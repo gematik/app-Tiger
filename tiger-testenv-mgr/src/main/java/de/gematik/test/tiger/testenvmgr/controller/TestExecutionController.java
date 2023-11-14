@@ -14,19 +14,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/testExecution")
 @Slf4j
 public class TestExecutionController {
-    @Setter
-    private Runnable shutdownListener = () -> {};
-    @Setter
-    private Runnable pauseListener = () -> {};
+  @Setter private Runnable shutdownListener = () -> {};
+  @Setter private Runnable pauseListener = () -> {};
 
-    @PutMapping(path = "/quit")
-    public void quit() {
-        log.trace("Fetch request to quit() received");
-        new Thread(shutdownListener).start();
-    }
-    @PutMapping(path = "/pause")
-    public void pause() {
-        log.trace("Fetch request to pause() received");
-        new Thread(pauseListener).start();
-    }
+  @PutMapping(path = "/quit")
+  public void quit() {
+    log.trace("Fetch request to quit() received");
+    new Thread(shutdownListener).start();
+  }
+
+  @PutMapping(path = "/pause")
+  public void pause() {
+    log.trace("Fetch request to pause() received");
+    new Thread(pauseListener).start();
+  }
 }

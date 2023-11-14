@@ -1,6 +1,7 @@
 package de.gematik.rbellogger.writer;
 
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
+
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelConverter;
@@ -11,13 +12,17 @@ import org.junit.jupiter.api.Test;
 
 class RbelBearerTokenWriterTests {
 
-    private final RbelLogger logger = RbelLogger.build(new RbelConfiguration()
-        .addInitializer(new RbelKeyFolderInitializer("src/test/resources")));
-    private RbelConverter rbelConverter = logger.getRbelConverter();
+  private final RbelLogger logger =
+      RbelLogger.build(
+          new RbelConfiguration()
+              .addInitializer(new RbelKeyFolderInitializer("src/test/resources")));
+  private RbelConverter rbelConverter = logger.getRbelConverter();
 
-    @Test
-    void testNestedJwtSerialization() {
-        final RbelElement input = rbelConverter.convertElement("""
+  @Test
+  void testNestedJwtSerialization() {
+    final RbelElement input =
+        rbelConverter.convertElement(
+            """
             Bearer {
               "tgrEncodeAs":"JWT",
               "header":{
@@ -33,17 +38,21 @@ class RbelBearerTokenWriterTests {
                 "verifiedUsing":"idpEnc"
               }
             }
-            """, null);
+            """,
+            null);
 
-        var output = serializeElement(input);
+    var output = serializeElement(input);
 
-        assertThat(output)
-            .extractChildWithPath("$.BearerToken.signature.verifiedUsing")
-            .hasValueEqualTo("puk_idpEnc");
-    }
-    @Test
-    void testPureJsonSerialization() {
-        final RbelElement input = rbelConverter.convertElement("""
+    assertThat(output)
+        .extractChildWithPath("$.BearerToken.signature.verifiedUsing")
+        .hasValueEqualTo("puk_idpEnc");
+  }
+
+  @Test
+  void testPureJsonSerialization() {
+    final RbelElement input =
+        rbelConverter.convertElement(
+            """
             {
               "tgrEncodeAs": "BEARER_TOKEN",
               "BearerToken": {
@@ -62,18 +71,18 @@ class RbelBearerTokenWriterTests {
                 }
               }
             }
-            """, null);
-
-        var output = serializeElement(input);
-
-        assertThat(output)
-            .extractChildWithPath("$.BearerToken.signature.verifiedUsing")
-            .hasValueEqualTo("puk_idpEnc");
-    }
-
-    private RbelElement serializeElement(RbelElement input) {
-        return rbelConverter.convertElement(
-            new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent(),
+            """,
             null);
-    }
+
+    var output = serializeElement(input);
+
+    assertThat(output)
+        .extractChildWithPath("$.BearerToken.signature.verifiedUsing")
+        .hasValueEqualTo("puk_idpEnc");
+  }
+
+  private RbelElement serializeElement(RbelElement input) {
+    return rbelConverter.convertElement(
+        new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent(), null);
+  }
 }

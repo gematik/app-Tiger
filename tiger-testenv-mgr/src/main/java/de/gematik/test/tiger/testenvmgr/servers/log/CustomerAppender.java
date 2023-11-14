@@ -11,28 +11,32 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerServerLogUpdate;
 
 public class CustomerAppender extends AppenderBase<ILoggingEvent> {
 
-    private final AbstractTigerServer server;
+  private final AbstractTigerServer server;
 
-    public CustomerAppender(AbstractTigerServer server) {
-        this.server = server;
+  public CustomerAppender(AbstractTigerServer server) {
+    this.server = server;
+  }
+
+  /**
+   * Send the LogEvent to all Listeners
+   *
+   * @param iLoggingEvent the LogEventObject
+   */
+  @Override
+  protected void append(ILoggingEvent iLoggingEvent) {
+    if (server.getConfiguration().getExternalJarOptions() == null
+        || server.getConfiguration().getExternalJarOptions().isActivateWorkflowLogs()) {
+      server
+          .getLogListeners()
+          .forEach(
+              listener -> {
+                listener.receiveServerLogUpdate(
+                    TigerServerLogUpdate.builder()
+                        .logLevel(iLoggingEvent.getLevel().levelStr)
+                        .logMessage(iLoggingEvent.getFormattedMessage())
+                        .serverName(server.getServerId())
+                        .build());
+              });
     }
-
-
-    /**
-     * Send the LogEvent to all Listeners
-     * @param iLoggingEvent the LogEventObject
-     */
-    @Override
-    protected void append(ILoggingEvent iLoggingEvent) {
-        if (server.getConfiguration().getExternalJarOptions() == null || server.getConfiguration().getExternalJarOptions().isActivateWorkflowLogs()) {
-            server.getLogListeners().forEach(listener -> {
-                 listener.receiveServerLogUpdate(TigerServerLogUpdate
-                    .builder()
-                    .logLevel(iLoggingEvent.getLevel().levelStr)
-                    .logMessage(iLoggingEvent.getFormattedMessage())
-                    .serverName(server.getServerId())
-                    .build());
-            });
-        }
-    }
+  }
 }

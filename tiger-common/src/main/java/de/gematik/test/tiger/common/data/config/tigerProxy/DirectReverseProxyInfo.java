@@ -15,6 +15,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class DirectReverseProxyInfo {
 
-    private String hostname;
-    private Integer port;
+  private String hostname;
+  private Integer port;
 }

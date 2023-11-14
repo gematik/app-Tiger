@@ -10,7 +10,8 @@ import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
 
 public interface RbelElementToContentTreeNodeConverter {
 
-    boolean shouldConvert(RbelElement target);
+  boolean shouldConvert(RbelElement target);
 
-    RbelContentTreeNode convert(RbelElement el, TigerConfigurationLoader context, RbelContentTreeConverter converter);
+  RbelContentTreeNode convert(
+      RbelElement el, TigerConfigurationLoader context, RbelContentTreeConverter converter);
 }

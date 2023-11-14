@@ -5,8 +5,8 @@
 package de.gematik.rbellogger.modifier;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelErpVauDecrpytionConverter;
@@ -27,85 +27,110 @@ import org.junit.jupiter.api.Test;
 
 public class VauModifierTest {
 
-    static {
-        Security.addProvider(new BouncyCastleProvider());
+  static {
+    Security.addProvider(new BouncyCastleProvider());
+  }
+
+  private RbelLogger rbelLogger;
+
+  @BeforeEach
+  public void initRbelLogger() {
+    if (rbelLogger == null) {
+      rbelLogger =
+          RbelLogger.build(
+              new RbelConfiguration()
+                  .addAdditionalConverter(new RbelVauEpaConverter())
+                  .addAdditionalConverter(new RbelErpVauDecrpytionConverter())
+                  .addInitializer(new RbelKeyFolderInitializer("src/test/resources")));
     }
+    rbelLogger.getRbelModifier().deleteAllModifications();
+  }
 
-    private RbelLogger rbelLogger;
+  @Test
+  public void modifyErpVauRequestBody() throws IOException {
+    final RbelElement message = readAndConvertRawMessage("src/test/resources/vauErpRequest.b64");
 
-    @BeforeEach
-    public void initRbelLogger() {
-        if (rbelLogger == null) {
-            rbelLogger = RbelLogger.build(
-                new RbelConfiguration()
-                    .addAdditionalConverter(new RbelVauEpaConverter())
-                    .addAdditionalConverter(new RbelErpVauDecrpytionConverter())
-                    .addInitializer(new RbelKeyFolderInitializer("src/test/resources")));
-        }
-        rbelLogger.getRbelModifier().deleteAllModifications();
-    }
+    rbelLogger
+        .getRbelModifier()
+        .addModification(
+            RbelModificationDescription.builder()
+                .targetElement("$.body.message.body")
+                .replaceWith("<New>Vau inner body</New>")
+                .build());
 
-    @Test
-    public void modifyErpVauRequestBody() throws IOException {
-        final RbelElement message = readAndConvertRawMessage("src/test/resources/vauErpRequest.b64");
+    final RbelElement modifiedMessage = rbelLogger.getRbelModifier().applyModifications(message);
 
-        rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
-            .targetElement("$.body.message.body")
-            .replaceWith("<New>Vau inner body</New>")
-            .build());
+    assertThat(
+            modifiedMessage
+                .findElement("$.body.message.body.New.text")
+                .map(RbelElement::getRawStringContent)
+                .get())
+        .isEqualTo("Vau inner body");
+  }
 
-        final RbelElement modifiedMessage = rbelLogger.getRbelModifier().applyModifications(message);
+  @Test
+  public void modifyErpVauResponseBody() throws IOException {
+    rbelLogger
+        .getRbelKeyManager()
+        .addKey(
+            "secretKey",
+            new SecretKeySpec(Base64.getDecoder().decode("dGPgkcT15xeXhORNsgc83A=="), "AES"),
+            0);
+    final RbelElement message = readAndConvertRawMessage("src/test/resources/vauErpResponse.b64");
 
-        assertThat(modifiedMessage.findElement("$.body.message.body.New.text")
-            .map(RbelElement::getRawStringContent).get())
-            .isEqualTo("Vau inner body");
-    }
+    rbelLogger
+        .getRbelModifier()
+        .addModification(
+            RbelModificationDescription.builder()
+                .targetElement("$.body.message.body")
+                .replaceWith("<New>Vau inner body</New>")
+                .build());
 
-    @Test
-    public void modifyErpVauResponseBody() throws IOException {
-        rbelLogger.getRbelKeyManager().addKey("secretKey",
-            new SecretKeySpec(Base64.getDecoder().decode("dGPgkcT15xeXhORNsgc83A=="), "AES"), 0);
-        final RbelElement message = readAndConvertRawMessage("src/test/resources/vauErpResponse.b64");
+    final RbelElement modifiedMessage = rbelLogger.getRbelModifier().applyModifications(message);
+    assertThat(
+            modifiedMessage
+                .findElement("$.body.message.body.New.text")
+                .map(RbelElement::getRawStringContent)
+                .get())
+        .isEqualTo("Vau inner body");
+  }
 
-        rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
-            .targetElement("$.body.message.body")
-            .replaceWith("<New>Vau inner body</New>")
-            .build());
+  @Test
+  public void modifyEpaVauRequestBody() {
+    rbelLogger =
+        RbelLogger.build(
+            new RbelConfiguration()
+                .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+                .addAdditionalConverter(new RbelVauEpaConverter())
+                .addCapturer(
+                    RbelFileReaderCapturer.builder()
+                        .rbelFile("src/test/resources/vauFlow.tgr")
+                        .build()));
+    rbelLogger.getRbelCapturer().initialize();
+    final RbelElement message = rbelLogger.getMessageList().get(4);
 
-        final RbelElement modifiedMessage = rbelLogger.getRbelModifier().applyModifications(message);
-        assertThat(modifiedMessage.findElement("$.body.message.body.New.text")
-            .map(RbelElement::getRawStringContent).get())
-            .isEqualTo("Vau inner body");
-    }
+    rbelLogger
+        .getRbelModifier()
+        .addModification(
+            RbelModificationDescription.builder()
+                .targetElement("$.body.message")
+                .replaceWith("<New>Vau inner body</New>")
+                .build());
 
-    @Test
-    public void modifyEpaVauRequestBody() {
-        rbelLogger = RbelLogger.build(new RbelConfiguration()
-            .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-            .addAdditionalConverter(new RbelVauEpaConverter())
-            .addCapturer(RbelFileReaderCapturer.builder()
-                .rbelFile("src/test/resources/vauFlow.tgr")
-                .build())
-        );
-        rbelLogger.getRbelCapturer().initialize();
-        final RbelElement message = rbelLogger.getMessageList().get(4);
+    final RbelElement modifiedMessage = rbelLogger.getRbelModifier().applyModifications(message);
 
-        rbelLogger.getRbelModifier().addModification(RbelModificationDescription.builder()
-            .targetElement("$.body.message")
-            .replaceWith("<New>Vau inner body</New>")
-            .build());
+    assertThat(
+            modifiedMessage
+                .findElement("$.body.message.New.text")
+                .map(RbelElement::getRawStringContent))
+        .get()
+        .isEqualTo("Vau inner body");
+  }
 
-        final RbelElement modifiedMessage = rbelLogger.getRbelModifier().applyModifications(message);
-
-        assertThat(modifiedMessage.findElement("$.body.message.New.text")
-            .map(RbelElement::getRawStringContent))
-            .get()
-            .isEqualTo("Vau inner body");
-    }
-
-    private RbelElement readAndConvertRawMessage(String fileName) throws IOException {
-        String rawMessage = FileUtils.readFileToString(new File(fileName), Charset.defaultCharset());
-        return rbelLogger.getRbelConverter()
-            .convertElement(Base64.getDecoder().decode(rawMessage), null);
-    }
+  private RbelElement readAndConvertRawMessage(String fileName) throws IOException {
+    String rawMessage = FileUtils.readFileToString(new File(fileName), Charset.defaultCharset());
+    return rbelLogger
+        .getRbelConverter()
+        .convertElement(Base64.getDecoder().decode(rawMessage), null);
+  }
 }

@@ -25,75 +25,87 @@ import org.dom4j.tree.DefaultText;
 @Slf4j
 public class RbelXmlSerializer implements RbelSerializer {
 
-    @SneakyThrows
-    public byte[] render(RbelContentTreeNode treeRootNode, RbelWriterInstance rbelWriter) {
-        final Document document = DocumentHelper.createDocument();
+  @SneakyThrows
+  public byte[] render(RbelContentTreeNode treeRootNode, RbelWriterInstance rbelWriter) {
+    final Document document = DocumentHelper.createDocument();
 
-        for (RbelContentTreeNode childNode : treeRootNode.getChildNodes()) {
-            addNode(childNode, document, rbelWriter);
-        }
-
-        addEncodingInformationIfMissing(document, treeRootNode);
-
-        return convertDocumentToString(document, false);
+    for (RbelContentTreeNode childNode : treeRootNode.getChildNodes()) {
+      addNode(childNode, document, rbelWriter);
     }
 
-    @SneakyThrows
-    public byte[] renderNode(RbelContentTreeNode treeRootNode, RbelWriterInstance rbelWriter) {
-        final Document document = DocumentHelper.createDocument();
-        for (RbelContentTreeNode childNode : treeRootNode.getChildNodes()) {
-            addNode(childNode, document, rbelWriter);
+    addEncodingInformationIfMissing(document, treeRootNode);
+
+    return convertDocumentToString(document, false);
+  }
+
+  @SneakyThrows
+  public byte[] renderNode(RbelContentTreeNode treeRootNode, RbelWriterInstance rbelWriter) {
+    final Document document = DocumentHelper.createDocument();
+    for (RbelContentTreeNode childNode : treeRootNode.getChildNodes()) {
+      addNode(childNode, document, rbelWriter);
+    }
+    return convertDocumentToString(document, true);
+  }
+
+  private void addEncodingInformationIfMissing(
+      Document document, RbelContentTreeNode treeRootNode) {
+    if (StringUtils.isEmpty(document.getXMLEncoding())) {
+      document.setXMLEncoding(treeRootNode.getElementCharset().displayName());
+    }
+  }
+
+  private void addNode(
+      RbelContentTreeNode treeNode, Branch parentBranch, RbelWriterInstance rbelWriter) {
+    if (log.isTraceEnabled()) {
+      log.trace(
+          "converting xml node '{}'",
+          treeNode.getContent() == null
+              ? "<null>"
+              : new String(treeNode.getContent(), treeNode.getElementCharset()));
+    }
+    final String key =
+        treeNode
+            .getKey()
+            .orElseThrow(
+                () -> new RbelSerializationException("Could not find key for " + treeNode));
+
+    if (StringUtils.isEmpty(key)) {
+      return;
+    } else {
+      final boolean isATextNode =
+          "text".equals(key)
+              && !treeNode.hasTypeOptional(RbelContentType.XML).orElse(false)
+              && !treeNode.attributes().containsKey(RbelXmlElementToNodeConverter.IS_XML_ATTRIBUTE);
+      if (isATextNode) {
+        if (!(parentBranch instanceof Document)) {
+          parentBranch.add(
+              new DefaultText(
+                  new String(
+                      rbelWriter.renderTree(treeNode).getContent(), treeNode.getElementCharset())));
         }
-        return convertDocumentToString(document, true);
+        return;
+      } else if (treeNode.attributes().containsKey("isXmlAttribute")
+          && parentBranch instanceof Element element) {
+        element.addAttribute(key, rbelWriter.renderTree(treeNode).getContentAsString());
+        return;
+      }
     }
 
-    private void addEncodingInformationIfMissing(Document document, RbelContentTreeNode treeRootNode) {
-        if (StringUtils.isEmpty(document.getXMLEncoding())) {
-            document.setXMLEncoding(treeRootNode.getElementCharset().displayName());
-        }
+    final Element newElement = parentBranch.addElement(key);
+    for (RbelContentTreeNode childNode : treeNode.getChildNodes()) {
+      addNode(childNode, newElement, rbelWriter);
     }
+  }
 
-    private void addNode(RbelContentTreeNode treeNode, Branch parentBranch, RbelWriterInstance rbelWriter) {
-        if (log.isTraceEnabled()) {
-            log.trace("converting xml node '{}'",
-                treeNode.getContent() == null ? "<null>"
-                    : new String(treeNode.getContent(), treeNode.getElementCharset()));
-        }
-        final String key = treeNode.getKey()
-            .orElseThrow(() -> new RbelSerializationException("Could not find key for " + treeNode));
+  private byte[] convertDocumentToString(Document document, boolean suppressDeclaration)
+      throws IOException {
+    final StringWriter resultWriter = new StringWriter();
 
-        if (StringUtils.isEmpty(key)) {
-            return;
-        } else {
-            final boolean isATextNode = "text".equals(key)
-                && !treeNode.hasTypeOptional(RbelContentType.XML).orElse(false)
-                && !treeNode.attributes().containsKey(RbelXmlElementToNodeConverter.IS_XML_ATTRIBUTE);
-            if (isATextNode) {
-                if (!(parentBranch instanceof Document)) {
-                    parentBranch.add(new DefaultText(
-                        new String(rbelWriter.renderTree(treeNode).getContent(), treeNode.getElementCharset())));
-                }
-                return;
-            } else if (treeNode.attributes().containsKey("isXmlAttribute") && parentBranch instanceof Element element) {
-                element.addAttribute(key, rbelWriter.renderTree(treeNode).getContentAsString());
-                return;
-            }
-        }
+    OutputFormat format = OutputFormat.createPrettyPrint();
+    format.setSuppressDeclaration(suppressDeclaration);
 
-        final Element newElement = parentBranch.addElement(key);
-        for (RbelContentTreeNode childNode : treeNode.getChildNodes()) {
-            addNode(childNode, newElement, rbelWriter);
-        }
-    }
-
-    private byte[] convertDocumentToString(Document document, boolean suppressDeclaration) throws IOException {
-        final StringWriter resultWriter = new StringWriter();
-
-        OutputFormat format = OutputFormat.createPrettyPrint();
-        format.setSuppressDeclaration(suppressDeclaration);
-
-        XMLWriter writer = new XMLWriter(resultWriter, format);
-        writer.write(document);
-        return resultWriter.toString().getBytes();
-    }
+    XMLWriter writer = new XMLWriter(resultWriter, format);
+    writer.write(document);
+    return resultWriter.toString().getBytes();
+  }
 }

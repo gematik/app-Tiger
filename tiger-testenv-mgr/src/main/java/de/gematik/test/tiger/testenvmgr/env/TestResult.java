@@ -5,5 +5,12 @@
 package de.gematik.test.tiger.testenvmgr.env;
 
 public enum TestResult {
-    FAILED, PASSED, SKIPPED, PENDING, EXECUTING, UNDEFINED, UNUSED, AMBIGUOUS
+  FAILED,
+  PASSED,
+  SKIPPED,
+  PENDING,
+  EXECUTING,
+  UNDEFINED,
+  UNUSED,
+  AMBIGUOUS
 }

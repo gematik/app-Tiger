@@ -24,40 +24,40 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
-@JsonIgnoreProperties(value = {
-    "certificate",
-    "privateKey",
-    "keyId",
-    "certificateChain"
-})
+@JsonIgnoreProperties(value = {"certificate", "privateKey", "keyId", "certificateChain"})
 @JsonDeserialize(using = TigerPkiIdentityDeserializer.class)
 @JsonSerialize(using = TigerPkiIdentitySerializer.class)
 public class TigerConfigurationPkiIdentity extends TigerPkiIdentity {
-    private String fileLoadingInformation;
+  private String fileLoadingInformation;
 
-    public TigerConfigurationPkiIdentity(String fileLoadingInformation) {
-        super(fileLoadingInformation);
-        this.fileLoadingInformation = fileLoadingInformation;
+  public TigerConfigurationPkiIdentity(String fileLoadingInformation) {
+    super(fileLoadingInformation);
+    this.fileLoadingInformation = fileLoadingInformation;
+  }
+
+  public static class TigerPkiIdentityDeserializer
+      extends JsonDeserializer<TigerConfigurationPkiIdentity> {
+
+    @Override
+    public TigerConfigurationPkiIdentity deserialize(JsonParser p, DeserializationContext ctxt) {
+      try {
+        return new TigerConfigurationPkiIdentity(
+            ((com.fasterxml.jackson.databind.node.TextNode) p.readValueAsTree()).asText());
+      } catch (IOException e) {
+        throw new TigerConfigurationException(
+            "Error while deserializing from JSON: " + e.getMessage(), e);
+      }
     }
+  }
 
-    public static class TigerPkiIdentityDeserializer extends JsonDeserializer<TigerConfigurationPkiIdentity> {
+  public static class TigerPkiIdentitySerializer
+      extends JsonSerializer<TigerConfigurationPkiIdentity> {
 
-        @Override
-        public TigerConfigurationPkiIdentity deserialize(JsonParser p, DeserializationContext ctxt) {
-            try {
-                return new TigerConfigurationPkiIdentity(
-                    ((com.fasterxml.jackson.databind.node.TextNode) p.readValueAsTree()).asText());
-            } catch (IOException e) {
-                throw new TigerConfigurationException("Error while deserializing from JSON: " + e.getMessage(), e);
-            }
-        }
+    @Override
+    public void serialize(
+        TigerConfigurationPkiIdentity value, JsonGenerator gen, SerializerProvider serializers)
+        throws IOException {
+      gen.writeString(value.getFileLoadingInformation());
     }
-
-    public static class TigerPkiIdentitySerializer extends JsonSerializer<TigerConfigurationPkiIdentity> {
-
-        @Override
-        public void serialize(TigerConfigurationPkiIdentity value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-            gen.writeString(value.getFileLoadingInformation());
-        }
-    }
+  }
 }

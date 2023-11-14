@@ -18,17 +18,17 @@ import lombok.RequiredArgsConstructor;
 @Builder(toBuilder = true)
 public class RbelListFacet implements RbelFacet {
 
-    private final List<RbelElement> childNodes;
+  private final List<RbelElement> childNodes;
 
-    @Override
-    public RbelMultiMap<RbelElement> getChildElements() {
-        RbelMultiMap<RbelElement> result = new RbelMultiMap<>();
-        AtomicInteger index = new AtomicInteger();
-        childNodes.forEach(element -> result.put(String.valueOf(index.getAndIncrement()), element));
-        return result;
-    }
+  @Override
+  public RbelMultiMap<RbelElement> getChildElements() {
+    RbelMultiMap<RbelElement> result = new RbelMultiMap<>();
+    AtomicInteger index = new AtomicInteger();
+    childNodes.forEach(element -> result.put(String.valueOf(index.getAndIncrement()), element));
+    return result;
+  }
 
-    public boolean isEmpty() {
-        return childNodes.isEmpty();
-    }
+  public boolean isEmpty() {
+    return childNodes.isEmpty();
+  }
 }

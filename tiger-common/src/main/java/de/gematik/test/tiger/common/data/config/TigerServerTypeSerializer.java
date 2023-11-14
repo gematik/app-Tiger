@@ -11,9 +11,12 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import java.io.IOException;
 
 public class TigerServerTypeSerializer extends JsonSerializer<TigerServerType> {
-    @Override
-    public void serialize(TigerServerType tigerServerType, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
-        throws IOException {
-        jsonGenerator.writeString(tigerServerType.value());
-    }
+  @Override
+  public void serialize(
+      TigerServerType tigerServerType,
+      JsonGenerator jsonGenerator,
+      SerializerProvider serializerProvider)
+      throws IOException {
+    jsonGenerator.writeString(tigerServerType.value());
+  }
 }

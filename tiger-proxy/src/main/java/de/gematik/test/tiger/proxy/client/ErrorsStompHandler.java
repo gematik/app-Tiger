@@ -14,20 +14,23 @@ import org.springframework.messaging.simp.stomp.StompHeaders;
 @Slf4j
 class ErrorsStompHandler implements StompFrameHandler {
 
-    private final TigerRemoteProxyClient remoteProxyClient;
+  private final TigerRemoteProxyClient remoteProxyClient;
 
-    @Override
-    public Type getPayloadType(StompHeaders stompHeaders) {
-        return TigerExceptionDto.class;
-    }
+  @Override
+  public Type getPayloadType(StompHeaders stompHeaders) {
+    return TigerExceptionDto.class;
+  }
 
-    @Override
-    public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
-        if (frameContent instanceof TigerExceptionDto) {
-            final TigerExceptionDto exceptionDto = (TigerExceptionDto) frameContent;
-            log.warn("Received remote exception: ({}) {}: {} ",
-                exceptionDto.getClassName(), exceptionDto.getMessage(), exceptionDto.getStacktrace());
-            remoteProxyClient.getReceivedRemoteExceptions().add(exceptionDto);
-        }
+  @Override
+  public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
+    if (frameContent instanceof TigerExceptionDto) {
+      final TigerExceptionDto exceptionDto = (TigerExceptionDto) frameContent;
+      log.warn(
+          "Received remote exception: ({}) {}: {} ",
+          exceptionDto.getClassName(),
+          exceptionDto.getMessage(),
+          exceptionDto.getStacktrace());
+      remoteProxyClient.getReceivedRemoteExceptions().add(exceptionDto);
     }
+  }
 }

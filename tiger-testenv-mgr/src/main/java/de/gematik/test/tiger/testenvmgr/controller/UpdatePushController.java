@@ -19,19 +19,19 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UpdatePushController implements TigerUpdateListener {
 
-    public final SimpMessagingTemplate template;
-    public final TigerTestEnvMgr tigerTestEnvMgr;
+  public final SimpMessagingTemplate template;
+  public final TigerTestEnvMgr tigerTestEnvMgr;
 
-    @PostConstruct
-    public void addWebSocketListener() {
-        tigerTestEnvMgr.registerNewListener(this);
-    }
+  @PostConstruct
+  public void addWebSocketListener() {
+    tigerTestEnvMgr.registerNewListener(this);
+  }
 
-    @Override
-    public void receiveTestEnvUpdate(TigerStatusUpdate update) {
-        if (tigerTestEnvMgr.isWorkflowUiSentFetch() && !tigerTestEnvMgr.isShouldAbortTestExecution()) {
-            log.trace("Propagating status udpate {}", update);
-            template.convertAndSend("/topic/envStatus", TestEnvStatusDto.createFrom(update));
-        }
+  @Override
+  public void receiveTestEnvUpdate(TigerStatusUpdate update) {
+    if (tigerTestEnvMgr.isWorkflowUiSentFetch() && !tigerTestEnvMgr.isShouldAbortTestExecution()) {
+      log.trace("Propagating status udpate {}", update);
+      template.convertAndSend("/topic/envStatus", TestEnvStatusDto.createFrom(update));
     }
+  }
 }

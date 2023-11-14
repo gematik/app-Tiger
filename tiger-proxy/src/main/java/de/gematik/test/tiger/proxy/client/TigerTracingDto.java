@@ -13,10 +13,10 @@ import lombok.Data;
 @Builder
 public class TigerTracingDto {
 
-    private final String requestUuid;
-    private final String responseUuid;
-    private final RbelHostname sender;
-    private final RbelHostname receiver;
-    private final ZonedDateTime requestTransmissionTime;
-    private final ZonedDateTime responseTransmissionTime;
+  private final String requestUuid;
+  private final String responseUuid;
+  private final RbelHostname sender;
+  private final RbelHostname receiver;
+  private final ZonedDateTime requestTransmissionTime;
+  private final ZonedDateTime responseTransmissionTime;
 }

@@ -17,34 +17,34 @@ import org.junit.jupiter.api.Test;
 
 class GenerateDriverMojoTest {
 
-    @Test
-    void testEmptyIncludes_NOK() {
-        final GenerateDriverMojo mavenGoal = new GenerateDriverMojo();
-        mavenGoal.setIncludes(new ArrayList<>());
-        assertThatThrownBy(mavenGoal::execute).isInstanceOf(MojoExecutionException.class);
-    }
+  @Test
+  void testEmptyIncludes_NOK() {
+    final GenerateDriverMojo mavenGoal = new GenerateDriverMojo();
+    mavenGoal.setIncludes(new ArrayList<>());
+    assertThatThrownBy(mavenGoal::execute).isInstanceOf(MojoExecutionException.class);
+  }
 
-    @Test
-    void testEmptyGlues_NOK() {
-        final GenerateDriverMojo mavenGoal = new GenerateDriverMojo();
-        mavenGoal.setGlues(new ArrayList<>());
-        assertThatThrownBy(mavenGoal::execute).isInstanceOf(MojoExecutionException.class);
-    }
+  @Test
+  void testEmptyGlues_NOK() {
+    final GenerateDriverMojo mavenGoal = new GenerateDriverMojo();
+    mavenGoal.setGlues(new ArrayList<>());
+    assertThatThrownBy(mavenGoal::execute).isInstanceOf(MojoExecutionException.class);
+  }
 
-    @Test
-    void testDriverClassNameNoCtr_NOK() {
-        final GenerateDriverMojo mavenGoal = new GenerateDriverMojo();
-        mavenGoal.setDriverClassName("TestDriverClassName");
-        assertThatThrownBy(mavenGoal::execute).isInstanceOf(MojoExecutionException.class);
-    }
+  @Test
+  void testDriverClassNameNoCtr_NOK() {
+    final GenerateDriverMojo mavenGoal = new GenerateDriverMojo();
+    mavenGoal.setDriverClassName("TestDriverClassName");
+    assertThatThrownBy(mavenGoal::execute).isInstanceOf(MojoExecutionException.class);
+  }
 
-    @Test
-    void testSkip() throws IOException, MojoExecutionException {
-        final File folder = Paths.get("target", "generated-test-sources/tigerbdd").toFile();
-        FileUtils.deleteDirectory(folder);
-        final GenerateDriverMojo mavenGoal = new GenerateDriverMojo();
-        mavenGoal.setSkip(true);
-        mavenGoal.execute();
-        assertThat(folder).doesNotExist();
-    }
+  @Test
+  void testSkip() throws IOException, MojoExecutionException {
+    final File folder = Paths.get("target", "generated-test-sources/tigerbdd").toFile();
+    FileUtils.deleteDirectory(folder);
+    final GenerateDriverMojo mavenGoal = new GenerateDriverMojo();
+    mavenGoal.setSkip(true);
+    mavenGoal.execute();
+    assertThat(folder).doesNotExist();
+  }
 }

@@ -4,7 +4,6 @@
 
 package de.gematik.rbellogger.converter.listener;
 
-import de.gematik.rbellogger.configuration.RbelFileSaveInfo;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
@@ -21,31 +20,37 @@ import org.apache.commons.lang3.StringUtils;
 @Data
 public class RbelFileAppenderPlugin implements RbelConverterPlugin {
 
-    private final TigerFileSaveInfo fileSaveInfo;
-    private final RbelFileWriter rbelFileWriter;
+  private final TigerFileSaveInfo fileSaveInfo;
+  private final RbelFileWriter rbelFileWriter;
 
-    public RbelFileAppenderPlugin(TigerFileSaveInfo fileSaveInfo, RbelConverter rbelConverter) {
-        this.fileSaveInfo = fileSaveInfo;
-        this.rbelFileWriter = new RbelFileWriter(rbelConverter);
-        if (fileSaveInfo.isWriteToFile()
-            && StringUtils.isNotEmpty(fileSaveInfo.getFilename())
-            && fileSaveInfo.isClearFileOnBoot()) {
-            FileUtils.deleteQuietly(new File(fileSaveInfo.getFilename()));
-        }
+  public RbelFileAppenderPlugin(TigerFileSaveInfo fileSaveInfo, RbelConverter rbelConverter) {
+    this.fileSaveInfo = fileSaveInfo;
+    this.rbelFileWriter = new RbelFileWriter(rbelConverter);
+    if (fileSaveInfo.isWriteToFile()
+        && StringUtils.isNotEmpty(fileSaveInfo.getFilename())
+        && fileSaveInfo.isClearFileOnBoot()) {
+      FileUtils.deleteQuietly(new File(fileSaveInfo.getFilename()));
     }
+  }
 
-    @Override
-    public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
-        if (fileSaveInfo.isWriteToFile()
-            && StringUtils.isNotEmpty(fileSaveInfo.getFilename())
-            && rbelElement.hasFacet(RbelTcpIpMessageFacet.class)) {
-            try {
-                FileUtils.writeStringToFile(new File(fileSaveInfo.getFilename()),
-                    rbelFileWriter.convertToRbelFileString(rbelElement), StandardCharsets.UTF_8, true);
-            } catch (IOException e) {
-                throw new RuntimeException("Exception while trying to save RbelElement to file '" + fileSaveInfo.getFilename() + "'!", e);
-            }
-        }
+  @Override
+  public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
+    if (fileSaveInfo.isWriteToFile()
+        && StringUtils.isNotEmpty(fileSaveInfo.getFilename())
+        && rbelElement.hasFacet(RbelTcpIpMessageFacet.class)) {
+      try {
+        FileUtils.writeStringToFile(
+            new File(fileSaveInfo.getFilename()),
+            rbelFileWriter.convertToRbelFileString(rbelElement),
+            StandardCharsets.UTF_8,
+            true);
+      } catch (IOException e) {
+        throw new RuntimeException(
+            "Exception while trying to save RbelElement to file '"
+                + fileSaveInfo.getFilename()
+                + "'!",
+            e);
+      }
     }
-
+  }
 }

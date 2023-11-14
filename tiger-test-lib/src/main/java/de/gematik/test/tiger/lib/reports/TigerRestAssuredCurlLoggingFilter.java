@@ -12,54 +12,53 @@ import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.response.Response;
 import io.restassured.specification.FilterableRequestSpecification;
 import io.restassured.specification.FilterableResponseSpecification;
-import lombok.extern.slf4j.Slf4j;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TigerRestAssuredCurlLoggingFilter implements Filter {
 
-    private ByteArrayOutputStream outputStream;
-    private RequestLoggingFilter requestLoggingFilter;
+  private ByteArrayOutputStream outputStream;
+  private RequestLoggingFilter requestLoggingFilter;
 
-    public TigerRestAssuredCurlLoggingFilter() {
-        outputStream = new ByteArrayOutputStream();
-        requestLoggingFilter = new RequestLoggingFilter(
-            LogDetail.ALL,
-            true,
-            new PrintStream(outputStream),
-            true);
+  public TigerRestAssuredCurlLoggingFilter() {
+    outputStream = new ByteArrayOutputStream();
+    requestLoggingFilter =
+        new RequestLoggingFilter(LogDetail.ALL, true, new PrintStream(outputStream), true);
+  }
+
+  public synchronized void printToReport() {
+    String raLog = outputStream.toString(StandardCharsets.UTF_8);
+    outputStream.reset();
+
+    if (raLog.isEmpty()) {
+      return;
     }
-
-    public synchronized void printToReport() {
-        String raLog = outputStream.toString(StandardCharsets.UTF_8);
-        outputStream.reset();
-
-        if (raLog.isEmpty()) {
-            return;
+    int callCounter = 0;
+    final List<String> listOfCurlCalls =
+        RestAssuredLogToCurlCommandParser.convertRestAssuredLogToCurlCalls(raLog);
+    for (String callLog : listOfCurlCalls) {
+      String curlCommand =
+          RestAssuredLogToCurlCommandParser.parseCurlCommandFromRestAssuredLog(callLog);
+      if (TigerDirector.isSerenityAvailable(true) && !curlCommand.isEmpty()) {
+        String title = "cURL";
+        if (listOfCurlCalls.size() > 1) {
+          title += " " + String.format("%3d", callCounter++); // 3 digit zero padded counter string
         }
-        int callCounter = 0;
-        final List<String> listOfCurlCalls = RestAssuredLogToCurlCommandParser.convertRestAssuredLogToCurlCalls(raLog);
-        for (String callLog : listOfCurlCalls) {
-            String curlCommand = RestAssuredLogToCurlCommandParser.parseCurlCommandFromRestAssuredLog(callLog);
-            if (TigerDirector.isSerenityAvailable(true) && !curlCommand.isEmpty()) {
-                String title = "cURL";
-                if (listOfCurlCalls.size() > 1) {
-                    title += " " + String.format("%3d", callCounter++); // 3 digit zero padded counter string
-                }
-                log.debug("RestAssured details for cURL command:\n{}", callLog);
-                SerenityReportUtils.addCustomData(title, curlCommand);
-            }
-        }
+        log.debug("RestAssured details for cURL command:\n{}", callLog);
+        SerenityReportUtils.addCustomData(title, curlCommand);
+      }
     }
+  }
 
-    @Override
-    public synchronized Response filter(FilterableRequestSpecification requestSpec,
-        FilterableResponseSpecification responseSpec,
-        FilterContext ctx) {
-        return requestLoggingFilter.filter(requestSpec, responseSpec, ctx);
-    }
+  @Override
+  public synchronized Response filter(
+      FilterableRequestSpecification requestSpec,
+      FilterableResponseSpecification responseSpec,
+      FilterContext ctx) {
+    return requestLoggingFilter.filter(requestSpec, responseSpec, ctx);
+  }
 }

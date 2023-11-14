@@ -27,129 +27,160 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class TigerRemoteTrafficDownloader {
 
-    private final TigerRemoteProxyClient tigerRemoteProxyClient;
+  private final TigerRemoteProxyClient tigerRemoteProxyClient;
 
-    public void execute() {
-        tigerRemoteProxyClient.getTrafficParserExecutor()
-            .submit(tigerRemoteProxyClient::switchToQueueMode);
+  public void execute() {
+    tigerRemoteProxyClient
+        .getTrafficParserExecutor()
+        .submit(tigerRemoteProxyClient::switchToQueueMode);
 
-        downloadAllTrafficFromRemote();
+    downloadAllTrafficFromRemote();
 
-        log.info("{}Successfully downloaded missed traffic from '{}'.",
-            tigerRemoteProxyClient.proxyName(), getRemoteProxyUrl());
+    log.info(
+        "{}Successfully downloaded missed traffic from '{}'.",
+        tigerRemoteProxyClient.proxyName(),
+        getRemoteProxyUrl());
 
-        tigerRemoteProxyClient.getTrafficParserExecutor()
-            .submit(() -> log.info("{}Successfully downloaded & parsed missed traffic from '{}'. Now {} message cached",
-                tigerRemoteProxyClient.proxyName(), getRemoteProxyUrl(), getRbelLogger().getMessageHistory().size()));
+    tigerRemoteProxyClient
+        .getTrafficParserExecutor()
+        .submit(
+            () ->
+                log.info(
+                    "{}Successfully downloaded & parsed missed traffic from '{}'. Now {} message"
+                        + " cached",
+                    tigerRemoteProxyClient.proxyName(),
+                    getRemoteProxyUrl(),
+                    getRbelLogger().getMessageHistory().size()));
 
-        tigerRemoteProxyClient.getTrafficParserExecutor()
-            .submit(tigerRemoteProxyClient::switchToExecutorMode);
+    tigerRemoteProxyClient
+        .getTrafficParserExecutor()
+        .submit(tigerRemoteProxyClient::switchToExecutorMode);
+  }
+
+  private void parseTrafficChunk(String rawTraffic) {
+    final List<RbelElement> convertedMessages =
+        tigerRemoteProxyClient.getRbelFileWriter().convertFromRbelFile(rawTraffic);
+    final long count = rawTraffic.lines().count();
+    convertedMessages.forEach(msg -> msg.addFacet(new TigerDownloadedMessageFacet()));
+    for (int i = 0; i < convertedMessages.size(); i += 2) {
+      val pairFacet =
+          TracingMessagePairFacet.builder()
+              .response(convertedMessages.get(i + 1))
+              .request(convertedMessages.get(i))
+              .build();
+      convertedMessages.get(i + 1).addFacet(pairFacet);
+    }
+    if (log.isTraceEnabled()) {
+      log.trace(
+          "{}Just parsed another traffic batch of {} lines, got {} messages, expected {} (rest was"
+              + " filtered). Now standing at {} messages overall",
+          tigerRemoteProxyClient.proxyName(),
+          count,
+          convertedMessages.size(),
+          (count + 2) / 3,
+          getRbelLogger().getMessageHistory().size());
+    }
+    if (!convertedMessages.isEmpty()) {
+      tigerRemoteProxyClient
+          .getLastMessageUuid()
+          .set(convertedMessages.get(convertedMessages.size() - 1).getUuid());
+    }
+    convertedMessages.forEach(tigerRemoteProxyClient::triggerListener);
+    if (log.isTraceEnabled()) {
+      log.trace(
+          "{}Parsed traffic, ending with {}",
+          tigerRemoteProxyClient.proxyName(),
+          convertedMessages.stream()
+              .map(RbelElement::getRawStringContent)
+              .flatMap(content -> Stream.of(content.split(" ")).skip(1).limit(1))
+              .filter(httpHeaderString -> httpHeaderString.startsWith("/"))
+              .collect(Collectors.joining(", ")));
+    }
+  }
+
+  private void downloadAllTrafficFromRemote() {
+    PaginationInfo paginationInfo;
+    int pageNumber = 0;
+    // we make a copy of the last uuid because the traffic parsing will be commenced in parallel,
+    // meaning
+    // the tigerRemoteProxyClient.getLastMessageUuid() can shift
+    Optional<String> currentLastUuid =
+        Optional.ofNullable(tigerRemoteProxyClient.getLastMessageUuid().get());
+    final int pageSize =
+        tigerRemoteProxyClient.getTigerProxyConfiguration().getTrafficDownloadPageSize();
+    do {
+      paginationInfo = downloadTrafficPageFromRemoteAndAddToQueue(pageSize, currentLastUuid);
+      pageNumber++;
+      currentLastUuid =
+          Optional.ofNullable(paginationInfo.getLastUuid()).filter(StringUtils::isNotEmpty);
+
+      if (pageNumber > 100) {
+        log.warn(
+            "Interrupting traffic-download: Reached 100 downloads! (Maybe the influx of traffic on"
+                + " the upstream proxy is greater then our downstream-sped?)");
+        return;
+      }
+    } while (paginationInfo.getAvailableMessages() > pageSize);
+  }
+
+  private PaginationInfo downloadTrafficPageFromRemoteAndAddToQueue(
+      int pageSize, Optional<String> currentLastUuid) {
+    final String downloadUrl = getRemoteProxyUrl() + "/webui/trafficLog.tgr";
+    log.debug(
+        "{}Downloading missed traffic from '{}', starting from {}. page-size {} (currently cached"
+            + " {} messages)",
+        tigerRemoteProxyClient.proxyName(),
+        currentLastUuid,
+        downloadUrl,
+        pageSize,
+        getRbelLogger().getMessageHistory().size());
+
+    final Map<String, Object> parameters = new HashMap<>();
+    parameters.put("pageSize", pageSize);
+    currentLastUuid.ifPresent(uuid -> parameters.put("lastMsgUuid", uuid));
+
+    final HttpResponse<String> response =
+        Unirest.get(downloadUrl).queryString(parameters).asString();
+    if (response.getStatus() != 200) {
+      throw new TigerRemoteProxyClientException(
+          "Error while downloading message from remote '"
+              + downloadUrl
+              + "': "
+              + response.getBody());
+    }
+    tigerRemoteProxyClient
+        .getTrafficParserExecutor()
+        .submit(() -> parseTrafficChunk(response.getBody()));
+    return PaginationInfo.of(response);
+  }
+
+  private RbelLogger getRbelLogger() {
+    return tigerRemoteProxyClient.getRbelLogger();
+  }
+
+  private String getRemoteProxyUrl() {
+    return tigerRemoteProxyClient.getRemoteProxyUrl();
+  }
+
+  @Data
+  @Builder
+  private static class PaginationInfo {
+
+    private final int availableMessages;
+    private final String lastUuid;
+
+    public static PaginationInfo of(HttpResponse<String> response) {
+      return PaginationInfo.builder()
+          .availableMessages(convertHeaderFieldToInt(response, "available-messages"))
+          .lastUuid(response.getHeaders().getFirst("last-uuid"))
+          .build();
     }
 
-    private void parseTrafficChunk(String rawTraffic) {
-        final List<RbelElement> convertedMessages = tigerRemoteProxyClient.getRbelFileWriter()
-            .convertFromRbelFile(rawTraffic);
-        final long count = rawTraffic.lines().count();
-        convertedMessages.forEach(msg -> msg.addFacet(new TigerDownloadedMessageFacet()));
-        for (int i = 0; i < convertedMessages.size(); i += 2) {
-            val pairFacet = TracingMessagePairFacet.builder()
-                .response(convertedMessages.get(i + 1))
-                .request(convertedMessages.get(i))
-                .build();
-            convertedMessages.get(i + 1).addFacet(pairFacet);
-        }
-        if (log.isTraceEnabled()) {
-            log.trace(
-                "{}Just parsed another traffic batch of {} lines, got {} messages, expected {} (rest was filtered). Now standing at {} messages overall",
-                tigerRemoteProxyClient.proxyName(), count, convertedMessages.size(), (count + 2) / 3,
-                getRbelLogger().getMessageHistory().size());
-        }
-        if (!convertedMessages.isEmpty()) {
-            tigerRemoteProxyClient.getLastMessageUuid().set(
-                convertedMessages.get(convertedMessages.size() - 1).getUuid()
-            );
-        }
-        convertedMessages.forEach(tigerRemoteProxyClient::triggerListener);
-        if (log.isTraceEnabled()) {
-            log.trace("{}Parsed traffic, ending with {}", tigerRemoteProxyClient.proxyName(),
-                convertedMessages.stream()
-                    .map(RbelElement::getRawStringContent)
-                    .flatMap(content -> Stream.of(content.split(" ")).skip(1).limit(1))
-                    .filter(httpHeaderString -> httpHeaderString.startsWith("/"))
-                    .collect(Collectors.joining(", ")));
-        }
+    private static Integer convertHeaderFieldToInt(HttpResponse<String> response, String key) {
+      return Optional.ofNullable(response.getHeaders().getFirst(key))
+          .filter(StringUtils::isNotEmpty)
+          .map(Integer::parseInt)
+          .orElse(-1);
     }
-
-    private void downloadAllTrafficFromRemote() {
-        PaginationInfo paginationInfo;
-        int pageNumber = 0;
-        // we make a copy of the last uuid because the traffic parsing will be commenced in parallel, meaning
-        // the tigerRemoteProxyClient.getLastMessageUuid() can shift
-        Optional<String> currentLastUuid = Optional.ofNullable(tigerRemoteProxyClient.getLastMessageUuid().get());
-        final int pageSize = tigerRemoteProxyClient.getTigerProxyConfiguration().getTrafficDownloadPageSize();
-        do {
-            paginationInfo = downloadTrafficPageFromRemoteAndAddToQueue(pageSize, currentLastUuid);
-            pageNumber++;
-            currentLastUuid = Optional.ofNullable(paginationInfo.getLastUuid())
-                .filter(StringUtils::isNotEmpty);
-
-            if (pageNumber > 100) {
-                log.warn("Interrupting traffic-download: Reached 100 downloads! "
-                    + "(Maybe the influx of traffic on the upstream proxy is greater then our downstream-sped?)");
-                return;
-            }
-        } while (paginationInfo.getAvailableMessages() > pageSize);
-    }
-
-    private PaginationInfo downloadTrafficPageFromRemoteAndAddToQueue(int pageSize, Optional<String> currentLastUuid) {
-        final String downloadUrl = getRemoteProxyUrl() + "/webui/trafficLog.tgr";
-        log.debug(
-            "{}Downloading missed traffic from '{}', starting from {}. page-size {} (currently cached {} messages)",
-            tigerRemoteProxyClient.proxyName(), currentLastUuid, downloadUrl, pageSize, getRbelLogger().getMessageHistory().size());
-
-        final Map<String, Object> parameters = new HashMap<>();
-        parameters.put("pageSize", pageSize);
-        currentLastUuid
-            .ifPresent(uuid -> parameters.put("lastMsgUuid", uuid));
-
-        final HttpResponse<String> response = Unirest.get(downloadUrl)
-            .queryString(parameters)
-            .asString();
-        if (response.getStatus() != 200) {
-            throw new TigerRemoteProxyClientException(
-                "Error while downloading message from remote '" + downloadUrl + "': " + response.getBody());
-        }
-        tigerRemoteProxyClient.getTrafficParserExecutor().submit(() -> parseTrafficChunk(response.getBody()));
-        return PaginationInfo.of(response);
-    }
-
-    private RbelLogger getRbelLogger() {
-        return tigerRemoteProxyClient.getRbelLogger();
-    }
-
-    private String getRemoteProxyUrl() {
-        return tigerRemoteProxyClient.getRemoteProxyUrl();
-    }
-
-    @Data
-    @Builder
-    private static class PaginationInfo {
-
-        private final int availableMessages;
-        private final String lastUuid;
-
-        public static PaginationInfo of(HttpResponse<String> response) {
-            return PaginationInfo.builder()
-                .availableMessages(convertHeaderFieldToInt(response, "available-messages"))
-                .lastUuid(response.getHeaders().getFirst("last-uuid"))
-                .build();
-        }
-
-        private static Integer convertHeaderFieldToInt(HttpResponse<String> response, String key) {
-            return Optional.ofNullable(response.getHeaders().getFirst(key))
-                .filter(StringUtils::isNotEmpty)
-                .map(Integer::parseInt)
-                .orElse(-1);
-        }
-    }
+  }
 }

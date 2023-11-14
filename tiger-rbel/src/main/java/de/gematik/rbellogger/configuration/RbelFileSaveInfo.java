@@ -15,10 +15,7 @@ import lombok.RequiredArgsConstructor;
 @Builder
 public class RbelFileSaveInfo {
 
-    @Builder.Default
-    private boolean writeToFile = false;
-    @Builder.Default
-    private String filename = "tiger-proxy.tgr";
-    @Builder.Default
-    private boolean clearFileOnBoot = false;
+  @Builder.Default private boolean writeToFile = false;
+  @Builder.Default private String filename = "tiger-proxy.tgr";
+  @Builder.Default private boolean clearFileOnBoot = false;
 }

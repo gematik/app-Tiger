@@ -24,42 +24,45 @@ import org.springframework.context.ConfigurableApplicationContext;
 @TigerServerType("zion")
 public class ZionServerType extends AbstractExternalTigerServer {
 
-    @Getter
-    private ConfigurableApplicationContext applicationContext;
+  @Getter private ConfigurableApplicationContext applicationContext;
 
-    public ZionServerType(TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
-        super(serverId, serverId, configuration, tigerTestEnvMgr);
-    }
+  public ZionServerType(TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
+    super(serverId, serverId, configuration, tigerTestEnvMgr);
+  }
 
-    @Override
-    public Optional<String> getHealthcheckUrl() {
-        return Optional.of("http://localhost:" + getServerPort());
-    }
+  @Override
+  public Optional<String> getHealthcheckUrl() {
+    return Optional.of("http://localhost:" + getServerPort());
+  }
 
-    @SneakyThrows
-    @Override
-    public void performStartup() {
-        log.info("Entering pre-startup of Zion-Server {}", getServerId());
-        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
+  @SneakyThrows
+  @Override
+  public void performStartup() {
+    log.info("Entering pre-startup of Zion-Server {}", getServerId());
+    publishNewStatusUpdate(
+        TigerServerStatusUpdate.builder()
             .statusMessage("Pre-start Zion-Server " + getServerId())
             .build());
-        final ZionServerConfiguration zionConfiguration = getZionConfiguration();
-        final HashMap<String, Object> propertyMap
-            = new HashMap<>(TigerSerializationUtil.toMap(zionConfiguration.getZionConfiguration(), "zion"));
-        final int serverPort = getServerPort();
-        propertyMap.put("server.port", serverPort);
+    final ZionServerConfiguration zionConfiguration = getZionConfiguration();
+    final HashMap<String, Object> propertyMap =
+        new HashMap<>(
+            TigerSerializationUtil.toMap(zionConfiguration.getZionConfiguration(), "zion"));
+    final int serverPort = getServerPort();
+    propertyMap.put("server.port", serverPort);
 
-        if (getTigerTestEnvMgr().isShuttingDown()) {
-            log.debug("Skipping startup, already shutting down...");
-            publishNewStatusUpdate(TigerServerStatusUpdate.builder()
-                .statusMessage("Skipped startup of Zion-Server " + getServerId())
-                .build());
-            return;
-        }
+    if (getTigerTestEnvMgr().isShuttingDown()) {
+      log.debug("Skipping startup, already shutting down...");
+      publishNewStatusUpdate(
+          TigerServerStatusUpdate.builder()
+              .statusMessage("Skipped startup of Zion-Server " + getServerId())
+              .build());
+      return;
+    }
 
-        log.info("Actually performing startup of Zion-Server {}", getServerId());
-        statusMessage("Starting ZionServer " + getServerId() + " at " + serverPort + "...");
-        applicationContext = new SpringApplicationBuilder()
+    log.info("Actually performing startup of Zion-Server {}", getServerId());
+    statusMessage("Starting ZionServer " + getServerId() + " at " + serverPort + "...");
+    applicationContext =
+        new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
             .properties(propertyMap)
             .sources(ZionApplication.class)
@@ -68,49 +71,49 @@ public class ZionServerType extends AbstractExternalTigerServer {
             .initializers()
             .run();
 
-        waitForServerUp();
+    waitForServerUp();
 
-        addServerToLocalProxyRouteMap(new URL(getZionServerBaseUrl()));
+    addServerToLocalProxyRouteMap(new URL(getZionServerBaseUrl()));
 
-        publishNewStatusUpdate(TigerServerStatusUpdate.builder()
-            .baseUrl(getZionServerBaseUrl())
-            .build());
+    publishNewStatusUpdate(
+        TigerServerStatusUpdate.builder().baseUrl(getZionServerBaseUrl()).build());
+  }
+
+  private String getZionServerBaseUrl() {
+    return "http://localhost:"
+        + ((ServletWebServerApplicationContext) applicationContext).getWebServer().getPort();
+  }
+
+  private int getServerPort() {
+    return getZionConfiguration().getZionConfiguration().getServerPort();
+  }
+
+  private ZionServerConfiguration getZionConfiguration() {
+    final CfgServer configuration = getConfiguration();
+    if (configuration instanceof ZionServerConfiguration zionServerConfiguration) {
+      return zionServerConfiguration;
+    } else {
+      throw new TigerEnvironmentStartupException(
+          "Unexpected configuration type. Expected ZionServerConfiguration but found "
+              + configuration.getClass().getName());
     }
+  }
 
-    private String getZionServerBaseUrl() {
-        return "http://localhost:" + ((ServletWebServerApplicationContext) applicationContext).getWebServer().getPort();
+  @Override
+  public void shutdown() {
+    log.info("Stopping Zion-Server {}...", getServerId());
+    if (applicationContext != null && applicationContext.isRunning()) {
+      log.info("Triggering tiger-server shutdown for {}...", getServerId());
+      applicationContext.close();
+      setStatus(TigerServerStatus.STOPPED, "Stopped Zion-Server " + getServerId());
+    } else {
+      log.info("Skipping tiger-server shutdown for {}!", getServerId());
+      setStatus(TigerServerStatus.STOPPED, "Zion-Server " + getServerId() + " already stopped");
     }
+  }
 
-    private int getServerPort() {
-        return getZionConfiguration().getZionConfiguration().getServerPort();
-    }
-
-    private ZionServerConfiguration getZionConfiguration() {
-        final CfgServer configuration = getConfiguration();
-        if (configuration instanceof ZionServerConfiguration zionServerConfiguration) {
-            return zionServerConfiguration;
-        } else {
-            throw new TigerEnvironmentStartupException("Unexpected configuration type. Expected ZionServerConfiguration but found " +
-                    configuration.getClass().getName());
-        }
-    }
-
-    @Override
-    public void shutdown() {
-        log.info("Stopping Zion-Server {}...", getServerId());
-        if (applicationContext != null
-            && applicationContext.isRunning()) {
-            log.info("Triggering tiger-server shutdown for {}...", getServerId());
-            applicationContext.close();
-            setStatus(TigerServerStatus.STOPPED, "Stopped Zion-Server " + getServerId());
-        } else {
-            log.info("Skipping tiger-server shutdown for {}!", getServerId());
-            setStatus(TigerServerStatus.STOPPED, "Zion-Server " + getServerId() + " already stopped");
-        }
-    }
-
-    @Override
-    public Class<? extends CfgServer> getConfigurationBeanClass() {
-        return ZionServerConfiguration.class;
-    }
+  @Override
+  public Class<? extends CfgServer> getConfigurationBeanClass() {
+    return ZionServerConfiguration.class;
+  }
 }

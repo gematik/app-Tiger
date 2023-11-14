@@ -13,8 +13,7 @@ import lombok.*;
 @Data
 @Builder
 public class CfgKey {
-    private String id;
-    private String pem;
-    @Builder.Default
-    private PkiType type = PkiType.Certificate;
+  private String id;
+  private String pem;
+  @Builder.Default private PkiType type = PkiType.Certificate;
 }

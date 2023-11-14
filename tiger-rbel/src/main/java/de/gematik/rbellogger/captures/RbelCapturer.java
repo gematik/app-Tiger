@@ -12,7 +12,7 @@ import lombok.Data;
 @Data
 public abstract class RbelCapturer implements AutoCloseable {
 
-    private RbelConverter rbelConverter;
+  private RbelConverter rbelConverter;
 
-    public abstract RbelCapturer initialize();
+  public abstract RbelCapturer initialize();
 }

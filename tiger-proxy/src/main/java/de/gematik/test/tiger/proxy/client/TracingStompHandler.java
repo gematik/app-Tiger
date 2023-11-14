@@ -15,63 +15,73 @@ import org.springframework.messaging.simp.stomp.StompHeaders;
 @Slf4j
 class TracingStompHandler implements StompFrameHandler {
 
-    private final TigerRemoteProxyClient remoteProxyClient;
+  private final TigerRemoteProxyClient remoteProxyClient;
 
-    @Override
-    public Type getPayloadType(StompHeaders stompHeaders) {
-        return TigerTracingDto.class;
+  @Override
+  public Type getPayloadType(StompHeaders stompHeaders) {
+    return TigerTracingDto.class;
+  }
+
+  @Override
+  public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
+    if (log.isTraceEnabled()) {
+      log.trace(
+          "Received new frame of type {} in proxy {}",
+          frameContent.getClass().getSimpleName(),
+          remoteProxyClient.getName().orElse("<>"));
     }
-
-    @Override
-    public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
-        if (log.isTraceEnabled()) {
-            log.trace("Received new frame of type {} in proxy {}",
-                frameContent.getClass().getSimpleName(), remoteProxyClient.getName().orElse("<>"));
-        }
-        if (frameContent instanceof TigerTracingDto) {
-            final TigerTracingDto tigerTracingDto = (TigerTracingDto) frameContent;
-            if (log.isDebugEnabled()) {
-                log.debug("Received TigerTracingDto with request-uuid {} and response-uuid {} (proxy {})",
-                    tigerTracingDto.getRequestUuid(), tigerTracingDto.getResponseUuid(), remoteProxyClient.getName().orElse("<>"));
-            }
-            if (StringUtils.isEmpty(tigerTracingDto.getResponseUuid())) {
-                registerNewIsolaniMessage(tigerTracingDto);
-            } else {
-                registerNewMessagePair(tigerTracingDto);
-            }
-        }
+    if (frameContent instanceof TigerTracingDto) {
+      final TigerTracingDto tigerTracingDto = (TigerTracingDto) frameContent;
+      if (log.isDebugEnabled()) {
+        log.debug(
+            "Received TigerTracingDto with request-uuid {} and response-uuid {} (proxy {})",
+            tigerTracingDto.getRequestUuid(),
+            tigerTracingDto.getResponseUuid(),
+            remoteProxyClient.getName().orElse("<>"));
+      }
+      if (StringUtils.isEmpty(tigerTracingDto.getResponseUuid())) {
+        registerNewIsolaniMessage(tigerTracingDto);
+      } else {
+        registerNewMessagePair(tigerTracingDto);
+      }
     }
+  }
 
-    private void registerNewIsolaniMessage(TigerTracingDto tigerTracingDto) {
-        var isolani = new TracingMessageIsolani(remoteProxyClient);
-        isolani.setMessage(PartialTracingMessage.builder()
+  private void registerNewIsolaniMessage(TigerTracingDto tigerTracingDto) {
+    var isolani = new TracingMessageIsolani(remoteProxyClient);
+    isolani.setMessage(
+        PartialTracingMessage.builder()
             .tracingDto(tigerTracingDto)
             .receiver(tigerTracingDto.getSender())
             .sender(tigerTracingDto.getReceiver())
             .messageFrame(isolani)
             .transmissionTime(tigerTracingDto.getRequestTransmissionTime())
             .build());
-        remoteProxyClient.initOrUpdateMessagePart(tigerTracingDto.getRequestUuid(), isolani.getMessage());
-    }
+    remoteProxyClient.initOrUpdateMessagePart(
+        tigerTracingDto.getRequestUuid(), isolani.getMessage());
+  }
 
-    private void registerNewMessagePair(TigerTracingDto tigerTracingDto) {
-        TracingMessagePair messagePair = new TracingMessagePair(remoteProxyClient);
-        messagePair.setRequest(PartialTracingMessage.builder()
+  private void registerNewMessagePair(TigerTracingDto tigerTracingDto) {
+    TracingMessagePair messagePair = new TracingMessagePair(remoteProxyClient);
+    messagePair.setRequest(
+        PartialTracingMessage.builder()
             .tracingDto(tigerTracingDto)
             .receiver(tigerTracingDto.getSender())
             .sender(tigerTracingDto.getReceiver())
             .messageFrame(messagePair)
             .transmissionTime(tigerTracingDto.getRequestTransmissionTime())
             .build());
-        messagePair.setResponse(
-            PartialTracingMessage.builder()
-                .tracingDto(tigerTracingDto)
-                .receiver(tigerTracingDto.getReceiver())
-                .sender(tigerTracingDto.getSender())
-                .messageFrame(messagePair)
-                .transmissionTime(tigerTracingDto.getResponseTransmissionTime())
-                .build());
-        remoteProxyClient.initOrUpdateMessagePart(tigerTracingDto.getRequestUuid(), messagePair.getRequest());
-        remoteProxyClient.initOrUpdateMessagePart(tigerTracingDto.getResponseUuid(), messagePair.getResponse());
-    }
+    messagePair.setResponse(
+        PartialTracingMessage.builder()
+            .tracingDto(tigerTracingDto)
+            .receiver(tigerTracingDto.getReceiver())
+            .sender(tigerTracingDto.getSender())
+            .messageFrame(messagePair)
+            .transmissionTime(tigerTracingDto.getResponseTransmissionTime())
+            .build());
+    remoteProxyClient.initOrUpdateMessagePart(
+        tigerTracingDto.getRequestUuid(), messagePair.getRequest());
+    remoteProxyClient.initOrUpdateMessagePart(
+        tigerTracingDto.getResponseUuid(), messagePair.getResponse());
+  }
 }

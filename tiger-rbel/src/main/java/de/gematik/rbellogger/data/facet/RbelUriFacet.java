@@ -9,6 +9,7 @@ import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.ancestorTi
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.vertParentTitle;
 import static j2html.TagCreator.br;
 import static j2html.TagCreator.div;
+
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
@@ -26,78 +27,90 @@ import lombok.Data;
 @Data
 public class RbelUriFacet implements RbelFacet {
 
-    static {
-        RbelHtmlRenderer.registerFacetRenderer(new RbelHtmlFacetRenderer() {
-            @Override
-            public boolean checkForRendering(RbelElement element) {
-                return element.hasFacet(RbelUriFacet.class);
-            }
+  static {
+    RbelHtmlRenderer.registerFacetRenderer(
+        new RbelHtmlFacetRenderer() {
+          @Override
+          public boolean checkForRendering(RbelElement element) {
+            return element.hasFacet(RbelUriFacet.class);
+          }
 
-            @Override
-            public ContainerTag performRendering(RbelElement element, Optional<String> key,
-                                                 RbelHtmlRenderingToolkit renderingToolkit) {
-                final RbelUriFacet uriFacet = element.getFacetOrFail(RbelUriFacet.class);
-                final String originalUrl = element.getRawStringContent();
-                final ContainerTag urlContent = renderUrlContent(renderingToolkit, uriFacet, originalUrl);
-                if (element.traverseAndReturnNestedMembers().isEmpty()) {
-                    return div().with(urlContent).with(addNotes(element));
-                } else {
-                    return ancestorTitle().with(
-                        vertParentTitle().with(
-                            div().withClass("tile is-child pe-3")
-                                .with(urlContent)
-                                .with(addNotes(element))
-                                .with(renderingToolkit.convertNested(element))));
-                }
+          @Override
+          public ContainerTag performRendering(
+              RbelElement element,
+              Optional<String> key,
+              RbelHtmlRenderingToolkit renderingToolkit) {
+            final RbelUriFacet uriFacet = element.getFacetOrFail(RbelUriFacet.class);
+            final String originalUrl = element.getRawStringContent();
+            final ContainerTag urlContent =
+                renderUrlContent(renderingToolkit, uriFacet, originalUrl);
+            if (element.traverseAndReturnNestedMembers().isEmpty()) {
+              return div().with(urlContent).with(addNotes(element));
+            } else {
+              return ancestorTitle()
+                  .with(
+                      vertParentTitle()
+                          .with(
+                              div()
+                                  .withClass("tile is-child pe-3")
+                                  .with(urlContent)
+                                  .with(addNotes(element))
+                                  .with(renderingToolkit.convertNested(element))));
             }
+          }
 
-            private ContainerTag renderUrlContent(RbelHtmlRenderingToolkit renderingToolkit, RbelUriFacet uriFacet, String originalUrl) {
-                if (!originalUrl.contains("?")) {
-                    return div(new UnescapedText(originalUrl));
-                } else {
-                    final ContainerTag div = div(uriFacet.getBasicPathString() + "?").with(br());
-                    boolean firstElement = true;
-                    for (final RbelElement queryElementEntry : uriFacet.getQueryParameters()) {
-                        final RbelUriParameterFacet parameterFacet = queryElementEntry
-                            .getFacetOrFail(RbelUriParameterFacet.class);
-                        final String shadedStringContent = renderingToolkit
-                            .shadeValue(parameterFacet.getValue(), Optional.of(parameterFacet.getKeyAsString()))
-                            .map(content -> queryElementEntry.getKey() + "=" + content)
-                            .orElse(queryElementEntry.getRawStringContent());
+          private ContainerTag renderUrlContent(
+              RbelHtmlRenderingToolkit renderingToolkit,
+              RbelUriFacet uriFacet,
+              String originalUrl) {
+            if (!originalUrl.contains("?")) {
+              return div(new UnescapedText(originalUrl));
+            } else {
+              final ContainerTag div = div(uriFacet.getBasicPathString() + "?").with(br());
+              boolean firstElement = true;
+              for (final RbelElement queryElementEntry : uriFacet.getQueryParameters()) {
+                final RbelUriParameterFacet parameterFacet =
+                    queryElementEntry.getFacetOrFail(RbelUriParameterFacet.class);
+                final String shadedStringContent =
+                    renderingToolkit
+                        .shadeValue(
+                            parameterFacet.getValue(), Optional.of(parameterFacet.getKeyAsString()))
+                        .map(content -> queryElementEntry.getKey() + "=" + content)
+                        .orElse(queryElementEntry.getRawStringContent());
 
-                        div.with(div((firstElement ? "" : "&") + shadedStringContent)
-                            .with(addNotes(queryElementEntry, " ms-6")));
-                        firstElement = false;
-                    }
-                    return div;
-                }
+                div.with(
+                    div((firstElement ? "" : "&") + shadedStringContent)
+                        .with(addNotes(queryElementEntry, " ms-6")));
+                firstElement = false;
+              }
+              return div;
             }
+          }
         });
-    }
+  }
 
-    private final RbelElement basicPath;
-    private final List<RbelElement> queryParameters;
+  private final RbelElement basicPath;
+  private final List<RbelElement> queryParameters;
 
-    @Override
-    public RbelMultiMap getChildElements() {
-        RbelMultiMap result = new RbelMultiMap();
-        queryParameters.forEach(el ->
-            result.put(el.getFacetOrFail(RbelUriParameterFacet.class).getKeyAsString(), el));
-        result.put("basicPath", basicPath);
-        return result;
-    }
+  @Override
+  public RbelMultiMap getChildElements() {
+    RbelMultiMap result = new RbelMultiMap();
+    queryParameters.forEach(
+        el -> result.put(el.getFacetOrFail(RbelUriParameterFacet.class).getKeyAsString(), el));
+    result.put("basicPath", basicPath);
+    return result;
+  }
 
-    public String getBasicPathString() {
-        return basicPath.seekValue(String.class)
-            .orElseThrow();
-    }
+  public String getBasicPathString() {
+    return basicPath.seekValue(String.class).orElseThrow();
+  }
 
-    public Optional<RbelElement> getQueryParameter(String key) {
-        Objects.requireNonNull(key);
-        return queryParameters.stream()
-            .map(element -> element.getFacetOrFail(RbelUriParameterFacet.class))
-            .filter(e -> e.getKeyAsString().equals(key))
-            .map(RbelUriParameterFacet::getValue)
-            .findFirst();
-    }
+  public Optional<RbelElement> getQueryParameter(String key) {
+    Objects.requireNonNull(key);
+    return queryParameters.stream()
+        .map(element -> element.getFacetOrFail(RbelUriParameterFacet.class))
+        .filter(e -> e.getKeyAsString().equals(key))
+        .map(RbelUriParameterFacet::getValue)
+        .findFirst();
+  }
 }

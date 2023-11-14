@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.gematik.test</groupId>
@@ -10,7 +10,9 @@
 
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
-    <description>Tiger is a test platform. For more info check our project at github https://github.com/gematik/app-Tiger</description>
+    <description>Tiger is a test platform. For more info check our project at github
+        https://github.com/gematik/app-Tiger
+    </description>
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
@@ -52,6 +54,8 @@
         <version.system-stubs>2.0.2</version.system-stubs>
         <version.unirest>3.14.2</version.unirest>
         <version.wiremock>2.35.0</version.wiremock>
+        <spotless-maven-plugin.version>2.40.0</spotless-maven-plugin.version>
+        <spotless.google-java-format.version>1.18.1</spotless.google-java-format.version>
 
         <!-- frontend -->
         <!-- when changing the webjar version here make sure to adapt the web ui links too -->
@@ -611,19 +615,64 @@
                 </configuration>
             </plugin>
             <plugin>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <version>${version.maven.failsafe}</version>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>integration-test</goal>
-                        <goal>verify</goal>
-                    </goals>
-                    <configuration>
-                        <argLine>${failsafeJacocoAgent}</argLine>
-                    </configuration>
-                </execution>
-            </executions>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${version.maven.failsafe}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <configuration>
+                            <argLine>${failsafeJacocoAgent}</argLine>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless-maven-plugin.version}</version>
+                <configuration>
+                    <formats>
+                        <format>
+                            <includes>
+                                <include>**/*.yml</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/target/**/*</exclude>
+                            </excludes>
+                            <trimTrailingWhitespace/>
+                            <endWithNewline/>
+                            <indent>
+                                <spaces>true</spaces>
+                                <spacesPerTab>2</spacesPerTab>
+                            </indent>
+                        </format>
+                    </formats>
+                    <java>
+                        <toggleOffOn/>
+                        <googleJavaFormat>
+                            <version>${spotless.google-java-format.version}</version>
+                            <style>GOOGLE</style>
+                            <reflowLongStrings>true</reflowLongStrings>
+                        </googleJavaFormat>
+                    </java>
+                    <groovy>
+                        <includes>
+                            <include>**/*.Jenkinsfile</include>
+                        </includes>
+                        <importOrder/>
+                    </groovy>
+                    <markdown>
+                        <includes>
+                            <include>**/*.md</include>
+                        </includes>
+                        <excludes>
+                            <exclude>**/target/**/*</exclude>
+                        </excludes>
+                    </markdown>
+                </configuration>
             </plugin>
         </plugins>
     </build>

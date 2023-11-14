@@ -12,21 +12,23 @@ import org.slf4j.Logger;
 import org.slf4j.event.Level;
 
 public class TigerStreamLogFeeder {
-    public TigerStreamLogFeeder(Logger log, InputStream inputStream, Level logLevel) {
-        new Thread(() -> {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+  public TigerStreamLogFeeder(Logger log, InputStream inputStream, Level logLevel) {
+    new Thread(
+            () -> {
+              try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
                 String line = reader.readLine();
                 while (line != null) {
-                    if (logLevel == Level.ERROR) {
-                        log.error(line);
-                    } else {
-                        log.info(line);
-                    }
-                    line = reader.readLine();
+                  if (logLevel == Level.ERROR) {
+                    log.error(line);
+                  } else {
+                    log.info(line);
+                  }
+                  line = reader.readLine();
                 }
-            } catch (IOException e) {
+              } catch (IOException e) {
                 throw new RuntimeException(e);
-            }
-        }).start();
-    }
+              }
+            })
+        .start();
+  }
 }

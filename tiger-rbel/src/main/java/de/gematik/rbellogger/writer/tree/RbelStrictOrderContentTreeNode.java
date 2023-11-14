@@ -8,7 +8,8 @@ import de.gematik.rbellogger.data.RbelMultiMap;
 
 public class RbelStrictOrderContentTreeNode extends RbelContentTreeNode {
 
-    public RbelStrictOrderContentTreeNode(RbelMultiMap<RbelContentTreeNode> childNodes, byte[] content) {
-        super(childNodes, content);
-    }
+  public RbelStrictOrderContentTreeNode(
+      RbelMultiMap<RbelContentTreeNode> childNodes, byte[] content) {
+    super(childNodes, content);
+  }
 }

@@ -16,11 +16,11 @@ import lombok.Data;
 @AllArgsConstructor
 public class TracingMessagePairFacet implements RbelFacet {
 
-    private final RbelElement response;
-    private final RbelElement request;
+  private final RbelElement response;
+  private final RbelElement request;
 
-    @Override
-    public RbelMultiMap getChildElements() {
-        return new RbelMultiMap();
-    }
+  @Override
+  public RbelMultiMap getChildElements() {
+    return new RbelMultiMap();
+  }
 }

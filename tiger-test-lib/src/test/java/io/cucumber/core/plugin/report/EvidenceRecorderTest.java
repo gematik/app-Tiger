@@ -1,7 +1,7 @@
 package io.cucumber.core.plugin.report;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
@@ -36,25 +36,27 @@ class EvidenceRecorderTest {
     underTest.recordEvidence(new Evidence(Type.INFO, "Title22", "some fancy details3"));
 
     // Act
-    var result = underTest.getEvidenceReportForScenario(
-        new ReportContext("brave new world",
-            URI.create("file://somewhat.feature")));
+    var result =
+        underTest.getEvidenceReportForScenario(
+            new ReportContext("brave new world", URI.create("file://somewhat.feature")));
 
     // Assert
-    assertSoftly(soft -> {
+    assertSoftly(
+        soft -> {
           soft.assertThat(result.getContext())
-              .isEqualTo(new ReportContext("brave new world",
-                  URI.create("file://somewhat.feature")));
+              .isEqualTo(
+                  new ReportContext("brave new world", URI.create("file://somewhat.feature")));
           soft.assertThat(result.getSteps())
-              .containsExactly(new Step("Mopsgeschwader",
-                      List.of(
-                          new Evidence(Type.INFO, "Title11", "some fancy details1"))),
-                  new Step("Hundekuchen",
+              .containsExactly(
+                  new Step(
+                      "Mopsgeschwader",
+                      List.of(new Evidence(Type.INFO, "Title11", "some fancy details1"))),
+                  new Step(
+                      "Hundekuchen",
                       List.of(
                           new Evidence(Type.INFO, "Title21"),
                           new Evidence(Type.INFO, "Title22", "some fancy details3"))));
-        }
-    );
+        });
   }
 
   @Test
@@ -65,9 +67,9 @@ class EvidenceRecorderTest {
     underTest.openStepContext(new ReportStepConfiguration("Mopsgeschwader"));
 
     // Act
-    var result = underTest.getEvidenceReportForScenario(
-        new ReportContext("brave new world",
-            URI.create("file://somewhat.feature")));
+    var result =
+        underTest.getEvidenceReportForScenario(
+            new ReportContext("brave new world", URI.create("file://somewhat.feature")));
 
     // Assert
     org.assertj.core.api.Assertions.assertThat(result.getSteps())
@@ -75,17 +77,19 @@ class EvidenceRecorderTest {
   }
 
   @Test
-  @DisplayName("It should not be possible to add entries without a prior opened step to get early feedback")
+  @DisplayName(
+      "It should not be possible to add entries without a prior opened step to get early feedback")
   @SneakyThrows
-  void getEvidenceReport_ItShouldNotBePossibleToAddEntriesWithoutAPriorOpenedStepToGetEarlyFeedback() {
+  void
+      getEvidenceReport_ItShouldNotBePossibleToAddEntriesWithoutAPriorOpenedStepToGetEarlyFeedback() {
     // Arrange
-    final Evidence evidence = new Evidence(Type.INFO, "Title21",
-        "some fancy details2");
+    final Evidence evidence = new Evidence(Type.INFO, "Title21", "some fancy details2");
 
     // Assert
-    assertThatThrownBy(() ->
-        // Act
-        underTest.recordEvidence(evidence))
+    assertThatThrownBy(
+            () ->
+                // Act
+                underTest.recordEvidence(evidence))
         .isInstanceOf(IllegalStateException.class)
         .hasMessage("No step opened in EvidenceRecorder yet");
   }

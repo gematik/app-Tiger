@@ -8,6 +8,7 @@ import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineB
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
@@ -31,268 +32,305 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 class RbelPathExecutorTest {
 
-    private static final RbelConverter RBEL_CONVERTER = RbelLogger.build().getRbelConverter();
-    private static RbelElement jwtMessage;
-    private static RbelElement xmlMessage;
-    private static RbelElement jsonElement;
+  private static final RbelConverter RBEL_CONVERTER = RbelLogger.build().getRbelConverter();
+  private static RbelElement jwtMessage;
+  private static RbelElement xmlMessage;
+  private static RbelElement jsonElement;
 
-    @BeforeAll
-    public static void setUp() throws IOException {
-        jwtMessage = extractMessage("rbelPath.curl");
-        xmlMessage = extractMessage("xmlMessage.curl");
-        jsonElement = extractMessage("../jexlWorkshop.json");
-    }
+  @BeforeAll
+  public static void setUp() throws IOException {
+    jwtMessage = extractMessage("rbelPath.curl");
+    xmlMessage = extractMessage("xmlMessage.curl");
+    jsonElement = extractMessage("../jexlWorkshop.json");
+  }
 
-    private static RbelElement extractMessage(String fileName) throws IOException {
-        final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
-            ("src/test/resources/sampleMessages/" + fileName);
+  private static RbelElement extractMessage(String fileName) throws IOException {
+    final String curlMessage =
+        readCurlFromFileWithCorrectedLineBreaks("src/test/resources/sampleMessages/" + fileName);
 
-        return RBEL_CONVERTER
-            .parseMessage(curlMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
-    }
+    return RBEL_CONVERTER.parseMessage(
+        curlMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+  }
 
-    @Test
-    void assertThatPathValueFollowsConvention() {
-        assertThat(jwtMessage.findNodePath())
-            .isEqualTo("");
-        assertThat(jwtMessage.getFirst("header").get().findNodePath())
-            .isEqualTo("header");
-        assertThat(jwtMessage.getFirst("header").get().getChildNodes().get(0).findNodePath())
-            .startsWith("header.");
-    }
+  @Test
+  void assertThatPathValueFollowsConvention() {
+    assertThat(jwtMessage.findNodePath()).isEqualTo("");
+    assertThat(jwtMessage.getFirst("header").get().findNodePath()).isEqualTo("header");
+    assertThat(jwtMessage.getFirst("header").get().getChildNodes().get(0).findNodePath())
+        .startsWith("header.");
+  }
 
-    @Test
-    void simpleRbelPath_shouldFindTarget() {
-        assertThat(jwtMessage)
-            .extractChildWithPath("$.header")
-            .isSameAs(jwtMessage.getFacetOrFail(RbelHttpMessageFacet.class).getHeader());
+  @Test
+  void simpleRbelPath_shouldFindTarget() {
+    assertThat(jwtMessage)
+        .extractChildWithPath("$.header")
+        .isSameAs(jwtMessage.getFacetOrFail(RbelHttpMessageFacet.class).getHeader());
 
-        assertThat(jwtMessage.findRbelPathMembers("$.body.body.nbf"))
-            .containsExactly(jwtMessage.getFirst("body").get()
-                .getFirst("body").get()
-                .getFirst("nbf").get()
-                .getFirst("content").get());
-    }
+    assertThat(jwtMessage.findRbelPathMembers("$.body.body.nbf"))
+        .containsExactly(
+            jwtMessage
+                .getFirst("body")
+                .get()
+                .getFirst("body")
+                .get()
+                .getFirst("nbf")
+                .get()
+                .getFirst("content")
+                .get());
+  }
 
-    @Test
-    void rbelPathEndingOnStringValue_shouldReturnNestedValue() {
-        assertThat(jwtMessage).extractChildWithPath("$.body.body.sso_endpoint")
-            .asString()
-            .startsWith("http://");
-    }
+  @Test
+  void rbelPathEndingOnStringValue_shouldReturnNestedValue() {
+    assertThat(jwtMessage)
+        .extractChildWithPath("$.body.body.sso_endpoint")
+        .asString()
+        .startsWith("http://");
+  }
 
-    @Test
-    void squareBracketRbelPath_shouldFindTarget() {
-        assertThat(jwtMessage.findRbelPathMembers("$.['body'].['body'].['nbf']"))
-            .containsExactly(jwtMessage.getFirst("body").get().
-                getFirst("body").get().
-                getFirst("nbf").get().
-                getFirst("content").get());
-    }
+  @Test
+  void squareBracketRbelPath_shouldFindTarget() {
+    assertThat(jwtMessage.findRbelPathMembers("$.['body'].['body'].['nbf']"))
+        .containsExactly(
+            jwtMessage
+                .getFirst("body")
+                .get()
+                .getFirst("body")
+                .get()
+                .getFirst("nbf")
+                .get()
+                .getFirst("content")
+                .get());
+  }
 
-    @Test
-    void wildcardDescent_shouldFindSpecificTarget() {
-        assertThat(jwtMessage.findRbelPathMembers("$.body.[*].nbf"))
-            .containsExactly(jwtMessage.getFirst("body").get().
-                getFirst("body").get().
-                getFirst("nbf").get().
-                getFirst("content").get());
-    }
+  @Test
+  void wildcardDescent_shouldFindSpecificTarget() {
+    assertThat(jwtMessage.findRbelPathMembers("$.body.[*].nbf"))
+        .containsExactly(
+            jwtMessage
+                .getFirst("body")
+                .get()
+                .getFirst("body")
+                .get()
+                .getFirst("nbf")
+                .get()
+                .getFirst("content")
+                .get());
+  }
 
-    @Test
-    void recursiveDescent_shouldFindSpecificTarget() {
-        assertThat(jwtMessage.findRbelPathMembers("$..nbf"))
-            .hasSize(2)
-            .contains(jwtMessage.getFirst("body").get().
-                getFirst("body").get().
-                getFirst("nbf").get().
-                getFirst("content").get());
-        assertThat(jwtMessage.findRbelPathMembers("$.body..nbf"))
-            .hasSize(1)
-            .contains(jwtMessage.getFirst("body").get().
-                getFirst("body").get().
-                getFirst("nbf").get().
-                getFirst("content").get());
-    }
+  @Test
+  void recursiveDescent_shouldFindSpecificTarget() {
+    assertThat(jwtMessage.findRbelPathMembers("$..nbf"))
+        .hasSize(2)
+        .contains(
+            jwtMessage
+                .getFirst("body")
+                .get()
+                .getFirst("body")
+                .get()
+                .getFirst("nbf")
+                .get()
+                .getFirst("content")
+                .get());
+    assertThat(jwtMessage.findRbelPathMembers("$.body..nbf"))
+        .hasSize(1)
+        .contains(
+            jwtMessage
+                .getFirst("body")
+                .get()
+                .getFirst("body")
+                .get()
+                .getFirst("nbf")
+                .get()
+                .getFirst("content")
+                .get());
+  }
 
-    @Test
-    void jexlExpression_shouldFindSpecificTarget() {
-        assertThat(jwtMessage.findRbelPathMembers("$..[?(key=='nbf')]"))
-            .hasSize(2)
-            .contains(jwtMessage.getFirst("body").get()
-                .getFirst("body").get()
-                .getFirst("nbf").get()
-                .getFirst("content").get());
-    }
+  @Test
+  void jexlExpression_shouldFindSpecificTarget() {
+    assertThat(jwtMessage.findRbelPathMembers("$..[?(key=='nbf')]"))
+        .hasSize(2)
+        .contains(
+            jwtMessage
+                .getFirst("body")
+                .get()
+                .getFirst("body")
+                .get()
+                .getFirst("nbf")
+                .get()
+                .getFirst("content")
+                .get());
+  }
 
-    @Test
-    void complexJexlExpression_shouldFindSpecificTarget() {
-        assertThat(jwtMessage.findRbelPathMembers("$..[?(path=~'.*scopes_supported\\.\\d')]"))
-            .hasSize(2);
+  @Test
+  void complexJexlExpression_shouldFindSpecificTarget() {
+    assertThat(jwtMessage.findRbelPathMembers("$..[?(path=~'.*scopes_supported\\.\\d')]"))
+        .hasSize(2);
 
-        assertThat(jwtMessage.findRbelPathMembers("$.body.body..[?(path=~'.*scopes_supported\\.\\d')]"))
-            .hasSize(2);
-    }
+    assertThat(jwtMessage.findRbelPathMembers("$.body.body..[?(path=~'.*scopes_supported\\.\\d')]"))
+        .hasSize(2);
+  }
 
-    @Test
-    void findAllMembers() throws IOException {
-        assertThat(jwtMessage.findRbelPathMembers("$..*"))
-            .hasSizeGreaterThan(214);
+  @Test
+  void findAllMembers() throws IOException {
+    assertThat(jwtMessage.findRbelPathMembers("$..*")).hasSizeGreaterThan(214);
 
-        FileUtils.writeStringToFile(new File("target/jsonNested.html"),
-            RbelHtmlRenderer.render(List.of(jwtMessage)));
+    FileUtils.writeStringToFile(
+        new File("target/jsonNested.html"), RbelHtmlRenderer.render(List.of(jwtMessage)));
+  }
 
-    }
+  @Test
+  void findSingleElement_present() {
+    assertThat(jwtMessage.findElement("$.body.body.authorization_endpoint"))
+        .isPresent()
+        .get()
+        .isEqualTo(jwtMessage.findRbelPathMembers("$.body.body.authorization_endpoint").get(0));
+  }
 
-    @Test
-    void findSingleElement_present() {
-        assertThat(jwtMessage.findElement("$.body.body.authorization_endpoint"))
-            .isPresent()
-            .get()
-            .isEqualTo(jwtMessage.findRbelPathMembers("$.body.body.authorization_endpoint").get(0));
-    }
+  @Test
+  void findSingleElement_notPresent_expectEmpty() {
+    assertThat(jwtMessage.findElement("$.hfd7a89vufd")).isEmpty();
+  }
 
-    @Test
-    void findSingleElement_notPresent_expectEmpty() {
-        assertThat(jwtMessage.findElement("$.hfd7a89vufd"))
-            .isEmpty();
-    }
+  @Test
+  void findSingleElementWithMultipleReturns_expectException() {
+    assertThatThrownBy(() -> jwtMessage.findElement("$..*")).isInstanceOf(RuntimeException.class);
+  }
 
-    @Test
-    void findSingleElementWithMultipleReturns_expectException() {
-        assertThatThrownBy(() -> jwtMessage.findElement("$..*"))
-            .isInstanceOf(RuntimeException.class);
-    }
+  @Test
+  void eliminateContentInRbelPathResult() throws IOException {
+    final String challengeMessage =
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/sampleMessages/getChallenge.curl");
 
-    @Test
-    void eliminateContentInRbelPathResult() throws IOException {
-        final String challengeMessage = readCurlFromFileWithCorrectedLineBreaks
-            ("src/test/resources/sampleMessages/getChallenge.curl");
+    final RbelElement convertedMessage =
+        RbelLogger.build()
+            .getRbelConverter()
+            .parseMessage(
+                challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
 
-        final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
-            .parseMessage(challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+    Assertions.assertThat(convertedMessage.findElement("$.body.challenge.signature").get())
+        .isSameAs(convertedMessage.findElement("$.body.challenge.content.signature").get());
+  }
 
-        Assertions.assertThat(convertedMessage.findElement("$.body.challenge.signature").get())
-            .isSameAs(convertedMessage.findElement("$.body.challenge.content.signature").get());
-    }
+  @Test
+  void rbelPathWithReasonPhrase_shouldReturnTheValue() {
+    assertThat(jwtMessage.findRbelPathMembers("$.reasonPhrase").get(0).getRawStringContent())
+        .isEqualTo("OK");
+  }
 
-    @Test
-    void rbelPathWithReasonPhrase_shouldReturnTheValue() {
-        assertThat(jwtMessage.findRbelPathMembers("$.reasonPhrase")
-            .get(0).getRawStringContent())
-            .isEqualTo("OK");
-    }
+  @ParameterizedTest
+  @CsvSource({
+    "$..[?(@.alg=='BP256R1')],$.body.RegistryResponse.RegistryErrorList.RegistryError.jwtTag.text.header",
+    "$..[?(@.hier=='ist kein"
+        + " text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text",
+    "$..RegistryError.[?(@.hier=='ist kein"
+        + " text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text",
+    "$..textTest[?(@.hier=='ist kein"
+        + " text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text",
+    "$..RegistryError[1].textTest[?(@.hier=='ist kein"
+        + " text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text",
+    "$..x5c.0.content.0.7..[?(@.0 == '1.3.36.8.3.3')],$..7.content.1"
+  })
+  void rbelPathWithAddSign_ShouldFindCorrectNode(String path1, String path2) {
+    final List<RbelElement> path1Results = xmlMessage.findRbelPathMembers(path1);
+    final List<RbelElement> path2Results = xmlMessage.findRbelPathMembers(path2);
+    assertThat(path1Results).containsAll(path2Results);
 
-    @ParameterizedTest
-    @CsvSource({
-        "$..[?(@.alg=='BP256R1')],$.body.RegistryResponse.RegistryErrorList.RegistryError.jwtTag.text.header",
-        "$..[?(@.hier=='ist kein text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text",
-        "$..RegistryError.[?(@.hier=='ist kein text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text",
-        "$..textTest[?(@.hier=='ist kein text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text",
-        "$..RegistryError[1].textTest[?(@.hier=='ist kein text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text",
-        "$..x5c.0.content.0.7..[?(@.0 == '1.3.36.8.3.3')],$..7.content.1"
-    })
-    void rbelPathWithAddSign_ShouldFindCorrectNode(String path1, String path2) {
-        final List<RbelElement> path1Results = xmlMessage.findRbelPathMembers(path1);
-        final List<RbelElement> path2Results = xmlMessage.findRbelPathMembers(path2);
-        assertThat(path1Results)
-            .containsAll(path2Results);
+    assertThat(path2Results).containsAll(path1Results);
+  }
 
-        assertThat(path2Results)
-            .containsAll(path1Results);
-    }
-
-    @Test
-    void testRelativeJexlSelectorInJwt() {
-        final RbelFileReaderCapturer fileReaderCapturer = RbelFileReaderCapturer.builder()
+  @Test
+  void testRelativeJexlSelectorInJwt() {
+    final RbelFileReaderCapturer fileReaderCapturer =
+        RbelFileReaderCapturer.builder()
             .rbelFile("src/test/resources/nestedJwtTraffic.tgr")
             .build();
-        final RbelLogger logger = RbelLogger.build(RbelConfiguration.builder()
-            .capturer(fileReaderCapturer)
-            .build());
-        fileReaderCapturer.initialize();
-        final RbelElement secondResponse = logger.getMessageList().get(3);
+    final RbelLogger logger =
+        RbelLogger.build(RbelConfiguration.builder().capturer(fileReaderCapturer).build());
+    fileReaderCapturer.initialize();
+    final RbelElement secondResponse = logger.getMessageList().get(3);
 
-        assertThat(secondResponse)
-            .extractChildWithPath("$.body.body.idp_entity.[?(@.iss.content=='https://idpsek.dev.gematik.solutions')]")
-            .hasStringContentEqualTo(
-                "{\"iss\":\"https://idpsek.dev.gematik.solutions\",\"organization_name\":\"gematik\",\"logo_uri\":null,\"user_type_supported\":\"IP\"}");
-    }
+    assertThat(secondResponse)
+        .extractChildWithPath(
+            "$.body.body.idp_entity.[?(@.iss.content=='https://idpsek.dev.gematik.solutions')]")
+        .hasStringContentEqualTo(
+            "{\"iss\":\"https://idpsek.dev.gematik.solutions\",\"organization_name\":\"gematik\",\"logo_uri\":null,\"user_type_supported\":\"IP\"}");
+  }
 
-    @Test
-    void testAbsoluteJexlSelectorInJwt() {
-        final RbelFileReaderCapturer fileReaderCapturer = RbelFileReaderCapturer.builder()
+  @Test
+  void testAbsoluteJexlSelectorInJwt() {
+    final RbelFileReaderCapturer fileReaderCapturer =
+        RbelFileReaderCapturer.builder()
             .rbelFile("src/test/resources/nestedJwtTraffic.tgr")
             .build();
-        final RbelLogger logger = RbelLogger.build(RbelConfiguration.builder()
-            .capturer(fileReaderCapturer)
-            .build());
-        fileReaderCapturer.initialize();
-        final RbelElement secondResponse = logger.getMessageList().get(3);
+    final RbelLogger logger =
+        RbelLogger.build(RbelConfiguration.builder().capturer(fileReaderCapturer).build());
+    fileReaderCapturer.initialize();
+    final RbelElement secondResponse = logger.getMessageList().get(3);
 
-        assertThat(secondResponse)
-            .extractChildWithPath("$.body.body.idp_entity.[?(@.iss.content==$.body.body.idp_entity.0.iss.content)]")
-            .hasStringContentEqualTo(
-                "{\"iss\":\"https://idpsek.dev.gematik.solutions\",\"organization_name\":\"gematik\",\"logo_uri\":null,\"user_type_supported\":\"IP\"}");
-    }
+    assertThat(secondResponse)
+        .extractChildWithPath(
+            "$.body.body.idp_entity.[?(@.iss.content==$.body.body.idp_entity.0.iss.content)]")
+        .hasStringContentEqualTo(
+            "{\"iss\":\"https://idpsek.dev.gematik.solutions\",\"organization_name\":\"gematik\",\"logo_uri\":null,\"user_type_supported\":\"IP\"}");
+  }
 
-    @Test
-    void trailingSpace_shouldStillWork() {
-        assertThat(jwtMessage)
-            .extractChildWithPath("$.body.body ")
-            .isSameAs(jwtMessage.findElement("$.body.body").get());
-    }
+  @Test
+  void trailingSpace_shouldStillWork() {
+    assertThat(jwtMessage)
+        .extractChildWithPath("$.body.body ")
+        .isSameAs(jwtMessage.findElement("$.body.body").get());
+  }
 
-    @Test
-    void unescapedSpaceInKeys_shouldGiveError() {
-        assertThatThrownBy(() -> jwtMessage.findRbelPathMembers("$.body .body"))
-            .isInstanceOf(RbelPathException.class)
-            .hasMessageContaining("$.body .body");
-    }
+  @Test
+  void unescapedSpaceInKeys_shouldGiveError() {
+    assertThatThrownBy(() -> jwtMessage.findRbelPathMembers("$.body .body"))
+        .isInstanceOf(RbelPathException.class)
+        .hasMessageContaining("$.body .body");
+  }
 
-    @Test
-    void esacpedSpaceInKeys_shouldWorkCorrectly() {
-        assertThat(RBEL_CONVERTER.convertElement("{\"foo bar\":\"value\"}", null))
-            .extractChildWithPath("$.['foo bar']")
-            .hasStringContentEqualTo("value");
-    }
+  @Test
+  void esacpedSpaceInKeys_shouldWorkCorrectly() {
+    assertThat(RBEL_CONVERTER.convertElement("{\"foo bar\":\"value\"}", null))
+        .extractChildWithPath("$.['foo bar']")
+        .hasStringContentEqualTo("value");
+  }
 
-    @Test
-    void escapedPipeInKeys_shouldFindTarget() {
-        assertThat(RBEL_CONVERTER.convertElement("{\"foo|bar\":\"value\"}", null))
-            .extractChildWithPath("$.['foo%7Cbar']")
-            .hasStringContentEqualTo("value");
-    }
+  @Test
+  void escapedPipeInKeys_shouldFindTarget() {
+    assertThat(RBEL_CONVERTER.convertElement("{\"foo|bar\":\"value\"}", null))
+        .extractChildWithPath("$.['foo%7Cbar']")
+        .hasStringContentEqualTo("value");
+  }
 
-    @Test
-    void alternateKeys_shouldFindTarget() {
-        assertThat(jwtMessage.findRbelPathMembers("$.body.body.['nbf'|'foobar']"))
-            .containsExactly(jwtMessage.findElement("$.body.body.nbf").get());
-        assertThat(jwtMessage.findRbelPathMembers("$.body.body.['foobar'|'nbf']"))
-            .containsExactly(jwtMessage.findElement("$.body.body.nbf").get());
-    }
+  @Test
+  void alternateKeys_shouldFindTarget() {
+    assertThat(jwtMessage.findRbelPathMembers("$.body.body.['nbf'|'foobar']"))
+        .containsExactly(jwtMessage.findElement("$.body.body.nbf").get());
+    assertThat(jwtMessage.findRbelPathMembers("$.body.body.['foobar'|'nbf']"))
+        .containsExactly(jwtMessage.findElement("$.body.body.nbf").get());
+  }
 
-    @Test
-    void alternateKeys_shouldFindMultipleTargets() {
-        assertThat(jwtMessage.findRbelPathMembers("$.body.body.['exp'|'iat'|'nbf']"))
-            .containsExactlyInAnyOrder(
-                jwtMessage.findElement("$.body.body.nbf").get(),
-                jwtMessage.findElement("$.body.body.exp").get(),
-                jwtMessage.findElement("$.body.body.iat").get());
-    }
+  @Test
+  void alternateKeys_shouldFindMultipleTargets() {
+    assertThat(jwtMessage.findRbelPathMembers("$.body.body.['exp'|'iat'|'nbf']"))
+        .containsExactlyInAnyOrder(
+            jwtMessage.findElement("$.body.body.nbf").get(),
+            jwtMessage.findElement("$.body.body.exp").get(),
+            jwtMessage.findElement("$.body.body.iat").get());
+  }
 
-    @SneakyThrows
-    @ParameterizedTest
-    @CsvSource({
-        "$..[?(@.0.id == '5001')], $.topping",
-        "$..[?(@.id == '5001')], $.topping.0",
-        "$..batter.[?(content =~ \".*1001.*\")], $.batters.batter.0",
-        "$..recipient.[?(@.. == 'FooBar')], $.recipient.1",
-        "$..recipient.[?(not (@.. == 'FooBar'))], $.recipient.*"
-    })
-    void recursiveDescentMixedWithJexl(String rbelPath1, String rbelPath2) {
-        assertThat(jsonElement.findRbelPathMembers(rbelPath1))
-            .containsExactlyInAnyOrderElementsOf(
-                jsonElement.findRbelPathMembers(rbelPath2));
-    }
+  @SneakyThrows
+  @ParameterizedTest
+  @CsvSource({
+    "$..[?(@.0.id == '5001')], $.topping",
+    "$..[?(@.id == '5001')], $.topping.0",
+    "$..batter.[?(content =~ \".*1001.*\")], $.batters.batter.0",
+    "$..recipient.[?(@.. == 'FooBar')], $.recipient.1",
+    "$..recipient.[?(not (@.. == 'FooBar'))], $.recipient.*"
+  })
+  void recursiveDescentMixedWithJexl(String rbelPath1, String rbelPath2) {
+    assertThat(jsonElement.findRbelPathMembers(rbelPath1))
+        .containsExactlyInAnyOrderElementsOf(jsonElement.findRbelPathMembers(rbelPath2));
+  }
 }

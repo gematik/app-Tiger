@@ -1,6 +1,7 @@
 package de.gematik.test.tiger.zion;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
 import de.gematik.idp.IdpConstants;
 import de.gematik.idp.client.IdpClient;
 import de.gematik.idp.crypto.model.PkiIdentity;
@@ -28,67 +29,74 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ResetTigerConfiguration
-@TestPropertySource(properties = {
-    "zion.mockResponseFiles.firstFile=src/test/resources/someMockResponse.yaml"})
+@TestPropertySource(
+    properties = {"zion.mockResponseFiles.firstFile=src/test/resources/someMockResponse.yaml"})
 class TestIdpZoc {
 
-    final Path tempDirectory = Path.of("target", "zionResponses");
+  final Path tempDirectory = Path.of("target", "zionResponses");
 
-    @Autowired
-    private ZionConfiguration configuration;
-    @LocalServerPort
-    private int port;
-    private Map<String, TigerMockResponse> mockResponsesBackup;
+  @Autowired private ZionConfiguration configuration;
+  @LocalServerPort private int port;
+  private Map<String, TigerMockResponse> mockResponsesBackup;
 
-    @SneakyThrows
-    @BeforeEach
-    public void setupTempDirectory() {
-        TigerGlobalConfiguration.reset();
-        Files.createDirectories(tempDirectory);
-        Files.list(tempDirectory).forEach(path -> path.toFile().delete());
-        mockResponsesBackup = configuration.getMockResponses();
-    }
+  @SneakyThrows
+  @BeforeEach
+  public void setupTempDirectory() {
+    TigerGlobalConfiguration.reset();
+    Files.createDirectories(tempDirectory);
+    Files.list(tempDirectory).forEach(path -> path.toFile().delete());
+    mockResponsesBackup = configuration.getMockResponses();
+  }
 
-    @AfterEach
-    public void resetMockResponses() {
-        TigerGlobalConfiguration.reset();
-        configuration.setMockResponses(mockResponsesBackup);
-        configuration.setSpy(null);
-    }
+  @AfterEach
+  public void resetMockResponses() {
+    TigerGlobalConfiguration.reset();
+    configuration.setMockResponses(mockResponsesBackup);
+    configuration.setSpy(null);
+  }
 
-    @Test
-    void testIdpClient() {
-        configuration.setMockResponses(Map.of(
+  @Test
+  void testIdpClient() {
+    configuration.setMockResponses(
+        Map.of(
             "discovery_document", discoveryDocumentMockResponse(),
             "key_endpoints", keyEndpoints(),
             "sign_response", signResponse(),
             "sign_response_post", signResponsePost(),
             "token", tokenEndpoint()));
 
-        final IdpClient idpClient = IdpClient.builder()
+    final IdpClient idpClient =
+        IdpClient.builder()
             .clientId("eRezeptApp")
-            .discoveryDocumentUrl("http://localhost:" + port + IdpConstants.DISCOVERY_DOCUMENT_ENDPOINT)
+            .discoveryDocumentUrl(
+                "http://localhost:" + port + IdpConstants.DISCOVERY_DOCUMENT_ENDPOINT)
             .redirectUrl("http://redirect.gematik.de/erezept")
             .build();
-        final TigerPkiIdentity clientIdentity = new TigerPkiIdentity("src/test/resources/egk_identity.p12;00");
+    final TigerPkiIdentity clientIdentity =
+        new TigerPkiIdentity("src/test/resources/egk_identity.p12;00");
 
-        assertDoesNotThrow(() -> {
-            idpClient.initialize();
-            idpClient.login(PkiIdentity.builder()
-                .certificate(clientIdentity.getCertificate())
-                .privateKey(clientIdentity.getPrivateKey())
-                .build());
+    assertDoesNotThrow(
+        () -> {
+          idpClient.initialize();
+          idpClient.login(
+              PkiIdentity.builder()
+                  .certificate(clientIdentity.getCertificate())
+                  .privateKey(clientIdentity.getPrivateKey())
+                  .build());
         });
-    }
+  }
 
-    private TigerMockResponse signResponsePost() {
-        return TigerMockResponse.builder()
-            .requestCriterions(List.of(
-                "message.method == 'POST'",
-                "message.url =~ '.*/sign_response?.*'"))
-            .response(TigerMockResponseDescription.builder()
+  private TigerMockResponse signResponsePost() {
+    return TigerMockResponse.builder()
+        .requestCriterions(
+            List.of("message.method == 'POST'", "message.url =~ '.*/sign_response?.*'"))
+        .response(
+            TigerMockResponseDescription.builder()
                 .statusCode(302)
-                .headers(Map.of("Location", """
+                .headers(
+                    Map.of(
+                        "Location",
+                        """
                     {
                       "tgrEncodeAs": "url",
                       "basicPath": "http://redirect.gematik.de/erezept",
@@ -145,16 +153,17 @@ class TestIdpZoc {
                     }
                     """))
                 .build())
-            .build();
-    }
+        .build();
+  }
 
-    private TigerMockResponse signResponse() {
-        return TigerMockResponse.builder()
-            .requestCriterions(List.of(
-                "message.method == 'GET'",
-                "message.url =~ '.*/sign_response?.*'"))
-            .response(TigerMockResponseDescription.builder()
-                .body("""
+  private TigerMockResponse signResponse() {
+    return TigerMockResponse.builder()
+        .requestCriterions(
+            List.of("message.method == 'GET'", "message.url =~ '.*/sign_response?.*'"))
+        .response(
+            TigerMockResponseDescription.builder()
+                .body(
+                    """
                     {
                       "challenge": {
                           "tgrEncodeAs": "JWT",
@@ -187,16 +196,16 @@ class TestIdpZoc {
                     }
                     """)
                 .build())
-            .build();
-    }
+        .build();
+  }
 
-    private TigerMockResponse keyEndpoints() {
-        return TigerMockResponse.builder()
-            .requestCriterions(List.of(
-                "message.method == 'GET'",
-                "message.url =~ '.*jwk.json?.*'"))
-            .response(TigerMockResponseDescription.builder()
-                .body("""
+  private TigerMockResponse keyEndpoints() {
+    return TigerMockResponse.builder()
+        .requestCriterions(List.of("message.method == 'GET'", "message.url =~ '.*jwk.json?.*'"))
+        .response(
+            TigerMockResponseDescription.builder()
+                .body(
+                    """
                     {
                       "x5c": [
                         "!{keyMgr.b64Certificate('puk_?{$.path.keyId.value}')}"
@@ -210,16 +219,18 @@ class TestIdpZoc {
                     }
                     """)
                 .build())
-            .build();
-    }
+        .build();
+  }
 
-    private static TigerMockResponse discoveryDocumentMockResponse() {
-        return TigerMockResponse.builder()
-            .requestCriterions(List.of(
-                "message.method == 'GET'",
-                "message.url =$ '/.well-known/openid-configuration'"))
-            .response(TigerMockResponseDescription.builder()
-                .body("""
+  private static TigerMockResponse discoveryDocumentMockResponse() {
+    return TigerMockResponse.builder()
+        .requestCriterions(
+            List.of(
+                "message.method == 'GET'", "message.url =$ '/.well-known/openid-configuration'"))
+        .response(
+            TigerMockResponseDescription.builder()
+                .body(
+                    """
                     {
                       "tgrEncodeAs": "JWT",
                       "header": {
@@ -280,17 +291,16 @@ class TestIdpZoc {
                     }
                     """)
                 .build())
-            .build();
-    }
+        .build();
+  }
 
-    private TigerMockResponse tokenEndpoint() {
-        return TigerMockResponse.builder()
-            .requestCriterions(List.of(
-                "message.method == 'POST'",
-                "message.url =~ '.*/token'"))
-            .response(TigerMockResponseDescription.builder()
+  private TigerMockResponse tokenEndpoint() {
+    return TigerMockResponse.builder()
+        .requestCriterions(List.of("message.method == 'POST'", "message.url =~ '.*/token'"))
+        .response(
+            TigerMockResponseDescription.builder()
                 .bodyFile("src/test/resources/idpTokenEndpointResponseBody.json")
                 .build())
-            .build();
-    }
+        .build();
+  }
 }

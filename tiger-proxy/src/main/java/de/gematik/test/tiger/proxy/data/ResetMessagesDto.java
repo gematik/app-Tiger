@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.proxy.data;
 
-import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,5 +14,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class ResetMessagesDto {
-    int numMsgs;
+  int numMsgs;
 }

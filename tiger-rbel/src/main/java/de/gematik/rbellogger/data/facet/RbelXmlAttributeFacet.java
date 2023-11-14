@@ -9,8 +9,8 @@ import de.gematik.rbellogger.data.RbelMultiMap;
 
 public class RbelXmlAttributeFacet implements RbelFacet {
 
-    @Override
-    public RbelMultiMap<RbelElement> getChildElements() {
-        return RbelMultiMap.EMPTY;
-    }
+  @Override
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return RbelMultiMap.EMPTY;
+  }
 }

@@ -14,22 +14,24 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.annotation.Bean;
 
-@SpringBootApplication(scanBasePackageClasses = {TigerBuildPropertiesService.class, TigerTestEnvMgrApplication.class})
+@SpringBootApplication(
+    scanBasePackageClasses = {TigerBuildPropertiesService.class, TigerTestEnvMgrApplication.class})
 @Slf4j
 public class TigerTestEnvMgrApplication implements ServletContextListener {
 
-    public static void main(String[] args) {
-        new SpringApplicationBuilder()
-            .bannerMode(Mode.OFF)
-            .sources(TigerTestEnvMgrApplication.class)
-            .initializers()
-            .run(args);
-    }
+  public static void main(String[] args) {
+    new SpringApplicationBuilder()
+        .bannerMode(Mode.OFF)
+        .sources(TigerTestEnvMgrApplication.class)
+        .initializers()
+        .run(args);
+  }
 
-    @Bean
-    public TigerTestEnvMgr tigerTestEnvMgr() {
-        TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-        log.info(Ansi.colorize("Tiger standalone test environment manager UP!", RbelAnsiColors.GREEN_BOLD));
-        return envMgr;
-    }
+  @Bean
+  public TigerTestEnvMgr tigerTestEnvMgr() {
+    TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
+    log.info(
+        Ansi.colorize("Tiger standalone test environment manager UP!", RbelAnsiColors.GREEN_BOLD));
+    return envMgr;
+  }
 }

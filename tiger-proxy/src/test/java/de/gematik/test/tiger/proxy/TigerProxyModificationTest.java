@@ -5,8 +5,8 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
@@ -29,93 +29,106 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ResetTigerConfiguration
 class TigerProxyModificationTest {
 
-    @Autowired
-    private TigerProxy tigerProxy;
-    private TigerRemoteProxyClient tigerRemoteProxyClient;
-    @LocalServerPort
-    private int managementPort;
-    private UnirestInstance unirestInstance;
+  @Autowired private TigerProxy tigerProxy;
+  private TigerRemoteProxyClient tigerRemoteProxyClient;
+  @LocalServerPort private int managementPort;
+  private UnirestInstance unirestInstance;
 
-    @BeforeEach
-    public void beforeEachLifecyleMethod() {
-        tigerProxy.getModifications().stream()
-            .map(RbelModificationDescription::getName)
-            .forEach(tigerProxy::removeModification);
+  @BeforeEach
+  public void beforeEachLifecyleMethod() {
+    tigerProxy.getModifications().stream()
+        .map(RbelModificationDescription::getName)
+        .forEach(tigerProxy::removeModification);
 
-        tigerRemoteProxyClient = new TigerRemoteProxyClient("http://localhost:" + managementPort,
-            TigerProxyConfiguration.builder().build());
+    tigerRemoteProxyClient =
+        new TigerRemoteProxyClient(
+            "http://localhost:" + managementPort, TigerProxyConfiguration.builder().build());
 
-        if (unirestInstance != null) {
-            return;
-        }
-
-        unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config()
-            .defaultBaseUrl("http://localhost:" + managementPort);
+    if (unirestInstance != null) {
+      return;
     }
 
-    @AfterEach
-    public void reset() {
-        tigerRemoteProxyClient.close();
-        tigerRemoteProxyClient.getRbelLogger().getRbelModifier().deleteAllModifications();
-        tigerProxy.getRbelLogger().getRbelModifier().deleteAllModifications();
-    }
+    unirestInstance = Unirest.spawnInstance();
+    unirestInstance.config().defaultBaseUrl("http://localhost:" + managementPort);
+  }
 
-    @Test
-    void addModification_shouldWork() {
-        final RbelModificationDescription modificationDescription = RbelModificationDescription.builder()
-            .condition("isRequest").targetElement("$.header.user-agent").replaceWith("modified user-agent").build();
-        tigerRemoteProxyClient.addModificaton(modificationDescription);
+  @AfterEach
+  public void reset() {
+    tigerRemoteProxyClient.close();
+    tigerRemoteProxyClient.getRbelLogger().getRbelModifier().deleteAllModifications();
+    tigerProxy.getRbelLogger().getRbelModifier().deleteAllModifications();
+  }
 
-        final RbelModificationDescription modification = tigerProxy.getRbelLogger()
-            .getRbelModifier().getModifications().get(0);
-
-        assertThat(modification.getCondition()).isEqualTo("isRequest");
-        assertThat(modification.getTargetElement()).isEqualTo("$.header.user-agent");
-        assertThat(modification.getReplaceWith()).isEqualTo("modified user-agent");
-
-    }
-
-    @Test
-    void getModifications_shouldGiveAllModifications() {
-        final RbelModificationDescription modification1 = RbelModificationDescription.builder().name("test1").build();
-        final RbelModificationDescription modification2 = RbelModificationDescription.builder().name("test2").build();
-
-        tigerRemoteProxyClient.addModificaton(modification1);
-        tigerRemoteProxyClient.addModificaton(modification2);
-
-        final List<RbelModificationDescription> modifications = tigerRemoteProxyClient.getModifications();
-
-        assertThat(modifications).extracting(RbelModificationDescription::getName).contains("test1", "test2");
-    }
-
-    @Test
-    void deleteModification_shouldWork() {
-        final RbelModificationDescription modificationDescription = RbelModificationDescription.builder()
-            .condition("isRequest").targetElement("$.header.user-agent").replaceWith("modified user-agent").name("blub")
+  @Test
+  void addModification_shouldWork() {
+    final RbelModificationDescription modificationDescription =
+        RbelModificationDescription.builder()
+            .condition("isRequest")
+            .targetElement("$.header.user-agent")
+            .replaceWith("modified user-agent")
             .build();
-        final String modificationName = tigerRemoteProxyClient.addModificaton(modificationDescription).getName();
+    tigerRemoteProxyClient.addModificaton(modificationDescription);
 
-        assertThat(modificationName).isEqualTo("blub");
+    final RbelModificationDescription modification =
+        tigerProxy.getRbelLogger().getRbelModifier().getModifications().get(0);
 
-        tigerRemoteProxyClient.removeModification(modificationName);
+    assertThat(modification.getCondition()).isEqualTo("isRequest");
+    assertThat(modification.getTargetElement()).isEqualTo("$.header.user-agent");
+    assertThat(modification.getReplaceWith()).isEqualTo("modified user-agent");
+  }
 
-        assertThat(tigerProxy.getRbelLogger()
-            .getRbelModifier().getModifications()).isEmpty();
-    }
+  @Test
+  void getModifications_shouldGiveAllModifications() {
+    final RbelModificationDescription modification1 =
+        RbelModificationDescription.builder().name("test1").build();
+    final RbelModificationDescription modification2 =
+        RbelModificationDescription.builder().name("test2").build();
 
-    @Test
-    void deleteModificationWithoutName_shouldWork() {
-        final RbelModificationDescription modificationDescription = RbelModificationDescription.builder()
-            .condition("isRequest").targetElement("$.header.user-agent").replaceWith("modified user-agent").build();
-        final String modificationName = tigerRemoteProxyClient.addModificaton(modificationDescription).getName();
+    tigerRemoteProxyClient.addModificaton(modification1);
+    tigerRemoteProxyClient.addModificaton(modification2);
 
-        assertThat(modificationName).isNotNull();
+    final List<RbelModificationDescription> modifications =
+        tigerRemoteProxyClient.getModifications();
 
-        tigerRemoteProxyClient.removeModification(modificationName);
+    assertThat(modifications)
+        .extracting(RbelModificationDescription::getName)
+        .contains("test1", "test2");
+  }
 
-        assertThat(tigerProxy.getRbelLogger()
-            .getRbelModifier().getModifications()).isEmpty();
-    }
+  @Test
+  void deleteModification_shouldWork() {
+    final RbelModificationDescription modificationDescription =
+        RbelModificationDescription.builder()
+            .condition("isRequest")
+            .targetElement("$.header.user-agent")
+            .replaceWith("modified user-agent")
+            .name("blub")
+            .build();
+    final String modificationName =
+        tigerRemoteProxyClient.addModificaton(modificationDescription).getName();
+
+    assertThat(modificationName).isEqualTo("blub");
+
+    tigerRemoteProxyClient.removeModification(modificationName);
+
+    assertThat(tigerProxy.getRbelLogger().getRbelModifier().getModifications()).isEmpty();
+  }
+
+  @Test
+  void deleteModificationWithoutName_shouldWork() {
+    final RbelModificationDescription modificationDescription =
+        RbelModificationDescription.builder()
+            .condition("isRequest")
+            .targetElement("$.header.user-agent")
+            .replaceWith("modified user-agent")
+            .build();
+    final String modificationName =
+        tigerRemoteProxyClient.addModificaton(modificationDescription).getName();
+
+    assertThat(modificationName).isNotNull();
+
+    tigerRemoteProxyClient.removeModification(modificationName);
+
+    assertThat(tigerProxy.getRbelLogger().getRbelModifier().getModifications()).isEmpty();
+  }
 }
-

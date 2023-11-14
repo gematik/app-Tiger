@@ -45,341 +45,366 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 @Slf4j
 public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCloseable {
 
-    public static final String WS_TRACING = "/topic/traces";
-    public static final String WS_DATA = "/topic/data";
-    public static final String WS_ERRORS = "/topic/errors";
-    @Getter
-    private final String remoteProxyUrl;
-    private final WebSocketStompClient tigerProxyStompClient;
+  public static final String WS_TRACING = "/topic/traces";
+  public static final String WS_DATA = "/topic/data";
+  public static final String WS_ERRORS = "/topic/errors";
+  @Getter private final String remoteProxyUrl;
+  private final WebSocketStompClient tigerProxyStompClient;
 
-    @Getter
-    private final List<TigerExceptionDto> receivedRemoteExceptions = new ArrayList<>();
-    @Getter
-    private final Map<String, PartialTracingMessage> partiallyReceivedMessageMap = new HashMap<>();
-    @Getter
-    private final TigerStompSessionHandler tigerStompSessionHandler;
-    @Getter
-    @Setter
-    private Duration maximumPartialMessageAge;
-    private final AtomicBoolean stompMessageShouldQueue = new AtomicBoolean(false);
-    private final Queue<Runnable> messageTaskQueue = new ConcurrentLinkedQueue<>();
-    private final AtomicReference<StompSession> stompSession = new AtomicReference<>();
-    @Getter
-    private final AtomicReference<String> lastMessageUuid = new AtomicReference<>();
-    private SockJsClient webSocketClient;
-    private StandardWebSocketClient wsClient;
-    private int connectionTimeoutInSeconds;
+  @Getter private final List<TigerExceptionDto> receivedRemoteExceptions = new ArrayList<>();
 
-    public TigerRemoteProxyClient(String remoteProxyUrl) {
-        this(remoteProxyUrl, new TigerProxyConfiguration(), null);
+  @Getter
+  private final Map<String, PartialTracingMessage> partiallyReceivedMessageMap = new HashMap<>();
+
+  @Getter private final TigerStompSessionHandler tigerStompSessionHandler;
+  @Getter @Setter private Duration maximumPartialMessageAge;
+  private final AtomicBoolean stompMessageShouldQueue = new AtomicBoolean(false);
+  private final Queue<Runnable> messageTaskQueue = new ConcurrentLinkedQueue<>();
+  private final AtomicReference<StompSession> stompSession = new AtomicReference<>();
+  @Getter private final AtomicReference<String> lastMessageUuid = new AtomicReference<>();
+  private SockJsClient webSocketClient;
+  private StandardWebSocketClient wsClient;
+  private int connectionTimeoutInSeconds;
+
+  public TigerRemoteProxyClient(String remoteProxyUrl) {
+    this(remoteProxyUrl, new TigerProxyConfiguration(), null);
+  }
+
+  public TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration) {
+    this(remoteProxyUrl, configuration, null);
+  }
+
+  public TigerRemoteProxyClient(
+      String remoteProxyUrl,
+      TigerProxyConfiguration configuration,
+      @Nullable TigerProxy masterTigerProxy) {
+    super(configuration, masterTigerProxy == null ? null : masterTigerProxy.getRbelLogger());
+    this.remoteProxyUrl = remoteProxyUrl;
+
+    WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+    container.setDefaultMaxBinaryMessageBufferSize(
+        1024 * 1024 * configuration.getPerMessageBufferSizeInMb());
+    container.setDefaultMaxTextMessageBufferSize(
+        1024 * 1024 * configuration.getPerMessageBufferSizeInMb());
+
+    if (masterTigerProxy != null) {
+      addRbelMessageListener(masterTigerProxy::triggerListener);
     }
 
-    public TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration) {
-        this(remoteProxyUrl, configuration, null);
+    final MappingJackson2MessageConverter messageConverter = new MappingJackson2MessageConverter();
+    messageConverter.getObjectMapper().registerModule(new JavaTimeModule());
+
+    wsClient = new StandardWebSocketClient(container);
+    webSocketClient = new SockJsClient(List.of(new WebSocketTransport(wsClient)));
+    tigerProxyStompClient = new WebSocketStompClient(webSocketClient);
+    tigerProxyStompClient.setMessageConverter(messageConverter);
+    tigerProxyStompClient.setInboundMessageSizeLimit(
+        1024 * 1024 * configuration.getStompClientBufferSizeInMb());
+    tigerStompSessionHandler = new TigerStompSessionHandler(this);
+    maximumPartialMessageAge =
+        Duration.ofSeconds(configuration.getMaximumPartialMessageAgeInSeconds());
+    connectionTimeoutInSeconds = configuration.getConnectionTimeoutInSeconds();
+  }
+
+  public void connect() {
+    connectToRemoteUrl(
+        tigerStompSessionHandler,
+        connectionTimeoutInSeconds,
+        getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints());
+  }
+
+  private String getTracingWebSocketUrl(String remoteProxyUrl) {
+    return remoteProxyUrl.replaceFirst("http", "ws") + "/tracing";
+  }
+
+  private void downloadTrafficFromRemoteProxy() {
+    new TigerRemoteTrafficDownloader(this).execute();
+  }
+
+  void connectToRemoteUrl(
+      TigerStompSessionHandler tigerStompSessionHandler,
+      int connectionTimeoutInSeconds,
+      boolean downloadTraffic) {
+    if (isShuttingDown()) {
+      return;
     }
-
-    public TigerRemoteProxyClient(String remoteProxyUrl, TigerProxyConfiguration configuration,
-        @Nullable TigerProxy masterTigerProxy) {
-        super(configuration, masterTigerProxy == null ? null : masterTigerProxy.getRbelLogger());
-        this.remoteProxyUrl = remoteProxyUrl;
-
-        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-        container.setDefaultMaxBinaryMessageBufferSize(1024 * 1024 * configuration.getPerMessageBufferSizeInMb());
-        container.setDefaultMaxTextMessageBufferSize(1024 * 1024 * configuration.getPerMessageBufferSizeInMb());
-
-        if (masterTigerProxy != null) {
-            addRbelMessageListener(masterTigerProxy::triggerListener);
-        }
-
-        final MappingJackson2MessageConverter messageConverter = new MappingJackson2MessageConverter();
-        messageConverter.getObjectMapper().registerModule(new JavaTimeModule());
-
-        wsClient = new StandardWebSocketClient(container);
-        webSocketClient = new SockJsClient(List.of(new WebSocketTransport(wsClient)));
-        tigerProxyStompClient = new WebSocketStompClient(webSocketClient);
-        tigerProxyStompClient.setMessageConverter(messageConverter);
-        tigerProxyStompClient.setInboundMessageSizeLimit(1024 * 1024 * configuration.getStompClientBufferSizeInMb());
-        tigerStompSessionHandler = new TigerStompSessionHandler(this);
-        maximumPartialMessageAge = Duration.ofSeconds(configuration.getMaximumPartialMessageAgeInSeconds());
-        connectionTimeoutInSeconds = configuration.getConnectionTimeoutInSeconds();
+    waitForRemoteTigerProxyToBeOnline(remoteProxyUrl);
+    if (isShuttingDown()) {
+      return;
     }
+    final String tracingWebSocketUrl = getTracingWebSocketUrl(remoteProxyUrl);
+    final ListenableFuture<StompSession> connectFuture =
+        tigerProxyStompClient.connect(tracingWebSocketUrl, tigerStompSessionHandler);
 
-    public void connect() {
-        connectToRemoteUrl(tigerStompSessionHandler,
-            connectionTimeoutInSeconds,
-            getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints());
+    connectFuture.addCallback(
+        stompSession -> {
+          log.info(
+              "{}Successfully opened stomp session {} to url {}",
+              proxyName(),
+              stompSession.getSessionId(),
+              tracingWebSocketUrl);
+          if (downloadTraffic) {
+            downloadTrafficFromRemoteProxy();
+          }
+        },
+        throwable -> {
+          throw new TigerRemoteProxyClientException(
+              "Exception while opening tracing-connection to " + tracingWebSocketUrl, throwable);
+        });
+
+    try {
+      stompSession.set(connectFuture.get(connectionTimeoutInSeconds, TimeUnit.SECONDS));
+    } catch (RuntimeException | ExecutionException | TimeoutException e) {
+      throw new TigerRemoteProxyClientException(
+          "Exception while opening tracing-connection to " + tracingWebSocketUrl, e);
+    } catch (InterruptedException e) {
+      log.error("InterruptedException while opening tracing-connection to {}", tracingWebSocketUrl);
+      Thread.currentThread().interrupt();
     }
+  }
 
-    private String getTracingWebSocketUrl(String remoteProxyUrl) {
-        return remoteProxyUrl.replaceFirst("http", "ws") + "/tracing";
-    }
+  @Override
+  public TigerRoute addRoute(TigerRoute tigerRoute) {
+    return Unirest.put(remoteProxyUrl + "/route")
+        .body(tigerRoute)
+        .contentType(MediaType.APPLICATION_JSON_VALUE)
+        .asObject(TigerRoute.class)
+        .ifFailure(
+            response -> {
+              throw new TigerRemoteProxyClientException(
+                  "Unable to add route. Got "
+                      + response.getStatus()
+                      + ": "
+                      + response.mapError(String.class));
+            })
+        .getBody();
+  }
 
-    private void downloadTrafficFromRemoteProxy() {
-        new TigerRemoteTrafficDownloader(this).execute();
-    }
-
-    void connectToRemoteUrl(TigerStompSessionHandler tigerStompSessionHandler,
-        int connectionTimeoutInSeconds, boolean downloadTraffic) {
-        if (isShuttingDown()) {
-            return;
-        }
-        waitForRemoteTigerProxyToBeOnline(remoteProxyUrl);
-        if (isShuttingDown()) {
-            return;
-        }
-        final String tracingWebSocketUrl = getTracingWebSocketUrl(remoteProxyUrl);
-        final ListenableFuture<StompSession> connectFuture
-            = tigerProxyStompClient.connect(tracingWebSocketUrl, tigerStompSessionHandler);
-
-        connectFuture.addCallback(stompSession -> {
-                log.info("{}Successfully opened stomp session {} to url {}",
-                    proxyName(), stompSession.getSessionId(), tracingWebSocketUrl);
-                if (downloadTraffic) {
-                    downloadTrafficFromRemoteProxy();
-                }
-            },
-            throwable -> {
-                throw new TigerRemoteProxyClientException("Exception while opening tracing-connection to "
-                    + tracingWebSocketUrl, throwable);
+  @Override
+  public void removeRoute(String routeId) {
+    Assert.hasText(routeId, () -> "No route ID given!");
+    Unirest.delete(remoteProxyUrl + "/route/" + routeId)
+        .asEmpty()
+        .ifFailure(
+            httpResponse -> {
+              throw new TigerRemoteProxyClientException(
+                  "Unable to remove route. Got " + httpResponse);
             });
+  }
 
-        try {
-            stompSession.set(connectFuture.get(connectionTimeoutInSeconds, TimeUnit.SECONDS));
-        } catch (RuntimeException | ExecutionException | TimeoutException e) {
-            throw new TigerRemoteProxyClientException("Exception while opening tracing-connection to "
-                + tracingWebSocketUrl, e);
-        } catch (InterruptedException e) {
-            log.error("InterruptedException while opening tracing-connection to {}", tracingWebSocketUrl);
-            Thread.currentThread().interrupt();
-        }
-    }
+  @Override
+  public String getBaseUrl() {
+    return remoteProxyUrl;
+  }
 
-    @Override
-    public TigerRoute addRoute(TigerRoute tigerRoute) {
-        return Unirest.put(remoteProxyUrl + "/route")
-            .body(tigerRoute)
-            .contentType(MediaType.APPLICATION_JSON_VALUE)
-            .asObject(TigerRoute.class)
-            .ifFailure(response -> {
-                throw new TigerRemoteProxyClientException(
-                    "Unable to add route. Got " + response.getStatus() +
-                        ": " + response.mapError(String.class)
-                );
+  @Override
+  public int getProxyPort() {
+    return 0;
+  }
+
+  @Override
+  public List<TigerRoute> getRoutes() {
+    return Unirest.get(remoteProxyUrl + "/route")
+        .asObject(new GenericType<List<TigerRoute>>() {})
+        .ifFailure(
+            response -> {
+              throw new TigerRemoteProxyClientException(
+                  "Unable to get routes. Got "
+                      + response.getStatus()
+                      + ": "
+                      + response.mapError(String.class));
             })
-            .getBody();
-    }
+        .getBody();
+  }
 
-    @Override
-    public void removeRoute(String routeId) {
-        Assert.hasText(routeId, () -> "No route ID given!");
-        Unirest.delete(remoteProxyUrl + "/route/" + routeId)
-            .asEmpty()
-            .ifFailure(httpResponse -> {
-                throw new TigerRemoteProxyClientException(
-                    "Unable to remove route. Got " + httpResponse);
+  @Override
+  public RbelModificationDescription addModificaton(RbelModificationDescription modification) {
+    return Unirest.put(remoteProxyUrl + "/modification")
+        .body(modification)
+        .contentType(MediaType.APPLICATION_JSON_VALUE)
+        .asObject(RbelModificationDescription.class)
+        .ifFailure(
+            response -> {
+              throw new TigerRemoteProxyClientException(
+                  "Unable to add modification. Got "
+                      + response.getStatus()
+                      + ": "
+                      + response.mapError(String.class));
+            })
+        .getBody();
+  }
+
+  @Override
+  public List<RbelModificationDescription> getModifications() {
+    return Unirest.get(remoteProxyUrl + "/modification")
+        .asObject(new GenericType<List<RbelModificationDescription>>() {})
+        .ifFailure(
+            response -> {
+              throw new TigerRemoteProxyClientException(
+                  "Unable to get modifications. Got "
+                      + response.getStatus()
+                      + ": "
+                      + response.mapError(String.class));
+            })
+        .getBody();
+  }
+
+  @Override
+  public void removeModification(String modificationName) {
+    Assert.hasText(modificationName, () -> "No modification name given!");
+    Unirest.delete(remoteProxyUrl + "/modification/" + modificationName)
+        .asEmpty()
+        .ifFailure(
+            httpResponse -> {
+              throw new TigerRemoteProxyClientException(
+                  "Unable to remove modification. Got " + httpResponse);
             });
+  }
+
+  Optional<RbelElement> buildNewRbelMessage(
+      RbelHostname sender,
+      RbelHostname receiver,
+      byte[] messageBytes,
+      Optional<ZonedDateTime> transmissionTime,
+      String uuid) {
+    if (messageBytes != null) {
+      log.trace("{}Received new message with ID '{}'", proxyName(), uuid);
+
+      final RbelElement rbelMessage =
+          getRbelLogger()
+              .getRbelConverter()
+              .parseMessage(
+                  RbelElement.builder().uuid(uuid).rawContent(messageBytes).build(),
+                  sender,
+                  receiver,
+                  transmissionTime);
+      return Optional.of(rbelMessage);
+    } else {
+      log.warn("Received message with content 'null'. Skipping parsing...");
+      return Optional.empty();
     }
+  }
 
-    @Override
-    public String getBaseUrl() {
-        return remoteProxyUrl;
+  void propagateMessage(RbelElement rbelMessage) {
+    super.triggerListener(rbelMessage);
+  }
+
+  void removeMessage(RbelElement rbelMessage) {
+    getRbelLogger().getRbelConverter().removeMessage(rbelMessage);
+  }
+
+  public boolean messageMatchesFilterCriterion(RbelElement rbelMessage) {
+    if (StringUtils.isEmpty(getTigerProxyConfiguration().getTrafficEndpointFilterString())) {
+      return true;
     }
+    return TigerJexlExecutor.matchesAsJexlExpression(
+        rbelMessage,
+        getTigerProxyConfiguration().getTrafficEndpointFilterString(),
+        Optional.empty());
+  }
 
-    @Override
-    public int getProxyPort() {
-        return 0;
+  @Override
+  public void close() {
+    super.close();
+    log.debug("Stopping websocket client with remote URL '{}'", remoteProxyUrl);
+    if (stompSession.get() != null && stompSession.get().isConnected()) {
+      stompSession.get().disconnect();
     }
+    tigerProxyStompClient.stop();
+    webSocketClient.stop();
+  }
 
-    @Override
-    public List<TigerRoute> getRoutes() {
-        return Unirest.get(remoteProxyUrl + "/route")
-            .asObject(new GenericType<List<TigerRoute>>() {
-            })
-            .ifFailure(response -> {
-                throw new TigerRemoteProxyClientException(
-                    "Unable to get routes. Got " + response.getStatus() +
-                        ": " + response.mapError(String.class)
-                );
-            })
-            .getBody();
-    }
-
-    @Override
-    public RbelModificationDescription addModificaton(RbelModificationDescription modification) {
-        return Unirest.put(remoteProxyUrl + "/modification")
-            .body(modification)
-            .contentType(MediaType.APPLICATION_JSON_VALUE)
-            .asObject(RbelModificationDescription.class)
-            .ifFailure(response -> {
-                throw new TigerRemoteProxyClientException(
-                    "Unable to add modification. Got " + response.getStatus() +
-                        ": " + response.mapError(String.class)
-                );
-            })
-            .getBody();
-    }
-
-    @Override
-    public List<RbelModificationDescription> getModifications() {
-        return Unirest.get(remoteProxyUrl + "/modification")
-            .asObject(new GenericType<List<RbelModificationDescription>>() {
-            })
-            .ifFailure(response -> {
-                throw new TigerRemoteProxyClientException(
-                    "Unable to get modifications. Got " + response.getStatus() +
-                        ": " + response.mapError(String.class)
-                );
-            })
-            .getBody();
-    }
-
-    @Override
-    public void removeModification(String modificationName) {
-        Assert.hasText(modificationName, () -> "No modification name given!");
-        Unirest.delete(remoteProxyUrl + "/modification/" + modificationName)
-            .asEmpty()
-            .ifFailure(httpResponse -> {
-                throw new TigerRemoteProxyClientException(
-                    "Unable to remove modification. Got " + httpResponse);
-            });
-    }
-
-    Optional<RbelElement> buildNewRbelMessage(RbelHostname sender, RbelHostname receiver, byte[] messageBytes,
-        Optional<ZonedDateTime> transmissionTime, String uuid) {
-        if (messageBytes != null) {
-            log.trace("{}Received new message with ID '{}'", proxyName(), uuid);
-
-            final RbelElement rbelMessage = getRbelLogger().getRbelConverter()
-                .parseMessage(RbelElement.builder()
-                    .uuid(uuid)
-                    .rawContent(messageBytes)
-                    .build(), sender, receiver, transmissionTime);
-            return Optional.of(rbelMessage);
-        } else {
-            log.warn("Received message with content 'null'. Skipping parsing...");
-            return Optional.empty();
-        }
-    }
-
-    void propagateMessage(RbelElement rbelMessage) {
-        super.triggerListener(rbelMessage);
-    }
-
-    void removeMessage(RbelElement rbelMessage) {
-        getRbelLogger().getRbelConverter().removeMessage(rbelMessage);
-    }
-
-    public boolean messageMatchesFilterCriterion(RbelElement rbelMessage) {
-        if (StringUtils.isEmpty(getTigerProxyConfiguration().getTrafficEndpointFilterString())) {
-            return true;
-        }
-        return TigerJexlExecutor.matchesAsJexlExpression(
-            rbelMessage,
-            getTigerProxyConfiguration().getTrafficEndpointFilterString(),
-            Optional.empty());
-    }
-
-    @Override
-    public void close() {
-        super.close();
-        log.debug("Stopping websocket client with remote URL '{}'", remoteProxyUrl);
-        if (stompSession.get() != null && stompSession.get().isConnected()) {
-            stompSession.get().disconnect();
-        }
-        tigerProxyStompClient.stop();
-        webSocketClient.stop();
-    }
-
-    void receiveNewMessagePart(TracingMessagePart tracingMessagePart) {
-        final PartialTracingMessage tracingMessage = retrieveOrInitializePartialMessage(
+  void receiveNewMessagePart(TracingMessagePart tracingMessagePart) {
+    final PartialTracingMessage tracingMessage =
+        retrieveOrInitializePartialMessage(
             tracingMessagePart.getUuid(), PartialTracingMessage.builder().build());
 
-        tracingMessage.getMessageParts().add(tracingMessagePart);
-        checkForCompletion(tracingMessage, tracingMessagePart.getUuid());
-    }
+    tracingMessage.getMessageParts().add(tracingMessagePart);
+    checkForCompletion(tracingMessage, tracingMessagePart.getUuid());
+  }
 
-    private PartialTracingMessage retrieveOrInitializePartialMessage(String uuid, PartialTracingMessage message) {
-        synchronized (partiallyReceivedMessageMap) {
-            if (partiallyReceivedMessageMap.containsKey(uuid)) {
-                return partiallyReceivedMessageMap.get(uuid);
-            }
-            partiallyReceivedMessageMap.put(uuid, message);
-            return message;
+  private PartialTracingMessage retrieveOrInitializePartialMessage(
+      String uuid, PartialTracingMessage message) {
+    synchronized (partiallyReceivedMessageMap) {
+      if (partiallyReceivedMessageMap.containsKey(uuid)) {
+        return partiallyReceivedMessageMap.get(uuid);
+      }
+      partiallyReceivedMessageMap.put(uuid, message);
+      return message;
+    }
+  }
+
+  public void initOrUpdateMessagePart(String uuid, PartialTracingMessage partialTracingMessage) {
+    synchronized (partiallyReceivedMessageMap) {
+      if (partiallyReceivedMessageMap.containsKey(uuid)) {
+        val oldMessage = partiallyReceivedMessageMap.get(uuid);
+        partialTracingMessage.getMessageParts().addAll(oldMessage.getMessageParts());
+      }
+      partiallyReceivedMessageMap.put(uuid, partialTracingMessage);
+    }
+    checkForCompletion(partialTracingMessage, uuid);
+  }
+
+  private void checkForCompletion(PartialTracingMessage tracingMessage, String messageUuid) {
+    if (tracingMessage.isComplete()) {
+      tracingMessage.getMessageFrame().checkForCompletePairAndPropagateIfComplete();
+      partiallyReceivedMessageMap.remove(messageUuid);
+    }
+  }
+
+  public void triggerPartialMessageCleanup() {
+    final ZonedDateTime cutoff = ZonedDateTime.now().minus(maximumPartialMessageAge);
+    synchronized (partiallyReceivedMessageMap) {
+      final Iterator<PartialTracingMessage> entryIterator =
+          partiallyReceivedMessageMap.values().iterator();
+      while (entryIterator.hasNext()) {
+        PartialTracingMessage next = entryIterator.next();
+        log.trace("Trying to remove {}, cutoff is {}", next.getReceivedTime(), cutoff);
+        if (cutoff.isAfter(next.getReceivedTime())) {
+          entryIterator.remove();
         }
+      }
     }
+  }
 
-    public void initOrUpdateMessagePart(String uuid, PartialTracingMessage partialTracingMessage) {
-        synchronized (partiallyReceivedMessageMap) {
-            if (partiallyReceivedMessageMap.containsKey(uuid)) {
-                val oldMessage = partiallyReceivedMessageMap.get(uuid);
-                partialTracingMessage.getMessageParts().addAll(oldMessage.getMessageParts());
-            }
-            partiallyReceivedMessageMap.put(uuid, partialTracingMessage);
-        }
-        checkForCompletion(partialTracingMessage, uuid);
+  public void submitNewMessageTask(Runnable messageTask) {
+    synchronized (stompMessageShouldQueue) {
+      if (stompMessageShouldQueue.get()) {
+        messageTaskQueue.add(messageTask);
+      } else {
+        getTrafficParserExecutor().submit(messageTask);
+      }
     }
+  }
 
-    private void checkForCompletion(PartialTracingMessage tracingMessage, String messageUuid) {
-        if (tracingMessage.isComplete()) {
-            tracingMessage.getMessageFrame().checkForCompletePairAndPropagateIfComplete();
-            partiallyReceivedMessageMap.remove(messageUuid);
-        }
+  public void switchToQueueMode() {
+    synchronized (stompMessageShouldQueue) {
+      stompMessageShouldQueue.set(true);
     }
+  }
 
-    public void triggerPartialMessageCleanup() {
-        final ZonedDateTime cutoff = ZonedDateTime.now().minus(maximumPartialMessageAge);
-        synchronized (partiallyReceivedMessageMap) {
-            final Iterator<PartialTracingMessage> entryIterator
-                = partiallyReceivedMessageMap.values().iterator();
-            while (entryIterator.hasNext()) {
-                PartialTracingMessage next = entryIterator.next();
-                log.trace("Trying to remove {}, cutoff is {}", next.getReceivedTime(), cutoff);
-                if (cutoff.isAfter(next.getReceivedTime())) {
-                    entryIterator.remove();
-                }
-            }
-        }
+  public void switchToExecutorMode() {
+    synchronized (stompMessageShouldQueue) {
+      log.trace(
+          "Switching to executor mode, currently {} messages waiting", messageTaskQueue.size());
+      while (!messageTaskQueue.isEmpty()) {
+        log.trace("Submitting a new task");
+        getTrafficParserExecutor().submit(messageTaskQueue.poll());
+      }
+      log.trace("Flipping the switch");
+      stompMessageShouldQueue.set(false);
     }
+  }
 
-    public void submitNewMessageTask(Runnable messageTask) {
-        synchronized (stompMessageShouldQueue) {
-            if (stompMessageShouldQueue.get()) {
-                messageTaskQueue.add(messageTask);
-            } else {
-                getTrafficParserExecutor().submit(messageTask);
-            }
-        }
-    }
+  public boolean messageUuidKnown(final String messageUuid) {
+    return getRbelLogger().getRbelConverter().isMessageUuidAlreadyKnown(messageUuid);
+  }
 
-    public void switchToQueueMode() {
-        synchronized (stompMessageShouldQueue) {
-            stompMessageShouldQueue.set(true);
-        }
-    }
-
-    public void switchToExecutorMode() {
-        synchronized (stompMessageShouldQueue) {
-            log.trace("Switching to executor mode, currently {} messages waiting", messageTaskQueue.size());
-            while (!messageTaskQueue.isEmpty()) {
-                log.trace("Submitting a new task");
-                getTrafficParserExecutor().submit(
-                    messageTaskQueue.poll()
-                );
-            }
-            log.trace("Flipping the switch");
-            stompMessageShouldQueue.set(false);
-        }
-    }
-
-    public boolean messageUuidKnown(final String messageUuid) {
-        return getRbelLogger().getRbelConverter().isMessageUuidAlreadyKnown(messageUuid);
-    }
-
-    public boolean isConnected() {
-        return Optional.ofNullable(stompSession)
-            .map(AtomicReference::get)
-            .filter(Objects::nonNull)
-            .map(StompSession::isConnected)
-            .orElse(false);
-    }
+  public boolean isConnected() {
+    return Optional.ofNullable(stompSession)
+        .map(AtomicReference::get)
+        .filter(Objects::nonNull)
+        .map(StompSession::isConnected)
+        .orElse(false);
+  }
 }

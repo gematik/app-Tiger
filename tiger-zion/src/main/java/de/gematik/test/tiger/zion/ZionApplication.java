@@ -18,28 +18,28 @@ import org.springframework.context.annotation.Bean;
 @Slf4j
 public class ZionApplication {
 
-    static {
-        RbelJexlExecutor.initialize();
-    }
+  static {
+    RbelJexlExecutor.initialize();
+  }
 
-    public static void main(String[] args) { //NOSONAR
-        new SpringApplicationBuilder()
-            .sources(ZionApplication.class)
-            .run(args);
-    }
+  public static void main(String[] args) { // NOSONAR
+    new SpringApplicationBuilder().sources(ZionApplication.class).run(args);
+  }
 
-    @Bean
-    public RbelLogger rbelLogger() {
-        log.info("Starting rbel build...");
-        final RbelLogger logger = RbelLogger.build(new RbelConfiguration()
-            .addPostConversionListener(RbelKeyManager.RBEL_IDP_TOKEN_KEY_LISTENER)
-            .addInitializer(new RbelKeyFolderInitializer(".")));
-        log.info("done with build");
-        return logger;
-    }
+  @Bean
+  public RbelLogger rbelLogger() {
+    log.info("Starting rbel build...");
+    final RbelLogger logger =
+        RbelLogger.build(
+            new RbelConfiguration()
+                .addPostConversionListener(RbelKeyManager.RBEL_IDP_TOKEN_KEY_LISTENER)
+                .addInitializer(new RbelKeyFolderInitializer(".")));
+    log.info("done with build");
+    return logger;
+  }
 
-    @Bean
-    public RbelWriter rbelWriter(@Autowired RbelLogger rbelLogger) {
-        return new RbelWriter(rbelLogger.getRbelConverter());
-    }
+  @Bean
+  public RbelWriter rbelWriter(@Autowired RbelLogger rbelLogger) {
+    return new RbelWriter(rbelLogger.getRbelConverter());
+  }
 }

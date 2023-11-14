@@ -24,29 +24,31 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 public class TigerModificationController {
 
-    private final TigerProxy tigerProxy;
+  private final TigerProxy tigerProxy;
 
-    @PutMapping(value = "/modification", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ModificationDto addModification(@RequestBody ModificationDto addModificationDto) {
-        final RbelModificationDescription modification =
-            tigerProxy.addModificaton(
-                RbelModificationDescription.builder()
-                    .name(addModificationDto.getName())
-                    .condition(addModificationDto.getCondition())
-                    .targetElement(addModificationDto.getTargetElement())
-                    .replaceWith(addModificationDto.getReplaceWith())
-                    .regexFilter(addModificationDto.getRegexFilter())
-                    .build());
-        return ModificationDto.from(modification);
-    }
+  @PutMapping(value = "/modification", consumes = MediaType.APPLICATION_JSON_VALUE)
+  public ModificationDto addModification(@RequestBody ModificationDto addModificationDto) {
+    final RbelModificationDescription modification =
+        tigerProxy.addModificaton(
+            RbelModificationDescription.builder()
+                .name(addModificationDto.getName())
+                .condition(addModificationDto.getCondition())
+                .targetElement(addModificationDto.getTargetElement())
+                .replaceWith(addModificationDto.getReplaceWith())
+                .regexFilter(addModificationDto.getRegexFilter())
+                .build());
+    return ModificationDto.from(modification);
+  }
 
-    @GetMapping(value = "/modification", produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<ModificationDto> getModifications() {
-        return tigerProxy.getModifications().stream().map(ModificationDto::from).collect(Collectors.toList());
-    }
+  @GetMapping(value = "/modification", produces = MediaType.APPLICATION_JSON_VALUE)
+  public List<ModificationDto> getModifications() {
+    return tigerProxy.getModifications().stream()
+        .map(ModificationDto::from)
+        .collect(Collectors.toList());
+  }
 
-    @DeleteMapping(value = "/modification/{name}")
-    public void deleteModification(@PathVariable @NotBlank String name) {
-        tigerProxy.removeModification(name);
-    }
+  @DeleteMapping(value = "/modification/{name}")
+  public void deleteModification(@PathVariable @NotBlank String name) {
+    tigerProxy.removeModification(name);
+  }
 }

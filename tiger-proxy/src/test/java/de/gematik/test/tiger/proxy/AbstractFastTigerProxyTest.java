@@ -17,20 +17,19 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 @ResetTigerConfiguration
 class AbstractFastTigerProxyTest extends AbstractTigerProxyTest {
 
-    @BeforeAll
-    public void setupTigerProxy() {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .build());
-    }
+  @BeforeAll
+  public void setupTigerProxy() {
+    spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
+  }
 
-    @BeforeEach
-    public void cleanupTiger() {
-        tigerProxy.clearAllRoutes();
-        tigerProxy.clearAllMessages();
-    }
+  @BeforeEach
+  public void cleanupTiger() {
+    tigerProxy.clearAllRoutes();
+    tigerProxy.clearAllMessages();
+  }
 
-    @Override
-    public void stopSpawnedTigerProxy() {
-        // nothing
-    }
+  @Override
+  public void stopSpawnedTigerProxy() {
+    // nothing
+  }
 }

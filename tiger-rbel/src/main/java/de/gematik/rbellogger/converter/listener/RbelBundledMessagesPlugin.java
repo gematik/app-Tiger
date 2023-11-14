@@ -20,77 +20,98 @@ import org.apache.commons.lang3.StringUtils;
 
 public class RbelBundledMessagesPlugin implements RbelConverterPlugin {
 
-    private final TigerJexlExecutor executor = new TigerJexlExecutor();
+  private final TigerJexlExecutor executor = new TigerJexlExecutor();
 
-    @Override
-    public void consumeElement(RbelElement messageElement, RbelConverter converter) {
-        if (!messageElement.hasFacet(RbelTcpIpMessageFacet.class)) {
-            return;
-        }
-
-        for (RbelBundleCriterion bundleCriterion : converter.getBundleCriterionList()) {
-            String bundledServerName = bundleCriterion.getBundledServerName();
-            if (StringUtils.isEmpty(bundledServerName)) {
-                continue;
-            }
-
-            checkJexlExpressionsAndAddBundledServernameIfPossible(messageElement, RbelTcpIpMessageFacet::getReceiver,
-                bundleCriterion.getReceiver(), bundledServerName);
-
-            checkJexlExpressionsAndAddBundledServernameIfPossible(messageElement, RbelTcpIpMessageFacet::getSender,
-                bundleCriterion.getSender(), bundledServerName);
-
-            if (messageElement.hasFacet(RbelHttpResponseFacet.class)) {
-                copyAndAddBundledServernameIfPossible(messageElement);
-            }
-        }
+  @Override
+  public void consumeElement(RbelElement messageElement, RbelConverter converter) {
+    if (!messageElement.hasFacet(RbelTcpIpMessageFacet.class)) {
+      return;
     }
 
-    private void checkJexlExpressionsAndAddBundledServernameIfPossible(RbelElement message,
-                                                                       Function<RbelTcpIpMessageFacet, RbelElement> hostnameExtractor,
-                                                                       List<String> jexlExpressionList, String bundledServerName) {
-        if (jexlExpressionList == null) {
-            return;
-        }
+    for (RbelBundleCriterion bundleCriterion : converter.getBundleCriterionList()) {
+      String bundledServerName = bundleCriterion.getBundledServerName();
+      if (StringUtils.isEmpty(bundledServerName)) {
+        continue;
+      }
 
-        for (String jexlExpression : jexlExpressionList) {
-            if (executor.matchesAsJexlExpression(message, jexlExpression, Optional.empty())) {
-                message.getFacet(RbelTcpIpMessageFacet.class)
-                    .map(hostnameExtractor)
-                        .ifPresent(hostnameElement -> changeHostnameFacet(hostnameElement, bundledServerName));
-            }
-        }
+      checkJexlExpressionsAndAddBundledServernameIfPossible(
+          messageElement,
+          RbelTcpIpMessageFacet::getReceiver,
+          bundleCriterion.getReceiver(),
+          bundledServerName);
+
+      checkJexlExpressionsAndAddBundledServernameIfPossible(
+          messageElement,
+          RbelTcpIpMessageFacet::getSender,
+          bundleCriterion.getSender(),
+          bundledServerName);
+
+      if (messageElement.hasFacet(RbelHttpResponseFacet.class)) {
+        copyAndAddBundledServernameIfPossible(messageElement);
+      }
+    }
+  }
+
+  private void checkJexlExpressionsAndAddBundledServernameIfPossible(
+      RbelElement message,
+      Function<RbelTcpIpMessageFacet, RbelElement> hostnameExtractor,
+      List<String> jexlExpressionList,
+      String bundledServerName) {
+    if (jexlExpressionList == null) {
+      return;
     }
 
-    private void changeHostnameFacet(RbelElement hostnameElement, String bundledServerName) {
-        RbelHostnameFacetBuilder hostnameFacetBuilder = hostnameElement.getFacet(RbelHostnameFacet.class)
+    for (String jexlExpression : jexlExpressionList) {
+      if (executor.matchesAsJexlExpression(message, jexlExpression, Optional.empty())) {
+        message
+            .getFacet(RbelTcpIpMessageFacet.class)
+            .map(hostnameExtractor)
+            .ifPresent(hostnameElement -> changeHostnameFacet(hostnameElement, bundledServerName));
+      }
+    }
+  }
+
+  private void changeHostnameFacet(RbelElement hostnameElement, String bundledServerName) {
+    RbelHostnameFacetBuilder hostnameFacetBuilder =
+        hostnameElement
+            .getFacet(RbelHostnameFacet.class)
             .map(RbelHostnameFacet::toBuilder)
             .orElse(RbelHostnameFacet.builder());
 
-        RbelHostnameFacet hostnameFacet = hostnameFacetBuilder
-            .bundledServerName(Optional.ofNullable(RbelElement.wrap(hostnameElement, bundledServerName)))
+    RbelHostnameFacet hostnameFacet =
+        hostnameFacetBuilder
+            .bundledServerName(
+                Optional.ofNullable(RbelElement.wrap(hostnameElement, bundledServerName)))
             .build();
 
-        hostnameElement.addOrReplaceFacet(hostnameFacet);
-    }
+    hostnameElement.addOrReplaceFacet(hostnameFacet);
+  }
 
-    private void copyAndAddBundledServernameIfPossible(RbelElement message) {
-        copyBundledServerNameFromTo(message, RbelTcpIpMessageFacet::getSender, RbelTcpIpMessageFacet::getReceiver);
-        copyBundledServerNameFromTo(message, RbelTcpIpMessageFacet::getReceiver, RbelTcpIpMessageFacet::getSender);
-    }
+  private void copyAndAddBundledServernameIfPossible(RbelElement message) {
+    copyBundledServerNameFromTo(
+        message, RbelTcpIpMessageFacet::getSender, RbelTcpIpMessageFacet::getReceiver);
+    copyBundledServerNameFromTo(
+        message, RbelTcpIpMessageFacet::getReceiver, RbelTcpIpMessageFacet::getSender);
+  }
 
-    private void copyBundledServerNameFromTo(RbelElement rbelElement,
-                                             Function<RbelTcpIpMessageFacet, RbelElement> sourceExtractor,
-                                             Function<RbelTcpIpMessageFacet, RbelElement> destinationExtractor) {
-        rbelElement.getFacet(RbelTcpIpMessageFacet.class)
-            .map(sourceExtractor)
-            .ifPresent(hostname -> rbelElement.getFacet(RbelHttpResponseFacet.class)
-                .map(RbelHttpResponseFacet::getRequest)
-                .flatMap(el -> el.getFacet(RbelTcpIpMessageFacet.class))
-                .map(destinationExtractor)
-                .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
-                .flatMap(e -> e.getBundledServerName())
-                .flatMap(el -> el.seekValue(String.class))
-                .ifPresent(bundledServerName -> changeHostnameFacet(hostname, bundledServerName)));
-    }
+  private void copyBundledServerNameFromTo(
+      RbelElement rbelElement,
+      Function<RbelTcpIpMessageFacet, RbelElement> sourceExtractor,
+      Function<RbelTcpIpMessageFacet, RbelElement> destinationExtractor) {
+    rbelElement
+        .getFacet(RbelTcpIpMessageFacet.class)
+        .map(sourceExtractor)
+        .ifPresent(
+            hostname ->
+                rbelElement
+                    .getFacet(RbelHttpResponseFacet.class)
+                    .map(RbelHttpResponseFacet::getRequest)
+                    .flatMap(el -> el.getFacet(RbelTcpIpMessageFacet.class))
+                    .map(destinationExtractor)
+                    .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
+                    .flatMap(e -> e.getBundledServerName())
+                    .flatMap(el -> el.seekValue(String.class))
+                    .ifPresent(
+                        bundledServerName -> changeHostnameFacet(hostname, bundledServerName)));
+  }
 }

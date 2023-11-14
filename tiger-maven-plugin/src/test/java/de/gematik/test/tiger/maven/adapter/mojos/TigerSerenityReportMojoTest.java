@@ -17,7 +17,6 @@ import static org.mockito.Mockito.verify;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.logging.Log;
@@ -33,84 +32,90 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class TigerSerenityReportMojoTest {
 
-    @Mock
-    private Log log;
+  @Mock private Log log;
 
-    @TempDir
-    private Path reportDir;
+  @TempDir private Path reportDir;
 
-    private TigerSerenityReportMojo underTest;
+  private TigerSerenityReportMojo underTest;
 
-    @BeforeEach
-    void setUp() {
-        underTest = new TigerSerenityReportMojo();
-        underTest.setLog(log);
-        underTest.setReportDirectory(reportDir.toFile());
-        underTest.setRequirementsBaseDir("src/test/resources");
-    }
+  @BeforeEach
+  void setUp() {
+    underTest = new TigerSerenityReportMojo();
+    underTest.setLog(log);
+    underTest.setReportDirectory(reportDir.toFile());
+    underTest.setRequirementsBaseDir("src/test/resources");
+  }
 
-    @Test
-    @DisplayName("If the report directory does not exist, a warning should be shown")
-    @SneakyThrows
-    void testIfTheReportDirectoryDoesNotExistAWarningShouldBeShown() {
-        // Preparation
-        Files.delete(reportDir);
+  @Test
+  @DisplayName("If the report directory does not exist, a warning should be shown")
+  @SneakyThrows
+  void testIfTheReportDirectoryDoesNotExistAWarningShouldBeShown() {
+    // Preparation
+    Files.delete(reportDir);
 
-        // Execution
-        underTest.execute();
+    // Execution
+    underTest.execute();
 
-        // Assertion
-        verify(log).warn("Report directory does not exist yet: " + reportDir);
-    }
+    // Assertion
+    verify(log).warn("Report directory does not exist yet: " + reportDir);
+  }
 
-    @Test
-    @DisplayName("Should contain all relevant report info with failure data")
-    @SneakyThrows
-    void testShouldContainAllRelevantReportInfoWithFailureData() {
-        // Preparation
-        prepareReportDir();
+  @Test
+  @DisplayName("Should contain all relevant report info with failure data")
+  @SneakyThrows
+  void testShouldContainAllRelevantReportInfoWithFailureData() {
+    // Preparation
+    prepareReportDir();
 
-        // Execution
-        underTest.execute();
+    // Execution
+    underTest.execute();
 
-        // Assertion
-        assertAll(
-                () -> assertThat(readAllLines(reportDir.resolve("results.csv")),
-                        containsInAnyOrder(
-                                startsWith("\"Story\",\"Title\",\"Result\","),
-                                startsWith("\"Test Tiger BDD\",\"Simple first test\",\"SUCCESS\","),
-                                startsWith("\"Test Tiger BDD\",\"Simple second test\",\"FAILURE\","),
-                                startsWith("\"Test Tiger BDD\",\"Simple third test\",\"SUCCESS\",")
-                        )),
-                () -> assertThat(readString(reportDir.resolve("serenity-summary.html")),
-                        containsString("2 passing tests")),
-                () -> assertThat(readString(reportDir.resolve("serenity-summary.html")),
-                        containsString("1 failing test")),
-                () -> assertThat(readString(reportDir.resolve("serenity-summary.html")),
-                        containsString(
-                                "Assertion error: Expecting actual:  &quot;jetty-dir.css&quot;to match pattern:  &quot;mööööp&quot;")),
-                () -> assertTrue(Files.exists(reportDir.resolve("index.html")), "index.html exists")
-        );
-    }
+    // Assertion
+    assertAll(
+        () ->
+            assertThat(
+                readAllLines(reportDir.resolve("results.csv")),
+                containsInAnyOrder(
+                    startsWith("\"Story\",\"Title\",\"Result\","),
+                    startsWith("\"Test Tiger BDD\",\"Simple first test\",\"SUCCESS\","),
+                    startsWith("\"Test Tiger BDD\",\"Simple second test\",\"FAILURE\","),
+                    startsWith("\"Test Tiger BDD\",\"Simple third test\",\"SUCCESS\","))),
+        () ->
+            assertThat(
+                readString(reportDir.resolve("serenity-summary.html")),
+                containsString("2 passing tests")),
+        () ->
+            assertThat(
+                readString(reportDir.resolve("serenity-summary.html")),
+                containsString("1 failing test")),
+        () ->
+            assertThat(
+                readString(reportDir.resolve("serenity-summary.html")),
+                containsString(
+                    "Assertion error: Expecting actual:  &quot;jetty-dir.css&quot;to match pattern:"
+                        + "  &quot;mööööp&quot;")),
+        () -> assertTrue(Files.exists(reportDir.resolve("index.html")), "index.html exists"));
+  }
 
-    @Tag("de.gematik.test.tiger.common.LongrunnerTest")
-    @Test
-    @DisplayName("If the property openSerenityReportInBrowser is set, the browser should open with the serenity report")
-    @SneakyThrows
-    void testIfTheBrowserOpensWithSerenityReport() {
-        assertThatNoException().isThrownBy(
-                () -> {
-                    underTest.setOpenSerenityReportInBrowser(true);
-                    underTest.execute();
-                }
-        );
-    }
+  @Tag("de.gematik.test.tiger.common.LongrunnerTest")
+  @Test
+  @DisplayName(
+      "If the property openSerenityReportInBrowser is set, the browser should open with the"
+          + " serenity report")
+  @SneakyThrows
+  void testIfTheBrowserOpensWithSerenityReport() {
+    assertThatNoException()
+        .isThrownBy(
+            () -> {
+              underTest.setOpenSerenityReportInBrowser(true);
+              underTest.execute();
+            });
+  }
 
-    @SneakyThrows
-    private void prepareReportDir() {
-        final var repoRessourceDir = Paths.get(
-                getClass().getResource("/serenetyReports/fresh").toURI());
-        FileUtils.copyDirectory(repoRessourceDir.toFile(), reportDir.toFile());
-    }
-
+  @SneakyThrows
+  private void prepareReportDir() {
+    final var repoRessourceDir =
+        Paths.get(getClass().getResource("/serenetyReports/fresh").toURI());
+    FileUtils.copyDirectory(repoRessourceDir.toFile(), reportDir.toFile());
+  }
 }

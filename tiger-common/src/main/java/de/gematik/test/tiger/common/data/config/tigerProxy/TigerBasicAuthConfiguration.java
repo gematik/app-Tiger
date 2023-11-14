@@ -17,11 +17,12 @@ import lombok.RequiredArgsConstructor;
 @Data
 public class TigerBasicAuthConfiguration {
 
-    private String username;
-    private String password;
+  private String username;
+  private String password;
 
-    public String toAuthorizationHeaderValue() {
-        return "Basic " + Base64.getEncoder().encodeToString((username + ":" + password)
-            .getBytes(StandardCharsets.US_ASCII));
-    }
+  public String toAuthorizationHeaderValue() {
+    return "Basic "
+        + Base64.getEncoder()
+            .encodeToString((username + ":" + password).getBytes(StandardCharsets.US_ASCII));
+  }
 }

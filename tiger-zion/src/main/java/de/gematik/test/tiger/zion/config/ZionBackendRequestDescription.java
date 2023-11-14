@@ -16,15 +16,10 @@ import lombok.NoArgsConstructor;
 @JsonInclude(Include.NON_NULL)
 public class ZionBackendRequestDescription {
 
-    @TigerSkipEvaluation
-    private String url;
-    @TigerSkipEvaluation
-    private Map<String, String> headers;
-    @TigerSkipEvaluation
-    private String body;
-    @TigerSkipEvaluation
-    private String method;
-    private boolean executeBeforeSelection = false;
-    @TigerSkipEvaluation
-    private Map<String, String> assignments;
+  @TigerSkipEvaluation private String url;
+  @TigerSkipEvaluation private Map<String, String> headers;
+  @TigerSkipEvaluation private String body;
+  @TigerSkipEvaluation private String method;
+  private boolean executeBeforeSelection = false;
+  @TigerSkipEvaluation private Map<String, String> assignments;
 }

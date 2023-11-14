@@ -15,11 +15,10 @@ import lombok.RequiredArgsConstructor;
 @Data
 public class RbelNestedFacet implements RbelFacet {
 
-    private final RbelElement nestedElement;
+  private final RbelElement nestedElement;
 
-    @Override
-    public RbelMultiMap getChildElements() {
-        return new RbelMultiMap<RbelElement>()
-            .with("content", nestedElement);
-    }
+  @Override
+  public RbelMultiMap getChildElements() {
+    return new RbelMultiMap<RbelElement>().with("content", nestedElement);
+  }
 }

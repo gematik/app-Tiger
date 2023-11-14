@@ -7,6 +7,7 @@ package de.gematik.test.tiger.proxy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
+
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerFileSaveInfo;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerFileSaveInfo.TigerFileSaveInfoBuilder;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
@@ -29,139 +30,158 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 @TestInstance(Lifecycle.PER_CLASS)
 @ResetTigerConfiguration
 class TestTigerProxyFile extends AbstractTigerProxyTest {
-    private static final String TGR_FILENAME = "target/reconstruction.tgr";
+  private static final String TGR_FILENAME = "target/reconstruction.tgr";
 
-    @Test
-    void saveToFileAndReadAgain_pairsShouldBeReconstructed() {
-        executeFileWritingAndReadingTest(
-            otherProxy -> {
-                await().atMost(2, TimeUnit.SECONDS)
-                    .until(() -> otherProxy.getRbelMessages().size() >= 4);
-                assertThat(
-                    otherProxy.getRbelLogger().getMessageHistory().getLast()
-                        .getFacetOrFail(TracingMessagePairFacet.class)
-                        .getRequest().findElement("$.path").get().getRawStringContent())
-                    .isEqualTo("/faabor");
-            },
-            TigerFileSaveInfo.builder(),
-            () -> {
-                proxyRest.get("http://backend/foobar").asJson();
-                proxyRest.get("http://backend/faabor").asJson();
-                fileHasNLines(TGR_FILENAME, 4);
-            });
-    }
+  @Test
+  void saveToFileAndReadAgain_pairsShouldBeReconstructed() {
+    executeFileWritingAndReadingTest(
+        otherProxy -> {
+          await().atMost(2, TimeUnit.SECONDS).until(() -> otherProxy.getRbelMessages().size() >= 4);
+          assertThat(
+                  otherProxy
+                      .getRbelLogger()
+                      .getMessageHistory()
+                      .getLast()
+                      .getFacetOrFail(TracingMessagePairFacet.class)
+                      .getRequest()
+                      .findElement("$.path")
+                      .get()
+                      .getRawStringContent())
+              .isEqualTo("/faabor");
+        },
+        TigerFileSaveInfo.builder(),
+        () -> {
+          proxyRest.get("http://backend/foobar").asJson();
+          proxyRest.get("http://backend/faabor").asJson();
+          fileHasNLines(TGR_FILENAME, 4);
+        });
+  }
 
-    @Test
-    void filterFileForRequest_pairShouldBeIntact() {
-        executeFileWritingAndReadingTest(
-            otherProxy -> {
-                await()
-                    .atMost(2, TimeUnit.SECONDS)
-                    .until(otherProxy::isFileParsed);
-                assertThat(otherProxy.getRbelLogger().getMessageHistory().getFirst().findElement("$.path")
-                    .get().getRawStringContent()).isEqualTo("/faabor");
-                assertThat(otherProxy.getRbelLogger().getMessageHistory())
-                    .hasSize(2);
-            },
-            TigerFileSaveInfo.builder()
-                .readFilter("message.path == '/faabor'"),
-            () -> {
-                proxyRest.get("http://backend/foobar").asJson();
-                proxyRest.get("http://backend/faabor").asJson();
-                fileHasNLines(TGR_FILENAME, 4);
-            });
-    }
+  @Test
+  void filterFileForRequest_pairShouldBeIntact() {
+    executeFileWritingAndReadingTest(
+        otherProxy -> {
+          await().atMost(2, TimeUnit.SECONDS).until(otherProxy::isFileParsed);
+          assertThat(
+                  otherProxy
+                      .getRbelLogger()
+                      .getMessageHistory()
+                      .getFirst()
+                      .findElement("$.path")
+                      .get()
+                      .getRawStringContent())
+              .isEqualTo("/faabor");
+          assertThat(otherProxy.getRbelLogger().getMessageHistory()).hasSize(2);
+        },
+        TigerFileSaveInfo.builder().readFilter("message.path == '/faabor'"),
+        () -> {
+          proxyRest.get("http://backend/foobar").asJson();
+          proxyRest.get("http://backend/faabor").asJson();
+          fileHasNLines(TGR_FILENAME, 4);
+        });
+  }
 
-    @Test
-    void filterFileForResponse_pairShouldBeIntact() {
-        executeFileWritingAndReadingTest(
-            otherProxy -> {
-                await()
-                    .atMost(2, TimeUnit.SECONDS)
-                        .until(otherProxy::isFileParsed);
-                assertThat(otherProxy.getRbelLogger().getMessageHistory().getFirst().findElement("$.path")
-                        .get().getRawStringContent()).isEqualTo("/faabor");
-                assertThat(otherProxy.getRbelLogger().getMessageHistory())
-                    .hasSize(2);
-            },
-            TigerFileSaveInfo.builder()
-                .readFilter("message.statusCode == '404'"),
-            () -> {
-                proxyRest.get("http://backend/foobar").asJson();
-                proxyRest.get("http://backend/faabor").asJson();
-                fileHasNLines(TGR_FILENAME, 4);
-            });
-    }
+  @Test
+  void filterFileForResponse_pairShouldBeIntact() {
+    executeFileWritingAndReadingTest(
+        otherProxy -> {
+          await().atMost(2, TimeUnit.SECONDS).until(otherProxy::isFileParsed);
+          assertThat(
+                  otherProxy
+                      .getRbelLogger()
+                      .getMessageHistory()
+                      .getFirst()
+                      .findElement("$.path")
+                      .get()
+                      .getRawStringContent())
+              .isEqualTo("/faabor");
+          assertThat(otherProxy.getRbelLogger().getMessageHistory()).hasSize(2);
+        },
+        TigerFileSaveInfo.builder().readFilter("message.statusCode == '404'"),
+        () -> {
+          proxyRest.get("http://backend/foobar").asJson();
+          proxyRest.get("http://backend/faabor").asJson();
+          fileHasNLines(TGR_FILENAME, 4);
+        });
+  }
 
-    @Test
-    void filterFileForRequestWithRequestFilter_pairShouldBeIntact() {
-        executeFileWritingAndReadingTest(
-            otherProxy -> {
-                await()
-                    .atMost(2, TimeUnit.SECONDS)
-                        .until(otherProxy::isFileParsed);
-                assertThat(otherProxy.getRbelLogger().getMessageHistory().getFirst().findElement("$.path")
-                        .get().getRawStringContent()).isEqualTo("/foobar");
-                assertThat(otherProxy.getRbelLogger().getMessageHistory())
-                    .hasSize(2);
-            },
-            TigerFileSaveInfo.builder()
-                .readFilter("request.url !$ 'faabor'"),
-            () -> {
-                proxyRest.get("http://backend/foobar").asJson();
-                proxyRest.get("http://backend/faabor").asJson();
-                fileHasNLines(TGR_FILENAME, 4);
-            });
-    }
+  @Test
+  void filterFileForRequestWithRequestFilter_pairShouldBeIntact() {
+    executeFileWritingAndReadingTest(
+        otherProxy -> {
+          await().atMost(2, TimeUnit.SECONDS).until(otherProxy::isFileParsed);
+          assertThat(
+                  otherProxy
+                      .getRbelLogger()
+                      .getMessageHistory()
+                      .getFirst()
+                      .findElement("$.path")
+                      .get()
+                      .getRawStringContent())
+              .isEqualTo("/foobar");
+          assertThat(otherProxy.getRbelLogger().getMessageHistory()).hasSize(2);
+        },
+        TigerFileSaveInfo.builder().readFilter("request.url !$ 'faabor'"),
+        () -> {
+          proxyRest.get("http://backend/foobar").asJson();
+          proxyRest.get("http://backend/faabor").asJson();
+          fileHasNLines(TGR_FILENAME, 4);
+        });
+  }
 
-    @Test
-    void errorWhileReadingTgrFile_expectStartupError() {
-        final TigerProxyConfiguration configuration = TigerProxyConfiguration.builder()
-            .fileSaveInfo(TigerFileSaveInfo.builder()
-                .sourceFile("pom.xml")
-                .build())
+  @Test
+  void errorWhileReadingTgrFile_expectStartupError() {
+    final TigerProxyConfiguration configuration =
+        TigerProxyConfiguration.builder()
+            .fileSaveInfo(TigerFileSaveInfo.builder().sourceFile("pom.xml").build())
             .build();
-        assertThatThrownBy(() -> {
-            final TigerProxy proxy = new TigerProxy(configuration);
-            await()
-                .atMost(200, TimeUnit.SECONDS)
-                .until(proxy::isFileParsed);
-        })
-            .isNotInstanceOf(ConditionTimeoutException.class);
-    }
+    assertThatThrownBy(
+            () -> {
+              final TigerProxy proxy = new TigerProxy(configuration);
+              await().atMost(200, TimeUnit.SECONDS).until(proxy::isFileParsed);
+            })
+        .isNotInstanceOf(ConditionTimeoutException.class);
+  }
 
-    private void executeFileWritingAndReadingTest(Consumer<TigerProxy> executeFileWritingAndReadingTest,
-        TigerFileSaveInfoBuilder fileReaderInfoBuilder, Runnable generateTraffic) {
-        FileUtils.deleteQuietly(new File(TGR_FILENAME));
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("http://backend")
-                .to("http://localhost:" + fakeBackendServerPort)
-                .build()))
-            .fileSaveInfo(TigerFileSaveInfo.builder()
-                .writeToFile(true)
-                .clearFileOnBoot(true)
-                .filename(TGR_FILENAME)
-                .build())
+  private void executeFileWritingAndReadingTest(
+      Consumer<TigerProxy> executeFileWritingAndReadingTest,
+      TigerFileSaveInfoBuilder fileReaderInfoBuilder,
+      Runnable generateTraffic) {
+    FileUtils.deleteQuietly(new File(TGR_FILENAME));
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("http://backend")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .fileSaveInfo(
+                TigerFileSaveInfo.builder()
+                    .writeToFile(true)
+                    .clearFileOnBoot(true)
+                    .filename(TGR_FILENAME)
+                    .build())
             .build());
 
-        generateTraffic.run();
+    generateTraffic.run();
 
-        try (final TigerProxy otherProxy = new TigerProxy(TigerProxyConfiguration.builder()
-            .fileSaveInfo(fileReaderInfoBuilder
-                .sourceFile(TGR_FILENAME)
-                .build())
-            .build())) {
-            executeFileWritingAndReadingTest.accept(otherProxy);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    try (final TigerProxy otherProxy =
+        new TigerProxy(
+            TigerProxyConfiguration.builder()
+                .fileSaveInfo(fileReaderInfoBuilder.sourceFile(TGR_FILENAME).build())
+                .build())) {
+      executeFileWritingAndReadingTest.accept(otherProxy);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
+  }
 
-    private static void fileHasNLines(String filename, int lines) {
-        await().atMost(2, TimeUnit.SECONDS)
-            .pollInterval(100, TimeUnit.MILLISECONDS)
-            .until(() -> FileUtils.readLines(new File(filename), StandardCharsets.UTF_8)
-                .size() >= lines);
-    }
+  private static void fileHasNLines(String filename, int lines) {
+    await()
+        .atMost(2, TimeUnit.SECONDS)
+        .pollInterval(100, TimeUnit.MILLISECONDS)
+        .until(
+            () -> FileUtils.readLines(new File(filename), StandardCharsets.UTF_8).size() >= lines);
+  }
 }

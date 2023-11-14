@@ -28,71 +28,62 @@ import lombok.NoArgsConstructor;
 @Builder
 public class RbelConfiguration {
 
-    @Builder.Default
-    private List<RbelConverterPlugin> postConversionListener = new ArrayList<>();
-    @Builder.Default
-    private List<RbelConverterPlugin> additionalConverters = new ArrayList<>();
-    @Builder.Default
-    private Map<Class<? extends RbelElement>, List<BiFunction<RbelElement, RbelConverter, RbelElement>>> preConversionMappers
-        = new HashMap<>();
-    @Builder.Default
-    private List<Consumer<RbelConverter>> initializers = new ArrayList<>();
-    @Builder.Default
-    private Map<String, RbelKey> keys = new HashMap<>();
-    private RbelCapturer capturer;
-    @Builder.Default
-    private boolean activateAsn1Parsing = true;
-    @Builder.Default
-    private int rbelBufferSizeInMb = 1024;
-    @Builder.Default
-    private int skipParsingWhenMessageLargerThanKb = 16_000;
-    @Builder.Default
-    private boolean manageBuffer = false;
+  @Builder.Default private List<RbelConverterPlugin> postConversionListener = new ArrayList<>();
+  @Builder.Default private List<RbelConverterPlugin> additionalConverters = new ArrayList<>();
 
-    public RbelConfiguration addPostConversionListener(RbelConverterPlugin listener) {
-        postConversionListener.add(listener);
-        return this;
-    }
+  @Builder.Default
+  private Map<
+          Class<? extends RbelElement>, List<BiFunction<RbelElement, RbelConverter, RbelElement>>>
+      preConversionMappers = new HashMap<>();
 
-    public <T extends RbelElement> RbelConfiguration addPreConversionMapper(Class<T> clazz,
-        BiFunction<T, RbelConverter, RbelElement> mapper) {
-        if (!preConversionMappers.containsKey(clazz)) {
-            preConversionMappers.put(clazz, new ArrayList<>());
-        }
-        preConversionMappers.get(clazz).add((rawKey, context) -> mapper.apply((T) rawKey, context));
-        return this;
-    }
+  @Builder.Default private List<Consumer<RbelConverter>> initializers = new ArrayList<>();
+  @Builder.Default private Map<String, RbelKey> keys = new HashMap<>();
+  private RbelCapturer capturer;
+  @Builder.Default private boolean activateAsn1Parsing = true;
+  @Builder.Default private int rbelBufferSizeInMb = 1024;
+  @Builder.Default private int skipParsingWhenMessageLargerThanKb = 16_000;
+  @Builder.Default private boolean manageBuffer = false;
 
-    public RbelConfiguration addInitializer(Consumer<RbelConverter> initializer) {
-        initializers.add(initializer);
-        return this;
-    }
+  public RbelConfiguration addPostConversionListener(RbelConverterPlugin listener) {
+    postConversionListener.add(listener);
+    return this;
+  }
 
-    public RbelConfiguration addKey(final String keyId, final Key key, final int precedence) {
-        keys.put(keyId, RbelKey.builder()
-            .key(key)
-            .keyName(keyId)
-            .precedence(precedence)
-            .build());
-        return this;
+  public <T extends RbelElement> RbelConfiguration addPreConversionMapper(
+      Class<T> clazz, BiFunction<T, RbelConverter, RbelElement> mapper) {
+    if (!preConversionMappers.containsKey(clazz)) {
+      preConversionMappers.put(clazz, new ArrayList<>());
     }
+    preConversionMappers.get(clazz).add((rawKey, context) -> mapper.apply((T) rawKey, context));
+    return this;
+  }
 
-    public RbelConfiguration addCapturer(RbelCapturer capturer) {
-        this.capturer = capturer;
-        return this;
-    }
+  public RbelConfiguration addInitializer(Consumer<RbelConverter> initializer) {
+    initializers.add(initializer);
+    return this;
+  }
 
-    public RbelConfiguration setActivateAsn1Parsing(boolean activateAsn1Parsing) {
-        this.activateAsn1Parsing = activateAsn1Parsing;
-        return this;
-    }
+  public RbelConfiguration addKey(final String keyId, final Key key, final int precedence) {
+    keys.put(keyId, RbelKey.builder().key(key).keyName(keyId).precedence(precedence).build());
+    return this;
+  }
 
-    public RbelConfiguration addAdditionalConverter(RbelConverterPlugin converter) {
-        additionalConverters.add(converter);
-        return this;
-    }
+  public RbelConfiguration addCapturer(RbelCapturer capturer) {
+    this.capturer = capturer;
+    return this;
+  }
 
-    public RbelLogger constructRbelLogger() {
-        return RbelLogger.build(this);
-    }
+  public RbelConfiguration setActivateAsn1Parsing(boolean activateAsn1Parsing) {
+    this.activateAsn1Parsing = activateAsn1Parsing;
+    return this;
+  }
+
+  public RbelConfiguration addAdditionalConverter(RbelConverterPlugin converter) {
+    additionalConverters.add(converter);
+    return this;
+  }
+
+  public RbelLogger constructRbelLogger() {
+    return RbelLogger.build(this);
+  }
 }

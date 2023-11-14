@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
@@ -22,44 +23,48 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 @ResetTigerConfiguration
 class TestTigerProxyCompetingRoutes extends AbstractTigerProxyTest {
 
-    @Test
-    @Disabled("Fails on build server")
-    void competingRoutes_shouldSelectSecondRoute() {
-        final String wrongDst = "http://localhost:" + fakeBackendServerPort + "/wrong";
-        final String correctDst = "http://localhost:" + fakeBackendServerPort + "/right";
+  @Test
+  @Disabled("Fails on build server")
+  void competingRoutes_shouldSelectSecondRoute() {
+    final String wrongDst = "http://localhost:" + fakeBackendServerPort + "/wrong";
+    final String correctDst = "http://localhost:" + fakeBackendServerPort + "/right";
 
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .build());
+    spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
 
-        final BiConsumer<TigerRoute, TigerRoute> testRoutesInOrder = (route1, route2) -> {
-            tigerProxy.clearAllRoutes();
-            tigerProxy.addRoute(route1);
-            tigerProxy.addRoute(route2);
+    final BiConsumer<TigerRoute, TigerRoute> testRoutesInOrder =
+        (route1, route2) -> {
+          tigerProxy.clearAllRoutes();
+          tigerProxy.addRoute(route1);
+          tigerProxy.addRoute(route2);
 
-            proxyRest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar/blub.html")
-                .asString();
-            awaitMessagesInTiger(2);
+          proxyRest
+              .get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar/blub.html")
+              .asString();
+          awaitMessagesInTiger(2);
 
-            assertThat(tigerProxy.getRbelMessages()).last()
-                // get the last request
-                .extracting(response -> response.getFacetOrFail(RbelHttpResponseFacet.class).getRequest())
-                // get the request url
-                .extracting(
-                    request -> request.getFacetOrFail(RbelHttpRequestFacet.class).getPath().getRawStringContent())
-                // do the assertions
-                .matches(path -> !path.contains("wrong"), "Does the path not contain 'wrong'?")
-                .matches(path -> path.contains("right"), "Does the path contain 'right'?");
+          assertThat(tigerProxy.getRbelMessages())
+              .last()
+              // get the last request
+              .extracting(
+                  response -> response.getFacetOrFail(RbelHttpResponseFacet.class).getRequest())
+              // get the request url
+              .extracting(
+                  request ->
+                      request
+                          .getFacetOrFail(RbelHttpRequestFacet.class)
+                          .getPath()
+                          .getRawStringContent())
+              // do the assertions
+              .matches(path -> !path.contains("wrong"), "Does the path not contain 'wrong'?")
+              .matches(path -> path.contains("right"), "Does the path contain 'right'?");
         };
 
-        testRoutesInOrder.accept(route("/foobar/", correctDst), route("/foo/", wrongDst));
-        testRoutesInOrder.accept(route("/foo/", wrongDst), route("/foobar/", correctDst));
-        testRoutesInOrder.accept(route("/foo/", wrongDst), route("/foobar", correctDst));
-    }
+    testRoutesInOrder.accept(route("/foobar/", correctDst), route("/foo/", wrongDst));
+    testRoutesInOrder.accept(route("/foo/", wrongDst), route("/foobar/", correctDst));
+    testRoutesInOrder.accept(route("/foo/", wrongDst), route("/foobar", correctDst));
+  }
 
-    private TigerRoute route(String from, String to) {
-        return TigerRoute.builder()
-            .from(from)
-            .to(to)
-            .build();
-    }
+  private TigerRoute route(String from, String to) {
+    return TigerRoute.builder().from(from).to(to).build();
+  }
 }

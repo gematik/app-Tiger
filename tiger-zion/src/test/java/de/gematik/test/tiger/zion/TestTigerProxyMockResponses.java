@@ -3,6 +3,7 @@ package de.gematik.test.tiger.zion;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -32,115 +33,121 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ResetTigerConfiguration
-@TestPropertySource(properties = {
-    "zion.mockResponseFiles.firstFile=src/test/resources/someMockResponse.yaml"})
+@TestPropertySource(
+    properties = {"zion.mockResponseFiles.firstFile=src/test/resources/someMockResponse.yaml"})
 class TestTigerProxyMockResponses {
 
-    final Path tempDirectory = Path.of("target", "zionResponses");
+  final Path tempDirectory = Path.of("target", "zionResponses");
 
-    @Autowired
-    private ZionConfiguration configuration;
-    @Autowired
-    private ObjectMapper objectMapper;
-    @LocalServerPort
-    private int port;
-    private Map<String, TigerMockResponse> mockResponsesBackup;
+  @Autowired private ZionConfiguration configuration;
+  @Autowired private ObjectMapper objectMapper;
+  @LocalServerPort private int port;
+  private Map<String, TigerMockResponse> mockResponsesBackup;
 
-    @SneakyThrows
-    @BeforeEach
-    public void setupTempDirectory() {
-        TigerGlobalConfiguration.reset();
-        Files.createDirectories(tempDirectory);
-        Files.list(tempDirectory).forEach(path -> path.toFile().delete());
-        mockResponsesBackup = configuration.getMockResponses();
-    }
+  @SneakyThrows
+  @BeforeEach
+  public void setupTempDirectory() {
+    TigerGlobalConfiguration.reset();
+    Files.createDirectories(tempDirectory);
+    Files.list(tempDirectory).forEach(path -> path.toFile().delete());
+    mockResponsesBackup = configuration.getMockResponses();
+  }
 
-    @AfterEach
-    public void resetMockResponses() {
-        TigerGlobalConfiguration.reset();
-        configuration.setMockResponses(mockResponsesBackup);
-        configuration.setSpy(null);
-    }
+  @AfterEach
+  public void resetMockResponses() {
+    TigerGlobalConfiguration.reset();
+    configuration.setMockResponses(mockResponsesBackup);
+    configuration.setSpy(null);
+  }
 
-    @Test
-    void simpleMockedResponse() {
-        configuration.setMockResponses(Map.of("backend_foobar",
+  @Test
+  void simpleMockedResponse() {
+    configuration.setMockResponses(
+        Map.of(
+            "backend_foobar",
             TigerMockResponse.builder()
-                .requestCriterions(List.of(
-                    "message.method == 'GET'",
-                    "message.url =~ '.*/userJsonPath.*'"))
-                .response(TigerMockResponseDescription.builder()
-                    .statusCode(666)
-                    .body("""
+                .requestCriterions(
+                    List.of("message.method == 'GET'", "message.url =~ '.*/userJsonPath.*'"))
+                .response(
+                    TigerMockResponseDescription.builder()
+                        .statusCode(666)
+                        .body(
+                            """
                         {
                           "authorizedUser": "!{$.path.username.value}",
                           "someCertificate": "!{keyMgr.b64Certificate('puk_idp_enc')}"
                         }
                         """)
-                    .build())
+                        .build())
                 .build()));
 
-        final HttpResponse<JsonNode> response = Unirest.get("http://localhost:" + port
-            + "/userJsonPath?username=someUsername").asJson();
-        assertThat(response.getStatus())
-            .isEqualTo(666);
-        assertThat(response.getBody().getObject().getString("authorizedUser"))
-            .isEqualTo("someUsername");
-    }
+    final HttpResponse<JsonNode> response =
+        Unirest.get("http://localhost:" + port + "/userJsonPath?username=someUsername").asJson();
+    assertThat(response.getStatus()).isEqualTo(666);
+    assertThat(response.getBody().getObject().getString("authorizedUser"))
+        .isEqualTo("someUsername");
+  }
 
-    @Test
-    void testMockResponseFromFile() {
-        final HttpResponse<JsonNode> response = Unirest.post("http://localhost:" + port + "/specificEndpoint")
-            .body("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im15SGFwcHlMaXR0bGVGb29iYXIifQ.u0NTCYczr5qVmwgvU21GgecaibDwnn6voWmvmFPvPh8")
+  @Test
+  void testMockResponseFromFile() {
+    final HttpResponse<JsonNode> response =
+        Unirest.post("http://localhost:" + port + "/specificEndpoint")
+            .body(
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Im15SGFwcHlMaXR0bGVGb29iYXIifQ.u0NTCYczr5qVmwgvU21GgecaibDwnn6voWmvmFPvPh8")
             .asJson();
-        assertThat(response.getStatus())
-            .isEqualTo(203);
-        assertThat(response.getBody().getObject().getString("authorizedUser"))
-            .isEqualTo("myHappyLittleFoobar");
+    assertThat(response.getStatus()).isEqualTo(203);
+    assertThat(response.getBody().getObject().getString("authorizedUser"))
+        .isEqualTo("myHappyLittleFoobar");
+  }
+
+  @Test
+  void testSpyFunctionality() throws IOException {
+    try (MockServer mockServer = new MockServer();
+        MockServerClient mockServerClient =
+            new MockServerClient("localhost", mockServer.getLocalPort())) {
+      mockServerClient
+          .when(request().withMethod("GET").withPath(".*"))
+          .respond(response().withStatusCode(666).withBody("{\"foo\":\"bar\"}"));
+
+      configuration.setSpy(
+          ZionSpyConfiguration.builder()
+              .url("http://localhost:" + mockServer.getLocalPort() + "/deepPath")
+              .protocolToPath("target/zionResponses")
+              .build());
+
+      Unirest.get("http://localhost:" + port + "/shallowPath?foo=bar").asJson();
+
+      final TigerMockResponse mockResponse =
+          objectMapper.readValue(
+              Files.list(Path.of("target", "zionResponses")).findAny().get().toFile(),
+              TigerMockResponse.class);
+
+      assertThat(mockResponse.getRequestCriterions())
+          .contains("message.method == 'GET'")
+          .contains("message.url =$ '/shallowPath?foo=bar'");
     }
+  }
 
-    @Test
-    void testSpyFunctionality() throws IOException {
-        try (MockServer mockServer = new MockServer();
-            MockServerClient mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort())) {
-            mockServerClient.when(request()
-                    .withMethod("GET")
-                    .withPath(".*"))
-                .respond(response().withStatusCode(666).withBody("{\"foo\":\"bar\"}"));
+  @Test
+  void testTemplatedBackendRequest() {
+    try (MockServer mockServer = new MockServer();
+        MockServerClient mockServerClient =
+            new MockServerClient("localhost", mockServer.getLocalPort())) {
+      mockServerClient
+          .when(request())
+          .respond(req -> response().withStatusCode(200).withBody(req.getBodyAsString()));
 
-            configuration.setSpy(ZionSpyConfiguration.builder()
-                .url("http://localhost:" + mockServer.getLocalPort() + "/deepPath")
-                .protocolToPath("target/zionResponses")
-                .build());
-
-            Unirest.get("http://localhost:" + port + "/shallowPath?foo=bar").asJson();
-
-            final TigerMockResponse mockResponse = objectMapper.readValue(
-                Files.list(Path.of("target", "zionResponses"))
-                    .findAny().get().toFile(),
-                TigerMockResponse.class);
-
-            assertThat(mockResponse.getRequestCriterions())
-                .contains("message.method == 'GET'")
-                .contains("message.url =$ '/shallowPath?foo=bar'");
-        }
-    }
-
-    @Test
-    void testTemplatedBackendRequest() {
-        try (MockServer mockServer = new MockServer();
-            MockServerClient mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort())) {
-            mockServerClient.when(request())
-                .respond(req -> response().withStatusCode(200)
-                    .withBody(req.getBodyAsString()));
-
-            configuration.setMockResponses(Map.of(
-                "templatedBackendRequest",
-                TigerMockResponse.builder()
-                    .backendRequests(Map.of("theRequest",
-                        ZionBackendRequestDescription.builder()
-                            .url("http://localhost:" + mockServer.getLocalPort() + "/deepPath")
-                            .body("""
+      configuration.setMockResponses(
+          Map.of(
+              "templatedBackendRequest",
+              TigerMockResponse.builder()
+                  .backendRequests(
+                      Map.of(
+                          "theRequest",
+                          ZionBackendRequestDescription.builder()
+                              .url("http://localhost:" + mockServer.getLocalPort() + "/deepPath")
+                              .body(
+                                  """
                                 {
                                   "tgrEncodeAs":"JWT",
                                   "header":{
@@ -157,132 +164,143 @@ class TestTigerProxyMockResponses {
                                   }
                                 }
                                 """)
-                            .assignments(Map.of("signer", "$.body.signature.verifiedUsing"))
-                            .build()))
-                    .response(TigerMockResponseDescription.builder()
-                        .body("${signer}")
-                        .build())
-                    .build()
-            ));
+                              .assignments(Map.of("signer", "$.body.signature.verifiedUsing"))
+                              .build()))
+                  .response(TigerMockResponseDescription.builder().body("${signer}").build())
+                  .build()));
 
-            assertThat(Unirest.get("http://localhost:" + port + "/shallowPath?foo=bar")
-                .asString()
-                .getBody())
-                .startsWith("puk_idp_");
-        }
+      assertThat(
+              Unirest.get("http://localhost:" + port + "/shallowPath?foo=bar").asString().getBody())
+          .startsWith("puk_idp_");
     }
+  }
 
-    @Test
-    void testRbelPathCriterions() {
-        configuration.setMockResponses(Map.of("backend_foobar",
+  @Test
+  void testRbelPathCriterions() {
+    configuration.setMockResponses(
+        Map.of(
+            "backend_foobar",
             TigerMockResponse.builder()
-                .requestCriterions(List.of(
-                    "$.path.username.value=='someUsername'"))
-                .response(TigerMockResponseDescription.builder()
-                    .statusCode(666)
-                    .build())
+                .requestCriterions(List.of("$.path.username.value=='someUsername'"))
+                .response(TigerMockResponseDescription.builder().statusCode(666).build())
                 .build()));
 
-        final HttpResponse<Empty> response = Unirest.get("http://localhost:" + port
-            + "/userJsonPath?username=someUsername").asEmpty();
-        assertThat(response.getStatus())
-            .isEqualTo(666);
-    }
+    final HttpResponse<Empty> response =
+        Unirest.get("http://localhost:" + port + "/userJsonPath?username=someUsername").asEmpty();
+    assertThat(response.getStatus()).isEqualTo(666);
+  }
 
-    @Test
-    void testConfigurationAssignments() {
-        configuration.setMockResponses(Map.of("backend_foobar",
+  @Test
+  void testConfigurationAssignments() {
+    configuration.setMockResponses(
+        Map.of(
+            "backend_foobar",
             TigerMockResponse.builder()
-                .requestCriterions(List.of(
-                    "message.method == 'GET'"))
+                .requestCriterions(List.of("message.method == 'GET'"))
                 .assignments(Map.of("foo.bar.variable", "$.path.username.value"))
-                .response(TigerMockResponseDescription.builder()
-                    .statusCode(666)
-                    .body("{\"authorizedUser\": \"${foo.bar.variable}\"}\n")
-                    .build())
+                .response(
+                    TigerMockResponseDescription.builder()
+                        .statusCode(666)
+                        .body("{\"authorizedUser\": \"${foo.bar.variable}\"}\n")
+                        .build())
                 .build()));
 
-        final HttpResponse<JsonNode> response = Unirest.get("http://localhost:" + port
-            + "/userJsonPath?username=someUsername").asJson();
-        assertThat(response.getBody().getObject().getString("authorizedUser"))
-            .isEqualTo("someUsername");
-        assertThat(TigerGlobalConfiguration.readStringOptional("foo.bar.variable"))
-            .isEmpty();
-    }
+    final HttpResponse<JsonNode> response =
+        Unirest.get("http://localhost:" + port + "/userJsonPath?username=someUsername").asJson();
+    assertThat(response.getBody().getObject().getString("authorizedUser"))
+        .isEqualTo("someUsername");
+    assertThat(TigerGlobalConfiguration.readStringOptional("foo.bar.variable")).isEmpty();
+  }
 
-    @Test
-    void testLoopOverRequestParts() {
-        configuration.setMockResponses(Map.of("myHappyResponse",
+  @Test
+  void testLoopOverRequestParts() {
+    configuration.setMockResponses(
+        Map.of(
+            "myHappyResponse",
             TigerMockResponse.builder()
-                .requestCriterions(List.of(
-                    "message.method == 'GET'"))
-                .response(TigerMockResponseDescription.builder()
-                    .statusCode(666)
-                    .body("{'headers': \n"
-                        + "    ["
-                        + "        {'header': '${header}',\n"
-                        + "         'tgrFor': 'header : request.headers.entrySet()'}]\n"
-                        + "}")
-                    .build())
+                .requestCriterions(List.of("message.method == 'GET'"))
+                .response(
+                    TigerMockResponseDescription.builder()
+                        .statusCode(666)
+                        .body(
+                            "{'headers': \n"
+                                + "    ["
+                                + "        {'header': '${header}',\n"
+                                + "         'tgrFor': 'header : request.headers.entrySet()'}]\n"
+                                + "}")
+                        .build())
                 .build()));
 
-        final HttpResponse<JsonNode> response = Unirest.get("http://localhost:" + port
-            + "/userJsonPath?username=someUsername").asJson();
-        assertThat(response.getBody().getObject().getJSONArray("headers").getJSONObject(0).getString("header"))
-            .matches(".*=.*");
-    }
+    final HttpResponse<JsonNode> response =
+        Unirest.get("http://localhost:" + port + "/userJsonPath?username=someUsername").asJson();
+    assertThat(
+            response
+                .getBody()
+                .getObject()
+                .getJSONArray("headers")
+                .getJSONObject(0)
+                .getString("header"))
+        .matches(".*=.*");
+  }
 
-    @Test
-    void testLoopWithArithmetic() {
-        configuration.setMockResponses(Map.of("myHappyResponse",
+  @Test
+  void testLoopWithArithmetic() {
+    configuration.setMockResponses(
+        Map.of(
+            "myHappyResponse",
             TigerMockResponse.builder()
-                .requestCriterions(List.of(
-                    "message.method == 'GET'"))
-                .response(TigerMockResponseDescription.builder()
-                    .statusCode(666)
-                    .body("<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n"
-                        + "<loops>\n"
-                        + "    <counting>\n"
-                        + "        <tgrFor>number : {1,2,3}</tgrFor>\n"
-                        + "        ${number} and !{ ${number} + 1}\n"
-                        + "    </counting>\n"
-                        + "</loops>\n")
-                    .build())
+                .requestCriterions(List.of("message.method == 'GET'"))
+                .response(
+                    TigerMockResponseDescription.builder()
+                        .statusCode(666)
+                        .body(
+                            "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n"
+                                + "<loops>\n"
+                                + "    <counting>\n"
+                                + "        <tgrFor>number : {1,2,3}</tgrFor>\n"
+                                + "        ${number} and !{ ${number} + 1}\n"
+                                + "    </counting>\n"
+                                + "</loops>\n")
+                        .build())
                 .build()));
 
-        final HttpResponse<String> response = Unirest.get("http://localhost:" + port + "/blub").asString();
-        assertThat(response.getBody())
-            .contains("<counting>1 and 2</counting>");
+    final HttpResponse<String> response =
+        Unirest.get("http://localhost:" + port + "/blub").asString();
+    assertThat(response.getBody()).contains("<counting>1 and 2</counting>");
+  }
+
+  @Test
+  void testSpyFunctionalityWithJwt() throws IOException {
+    try (MockServer mockServer = new MockServer();
+        MockServerClient mockServerClient =
+            new MockServerClient("localhost", mockServer.getLocalPort())) {
+      mockServerClient
+          .when(request().withMethod("GET").withPath(".*"))
+          .respond(
+              response()
+                  .withStatusCode(666)
+                  .withBody(
+                      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"));
+
+      configuration.setSpy(
+          ZionSpyConfiguration.builder()
+              .url("http://localhost:" + mockServer.getLocalPort() + "/deepPath")
+              .protocolToPath("target/zionResponses")
+              .build());
+
+      Unirest.get("http://localhost:" + port + "/shallowPath?foo=bar").asJson();
+
+      final TigerMockResponse mockResponse =
+          objectMapper.readValue(
+              Files.list(tempDirectory).findAny().get().toFile(), TigerMockResponse.class);
+
+      assertThat(mockResponse.getResponse().getBody())
+          .containsIgnoringWhitespaces(
+              "{\n"
+                  + "  \"sub\": \"1234567890\",\n"
+                  + "  \"name\": \"John Doe\",\n"
+                  + "  \"iat\": 1516239022\n"
+                  + "}");
     }
-
-    @Test
-    void testSpyFunctionalityWithJwt() throws IOException {
-        try (MockServer mockServer = new MockServer();
-            MockServerClient mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort())) {
-            mockServerClient.when(request()
-                    .withMethod("GET")
-                    .withPath(".*"))
-                .respond(response().withStatusCode(666).withBody(
-                    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"));
-
-            configuration.setSpy(ZionSpyConfiguration.builder()
-                .url("http://localhost:" + mockServer.getLocalPort() + "/deepPath")
-                .protocolToPath("target/zionResponses")
-                .build());
-
-            Unirest.get("http://localhost:" + port + "/shallowPath?foo=bar").asJson();
-
-            final TigerMockResponse mockResponse = objectMapper.readValue(
-                Files.list(tempDirectory)
-                    .findAny().get().toFile(),
-                TigerMockResponse.class);
-
-            assertThat(mockResponse.getResponse().getBody())
-                .containsIgnoringWhitespaces("{\n"
-                    + "  \"sub\": \"1234567890\",\n"
-                    + "  \"name\": \"John Doe\",\n"
-                    + "  \"iat\": 1516239022\n"
-                    + "}");
-        }
-    }
+  }
 }

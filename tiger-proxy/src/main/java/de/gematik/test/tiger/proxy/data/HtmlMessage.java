@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class HtmlMessage {
 
-    private String html;
-    private long sequenceNumber;
-    private String uuid;
+  private String html;
+  private long sequenceNumber;
+  private String uuid;
 }

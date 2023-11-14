@@ -11,32 +11,34 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 
-public class TigerServerTypeImpl extends StdScalarDeserializer<TigerServerType> implements TigerServerType {
+public class TigerServerTypeImpl extends StdScalarDeserializer<TigerServerType>
+    implements TigerServerType {
 
-    private String val;
+  private String val;
 
-    public TigerServerTypeImpl() {
-        super(TigerServerType.class);
-        val = "UNSET";
-    }
+  public TigerServerTypeImpl() {
+    super(TigerServerType.class);
+    val = "UNSET";
+  }
 
-    public TigerServerTypeImpl(String typeToken) {
-        super(TigerServerType.class);
-        val = typeToken;
-    }
+  public TigerServerTypeImpl(String typeToken) {
+    super(TigerServerType.class);
+    val = typeToken;
+  }
 
-    @Override
-    public String value() {
-        return val;
-    }
+  @Override
+  public String value() {
+    return val;
+  }
 
-    @Override
-    public Class<? extends Annotation> annotationType() {
-        return TigerServerType.class;
-    }
+  @Override
+  public Class<? extends Annotation> annotationType() {
+    return TigerServerType.class;
+  }
 
-    @Override
-    public TigerServerType deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
-        return new TigerServerTypeImpl(jsonParser.getValueAsString());
-    }
+  @Override
+  public TigerServerType deserialize(
+      JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException {
+    return new TigerServerTypeImpl(jsonParser.getValueAsString());
+  }
 }

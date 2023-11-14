@@ -10,6 +10,7 @@ import static j2html.TagCreator.b;
 import static j2html.TagCreator.div;
 import static j2html.TagCreator.p;
 import static j2html.TagCreator.span;
+
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.key.RbelKey;
@@ -29,87 +30,125 @@ import lombok.RequiredArgsConstructor;
 @Getter
 public class RbelVauEpaFacet implements RbelFacet {
 
-    static {
-        RbelHtmlRenderer.registerFacetRenderer(new RbelHtmlFacetRenderer() {
-            @Override
-            public boolean checkForRendering(RbelElement element) {
-                return element.hasFacet(RbelVauEpaFacet.class);
-            }
+  static {
+    RbelHtmlRenderer.registerFacetRenderer(
+        new RbelHtmlFacetRenderer() {
+          @Override
+          public boolean checkForRendering(RbelElement element) {
+            return element.hasFacet(RbelVauEpaFacet.class);
+          }
 
-            @Override
-            public ContainerTag performRendering(RbelElement element, Optional<String> key,
-                                                 RbelHtmlRenderingToolkit renderingToolkit) {
-                RbelElement vauMessage = element.getFacetOrFail(RbelVauEpaFacet.class).getMessage();
-                return div(t1ms("VAU Encrypted Message (EPA)")
+          @Override
+          public ContainerTag performRendering(
+              RbelElement element,
+              Optional<String> key,
+              RbelHtmlRenderingToolkit renderingToolkit) {
+            RbelElement vauMessage = element.getFacetOrFail(RbelVauEpaFacet.class).getMessage();
+            return div(t1ms("VAU Encrypted Message (EPA)")
                     .with(showContentButtonAndDialog(element, renderingToolkit)))
-                    .with(addNotes(element, "mb-5"))
-                    .with(ancestorTitle().with(
-                            vertParentTitle().with(
-                                childBoxNotifTitle(CLS_BODY).with(
-                                    t2("Header"),
-                                    Optional.ofNullable(element.getFacetOrFail(RbelVauEpaFacet.class))
-                                        .map(RbelVauEpaFacet::getAdditionalHeaders)
-                                        .map(renderingToolkit::convert)
-                                        .orElse(span()),
-                                    Optional.ofNullable(element.getFacetOrFail(RbelVauEpaFacet.class).getPVersionNumber())
-                                        .map(v -> p(b("Version Number: ")).withText(v.seekValue().get().toString()))
-                                        .map(DomContent.class::cast)
-                                        .orElse(span()),
-                                    Optional.ofNullable(element.getFacetOrFail(RbelVauEpaFacet.class).getSequenceNumber())
-                                        .map(v -> p(b("Sequence Number: ")).withText(v.seekValue().get().toString()))
-                                        .map(DomContent.class::cast)
-                                        .orElse(span()),
-                                    Optional.ofNullable(element.getFacetOrFail(RbelVauEpaFacet.class).getPHeaderInformation())
-                                        .map(v -> p(b("P Header (raw): ")).withText(v.seekValue().get().toString()))
-                                        .map(DomContent.class::cast)
-                                        .orElse(span())
-                                ),
-                                childBoxNotifTitle(CLS_BODY).with(t2("Body")
-                                                .with(showContentButtonAndDialog(vauMessage, renderingToolkit))
-                                    .with(addNotes(vauMessage)))
-                                    .with(renderingToolkit.convert(vauMessage)),
-                                childBoxNotifTitle(CLS_PKIOK).with(
-                                        p()
-                                            .withClass(CLS_PKIOK)
-                                            .withText("Was decrypted using Key ")
-                                            .with(b(element.getFacetOrFail(RbelVauEpaFacet.class)
-                                                    .getKeyIdUsed().getRawStringContent()),
-                                                element.getFacet(RbelVauEpaFacet.class)
-                                                    .flatMap(RbelVauEpaFacet::getKeyUsed)
-                                                    .filter(RbelVauKey.class::isInstance)
-                                                    .map(RbelVauKey.class::cast)
-                                                    .map(vauKey -> vauKey.getParentKey().getKeyName())
-                                                    .map(parentKeys -> span(" derived from ").with(b(parentKeys)))
-                                                    .orElse(span())))
-                                    .with(addNotes(element))
-                            )
-                        )
-                    );
-            }
+                .with(addNotes(element, "mb-5"))
+                .with(
+                    ancestorTitle()
+                        .with(
+                            vertParentTitle()
+                                .with(
+                                    childBoxNotifTitle(CLS_BODY)
+                                        .with(
+                                            t2("Header"),
+                                            Optional.ofNullable(
+                                                    element.getFacetOrFail(RbelVauEpaFacet.class))
+                                                .map(RbelVauEpaFacet::getAdditionalHeaders)
+                                                .map(renderingToolkit::convert)
+                                                .orElse(span()),
+                                            Optional.ofNullable(
+                                                    element
+                                                        .getFacetOrFail(RbelVauEpaFacet.class)
+                                                        .getPVersionNumber())
+                                                .map(
+                                                    v ->
+                                                        p(b("Version Number: "))
+                                                            .withText(
+                                                                v.seekValue().get().toString()))
+                                                .map(DomContent.class::cast)
+                                                .orElse(span()),
+                                            Optional.ofNullable(
+                                                    element
+                                                        .getFacetOrFail(RbelVauEpaFacet.class)
+                                                        .getSequenceNumber())
+                                                .map(
+                                                    v ->
+                                                        p(b("Sequence Number: "))
+                                                            .withText(
+                                                                v.seekValue().get().toString()))
+                                                .map(DomContent.class::cast)
+                                                .orElse(span()),
+                                            Optional.ofNullable(
+                                                    element
+                                                        .getFacetOrFail(RbelVauEpaFacet.class)
+                                                        .getPHeaderInformation())
+                                                .map(
+                                                    v ->
+                                                        p(b("P Header (raw): "))
+                                                            .withText(
+                                                                v.seekValue().get().toString()))
+                                                .map(DomContent.class::cast)
+                                                .orElse(span())),
+                                    childBoxNotifTitle(CLS_BODY)
+                                        .with(
+                                            t2("Body")
+                                                .with(
+                                                    showContentButtonAndDialog(
+                                                        vauMessage, renderingToolkit))
+                                                .with(addNotes(vauMessage)))
+                                        .with(renderingToolkit.convert(vauMessage)),
+                                    childBoxNotifTitle(CLS_PKIOK)
+                                        .with(
+                                            p().withClass(CLS_PKIOK)
+                                                .withText("Was decrypted using Key ")
+                                                .with(
+                                                    b(
+                                                        element
+                                                            .getFacetOrFail(RbelVauEpaFacet.class)
+                                                            .getKeyIdUsed()
+                                                            .getRawStringContent()),
+                                                    element
+                                                        .getFacet(RbelVauEpaFacet.class)
+                                                        .flatMap(RbelVauEpaFacet::getKeyUsed)
+                                                        .filter(RbelVauKey.class::isInstance)
+                                                        .map(RbelVauKey.class::cast)
+                                                        .map(
+                                                            vauKey ->
+                                                                vauKey.getParentKey().getKeyName())
+                                                        .map(
+                                                            parentKeys ->
+                                                                span(" derived from ")
+                                                                    .with(b(parentKeys)))
+                                                        .orElse(span())))
+                                        .with(addNotes(element)))));
+          }
         });
-    }
+  }
 
-    private final RbelElement message;
-    private final RbelElement encryptedMessage;
-    private final RbelElement sequenceNumber;
-    private final RbelElement additionalHeaders;
-    private final RbelElement pVersionNumber;
-    private final RbelElement keyIdUsed;
-    private final RbelElement pHeaderInformation;
-    private final RbelElement decryptedHeader;
-    @Builder.Default
-    private final Optional<RbelKey> keyUsed = Optional.empty();
+  private final RbelElement message;
+  private final RbelElement encryptedMessage;
+  private final RbelElement sequenceNumber;
+  private final RbelElement additionalHeaders;
+  private final RbelElement pVersionNumber;
+  private final RbelElement keyIdUsed;
+  private final RbelElement pHeaderInformation;
+  private final RbelElement decryptedHeader;
+  @Builder.Default private final Optional<RbelKey> keyUsed = Optional.empty();
 
-    @Override
-    public RbelMultiMap getChildElements() {
-        return new RbelMultiMap()
-            .withSkipIfNull("message", message)
-            .withSkipIfNull("encryptedMessage", encryptedMessage)
-            .withSkipIfNull("additionalHeaders", additionalHeaders)
-            .withSkipIfNull("sequenceNumber", sequenceNumber)
-            .withSkipIfNull("pVersionNumber", pVersionNumber)
-            .withSkipIfNull("pHeaderInformation", pHeaderInformation)
-            .withSkipIfNull("keyId", keyIdUsed)
-            .withSkipIfNull("decryptedHeader", decryptedHeader);
-    }
+  @Override
+  public RbelMultiMap getChildElements() {
+    return new RbelMultiMap()
+        .withSkipIfNull("message", message)
+        .withSkipIfNull("encryptedMessage", encryptedMessage)
+        .withSkipIfNull("additionalHeaders", additionalHeaders)
+        .withSkipIfNull("sequenceNumber", sequenceNumber)
+        .withSkipIfNull("pVersionNumber", pVersionNumber)
+        .withSkipIfNull("pHeaderInformation", pHeaderInformation)
+        .withSkipIfNull("keyId", keyIdUsed)
+        .withSkipIfNull("decryptedHeader", decryptedHeader);
+  }
 }

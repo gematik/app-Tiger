@@ -4,10 +4,11 @@
 
 package de.gematik.test.tiger.proxy;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
+
 import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
@@ -66,609 +67,696 @@ import org.junit.jupiter.params.provider.CsvSource;
 @ResetTigerConfiguration
 class TestTigerProxyTls extends AbstractTigerProxyTest {
 
-    @Test
-    void reverseProxy_shouldUseConfiguredAlternativeNameInTlsCertificate()
-        throws NoSuchAlgorithmException, KeyManagementException {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("/")
-                .to("http://localhost:" + fakeBackendServerPort)
-                .build()))
-            .tls(TigerTlsConfiguration.builder()
-                .domainName("muahaha")
-                .build())
+  @Test
+  void reverseProxy_shouldUseConfiguredAlternativeNameInTlsCertificate()
+      throws NoSuchAlgorithmException, KeyManagementException {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .tls(TigerTlsConfiguration.builder().domainName("muahaha").build())
             .build());
 
-        AtomicBoolean verifyWasCalledSuccesfully = new AtomicBoolean(false);
-        SSLContext ctx = SSLContext.getInstance("TLSv1.2");
-        ctx.init(null, new TrustManager[]{
-                new X509TrustManager() {
-                    public void checkClientTrusted(X509Certificate[] chain, String authType) {
-                    }
+    AtomicBoolean verifyWasCalledSuccesfully = new AtomicBoolean(false);
+    SSLContext ctx = SSLContext.getInstance("TLSv1.2");
+    ctx.init(
+        null,
+        new TrustManager[] {
+          new X509TrustManager() {
+            public void checkClientTrusted(X509Certificate[] chain, String authType) {}
 
-                    public void checkServerTrusted(X509Certificate[] chain, String authType) {
-                        assertThat(chain[0].getSubjectDN().getName())
-                            .contains("muahaha");
-                        verifyWasCalledSuccesfully.set(true);
-                    }
+            public void checkServerTrusted(X509Certificate[] chain, String authType) {
+              assertThat(chain[0].getSubjectDN().getName()).contains("muahaha");
+              verifyWasCalledSuccesfully.set(true);
+            }
 
-                    public X509Certificate[] getAcceptedIssuers() {
-                        return new X509Certificate[0];
-                    }
-                }
-            }, new SecureRandom()
-        );
-        try (final UnirestInstance unirestInstance = new UnirestInstance(new Config()
-            .sslContext(ctx))) {
-            unirestInstance
-                .get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
-            assertThat(verifyWasCalledSuccesfully).isTrue();
-        }
+            public X509Certificate[] getAcceptedIssuers() {
+              return new X509Certificate[0];
+            }
+          }
+        },
+        new SecureRandom());
+    try (final UnirestInstance unirestInstance =
+        new UnirestInstance(new Config().sslContext(ctx))) {
+      unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+      assertThat(verifyWasCalledSuccesfully).isTrue();
     }
+  }
 
-    @Test
-    void useTslBetweenClientAndProxy_shouldForward() throws UnirestException {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("https://backend")
-                .to("http://localhost:" + fakeBackendServerPort)
-                .build()))
+  @Test
+  void useTslBetweenClientAndProxy_shouldForward() throws UnirestException {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("https://backend")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
             .build());
 
-        final HttpResponse<JsonNode> response = proxyRest.get("https://backend/foobar")
-            .asJson();
+    final HttpResponse<JsonNode> response = proxyRest.get("https://backend/foobar").asJson();
 
-        assertThat(response.getStatus()).isEqualTo(666);
-        assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
-    }
+    assertThat(response.getStatus()).isEqualTo(666);
+    assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+  }
 
-    @SneakyThrows
-    @Test
-    void serverCertificateChainShouldContainMultipleCertificatesIfGiven() throws UnirestException {
-        Security.insertProviderAt(new BouncyCastleJsseProvider(), 1);
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("https://authn.aktor.epa.telematik-test")
-                .to("http://localhost:" + fakeBackendServerPort)
-                .build()))
-            .tls(TigerTlsConfiguration.builder()
-                .serverIdentity(new TigerConfigurationPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik"))
-                .build())
+  @SneakyThrows
+  @Test
+  void serverCertificateChainShouldContainMultipleCertificatesIfGiven() throws UnirestException {
+    Security.insertProviderAt(new BouncyCastleJsseProvider(), 1);
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("https://authn.aktor.epa.telematik-test")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .tls(
+                TigerTlsConfiguration.builder()
+                    .serverIdentity(
+                        new TigerConfigurationPkiIdentity(
+                            "src/test/resources/rsaStoreWithChain.jks;gematik"))
+                    .build())
             .build());
 
-        AtomicInteger callCounter = new AtomicInteger(0);
+    AtomicInteger callCounter = new AtomicInteger(0);
 
-        final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config().verifySsl(true);
-        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
-        SSLContext ctx = SSLContext.getInstance("TLSv1.2");
-        ctx.init(null, new TrustManager[]{
-                new X509TrustManager() {
-                    public void checkClientTrusted(X509Certificate[] chain, String authType) {
-                    }
+    final UnirestInstance unirestInstance = Unirest.spawnInstance();
+    unirestInstance.config().verifySsl(true);
+    unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
+    SSLContext ctx = SSLContext.getInstance("TLSv1.2");
+    ctx.init(
+        null,
+        new TrustManager[] {
+          new X509TrustManager() {
+            public void checkClientTrusted(X509Certificate[] chain, String authType) {}
 
-                    public void checkServerTrusted(X509Certificate[] chain, String authType) {
-                        assertThat(chain).hasSize(3);
-                        callCounter.incrementAndGet();
-                    }
+            public void checkServerTrusted(X509Certificate[] chain, String authType) {
+              assertThat(chain).hasSize(3);
+              callCounter.incrementAndGet();
+            }
 
-                    public X509Certificate[] getAcceptedIssuers() {
-                        return new X509Certificate[0];
-                    }
-                }
-            }, new SecureRandom()
-        );
-        unirestInstance.config().sslContext(ctx);
+            public X509Certificate[] getAcceptedIssuers() {
+              return new X509Certificate[0];
+            }
+          }
+        },
+        new SecureRandom());
+    unirestInstance.config().sslContext(ctx);
 
-        unirestInstance.get("https://authn.aktor.epa.telematik-test/foobar").asString();
+    unirestInstance.get("https://authn.aktor.epa.telematik-test/foobar").asString();
 
-        await().atMost(2, TimeUnit.SECONDS)
-            .until(() -> callCounter.get() > 0);
-    }
+    await().atMost(2, TimeUnit.SECONDS).until(() -> callCounter.get() > 0);
+  }
 
-    @Test
-    void rsaCaFileInP12File_shouldVerifyConnection() throws UnirestException {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("https://backend")
-                .to("http://localhost:" + fakeBackendServerPort)
-                .build()))
-            .tls(TigerTlsConfiguration.builder()
-                .serverRootCa(new TigerConfigurationPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;00"))
-                .build())
+  @Test
+  void rsaCaFileInP12File_shouldVerifyConnection() throws UnirestException {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("https://backend")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .tls(
+                TigerTlsConfiguration.builder()
+                    .serverRootCa(
+                        new TigerConfigurationPkiIdentity(
+                            "src/test/resources/selfSignedCa/rootCa.p12;00"))
+                    .build())
             .build());
 
-        final HttpResponse<JsonNode> response = proxyRest.get("https://backend/foobar")
-            .asJson();
+    final HttpResponse<JsonNode> response = proxyRest.get("https://backend/foobar").asJson();
 
-        assertThat(response.getStatus()).isEqualTo(666);
-        assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
-    }
+    assertThat(response.getStatus()).isEqualTo(666);
+    assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+  }
 
-    @Test
-    void defunctCertificate_expectException() throws UnirestException {
-        assertThatThrownBy(() -> new TigerProxy(TigerProxyConfiguration.builder()
-            .tls(TigerTlsConfiguration.builder()
-                .serverRootCa(
-                    new TigerConfigurationPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;wrongPassword"))
-                .build())
-            .build()))
-            .isInstanceOf(RuntimeException.class);
-    }
+  @Test
+  void defunctCertificate_expectException() throws UnirestException {
+    assertThatThrownBy(
+            () ->
+                new TigerProxy(
+                    TigerProxyConfiguration.builder()
+                        .tls(
+                            TigerTlsConfiguration.builder()
+                                .serverRootCa(
+                                    new TigerConfigurationPkiIdentity(
+                                        "src/test/resources/selfSignedCa/rootCa.p12;wrongPassword"))
+                                .build())
+                        .build()))
+        .isInstanceOf(RuntimeException.class);
+  }
 
-    // TODO TGR-263 really fix this and reactivate @Test, Julian knows more
-    public void customEccCaFileInTruststore_shouldVerifyConnection() throws UnirestException, IOException {
-        final TigerPkiIdentity ca = CryptoLoader.getIdentityFromP12(
+  // TODO TGR-263 really fix this and reactivate @Test, Julian knows more
+  public void customEccCaFileInTruststore_shouldVerifyConnection()
+      throws UnirestException, IOException {
+    final TigerPkiIdentity ca =
+        CryptoLoader.getIdentityFromP12(
             FileUtils.readFileToByteArray(new File("src/test/resources/customCa.p12")), "00");
 
-        final TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("https://backend")
-                .to("http://localhost:" + fakeBackendServerPort)
-                .build()))
-            .tls(TigerTlsConfiguration.builder()
-                .serverRootCa(new TigerConfigurationPkiIdentity("src/test/resources/customCa.p12;00"))
-                .build())
+    final TigerProxy tigerProxy =
+        new TigerProxy(
+            TigerProxyConfiguration.builder()
+                .proxyRoutes(
+                    List.of(
+                        TigerRoute.builder()
+                            .from("https://backend")
+                            .to("http://localhost:" + fakeBackendServerPort)
+                            .build()))
+                .tls(
+                    TigerTlsConfiguration.builder()
+                        .serverRootCa(
+                            new TigerConfigurationPkiIdentity("src/test/resources/customCa.p12;00"))
+                        .build())
+                .build());
+
+    try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
+      unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
+      unirestInstance.config().verifySsl(true);
+      unirestInstance.config().sslContext(tigerProxy.buildSslContext());
+
+      final HttpResponse<JsonNode> response =
+          unirestInstance.get("https://backend/foobar").asJson();
+
+      assertThat(response.getStatus()).isEqualTo(666);
+      assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+    }
+  }
+
+  @Test
+  void useTslBetweenProxyAndServer_shouldForward() throws UnirestException {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("http://backend")
+                        .to("https://localhost:" + fakeBackendServerPort)
+                        .build()))
             .build());
 
-        try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
-            unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
-            unirestInstance.config().verifySsl(true);
-            unirestInstance.config().sslContext(tigerProxy.buildSslContext());
+    final HttpResponse<JsonNode> response = proxyRest.get("http://backend/foobar").asJson();
 
-            final HttpResponse<JsonNode> response = unirestInstance.get("https://backend/foobar")
-                .asJson();
+    assertThat(response.getStatus()).isEqualTo(666);
+    assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+  }
 
-            assertThat(response.getStatus()).isEqualTo(666);
-            assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
-        }
-    }
+  @Test
+  void blanketReverseProxy_shouldForwardHttpsRequest() {
+    AtomicInteger callCounter = new AtomicInteger(0);
 
-    @Test
-    void useTslBetweenProxyAndServer_shouldForward() throws UnirestException {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("http://backend")
-                .to("https://localhost:" + fakeBackendServerPort)
-                .build()))
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .tls(
+                TigerTlsConfiguration.builder()
+                    .serverRootCa(
+                        new TigerConfigurationPkiIdentity(
+                            "src/test/resources/selfSignedCa/rootCa.p12;00"))
+                    .build())
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
             .build());
 
-        final HttpResponse<JsonNode> response = proxyRest.get("http://backend/foobar")
-            .asJson();
+    tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
 
-        assertThat(response.getStatus()).isEqualTo(666);
-        assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
-    }
+    proxyRest.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+    awaitMessagesInTiger(2);
 
-    @Test
-    void blanketReverseProxy_shouldForwardHttpsRequest() {
-        AtomicInteger callCounter = new AtomicInteger(0);
+    assertThat(callCounter.get()).isEqualTo(2);
+  }
 
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .tls(TigerTlsConfiguration.builder()
-                .serverRootCa(new TigerConfigurationPkiIdentity(
-                    "src/test/resources/selfSignedCa/rootCa.p12;00"))
-                .build())
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("/")
-                .to("http://localhost:" + fakeBackendServerPort)
-                .build()))
+  @Test
+  @Disabled("Waiting for the next mockserver release (>5.15.0). See TGR-898, TGR-815")
+  void forwardMutualTlsAndTerminatingTls_shouldUseCorrectTerminatingCa() throws UnirestException {
+    final TigerConfigurationPkiIdentity clientIdentity =
+        new TigerConfigurationPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik");
+
+    TigerProxy secondProxy =
+        new TigerProxy(
+            TigerProxyConfiguration.builder()
+                .proxyRoutes(
+                    List.of(
+                        TigerRoute.builder()
+                            .from("/")
+                            .to("http://localhost:" + fakeBackendServerPort)
+                            .build()))
+                .name("secondProxy")
+                .build());
+
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("https://localhost:" + secondProxy.getProxyPort())
+                        .build()))
+            .tls(TigerTlsConfiguration.builder().forwardMutualTlsIdentity(clientIdentity).build())
             .build());
 
-        tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
+    final HttpResponse<String> response = proxyRest.get("http://backend/foobar").asString();
+    awaitMessagesInTiger(2);
 
-        proxyRest.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
-        awaitMessagesInTiger(2);
+    assertThat(response.getStatus()).isEqualTo(666);
 
-        assertThat(callCounter.get()).isEqualTo(2);
-    }
+    RbelElementAssertion.assertThat(secondProxy.getRbelMessagesList().get(0))
+        .extractChildWithPath("$.clientTlsCertificateChain.0.subject")
+        .valueAsString()
+        .get()
+        .usingComparator((s1, s2) -> splitDn(s1).containsAll(splitDn(s2)) ? 0 : 1)
+        .isEqualTo(clientIdentity.getCertificate().getSubjectDN().getName());
+  }
 
-    @Test
-    @Disabled("Waiting for the next mockserver release (>5.15.0). See TGR-898, TGR-815")
-    void forwardMutualTlsAndTerminatingTls_shouldUseCorrectTerminatingCa() throws UnirestException {
-        final TigerConfigurationPkiIdentity clientIdentity = new TigerConfigurationPkiIdentity(
-            "src/test/resources/rsaStoreWithChain.jks;gematik");
+  @NotNull
+  private static List<String> splitDn(String s1) {
+    return Stream.of(s1.split(",")).map(String::trim).collect(Collectors.toList());
+  }
 
-        TigerProxy secondProxy = new TigerProxy(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("/")
-                .to("http://localhost:" + fakeBackendServerPort)
-                .build()))
-            .name("secondProxy")
+  @ParameterizedTest
+  @CsvSource({
+    "'TLSv1,TLSv1.2', 'TLSv1.2', true, TLSv1.2",
+    "'TLSv1,TLSv1.2,TLSv1.3', 'TLSv1.2', true, TLSv1.2",
+    "'TLSv1', 'TLSv1.2', false, TLSv1",
+    "'TLSv1.3', 'TLSv1.3', true, TLSv1.3"
+  })
+  void serverSslVersion_shouldBeHonored(
+      String clientTlsSuites,
+      String serverTlsSuites,
+      boolean shouldConnect,
+      String assertSuiteUsed) {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("https://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .tls(
+                TigerTlsConfiguration.builder()
+                    .serverTlsProtocols(
+                        Stream.of(serverTlsSuites.split(",")).collect(Collectors.toList()))
+                    .build())
             .build());
 
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("/")
-                .to("https://localhost:" + secondProxy.getProxyPort())
-                .build()))
-            .tls(TigerTlsConfiguration.builder()
-                .forwardMutualTlsIdentity(clientIdentity)
-                .build())
+    try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
+      SSLConnectionSocketFactory sslSocketFactory =
+          new SSLConnectionSocketFactory(
+              tigerProxy.getConfiguredTigerProxySslContext(),
+              clientTlsSuites.split(","),
+              null,
+              (hostname, session) -> {
+                assertThat(session.getProtocol()).isEqualTo(assertSuiteUsed);
+                return true;
+              });
+      var httpClient = HttpClients.custom().setSSLSocketFactory(sslSocketFactory).build();
+      unirestInstance.config().httpClient(ApacheClient.builder(httpClient));
+      final GetRequest request =
+          unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar");
+      if (shouldConnect) {
+        request.asString();
+      } else {
+        assertThatThrownBy(request::asString).hasCauseInstanceOf(SSLHandshakeException.class);
+      }
+    }
+  }
+
+  @Test
+  @Disabled("Waiting for the next mockserver release (>5.15.0)")
+  void extractSubjectDnFromClientCertificate_saveInTigerProxy() throws Exception {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("https://localhost:" + fakeBackendServerPort)
+                        .build()))
             .build());
 
-        final HttpResponse<String> response = proxyRest.get("http://backend/foobar").asString();
-        awaitMessagesInTiger(2);
+    try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
+      unirestInstance.config().httpClient(loadSslContextForClientCert());
+      unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+    }
+    awaitMessagesInTiger(2);
 
-        assertThat(response.getStatus())
-            .isEqualTo(666);
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .extractChildWithPath("$.clientTlsCertificateChain.0.subject")
+        .valueAsString()
+        .get(InstanceOfAssertFactories.STRING)
+        .contains("CN=mailuser-rsa1");
+  }
 
-        RbelElementAssertion.assertThat(secondProxy.getRbelMessagesList().get(0))
-            .extractChildWithPath("$.clientTlsCertificateChain.0.subject")
-            .valueAsString()
-            .get()
-            .usingComparator((s1, s2) -> splitDn(s1).containsAll(splitDn(s2)) ? 0 : 1)
-            .isEqualTo(clientIdentity.getCertificate().getSubjectDN().getName());
+  private CloseableHttpClient loadSslContextForClientCert() throws Exception {
+    KeyStore trustStore = KeyStore.getInstance("PKCS12");
+
+    FileInputStream instream = new FileInputStream("src/test/resources/mailuser-rsa1.p12");
+    try {
+      trustStore.load(instream, "00".toCharArray());
+    } finally {
+      instream.close();
     }
 
-    @NotNull
-    private static List<String> splitDn(String s1) {
-        return Stream.of(s1.split(","))
-            .map(String::trim)
-            .collect(Collectors.toList());
-    }
-
-    @ParameterizedTest
-    @CsvSource({
-        "'TLSv1,TLSv1.2', 'TLSv1.2', true, TLSv1.2",
-        "'TLSv1,TLSv1.2,TLSv1.3', 'TLSv1.2', true, TLSv1.2",
-        "'TLSv1', 'TLSv1.2', false, TLSv1",
-        "'TLSv1.3', 'TLSv1.3', true, TLSv1.3"
-    })
-    void serverSslVersion_shouldBeHonored(String clientTlsSuites, String serverTlsSuites,
-        boolean shouldConnect, String assertSuiteUsed) {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("/")
-                .to("https://localhost:" + fakeBackendServerPort)
-                .build()))
-            .tls(TigerTlsConfiguration.builder()
-                .serverTlsProtocols(Stream.of(serverTlsSuites.split(","))
-                    .collect(Collectors.toList()))
-                .build())
-            .build());
-
-        try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
-            SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
-                tigerProxy.getConfiguredTigerProxySslContext(),
-                clientTlsSuites.split(","),
-                null,
-                (hostname, session) -> {
-                    assertThat(session.getProtocol())
-                        .isEqualTo(assertSuiteUsed);
-                    return true;
-                });
-            var httpClient = HttpClients.custom()
-                .setSSLSocketFactory(sslSocketFactory)
-                .build();
-            unirestInstance.config().httpClient(ApacheClient.builder(httpClient));
-            final GetRequest request = unirestInstance.get(
-                "https://localhost:" + tigerProxy.getProxyPort() + "/foobar");
-            if (shouldConnect) {
-                request.asString();
-            } else {
-                assertThatThrownBy(request::asString)
-                    .hasCauseInstanceOf(SSLHandshakeException.class);
-            }
-        }
-    }
-
-    @Test
-    @Disabled("Waiting for the next mockserver release (>5.15.0)")
-    void extractSubjectDnFromClientCertificate_saveInTigerProxy() throws Exception {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("/")
-                .to("https://localhost:" + fakeBackendServerPort)
-                .build()))
-            .build());
-
-        try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
-            unirestInstance.config().httpClient(loadSslContextForClientCert());
-            unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
-        }
-        awaitMessagesInTiger(2);
-
-        assertThat(tigerProxy.getRbelMessagesList().get(0))
-            .extractChildWithPath("$.clientTlsCertificateChain.0.subject")
-            .valueAsString()
-            .get(InstanceOfAssertFactories.STRING)
-            .contains("CN=mailuser-rsa1");
-    }
-
-    private CloseableHttpClient loadSslContextForClientCert() throws Exception {
-        KeyStore trustStore = KeyStore.getInstance("PKCS12");
-
-        FileInputStream instream = new FileInputStream("src/test/resources/mailuser-rsa1.p12");
-        try {
-            trustStore.load(instream, "00".toCharArray());
-        } finally {
-            instream.close();
-        }
-
-        final SSLContext sslContext = SSLContexts.custom()
+    final SSLContext sslContext =
+        SSLContexts.custom()
             .loadTrustMaterial(trustStore, new TrustAllStrategy())
             .loadKeyMaterial(trustStore, "00".toCharArray(), (aliases, socket) -> "alias")
             .build();
 
-        return HttpClients.custom().setSSLContext(sslContext).build();
-    }
+    return HttpClients.custom().setSSLContext(sslContext).build();
+  }
 
-    @Test
-    void perRouteCertificate_shouldBePresentedOnlyForThisRoute() throws UnirestException {
-        final TigerConfigurationPkiIdentity serverIdentity
-            = new TigerConfigurationPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik");
+  @Test
+  void perRouteCertificate_shouldBePresentedOnlyForThisRoute() throws UnirestException {
+    final TigerConfigurationPkiIdentity serverIdentity =
+        new TigerConfigurationPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik");
 
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .tls(TigerTlsConfiguration.builder()
-                .serverIdentity(serverIdentity)
-                .build())
-            .proxyRoutes(List.of(TigerRoute.builder()
-                    // aktor-gateway.gematik.de ist der DN des obigen zertifikats
-                    .from("https://authn.aktor.epa.telematik-test")
-                    .to("http://localhost:" + fakeBackendServerPort)
-                    .build(),
-                TigerRoute.builder()
-                    .from("https://falsche-url")
-                    .to("http://localhost:" + fakeBackendServerPort)
-                    .build()))
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .tls(TigerTlsConfiguration.builder().serverIdentity(serverIdentity).build())
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        // aktor-gateway.gematik.de ist der DN des obigen zertifikats
+                        .from("https://authn.aktor.epa.telematik-test")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build(),
+                    TigerRoute.builder()
+                        .from("https://falsche-url")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
             .build());
 
-        final UnirestInstance unirestInstance = new UnirestInstance(
-            new Config().proxy("localhost", tigerProxy.getProxyPort())
+    final UnirestInstance unirestInstance =
+        new UnirestInstance(
+            new Config()
+                .proxy("localhost", tigerProxy.getProxyPort())
                 .verifySsl(true)
                 .sslContext(buildSslContextTrustingOnly(serverIdentity)));
 
-        assertThat(unirestInstance.get("https://authn.aktor.epa.telematik-test/foobar").asString()
-            .getStatus())
-            .isEqualTo(666);
-        assertThatThrownBy(() -> unirestInstance.get("https://falsche-url/foobar").asString())
-            .hasCauseInstanceOf(SSLPeerUnverifiedException.class);
+    assertThat(
+            unirestInstance
+                .get("https://authn.aktor.epa.telematik-test/foobar")
+                .asString()
+                .getStatus())
+        .isEqualTo(666);
+    assertThatThrownBy(() -> unirestInstance.get("https://falsche-url/foobar").asString())
+        .hasCauseInstanceOf(SSLPeerUnverifiedException.class);
+  }
+
+  @SneakyThrows
+  private SSLContext buildSslContextTrustingOnly(TigerPkiIdentity serverIdentity) {
+    KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+    ks.load(null);
+    ks.setCertificateEntry("caCert", serverIdentity.getCertificate());
+    int chainCertCtr = 0;
+    for (X509Certificate chainCert : serverIdentity.getCertificateChain()) {
+      ks.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);
     }
+    TrustManagerFactory tmf =
+        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 
-    @SneakyThrows
-    private SSLContext buildSslContextTrustingOnly(TigerPkiIdentity serverIdentity) {
-        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-        ks.load(null);
-        ks.setCertificateEntry("caCert", serverIdentity.getCertificate());
-        int chainCertCtr = 0;
-        for (X509Certificate chainCert : serverIdentity.getCertificateChain()) {
-            ks.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);
-        }
-        TrustManagerFactory tmf = TrustManagerFactory
-            .getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    tmf.init(ks);
 
-        tmf.init(ks);
+    SSLContext sslContext = SSLContext.getInstance("TLS");
+    sslContext.init(null, tmf.getTrustManagers(), null);
 
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(null, tmf.getTrustManagers(), null);
+    return sslContext;
+  }
 
-        return sslContext;
-    }
-
-    @Test
-    void configureServerTslSuites() {
-        final String configuredSslSuite = "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA";
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .tls(TigerTlsConfiguration.builder()
-                .serverSslSuites(List.of(configuredSslSuite))
-                .build())
+  @Test
+  void configureServerTslSuites() {
+    final String configuredSslSuite = "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA";
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .tls(
+                TigerTlsConfiguration.builder()
+                    .serverSslSuites(List.of(configuredSslSuite))
+                    .build())
             .build());
 
-        SSLContext ctx = tigerProxy.buildSslContext();
-        new UnirestInstance(new Config()
-            .sslContext(ctx)
-            .proxy("localhost", tigerProxy.getProxyPort()))
-            .get("https://localhost:" + fakeBackendServerPort + "/foobar").asString();
+    SSLContext ctx = tigerProxy.buildSslContext();
+    new UnirestInstance(new Config().sslContext(ctx).proxy("localhost", tigerProxy.getProxyPort()))
+        .get("https://localhost:" + fakeBackendServerPort + "/foobar")
+        .asString();
 
-        assertThat(ctx.getClientSessionContext()
-            .getSession(ctx.getClientSessionContext().getIds().nextElement())
-            .getCipherSuite())
-            .isEqualTo(configuredSslSuite);
-    }
+    assertThat(
+            ctx.getClientSessionContext()
+                .getSession(ctx.getClientSessionContext().getIds().nextElement())
+                .getCipherSuite())
+        .isEqualTo(configuredSslSuite);
+  }
 
-    @Test
-    void autoconfigureSslContextUnirest_shouldTrustTigerProxy() {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("https://backend")
-                .to("http://localhost:" + fakeBackendServerPort)
-                .build()))
+  @Test
+  void autoconfigureSslContextUnirest_shouldTrustTigerProxy() {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("https://backend")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
             .build());
 
-        var restInstanceWithSslContextConfigured = Unirest.spawnInstance();
-        restInstanceWithSslContextConfigured.config().proxy("localhost", tigerProxy.getProxyPort());
-        restInstanceWithSslContextConfigured.config().sslContext(tigerProxy.buildSslContext());
+    var restInstanceWithSslContextConfigured = Unirest.spawnInstance();
+    restInstanceWithSslContextConfigured.config().proxy("localhost", tigerProxy.getProxyPort());
+    restInstanceWithSslContextConfigured.config().sslContext(tigerProxy.buildSslContext());
 
-        final HttpResponse<JsonNode> response = restInstanceWithSslContextConfigured.get("https://backend/foobar")
-            .asJson();
+    final HttpResponse<JsonNode> response =
+        restInstanceWithSslContextConfigured.get("https://backend/foobar").asJson();
 
-        assertThat(response.getStatus()).isEqualTo(666);
-        assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
-    }
+    assertThat(response.getStatus()).isEqualTo(666);
+    assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+  }
 
-    @Test
-    void noConfiguredSslContextUnirest_shouldNotTrustTigerProxy() {
-        assertThatThrownBy(() -> {
-            spawnTigerProxyWith(TigerProxyConfiguration.builder()
-                .proxyRoutes(List.of(TigerRoute.builder()
-                    .from("https://backend")
-                    .to("http://localhost:" + fakeBackendServerPort)
-                    .build()))
-                .build());
+  @Test
+  void noConfiguredSslContextUnirest_shouldNotTrustTigerProxy() {
+    assertThatThrownBy(
+            () -> {
+              spawnTigerProxyWith(
+                  TigerProxyConfiguration.builder()
+                      .proxyRoutes(
+                          List.of(
+                              TigerRoute.builder()
+                                  .from("https://backend")
+                                  .to("http://localhost:" + fakeBackendServerPort)
+                                  .build()))
+                      .build());
 
-            var restInstanceWithoutSslContextConfigured = Unirest.spawnInstance();
-            restInstanceWithoutSslContextConfigured.config().proxy("localhost", tigerProxy.getProxyPort());
-            restInstanceWithoutSslContextConfigured.get("https://backend/foobar")
-                .asJson();
+              var restInstanceWithoutSslContextConfigured = Unirest.spawnInstance();
+              restInstanceWithoutSslContextConfigured
+                  .config()
+                  .proxy("localhost", tigerProxy.getProxyPort());
+              restInstanceWithoutSslContextConfigured.get("https://backend/foobar").asJson();
+            })
+        .hasMessageContaining(
+            "PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException:"
+                + " unable to find valid certification path to requested target");
+  }
 
-        }).hasMessageContaining(
-            "PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target");
-    }
-
-    @Test
-    @Disabled
-    void autoconfigureSslContextOkHttp_shouldTrustTigerProxy() throws IOException {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("http://backend")
-                .to("http://localhost:" + fakeBackendServerPort)
-                .build()))
+  @Test
+  @Disabled
+  void autoconfigureSslContextOkHttp_shouldTrustTigerProxy() throws IOException {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("http://backend")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
             .build());
 
-        OkHttpClient client = new OkHttpClient.Builder()
-            .proxy(new Proxy(Type.HTTP, new InetSocketAddress("localhost", tigerProxy.getProxyPort())))
-            .sslSocketFactory(tigerProxy.getConfiguredTigerProxySslContext().getSocketFactory(),
+    OkHttpClient client =
+        new OkHttpClient.Builder()
+            .proxy(
+                new Proxy(Type.HTTP, new InetSocketAddress("localhost", tigerProxy.getProxyPort())))
+            .sslSocketFactory(
+                tigerProxy.getConfiguredTigerProxySslContext().getSocketFactory(),
                 tigerProxy.buildTrustManagerForTigerProxy())
             .build();
 
-        Request request = new Request.Builder()
-            .url("http://backend/foobar")
-            .build();
+    Request request = new Request.Builder().url("http://backend/foobar").build();
 
-        okhttp3.Response response = client.newCall(request).execute();
+    okhttp3.Response response = client.newCall(request).execute();
 
-        assertThat(response.code()).isEqualTo(666);
-    }
+    assertThat(response.code()).isEqualTo(666);
+  }
 
-    @Test
-    void noConfiguredSslContextOKHttp_shouldNotTrustTigerProxy() {
-        assertThatThrownBy(() -> {
-            spawnTigerProxyWith(TigerProxyConfiguration.builder()
-                .proxyRoutes(List.of(TigerRoute.builder()
-                    .from("https://backend")
-                    .to("http://localhost:" + fakeBackendServerPort)
-                    .build()))
-                .build());
+  @Test
+  void noConfiguredSslContextOKHttp_shouldNotTrustTigerProxy() {
+    assertThatThrownBy(
+            () -> {
+              spawnTigerProxyWith(
+                  TigerProxyConfiguration.builder()
+                      .proxyRoutes(
+                          List.of(
+                              TigerRoute.builder()
+                                  .from("https://backend")
+                                  .to("http://localhost:" + fakeBackendServerPort)
+                                  .build()))
+                      .build());
 
-            OkHttpClient client = new OkHttpClient.Builder()
-                .proxy(new Proxy(Proxy.Type.HTTP, new InetSocketAddress("localhost", tigerProxy.getProxyPort())))
-                .build();
+              OkHttpClient client =
+                  new OkHttpClient.Builder()
+                      .proxy(
+                          new Proxy(
+                              Proxy.Type.HTTP,
+                              new InetSocketAddress("localhost", tigerProxy.getProxyPort())))
+                      .build();
 
-            Request request = new Request.Builder()
-                .url("https://backend/foobar")
-                .build();
+              Request request = new Request.Builder().url("https://backend/foobar").build();
 
-            client.newCall(request).execute();
+              client.newCall(request).execute();
+            })
+        .hasMessageContaining(
+            "PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException:"
+                + " unable to find valid certification path to requested target");
+  }
 
-        }).hasMessageContaining(
-            "PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target");
-    }
-
-    @Test
-    void autoconfigureSslContextRestAssured_shouldTrustTigerProxy() {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("https://backend")
-                .to("http://localhost:" + fakeBackendServerPort)
-                .build()))
+  @Test
+  void autoconfigureSslContextRestAssured_shouldTrustTigerProxy() {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("https://backend")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
             .build());
 
-        RestAssured.config = RestAssured.config().sslConfig(SSLConfig.sslConfig()
-            .trustStore(tigerProxy.buildTruststore()));
+    RestAssured.config =
+        RestAssured.config()
+            .sslConfig(SSLConfig.sslConfig().trustStore(tigerProxy.buildTruststore()));
 
-        RestAssured.proxy("localhost", tigerProxy.getProxyPort());
-        Response response = RestAssured.get(
-                "https://backend/foobar").
-            andReturn();
+    RestAssured.proxy("localhost", tigerProxy.getProxyPort());
+    Response response = RestAssured.get("https://backend/foobar").andReturn();
 
-        assertThat(response.getStatusCode()).isEqualTo(666);
-    }
+    assertThat(response.getStatusCode()).isEqualTo(666);
+  }
 
-    @Test
-    void autoconfigureSslContextRestAssured_shouldNotTrustTigerProxy() {
-        assertThatThrownBy(() -> {
-            spawnTigerProxyWith(TigerProxyConfiguration.builder()
-                .proxyRoutes(List.of(TigerRoute.builder()
-                    .from("https://backend")
-                    .to("http://localhost:" + fakeBackendServerPort)
-                    .build()))
-                .build());
+  @Test
+  void autoconfigureSslContextRestAssured_shouldNotTrustTigerProxy() {
+    assertThatThrownBy(
+            () -> {
+              spawnTigerProxyWith(
+                  TigerProxyConfiguration.builder()
+                      .proxyRoutes(
+                          List.of(
+                              TigerRoute.builder()
+                                  .from("https://backend")
+                                  .to("http://localhost:" + fakeBackendServerPort)
+                                  .build()))
+                      .build());
 
-            RestAssured.config = RestAssured.config().sslConfig(SSLConfig.sslConfig()
-                .trustStore(null));
+              RestAssured.config =
+                  RestAssured.config().sslConfig(SSLConfig.sslConfig().trustStore(null));
 
-            RestAssured.proxy("localhost", tigerProxy.getProxyPort());
-            RestAssured.get(
-                    "https://backend/foobar").
-                andReturn();
+              RestAssured.proxy("localhost", tigerProxy.getProxyPort());
+              RestAssured.get("https://backend/foobar").andReturn();
+            })
+        .hasMessageContaining(
+            "PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException:"
+                + " unable to find valid certification path to requested target");
+  }
 
-        }).hasMessageContaining(
-            "PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target");
-    }
-
-    @Test
-    void dynamicallyCreateCaAndEeCertificate_shouldBeValidForOneYear() throws Exception {
-        spawnTigerProxyWith(TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("/")
-                .to("http://localhost:" + fakeBackendServerPort)
-                .build()))
+  @Test
+  void dynamicallyCreateCaAndEeCertificate_shouldBeValidForOneYear() throws Exception {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
             .build());
 
-        AtomicInteger checkCounter = new AtomicInteger(0);
-        final UnirestInstance unirestInstance = Unirest.spawnInstance();
-        unirestInstance.config().verifySsl(true);
-        unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
-        SSLContext ctx = SSLContext.getInstance("TLSv1.2");
-        ctx.init(null, new TrustManager[]{
-                new X509TrustManager() {
-                    public void checkClientTrusted(X509Certificate[] chain, String authType) {
-                    }
+    AtomicInteger checkCounter = new AtomicInteger(0);
+    final UnirestInstance unirestInstance = Unirest.spawnInstance();
+    unirestInstance.config().verifySsl(true);
+    unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
+    SSLContext ctx = SSLContext.getInstance("TLSv1.2");
+    ctx.init(
+        null,
+        new TrustManager[] {
+          new X509TrustManager() {
+            public void checkClientTrusted(X509Certificate[] chain, String authType) {}
 
-                    public void checkServerTrusted(X509Certificate[] chain, String authType) {
-                        Arrays.stream(chain)
-                            .forEach(cert -> {
-                                try {
-                                    cert.checkValidity(Date.from(ZonedDateTime.now().plusYears(1).toInstant()));
-                                    checkCounter.incrementAndGet();
-                                } catch (CertificateExpiredException | CertificateNotYetValidException e) {
-                                    throw new RuntimeException(e);
-                                }
-                            });
-                    }
+            public void checkServerTrusted(X509Certificate[] chain, String authType) {
+              Arrays.stream(chain)
+                  .forEach(
+                      cert -> {
+                        try {
+                          cert.checkValidity(
+                              Date.from(ZonedDateTime.now().plusYears(1).toInstant()));
+                          checkCounter.incrementAndGet();
+                        } catch (CertificateExpiredException | CertificateNotYetValidException e) {
+                          throw new RuntimeException(e);
+                        }
+                      });
+            }
 
-                    public X509Certificate[] getAcceptedIssuers() {
-                        return new X509Certificate[0];
-                    }
-                }
-            }, new SecureRandom());
-        unirestInstance.config().sslContext(ctx);
-        unirestInstance
-            .get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+            public X509Certificate[] getAcceptedIssuers() {
+              return new X509Certificate[0];
+            }
+          }
+        },
+        new SecureRandom());
+    unirestInstance.config().sslContext(ctx);
+    unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
-        assertThat(checkCounter)
-            .hasValueGreaterThanOrEqualTo(1);
-    }
+    assertThat(checkCounter).hasValueGreaterThanOrEqualTo(1);
+  }
 
-    @Test
-    void changeCertificateDuringRuntime_shouldBeUsedDuringHandshake() throws UnirestException {
-        final TigerProxyConfiguration cfg = TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder()
-                .from("https://backend")
-                .to("http://localhost:" + fakeBackendServerPort)
-                .build()))
+  @Test
+  void changeCertificateDuringRuntime_shouldBeUsedDuringHandshake() throws UnirestException {
+    final TigerProxyConfiguration cfg =
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("https://backend")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
             .build();
-        spawnTigerProxyWith(cfg);
+    spawnTigerProxyWith(cfg);
 
-        // initial get (force certificate to be used)
-        proxyRest.get("https://backend/foobar").asJson();
+    // initial get (force certificate to be used)
+    proxyRest.get("https://backend/foobar").asJson();
 
-        // change certificate
-        cfg.getTls().setServerRootCa(new TigerConfigurationPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;00"));
-        tigerProxy.restartMockserver();
+    // change certificate
+    cfg.getTls()
+        .setServerRootCa(
+            new TigerConfigurationPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;00"));
+    tigerProxy.restartMockserver();
 
-        // should use new certificate
-        assertThatThrownBy(() -> proxyRest.get("https://backend/foobar").asJson())
-            .isInstanceOf(RuntimeException.class);
-        var newRestClient = Unirest.spawnInstance();
-        newRestClient.config()
-            .proxy("localhost", tigerProxy.getProxyPort())
-            .sslContext(tigerProxy.buildSslContext());
+    // should use new certificate
+    assertThatThrownBy(() -> proxyRest.get("https://backend/foobar").asJson())
+        .isInstanceOf(RuntimeException.class);
+    var newRestClient = Unirest.spawnInstance();
+    newRestClient
+        .config()
+        .proxy("localhost", tigerProxy.getProxyPort())
+        .sslContext(tigerProxy.buildSslContext());
 
-        final HttpResponse<JsonNode> response = newRestClient.get("https://backend/foobar").asJson();
+    final HttpResponse<JsonNode> response = newRestClient.get("https://backend/foobar").asJson();
 
-        assertThat(response.getStatus()).isEqualTo(666);
-        assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
-    }
+    assertThat(response.getStatus()).isEqualTo(666);
+    assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+  }
 }

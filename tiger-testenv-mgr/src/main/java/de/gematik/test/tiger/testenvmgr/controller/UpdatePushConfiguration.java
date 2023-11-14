@@ -20,26 +20,28 @@ import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 @RequiredArgsConstructor
 public class UpdatePushConfiguration implements WebSocketMessageBrokerConfigurer {
 
-    @Override
-    public void configureMessageBroker(final MessageBrokerRegistry config) {
-        config.enableSimpleBroker("/topic");
-        config.setApplicationDestinationPrefixes("/envStatus");
-        config.setApplicationDestinationPrefixes("/serverLog");
-    }
+  @Override
+  public void configureMessageBroker(final MessageBrokerRegistry config) {
+    config.enableSimpleBroker("/topic");
+    config.setApplicationDestinationPrefixes("/envStatus");
+    config.setApplicationDestinationPrefixes("/serverLog");
+  }
 
-    @Override
-    public void registerStompEndpoints(final StompEndpointRegistry registry) {
-        registry.addEndpoint("/testEnv")
-            .setHandshakeHandler(new DefaultHandshakeHandler(new TomcatRequestUpgradeStrategy()))
-            .withSockJS();
-        registry.addEndpoint("/testLog")
-            .setHandshakeHandler(new DefaultHandshakeHandler(new TomcatRequestUpgradeStrategy()))
-            .withSockJS();
-    }
+  @Override
+  public void registerStompEndpoints(final StompEndpointRegistry registry) {
+    registry
+        .addEndpoint("/testEnv")
+        .setHandshakeHandler(new DefaultHandshakeHandler(new TomcatRequestUpgradeStrategy()))
+        .withSockJS();
+    registry
+        .addEndpoint("/testLog")
+        .setHandshakeHandler(new DefaultHandshakeHandler(new TomcatRequestUpgradeStrategy()))
+        .withSockJS();
+  }
 
-    @Override
-    public void configureClientOutboundChannel(final ChannelRegistration registration) {
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        registration.taskExecutor(executor);
-    }
+  @Override
+  public void configureClientOutboundChannel(final ChannelRegistration registration) {
+    ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+    registration.taskExecutor(executor);
+  }
 }

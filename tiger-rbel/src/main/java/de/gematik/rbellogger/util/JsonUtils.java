@@ -12,18 +12,17 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public class JsonUtils {
 
-    public static List<Entry<String, String>> convertJsonObjectStringToMap(String jsonObjectString) {
-        return JsonParser.parseString(jsonObjectString)
-            .getAsJsonObject().entrySet()
-            .stream()
-            .map(entry -> {
-                if (entry.getValue().isJsonPrimitive()
-                    && entry.getValue().getAsJsonPrimitive().isString()) {
-                    return Pair.of(entry.getKey(), entry.getValue().getAsString());
-                } else {
-                    return Pair.of(entry.getKey(), entry.getValue().toString());
-                }
+  public static List<Entry<String, String>> convertJsonObjectStringToMap(String jsonObjectString) {
+    return JsonParser.parseString(jsonObjectString).getAsJsonObject().entrySet().stream()
+        .map(
+            entry -> {
+              if (entry.getValue().isJsonPrimitive()
+                  && entry.getValue().getAsJsonPrimitive().isString()) {
+                return Pair.of(entry.getKey(), entry.getValue().getAsString());
+              } else {
+                return Pair.of(entry.getKey(), entry.getValue().toString());
+              }
             })
-            .collect(Collectors.toList());
-    }
+        .collect(Collectors.toList());
+  }
 }

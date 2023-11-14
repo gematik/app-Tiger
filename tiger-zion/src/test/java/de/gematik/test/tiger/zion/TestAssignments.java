@@ -1,6 +1,7 @@
 package de.gematik.test.tiger.zion;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.zion.config.TigerMockResponse;
@@ -26,37 +27,42 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ResetTigerConfiguration
 class TestAssignments {
 
-    @Autowired
-    private ZionConfiguration configuration;
-    @LocalServerPort
-    private int port;
-    private Map<String, TigerMockResponse> mockResponsesBackup;
+  @Autowired private ZionConfiguration configuration;
+  @LocalServerPort private int port;
+  private Map<String, TigerMockResponse> mockResponsesBackup;
 
-    @SneakyThrows
-    @BeforeEach
-    public void setupTempDirectory() {
-        TigerGlobalConfiguration.reset();
-        mockResponsesBackup = configuration.getMockResponses();
-    }
+  @SneakyThrows
+  @BeforeEach
+  public void setupTempDirectory() {
+    TigerGlobalConfiguration.reset();
+    mockResponsesBackup = configuration.getMockResponses();
+  }
 
-    @AfterEach
-    public void resetMockResponses() {
-        TigerGlobalConfiguration.reset();
-        configuration.setMockResponses(mockResponsesBackup);
-        configuration.setSpy(null);
-    }
+  @AfterEach
+  public void resetMockResponses() {
+    TigerGlobalConfiguration.reset();
+    configuration.setMockResponses(mockResponsesBackup);
+    configuration.setSpy(null);
+  }
 
-    @ParameterizedTest
-    @CsvSource({
-        "$.method,GET",
-        "!{$.method},GET",
-        "?{$.method},GET"})
-    void testAssignments(String extractorString, String expectedValue) {
-        configuration.setMockResponses(Map.of("backend_foobar", TigerMockResponse.builder().requestCriterions(List.of()) // always true
-            .assignments(Map.of("theAssignedValue", extractorString))
-            .response(TigerMockResponseDescription.builder().statusCode(666).body("${theAssignedValue}").build()).build()));
+  @ParameterizedTest
+  @CsvSource({"$.method,GET", "!{$.method},GET", "?{$.method},GET"})
+  void testAssignments(String extractorString, String expectedValue) {
+    configuration.setMockResponses(
+        Map.of(
+            "backend_foobar",
+            TigerMockResponse.builder()
+                .requestCriterions(List.of()) // always true
+                .assignments(Map.of("theAssignedValue", extractorString))
+                .response(
+                    TigerMockResponseDescription.builder()
+                        .statusCode(666)
+                        .body("${theAssignedValue}")
+                        .build())
+                .build()));
 
-        final HttpResponse<String> response = Unirest.get("http://localhost:" + port + "/userJsonPath?username=someUsername").asString();
-        assertThat(response.getBody()).isEqualTo(expectedValue);
-    }
+    final HttpResponse<String> response =
+        Unirest.get("http://localhost:" + port + "/userJsonPath?username=someUsername").asString();
+    assertThat(response.getBody()).isEqualTo(expectedValue);
+  }
 }

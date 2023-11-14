@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.testenvmgr;
 
 import static org.awaitility.Awaitility.await;
+
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.facet.RbelValueFacet;
@@ -20,38 +21,51 @@ import org.junit.jupiter.api.Test;
 @Getter
 class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
 
-    @Test
-    @TigerTest(tigerYaml = "tigerProxy:\n"
-        + "  skipTrafficEndpointsSubscription: true\n"
-        + "  activateEpaVauAnalysis: true\n"
-        + "  trafficEndpointFilterString: \"$.body.recordId == 'X114428539'\"\n"
-        + "  keyFolders:\n"
-        + "    - '../tiger-proxy/src/test/resources'\n"
-        + "  trafficEndpoints:\n"
-        + "    - http://localhost:${free.port.1}\n"
-        + "servers:\n"
-        + "  upstreamProxy:\n"
-        + "    type: tigerProxy\n"
-        + "    tigerProxyCfg:\n"
-        + "      adminPort: ${free.port.1}\n"
-        + "      proxyPort: ${free.port.2}\n")
-    void filterForEpaKvnr(TigerTestEnvMgr envMgr) {
-        final TigerProxy upstreamTigerProxy = ((TigerProxyServer) envMgr.getServers().get("upstreamProxy"))
-            .getTigerProxy();
-        final RbelConverter upstreamRbelConverter = upstreamTigerProxy.getRbelLogger().getRbelConverter();
+  @Test
+  @TigerTest(
+      tigerYaml =
+          "tigerProxy:\n"
+              + "  skipTrafficEndpointsSubscription: true\n"
+              + "  activateEpaVauAnalysis: true\n"
+              + "  trafficEndpointFilterString: \"$.body.recordId == 'X114428539'\"\n"
+              + "  keyFolders:\n"
+              + "    - '../tiger-proxy/src/test/resources'\n"
+              + "  trafficEndpoints:\n"
+              + "    - http://localhost:${free.port.1}\n"
+              + "servers:\n"
+              + "  upstreamProxy:\n"
+              + "    type: tigerProxy\n"
+              + "    tigerProxyCfg:\n"
+              + "      adminPort: ${free.port.1}\n"
+              + "      proxyPort: ${free.port.2}\n")
+  void filterForEpaKvnr(TigerTestEnvMgr envMgr) {
+    final TigerProxy upstreamTigerProxy =
+        ((TigerProxyServer) envMgr.getServers().get("upstreamProxy")).getTigerProxy();
+    final RbelConverter upstreamRbelConverter =
+        upstreamTigerProxy.getRbelLogger().getRbelConverter();
 
-        upstreamRbelConverter.addPostConversionListener((el, conv) -> upstreamTigerProxy.triggerListener(el));
-        RbelFileReaderCapturer.builder()
-            .rbelFile("src/test/resources/vauEpa2Flow.tgr")
-            .rbelConverter(upstreamRbelConverter)
-            .build().initialize();
+    upstreamRbelConverter.addPostConversionListener(
+        (el, conv) -> upstreamTigerProxy.triggerListener(el));
+    RbelFileReaderCapturer.builder()
+        .rbelFile("src/test/resources/vauEpa2Flow.tgr")
+        .rbelConverter(upstreamRbelConverter)
+        .build()
+        .initialize();
 
-        await()
-            .atMost(5, TimeUnit.SECONDS)
-            .ignoreExceptions()
-            .until(() -> envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().getFirst().findElement("$.body.recordId")
-                .get()
-                .getFacetOrFail(RbelValueFacet.class)
-                .getValue().equals("X114428539"));
-    }
+    await()
+        .atMost(5, TimeUnit.SECONDS)
+        .ignoreExceptions()
+        .until(
+            () ->
+                envMgr
+                    .getLocalTigerProxyOrFail()
+                    .getRbelLogger()
+                    .getMessageHistory()
+                    .getFirst()
+                    .findElement("$.body.recordId")
+                    .get()
+                    .getFacetOrFail(RbelValueFacet.class)
+                    .getValue()
+                    .equals("X114428539"));
+  }
 }

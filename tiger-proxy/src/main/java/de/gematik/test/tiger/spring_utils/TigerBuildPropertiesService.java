@@ -16,20 +16,18 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class TigerBuildPropertiesService {
 
-    private final Optional<BuildProperties> buildProperties;
+  private final Optional<BuildProperties> buildProperties;
 
-    public String tigerVersionAsString() {
-        return buildProperties
-            .map(BuildProperties::getVersion)
-            .orElse("<unknown version>");
-    }
+  public String tigerVersionAsString() {
+    return buildProperties.map(BuildProperties::getVersion).orElse("<unknown version>");
+  }
 
-    public String tigerBuildDateAsString() {
-        return buildProperties
-            .map(BuildProperties::getTime)
-            .map(t -> t.atZone(ZoneId.systemDefault()))
-            .map(ZonedDateTime::toLocalDate)
-            .map(LocalDate::toString)
-            .orElse("-?-");
-    }
+  public String tigerBuildDateAsString() {
+    return buildProperties
+        .map(BuildProperties::getTime)
+        .map(t -> t.atZone(ZoneId.systemDefault()))
+        .map(ZonedDateTime::toLocalDate)
+        .map(LocalDate::toString)
+        .orElse("-?-");
+  }
 }

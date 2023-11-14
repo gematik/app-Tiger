@@ -10,11 +10,12 @@ import java.util.Optional;
 
 public interface RbelHtmlFacetRenderer {
 
-    boolean checkForRendering(RbelElement element);
+  boolean checkForRendering(RbelElement element);
 
-    ContainerTag performRendering(RbelElement element, Optional<String> key, RbelHtmlRenderingToolkit renderingToolkit);
+  ContainerTag performRendering(
+      RbelElement element, Optional<String> key, RbelHtmlRenderingToolkit renderingToolkit);
 
-    default int order() {
-        return 0;
-    }
+  default int order() {
+    return 0;
+  }
 }

@@ -11,8 +11,8 @@ import lombok.Data;
 @Builder
 public class TracingMessagePart {
 
-    private String uuid;
-    private int index;
-    private int numberOfMessages;
-    private byte[] data;
+  private String uuid;
+  private int index;
+  private int numberOfMessages;
+  private byte[] data;
 }

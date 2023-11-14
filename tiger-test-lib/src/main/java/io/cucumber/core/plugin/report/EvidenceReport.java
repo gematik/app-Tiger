@@ -25,7 +25,6 @@ public class EvidenceReport {
       evidenceEntries = Collections.unmodifiableList(new ArrayList<>());
     }
 
-
     @With(AccessLevel.PRIVATE)
     List<Evidence> evidenceEntries;
 
@@ -34,7 +33,6 @@ public class EvidenceReport {
           Stream.concat(evidenceEntries.stream(), Stream.of(stepEvidenceToAdd))
               .collect(Collectors.toUnmodifiableList()));
     }
-
   }
 
   @Value
@@ -47,5 +45,4 @@ public class EvidenceReport {
   ReportContext context;
 
   List<Step> steps;
-
 }

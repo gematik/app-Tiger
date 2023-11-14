@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
+
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -28,9 +29,11 @@ import org.junit.jupiter.api.Test;
 @Slf4j
 class ForwardProxyInfoTest {
 
-    @SneakyThrows
-    @Test
-    @TigerTest(tigerYaml = """
+  @SneakyThrows
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
         tigerProxy:
           forwardToProxy:
             hostname: 127.0.0.1
@@ -47,52 +50,59 @@ class ForwardProxyInfoTest {
             source:
               - http://localhost:${free.port.14}/foobar
         """)
-    void localSource_shouldNotUseForwardProxy(TigerTestEnvMgr envMgr) {
-        assertThat(((TigerProxyServer) envMgr.getServers().get("someProxyServer"))
-                    .getApplicationContext()
-                    .getBean(TigerProxy.class)
-                    .getRbelMessages())
-            .isEmpty();
-    }
+  void localSource_shouldNotUseForwardProxy(TigerTestEnvMgr envMgr) {
+    assertThat(
+            ((TigerProxyServer) envMgr.getServers().get("someProxyServer"))
+                .getApplicationContext()
+                .getBean(TigerProxy.class)
+                .getRbelMessages())
+        .isEmpty();
+  }
 
-    @SneakyThrows
-    @Test
-    @TigerTest(tigerYaml = """
+  @SneakyThrows
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
         tigerProxy:
         servers:
           virtualExternalServer:
             type: externalUrl
             source:
               - http://localhost:${free.port.30}
-        """, skipEnvironmentSetup = true)
-    void localSourceNonHttp_shouldStillStartUp(TigerTestEnvMgr envMgr) {
-        AtomicBoolean shouldServerRun = new AtomicBoolean(true);
-        final Integer port = TigerGlobalConfiguration.readIntegerOptional("free.port.30").orElseThrow();
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
-            final Thread serverThread = new Thread(() -> {
+        """,
+      skipEnvironmentSetup = true)
+  void localSourceNonHttp_shouldStillStartUp(TigerTestEnvMgr envMgr) {
+    AtomicBoolean shouldServerRun = new AtomicBoolean(true);
+    final Integer port = TigerGlobalConfiguration.readIntegerOptional("free.port.30").orElseThrow();
+    try (ServerSocket serverSocket = new ServerSocket(port)) {
+      final Thread serverThread =
+          new Thread(
+              () -> {
                 while (shouldServerRun.get()) {
-                    try {
-                        Socket socket = serverSocket.accept();
-                        OutputStream out = socket.getOutputStream();
-                        out.write("pong".getBytes());
-                        out.close();
-                        socket.close();
-                    } catch (IOException e) {
-                        // swallow
-                    }
+                  try {
+                    Socket socket = serverSocket.accept();
+                    OutputStream out = socket.getOutputStream();
+                    out.write("pong".getBytes());
+                    out.close();
+                    socket.close();
+                  } catch (IOException e) {
+                    // swallow
+                  }
                 }
-            });
-            serverThread.start();
-            assertThatNoException()
-                .isThrownBy(envMgr::setUpEnvironment);
-        } finally {
-            shouldServerRun.set(false);
-        }
+              });
+      serverThread.start();
+      assertThatNoException().isThrownBy(envMgr::setUpEnvironment);
+    } finally {
+      shouldServerRun.set(false);
     }
+  }
 
-    @SneakyThrows
-    @Test
-    @TigerTest(tigerYaml = """
+  @SneakyThrows
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
         tigerProxy:
           forwardToProxy:
             hostname: 127.0.0.1
@@ -107,35 +117,39 @@ class ForwardProxyInfoTest {
             type: externalUrl
             source:
               - http://localhost:${free.port.31}
-        """, skipEnvironmentSetup = true)
-    void localSourceNonHttpAndForwardProxyConfigured_shouldStillStartUp(TigerTestEnvMgr envMgr) {
-        AtomicBoolean shouldServerRun = new AtomicBoolean(true);
-        final Integer port = TigerGlobalConfiguration.readIntegerOptional("free.port.31").orElseThrow();
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
-            final Thread serverThread = new Thread(() -> {
+        """,
+      skipEnvironmentSetup = true)
+  void localSourceNonHttpAndForwardProxyConfigured_shouldStillStartUp(TigerTestEnvMgr envMgr) {
+    AtomicBoolean shouldServerRun = new AtomicBoolean(true);
+    final Integer port = TigerGlobalConfiguration.readIntegerOptional("free.port.31").orElseThrow();
+    try (ServerSocket serverSocket = new ServerSocket(port)) {
+      final Thread serverThread =
+          new Thread(
+              () -> {
                 while (shouldServerRun.get()) {
-                    try {
-                        Socket socket = serverSocket.accept();
-                        OutputStream out = socket.getOutputStream();
-                        out.write("fdsa".getBytes());
-                        out.close();
-                        socket.close();
-                    } catch (IOException e) {
-                        // swallow
-                    }
+                  try {
+                    Socket socket = serverSocket.accept();
+                    OutputStream out = socket.getOutputStream();
+                    out.write("fdsa".getBytes());
+                    out.close();
+                    socket.close();
+                  } catch (IOException e) {
+                    // swallow
+                  }
                 }
-            });
-            serverThread.start();
-            assertThatNoException()
-                .isThrownBy(envMgr::setUpEnvironment);
-        } finally {
-            shouldServerRun.set(false);
-        }
+              });
+      serverThread.start();
+      assertThatNoException().isThrownBy(envMgr::setUpEnvironment);
+    } finally {
+      shouldServerRun.set(false);
     }
+  }
 
-    @SneakyThrows
-    @Test
-    @TigerTest(tigerYaml = """
+  @SneakyThrows
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
         tigerProxy:
           forwardToProxy:
             hostname: 127.0.0.1
@@ -151,16 +165,21 @@ class ForwardProxyInfoTest {
             startupTimeoutSec: 1
             source:
               - http://localhost:${free.port.32}
-        """, skipEnvironmentSetup = true)
-    void localSourceServerNotRunningAndForwardProxyConfigured_shouldGiveStartupError(TigerTestEnvMgr envMgr) {
-        assertThatThrownBy(() -> envMgr.setUpEnvironment())
-            .isInstanceOf(TigerTestEnvException.class)
-            .hasMessageStartingWith("Timeout waiting for external server 'virtualExternalServer' to respond at");
-    }
+        """,
+      skipEnvironmentSetup = true)
+  void localSourceServerNotRunningAndForwardProxyConfigured_shouldGiveStartupError(
+      TigerTestEnvMgr envMgr) {
+    assertThatThrownBy(() -> envMgr.setUpEnvironment())
+        .isInstanceOf(TigerTestEnvException.class)
+        .hasMessageStartingWith(
+            "Timeout waiting for external server 'virtualExternalServer' to respond at");
+  }
 
-    @SneakyThrows
-    @Test
-    @TigerTest(tigerYaml = """
+  @SneakyThrows
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
         tigerProxy:
           forwardToProxy:
             hostname: 127.0.0.1
@@ -177,16 +196,19 @@ class ForwardProxyInfoTest {
             source:
               - http://google.com/foobar
         """)
-    void externalSource_shouldUseForwardProxy(TigerTestEnvMgr envMgr) {
-        await()
-            .atMost(5, TimeUnit.SECONDS)
-            .until(() ->
+  void externalSource_shouldUseForwardProxy(TigerTestEnvMgr envMgr) {
+    await()
+        .atMost(5, TimeUnit.SECONDS)
+        .until(
+            () ->
                 ((TigerProxyServer) envMgr.getServers().get("someProxyServer"))
-                    .getApplicationContext()
-                    .getBean(TigerProxy.class)
-                    .getRbelMessages().stream()
-                    .anyMatch(el -> el.getFacet(RbelHttpRequestFacet.class)
-                        .map(req -> req.getPath().getRawStringContent().contains("foobar"))
-                        .orElse(false)));
-    }
+                    .getApplicationContext().getBean(TigerProxy.class).getRbelMessages().stream()
+                        .anyMatch(
+                            el ->
+                                el.getFacet(RbelHttpRequestFacet.class)
+                                    .map(
+                                        req ->
+                                            req.getPath().getRawStringContent().contains("foobar"))
+                                    .orElse(false)));
+  }
 }

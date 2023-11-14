@@ -6,10 +6,10 @@ Feature: HTTP/HTTPS GlueCode Test feature
   Scenario Outline:  Test <color> with <inhalt>
     And TGR show <color> text "<inhalt>"
     Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
-      | color | inhalt |
-      | red | Dagmar |
-      | blue | Nils |
-      | green | Tim  |
+      | color  | inhalt |
+      | red    | Dagmar |
+      | blue   | Nils   |
+      | green  | Tim    |
       | yellow | Sophie |
 
   Scenario Outline: Test <color> with <text> again
@@ -92,8 +92,8 @@ Feature: HTTP/HTTPS GlueCode Test feature
     Given TGR set local variable "configured_state_value" to "some weird $value§"
     Given TGR set local variable "configured_param_name" to "my_cool_param"
     When TGR send GET request to "http://httpbin/get" with:
-      | ${configured_param_name}   | state                     | redirect_uri        |
-      | client_id                  | ${configured_state_value} | https://my.redirect |
+      | ${configured_param_name} | state                     | redirect_uri        |
+      | client_id                | ${configured_state_value} | https://my.redirect |
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.path.state.value')}" matches "${configured_state_value}"
     And TGR assert "!{rbel:currentRequestAsString('$.path.state')}" matches "state=!{urlEncoded('some weird $value§')}"
@@ -104,8 +104,8 @@ Feature: HTTP/HTTPS GlueCode Test feature
     Given TGR set local variable "configured_state_value" to "some weird $value§"
     Given TGR set local variable "configured_param_name" to "my_cool_param"
     When TGR send POST request to "http://httpbin/post" with:
-      | ${configured_param_name}   | state                     | redirect_uri        |
-      | client_id                  | ${configured_state_value} | https://my.redirect |
+      | ${configured_param_name} | state                     | redirect_uri        |
+      | client_id                | ${configured_state_value} | https://my.redirect |
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.body.state')}" matches "!{urlEncoded('some weird $value§')}"
     And TGR assert "!{rbel:currentRequestAsString('$.body.my_cool_param')}" matches "client_id"
@@ -115,8 +115,8 @@ Feature: HTTP/HTTPS GlueCode Test feature
   Scenario: Request with custom and default header, check application type json
     Given TGR set default header "Content-Type" to "application/json"
     When TGR send POST request to "http://httpbin/post" with:
-      | ${configured_param_name}   |
-      | client_id                  |
+      | ${configured_param_name} |
+      | client_id                |
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.header.Content-Type')}" matches "application/json"
 
@@ -126,9 +126,9 @@ Feature: HTTP/HTTPS GlueCode Test feature
     Then TGR current response with attribute "$.body.html.body.h1.text" matches "!{rbel:currentResponseAsString('$.body.html.body.h1.text')}"
 
     Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
-      | txt   | txt2 | txt3| txt4| txt5|
-      | text2 | 21   |31   |41   |51   |
-      | text2 |22    |32   |42   |52   |
+      | txt   | txt2 | txt3 | txt4 | txt5 |
+      | text2 | 21   | 31   | 41   | 51   |
+      | text2 | 22   | 32   | 42   | 52   |
 
   Scenario: Simple first test
     Given TGR send empty GET request to "http://httpbin/html"

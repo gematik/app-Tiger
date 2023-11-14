@@ -12,13 +12,13 @@ import lombok.Data;
 @AllArgsConstructor
 public class TlsFacet implements RbelFacet {
 
-    private final RbelElement clientCertificateChain;
+  private final RbelElement clientCertificateChain;
 
-    @Override
-    public RbelMultiMap getChildElements() {
-        if (clientCertificateChain == null) {
-            return new RbelMultiMap();
-        }
-        return new RbelMultiMap().with("clientTlsCertificateChain", clientCertificateChain);
+  @Override
+  public RbelMultiMap getChildElements() {
+    if (clientCertificateChain == null) {
+      return new RbelMultiMap();
     }
+    return new RbelMultiMap().with("clientTlsCertificateChain", clientCertificateChain);
+  }
 }

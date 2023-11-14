@@ -14,32 +14,43 @@ import java.util.Optional;
 
 public class RbelElementWrapperContentTreeNode extends RbelContentTreeNode {
 
-    public static RbelElementWrapperContentTreeNode constructFromRbelElement(RbelElement source, TigerConfigurationLoader conversionContext, TigerJexlContext jexlContext) {
-        var result = new RbelElementWrapperContentTreeNode();
-        result.setContent(TokenSubstituteHelper.substitute(source.getRawStringContent(), conversionContext, Optional.ofNullable(jexlContext))
+  public static RbelElementWrapperContentTreeNode constructFromRbelElement(
+      RbelElement source,
+      TigerConfigurationLoader conversionContext,
+      TigerJexlContext jexlContext) {
+    var result = new RbelElementWrapperContentTreeNode();
+    result.setContent(
+        TokenSubstituteHelper.substitute(
+                source.getRawStringContent(), conversionContext, Optional.ofNullable(jexlContext))
             .getBytes());
-        return result;
-    }
+    return result;
+  }
 
-    public static RbelElementWrapperContentTreeNode constructFromValueElement(RbelElement source, TigerConfigurationLoader conversionContext, TigerJexlContext jexlContext) {
-        var result = new RbelElementWrapperContentTreeNode();
-        result.setContent(TokenSubstituteHelper.substitute(source.printValue().orElseGet(source::getRawStringContent), conversionContext,
+  public static RbelElementWrapperContentTreeNode constructFromValueElement(
+      RbelElement source,
+      TigerConfigurationLoader conversionContext,
+      TigerJexlContext jexlContext) {
+    var result = new RbelElementWrapperContentTreeNode();
+    result.setContent(
+        TokenSubstituteHelper.substitute(
+                source.printValue().orElseGet(source::getRawStringContent),
+                conversionContext,
                 Optional.ofNullable(jexlContext))
             .getBytes());
-        return result;
-    }
+    return result;
+  }
 
-    private RbelElementWrapperContentTreeNode() {
-        super(new RbelMultiMap<> (), null);
-    }
+  private RbelElementWrapperContentTreeNode() {
+    super(new RbelMultiMap<>(), null);
+  }
 
-    @Override
-    public List<RbelContentTreeNode> getChildNodes() {
-        return List.of();
-    }
+  @Override
+  public List<RbelContentTreeNode> getChildNodes() {
+    return List.of();
+  }
 
-    @Override
-    public String toString() {
-        return "wrappernode:{<node child nodes>, content=" + new String(getContent()) + "}";
-    }
+  @Override
+  public String toString() {
+    return "wrappernode:{<node child nodes>, content=" + new String(getContent()) + "}";
+  }
 }

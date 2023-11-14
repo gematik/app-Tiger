@@ -4,7 +4,11 @@
 
 package de.gematik.test.tiger.maven.adapter.mojos;
 
+import static org.awaitility.Awaitility.await;
+
 import de.gematik.test.tiger.lib.TigerDirector;
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 import lombok.Data;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -12,66 +16,60 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.awaitility.core.ConditionTimeoutException;
 
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
-
-import static org.awaitility.Awaitility.await;
-
 /**
- * This plugin allows to start up the Tiger test environment configured in a specific tiger yaml file in the
- * pre-integration-test phase. To trigger use the "setup-testenv" goal. For more details please refer to the README.adoc file in the
- * project root.
+ * This plugin allows to start up the Tiger test environment configured in a specific tiger yaml
+ * file in the pre-integration-test phase. To trigger use the "setup-testenv" goal. For more details
+ * please refer to the README.adoc file in the project root.
  */
 @Data
 @Mojo(name = "setup-testenv", defaultPhase = LifecyclePhase.INITIALIZE)
 public class TestEnvironmentMojo extends AbstractMojo {
 
-    /**
-     * Skip running this plugin. Default is false.
-     */
-    @Parameter
-    private boolean skip = false;
-    /**
-     * Timespan to keep the test environment up and running in seconds
-     */
-    @Parameter(defaultValue = "86400")
-    private long autoShutdownAfterSeconds = Duration.ofDays(1).getSeconds();
+  /** Skip running this plugin. Default is false. */
+  @Parameter private boolean skip = false;
 
-    private boolean isRunning = false;
+  /** Timespan to keep the test environment up and running in seconds */
+  @Parameter(defaultValue = "86400")
+  private long autoShutdownAfterSeconds = Duration.ofDays(1).getSeconds();
 
-    public TestEnvironmentMojo() {
-        super();
+  private boolean isRunning = false;
+
+  public TestEnvironmentMojo() {
+    super();
+  }
+
+  @Override
+  public void execute() {
+    if (skip) {
+      getLog().info("Skipping");
+      return;
     }
-
-    @Override
-    public void execute() {
-        if (skip) {
-            getLog().info("Skipping");
-            return;
-        }
-        isRunning = true;
-        TigerDirector.startStandaloneTestEnvironment();
-        getLog().info("Tiger standalone test environment is setup!");
-        try {
-            await().atMost(autoShutdownAfterSeconds, TimeUnit.SECONDS)
-                    .pollInterval(200, TimeUnit.MILLISECONDS)
-                    .until(() -> !isRunning() ||
-                            TigerDirector.getTigerTestEnvMgr() == null ||
-                            TigerDirector.getTigerTestEnvMgr().isShutDown());
-            if (TigerDirector.getTigerTestEnvMgr() != null) {
-                TigerDirector.getTigerTestEnvMgr().shutDown();
-            }
-        } catch (ConditionTimeoutException cte) {
-            getLog().info("Tiger Testenvironment TIMEOUT reached, shutting down...");
-            if (TigerDirector.getTigerTestEnvMgr() != null) {
-                TigerDirector.getTigerTestEnvMgr().shutDown();
-            }
-        }
-        getLog().info("Tiger standalone test environment is shut down!");
-        isRunning = false;
+    isRunning = true;
+    TigerDirector.startStandaloneTestEnvironment();
+    getLog().info("Tiger standalone test environment is setup!");
+    try {
+      await()
+          .atMost(autoShutdownAfterSeconds, TimeUnit.SECONDS)
+          .pollInterval(200, TimeUnit.MILLISECONDS)
+          .until(
+              () ->
+                  !isRunning()
+                      || TigerDirector.getTigerTestEnvMgr() == null
+                      || TigerDirector.getTigerTestEnvMgr().isShutDown());
+      if (TigerDirector.getTigerTestEnvMgr() != null) {
+        TigerDirector.getTigerTestEnvMgr().shutDown();
+      }
+    } catch (ConditionTimeoutException cte) {
+      getLog().info("Tiger Testenvironment TIMEOUT reached, shutting down...");
+      if (TigerDirector.getTigerTestEnvMgr() != null) {
+        TigerDirector.getTigerTestEnvMgr().shutDown();
+      }
     }
+    getLog().info("Tiger standalone test environment is shut down!");
+    isRunning = false;
+  }
 
-    void abort() {
-        isRunning = false;
-    }
+  void abort() {
+    isRunning = false;
+  }
 }

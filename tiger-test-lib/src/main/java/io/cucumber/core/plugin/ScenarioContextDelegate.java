@@ -8,6 +8,5 @@ public class ScenarioContextDelegate {
     this.context = context;
   }
 
-  @Delegate
-  private final ScenarioContext context;
+  @Delegate private final ScenarioContext context;
 }

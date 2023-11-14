@@ -15,9 +15,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class GetMessagesAfterDto {
-    String lastMsgUuid;
-    List<HtmlMessage> htmlMsgList;
-    List<MessageMetaDataDto> metaMsgList;
-    Integer pagesAvailable;
-    Integer totalMsgCount;
+  String lastMsgUuid;
+  List<HtmlMessage> htmlMsgList;
+  List<MessageMetaDataDto> metaMsgList;
+  Integer pagesAvailable;
+  Integer totalMsgCount;
 }

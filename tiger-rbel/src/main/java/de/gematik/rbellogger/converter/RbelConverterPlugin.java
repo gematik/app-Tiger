@@ -8,9 +8,9 @@ import de.gematik.rbellogger.data.RbelElement;
 
 public interface RbelConverterPlugin {
 
-    void consumeElement(RbelElement rbelElement, RbelConverter converter);
+  void consumeElement(RbelElement rbelElement, RbelConverter converter);
 
-    default boolean ignoreOversize() {
-        return false;
-    }
+  default boolean ignoreOversize() {
+    return false;
+  }
 }

@@ -4,6 +4,9 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static de.gematik.test.tiger.proxy.tls.TlsCertificateGenerator.generateNewCaCertificate;
+import static org.mockserver.model.HttpRequest.request;
+
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
@@ -22,6 +25,32 @@ import de.gematik.test.tiger.proxy.tls.DynamicTigerKeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.tls.StaticTigerKeyAndCertificateFactory;
 import io.netty.handler.ssl.SslProvider;
 import jakarta.annotation.PreDestroy;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import kong.unirest.Unirest;
 import kong.unirest.apache.ApacheClient;
 import lombok.EqualsAndHashCode;
@@ -48,591 +77,613 @@ import org.mockserver.socket.tls.NettySslContextFactory;
 import org.mockserver.socket.tls.bouncycastle.BCKeyAndCertificateFactory;
 import org.springframework.stereotype.Component;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
-
-import static de.gematik.test.tiger.proxy.tls.TlsCertificateGenerator.generateNewCaCertificate;
-import static org.mockserver.model.HttpRequest.request;
-
 @Component
 @EqualsAndHashCode(callSuper = true)
 public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
-    public static final String CA_CERT_ALIAS = "caCert";
-    private final List<DynamicTigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();
-    private final List<Consumer<Throwable>> exceptionListeners = new ArrayList<>();
-    private MockServer mockServer;
-    private MockServerClient mockServerClient;
-    @Getter
-    private final MockServerToRbelConverter mockServerToRbelConverter;
-    private final Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
-    private final List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
-    private TigerPkiIdentity generatedRootCa;
+  public static final String CA_CERT_ALIAS = "caCert";
+  private final List<DynamicTigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();
+  private final List<Consumer<Throwable>> exceptionListeners = new ArrayList<>();
+  private MockServer mockServer;
+  private MockServerClient mockServerClient;
+  @Getter private final MockServerToRbelConverter mockServerToRbelConverter;
+  private final Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
+  private final List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
+  private TigerPkiIdentity generatedRootCa;
 
-    /**
-     * Tiger Proxy health endpoint performs http get requests towards the local server port of the Tiger Proxy.
-     * To filter them out from Rbel logs we add a specific query param (healthEndPointUuid) with this uuid as
-     * value. The Filtering takes place in {@link de.gematik.test.tiger.proxy.handler.AbstractTigerRouteCallback#isHealthEndpointRequest(HttpRequest)}.
-     */
-    @Getter
-    private final UUID healthEndpointRequestUuid = UUID.randomUUID();
+  /**
+   * Tiger Proxy health endpoint performs http get requests towards the local server port of the
+   * Tiger Proxy. To filter them out from Rbel logs we add a specific query param
+   * (healthEndPointUuid) with this uuid as value. The Filtering takes place in {@link
+   * de.gematik.test.tiger.proxy.handler.AbstractTigerRouteCallback#isHealthEndpointRequest(HttpRequest)}.
+   */
+  @Getter private final UUID healthEndpointRequestUuid = UUID.randomUUID();
 
-    public TigerProxy(final TigerProxyConfiguration configuration) {
-        super(configuration);
+  public TigerProxy(final TigerProxyConfiguration configuration) {
+    super(configuration);
 
-        mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
+    mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
 
-        bootMockServer();
+    bootMockServer();
 
-        if (!configuration.isSkipTrafficEndpointsSubscription()) {
-            subscribeToTrafficEndpoints(configuration);
-        }
-
-        if (configuration.getModifications() != null) {
-            int counter = 0;
-            for (final RbelModificationDescription modification : configuration.getModifications()) {
-                if (modification.getName() == null) {
-                    modification.setName("TigerModification #" + counter++);
-                }
-                getRbelLogger().getRbelModifier().addModification(modification);
-            }
-        }
+    if (!configuration.isSkipTrafficEndpointsSubscription()) {
+      subscribeToTrafficEndpoints(configuration);
     }
 
-    /**
-     * Will restart the internal mockserver. This can be done to force a reload of the configured TLS-identities.
-     * This will block until the mockserver is running again. Background connections will most likely be interrupted.
-     * Routes will be re-added to the server, but the ID's will change.
-     * 
-     */
-    public void restartMockserver() {
-        if (getTigerProxyConfiguration().getProxyPort() == null) {
-            getTigerProxyConfiguration().setProxyPort(mockServer.getLocalPort());
+    if (configuration.getModifications() != null) {
+      int counter = 0;
+      for (final RbelModificationDescription modification : configuration.getModifications()) {
+        if (modification.getName() == null) {
+          modification.setName("TigerModification #" + counter++);
         }
-        mockServer.stop();
-        mockServerClient.stop();
-        var originalRoutes = Collections.unmodifiableMap(tigerRouteMap);
-        tigerRouteMap.clear();
-        bootMockServer();
-        originalRoutes.values().stream()
-            .filter(r -> !r.isInternalRoute())
-            .forEach(r -> {
-                try {
-                    addRoute(r);
-                } catch (RuntimeException e) {
-                    //swallow
-                    log.trace("Ignored exception during re-adding of routes", e);
-                }
-            }) ;
+        getRbelLogger().getRbelModifier().addModification(modification);
+      }
+    }
+  }
+
+  /**
+   * Will restart the internal mockserver. This can be done to force a reload of the configured
+   * TLS-identities. This will block until the mockserver is running again. Background connections
+   * will most likely be interrupted. Routes will be re-added to the server, but the ID's will
+   * change.
+   */
+  public void restartMockserver() {
+    if (getTigerProxyConfiguration().getProxyPort() == null) {
+      getTigerProxyConfiguration().setProxyPort(mockServer.getLocalPort());
+    }
+    mockServer.stop();
+    mockServerClient.stop();
+    var originalRoutes = Collections.unmodifiableMap(tigerRouteMap);
+    tigerRouteMap.clear();
+    bootMockServer();
+    originalRoutes.values().stream()
+        .filter(r -> !r.isInternalRoute())
+        .forEach(
+            r -> {
+              try {
+                addRoute(r);
+              } catch (RuntimeException e) {
+                // swallow
+                log.trace("Ignored exception during re-adding of routes", e);
+              }
+            });
+  }
+
+  private void bootMockServer() {
+    createNewMockServer();
+    buildMockServerClient();
+  }
+
+  private void buildMockServerClient() {
+    mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
+
+    if (getTigerProxyConfiguration().isActivateForwardAllLogging()) {
+      mockServerClient
+          .when(
+              request().withPath(".*"),
+              Times.unlimited(),
+              TimeToLive.unlimited(),
+              Integer.MIN_VALUE)
+          .forward(new ForwardAllCallback(this));
+    }
+    addRoutesToTigerProxy();
+  }
+
+  private void createNewMockServer() {
+    KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(
+        buildKeyAndCertificateFactory());
+
+    Configuration mockServerConfiguration = Configuration.configuration();
+    mockServerConfiguration.forwardProxyTLSX509CertificatesTrustManagerType(
+        ForwardProxyTLSX509CertificatesTrustManager.ANY);
+    mockServerConfiguration.maxLogEntries(0);
+    if (StringUtils.isNotEmpty(getTigerProxyConfiguration().getProxyLogLevel())) {
+      mockServerConfiguration.logLevel(getTigerProxyConfiguration().getProxyLogLevel());
+    } else {
+      mockServerConfiguration.logLevel("WARN");
     }
 
-    private void bootMockServer() {
-        createNewMockServer();
-        buildMockServerClient();
-    }
+    customizeSslSuitesIfApplicable();
 
-    private void buildMockServerClient() {
-        mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
-
-        if (getTigerProxyConfiguration().isActivateForwardAllLogging()) {
-            mockServerClient.when(request()
-                    .withPath(".*"), Times.unlimited(), TimeToLive.unlimited(), Integer.MIN_VALUE)
-                .forward(new ForwardAllCallback(this));
-        }
-        addRoutesToTigerProxy();
-    }
-
-    private void createNewMockServer() {
-        KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(buildKeyAndCertificateFactory());
-
-        Configuration mockServerConfiguration = Configuration.configuration();
-        mockServerConfiguration.forwardProxyTLSX509CertificatesTrustManagerType(
-            ForwardProxyTLSX509CertificatesTrustManager.ANY);
-        mockServerConfiguration.maxLogEntries(0);
-        if (StringUtils.isNotEmpty(getTigerProxyConfiguration().getProxyLogLevel())) {
-            mockServerConfiguration.logLevel(getTigerProxyConfiguration().getProxyLogLevel());
-        } else {
-            mockServerConfiguration.logLevel("WARN");
-        }
-
-        customizeSslSuitesIfApplicable();
-
-        final Optional<ProxyConfiguration> forwardProxyConfig = ProxyConfigurationConverter.convertForwardProxyConfigurationToMockServerConfiguration(
+    final Optional<ProxyConfiguration> forwardProxyConfig =
+        ProxyConfigurationConverter.convertForwardProxyConfigurationToMockServerConfiguration(
             getTigerProxyConfiguration());
-        outputForwardProxyConfigLogs(forwardProxyConfig);
+    outputForwardProxyConfigLogs(forwardProxyConfig);
 
-        if (getTigerProxyConfiguration().getDirectReverseProxy() == null) {
-            mockServer = forwardProxyConfig
-                .map(proxyConfiguration -> new MockServer(proxyConfiguration, getTigerProxyConfiguration().getPortAsArray()))
-                .orElseGet(() -> new MockServer(getTigerProxyConfiguration().getPortAsArray()));
-        } else {
-            mockServer = spawnDirectInverseTigerProxy(mockServerConfiguration, forwardProxyConfig);
-        }
-        log.info("Proxy '{}' started on port {}", getName().orElse("?"), mockServer.getLocalPort());
+    if (getTigerProxyConfiguration().getDirectReverseProxy() == null) {
+      mockServer =
+          forwardProxyConfig
+              .map(
+                  proxyConfiguration ->
+                      new MockServer(
+                          proxyConfiguration, getTigerProxyConfiguration().getPortAsArray()))
+              .orElseGet(() -> new MockServer(getTigerProxyConfiguration().getPortAsArray()));
+    } else {
+      mockServer = spawnDirectInverseTigerProxy(mockServerConfiguration, forwardProxyConfig);
     }
+    log.info("Proxy '{}' started on port {}", getName().orElse("?"), mockServer.getLocalPort());
+  }
 
-    private void addRoutesToTigerProxy() {
-        if (getTigerProxyConfiguration().getProxyRoutes() != null) {
-            for (final TigerRoute tigerRoute : getTigerProxyConfiguration().getProxyRoutes()) {
-                addRoute(tigerRoute);
-            }
-        }
+  private void addRoutesToTigerProxy() {
+    if (getTigerProxyConfiguration().getProxyRoutes() != null) {
+      for (final TigerRoute tigerRoute : getTigerProxyConfiguration().getProxyRoutes()) {
+        addRoute(tigerRoute);
+      }
     }
+  }
 
-    private MockServer spawnDirectInverseTigerProxy(Configuration mockServerConfiguration,
-        Optional<ProxyConfiguration> forwardProxyConfig) {
-        mockServerConfiguration.forwardBinaryRequestsWithoutWaitingForResponse(true);
-        mockServerConfiguration.binaryProxyListener(new BinaryExchangeHandler(this));
-        if (forwardProxyConfig.isPresent()) {
-            throw new TigerProxyStartupException(
-                "DirectForwardProxy configured with additional forwardProxy: Not possible! (forwardProxy is always HTTP!)");
-        }
-        MockServer mockServer = new MockServer(mockServerConfiguration,
+  private MockServer spawnDirectInverseTigerProxy(
+      Configuration mockServerConfiguration, Optional<ProxyConfiguration> forwardProxyConfig) {
+    mockServerConfiguration.forwardBinaryRequestsWithoutWaitingForResponse(true);
+    mockServerConfiguration.binaryProxyListener(new BinaryExchangeHandler(this));
+    if (forwardProxyConfig.isPresent()) {
+      throw new TigerProxyStartupException(
+          "DirectForwardProxy configured with additional forwardProxy: Not possible! (forwardProxy"
+              + " is always HTTP!)");
+    }
+    MockServer mockServer =
+        new MockServer(
+            mockServerConfiguration,
             getTigerProxyConfiguration().getDirectReverseProxy().getPort(),
             getTigerProxyConfiguration().getDirectReverseProxy().getHostname(),
             getTigerProxyConfiguration().getPortAsArray());
-        addReverseProxyRouteIfNotPresent();
-        return mockServer;
-    }
+    addReverseProxyRouteIfNotPresent();
+    return mockServer;
+  }
 
-    private void addReverseProxyRouteIfNotPresent() {
-        if (getTigerProxyConfiguration().getProxyRoutes() == null) {
-            getTigerProxyConfiguration().setProxyRoutes(new ArrayList<>());
-        }
-        getTigerProxyConfiguration().getProxyRoutes().add(
+  private void addReverseProxyRouteIfNotPresent() {
+    if (getTigerProxyConfiguration().getProxyRoutes() == null) {
+      getTigerProxyConfiguration().setProxyRoutes(new ArrayList<>());
+    }
+    getTigerProxyConfiguration()
+        .getProxyRoutes()
+        .add(
             TigerRoute.builder()
                 .from("/")
-                .to("http://" + getTigerProxyConfiguration().getDirectReverseProxy().getHostname()
-                    + ":" +
-                    getTigerProxyConfiguration().getDirectReverseProxy().getPort())
-                .build()
-        );
-    }
+                .to(
+                    "http://"
+                        + getTigerProxyConfiguration().getDirectReverseProxy().getHostname()
+                        + ":"
+                        + getTigerProxyConfiguration().getDirectReverseProxy().getPort())
+                .build());
+  }
 
-    private void customizeSslSuitesIfApplicable() {
-        final TigerTlsConfiguration tlsConfiguration = getTigerProxyConfiguration().getTls();
-        if (tlsConfiguration.getServerSslSuites() != null
-            || tlsConfiguration.getServerTlsProtocols() != null) {
-            NettySslContextFactory.sslServerContextBuilderCustomizer = builder -> {
-                if (tlsConfiguration.getServerSslSuites() != null) {
-                    builder.ciphers(tlsConfiguration.getServerSslSuites());
-                }
-                if (tlsConfiguration.getServerTlsProtocols() != null) {
-                    builder.protocols(tlsConfiguration.getServerTlsProtocols());
-                }
-                builder.sslProvider(SslProvider.JDK);
-
-                return builder;
-            };
-        } else {
-            NettySslContextFactory.sslServerContextBuilderCustomizer = UnaryOperator.identity();
-        }
-        if (tlsConfiguration.getClientSslSuites() != null) {
-            NettySslContextFactory.sslClientContextBuilderCustomizer = builder -> {
-                builder.ciphers(tlsConfiguration.getClientSslSuites());
-                builder.sslProvider(SslProvider.JDK);
-                return builder;
-            };
-        } else {
-            NettySslContextFactory.sslClientContextBuilderCustomizer = UnaryOperator.identity();
-        }
-    }
-
-    private KeyAndCertificateFactorySupplier buildKeyAndCertificateFactory() {
-        return (mockServerLogger, isServerInstance, mockServerConfiguration) -> {
-            if (isServerInstance) {
-                if (getTigerProxyConfiguration().getTls() != null
-                    && getTigerProxyConfiguration().getTls().getServerIdentity() != null) {
-                    return new StaticTigerKeyAndCertificateFactory(mockServerLogger,
-                        getTigerProxyConfiguration(),
-                        getTigerProxyConfiguration().getTls().getServerIdentity());
-                } else {
-                    final DynamicTigerKeyAndCertificateFactory dynamicTigerKeyAndCertificateFactory = new DynamicTigerKeyAndCertificateFactory(
-                        mockServerLogger,
-                        getTigerProxyConfiguration(),
-                        determineServerRootCa()
-                            .orElseThrow(() -> new TigerProxyStartupException("Unrecoverable TLS startup state")));
-                    this.tlsFactories.add(dynamicTigerKeyAndCertificateFactory);
-                    return dynamicTigerKeyAndCertificateFactory;
-                }
-            } else {
-                if (getTigerProxyConfiguration().getTls() != null
-                    && getTigerProxyConfiguration().getTls().getForwardMutualTlsIdentity() != null) {
-                    return new StaticTigerKeyAndCertificateFactory(mockServerLogger,
-                        getTigerProxyConfiguration(),
-                        getTigerProxyConfiguration().getTls().getForwardMutualTlsIdentity());
-                } else {
-                    return new BCKeyAndCertificateFactory(mockServerConfiguration, mockServerLogger);
-                }
+  private void customizeSslSuitesIfApplicable() {
+    final TigerTlsConfiguration tlsConfiguration = getTigerProxyConfiguration().getTls();
+    if (tlsConfiguration.getServerSslSuites() != null
+        || tlsConfiguration.getServerTlsProtocols() != null) {
+      NettySslContextFactory.sslServerContextBuilderCustomizer =
+          builder -> {
+            if (tlsConfiguration.getServerSslSuites() != null) {
+              builder.ciphers(tlsConfiguration.getServerSslSuites());
             }
-        };
-    }
-
-    private Optional<TigerPkiIdentity> determineServerRootCa() {
-        if (getTigerProxyConfiguration().getTls().getServerRootCa() != null) {
-            return Optional.ofNullable(getTigerProxyConfiguration().getTls().getServerRootCa());
-        } else {
-            if (generatedRootCa == null) {
-                generatedRootCa = generateNewCaCertificate();
+            if (tlsConfiguration.getServerTlsProtocols() != null) {
+              builder.protocols(tlsConfiguration.getServerTlsProtocols());
             }
-            return Optional.of(generatedRootCa);
+            builder.sslProvider(SslProvider.JDK);
+
+            return builder;
+          };
+    } else {
+      NettySslContextFactory.sslServerContextBuilderCustomizer = UnaryOperator.identity();
+    }
+    if (tlsConfiguration.getClientSslSuites() != null) {
+      NettySslContextFactory.sslClientContextBuilderCustomizer =
+          builder -> {
+            builder.ciphers(tlsConfiguration.getClientSslSuites());
+            builder.sslProvider(SslProvider.JDK);
+            return builder;
+          };
+    } else {
+      NettySslContextFactory.sslClientContextBuilderCustomizer = UnaryOperator.identity();
+    }
+  }
+
+  private KeyAndCertificateFactorySupplier buildKeyAndCertificateFactory() {
+    return (mockServerLogger, isServerInstance, mockServerConfiguration) -> {
+      if (isServerInstance) {
+        if (getTigerProxyConfiguration().getTls() != null
+            && getTigerProxyConfiguration().getTls().getServerIdentity() != null) {
+          return new StaticTigerKeyAndCertificateFactory(
+              mockServerLogger,
+              getTigerProxyConfiguration(),
+              getTigerProxyConfiguration().getTls().getServerIdentity());
+        } else {
+          final DynamicTigerKeyAndCertificateFactory dynamicTigerKeyAndCertificateFactory =
+              new DynamicTigerKeyAndCertificateFactory(
+                  mockServerLogger,
+                  getTigerProxyConfiguration(),
+                  determineServerRootCa()
+                      .orElseThrow(
+                          () -> new TigerProxyStartupException("Unrecoverable TLS startup state")));
+          this.tlsFactories.add(dynamicTigerKeyAndCertificateFactory);
+          return dynamicTigerKeyAndCertificateFactory;
         }
-    }
-
-    public void subscribeToTrafficEndpoints(final TigerProxyConfiguration configuration) {
-        Optional.of(configuration)
-            .filter(Objects::nonNull)
-            .map(TigerProxyConfiguration::getTrafficEndpoints)
-            .ifPresent(this::subscribeToTrafficEndpoints);
-    }
-
-    public void subscribeToTrafficEndpoints(final List<String> trafficEndpointUrls) {
-        Optional.of(trafficEndpointUrls)
-            .filter(Objects::nonNull)
-            .stream()
-            .flatMap(List::stream)
-            .parallel()
-            .map(url -> new TigerRemoteProxyClient(url, TigerProxyConfiguration.builder()
-                .downloadInitialTrafficFromEndpoints(
-                    getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints())
-                .trafficEndpointFilterString(getTigerProxyConfiguration().getTrafficEndpointFilterString())
-                .name(getTigerProxyConfiguration().getName())
-                .connectionTimeoutInSeconds(getTigerProxyConfiguration().getConnectionTimeoutInSeconds())
-                .build(), this))
-            .forEach(remoteProxyClients::add);
-
-        remoteProxyClients.parallelStream()
-            .forEach(TigerRemoteProxyClient::connect);
-    }
-
-    @Override
-    public String getBaseUrl() {
-        return "http://localhost:" + mockServer.getLocalPort();
-    }
-
-    @Override
-    public int getProxyPort() {
-        return mockServer.getLocalPort();
-    }
-
-    public int getAdminPort() {
-        return getTigerProxyConfiguration().getAdminPort();
-    }
-
-    @Override
-    public List<TigerRoute> getRoutes() {
-        return tigerRouteMap.values().stream().collect(Collectors.toUnmodifiableList());
-    }
-
-    @Override
-    public RbelModificationDescription addModificaton(final RbelModificationDescription modification) {
-        getRbelLogger().getRbelModifier().addModification(modification);
-        return modification;
-    }
-
-    @Override
-    public List<RbelModificationDescription> getModifications() {
-        return getRbelLogger().getRbelModifier().getModifications();
-    }
-
-    @Override
-    public void removeModification(final String modificationId) {
-        getRbelLogger().getRbelModifier().deleteModification(modificationId);
-    }
-
-    @Override
-    public synchronized TigerRoute addRoute(final TigerRoute tigerRoute) {
-        assertThatRouteIsUnique(tigerRoute);
-
-        log.info("Adding route {} -> {}", tigerRoute.getFrom(), tigerRoute.getTo());
-        final Expectation[] expectations = buildRouteAndReturnExpectation(tigerRoute);
-        if (expectations.length > 1) {
-            log.warn("Unexpected number of expectations created! Got {}, expected 1", expectations.length);
+      } else {
+        if (getTigerProxyConfiguration().getTls() != null
+            && getTigerProxyConfiguration().getTls().getForwardMutualTlsIdentity() != null) {
+          return new StaticTigerKeyAndCertificateFactory(
+              mockServerLogger,
+              getTigerProxyConfiguration(),
+              getTigerProxyConfiguration().getTls().getForwardMutualTlsIdentity());
+        } else {
+          return new BCKeyAndCertificateFactory(mockServerConfiguration, mockServerLogger);
         }
-        if (expectations.length == 0) {
-            throw new TigerProxyConfigurationException(
-                "Error while adding route from '{}' to '{}': Got 0 new expectations");
-        }
+      }
+    };
+  }
 
-        final TigerRoute createdTigerRoute = tigerRoute.withId(expectations[0].getId());
-        tigerRouteMap.put(expectations[0].getId(), createdTigerRoute);
+  private Optional<TigerPkiIdentity> determineServerRootCa() {
+    if (getTigerProxyConfiguration().getTls().getServerRootCa() != null) {
+      return Optional.ofNullable(getTigerProxyConfiguration().getTls().getServerRootCa());
+    } else {
+      if (generatedRootCa == null) {
+        generatedRootCa = generateNewCaCertificate();
+      }
+      return Optional.of(generatedRootCa);
+    }
+  }
 
-        log.info("Created route {} with expectation {}", createdTigerRoute, expectations[0]);
-        return createdTigerRoute;
+  public void subscribeToTrafficEndpoints(final TigerProxyConfiguration configuration) {
+    Optional.of(configuration)
+        .filter(Objects::nonNull)
+        .map(TigerProxyConfiguration::getTrafficEndpoints)
+        .ifPresent(this::subscribeToTrafficEndpoints);
+  }
+
+  public void subscribeToTrafficEndpoints(final List<String> trafficEndpointUrls) {
+    Optional.of(trafficEndpointUrls).filter(Objects::nonNull).stream()
+        .flatMap(List::stream)
+        .parallel()
+        .map(
+            url ->
+                new TigerRemoteProxyClient(
+                    url,
+                    TigerProxyConfiguration.builder()
+                        .downloadInitialTrafficFromEndpoints(
+                            getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints())
+                        .trafficEndpointFilterString(
+                            getTigerProxyConfiguration().getTrafficEndpointFilterString())
+                        .name(getTigerProxyConfiguration().getName())
+                        .connectionTimeoutInSeconds(
+                            getTigerProxyConfiguration().getConnectionTimeoutInSeconds())
+                        .build(),
+                    this))
+        .forEach(remoteProxyClients::add);
+
+    remoteProxyClients.parallelStream().forEach(TigerRemoteProxyClient::connect);
+  }
+
+  @Override
+  public String getBaseUrl() {
+    return "http://localhost:" + mockServer.getLocalPort();
+  }
+
+  @Override
+  public int getProxyPort() {
+    return mockServer.getLocalPort();
+  }
+
+  public int getAdminPort() {
+    return getTigerProxyConfiguration().getAdminPort();
+  }
+
+  @Override
+  public List<TigerRoute> getRoutes() {
+    return tigerRouteMap.values().stream().collect(Collectors.toUnmodifiableList());
+  }
+
+  @Override
+  public RbelModificationDescription addModificaton(
+      final RbelModificationDescription modification) {
+    getRbelLogger().getRbelModifier().addModification(modification);
+    return modification;
+  }
+
+  @Override
+  public List<RbelModificationDescription> getModifications() {
+    return getRbelLogger().getRbelModifier().getModifications();
+  }
+
+  @Override
+  public void removeModification(final String modificationId) {
+    getRbelLogger().getRbelModifier().deleteModification(modificationId);
+  }
+
+  @Override
+  public synchronized TigerRoute addRoute(final TigerRoute tigerRoute) {
+    assertThatRouteIsUnique(tigerRoute);
+
+    log.info("Adding route {} -> {}", tigerRoute.getFrom(), tigerRoute.getTo());
+    final Expectation[] expectations = buildRouteAndReturnExpectation(tigerRoute);
+    if (expectations.length > 1) {
+      log.warn(
+          "Unexpected number of expectations created! Got {}, expected 1", expectations.length);
+    }
+    if (expectations.length == 0) {
+      throw new TigerProxyConfigurationException(
+          "Error while adding route from '{}' to '{}': Got 0 new expectations");
     }
 
-    private void assertThatRouteIsUnique(TigerRoute tigerRoute) {
-        tigerRouteMap.values().stream()
-            .filter(existingRoute ->
+    final TigerRoute createdTigerRoute = tigerRoute.withId(expectations[0].getId());
+    tigerRouteMap.put(expectations[0].getId(), createdTigerRoute);
+
+    log.info("Created route {} with expectation {}", createdTigerRoute, expectations[0]);
+    return createdTigerRoute;
+  }
+
+  private void assertThatRouteIsUnique(TigerRoute tigerRoute) {
+    tigerRouteMap.values().stream()
+        .filter(
+            existingRoute ->
                 uriTwoIsBelowUriOne(existingRoute.getFrom(), tigerRoute.getFrom())
                     || uriTwoIsBelowUriOne(tigerRoute.getFrom(), existingRoute.getFrom()))
-            .findAny()
-            .ifPresent(existingRoute -> {
-                throw new TigerProxyRouteConflictException(existingRoute);
+        .findAny()
+        .ifPresent(
+            existingRoute -> {
+              throw new TigerProxyRouteConflictException(existingRoute);
             });
-    }
+  }
 
-    private boolean uriTwoIsBelowUriOne(final String value1, final String value2) {
-        try {
-            final URI uri1 = new URI(value1);
-            final URI uri2WithUri1Scheme = new URIBuilder(value2)
-                .setScheme(uri1.getScheme()).build();
-            return !new URI(value1)
-                .relativize(uri2WithUri1Scheme).equals(uri2WithUri1Scheme);
-        } catch (final URISyntaxException e) {
-            return false;
-        }
+  private boolean uriTwoIsBelowUriOne(final String value1, final String value2) {
+    try {
+      final URI uri1 = new URI(value1);
+      final URI uri2WithUri1Scheme = new URIBuilder(value2).setScheme(uri1.getScheme()).build();
+      return !new URI(value1).relativize(uri2WithUri1Scheme).equals(uri2WithUri1Scheme);
+    } catch (final URISyntaxException e) {
+      return false;
     }
+  }
 
-    private Expectation[] buildRouteAndReturnExpectation(final TigerRoute tigerRoute) {
-        if (UriUtil.hasScheme(tigerRoute.getFrom())) {
-            return buildForwardProxyRoute(tigerRoute);
-        } else {
-            return buildReverseProxyRoute(tigerRoute);
-        }
+  private Expectation[] buildRouteAndReturnExpectation(final TigerRoute tigerRoute) {
+    if (UriUtil.hasScheme(tigerRoute.getFrom())) {
+      return buildForwardProxyRoute(tigerRoute);
+    } else {
+      return buildReverseProxyRoute(tigerRoute);
     }
+  }
 
-    private Expectation[] buildReverseProxyRoute(final TigerRoute tigerRoute) {
-        return mockServerClient.when(request()
-                .withPath(tigerRoute.getFrom() + ".*"))
-            .forward(new ReverseProxyCallback(this, tigerRoute));
-    }
+  private Expectation[] buildReverseProxyRoute(final TigerRoute tigerRoute) {
+    return mockServerClient
+        .when(request().withPath(tigerRoute.getFrom() + ".*"))
+        .forward(new ReverseProxyCallback(this, tigerRoute));
+  }
 
-    private Expectation[] buildForwardProxyRoute(final TigerRoute tigerRoute) {
-        final URL url = buildUrlSafe(tigerRoute);
-        return mockServerClient.when(request()
+  private Expectation[] buildForwardProxyRoute(final TigerRoute tigerRoute) {
+    final URL url = buildUrlSafe(tigerRoute);
+    return mockServerClient
+        .when(
+            request()
                 .withHeader("Host", url.getAuthority())
                 .withSecure(url.getProtocol().equals("https")))
-            .forward(new ForwardProxyCallback(this, tigerRoute));
+        .forward(new ForwardProxyCallback(this, tigerRoute));
+  }
+
+  private static URL buildUrlSafe(TigerRoute tigerRoute) {
+    try {
+      return new URL(tigerRoute.getFrom());
+    } catch (MalformedURLException e) {
+      throw new TigerProxyStartupException("Error while building route", e);
     }
+  }
 
-    private static URL buildUrlSafe(TigerRoute tigerRoute) {
-        try {
-            return new URL(tigerRoute.getFrom());
-        } catch (MalformedURLException e) {
-            throw new TigerProxyStartupException("Error while building route", e);
-        }
+  /**
+   * Adds the given host to the list of alternative names in the tiger proxy TLS certificate. Adding
+   * alternative names after an initial request has been handled by the tiger proxy will have no
+   * effect, since the internal mockserver will have already created its SSLContext. If this is
+   * required, then a restart of the internal mockserver is necessary. See {@link
+   * #restartMockserver()}
+   *
+   * @param host the host to add as alternative name.
+   */
+  public void addAlternativeName(final String host) {
+    if (StringUtils.isBlank(host)) {
+      return;
     }
-
-    /**
-     * Adds the given host to the list of alternative names in the tiger proxy TLS certificate.
-     * Adding alternative names after an initial request has been handled by the tiger proxy will have no effect,
-     * since the internal mockserver will have already created its SSLContext. If this is required, then a restart of
-     * the internal mockserver is necessary. See {@link #restartMockserver()}
-     *
-     * @param host the host to add as alternative name.
-     */
-    public void addAlternativeName(final String host) {
-        if (StringUtils.isBlank(host)) {
-            return;
-        }
-        final List<String> newAlternativeNames = new ArrayList<>();
-        if (getTigerProxyConfiguration().getTls() != null
-            && getTigerProxyConfiguration().getTls().getAlternativeNames() != null) {
-            newAlternativeNames.addAll(getTigerProxyConfiguration().getTls().getAlternativeNames());
-        }
-        newAlternativeNames.add(host);
-        getTigerProxyConfiguration().getTls().setAlternativeNames(newAlternativeNames);
-
-        for (final DynamicTigerKeyAndCertificateFactory tlsFactory : tlsFactories) {
-            tlsFactory.addAlternativeName(host);
-            tlsFactory.resetEeCertificate();
-        }
+    final List<String> newAlternativeNames = new ArrayList<>();
+    if (getTigerProxyConfiguration().getTls() != null
+        && getTigerProxyConfiguration().getTls().getAlternativeNames() != null) {
+      newAlternativeNames.addAll(getTigerProxyConfiguration().getTls().getAlternativeNames());
     }
+    newAlternativeNames.add(host);
+    getTigerProxyConfiguration().getTls().setAlternativeNames(newAlternativeNames);
 
-    @Override
-    public void removeRoute(final String routeId) {
-        if (!mockServer.isRunning()) {
-            return;
-        }
-        mockServerClient.clear(new ExpectationId().withId(routeId));
-        final TigerRoute route = tigerRouteMap.remove(routeId);
-
-        log.info("Deleted route {}. Current # expectations {}",
-            route,
-            mockServerClient.retrieveActiveExpectations(request()).length);
+    for (final DynamicTigerKeyAndCertificateFactory tlsFactory : tlsFactories) {
+      tlsFactory.addAlternativeName(host);
+      tlsFactory.resetEeCertificate();
     }
+  }
 
-    public SSLContext getConfiguredTigerProxySslContext() {
-        try {
-            final SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, new TrustManager[]{buildTrustManagerForTigerProxy()}, null);
-
-            SSLContext.setDefault(sslContext);
-            return sslContext;
-        } catch (final Exception e) {
-            throw new TigerProxyTrustManagerBuildingException("Error while configuring SSL Context for Tiger Proxy",
-                e);
-        }
+  @Override
+  public void removeRoute(final String routeId) {
+    if (!mockServer.isRunning()) {
+      return;
     }
+    mockServerClient.clear(new ExpectationId().withId(routeId));
+    final TigerRoute route = tigerRouteMap.remove(routeId);
 
-    public X509TrustManager buildTrustManagerForTigerProxy() {
-        try {
-            final X509TrustManager defaultTrustManager = extractTrustManager(null);
-            final X509TrustManager customTrustManager = extractTrustManager(buildTruststore());
-            return new X509TrustManager() {
-                @Override
-                public X509Certificate[] getAcceptedIssuers() {
-                    return defaultTrustManager.getAcceptedIssuers();
-                }
+    log.info(
+        "Deleted route {}. Current # expectations {}",
+        route,
+        mockServerClient.retrieveActiveExpectations(request()).length);
+  }
 
-                @Override
-                public void checkServerTrusted(final X509Certificate[] chain,
-                    final String authType) throws CertificateException {
-                    try {
-                        customTrustManager.checkServerTrusted(chain, authType);
-                    } catch (final CertificateException e) {
-                        defaultTrustManager.checkServerTrusted(chain, authType);
-                    }
-                }
+  public SSLContext getConfiguredTigerProxySslContext() {
+    try {
+      final SSLContext sslContext = SSLContext.getInstance("TLS");
+      sslContext.init(null, new TrustManager[] {buildTrustManagerForTigerProxy()}, null);
 
-                @Override
-                public void checkClientTrusted(final X509Certificate[] chain,
-                    final String authType) throws CertificateException {
-                    defaultTrustManager.checkClientTrusted(chain, authType);
-                }
-            };
-        } catch (final Exception e) {
-            throw new TigerProxyTrustManagerBuildingException("Error while building TrustManager for Tiger Proxy",
-                e);
-        }
+      SSLContext.setDefault(sslContext);
+      return sslContext;
+    } catch (final Exception e) {
+      throw new TigerProxyTrustManagerBuildingException(
+          "Error while configuring SSL Context for Tiger Proxy", e);
     }
+  }
 
-    private X509TrustManager extractTrustManager(final KeyStore keystore)
-        throws NoSuchAlgorithmException, KeyStoreException {
-        final TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
-            TrustManagerFactory.getDefaultAlgorithm());
-        trustManagerFactory.init(keystore);
+  public X509TrustManager buildTrustManagerForTigerProxy() {
+    try {
+      final X509TrustManager defaultTrustManager = extractTrustManager(null);
+      final X509TrustManager customTrustManager = extractTrustManager(buildTruststore());
+      return new X509TrustManager() {
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+          return defaultTrustManager.getAcceptedIssuers();
+        }
 
-        return (X509TrustManager) Arrays.stream(trustManagerFactory.getTrustManagers())
+        @Override
+        public void checkServerTrusted(final X509Certificate[] chain, final String authType)
+            throws CertificateException {
+          try {
+            customTrustManager.checkServerTrusted(chain, authType);
+          } catch (final CertificateException e) {
+            defaultTrustManager.checkServerTrusted(chain, authType);
+          }
+        }
+
+        @Override
+        public void checkClientTrusted(final X509Certificate[] chain, final String authType)
+            throws CertificateException {
+          defaultTrustManager.checkClientTrusted(chain, authType);
+        }
+      };
+    } catch (final Exception e) {
+      throw new TigerProxyTrustManagerBuildingException(
+          "Error while building TrustManager for Tiger Proxy", e);
+    }
+  }
+
+  private X509TrustManager extractTrustManager(final KeyStore keystore)
+      throws NoSuchAlgorithmException, KeyStoreException {
+    final TrustManagerFactory trustManagerFactory =
+        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    trustManagerFactory.init(keystore);
+
+    return (X509TrustManager)
+        Arrays.stream(trustManagerFactory.getTrustManagers())
             .filter(X509TrustManager.class::isInstance)
             .findAny()
-            .orElseThrow(() -> new TigerProxyTrustManagerBuildingException(
-                "Error while configuring TrustManager for Tiger Proxy"));
+            .orElseThrow(
+                () ->
+                    new TigerProxyTrustManagerBuildingException(
+                        "Error while configuring TrustManager for Tiger Proxy"));
+  }
+
+  public KeyStore buildTruststore() {
+    try {
+      final KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+      ks.load(null);
+      final TigerPkiIdentity serverIdentity =
+          determineServerRootCa()
+              .or(
+                  () ->
+                      Optional.ofNullable(getTigerProxyConfiguration().getTls())
+                          .map(TigerTlsConfiguration::getServerIdentity)
+                          .filter(Objects::nonNull))
+              .orElseThrow(
+                  () ->
+                      new TigerProxyTrustManagerBuildingException(
+                          "Unrecoverable state: Server-Identity null and Server-CA empty"));
+
+      ks.setCertificateEntry(CA_CERT_ALIAS, serverIdentity.getCertificate());
+      int chainCertCtr = 0;
+      for (final X509Certificate chainCert : serverIdentity.getCertificateChain()) {
+        ks.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);
+      }
+      return ks;
+    } catch (final Exception e) {
+      throw new TigerProxyTrustManagerBuildingException(
+          "Error while building SSL-Context for Tiger Proxy", e);
+    }
+  }
+
+  public SSLContext buildSslContext() {
+    try {
+      final TrustManagerFactory tmf =
+          TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+
+      tmf.init(buildTruststore());
+
+      SSLContext sslContext = SSLContext.getInstance("TLS");
+      TrustManager[] trustManagers = tmf.getTrustManagers();
+      sslContext.init(null, trustManagers, null);
+
+      final HttpClient httpClient =
+          HttpClients.custom()
+              .setSSLContext(sslContext)
+              .setSSLHostnameVerifier(new DefaultHostnameVerifier())
+              .build();
+
+      Unirest.primaryInstance()
+          .config()
+          .httpClient(config -> ApacheClient.builder(httpClient).apply(config));
+      return sslContext;
+    } catch (final RuntimeException
+        | NoSuchAlgorithmException
+        | KeyStoreException
+        | KeyManagementException e) {
+      throw new TigerProxyTrustManagerBuildingException(
+          "Error while building SSL-Context for Tiger Proxy", e);
+    }
+  }
+
+  private void outputForwardProxyConfigLogs(final Optional<ProxyConfiguration> forwardProxyConfig) {
+    if (forwardProxyConfig.isEmpty()) {
+      log.info("Tigerproxy has NO forward proxy configured!");
+    } else {
+      final ProxyConfiguration configNotEmpty = forwardProxyConfig.get();
+      if (configNotEmpty.getUsername() == null) {
+        log.info(
+            "Forward proxy is set to "
+                + configNotEmpty.getType()
+                + "://"
+                + configNotEmpty.getProxyAddress().getHostName()
+                + ":"
+                + configNotEmpty.getProxyAddress().getPort());
+      } else if (configNotEmpty.getUsername() != null) {
+        log.info(
+            "Forward proxy is set to "
+                + configNotEmpty.getType()
+                + "://"
+                + configNotEmpty.getProxyAddress().getHostName()
+                + ":"
+                + configNotEmpty.getProxyAddress().getPort()
+                + "@"
+                + configNotEmpty.getUsername()
+                + ":"
+                + configNotEmpty.getPassword());
+      }
+    }
+  }
+
+  public void propagateException(final Throwable exception) {
+    exceptionListeners.forEach(consumer -> consumer.accept(exception));
+  }
+
+  public void addNewExceptionConsumer(final Consumer<Throwable> newConsumer) {
+    exceptionListeners.add(newConsumer);
+  }
+
+  @Override
+  @PreDestroy
+  public void close() {
+    log.info("Shutting down Tiger-Proxy {}", getName().orElse(""));
+    super.close();
+    remoteProxyClients.forEach(TigerRemoteProxyClient::close);
+    mockServerClient.stop();
+    mockServer.stop();
+    NettySslContextFactory.sslServerContextBuilderCustomizer = UnaryOperator.identity();
+    KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(null);
+  }
+
+  private static class TigerProxyTrustManagerBuildingException extends RuntimeException {
+
+    public TigerProxyTrustManagerBuildingException(final String s, final Exception e) {
+      super(s, e);
     }
 
-    public KeyStore buildTruststore() {
-        try {
-            final KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-            ks.load(null);
-            final TigerPkiIdentity serverIdentity = determineServerRootCa()
-                .or(() -> Optional.ofNullable(getTigerProxyConfiguration().getTls())
-                    .map(TigerTlsConfiguration::getServerIdentity)
-                    .filter(Objects::nonNull))
-                .orElseThrow(() -> new TigerProxyTrustManagerBuildingException(
-                    "Unrecoverable state: Server-Identity null and Server-CA empty"));
-
-            ks.setCertificateEntry(CA_CERT_ALIAS, serverIdentity.getCertificate());
-            int chainCertCtr = 0;
-            for (final X509Certificate chainCert : serverIdentity.getCertificateChain()) {
-                ks.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);
-            }
-            return ks;
-        } catch (final Exception e) {
-            throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for Tiger Proxy",
-                e);
-        }
+    public TigerProxyTrustManagerBuildingException(final String s) {
+      super(s);
     }
-
-    public SSLContext buildSslContext() {
-        try {
-            final TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-
-            tmf.init(buildTruststore());
-
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            TrustManager[] trustManagers = tmf.getTrustManagers();
-            sslContext.init(null, trustManagers, null);
-
-            final HttpClient httpClient = HttpClients.custom()
-                .setSSLContext(sslContext)
-                .setSSLHostnameVerifier(new DefaultHostnameVerifier())
-                .build();
-
-            Unirest.primaryInstance()
-                .config()
-                .httpClient(config -> ApacheClient.builder(httpClient).apply(config));
-            return sslContext;
-        } catch (final RuntimeException | NoSuchAlgorithmException | KeyStoreException | KeyManagementException e) {
-            throw new TigerProxyTrustManagerBuildingException("Error while building SSL-Context for Tiger Proxy", e);
-        }
-    }
-
-    private void outputForwardProxyConfigLogs(final Optional<ProxyConfiguration> forwardProxyConfig) {
-        if (forwardProxyConfig.isEmpty()) {
-            log.info("Tigerproxy has NO forward proxy configured!");
-        } else {
-            final ProxyConfiguration configNotEmpty = forwardProxyConfig.get();
-            if (configNotEmpty.getUsername() == null) {
-                log.info("Forward proxy is set to " +
-                    configNotEmpty.getType() + "://"
-                    + configNotEmpty.getProxyAddress().getHostName() + ":"
-                    + configNotEmpty.getProxyAddress().getPort());
-            } else if (configNotEmpty.getUsername() != null) {
-                log.info("Forward proxy is set to " +
-                    configNotEmpty.getType() + "://"
-                    + configNotEmpty.getProxyAddress().getHostName() + ":"
-                    + configNotEmpty.getProxyAddress().getPort() + "@"
-                    + configNotEmpty.getUsername() + ":"
-                    + configNotEmpty.getPassword());
-            }
-        }
-    }
-
-    public void propagateException(final Throwable exception) {
-        exceptionListeners
-            .forEach(consumer -> consumer.accept(exception));
-    }
-
-    public void addNewExceptionConsumer(final Consumer<Throwable> newConsumer) {
-        exceptionListeners.add(newConsumer);
-    }
-
-    @Override
-    @PreDestroy
-    public void close() {
-        log.info("Shutting down Tiger-Proxy {}", getName().orElse(""));
-        super.close();
-        remoteProxyClients
-            .forEach(TigerRemoteProxyClient::close);
-        mockServerClient.stop();
-        mockServer.stop();
-        NettySslContextFactory.sslServerContextBuilderCustomizer = UnaryOperator.identity();
-        KeyAndCertificateFactoryFactory.setCustomKeyAndCertificateFactorySupplier(null);
-    }
-
-    private static class TigerProxyTrustManagerBuildingException extends RuntimeException {
-
-        public TigerProxyTrustManagerBuildingException(final String s, final Exception e) {
-            super(s, e);
-        }
-
-        public TigerProxyTrustManagerBuildingException(final String s) {
-            super(s);
-        }
-    }
+  }
 }
