@@ -1092,6 +1092,8 @@ function updatePageSelector(pagesAvailable) {
         + '</a>';
   }
   selector.innerHTML = selectorInnerHtml;
+  document.getElementById("pageNumberDisplay").textContent =
+      "Page " + (pageNumber + 1);
 }
 
 let tobeScrolledToUUID;
