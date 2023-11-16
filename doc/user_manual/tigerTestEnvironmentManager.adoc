@@ -279,6 +279,18 @@ Each part can be one of:
 * password
 * store-type (accepted are P12, PKCS12, JKS, BKS, PKCS1 and PKCS8)
 
+===== PKI identity passwords
+
+Tiger will attempt to decrypt a given P12 file with a list of common passwords.
+----
+"00", "123456", "gematik", "changeit"
+----
+Users can insert additional passwords by configuring the `tiger.yaml` as follows
+----
+lib:
+    additionalKeyStorePasswords: ["foo", "bar", "baz"]
+----
+
 ==== Docker Container node
 
 The docker container node allows to instantiate a local docker container from the configured image.

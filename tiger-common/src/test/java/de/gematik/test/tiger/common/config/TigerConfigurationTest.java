@@ -29,10 +29,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -295,6 +292,22 @@ public class TigerConfigurationTest {
               assertThat(dummyBean)
                   .containsOnlyKeys("camelCase1", "camelCase2", "camelCase3", "snakecase");
             });
+  }
+
+  @Test
+  void readAList() {
+    TigerGlobalConfiguration.reset();
+    TigerGlobalConfiguration.readFromYaml(
+        """
+      some.key:
+        and.then:
+          some:
+            - fooBar1
+            - fooBar2
+            - fooBar3
+      """);
+    assertThat(TigerGlobalConfiguration.readList("some.key.and", "then", "some"))
+        .containsExactly("fooBar1", "fooBar2", "fooBar3");
   }
 
   @Test

@@ -34,4 +34,8 @@ public abstract class AbstractTigerConfigurationSource {
   public abstract void putValue(TigerConfigurationKey key, String value);
 
   public abstract void removeValue(TigerConfigurationKey key);
+
+  public abstract boolean containsKey(TigerConfigurationKey key);
+
+  public abstract String getValue(TigerConfigurationKey key);
 }

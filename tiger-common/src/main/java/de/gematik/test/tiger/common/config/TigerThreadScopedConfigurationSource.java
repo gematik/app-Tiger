@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
 
 /**
@@ -54,19 +56,43 @@ public class TigerThreadScopedConfigurationSource extends AbstractTigerConfigura
 
   @Override
   public void putValue(TigerConfigurationKey key, String value) {
-    final long threadId = Thread.currentThread().getId();
-    synchronized (threadIdToValuesMap) {
-      threadIdToValuesMap.computeIfAbsent(threadId, thid -> new ConcurrentHashMap<>());
-      threadIdToValuesMap.get(threadId).put(key, value);
-    }
+    executeWithCurrentThreadMap(
+        threadId -> {
+          threadIdToValuesMap.get(threadId).put(key, value);
+        });
   }
 
   @Override
   public void removeValue(TigerConfigurationKey key) {
+    executeWithCurrentThreadMap(
+        threadId -> {
+          threadIdToValuesMap.get(threadId).remove(key);
+        });
+  }
+
+  @Override
+  public boolean containsKey(TigerConfigurationKey key) {
+    return retrieveFromCurrentThreadMap(m -> m.containsKey(key));
+  }
+
+  @Override
+  public String getValue(TigerConfigurationKey key) {
+    return retrieveFromCurrentThreadMap(m -> m.get(key));
+  }
+
+  private <T> T retrieveFromCurrentThreadMap(Function<Map<TigerConfigurationKey, String>, T> retriever) {
     final long threadId = Thread.currentThread().getId();
     synchronized (threadIdToValuesMap) {
       threadIdToValuesMap.computeIfAbsent(threadId, thid -> new ConcurrentHashMap<>());
-      threadIdToValuesMap.get(threadId).remove(key);
+      return retriever.apply(threadIdToValuesMap.get(threadId));
+    }
+  }
+
+  private void executeWithCurrentThreadMap(LongConsumer threadIdConsumer) {
+    final long threadId = Thread.currentThread().getId();
+    synchronized (threadIdToValuesMap) {
+      threadIdToValuesMap.computeIfAbsent(threadId, thid -> new ConcurrentHashMap<>());
+      threadIdConsumer.accept(threadId);
     }
   }
 }

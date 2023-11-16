@@ -4,7 +4,10 @@
 
 package de.gematik.test.tiger.common.pki;
 
+import static de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader.StoreType.PKCS12;
+
 import de.gematik.rbellogger.util.CryptoLoader;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -31,6 +35,8 @@ import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 public class TigerPkiIdentityLoader {
 
   private static final String CLASSPATH_PREFIX = "classpath:";
+  private static final List<String> DEFAULT_KEYSTORE_PASSWORDS =
+      List.of("00", "123456", "gematik", "changeit");
 
   static {
     BouncyCastleJsseProvider bcJsseProv = new BouncyCastleJsseProvider();
@@ -56,6 +62,33 @@ public class TigerPkiIdentityLoader {
 
   public static TigerPkiIdentity loadRbelPkiIdentity(File file, String information) {
     return loadRbelPkiIdentity(Optional.of(file), information);
+  }
+
+  @SneakyThrows
+  public static TigerPkiIdentity loadRbelPkiIdentityWithGuessedPassword(File file) {
+    Pair<String, byte[]> keystore =
+        Pair.of(file.getAbsolutePath(), FileUtils.readFileToByteArray(file));
+    final List<String> keystorePasswords = getAllKeystorePasswords();
+
+    for (String password : keystorePasswords) {
+      try {
+        return loadKeystoreFrom(keystore, password, PKCS12.name());
+      } catch (TigerPkiIdentityLoaderException e) {
+        // continue
+      }
+    }
+
+    throw new TigerPkiIdentityLoaderException(
+        "Unable to decrypt file %s with any of these keystore passwords: %s"
+            .formatted(file.getName(), keystorePasswords));
+  }
+
+  static List<String> getAllKeystorePasswords() {
+    List<String> keystorePasswords = new ArrayList<>(DEFAULT_KEYSTORE_PASSWORDS);
+    List<String> additionalPasswords =
+        TigerGlobalConfiguration.readList("tiger", "lib", "additionalKeyStorePasswords");
+    keystorePasswords.addAll(additionalPasswords);
+    return keystorePasswords;
   }
 
   private static TigerPkiIdentity loadRbelPkiIdentity(

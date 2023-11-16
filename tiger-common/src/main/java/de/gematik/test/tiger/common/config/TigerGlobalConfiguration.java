@@ -61,7 +61,7 @@ public class TigerGlobalConfiguration {
     initializeWithCliProperties(Map.of());
   }
 
-  public static void initializeWithCliProperties(Map<String, String> additionalProperties) {
+  public synchronized static void initializeWithCliProperties(Map<String, String> additionalProperties) {
     if (initialized) {
       return;
     }
@@ -210,6 +210,11 @@ public class TigerGlobalConfiguration {
       TigerGlobalConfiguration.initialize();
       initialized = true;
     }
+  }
+
+  public static List<String> readList(String... baseKeys) {
+    assertGlobalConfigurationIsInitialized();
+    return globalConfigurationLoader.readList(baseKeys);
   }
 
   public static Map<String, String> readMap(String... baseKeys) {

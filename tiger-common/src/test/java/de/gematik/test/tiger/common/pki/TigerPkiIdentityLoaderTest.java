@@ -7,11 +7,21 @@ package de.gematik.test.tiger.common.pki;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader.TigerPkiIdentityLoaderException;
+import java.io.File;
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 class TigerPkiIdentityLoaderTest {
+
+  @AfterEach
+  void afterAll() {
+    TigerGlobalConfiguration.reset();
+  }
 
   @ParameterizedTest
   @CsvSource(
@@ -118,6 +128,31 @@ class TigerPkiIdentityLoaderTest {
   @CsvSource(
       textBlock =
           """
+           src/test/resources/customCa.p12
+           src/test/resources/nonDefaultPw.p12
+           src/test/resources/hera.p12
+            """)
+  void loadWithDefaultKeystorePasswords(String path) {
+    TigerGlobalConfiguration.initialize();
+    assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentityWithGuessedPassword(new File(path)))
+        .isNotNull();
+  }
+
+  @Test
+  void additionalKeystorePasswords() {
+    TigerGlobalConfiguration.readFromYaml(
+      """
+      tiger:
+        lib:
+          additionalKeyStorePasswords: ["foo", "baz", "bar"]
+      """);
+    List<String> list = TigerPkiIdentityLoader.getAllKeystorePasswords();
+    assertThat(list)
+            .containsAll(List.of("00", "123456", "gematik", "changeit", "foo", "baz", "bar"));
+  }
+
+  @ParameterizedTest
+    @CsvSource(textBlock = """
            src/test/fdfdxsss/herffssa.p1sddef2;00
            src\\test\\fdfdxsss\\herffssa.p1sddef2;00
             """)

@@ -108,8 +108,8 @@ public class TigerConfigurationLoader {
   public Optional<String> readStringOptional(TigerConfigurationKey key) {
     return loadedSources.stream()
         .sorted(Comparator.comparing(source -> source.getSourceType().getPrecedence()))
-        .filter(source -> source.getValues().containsKey(key))
-        .map(source -> source.getValues().get(key))
+        .filter(source -> source.containsKey(key))
+        .map(source -> source.getValue(key))
         .findFirst();
   }
 
@@ -503,6 +503,14 @@ public class TigerConfigurationLoader {
                 Entry::getValue));
   }
 
+  public List<String> readList(String... baseKeys) {
+    var reference = new TigerConfigurationKey(baseKeys);
+    return retrieveMap().entrySet().stream()
+        .filter(entry -> entry.getKey().isBelow(reference))
+        .map(Entry::getValue)
+        .toList();
+  }
+
   public Map<String, String> readMapWithCaseSensitiveKeys(String... baseKeys) {
     var reference = new TigerConfigurationKey(baseKeys);
     return retrieveMap().entrySet().stream()
@@ -566,7 +574,7 @@ public class TigerConfigurationLoader {
       loadedSources.add(newSource);
       newSource.putValue(new TigerConfigurationKey(key), value);
     } else {
-      configurationSource.get().getValues().put(new TigerConfigurationKey(key), value);
+      configurationSource.get().putValue(new TigerConfigurationKey(key), value);
     }
   }
 
