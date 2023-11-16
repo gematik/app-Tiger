@@ -130,6 +130,14 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
   }
 
+  @Test
+  void forwardProxyWithoutConfiguredServerName_certificateShouldContainCorrectServerName() {
+    spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
+
+    final HttpResponse<JsonNode> response = proxyRest.get("https://google.com").asJson();
+    assertThat(response.getStatus()).isEqualTo(200);
+  }
+
   @SneakyThrows
   @Test
   void serverCertificateChainShouldContainMultipleCertificatesIfGiven() throws UnirestException {

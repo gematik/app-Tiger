@@ -18,7 +18,6 @@ import java.security.interfaces.RSAPrivateKey;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.stream.Stream;
 import lombok.Builder;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -36,6 +35,7 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.IPAddress;
+import org.mockserver.configuration.Configuration;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.log.model.LogEntry;
 import org.mockserver.logging.MockServerLogger;
@@ -56,12 +56,15 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
   private final String serverName;
   private final List<String> serverAlternativeNames;
   private TigerPkiIdentity eeIdentity;
+  private List<String> hostsCoveredByGeneratedIdentity = List.of();
+  private final Configuration mockServerConfiguration;
 
   @Builder
   public DynamicTigerKeyAndCertificateFactory(
       MockServerLogger mockServerLogger,
       TigerProxyConfiguration tigerProxyConfiguration,
-      TigerPkiIdentity caIdentity) {
+      TigerPkiIdentity caIdentity,
+      Configuration mockServerConfiguration) {
     super(
         ProxyConfigurationConverter.convertToMockServerConfiguration(tigerProxyConfiguration),
         mockServerLogger);
@@ -74,6 +77,7 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
     if (tigerProxyConfiguration.getTls().getAlternativeNames() != null) {
       serverAlternativeNames.addAll(tigerProxyConfiguration.getTls().getAlternativeNames());
     }
+    this.mockServerConfiguration = mockServerConfiguration;
   }
 
   @Override
@@ -109,6 +113,7 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
 
   @Override
   public void buildAndSavePrivateKeyAndX509Certificate() {
+    assureCurrentCertificateCoversAllNecessaryHosts();
     if (eeIdentity == null) {
       try {
         KeyPair keyPair = this.generateRsaKeyPair(2048);
@@ -120,6 +125,7 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
 
         eeIdentity = new TigerPkiIdentity(x509Certificate, keyPair.getPrivate());
 
+        certificateChain.clear();
         certificateChain.add(x509Certificate);
         certificateChain.add(caIdentity.getCertificate());
         if (MockServerLogger.isEnabled(Level.TRACE)) {
@@ -140,6 +146,15 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
                 .setLogLevel(Level.ERROR)
                 .setMessageFormat("exception while generating private key and X509 certificate")
                 .setThrowable(e));
+      }
+    }
+  }
+
+  private void assureCurrentCertificateCoversAllNecessaryHosts() {
+    for (String hostThatShouldBePresent :
+        mockServerConfiguration.sslSubjectAlternativeNameDomains()) {
+      if (!hostsCoveredByGeneratedIdentity.contains(hostThatShouldBePresent)) {
+        eeIdentity = null;
       }
     }
   }
@@ -172,17 +187,19 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
         Extension.subjectKeyIdentifier, false, createNewSubjectKeyIdentifier(publicKey));
     builder.addExtension(Extension.basicConstraints, false, new BasicConstraints(false));
 
-    if (!serverAlternativeNames.isEmpty()) {
-      DERSequence subjectAlternativeNamesExtension =
-          new DERSequence(
-              Stream.concat(serverAlternativeNames.stream(), Stream.of(serverName))
-                  .distinct()
-                  .filter(Objects::nonNull)
-                  .map(this::mapAlternativeNameToAsn1Encodable)
-                  .toArray(ASN1Encodable[]::new));
-      builder.addExtension(
-          Extension.subjectAlternativeName, false, subjectAlternativeNamesExtension);
-    }
+    hostsCoveredByGeneratedIdentity = new ArrayList<>();
+    hostsCoveredByGeneratedIdentity.addAll(serverAlternativeNames);
+    hostsCoveredByGeneratedIdentity.addAll(
+        mockServerConfiguration.sslSubjectAlternativeNameDomains());
+    hostsCoveredByGeneratedIdentity.add(serverName);
+    DERSequence subjectAlternativeNamesExtension =
+        new DERSequence(
+            hostsCoveredByGeneratedIdentity.stream()
+                .distinct()
+                .filter(Objects::nonNull)
+                .map(this::mapAlternativeNameToAsn1Encodable)
+                .toArray(ASN1Encodable[]::new));
+    builder.addExtension(Extension.subjectAlternativeName, false, subjectAlternativeNamesExtension);
 
     return signTheCertificate(builder, certificateAuthorityPrivateKey);
   }

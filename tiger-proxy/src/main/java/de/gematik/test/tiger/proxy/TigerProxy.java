@@ -352,7 +352,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
                   getTigerProxyConfiguration(),
                   determineServerRootCa()
                       .orElseThrow(
-                          () -> new TigerProxyStartupException("Unrecoverable TLS startup state")));
+                          () -> new TigerProxyStartupException("Unrecoverable TLS startup state")),
+                  mockServerConfiguration);
           this.tlsFactories.add(dynamicTigerKeyAndCertificateFactory);
           return dynamicTigerKeyAndCertificateFactory;
         }
