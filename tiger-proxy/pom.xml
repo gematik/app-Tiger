@@ -76,7 +76,11 @@
             <artifactId>highlightjs</artifactId>
             <version>${version.highlightjs}</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bctls-jdk18on</artifactId>
+            <version>${version.bouncycastle}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.projectlombok</groupId>

@@ -810,6 +810,13 @@ tigerProxy:
       - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
     # Define which TLS protocols the server will allow/use. Available values can be found here:
     # https://docs.oracle.com/javase/7/docs/technotes/guides/security/SunProviders.html
+    clientSupportedDhGroups:
+      - "brainpoolP256r1"
+      - "brainpoolP384r1"
+      - "prime256v1"
+      - "secp384r1"
+    # Define the groups to be offered in the "client hello" message. More information can be found here:
+    # https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.7
     serverTlsProtocols:
       - "TLSv1.2"
 

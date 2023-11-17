@@ -23,10 +23,13 @@ import io.restassured.response.Response;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Proxy.Type;
+import java.net.Socket;
 import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
@@ -34,6 +37,7 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -53,6 +57,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContexts;
 import org.assertj.core.api.InstanceOfAssertFactories;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Disabled;
@@ -388,7 +393,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
       if (shouldConnect) {
         request.asString();
       } else {
-        assertThatThrownBy(request::asString).hasCauseInstanceOf(SSLHandshakeException.class);
+        assertThatThrownBy(request::asString).hasCauseInstanceOf(IllegalStateException.class);
       }
     }
   }
@@ -520,6 +525,113 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   }
 
   @Test
+  void mutualTlsWithEcc_konnektorGradeHandshake() {
+    final TigerConfigurationPkiIdentity clientIdentity =
+        new TigerConfigurationPkiIdentity("src/test/resources/gateway_ecc.p12;00");
+
+    int serverPort = startKonnektorAlikeServerReturningAlways555(clientIdentity);
+
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("http://backend")
+                        .to("https://localhost:" + serverPort)
+                        .build()))
+            .tls(
+                TigerTlsConfiguration.builder()
+                    .forwardMutualTlsIdentity(clientIdentity)
+                    .clientSslSuites(
+                        List.of(
+                            "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+                            "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"))
+                    .clientSupportedDhGroups(
+                        List.of("brainpoolP256r1", "brainpoolP384r1", "prime256v1", "secp384r1"))
+                    .build())
+            .build());
+
+    final HttpResponse<String> response = proxyRest.get("http://backend/foobar").asString();
+
+    assertThat(response.getStatus()).isEqualTo(555);
+  }
+
+  AtomicBoolean shouldServerRun = new AtomicBoolean(true);
+
+  @SneakyThrows
+  public int startKonnektorAlikeServerReturningAlways555(
+      TigerConfigurationPkiIdentity clientIdentity) {
+    var threadPool = Executors.newCachedThreadPool();
+
+    System.setProperty("jdk.tls.namedGroups", "brainpoolP384r1");
+    Security.setProperty("ssl.KeyManagerFactory.algorithm", "PKIX");
+    Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
+    Security.insertProviderAt(new BouncyCastleProvider(), 1);
+    Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
+    Security.insertProviderAt(new BouncyCastleJsseProvider(), 2);
+    SSLContext sslContext = getSSLContext(clientIdentity);
+    SSLServerSocketFactory ssf = sslContext.getServerSocketFactory();
+    SSLServerSocket serverSocket = (SSLServerSocket) ssf.createServerSocket(0);
+    String[] ciphers = {"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"};
+    serverSocket.setEnabledCipherSuites(ciphers);
+    serverSocket.setEnabledProtocols(new String[] {"TLSv1.2"});
+    serverSocket.setNeedClientAuth(true);
+
+    System.clearProperty("jdk.tls.namedGroups");
+
+    threadPool.execute(
+        () -> {
+          while (shouldServerRun.get()) {
+            try {
+              Socket socket = serverSocket.accept();
+              OutputStream out = socket.getOutputStream();
+              out.write("HTTP/1.1 555\r\n".getBytes());
+              out.close();
+              socket.close();
+            } catch (IOException e) {
+              // swallow
+            }
+          }
+        });
+
+    return serverSocket.getLocalPort();
+  }
+
+  protected SSLContext getSSLContext(TigerConfigurationPkiIdentity clientIdentity)
+      throws Exception {
+    SSLContext sslContext = SSLContext.getInstance("TLS");
+    final TigerConfigurationPkiIdentity serverCert =
+        new TigerConfigurationPkiIdentity("src/test/resources/eccStoreWithChain.jks;gematik");
+    // Set up key manager factory to use our key store
+    KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+    kmf.init(serverCert.toKeyStoreWithPassword("00"), "00".toCharArray());
+
+    // Initialize the SSLContext to work with our key managers.
+    final X509TrustManager x509TrustManager =
+        new X509TrustManager() {
+          @Override
+          public void checkClientTrusted(X509Certificate[] chain, String authType)
+              throws CertificateException {
+            // swallow
+          }
+
+          @Override
+          public void checkServerTrusted(X509Certificate[] chain, String authType)
+              throws CertificateException {
+            // swallow
+          }
+
+          @Override
+          public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[] {clientIdentity.getCertificate()};
+          }
+        };
+    sslContext.init(kmf.getKeyManagers(), new X509TrustManager[] {x509TrustManager}, null);
+
+    return sslContext;
+  }
+
+  @Test
   void autoconfigureSslContextUnirest_shouldTrustTigerProxy() {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
@@ -562,9 +674,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                   .proxy("localhost", tigerProxy.getProxyPort());
               restInstanceWithoutSslContextConfigured.get("https://backend/foobar").asJson();
             })
-        .hasMessageContaining(
-            "PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException:"
-                + " unable to find valid certification path to requested target");
+        .hasMessageContaining("certificate_unknown");
   }
 
   @Test
@@ -622,9 +732,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
               client.newCall(request).execute();
             })
-        .hasMessageContaining(
-            "PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException:"
-                + " unable to find valid certification path to requested target");
+        .hasMessageContaining("certificate_unknown");
   }
 
   @Test
@@ -669,9 +777,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
               RestAssured.proxy("localhost", tigerProxy.getProxyPort());
               RestAssured.get("https://backend/foobar").andReturn();
             })
-        .hasMessageContaining(
-            "PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException:"
-                + " unable to find valid certification path to requested target");
+        .hasMessageContaining("certificate_unknown");
   }
 
   @Test

@@ -5,6 +5,7 @@
 ## Features
 
 * TGR-912: Healthchecks for externalUrl-Servers now honor the configured forwardProxyInfo of the localTigerProxy
+* TGR-1163: TigerProxy: The groups to be used for the DH-key-exchange in TLS-Handshakes can now be set for clients
 
 ## Bugfixes
 * TGR-1139/TGR-1140: Fixed various minor problems with recursive descent and attributes in RbelPath-expressions
