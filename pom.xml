@@ -27,8 +27,8 @@
         <version.commons-io>2.13.0</version.commons-io>
         <version.commons-jexl3>3.3</version.commons-jexl3>
         <version.commons-collections>3.2.2</version.commons-collections>
-        <version.cucumber>7.11.0</version.cucumber>
-        <version.datatable>7.12.1</version.datatable>
+        <version.cucumber>7.14.0</version.cucumber>
+        <version.datatable>7.14.0</version.datatable>
         <version.gson>2.10.1</version.gson>
         <version.htmlunit>3.55.0</version.htmlunit>
         <version.jackson>2.14.2</version.jackson>
@@ -46,8 +46,8 @@
         <version.maven-plugin-tools>3.9.0</version.maven-plugin-tools>
         <version.mockito>5.4.0</version.mockito>
         <version.mockserver>5.15.0</version.mockserver>
-        <version.serenity.core>3.6.23</version.serenity.core>
-        <version.serenity.maven.plugin>3.8.1</version.serenity.maven.plugin>
+        <version.serenity.core>4.0.12</version.serenity.core>
+        <version.serenity.maven.plugin>4.0.12</version.serenity.maven.plugin>
         <version.slf4j>2.0.7</version.slf4j>
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
         <version.spring-boot>3.1.0</version.spring-boot>

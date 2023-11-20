@@ -11,7 +11,7 @@ import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 import lombok.SneakyThrows;
-import net.thucydides.core.annotations.Step;
+import net.serenitybdd.annotations.Step;
 import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;

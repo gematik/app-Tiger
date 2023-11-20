@@ -5,14 +5,15 @@ package de.gematik.test.tiger.maven.adapter.mojos;
 
 import de.gematik.test.tiger.common.web.TigerBrowserUtil;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.serenitybdd.reports.email.SinglePageHtmlReporter;
-import net.thucydides.core.reports.ResultChecker;
-import net.thucydides.core.reports.TestOutcomes;
 import net.thucydides.core.reports.html.HtmlAggregateStoryReporter;
-import net.thucydides.core.requirements.FileSystemRequirements;
+import net.thucydides.model.reports.ResultChecker;
+import net.thucydides.model.reports.TestOutcomes;
+import net.thucydides.model.requirements.FileSystemRequirements;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -46,7 +47,7 @@ public class TigerSerenityReportMojo extends AbstractMojo {
     }
   }
 
-  private void generateHtmlStoryReports() throws Exception {
+  private void generateHtmlStoryReports() throws IOException {
     if (!reportDirectory.exists()) {
       getLog().warn("Report directory does not exist yet: " + reportDirectory);
       return;

@@ -18,8 +18,8 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
-import net.thucydides.core.guice.Injectors;
-import net.thucydides.core.webdriver.Configuration;
+import net.serenitybdd.core.di.SerenityInfrastructure;
+import net.thucydides.model.webdriver.Configuration;
 import org.junit.runners.model.InitializationError;
 
 @Slf4j
@@ -60,7 +60,7 @@ public class TigerCucumberRunner extends CucumberSerenityBaseRunner {
 
   public static Runtime using(
       Supplier<ClassLoader> classLoaderSupplier, RuntimeOptions runtimeOptions) {
-    Configuration systemConfiguration = Injectors.getInjector().getInstance(Configuration.class);
+    Configuration<?> systemConfiguration = SerenityInfrastructure.getConfiguration();
     return createTigerSerenityEnabledRuntime(
         classLoaderSupplier, runtimeOptions, systemConfiguration);
   }
@@ -69,7 +69,7 @@ public class TigerCucumberRunner extends CucumberSerenityBaseRunner {
       /*ResourceLoader resourceLoader,*/
       Supplier<ClassLoader> classLoaderSupplier,
       RuntimeOptions runtimeOptions,
-      Configuration systemConfiguration) {
+      Configuration<?> systemConfiguration) {
     RuntimeOptionsBuilder runtimeOptionsBuilder = new RuntimeOptionsBuilder();
     Collection<String> allTagFilters = environmentSpecifiedTags(runtimeOptions.getTagExpressions());
     for (String tagFilter : allTagFilters) {
@@ -83,8 +83,6 @@ public class TigerCucumberRunner extends CucumberSerenityBaseRunner {
     FeaturePathFeatureSupplier featureSupplier =
         new FeaturePathFeatureSupplier(classLoaderSupplier, runtimeOptions, parser);
 
-    // NOSONAR 3.6.1 TigerSerenityReporterPlugin reporter = new
-    // TigerSerenityReporterPlugin(systemConfiguration);
     TigerSerenityReporterPlugin reporter = new TigerSerenityReporterPlugin(systemConfiguration);
 
     return Runtime.builder()
@@ -115,9 +113,7 @@ public class TigerCucumberRunner extends CucumberSerenityBaseRunner {
 
     ThreadLocalRunnerSupplier runnerSupplier = initializeServices(clazz, runtimeOptions);
 
-    Configuration systemConfiguration = Injectors.getInjector().getInstance(Configuration.class);
-    // 3.6.1 TigerSerenityReporterPlugin reporter = new
-    // TigerSerenityReporterPlugin(systemConfiguration);
+    Configuration<?> systemConfiguration = SerenityInfrastructure.getConfiguration();
     TigerSerenityReporterPlugin reporter = new TigerSerenityReporterPlugin(systemConfiguration);
     addPlugin(reporter);
 

@@ -8,7 +8,7 @@ import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
 import io.cucumber.plugin.event.*;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.thucydides.core.webdriver.Configuration;
+import net.thucydides.model.webdriver.Configuration;
 
 /** will be replacing teh TigerCucumberListener once Serenity PR is released */
 @Slf4j
