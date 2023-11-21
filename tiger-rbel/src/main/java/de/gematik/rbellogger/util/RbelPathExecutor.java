@@ -80,7 +80,7 @@ public class RbelPathExecutor {
             candidates.stream()
                 .flatMap(el -> el.getChildNodesWithKey().stream())
                 .map(Map.Entry::getKey)
-                .collect(Collectors.toList()));
+                .toList());
       }
       List<T> lastIterationCandidates = candidates;
       candidates =
@@ -120,7 +120,7 @@ public class RbelPathExecutor {
   }
 
   public static List<String> splitRbelPathIntoKeys(String rbelPath) {
-    final String[] split = rbelPath.substring(1).trim().split("\\.(?!(\\.|[^\\(]*\\)))");
+    final String[] split = rbelPath.substring(1).trim().split("\\.(?!(\\.|[^\\[]*\\]))");
     final ArrayList<String> keys = new ArrayList<>();
     for (String part : split) {
       if (StringUtils.isBlank(part)) {

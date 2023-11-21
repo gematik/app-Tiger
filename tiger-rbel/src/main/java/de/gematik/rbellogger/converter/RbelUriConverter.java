@@ -25,7 +25,11 @@ public class RbelUriConverter implements RbelConverterPlugin {
       return List.of();
     }
 
-    return Stream.of(originalContent.split("\\?")[1].split("\\&"))
+    final String[] split = originalContent.split("\\?");
+    if (split.length < 2) {
+      return List.of();
+    }
+    return Stream.of(split[1].split("\\&"))
         .filter(StringUtils::isNotEmpty)
         .map(
             param -> {

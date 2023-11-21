@@ -333,4 +333,10 @@ class RbelPathExecutorTest {
     assertThat(jsonElement.findRbelPathMembers(rbelPath1))
         .containsExactlyInAnyOrderElementsOf(jsonElement.findRbelPathMembers(rbelPath2));
   }
+
+  @Test
+  void testEscapingOfElementNamesWithPoints() {
+    assertThat(xmlMessage.findRbelPathMembers("$..['some.other-tag'].text").get(0).getRawStringContent())
+      .isEqualToIgnoringWhitespace("blub");
+  }
 }

@@ -5,8 +5,8 @@
 "use strict";
 
 import backendClient from '/backendClient.js'
-import SenderReceiversFrequencyCounter from '/senderReceiversFrequencyCounter.js'
-
+import SenderReceiversFrequencyCounter
+  from '/senderReceiversFrequencyCounter.js'
 
 let lastUuid = "";
 let filterCriterion = "";
@@ -814,12 +814,24 @@ function copyPathToInputField(event, element) {
   var text = element.textContent;
   var el = element.previousElementSibling;
   var marker = el.textContent;
+
+  function stringContainsNonWordCharacters(testString) {
+    return testString.match("\\W") != null;
+  }
+
+  if (stringContainsNonWordCharacters(text)) {
+    text = "['" + text + "']";
+  }
   while (el != null) {
     if (el.classList) {
       if (el.classList.contains('jexlResponseLink')) {
         if (el.previousElementSibling.classList.contains('text-danger') &&
             el.previousElementSibling.textContent.length < marker.length) {
-          text = el.textContent + "." + text;
+          if (stringContainsNonWordCharacters(el.textContent)) {
+            text = "['" + el.textContent + "']." + text;
+          } else {
+            text = el.textContent + "." + text;
+          }
           marker = el.previousElementSibling.textContent;
         }
       }

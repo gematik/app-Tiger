@@ -4,7 +4,7 @@ Feature: HTTP/HTTPS GlueCode Test feature
     Given TGR clear recorded messages
 
   Scenario Outline:  Test <color> with <inhalt>
-    And TGR show <color> text "<inhalt>"
+    And TGR show <color> text "${my.string}"
     Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
       | color  | inhalt |
       | red    | Dagmar |
