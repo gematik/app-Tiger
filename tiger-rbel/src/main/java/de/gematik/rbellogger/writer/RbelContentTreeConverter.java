@@ -109,17 +109,15 @@ public class RbelContentTreeConverter {
   private static List<RbelContentTreeNode> evaluateTgrEncodeAsIfPresent(
       RbelElement element, List<RbelContentTreeNode> input) {
     // tgrEncodeWith
-    if (element.getFirst(TGR_ENCODE_AS).isPresent()) {
-      input.stream()
-          .forEach(
-              node ->
-                  node.setType(
-                      RbelContentType.valueOf(
-                          element.getFirst(TGR_ENCODE_AS).get().getRawStringContent())));
-      return input;
-    } else {
-      return input;
+    final Optional<RbelElement> encodeAs = element.getFirst(TGR_ENCODE_AS);
+    if (encodeAs.isPresent()) {
+      for (RbelContentTreeNode node : input) {
+        node.setType(
+          RbelContentType.valueOf(
+            encodeAs.get().getRawStringContent()));
+      }
     }
+    return input;
   }
 
   private List<RbelContentTreeNode> executeTgrForLoop(

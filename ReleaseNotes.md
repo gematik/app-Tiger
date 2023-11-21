@@ -13,9 +13,7 @@
 * TGR-1139/TGR-1140: Fixed various minor problems with recursive descent and attributes in RbelPath-expressions
 * TGR-1150: TigerProxy WebUI: Correct escaping in inspect-dialog for RbelPath-generation added
 * TGR-1038: Changed assertThatNo()-exceptions to assertThatNo.isThrownBy so the tests are not ignored
-* TGR-935: Removed unnecessary encapsulation of tiger exceptions to reduce stacktrace flooding, added root cause to
-  exception message so that maven shows the root cause in the error line too.
-* TGR-1154: Improved error message in case the PKI Loader fails to open a key store (including the filename)
+* TGR-1170: TigerGlobalConfiguration: Fixes for very rare race conditions leading to ConcurrentModification-Exceptions
 * TGR-1162: fixed an issue were the amount of test cases was not reported correctly by serenity.
 
 -------

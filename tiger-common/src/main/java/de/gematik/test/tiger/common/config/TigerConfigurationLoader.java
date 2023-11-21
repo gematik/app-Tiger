@@ -39,7 +39,7 @@ public class TigerConfigurationLoader {
 
   private ObjectMapper objectMapper;
   private ObjectMapper strictObjectMapper;
-  private List<AbstractTigerConfigurationSource> loadedSources;
+  private TigerConfigurationSourcesManager sourcesManager = new TigerConfigurationSourcesManager();
   private List<TigerTemplateSource> loadedTemplates;
 
   public TigerConfigurationLoader() {
@@ -47,7 +47,7 @@ public class TigerConfigurationLoader {
   }
 
   public void reset() {
-    loadedSources.clear();
+    sourcesManager.reset();
     loadedTemplates.clear();
     initializeObjectMapper();
   }
@@ -55,10 +55,6 @@ public class TigerConfigurationLoader {
   public void initialize() {
     if (objectMapper == null) {
       initializeObjectMapper();
-    }
-
-    if (loadedSources == null) {
-      loadedSources = new ArrayList<>();
     }
     if (loadedTemplates == null) {
       loadedTemplates = new ArrayList<>();
@@ -106,8 +102,8 @@ public class TigerConfigurationLoader {
   }
 
   public Optional<String> readStringOptional(TigerConfigurationKey key) {
-    return loadedSources.stream()
-        .sorted(Comparator.comparing(source -> source.getSourceType().getPrecedence()))
+    return sourcesManager
+        .getSortedStream()
         .filter(source -> source.containsKey(key))
         .map(source -> source.getValue(key))
         .findFirst();
@@ -227,7 +223,7 @@ public class TigerConfigurationLoader {
     addYamlToMap(yaml.load(yamlSource), new TigerConfigurationKey(baseKeys), valueMap);
     DeprecatedKeysForbiddenUsageChecker.checkForDeprecatedKeys(valueMap);
 
-    loadedSources.add(
+    sourcesManager.addNewSource(
         BasicTigerConfigurationSource.builder()
             .values(valueMap)
             .sourceType(sourceType)
@@ -278,12 +274,12 @@ public class TigerConfigurationLoader {
   }
 
   public void loadEnvironmentVariables() {
-    loadedSources.stream()
+    sourcesManager
+        .getSortedStream()
         .filter(source -> source.getSourceType() == SourceType.ENV)
-        .findAny()
-        .ifPresent(loadedSources::remove);
+        .forEach(sourcesManager::removeSource);
 
-    loadedSources.add(
+    sourcesManager.addNewSource(
         BasicTigerConfigurationSource.builder()
             .basePath(new TigerConfigurationKey())
             .values(
@@ -298,12 +294,12 @@ public class TigerConfigurationLoader {
   }
 
   public void loadSystemProperties() {
-    loadedSources.stream()
+    sourcesManager
+      .getSortedStream()
         .filter(source -> source.getSourceType() == SourceType.PROPERTIES)
-        .findAny()
-        .ifPresent(loadedSources::remove);
+        .forEach(sourcesManager::removeSource);
 
-    loadedSources.add(
+    sourcesManager.addNewSource(
         BasicTigerConfigurationSource.builder()
             .basePath(new TigerConfigurationKey())
             .values(
@@ -341,10 +337,7 @@ public class TigerConfigurationLoader {
   public Map<TigerConfigurationKey, String> retrieveMapUnresolved() {
     Map<TigerConfigurationKey, String> loadedAndSortedProperties = new HashMap<>();
 
-    for (AbstractTigerConfigurationSource configurationSource :
-        loadedSources.stream()
-            .sorted(Comparator.comparing(AbstractTigerConfigurationSource::getSourceType))
-            .toList()) {
+    for (AbstractTigerConfigurationSource configurationSource : sourcesManager.getSortedListReversed()) {
       loadedAndSortedProperties =
           configurationSource.applyTemplatesAndAddValuesToMap(
               loadedTemplates, loadedAndSortedProperties);
@@ -523,7 +516,7 @@ public class TigerConfigurationLoader {
   }
 
   public List<AbstractTigerConfigurationSource> listSources() {
-    return Collections.unmodifiableList(loadedSources);
+    return sourcesManager.getSortedListReversed();
   }
 
   public void putValue(String key, String value) {
@@ -549,7 +542,7 @@ public class TigerConfigurationLoader {
             yaml.load(objectMapper.writeValueAsString(value)),
             new TigerConfigurationKey(key),
             valueMap);
-        loadedSources.add(
+        sourcesManager.addNewSource(
             BasicTigerConfigurationSource.builder()
                 .values(valueMap)
                 .sourceType(SourceType.RUNTIME_EXPORT)
@@ -563,7 +556,10 @@ public class TigerConfigurationLoader {
 
   public void putValue(String key, String value, SourceType sourceType) {
     final Optional<AbstractTigerConfigurationSource> configurationSource =
-        loadedSources.stream().filter(source -> source.getSourceType() == sourceType).findAny();
+        sourcesManager
+            .getSortedStream()
+            .filter(source -> source.getSourceType() == sourceType)
+            .findAny();
     if (configurationSource.isEmpty()) {
       final AbstractTigerConfigurationSource newSource;
       if (sourceType == SourceType.THREAD_CONTEXT) {
@@ -571,7 +567,7 @@ public class TigerConfigurationLoader {
       } else {
         newSource = new BasicTigerConfigurationSource(sourceType);
       }
-      loadedSources.add(newSource);
+      sourcesManager.addNewSource(newSource);
       newSource.putValue(new TigerConfigurationKey(key), value);
     } else {
       configurationSource.get().putValue(new TigerConfigurationKey(key), value);
@@ -579,11 +575,11 @@ public class TigerConfigurationLoader {
   }
 
   public void addConfigurationSource(AbstractTigerConfigurationSource configurationSource) {
-    loadedSources.add(configurationSource);
+    sourcesManager.addNewSource(configurationSource);
   }
 
   public boolean removeConfigurationSource(AbstractTigerConfigurationSource configurationSource) {
-    return loadedSources.remove(configurationSource);
+    return sourcesManager.removeSource(configurationSource);
   }
 
   public ObjectMapper getObjectMapper() {

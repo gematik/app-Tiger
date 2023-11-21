@@ -9,8 +9,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 
 /** Stores a map of key/value-pairs. */
+@EqualsAndHashCode(callSuper = true)
 public class BasicTigerConfigurationSource extends AbstractTigerConfigurationSource {
 
   private final Map<TigerConfigurationKey, String> values;

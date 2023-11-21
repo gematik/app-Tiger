@@ -11,12 +11,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.LongConsumer;
 import java.util.stream.Collectors;
+import lombok.EqualsAndHashCode;
 
 /**
  * Configuration-source which is bound to a certain thread. The configuration will be invisible from
  * outside the thread in which it has been set. Bear in mind that any unintentional threading
  * (Thread-Pools etc.) will also have the same effect.
  */
+@EqualsAndHashCode(callSuper = true)
 public class TigerThreadScopedConfigurationSource extends AbstractTigerConfigurationSource {
 
   private final Map<Long, Map<TigerConfigurationKey, String>> threadIdToValuesMap;
