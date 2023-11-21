@@ -311,15 +311,15 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
   }
 
   private void customizeClientBuilderFunction(TigerTlsConfiguration tlsConfiguration) {
-    if (tlsConfiguration.getClientSupportedDhGroups() != null
-        && !tlsConfiguration.getClientSupportedDhGroups().isEmpty()) {
+    if (tlsConfiguration.getClientSupportedGroups() != null
+        && !tlsConfiguration.getClientSupportedGroups().isEmpty()) {
       NettySslContextFactory.clientSslContextBuilderFunction = // NOSONAR
           sslContextBuilder -> {
             String before = System.getProperty(JDK_TLS_NAMED_GROUPS);
             try {
               System.setProperty(
                   JDK_TLS_NAMED_GROUPS,
-                  String.join(",", tlsConfiguration.getClientSupportedDhGroups()));
+                  String.join(",", tlsConfiguration.getClientSupportedGroups()));
               sslContextBuilder.sslProvider(SslProvider.JDK);
               return sslContextBuilder.build();
             } catch (SSLException e) {

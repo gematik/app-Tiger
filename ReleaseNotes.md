@@ -1,11 +1,11 @@
 # Changelog Tiger Test platform
 
-# Release 2.2.2
+# Release 2.3.0
 
 ## Features
 
 * TGR-912: Healthchecks for externalUrl-Servers now honor the configured forwardProxyInfo of the localTigerProxy
-* TGR-1163: TigerProxy: The groups to be used for the DH-key-exchange in TLS-Handshakes can now be set for clients
+* TGR-1163: TigerProxy: The groups to be used for the TLS-Handshakes can now be set for client
 * TGR-899: Migrated FAQ.md to FAQ.adoc, translated to english
 
 ## Bugfixes

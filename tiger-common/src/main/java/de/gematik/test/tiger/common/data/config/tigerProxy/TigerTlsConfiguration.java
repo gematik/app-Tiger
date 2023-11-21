@@ -28,5 +28,5 @@ public class TigerTlsConfiguration {
   private List<String> serverSslSuites;
   private List<String> clientSslSuites;
   private List<String> serverTlsProtocols;
-  private List<String> clientSupportedDhGroups;
+  private List<String> clientSupportedGroups;
 }

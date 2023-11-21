@@ -554,7 +554,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                         List.of(
                             "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
                             "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"))
-                    .clientSupportedDhGroups(
+                    .clientSupportedGroups(
                         List.of("brainpoolP256r1", "brainpoolP384r1", "prime256v1", "secp384r1"))
                     .build())
             .build());
