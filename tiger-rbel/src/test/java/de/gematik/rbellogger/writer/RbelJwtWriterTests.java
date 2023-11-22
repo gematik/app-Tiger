@@ -1,6 +1,7 @@
 package de.gematik.rbellogger.writer;
 
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
+
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelConverter;
@@ -12,13 +13,17 @@ import org.junit.jupiter.api.Test;
 
 class RbelJwtWriterTests {
 
-    private final RbelLogger logger = RbelLogger.build(new RbelConfiguration()
-        .addInitializer(new RbelKeyFolderInitializer("src/test/resources")));
-    private RbelConverter rbelConverter = logger.getRbelConverter();
+  private final RbelLogger logger =
+      RbelLogger.build(
+          new RbelConfiguration()
+              .addInitializer(new RbelKeyFolderInitializer("src/test/resources")));
+  private RbelConverter rbelConverter = logger.getRbelConverter();
 
-    @Test
-    void testSimpleJwtSerialization() {
-        final RbelElement input = rbelConverter.convertElement("""
+  @Test
+  void testSimpleJwtSerialization() {
+    final RbelElement input =
+        rbelConverter.convertElement(
+            """
             {
               "tgrEncodeAs":"JWT",
               "header":{
@@ -34,34 +39,36 @@ class RbelJwtWriterTests {
                 "verifiedUsing":"puk_idpEnc"
               }
             }
-            """, null);
-
-        var output = serializeElement(input);
-
-        assertThat(output)
-            .hasFacet(RbelJwtFacet.class)
-            .extractChildWithPath("$.signature.verifiedUsing")
-            .hasValueEqualTo("puk_idpEnc");
-    }
-
-    @Test
-    void roundTripJwtSerialization() {
-        final RbelElement input = rbelConverter.convertElement("eyJhbGciOiJCUDI1NlIxIiwidHlwIjoiSldUIn0"
-                                                               + ".eyJzdWIiOiAiMTIzNDU2Nzg5MCIsIm5hbWUiOiAiSm9obiBEb2UiLCJpYXQiOiAxNTE2MjM5MDIyfQ"
-                                                               + ".XqVOo3RGw8eBjpDJtw7NVTRW5Io5BTQ9MiW4QVxhy5943glx3TFvkMqCvEtiuQDxpJwsrXMmkmUemBaZr1qzFw",
+            """,
             null);
 
-        var output = serializeElement(input);
+    var output = serializeElement(input);
 
-        assertThat(output)
-            .hasFacet(RbelJwtFacet.class)
-            .extractChildWithPath("$.signature.verifiedUsing")
-            .hasValueEqualTo("puk_idpEnc");
-    }
+    assertThat(output)
+        .hasFacet(RbelJwtFacet.class)
+        .extractChildWithPath("$.signature.verifiedUsing")
+        .hasValueEqualTo("puk_idpEnc");
+  }
 
-    private RbelElement serializeElement(RbelElement input) {
-        return rbelConverter.convertElement(
-            new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent(),
+  @Test
+  void roundTripJwtSerialization() {
+    final RbelElement input =
+        rbelConverter.convertElement(
+            "eyJhbGciOiJCUDI1NlIxIiwidHlwIjoiSldUIn0"
+                + ".eyJzdWIiOiAiMTIzNDU2Nzg5MCIsIm5hbWUiOiAiSm9obiBEb2UiLCJpYXQiOiAxNTE2MjM5MDIyfQ"
+                + ".XqVOo3RGw8eBjpDJtw7NVTRW5Io5BTQ9MiW4QVxhy5943glx3TFvkMqCvEtiuQDxpJwsrXMmkmUemBaZr1qzFw",
             null);
-    }
+
+    var output = serializeElement(input);
+
+    assertThat(output)
+        .hasFacet(RbelJwtFacet.class)
+        .extractChildWithPath("$.signature.verifiedUsing")
+        .hasValueEqualTo("puk_idpEnc");
+  }
+
+  private RbelElement serializeElement(RbelElement input) {
+    return rbelConverter.convertElement(
+        new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent(), null);
+  }
 }

@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.lib;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.core.Serenity;
@@ -28,29 +29,29 @@ import org.junit.jupiter.api.Test;
 @Slf4j
 class TestSerenityRestSetup {
 
-    @BeforeEach
-    void init() {
-        TigerDirector.testUninitialize();
-    }
+  @BeforeEach
+  void init() {
+    TigerDirector.testUninitialize();
+  }
 
-    @AfterEach
-    void clearProperties() {
-        System.clearProperty("TIGER_TESTENV_CFGFILE");
-        TigerGlobalConfiguration.reset();
-    }
+  @AfterEach
+  void clearProperties() {
+    System.clearProperty("TIGER_TESTENV_CFGFILE");
+    TigerGlobalConfiguration.reset();
+  }
 
-    @Test
-    void trustStoreIsSet_ShouldBeValidRequestToHTTPS() {
-        System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/trustStoreTest.yaml");
+  @Test
+  void trustStoreIsSet_ShouldBeValidRequestToHTTPS() {
+    System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/trustStoreTest.yaml");
 
-        try {
-            Serenity.throwExceptionsImmediately();
-            TigerDirector.start();
-            assertThat(TigerDirector.getTigerTestEnvMgr().getConfiguration().isLocalProxyActive()).isTrue();
-            assertThat(SerenityRest
-                .with().get("https://blub/webui").getStatusCode()).isEqualTo(200);
-        } finally {
-            TigerDirector.getTigerTestEnvMgr().shutDown();
-        }
+    try {
+      Serenity.throwExceptionsImmediately();
+      TigerDirector.start();
+      assertThat(TigerDirector.getTigerTestEnvMgr().getConfiguration().isLocalProxyActive())
+          .isTrue();
+      assertThat(SerenityRest.with().get("https://blub/webui").getStatusCode()).isEqualTo(200);
+    } finally {
+      TigerDirector.getTigerTestEnvMgr().shutDown();
     }
+  }
 }

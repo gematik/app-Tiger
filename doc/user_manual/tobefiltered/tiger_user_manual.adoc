@@ -34,7 +34,6 @@
 Version {version} - {docdate}
 
 <<<
-
 include::overview.adoc[]
 
 <<<
@@ -72,9 +71,8 @@ include::tigerZion.adoc[]
 * 3-Amigos
 ** presumably first mentioned in https://blog.gdinwiddie.com/2009/06/17/if-you-dont-automate-acceptance-tests/[George Dinwiddie's blog] (2009)
 ** https://johnfergusonsmart.com/three-amigos-requirements-discovery/[John Ferguson's Blog about 3 Amigos]
-** https://scrumlog.org/2019/03/06/bdd-and-three-amigos/[Becky Carter's blog]
 * Cucumber
-** https://cucumber.io/[Product web site]
+** https://cucumber.io/[Product website]
 ** https://www.guru99.com/gherkin-test-cucumber.html[Guru99's Intro to Gherkin]
 ** https://cucumber.io/docs/gherkin/reference/[Cucumbers Gherkin reference]
 * https://serenity-bdd.info/[Serenity BDD]
@@ -88,7 +86,7 @@ include::tigerZion.adoc[]
 * FIRST principle for Unit tests
 ** http://agileinaflash.blogspot.com/2009/02/first.html[AgileOtters Blog]
 
-include::../../FAQ.md[leveloffset=+1]
+include::../../../FAQ.adoc[leveloffset=+1]
 
 
 // TODO TGR-316== Glossar

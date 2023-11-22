@@ -28,7 +28,6 @@ import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Optional;
-import javax.print.Doc;
 import lombok.extern.slf4j.Slf4j;
 import org.dom4j.*;
 import org.dom4j.io.SAXReader;
@@ -40,99 +39,97 @@ import org.xml.sax.SAXException;
 @Slf4j
 public class RbelXmlConverter implements RbelConverterPlugin {
 
-    private static final String XML_TEXT_KEY = "text";
-    private RbelHtmlConverter htmlConverter = new RbelHtmlConverter();
+  private static final String XML_TEXT_KEY = "text";
+  private RbelHtmlConverter htmlConverter = new RbelHtmlConverter();
 
-    @Override
-    public void consumeElement(final RbelElement rbel, final RbelConverter context) {
-        final String content = rbel.getRawStringContent();
-        if (content.contains("<") && content.contains(">")) {
-            try {
-                InputSource source = buildInputSource(content.trim(), rbel);
-                final Document parsedXml = parseXml(source);
-                buildXmlElementForNode(parsedXml, rbel, context);
-                setCharset(parsedXml, rbel);
-                rbel.addFacet(new RbelRootFacet(rbel.getFacetOrFail(RbelXmlFacet.class)));
-            } catch (DocumentException e) {
-                log.trace("Exception while trying to parse XML. Trying as HTML (more lenient SAX parsing)", e);
-                try {
-                    htmlConverter.parseHtml(content.trim())
-                        .ifPresent(document -> {
-                            htmlConverter.buildXmlElementForNode(document, rbel, context);
-                            rbel.addFacet(new RbelRootFacet(rbel.getFacetOrFail(RbelXmlFacet.class)));
-                        });
-                } catch (IOException | SAXException e2) {
-                    log.trace("Exception while trying to parse XML. Skipping", e);
-                }
-            }
+  @Override
+  public void consumeElement(final RbelElement rbel, final RbelConverter context) {
+    final String content = rbel.getRawStringContent();
+    if (content.contains("<") && content.contains(">")) {
+      try {
+        InputSource source = buildInputSource(content.trim(), rbel);
+        final Document parsedXml = parseXml(source);
+        buildXmlElementForNode(parsedXml, rbel, context);
+        setCharset(parsedXml, rbel);
+        rbel.addFacet(new RbelRootFacet(rbel.getFacetOrFail(RbelXmlFacet.class)));
+      } catch (DocumentException e) {
+        log.trace(
+            "Exception while trying to parse XML. Trying as HTML (more lenient SAX parsing)", e);
+        try {
+          htmlConverter
+              .parseHtml(content.trim())
+              .ifPresent(
+                  document -> {
+                    htmlConverter.buildXmlElementForNode(document, rbel, context);
+                    rbel.addFacet(new RbelRootFacet(rbel.getFacetOrFail(RbelXmlFacet.class)));
+                  });
+        } catch (IOException | SAXException e2) {
+          log.trace("Exception while trying to parse XML. Skipping", e);
         }
+      }
+    }
+  }
+
+  private void setCharset(Document source, RbelElement rbel) {
+    Optional.ofNullable(source.getXMLEncoding())
+        .map(Charset::forName)
+        .ifPresent(charset -> rbel.setCharset(Optional.of(charset)));
+  }
+
+  private Document parseXml(InputSource source) throws DocumentException {
+    SAXReader reader = new SAXReader(); // NOSONAR
+    reader.setMergeAdjacentText(true);
+    return reader.read(source);
+  }
+
+  private InputSource buildInputSource(String text, RbelElement parentElement) {
+    if (parentElement.getCharset().isPresent()) {
+      InputSource source = new InputSource(new StringReader(text));
+      // see https://www.ietf.org/rfc/rfc3023 8.5 and 8.20: We always use the http-encoding.
+      source.setEncoding(parentElement.getElementCharset().name());
+      return source;
+    } else {
+      return new InputSource(new ByteArrayInputStream(parentElement.getRawContent()));
+    }
+  }
+
+  private void buildXmlElementForNode(
+      Branch branch, RbelElement parentElement, RbelConverter converter) {
+    final RbelMultiMap<RbelElement> childElements = new RbelMultiMap();
+    parentElement.addFacet(RbelXmlFacet.builder().childElements(childElements).build());
+    for (Object child : branch.content()) {
+      if (child instanceof Text) {
+        childElements.put(
+            XML_TEXT_KEY, converter.convertElement(((Text) child).getText(), parentElement));
+      } else if (child instanceof AbstractBranch) {
+        final RbelElement element =
+            new RbelElement(
+                ((AbstractBranch) child).asXML().getBytes(parentElement.getElementCharset()),
+                parentElement);
+        buildXmlElementForNode((AbstractBranch) child, element, converter);
+        childElements.put(((AbstractBranch) child).getName(), element);
+      } else if (child instanceof Namespace) {
+        final String childXmlName = ((Namespace) child).getPrefix();
+        childElements.put(
+            childXmlName, converter.convertElement(((Namespace) child).getText(), parentElement));
+      } else if (child instanceof DefaultComment) {
+        // do nothing
+      } else {
+        throw new RbelException(
+            "Could not convert XML element of type " + child.getClass().getSimpleName());
+      }
     }
 
-    private void setCharset(Document source, RbelElement rbel) {
-        Optional.ofNullable(source.getXMLEncoding())
-            .map(Charset::forName)
-            .ifPresent(charset -> rbel.setCharset(Optional.of(charset)));
+    if (childElements.stream().map(Map.Entry::getKey).noneMatch(key -> key.equals(XML_TEXT_KEY))) {
+      childElements.put(XML_TEXT_KEY, new RbelElement(new byte[] {}, parentElement));
     }
 
-    private Document parseXml(InputSource source) throws DocumentException {
-        SAXReader reader = new SAXReader(); //NOSONAR
-        reader.setMergeAdjacentText(true);
-        return reader.read(source);
+    if (branch instanceof Element) {
+      for (Attribute attribute : ((Element) branch).attributes()) {
+        final RbelElement value = converter.convertElement(attribute.getText(), parentElement);
+        value.addFacet(new RbelXmlAttributeFacet());
+        childElements.put(attribute.getName(), value);
+      }
     }
-
-    private InputSource buildInputSource(String text, RbelElement parentElement) {
-        if (parentElement.getCharset().isPresent()) {
-            InputSource source = new InputSource(new StringReader(text));
-            // see https://www.ietf.org/rfc/rfc3023 8.5 and 8.20: We always use the http-encoding.
-            source.setEncoding(parentElement.getElementCharset().name());
-            return source;
-        } else {
-            return new InputSource(new ByteArrayInputStream(parentElement.getRawContent()));
-        }
-    }
-
-    private void buildXmlElementForNode(Branch branch, RbelElement parentElement, RbelConverter converter) {
-        final RbelMultiMap<RbelElement> childElements = new RbelMultiMap();
-        parentElement.addFacet(RbelXmlFacet.builder()
-            .childElements(childElements)
-            .build());
-        for (Object child : branch.content()) {
-            if (child instanceof Text) {
-                childElements.put(
-                    XML_TEXT_KEY,
-                    converter.convertElement(((Text) child).getText(), parentElement));
-            } else if (child instanceof AbstractBranch) {
-                final RbelElement element = new RbelElement(
-                    ((AbstractBranch) child).asXML().getBytes(parentElement.getElementCharset()),
-                    parentElement);
-                buildXmlElementForNode((AbstractBranch) child, element, converter);
-                childElements.put(
-                    ((AbstractBranch) child).getName(),
-                    element);
-            } else if (child instanceof Namespace) {
-                final String childXmlName = ((Namespace) child).getPrefix();
-                childElements.put(
-                    childXmlName,
-                    converter.convertElement(((Namespace) child).getText(), parentElement));
-            } else if (child instanceof DefaultComment) {
-                // do nothing
-            } else {
-                throw new RbelException("Could not convert XML element of type " + child.getClass().getSimpleName());
-            }
-        }
-
-        if (childElements.stream()
-            .map(Map.Entry::getKey)
-            .noneMatch(key -> key.equals(XML_TEXT_KEY))) {
-            childElements.put(XML_TEXT_KEY, new RbelElement(new byte[]{}, parentElement));
-        }
-
-        if (branch instanceof Element) {
-            for (Attribute attribute : ((Element) branch).attributes()) {
-                final RbelElement value = converter.convertElement(attribute.getText(), parentElement);
-                value.addFacet(new RbelXmlAttributeFacet());
-                childElements.put(attribute.getName(), value);
-            }
-        }
-    }
+  }
 }

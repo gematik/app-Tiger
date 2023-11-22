@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.testenvmgr.controller;
 
 import static org.awaitility.Awaitility.await;
+
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.env.*;
@@ -52,68 +53,83 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 @ResetTigerConfiguration
 class UpdatePushControllerTest {
 
-    @LocalServerPort
-    private int port;
-    @Autowired
-    private TigerTestEnvMgr tigerTestEnvMgr;
+  @LocalServerPort private int port;
+  @Autowired private TigerTestEnvMgr tigerTestEnvMgr;
 
-    @Test
-    @Disabled("Failed auf dem Jenkins, lokal läuft er grün. Am ende der timebox keine lösung, master grün, gogo")
-    void displayMessage_shouldPushToClient() throws ExecutionException, InterruptedException {
-        AtomicReference<String> receivedMessage = new AtomicReference<>("");
+  @Test
+  @Disabled(
+      "Failed auf dem Jenkins, lokal läuft er grün. Am ende der timebox keine lösung, master grün,"
+          + " gogo")
+  void displayMessage_shouldPushToClient() throws ExecutionException, InterruptedException {
+    AtomicReference<String> receivedMessage = new AtomicReference<>("");
 
-        connectToSocketUsingHandler(new StompSessionHandlerAdapter() {
-            @Override
-            public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
-                log.info("afterConnected, now subscribing to session...");
-                final StompFrameHandler handler = new StompFrameHandler() {
-                    @Override
-                    public Type getPayloadType(StompHeaders headers) {
-                        return TestEnvStatusDto.class;
-                    }
+    connectToSocketUsingHandler(
+        new StompSessionHandlerAdapter() {
+          @Override
+          public void afterConnected(StompSession session, StompHeaders connectedHeaders) {
+            log.info("afterConnected, now subscribing to session...");
+            final StompFrameHandler handler =
+                new StompFrameHandler() {
+                  @Override
+                  public Type getPayloadType(StompHeaders headers) {
+                    return TestEnvStatusDto.class;
+                  }
 
-                    @Override
-                    public void handleFrame(StompHeaders headers, Object payload) {
-                        log.info("Received Frame");
-                        receivedMessage.set(((TestEnvStatusDto) payload).getFeatureMap().toString());
-                    }
+                  @Override
+                  public void handleFrame(StompHeaders headers, Object payload) {
+                    log.info("Received Frame");
+                    receivedMessage.set(((TestEnvStatusDto) payload).getFeatureMap().toString());
+                  }
                 };
-                session.subscribe("/topic/envStatus", handler);
-            }
+            session.subscribe("/topic/envStatus", handler);
+          }
         });
 
-        TigerStatusUpdate update = TigerStatusUpdate.builder()
-            .featureMap(new LinkedHashMap<>(Map.of("feature", FeatureUpdate.builder()
-                .description("feature")
-                .scenarios(new LinkedHashMap<>(Map.of(
-                    "scenario", ScenarioUpdate.builder().description("scenario")
-                        .steps(Map.of("step", StepUpdate.builder().description("step").build()
-                        )).build()
-                ))).build()
-            ))).build();
+    TigerStatusUpdate update =
+        TigerStatusUpdate.builder()
+            .featureMap(
+                new LinkedHashMap<>(
+                    Map.of(
+                        "feature",
+                        FeatureUpdate.builder()
+                            .description("feature")
+                            .scenarios(
+                                new LinkedHashMap<>(
+                                    Map.of(
+                                        "scenario",
+                                        ScenarioUpdate.builder()
+                                            .description("scenario")
+                                            .steps(
+                                                Map.of(
+                                                    "step",
+                                                    StepUpdate.builder()
+                                                        .description("step")
+                                                        .build()))
+                                            .build())))
+                            .build())))
+            .build();
 
-        tigerTestEnvMgr.receiveTestEnvUpdate(update);
+    tigerTestEnvMgr.receiveTestEnvUpdate(update);
 
-        await()
-            .atMost(2, TimeUnit.SECONDS)
-            .pollInterval(100, TimeUnit.MILLISECONDS)
-            .until(() -> receivedMessage.get().equals(update.toString()));
-    }
+    await()
+        .atMost(2, TimeUnit.SECONDS)
+        .pollInterval(100, TimeUnit.MILLISECONDS)
+        .until(() -> receivedMessage.get().equals(update.toString()));
+  }
 
-    private void connectToSocketUsingHandler(StompSessionHandlerAdapter handler)
-        throws InterruptedException, ExecutionException {
-        var webSocketUrl = "ws://localhost:" + port + "/testEnv";
+  private void connectToSocketUsingHandler(StompSessionHandlerAdapter handler)
+      throws InterruptedException, ExecutionException {
+    var webSocketUrl = "ws://localhost:" + port + "/testEnv";
 
-        WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-        SockJsClient webSocketClient = new SockJsClient(
-            List.of(new WebSocketTransport(new StandardWebSocketClient(container))));
+    WebSocketContainer container = ContainerProvider.getWebSocketContainer();
+    SockJsClient webSocketClient =
+        new SockJsClient(List.of(new WebSocketTransport(new StandardWebSocketClient(container))));
 
-        var stompClient = new WebSocketStompClient(webSocketClient);
-        stompClient.setMessageConverter(new MappingJackson2MessageConverter());
+    var stompClient = new WebSocketStompClient(webSocketClient);
+    stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
-        final ListenableFuture<StompSession> connectFuture = stompClient.connect(
-            webSocketUrl, handler);
+    final ListenableFuture<StompSession> connectFuture = stompClient.connect(webSocketUrl, handler);
 
-        connectFuture.get();
-    }
+    connectFuture.get();
+  }
 }

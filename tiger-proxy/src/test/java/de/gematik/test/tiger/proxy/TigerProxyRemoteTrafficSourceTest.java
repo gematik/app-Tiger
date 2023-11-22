@@ -18,6 +18,7 @@ package de.gematik.test.tiger.proxy;
 
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
+
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.test.tiger.proxy.controller.TrafficPushController;
 import java.io.IOException;
@@ -32,79 +33,78 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
- * Tests and demonstrates the ability to add traffic to a Tiger-Proxy via the REST-API. This is useful for external traffic sources that are otherwise hard to
- * integrate.
+ * Tests and demonstrates the ability to add traffic to a Tiger-Proxy via the REST-API. This is
+ * useful for external traffic sources that are otherwise hard to integrate.
  */
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class TigerProxyRemoteTrafficSourceTest {
 
-    @Autowired
-    private TigerProxy tigerProxy;
+  @Autowired private TigerProxy tigerProxy;
 
-    @Test
-    void sendSimpleHttpRequest() throws IOException {
-        tigerProxy.clearAllMessages();
-        assertThat(tigerProxy.getRbelMessages()).isEmpty();
-        Unirest.post("http://localhost:" + tigerProxy.getAdminPort() + "/traffic")
-            .header(TrafficPushController.SENDER_REQUEST_HEADER, "127.0.0.1:54321")
-            .header(TrafficPushController.RECEIVER_REQUEST_HEADER, "127.0.0.1:8080")
-            .header(TrafficPushController.TIMESTAMP_REQUEST_HEADER, ZonedDateTime.now().minusSeconds(1).toString())
-            .body(Files.readAllBytes(Path.of("src/test/resources/messages/getRequest.curl")))
-            .asEmpty();
-        Unirest.post("http://localhost:" + tigerProxy.getAdminPort() + "/traffic")
-            .header(TrafficPushController.SENDER_REQUEST_HEADER, "127.0.0.1:8080")
-            .header(TrafficPushController.RECEIVER_REQUEST_HEADER, "127.0.0.1:54321")
-            .header(TrafficPushController.TIMESTAMP_REQUEST_HEADER, ZonedDateTime.now().toString())
-            .body(Files.readAllBytes(Path.of("src/test/resources/messages/getResponse.curl")))
-            .asEmpty();
+  @Test
+  void sendSimpleHttpRequest() throws IOException {
+    tigerProxy.clearAllMessages();
+    assertThat(tigerProxy.getRbelMessages()).isEmpty();
+    Unirest.post("http://localhost:" + tigerProxy.getAdminPort() + "/traffic")
+        .header(TrafficPushController.SENDER_REQUEST_HEADER, "127.0.0.1:54321")
+        .header(TrafficPushController.RECEIVER_REQUEST_HEADER, "127.0.0.1:8080")
+        .header(
+            TrafficPushController.TIMESTAMP_REQUEST_HEADER,
+            ZonedDateTime.now().minusSeconds(1).toString())
+        .body(Files.readAllBytes(Path.of("src/test/resources/messages/getRequest.curl")))
+        .asEmpty();
+    Unirest.post("http://localhost:" + tigerProxy.getAdminPort() + "/traffic")
+        .header(TrafficPushController.SENDER_REQUEST_HEADER, "127.0.0.1:8080")
+        .header(TrafficPushController.RECEIVER_REQUEST_HEADER, "127.0.0.1:54321")
+        .header(TrafficPushController.TIMESTAMP_REQUEST_HEADER, ZonedDateTime.now().toString())
+        .body(Files.readAllBytes(Path.of("src/test/resources/messages/getResponse.curl")))
+        .asEmpty();
 
-        assertThat(tigerProxy.getRbelMessages()).hasSize(2);
-        assertThat(tigerProxy.getRbelMessages().getFirst())
-            .extractChildWithPath("$.sender")
-            .hasStringContentEqualTo("127.0.0.1:54321");
-        assertThat(tigerProxy.getRbelMessages().getFirst())
-            .extractChildWithPath("$.receiver")
-            .hasStringContentEqualTo("127.0.0.1:8080");
-        assertThat(tigerProxy.getRbelMessages().getFirst())
-            .hasFacet(RbelMessageTimingFacet.class);
-        assertThat(tigerProxy.getRbelMessages().getLast())
-            .extractChildWithPath("$.sender")
-            .hasStringContentEqualTo("127.0.0.1:8080");
-        assertThat(tigerProxy.getRbelMessages().getLast())
-            .extractChildWithPath("$.receiver")
-            .hasStringContentEqualTo("127.0.0.1:54321");
-        assertThat(tigerProxy.getRbelMessages().getLast())
-            .hasFacet(RbelMessageTimingFacet.class);
-    }
+    assertThat(tigerProxy.getRbelMessages()).hasSize(2);
+    assertThat(tigerProxy.getRbelMessages().getFirst())
+        .extractChildWithPath("$.sender")
+        .hasStringContentEqualTo("127.0.0.1:54321");
+    assertThat(tigerProxy.getRbelMessages().getFirst())
+        .extractChildWithPath("$.receiver")
+        .hasStringContentEqualTo("127.0.0.1:8080");
+    assertThat(tigerProxy.getRbelMessages().getFirst()).hasFacet(RbelMessageTimingFacet.class);
+    assertThat(tigerProxy.getRbelMessages().getLast())
+        .extractChildWithPath("$.sender")
+        .hasStringContentEqualTo("127.0.0.1:8080");
+    assertThat(tigerProxy.getRbelMessages().getLast())
+        .extractChildWithPath("$.receiver")
+        .hasStringContentEqualTo("127.0.0.1:54321");
+    assertThat(tigerProxy.getRbelMessages().getLast()).hasFacet(RbelMessageTimingFacet.class);
+  }
 
-    @Test
-    void sendMessageWithMissingParameters_expectCorrectDefaults() throws IOException {
-        tigerProxy.clearAllMessages();
-        assertThat(tigerProxy.getRbelMessages()).isEmpty();
-        Unirest.post("http://localhost:" + tigerProxy.getAdminPort() + "/traffic")
-            .body(Files.readAllBytes(Path.of("src/test/resources/messages/getRequest.curl")))
-            .asEmpty();
-        Unirest.post("http://localhost:" + tigerProxy.getAdminPort() + "/traffic")
-            .body(Files.readAllBytes(Path.of("src/test/resources/messages/getResponse.curl")))
-            .asEmpty();
+  @Test
+  void sendMessageWithMissingParameters_expectCorrectDefaults() throws IOException {
+    tigerProxy.clearAllMessages();
+    assertThat(tigerProxy.getRbelMessages()).isEmpty();
+    Unirest.post("http://localhost:" + tigerProxy.getAdminPort() + "/traffic")
+        .body(Files.readAllBytes(Path.of("src/test/resources/messages/getRequest.curl")))
+        .asEmpty();
+    Unirest.post("http://localhost:" + tigerProxy.getAdminPort() + "/traffic")
+        .body(Files.readAllBytes(Path.of("src/test/resources/messages/getResponse.curl")))
+        .asEmpty();
 
-        assertThat(tigerProxy.getRbelMessages()).hasSize(2);
-        assertThat(tigerProxy.getRbelMessages().getFirst())
-            .extractChildWithPath("$.sender")
-            .hasNullContent();
-        assertThat(tigerProxy.getRbelMessages().getFirst())
-            .extractChildWithPath("$.receiver")
-            .hasNullContent();
-        assertThat(tigerProxy.getRbelMessages().getFirst())
-            .doesNotHaveFacet(RbelMessageTimingFacet.class);
-        assertThat(tigerProxy.getRbelMessages().getLast())
-            .extractChildWithPath("$.sender")
-            .hasNullContent();
-        assertThat(tigerProxy.getRbelMessages().getLast())
-            .extractChildWithPath("$.receiver")
-            .hasNullContent();
-        assertThat(tigerProxy.getRbelMessages().getLast())
-            .doesNotHaveFacet(RbelMessageTimingFacet.class);
-    }
+    assertThat(tigerProxy.getRbelMessages()).hasSize(2);
+    assertThat(tigerProxy.getRbelMessages().getFirst())
+        .extractChildWithPath("$.sender")
+        .hasNullContent();
+    assertThat(tigerProxy.getRbelMessages().getFirst())
+        .extractChildWithPath("$.receiver")
+        .hasNullContent();
+    assertThat(tigerProxy.getRbelMessages().getFirst())
+        .doesNotHaveFacet(RbelMessageTimingFacet.class);
+    assertThat(tigerProxy.getRbelMessages().getLast())
+        .extractChildWithPath("$.sender")
+        .hasNullContent();
+    assertThat(tigerProxy.getRbelMessages().getLast())
+        .extractChildWithPath("$.receiver")
+        .hasNullContent();
+    assertThat(tigerProxy.getRbelMessages().getLast())
+        .doesNotHaveFacet(RbelMessageTimingFacet.class);
+  }
 }

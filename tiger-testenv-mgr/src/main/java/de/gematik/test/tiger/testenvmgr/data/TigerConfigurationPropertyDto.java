@@ -5,7 +5,7 @@ import lombok.Value;
 @Value(staticConstructor = "of")
 public class TigerConfigurationPropertyDto {
 
-    String key;
-    String value;
-    String source;
+  String key;
+  String value;
+  String source;
 }

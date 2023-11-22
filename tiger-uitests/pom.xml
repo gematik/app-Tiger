@@ -6,7 +6,7 @@
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
         <relativePath>../pom.xml</relativePath>
-        <version>2.2.1</version>
+        <version>2.3.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -47,6 +47,18 @@
             <version>3.9.2</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite</artifactId>
+            <version>1.9.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-junit-platform-engine</artifactId>
+            <version>7.11.2</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <profiles>
@@ -75,7 +87,7 @@
                     <plugin>
                         <groupId>de.gematik.test</groupId>
                         <artifactId>tiger-maven-plugin</artifactId>
-                        <version>2.2.1</version>
+                        <version>2.3.0</version>
                         <executions>
                             <execution>
                                 <id>generate-tiger-drivers</id>
@@ -88,6 +100,7 @@
                                     <glues>
                                         <glue>de.gematik.test.tiger.glue</glue>
                                     </glues>
+                                    <junit5Driver>true</junit5Driver>
                                     <!-- optional -->
                                     <featuresDir>${project.basedir}/src/test/resources/features</featuresDir>
                                 </configuration>
@@ -110,6 +123,7 @@
                                 <TIGER_TESTENV_CFGFILE>src/test/resources/playwright.yaml</TIGER_TESTENV_CFGFILE>
                             </environmentVariables>
                             <summaryFile>target/failsafe-reports/failsafe-summary.xml</summaryFile>
+                            <runOrder>alphabetical</runOrder>
                         </configuration>
                         <executions>
                             <execution>

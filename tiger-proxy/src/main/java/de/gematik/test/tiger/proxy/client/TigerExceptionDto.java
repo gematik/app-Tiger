@@ -23,7 +23,7 @@ import lombok.Data;
 @Builder
 public class TigerExceptionDto {
 
-    private final String message;
-    private final String stacktrace;
-    private final String className;
+  private final String message;
+  private final String stacktrace;
+  private final String className;
 }

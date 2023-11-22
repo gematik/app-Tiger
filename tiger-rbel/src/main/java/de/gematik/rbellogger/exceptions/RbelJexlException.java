@@ -18,7 +18,7 @@ package de.gematik.rbellogger.exceptions;
 
 public class RbelJexlException extends RuntimeException {
 
-    public RbelJexlException(String s, Exception e) {
-        super(s, e);
-    }
+  public RbelJexlException(String s, Exception e) {
+    super(s, e);
+  }
 }

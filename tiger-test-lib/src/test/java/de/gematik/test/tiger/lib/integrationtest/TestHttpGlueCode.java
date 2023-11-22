@@ -22,11 +22,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(TigerCucumberRunner.class)
 @CucumberOptions(
-    features = {
-        "./src/test/resources/features/tiger-test-lib/HttpGlueCodeTest.feature"
-    },
-    glue = { "de.gematik.test.tiger.glue" },
-    tags = "not @Ignore"
-)
-public class TestHttpGlueCode {
-}
+    features = {"./src/test/resources/features/tiger-test-lib/HttpGlueCodeTest.feature"},
+    glue = {"de.gematik.test.tiger.glue"},
+    tags = "not @Ignore")
+public class TestHttpGlueCode {}

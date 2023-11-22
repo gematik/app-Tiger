@@ -23,7 +23,7 @@ import lombok.Data;
 @Builder
 public class DeprecatedKeyDescriptor {
 
-    private String compareKey;
-    private String deprecatedKey;
-    private String newKey;
+  private String compareKey;
+  private String deprecatedKey;
+  private String newKey;
 }

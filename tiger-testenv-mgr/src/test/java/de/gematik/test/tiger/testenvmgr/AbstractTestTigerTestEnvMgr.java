@@ -16,7 +16,15 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockserver.model.HttpRequest.request;
+
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ThreadPoolExecutor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
@@ -31,92 +39,85 @@ import org.mockserver.mock.Expectation;
 import org.mockserver.model.HttpResponse;
 import org.mockserver.netty.MockServer;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ThreadPoolExecutor;
-
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockserver.model.HttpRequest.request;
-
 @Slf4j
 @Getter
 public abstract class AbstractTestTigerTestEnvMgr {
 
-    private static MockServer mockServer;
-    private static MockServerClient mockServerClient;
-    private static Expectation downloadExpectation;
-    private static byte[] winstoneBytes;
+  private static MockServer mockServer;
+  private static MockServerClient mockServerClient;
+  private static Expectation downloadExpectation;
+  private static byte[] winstoneBytes;
 
-    @AfterAll
-    public static void resetProperties() {
-        System.clearProperty("mockserver.port");
+  @AfterAll
+  public static void resetProperties() {
+    System.clearProperty("mockserver.port");
+  }
+
+  @BeforeAll
+  public static void startServer() throws IOException {
+    log.info("Booting MockServer...");
+    mockServer = new MockServer();
+    mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
+
+    final File winstoneFile = new File("target/winstone.jar");
+    if (!winstoneFile.exists()) {
+      throw new RuntimeException(
+          "winstone.jar not found in target-folder. "
+              + "Did you run mvn generate-test-resources? (It should be downloaded automatically)");
     }
+    winstoneBytes = FileUtils.readFileToByteArray(winstoneFile);
 
-    @BeforeAll
-    public static void startServer() throws IOException {
-        log.info("Booting MockServer...");
-        mockServer = new MockServer();
-        mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
+    downloadExpectation =
+        mockServerClient.when(request().withPath("/download"))
+            .respond(req -> HttpResponse.response().withBody(winstoneBytes))[0];
 
-        final File winstoneFile = new File("target/winstone.jar");
-        if (!winstoneFile.exists()) {
-            throw new RuntimeException("winstone.jar not found in target-folder. " +
-                "Did you run mvn generate-test-resources? (It should be downloaded automatically)");
-        }
-        winstoneBytes = FileUtils.readFileToByteArray(winstoneFile);
+    System.setProperty("mockserver.port", Integer.toString(mockServer.getLocalPort()));
+  }
 
-        downloadExpectation = mockServerClient.when(request()
-                .withPath("/download"))
-            .respond(req -> HttpResponse.response()
-                .withBody(winstoneBytes))[0];
+  @AfterEach
+  @BeforeEach
+  public void resetConfiguration() {
+    TigerGlobalConfiguration.reset();
+  }
 
-        System.setProperty("mockserver.port", Integer.toString(mockServer.getLocalPort()));
+  // -----------------------------------------------------------------------------------------------------------------
+  //
+  // helper methods
+  //
+  // -----------------------------------------------------------------------------------------------------------------
+
+  public static void createTestEnvMgrSafelyAndExecute(
+      String configurationFilePath, ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer) {
+    TigerTestEnvMgr envMgr = null;
+    try {
+      if (StringUtils.isEmpty(configurationFilePath)) {
+        TigerGlobalConfiguration.initialize();
+      } else {
+        TigerGlobalConfiguration.initializeWithCliProperties(
+            Map.of("TIGER_TESTENV_CFGFILE", configurationFilePath));
+      }
+      envMgr = new TigerTestEnvMgr();
+      testEnvMgrConsumer.accept(envMgr);
+    } finally {
+      if (envMgr != null) {
+        envMgr.shutDown();
+      }
     }
+  }
 
-    @AfterEach
-    @BeforeEach
-    public void resetConfiguration() {
-        TigerGlobalConfiguration.reset();
-    }
+  public void createTestEnvMgrSafelyAndExecute(
+      ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer, String configurationFilePath) {
+    createTestEnvMgrSafelyAndExecute(configurationFilePath, testEnvMgrConsumer);
+  }
 
-    // -----------------------------------------------------------------------------------------------------------------
-    //
-    // helper methods
-    //
-    // -----------------------------------------------------------------------------------------------------------------
+  public static void createTestEnvMgrSafelyAndExecute(
+      ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer) {
+    createTestEnvMgrSafelyAndExecute("", testEnvMgrConsumer);
+  }
 
-    public static void createTestEnvMgrSafelyAndExecute(String configurationFilePath,
-        ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer) {
-        TigerTestEnvMgr envMgr = null;
-        try {
-            if (StringUtils.isEmpty(configurationFilePath)) {
-                TigerGlobalConfiguration.initialize();
-            } else {
-                TigerGlobalConfiguration.initializeWithCliProperties(
-                    Map.of("TIGER_TESTENV_CFGFILE", configurationFilePath));
-            }
-            envMgr = new TigerTestEnvMgr();
-            testEnvMgrConsumer.accept(envMgr);
-        } finally {
-            if (envMgr != null) {
-                envMgr.shutDown();
-            }
-        }
-    }
-
-    public void createTestEnvMgrSafelyAndExecute(ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer, String configurationFilePath) {
-        createTestEnvMgrSafelyAndExecute(configurationFilePath, testEnvMgrConsumer);
-    }
-    public static void createTestEnvMgrSafelyAndExecute(ThrowingConsumer<TigerTestEnvMgr> testEnvMgrConsumer) {
-        createTestEnvMgrSafelyAndExecute("", testEnvMgrConsumer);
-    }
-
-    public TigerTestEnvMgr mockTestEnvMgr() {
-        final TigerTestEnvMgr mockMgr = mock(TigerTestEnvMgr.class);
-        doReturn(mock(ThreadPoolExecutor.class))
-            .when(mockMgr).getCachedExecutor();
-        return mockMgr;
-    }
+  public TigerTestEnvMgr mockTestEnvMgr() {
+    final TigerTestEnvMgr mockMgr = mock(TigerTestEnvMgr.class);
+    doReturn(mock(ThreadPoolExecutor.class)).when(mockMgr).getCachedExecutor();
+    return mockMgr;
+  }
 }

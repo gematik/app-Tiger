@@ -27,6 +27,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class AddRouteDto {
 
-    private String from;
-    private String to;
+  private String from;
+  private String to;
 }

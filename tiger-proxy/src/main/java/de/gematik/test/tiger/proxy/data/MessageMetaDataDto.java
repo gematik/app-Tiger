@@ -34,58 +34,71 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MessageMetaDataDto {
 
-    private String uuid;
-    private String path;
-    private String method;
-    private Integer responseCode;
-    private String recipient;
-    private String sender;
-    private long sequenceNumber;
-    private String menuInfoString;
-    private ZonedDateTime timestamp;
-    private boolean isRequest;
+  private String uuid;
+  private String path;
+  private String method;
+  private Integer responseCode;
+  private String recipient;
+  private String sender;
+  private long sequenceNumber;
+  private String menuInfoString;
+  private ZonedDateTime timestamp;
+  private boolean isRequest;
 
-    public static MessageMetaDataDto createFrom(RbelElement el) {
-        MessageMetaDataDto.MessageMetaDataDtoBuilder builder = MessageMetaDataDto.builder();
-        builder = builder.uuid(el.getUuid())
+  public static MessageMetaDataDto createFrom(RbelElement el) {
+    MessageMetaDataDto.MessageMetaDataDtoBuilder builder = MessageMetaDataDto.builder();
+    builder =
+        builder
+            .uuid(el.getUuid())
             .sequenceNumber(getElementSequenceNumber(el))
-            .sender(el.getFacet(RbelTcpIpMessageFacet.class)
-                .map(RbelTcpIpMessageFacet::getSender)
-                .filter(Objects::nonNull)
-                .filter(element -> element.getRawStringContent() != null)
-                .flatMap(element -> Optional.of(element.getRawStringContent()))
-                .orElse(""))
-            .recipient(el.getFacet(RbelTcpIpMessageFacet.class)
-                .map(RbelTcpIpMessageFacet::getReceiver)
-                .filter(Objects::nonNull)
-                .filter(element -> element.getRawStringContent() != null)
-                .flatMap(element -> Optional.of(element.getRawStringContent()))
-                .orElse(""));
+            .sender(
+                el.getFacet(RbelTcpIpMessageFacet.class)
+                    .map(RbelTcpIpMessageFacet::getSender)
+                    .filter(Objects::nonNull)
+                    .filter(element -> element.getRawStringContent() != null)
+                    .flatMap(element -> Optional.of(element.getRawStringContent()))
+                    .orElse(""))
+            .recipient(
+                el.getFacet(RbelTcpIpMessageFacet.class)
+                    .map(RbelTcpIpMessageFacet::getReceiver)
+                    .filter(Objects::nonNull)
+                    .filter(element -> element.getRawStringContent() != null)
+                    .flatMap(element -> Optional.of(element.getRawStringContent()))
+                    .orElse(""));
 
-        if (el.hasFacet(RbelHttpRequestFacet.class)) {
-            RbelHttpRequestFacet req = el.getFacetOrFail(RbelHttpRequestFacet.class);
-            builder = builder.path(req.getPath().getRawStringContent())
-                .method(req.getMethod().getRawStringContent())
-                .responseCode(null);
-        } else if (el.hasFacet(RbelHttpResponseFacet.class)) {
-            builder.responseCode(Integer.parseInt(el.getFacetOrFail(RbelHttpResponseFacet.class)
-                .getResponseCode().getRawStringContent()));
-        }
-        builder.isRequest(el.hasFacet(RbelRequestFacet.class));
-        builder.timestamp(el.getFacet(RbelMessageTimingFacet.class)
+    if (el.hasFacet(RbelHttpRequestFacet.class)) {
+      RbelHttpRequestFacet req = el.getFacetOrFail(RbelHttpRequestFacet.class);
+      builder =
+          builder
+              .path(req.getPath().getRawStringContent())
+              .method(req.getMethod().getRawStringContent())
+              .responseCode(null);
+    } else if (el.hasFacet(RbelHttpResponseFacet.class)) {
+      builder.responseCode(
+          Integer.parseInt(
+              el.getFacetOrFail(RbelHttpResponseFacet.class)
+                  .getResponseCode()
+                  .getRawStringContent()));
+    }
+    builder.isRequest(el.hasFacet(RbelRequestFacet.class));
+    builder.timestamp(
+        el.getFacet(RbelMessageTimingFacet.class)
             .map(RbelMessageTimingFacet::getTransmissionTime)
             .orElse(null));
-        builder.menuInfoString(el.getFacet(RbelRequestFacet.class)
+    builder.menuInfoString(
+        el.getFacet(RbelRequestFacet.class)
             .map(RbelRequestFacet::getMenuInfoString)
-            .or(() -> el.getFacet(RbelResponseFacet.class)
-                .map(RbelResponseFacet::getMenuInfoString))
+            .or(
+                () ->
+                    el.getFacet(RbelResponseFacet.class).map(RbelResponseFacet::getMenuInfoString))
             .orElse(null));
-        return builder.build();
-    }
+    return builder.build();
+  }
 
-    public static long getElementSequenceNumber(RbelElement rbelElement) {
-        return rbelElement.getFacet(RbelTcpIpMessageFacet.class)
-            .map(RbelTcpIpMessageFacet::getSequenceNumber)
-            .orElse(0L);
-    }
+  public static long getElementSequenceNumber(RbelElement rbelElement) {
+    return rbelElement
+        .getFacet(RbelTcpIpMessageFacet.class)
+        .map(RbelTcpIpMessageFacet::getSequenceNumber)
+        .orElse(0L);
+  }
 }

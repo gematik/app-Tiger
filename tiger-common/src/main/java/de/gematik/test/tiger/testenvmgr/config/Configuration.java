@@ -28,13 +28,13 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor
 public class Configuration {
 
-    private final Map<String, CfgServer> servers = new HashMap<>();
-    private boolean localProxyActive = true;
-    private TigerProxyConfiguration tigerProxy;
+  private final Map<String, CfgServer> servers = new HashMap<>();
+  private boolean localProxyActive = true;
+  private TigerProxyConfiguration tigerProxy;
 
-    @Builder
-    @SuppressWarnings("unused")
-    private Configuration(boolean localProxyActive) {
-        this.localProxyActive = Optional.of(localProxyActive).orElse(true);
-    }
+  @Builder
+  @SuppressWarnings("unused")
+  private Configuration(boolean localProxyActive) {
+    this.localProxyActive = Optional.of(localProxyActive).orElse(true);
+  }
 }

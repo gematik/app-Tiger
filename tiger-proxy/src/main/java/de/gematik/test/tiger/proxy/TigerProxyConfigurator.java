@@ -29,32 +29,35 @@ import org.springframework.context.event.EventListener;
 @Configuration
 @RequiredArgsConstructor
 @Slf4j
-public class TigerProxyConfigurator implements WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> {
+public class TigerProxyConfigurator
+    implements WebServerFactoryCustomizer<ConfigurableServletWebServerFactory> {
 
-    private final TigerProxy tigerProxy;
-    private final ServletWebServerApplicationContext webServerAppCtxt;
+  private final TigerProxy tigerProxy;
+  private final ServletWebServerApplicationContext webServerAppCtxt;
 
-    @EventListener(ApplicationReadyEvent.class)
-    public void init() {
-        if (tigerProxy.getTigerProxyConfiguration().getAdminPort() == 0) {
-            tigerProxy.getTigerProxyConfiguration().setAdminPort(webServerAppCtxt.getWebServer().getPort());
-        }
-        log.info("Adding route for 'http://tiger.proxy'...");
-        tigerProxy.addRoute(
-                TigerRoute.builder()
-                        .from("http://tiger.proxy")
-                            // you might be tempted to look for "server.port", but don't:
-                            // when it is zero (random free port) then it stays zero
-                        .to("http://localhost:" + webServerAppCtxt.getWebServer().getPort())
-                        .disableRbelLogging(true)
-                        .internalRoute(true)
-                        .build());
+  @EventListener(ApplicationReadyEvent.class)
+  public void init() {
+    if (tigerProxy.getTigerProxyConfiguration().getAdminPort() == 0) {
+      tigerProxy
+          .getTigerProxyConfiguration()
+          .setAdminPort(webServerAppCtxt.getWebServer().getPort());
     }
+    log.info("Adding route for 'http://tiger.proxy'...");
+    tigerProxy.addRoute(
+        TigerRoute.builder()
+            .from("http://tiger.proxy")
+            // you might be tempted to look for "server.port", but don't:
+            // when it is zero (random free port) then it stays zero
+            .to("http://localhost:" + webServerAppCtxt.getWebServer().getPort())
+            .disableRbelLogging(true)
+            .internalRoute(true)
+            .build());
+  }
 
-    @Override
-    public void customize(ConfigurableServletWebServerFactory factory) {
-        if (tigerProxy.getTigerProxyConfiguration().getAdminPort() > 0) {
-            factory.setPort(tigerProxy.getTigerProxyConfiguration().getAdminPort());
-        }
+  @Override
+  public void customize(ConfigurableServletWebServerFactory factory) {
+    if (tigerProxy.getTigerProxyConfiguration().getAdminPort() > 0) {
+      factory.setPort(tigerProxy.getTigerProxyConfiguration().getAdminPort());
     }
+  }
 }

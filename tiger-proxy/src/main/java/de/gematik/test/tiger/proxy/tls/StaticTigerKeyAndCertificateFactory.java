@@ -31,58 +31,59 @@ import org.mockserver.socket.tls.bouncycastle.BCKeyAndCertificateFactory;
 
 public class StaticTigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
 
-    static {
-        Security.addProvider(new BouncyCastleProvider());
-    }
+  static {
+    Security.addProvider(new BouncyCastleProvider());
+  }
 
-    private final TigerPkiIdentity identity;
+  private final TigerPkiIdentity identity;
 
-    @Builder
-    public StaticTigerKeyAndCertificateFactory(MockServerLogger mockServerLogger,
-        TigerProxyConfiguration tigerProxyConfiguration,
-        TigerPkiIdentity eeIdentity) {
-        super(ProxyConfigurationConverter.convertToMockServerConfiguration(tigerProxyConfiguration), mockServerLogger);
-        this.identity = eeIdentity;
-    }
+  @Builder
+  public StaticTigerKeyAndCertificateFactory(
+      MockServerLogger mockServerLogger,
+      TigerProxyConfiguration tigerProxyConfiguration,
+      TigerPkiIdentity eeIdentity) {
+    super(
+        ProxyConfigurationConverter.convertToMockServerConfiguration(tigerProxyConfiguration),
+        mockServerLogger);
+    this.identity = eeIdentity;
+  }
 
-    @Override
-    public boolean certificateAuthorityCertificateNotYetCreated() {
-        return false;
-    }
+  @Override
+  public boolean certificateAuthorityCertificateNotYetCreated() {
+    return false;
+  }
 
-    @Override
-    public X509Certificate certificateAuthorityX509Certificate() {
-        if (!identity.getCertificateChain().isEmpty()) {
-            return identity.getCertificateChain()
-                .get(identity.getCertificateChain().size() - 1);
-        }
-        return identity.getCertificate(); // necessary because of missing null check in NettySslContextFactory
+  @Override
+  public X509Certificate certificateAuthorityX509Certificate() {
+    if (!identity.getCertificateChain().isEmpty()) {
+      return identity.getCertificateChain().get(identity.getCertificateChain().size() - 1);
     }
+    return identity
+        .getCertificate(); // necessary because of missing null check in NettySslContextFactory
+  }
 
-    @Override
-    public PrivateKey privateKey() {
-        return identity.getPrivateKey();
-    }
+  @Override
+  public PrivateKey privateKey() {
+    return identity.getPrivateKey();
+  }
 
-    @Override
-    public X509Certificate x509Certificate() {
-        return identity.getCertificate();
-    }
+  @Override
+  public X509Certificate x509Certificate() {
+    return identity.getCertificate();
+  }
 
-    @Override
-    public void buildAndSavePrivateKeyAndX509Certificate() {
-        // empty
-    }
+  @Override
+  public void buildAndSavePrivateKeyAndX509Certificate() {
+    // empty
+  }
 
-    @Override
-    public List<X509Certificate> certificateChain() {
-        return ListUtils.sum(
-            List.of(identity.getCertificate()),
-            identity.getCertificateChain());
-    }
+  @Override
+  public List<X509Certificate> certificateChain() {
+    return ListUtils.sum(List.of(identity.getCertificate()), identity.getCertificateChain());
+  }
 
-    @Override
-    public boolean certificateNotYetCreated() {
-        return false;
-    }
+  @Override
+  public boolean certificateNotYetCreated() {
+    return false;
+  }
 }

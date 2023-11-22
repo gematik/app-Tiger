@@ -20,6 +20,7 @@ import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.ancestorTi
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.vertParentTitle;
 import static j2html.TagCreator.div;
 import static j2html.TagCreator.pre;
+
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import de.gematik.rbellogger.data.RbelElement;
@@ -40,53 +41,64 @@ import lombok.Data;
 @Builder(toBuilder = true)
 public class RbelJsonFacet implements RbelFacet {
 
-    static {
-        RbelHtmlRenderer.registerFacetRenderer(new RbelHtmlFacetRenderer() {
-            @Override
-            public boolean checkForRendering(RbelElement element) {
-                return element.hasFacet(RbelJsonFacet.class)
-                    && element.getFacet(RbelRootFacet.class)
+  static {
+    RbelHtmlRenderer.registerFacetRenderer(
+        new RbelHtmlFacetRenderer() {
+          @Override
+          public boolean checkForRendering(RbelElement element) {
+            return element.hasFacet(RbelJsonFacet.class)
+                && element
+                    .getFacet(RbelRootFacet.class)
                     .filter(root -> root.getRootFacet() instanceof RbelJsonFacet)
                     .isPresent();
-            }
+          }
 
-            @Override
-            public ContainerTag performRendering(RbelElement element, Optional<String> key,
-                RbelHtmlRenderingToolkit renderingToolkit) {
-                String formatedJson = renderingToolkit.GSON.toJson(
+          @Override
+          public ContainerTag performRendering(
+              RbelElement element,
+              Optional<String> key,
+              RbelHtmlRenderingToolkit renderingToolkit) {
+            String formatedJson =
+                renderingToolkit.GSON.toJson(
                     renderingToolkit.shadeJson(
                         JsonParser.parseString(element.getRawStringContent()),
                         Optional.empty(),
-                        element
-                    ));
-                for (final Entry<UUID, JsonNoteEntry> entry : renderingToolkit.getNoteTags().entrySet()) {
-                    if (formatedJson.contains(entry.getValue().getStringToMatch() + ",")) {
-                        formatedJson = formatedJson.replace(
-                            entry.getValue().getStringToMatch() + ",",
-                            entry.getValue().getTagForKeyReplacement().render() + "," + entry.getValue().getTagForValueReplacement()
-                                .render());
-                    } else if (formatedJson.contains(entry.getValue().getStringToMatch())) {
-                        formatedJson = formatedJson.replace(
-                            entry.getValue().getStringToMatch(),
-                            entry.getValue().getTagForKeyReplacement().render()
-                                + entry.getValue().getTagForValueReplacement().render());
-                    }
-                }
-                return ancestorTitle()
-                    .with(
-                        vertParentTitle().with(
-                            div().withClass("tile is-child pe-3").with(
-                                pre(new UnescapedText(formatedJson))
-                                    .withClass("json language-json")
-                            ).with(renderingToolkit.convertNested(element))));
+                        element));
+            for (final Entry<UUID, JsonNoteEntry> entry :
+                renderingToolkit.getNoteTags().entrySet()) {
+              if (formatedJson.contains(entry.getValue().getStringToMatch() + ",")) {
+                formatedJson =
+                    formatedJson.replace(
+                        entry.getValue().getStringToMatch() + ",",
+                        entry.getValue().getTagForKeyReplacement().render()
+                            + ","
+                            + entry.getValue().getTagForValueReplacement().render());
+              } else if (formatedJson.contains(entry.getValue().getStringToMatch())) {
+                formatedJson =
+                    formatedJson.replace(
+                        entry.getValue().getStringToMatch(),
+                        entry.getValue().getTagForKeyReplacement().render()
+                            + entry.getValue().getTagForValueReplacement().render());
+              }
             }
+            return ancestorTitle()
+                .with(
+                    vertParentTitle()
+                        .with(
+                            div()
+                                .withClass("tile is-child pe-3")
+                                .with(
+                                    pre(new UnescapedText(formatedJson))
+                                        .withClass("json language-json"))
+                                .with(renderingToolkit.convertNested(element))));
+          }
         });
-    }
+  }
 
-    private final JsonElement jsonElement;
+  private final JsonElement jsonElement;
 
-    @Override
-    public RbelMultiMap getChildElements() {
-        return new RbelMultiMap();
-    }
+  @Override
+  public RbelMultiMap getChildElements() {
+    return new RbelMultiMap();
+  }
 }

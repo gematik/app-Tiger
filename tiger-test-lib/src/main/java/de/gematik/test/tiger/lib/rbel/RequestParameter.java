@@ -25,25 +25,24 @@ import org.apache.commons.lang3.StringUtils;
 @Getter
 public class RequestParameter {
 
-    private String path;
-    private String rbelPath;
-    private String value;
-    private final boolean startFromLastRequest;
-    private final boolean filterPreviousRequest;
-    private final boolean requireNewMessage;
-    @Builder.Default
-    private final boolean requireHttpMessage = true;
+  private String path;
+  private String rbelPath;
+  private String value;
+  private final boolean startFromLastRequest;
+  private final boolean filterPreviousRequest;
+  private final boolean requireNewMessage;
+  @Builder.Default private final boolean requireHttpMessage = true;
 
-    public RequestParameter resolvePlaceholders()  {
-        if (StringUtils.isNotEmpty(path)) {
-            path = TigerGlobalConfiguration.resolvePlaceholders(path);
-        }
-        if (StringUtils.isNotEmpty(rbelPath)) {
-            rbelPath = TigerGlobalConfiguration.resolvePlaceholders(rbelPath);
-        }
-        if (StringUtils.isNotEmpty(value)) {
-            value = TigerGlobalConfiguration.resolvePlaceholders(value);
-        }
-        return this;
+  public RequestParameter resolvePlaceholders() {
+    if (StringUtils.isNotEmpty(path)) {
+      path = TigerGlobalConfiguration.resolvePlaceholders(path);
     }
+    if (StringUtils.isNotEmpty(rbelPath)) {
+      rbelPath = TigerGlobalConfiguration.resolvePlaceholders(rbelPath);
+    }
+    if (StringUtils.isNotEmpty(value)) {
+      value = TigerGlobalConfiguration.resolvePlaceholders(value);
+    }
+    return this;
+  }
 }

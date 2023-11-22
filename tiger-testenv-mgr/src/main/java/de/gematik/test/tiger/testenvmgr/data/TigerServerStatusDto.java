@@ -28,10 +28,10 @@ import lombok.*;
 @EqualsAndHashCode
 public class TigerServerStatusDto {
 
-    private String name;
-    private String baseUrl;
-    private String type;
-    private TigerServerStatus status;
-    private String statusMessage;
-    private List<String> statusUpdates = new ArrayList<>();
+  private String name;
+  private String baseUrl;
+  private String type;
+  private TigerServerStatus status;
+  private String statusMessage;
+  private List<String> statusUpdates = new ArrayList<>();
 }

@@ -24,33 +24,33 @@ import lombok.Builder;
 
 public class RbelFileReaderCapturer extends RbelCapturer {
 
-    private final String rbelFile;
+  private final String rbelFile;
 
-    @Builder
-    public RbelFileReaderCapturer(RbelConverter rbelConverter, String rbelFile) {
-        super(rbelConverter);
-        this.rbelFile = rbelFile;
-    }
+  @Builder
+  public RbelFileReaderCapturer(RbelConverter rbelConverter, String rbelFile) {
+    super(rbelConverter);
+    this.rbelFile = rbelFile;
+  }
 
-    @Override
-    public RbelCapturer initialize() {
-        try {
-            new RbelFileWriter(getRbelConverter())
-                .convertFromRbelFile(Paths.get(rbelFile));
-            return this;
-        } catch (UncheckedIOException e) {
-            throw new RbelFileIoException("Error while reading from rbel-file with path '" + rbelFile + "'", e);
-        }
+  @Override
+  public RbelCapturer initialize() {
+    try {
+      new RbelFileWriter(getRbelConverter()).convertFromRbelFile(Paths.get(rbelFile));
+      return this;
+    } catch (UncheckedIOException e) {
+      throw new RbelFileIoException(
+          "Error while reading from rbel-file with path '" + rbelFile + "'", e);
     }
+  }
 
-    @Override
-    public void close() throws Exception {
-        // no open handles
-    }
+  @Override
+  public void close() throws Exception {
+    // no open handles
+  }
 
-    private static class RbelFileIoException extends RuntimeException {
-        public RbelFileIoException(String s, Exception e) {
-            super(s, e);
-        }
+  private static class RbelFileIoException extends RuntimeException {
+    public RbelFileIoException(String s, Exception e) {
+      super(s, e);
     }
+  }
 }

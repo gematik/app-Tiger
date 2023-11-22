@@ -18,6 +18,7 @@ package de.gematik.rbellogger.renderer;
 
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.Assertions.assertThat;
+
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.RbelValueShader;
@@ -46,206 +47,260 @@ import org.junit.jupiter.api.Test;
 
 class RbelHtmlRendererTest {
 
-    private static final RbelConverter RBEL_CONVERTER = RbelLogger.build()
-        .getRbelConverter();
-    private static final RbelHtmlRenderer RENDERER = new RbelHtmlRenderer();
+  private static final RbelConverter RBEL_CONVERTER = RbelLogger.build().getRbelConverter();
+  private static final RbelHtmlRenderer RENDERER = new RbelHtmlRenderer();
 
-    @BeforeEach
-    void resetConfig() {
-        TigerGlobalConfiguration.reset();
-    }
+  @BeforeEach
+  void resetConfig() {
+    TigerGlobalConfiguration.reset();
+  }
 
-    @Test
-    void convertToHtml() throws IOException {
-        final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
-            ("src/test/resources/sampleMessages/jwtMessage.curl");
+  @Test
+  void convertToHtml() throws IOException {
+    final String curlMessage =
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/sampleMessages/jwtMessage.curl");
 
-        final RbelElement convertedMessage = RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+    final RbelElement convertedMessage =
+        RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
 
-        final String render = RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()));
-        FileUtils.writeStringToFile(new File("target/out.html"), render, Charset.defaultCharset());
-        assertThat(Jsoup.parse(render))
-            .isNotNull();
-    }
+    final String render =
+        RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()));
+    FileUtils.writeStringToFile(new File("target/out.html"), render, Charset.defaultCharset());
+    assertThat(Jsoup.parse(render)).isNotNull();
+  }
 
-    @Test
-    void valueShading() throws IOException {
-        RENDERER.setRenderAsn1Objects(true);
-        RENDERER.setRenderNestedObjectsWithoutFacetRenderer(true);
-        final String curlMessage = readCurlFromFileWithCorrectedLineBreaks("src/test/resources/sampleMessages/jwtMessage.curl");
+  @Test
+  void valueShading() throws IOException {
+    RENDERER.setRenderAsn1Objects(true);
+    RENDERER.setRenderNestedObjectsWithoutFacetRenderer(true);
+    final String curlMessage =
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/sampleMessages/jwtMessage.curl");
 
-        final RbelElement convertedMessage = RBEL_CONVERTER.convertElement(curlMessage, null);
-        convertedMessage.addFacet(new RbelNoteFacet("foobar Message"));
-        convertedMessage.getFirst("header").get().addFacet(new RbelNoteFacet("foobar Header"));
-        convertedMessage.getFirst("header").get().getChildNodes().stream()
-            .forEach(element -> {
-                for (int i = 0; i < RandomUtils.nextInt(0, 4); i++) {
-                    element.addFacet(new RbelNoteFacet("some note " + RandomStringUtils.randomAlphanumeric(30),
+    final RbelElement convertedMessage = RBEL_CONVERTER.convertElement(curlMessage, null);
+    convertedMessage.addFacet(new RbelNoteFacet("foobar Message"));
+    convertedMessage.getFirst("header").get().addFacet(new RbelNoteFacet("foobar Header"));
+    convertedMessage.getFirst("header").get().getChildNodes().stream()
+        .forEach(
+            element -> {
+              for (int i = 0; i < RandomUtils.nextInt(0, 4); i++) {
+                element.addFacet(
+                    new RbelNoteFacet(
+                        "some note " + RandomStringUtils.randomAlphanumeric(30),
                         RbelNoteFacet.NoteStyling.values()[RandomUtils.nextInt(0, 3)]));
-                }
+              }
             });
-        convertedMessage.getFirst("body").get().addFacet(new RbelNoteFacet("foobar Body"));
-        convertedMessage.findElement("$.body.header").get().addFacet(new RbelNoteFacet("foobar JWT Header"));
-        convertedMessage.findElement("$.body.body").get().addFacet(new RbelNoteFacet("foobar JWT Body"));
-        convertedMessage.findElement("$.body.signature").get().addFacet(new RbelNoteFacet("foobar Signature"));
-        convertedMessage.findElement("$.body.body.jwks_uri").get().addFacet(new RbelNoteFacet("jwks_uri: note im JSON"));
-        convertedMessage.findElement("$.body.body.jwks_uri").get().addFacet(new RbelNoteFacet("warnung", RbelNoteFacet.NoteStyling.WARN));
-        convertedMessage.findElement("$.body.body.scopes_supported").get().addFacet(new RbelNoteFacet("scopes_supported: note an einem array"));
+    convertedMessage.getFirst("body").get().addFacet(new RbelNoteFacet("foobar Body"));
+    convertedMessage
+        .findElement("$.body.header")
+        .get()
+        .addFacet(new RbelNoteFacet("foobar JWT Header"));
+    convertedMessage
+        .findElement("$.body.body")
+        .get()
+        .addFacet(new RbelNoteFacet("foobar JWT Body"));
+    convertedMessage
+        .findElement("$.body.signature")
+        .get()
+        .addFacet(new RbelNoteFacet("foobar Signature"));
+    convertedMessage
+        .findElement("$.body.body.jwks_uri")
+        .get()
+        .addFacet(new RbelNoteFacet("jwks_uri: note im JSON"));
+    convertedMessage
+        .findElement("$.body.body.jwks_uri")
+        .get()
+        .addFacet(new RbelNoteFacet("warnung", RbelNoteFacet.NoteStyling.WARN));
+    convertedMessage
+        .findElement("$.body.body.scopes_supported")
+        .get()
+        .addFacet(new RbelNoteFacet("scopes_supported: note an einem array"));
 
-        final String convertedHtml = RENDERER.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()), new RbelValueShader()
-            .addSimpleShadingCriterion("Date", "<halt ein date>")
-            .addSimpleShadingCriterion("Content-Length", "<Die Länge. Hier %s>")
-            .addSimpleShadingCriterion("exp", "<Nested Shading>")
-            .addSimpleShadingCriterion("nbf", "\"foobar\"")
-            .addSimpleShadingCriterion("iat", "&some&more\"stuff\"")
-        );
-        FileUtils.writeStringToFile(new File("target/out.html"), convertedHtml);
+    final String convertedHtml =
+        RENDERER.render(
+            wrapHttpMessage(convertedMessage, ZonedDateTime.now()),
+            new RbelValueShader()
+                .addSimpleShadingCriterion("Date", "<halt ein date>")
+                .addSimpleShadingCriterion("Content-Length", "<Die Länge. Hier %s>")
+                .addSimpleShadingCriterion("exp", "<Nested Shading>")
+                .addSimpleShadingCriterion("nbf", "\"foobar\"")
+                .addSimpleShadingCriterion("iat", "&some&more\"stuff\""));
+    FileUtils.writeStringToFile(new File("target/out.html"), convertedHtml);
 
-        assertThat(convertedHtml)
-            .contains("&lt;halt ein date&gt;")
-            .contains("&lt;Die Länge. Hier 2653&gt;")
+    assertThat(convertedHtml)
+        .contains("&lt;halt ein date&gt;")
+        .contains("&lt;Die Länge. Hier 2653&gt;")
+        .contains("\"&quot;foobar&quot;\"")
+        .contains("&amp;some&amp;more&quot;stuff&quot;");
+  }
 
-            .contains("\"&quot;foobar&quot;\"")
-            .contains("&amp;some&amp;more&quot;stuff&quot;");
-    }
+  @Test
+  void advancedShading() throws IOException {
+    RENDERER.setRenderAsn1Objects(true);
+    RENDERER.setRenderNestedObjectsWithoutFacetRenderer(true);
+    final String curlMessage =
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/sampleMessages/jwtMessage.curl");
 
-    @Test
-    void advancedShading() throws IOException {
-        RENDERER.setRenderAsn1Objects(true);
-        RENDERER.setRenderNestedObjectsWithoutFacetRenderer(true);
-        final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
-            ("src/test/resources/sampleMessages/jwtMessage.curl");
+    final String convertedHtml =
+        RENDERER.render(
+            wrapHttpMessage(RBEL_CONVERTER.convertElement(curlMessage, null), ZonedDateTime.now()),
+            new RbelValueShader()
+                .addJexlShadingCriterion("key == 'Version'", "<version: %s>")
+                .addJexlShadingCriterion(
+                    "key == 'nbf' && empty(element.parentNode)", "<nbf in JWT: %s>"));
 
-        final String convertedHtml = RENDERER.render(wrapHttpMessage(RBEL_CONVERTER.convertElement(curlMessage, null), ZonedDateTime.now()), new RbelValueShader()
-            .addJexlShadingCriterion("key == 'Version'", "<version: %s>")
-            .addJexlShadingCriterion("key == 'nbf' && empty(element.parentNode)", "<nbf in JWT: %s>")
-        );
+    FileUtils.writeStringToFile(new File("target/out.html"), convertedHtml);
 
-        FileUtils.writeStringToFile(new File("target/out.html"), convertedHtml);
+    assertThat(convertedHtml)
+        .contains("&lt;version: 9.0.0&gt;")
+        .contains("nbf-Wert in http header")
+        .contains("&lt;nbf in JWT: 1614339303&gt;")
+        .doesNotContain("nbf in JWT: nbf-Wert in http header");
+  }
 
-        assertThat(convertedHtml)
-            .contains("&lt;version: 9.0.0&gt;")
-            .contains("nbf-Wert in http header")
-            .contains("&lt;nbf in JWT: 1614339303&gt;")
-            .doesNotContain("nbf in JWT: nbf-Wert in http header");
-    }
+  @Test
+  void onlyServerNameKnown_shouldStillRender() throws IOException {
+    final String curlMessage =
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/sampleMessages/jwtMessage.curl");
 
-    @Test
-    void onlyServerNameKnown_shouldStillRender() throws IOException {
-        final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
-            ("src/test/resources/sampleMessages/jwtMessage.curl");
+    final RbelElement convertedMessage =
+        RbelLogger.build()
+            .getRbelConverter()
+            .parseMessage(
+                curlMessage.getBytes(),
+                new RbelHostname("foobar", 666),
+                null,
+                Optional.of(ZonedDateTime.now()));
 
-        final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
-            .parseMessage(curlMessage.getBytes(), new RbelHostname("foobar", 666), null, Optional.of(ZonedDateTime.now()));
+    final String convertedHtml = RENDERER.render(List.of(convertedMessage));
 
-        final String convertedHtml = RENDERER.render(List.of(convertedMessage));
+    FileUtils.writeStringToFile(new File("target/out.html"), convertedHtml);
 
-        FileUtils.writeStringToFile(new File("target/out.html"), convertedHtml);
+    assertThat(convertedHtml)
+        .contains("foobar:666") // hostname
+        .contains("487275465566779"); // Serialnumber of cert
+  }
 
-        assertThat(convertedHtml)
-            .contains("foobar:666") // hostname
-            .contains("487275465566779"); // Serialnumber of cert
-    }
+  @Test
+  void shouldContainTimeStamps() throws IOException {
+    final String curlMessage =
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/sampleMessages/jwtMessage.curl");
 
-    @Test
-    void shouldContainTimeStamps() throws IOException {
-        final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
-            ("src/test/resources/sampleMessages/jwtMessage.curl");
+    final RbelElement convertedMessage =
+        RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
 
-        final RbelElement convertedMessage = RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+    final ZonedDateTime transmissionTime = ZonedDateTime.now();
 
-        final ZonedDateTime transmissionTime = ZonedDateTime.now();
+    assertThat(RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, transmissionTime)))
+        .contains(transmissionTime.format(DateTimeFormatter.ISO_TIME));
+  }
 
-        assertThat(RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, transmissionTime)))
-            .contains(transmissionTime.format(DateTimeFormatter.ISO_TIME));
-    }
-
-    @Test
-    void shouldRenderBinaryMessagesDirectly() throws IOException {
-        final byte[] content = Base64.getDecoder().decode("awAAAUEAAAAADoAoAAAIaQYTABMAEwD/");
-        final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
-            .parseMessage(content,
+  @Test
+  void shouldRenderBinaryMessagesDirectly() throws IOException {
+    final byte[] content = Base64.getDecoder().decode("awAAAUEAAAAADoAoAAAIaQYTABMAEwD/");
+    final RbelElement convertedMessage =
+        RbelLogger.build()
+            .getRbelConverter()
+            .parseMessage(
+                content,
                 new RbelHostname("sender", 1),
                 new RbelHostname("receiver", 1),
                 Optional.of(ZonedDateTime.now()));
-        convertedMessage.addFacet(new RbelBinaryFacet());
+    convertedMessage.addFacet(new RbelBinaryFacet());
 
-        final String convertedHtml = RENDERER.render(List.of(convertedMessage));
-        FileUtils.writeStringToFile(new File("target/binary.html"), convertedHtml);
+    final String convertedHtml = RENDERER.render(List.of(convertedMessage));
+    FileUtils.writeStringToFile(new File("target/binary.html"), convertedHtml);
 
-        assertThat(convertedHtml)
-            .contains("08 69 06 13 00 13 00 13 00 ff")
-            .contains(".i........");
-    }
+    assertThat(convertedHtml).contains("08 69 06 13 00 13 00 13 00 ff").contains(".i........");
+  }
 
-    @Test
-    void shouldRenderXmlMessagesDirectly() throws IOException {
-        byte[] xmlBytes = FileUtils.readFileToByteArray(new File("src/test/resources/randomXml.xml"));
-        final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
-            .parseMessage(xmlBytes,
+  @Test
+  void shouldRenderXmlMessagesDirectly() throws IOException {
+    byte[] xmlBytes = FileUtils.readFileToByteArray(new File("src/test/resources/randomXml.xml"));
+    final RbelElement convertedMessage =
+        RbelLogger.build()
+            .getRbelConverter()
+            .parseMessage(
+                xmlBytes,
                 new RbelHostname("sender", 13421),
                 new RbelHostname("receiver", 14512),
                 Optional.of(ZonedDateTime.now()));
 
-        final String convertedHtml = RENDERER.render(List.of(convertedMessage));
-        FileUtils.writeStringToFile(new File("target/directXml.html"), convertedHtml);
+    final String convertedHtml = RENDERER.render(List.of(convertedMessage));
+    FileUtils.writeStringToFile(new File("target/directXml.html"), convertedHtml);
 
-        assertThat(convertedHtml)
-            .contains("Configuration status=")
-            .contains("sender:13421");
-    }
+    assertThat(convertedHtml).contains("Configuration status=").contains("sender:13421");
+  }
 
-    @Test
-    void shouldRenderHtmlMessagesWithoutError() throws IOException {
-        byte[] htmlBytes = FileUtils.readFileToByteArray(new File("src/test/resources/sample.html"));
-        final RbelElement convertedMessage = RbelLogger.build().getRbelConverter()
-            .parseMessage(htmlBytes,
+  @Test
+  void shouldRenderHtmlMessagesWithoutError() throws IOException {
+    byte[] htmlBytes = FileUtils.readFileToByteArray(new File("src/test/resources/sample.html"));
+    final RbelElement convertedMessage =
+        RbelLogger.build()
+            .getRbelConverter()
+            .parseMessage(
+                htmlBytes,
                 new RbelHostname("sender", 13421),
                 new RbelHostname("receiver", 14512),
                 Optional.of(ZonedDateTime.now()));
 
-        final String convertedHtml = RENDERER.render(List.of(convertedMessage));
-        FileUtils.writeStringToFile(new File("target/directHtml.html"), convertedHtml);
+    final String convertedHtml = RENDERER.render(List.of(convertedMessage));
+    FileUtils.writeStringToFile(new File("target/directHtml.html"), convertedHtml);
 
-        assertThat(convertedHtml)
-            .contains("\n       &lt;li&gt;LoginCreateToken");
-    }
+    assertThat(convertedHtml).contains("\n       &lt;li&gt;LoginCreateToken");
+  }
 
-    @Test
-    void logoFilePathSet_ShouldBeUsed() throws IOException {
-        TigerGlobalConfiguration.putValue("tiger.lib.rbelLogoFilePath", "pom.xml");
-        final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
-            ("src/test/resources/sampleMessages/jwtMessage.curl");
+  @Test
+  void logoFilePathSet_ShouldBeUsed() throws IOException {
+    TigerGlobalConfiguration.putValue("tiger.lib.rbelLogoFilePath", "pom.xml");
+    final String curlMessage =
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/sampleMessages/jwtMessage.curl");
 
-        final RbelElement convertedMessage = RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+    final RbelElement convertedMessage =
+        RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
 
-        final String render = RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()));
-        assertThat(render)
-            .contains("data:image/png;base64," +
+    final String render =
+        RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()));
+    assertThat(render)
+        .contains(
+            "data:image/png;base64,"
+                +
                 // pom always starts with '<?xml'. Strip the rest to avoid trailing blank bytes.
-                Base64.getEncoder().encodeToString("<?xml".getBytes(StandardCharsets.UTF_8)).substring(0,6));
-    }
+                Base64.getEncoder()
+                    .encodeToString("<?xml".getBytes(StandardCharsets.UTF_8))
+                    .substring(0, 6));
+  }
 
-    @Test
-    void logoFilePathNotSet_ShouldDisplayStandardLogo() throws IOException {
-        final String curlMessage = readCurlFromFileWithCorrectedLineBreaks
-            ("src/test/resources/sampleMessages/jwtMessage.curl");
+  @Test
+  void logoFilePathNotSet_ShouldDisplayStandardLogo() throws IOException {
+    final String curlMessage =
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/sampleMessages/jwtMessage.curl");
 
-        final RbelElement convertedMessage = RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+    final RbelElement convertedMessage =
+        RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
 
-        final String render = RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()));
-        assertThat(render)
-            .contains("/png;base64,iVBORw0K");
-    }
+    final String render =
+        RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()));
+    assertThat(render).contains("/png;base64,iVBORw0K");
+  }
 
-    private List<RbelElement> wrapHttpMessage(RbelElement convertedMessage, ZonedDateTime... transmissionTime) {
-        convertedMessage.addFacet(RbelTcpIpMessageFacet.builder()
+  private List<RbelElement> wrapHttpMessage(
+      RbelElement convertedMessage, ZonedDateTime... transmissionTime) {
+    convertedMessage.addFacet(
+        RbelTcpIpMessageFacet.builder()
             .receiver(RbelElement.wrap(null, convertedMessage, new RbelHostname("recipient", 1)))
             .sender(RbelElement.wrap(null, convertedMessage, new RbelHostname("sender", 1)))
             .build());
-        convertedMessage.addFacet(RbelMessageTimingFacet.builder()
+    convertedMessage.addFacet(
+        RbelMessageTimingFacet.builder()
             .transmissionTime(transmissionTime == null ? ZonedDateTime.now() : transmissionTime[0])
             .build());
-        return List.of(convertedMessage);
-    }
+    return List.of(convertedMessage);
+  }
 }

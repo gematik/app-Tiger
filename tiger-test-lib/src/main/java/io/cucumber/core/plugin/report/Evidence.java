@@ -12,7 +12,10 @@ public class Evidence {
   }
 
   public enum Type {
-    INFO, WARN, ERROR, FATAL
+    INFO,
+    WARN,
+    ERROR,
+    FATAL
   }
 
   Type type;

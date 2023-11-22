@@ -18,17 +18,15 @@ package de.gematik.rbellogger.data.facet;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import java.util.List;
 import lombok.Data;
 
 @Data
 public class RbelAsn1UnparsedBytesFacet implements RbelFacet {
 
-    private final RbelElement unparsedBytes;
+  private final RbelElement unparsedBytes;
 
-    @Override
-    public RbelMultiMap getChildElements() {
-        return new RbelMultiMap()
-            .with("unparsedBytes", unparsedBytes);
-    }
+  @Override
+  public RbelMultiMap getChildElements() {
+    return new RbelMultiMap().with("unparsedBytes", unparsedBytes);
+  }
 }

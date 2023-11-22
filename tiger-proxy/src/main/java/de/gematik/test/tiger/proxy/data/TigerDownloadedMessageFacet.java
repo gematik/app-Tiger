@@ -21,8 +21,8 @@ import de.gematik.rbellogger.data.facet.RbelFacet;
 
 public class TigerDownloadedMessageFacet implements RbelFacet {
 
-    @Override
-    public RbelMultiMap getChildElements() {
-        return new RbelMultiMap();
-    }
+  @Override
+  public RbelMultiMap getChildElements() {
+    return new RbelMultiMap();
+  }
 }

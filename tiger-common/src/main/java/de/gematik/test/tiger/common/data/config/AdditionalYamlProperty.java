@@ -27,6 +27,6 @@ import lombok.NoArgsConstructor;
 @Data
 public class AdditionalYamlProperty {
 
-    private String filename;
-    private String baseKey;
+  private String filename;
+  private String baseKey;
 }

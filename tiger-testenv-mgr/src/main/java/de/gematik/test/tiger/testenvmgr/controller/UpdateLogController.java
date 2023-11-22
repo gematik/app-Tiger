@@ -31,20 +31,20 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UpdateLogController implements TigerServerLogListener {
 
-    public final SimpMessagingTemplate template;
-    public final TigerTestEnvMgr tigerTestEnvMgr;
+  public final SimpMessagingTemplate template;
+  public final TigerTestEnvMgr tigerTestEnvMgr;
 
-    @PostConstruct
-    public void addWebSocketListener() {
-        tigerTestEnvMgr.getServers().values().forEach(server -> server.registerLogListener(this));
-        tigerTestEnvMgr.registerLogListener(this);
-    }
+  @PostConstruct
+  public void addWebSocketListener() {
+    tigerTestEnvMgr.getServers().values().forEach(server -> server.registerLogListener(this));
+    tigerTestEnvMgr.registerLogListener(this);
+  }
 
-    @Override
-    public void receiveServerLogUpdate(TigerServerLogUpdate update) {
-        if (tigerTestEnvMgr.isWorkflowUiSentFetch() && !tigerTestEnvMgr.isShouldAbortTestExecution()) {
-            log.trace("Propagating tiger server log update {}", update);
-            template.convertAndSend("/topic/serverLog", TigerServerLogDto.createFrom(update));
-        }
+  @Override
+  public void receiveServerLogUpdate(TigerServerLogUpdate update) {
+    if (tigerTestEnvMgr.isWorkflowUiSentFetch() && !tigerTestEnvMgr.isShouldAbortTestExecution()) {
+      log.trace("Propagating tiger server log update {}", update);
+      template.convertAndSend("/topic/serverLog", TigerServerLogDto.createFrom(update));
     }
+  }
 }

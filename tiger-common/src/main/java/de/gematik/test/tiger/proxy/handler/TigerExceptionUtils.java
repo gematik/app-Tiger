@@ -17,27 +17,48 @@
 package de.gematik.test.tiger.proxy.handler;
 
 import java.util.Optional;
+import java.util.function.Predicate;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TigerExceptionUtils {
 
-    /**
-     * Looks for a cause with the given type and returns it if present. If not then an empty Optional is returned.
-     *
-     * @param exception The exception to be inspected
-     * @param causeClassToDetect The cause-class to detect
-     * @param <E> Type of the cause class
-     */
-    public static <E extends Throwable> Optional<E> getCauseWithType(
-        Throwable exception, Class<E> causeClassToDetect) {
-        if (causeClassToDetect.isInstance(exception)) {
-            return Optional.of((E) exception);
-        } else if (exception == null || exception.getCause() == null) {
-            return Optional.empty();
-        } else {
-            return getCauseWithType(exception.getCause(), causeClassToDetect);
-        }
+  /**
+   * Looks for a cause with the given type and returns it if present. If not then an empty Optional
+   * is returned.
+   *
+   * @param exception The exception to be inspected
+   * @param causeClassToDetect The cause-class to detect
+   * @param <E> Type of the cause class
+   */
+  public static <E extends Throwable> Optional<E> getCauseWithType(
+      Throwable exception, Class<E> causeClassToDetect) {
+    if (causeClassToDetect.isInstance(exception)) {
+      return Optional.of((E) exception);
+    } else if (exception == null || exception.getCause() == null) {
+      return Optional.empty();
+    } else {
+      return getCauseWithType(exception.getCause(), causeClassToDetect);
     }
+  }
+
+  /**
+   * Looks if a cause with matching message is found
+   *
+   * @param exception The exception to be inspected
+   * @param messageMatcher The matcher for the exception-message
+   */
+  public static Optional<Throwable> getCauseWithMessageMatching(
+      Throwable exception, Predicate<String> messageMatcher) {
+    if (exception == null) {
+      return Optional.empty();
+    } else if (messageMatcher.test(exception.getMessage())) {
+      return Optional.of(exception);
+    } else if (exception.getCause() == null) {
+      return Optional.empty();
+    } else {
+      return getCauseWithMessageMatching(exception.getCause(), messageMatcher);
+    }
+  }
 }

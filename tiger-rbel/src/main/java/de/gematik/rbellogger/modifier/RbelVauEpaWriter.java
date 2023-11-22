@@ -38,62 +38,76 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 public class RbelVauEpaWriter implements RbelElementWriter {
 
-    @SneakyThrows
-    public static byte[] encrypt(byte[] input, byte[] key, byte[] iv) {
-        SecretKey secretKey = new SecretKeySpec(key, "AES");
+  @SneakyThrows
+  public static byte[] encrypt(byte[] input, byte[] key, byte[] iv) {
+    SecretKey secretKey = new SecretKeySpec(key, "AES");
 
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", "BC");//NOSONAR
+    Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", "BC"); // NOSONAR
 
-        cipher.init(Cipher.ENCRYPT_MODE, secretKey, new GCMParameterSpec(16 * 8, iv));
+    cipher.init(Cipher.ENCRYPT_MODE, secretKey, new GCMParameterSpec(16 * 8, iv));
 
-        byte[] cipherTextPlusTag = cipher.doFinal(input);
+    byte[] cipherTextPlusTag = cipher.doFinal(input);
 
-        byte[] encMessage = Arrays.copyOf(iv, 12 + cipherTextPlusTag.length);
-        System.arraycopy(cipherTextPlusTag, 0, encMessage, 12, cipherTextPlusTag.length);
+    byte[] encMessage = Arrays.copyOf(iv, 12 + cipherTextPlusTag.length);
+    System.arraycopy(cipherTextPlusTag, 0, encMessage, 12, cipherTextPlusTag.length);
 
-        return encMessage;
+    return encMessage;
+  }
+
+  @Override
+  public boolean canWrite(RbelElement oldTargetElement) {
+    return oldTargetElement.hasFacet(RbelVauEpaFacet.class);
+  }
+
+  @SneakyThrows
+  @Override
+  public byte[] write(
+      RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, byte[] newContent) {
+    final Optional<RbelKey> decryptionKey =
+        oldTargetElement.getFacet(RbelVauEpaFacet.class).flatMap(RbelVauEpaFacet::getKeyUsed);
+    if (decryptionKey.isEmpty()) {
+      throw new RuntimeException(
+          "Error while trying to write VAU Erp Message: No decryption-key found!");
     }
+    final byte[] oldEncryptedMessage =
+        oldTargetElement
+            .getFacetOrFail(RbelVauEpaFacet.class)
+            .getEncryptedMessage()
+            .getRawContent();
+    final byte[] oldCleartext =
+        CryptoUtils.decrypt(
+                oldEncryptedMessage,
+                oldTargetElement.getFacetOrFail(RbelVauEpaFacet.class).getKeyUsed().get().getKey())
+            .get();
+    // for details see gemSpec_krypt, chapter 6
+    int headerLength =
+        java.nio.ByteBuffer.wrap((Arrays.copyOfRange(oldCleartext, 1 + 8, 1 + 8 + 4))).getInt();
+    int introLength = 1 + 8 + 4 + headerLength;
+    byte[] oldIv = Arrays.copyOfRange(oldEncryptedMessage, 0, 12);
+    final byte[] newCleartext =
+        ArrayUtils.addAll(Arrays.copyOfRange(oldCleartext, 0, introLength), newContent);
 
-    @Override
-    public boolean canWrite(RbelElement oldTargetElement) {
-        return oldTargetElement.hasFacet(RbelVauEpaFacet.class);
-    }
-
-    @SneakyThrows
-    @Override
-    public byte[] write(RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, byte[] newContent) {
-        final Optional<RbelKey> decryptionKey = oldTargetElement.getFacet(RbelVauEpaFacet.class)
-            .flatMap(RbelVauEpaFacet::getKeyUsed);
-        if (decryptionKey.isEmpty()) {
-            throw new RuntimeException("Error while trying to write VAU Erp Message: No decryption-key found!");
-        }
-        final byte[] oldEncryptedMessage = oldTargetElement.getFacetOrFail(RbelVauEpaFacet.class).getEncryptedMessage().getRawContent();
-        final byte[] oldCleartext = CryptoUtils.decrypt(oldEncryptedMessage,
-            oldTargetElement.getFacetOrFail(RbelVauEpaFacet.class).getKeyUsed().get().getKey()).get();
-        // for details see gemSpec_krypt, chapter 6
-        int headerLength = java.nio.ByteBuffer.wrap((Arrays.copyOfRange(oldCleartext, 1 + 8, 1 + 8 + 4))).getInt();
-        int introLength = 1 + 8 + 4 + headerLength;
-        byte[] oldIv = Arrays.copyOfRange(oldEncryptedMessage, 0, 12);
-        final byte[] newCleartext = ArrayUtils.addAll(Arrays.copyOfRange(oldCleartext, 0, introLength), newContent);
-
-        final byte[] newVauMessage = ArrayUtils.addAll(Arrays.copyOfRange(oldTargetElement.getRawContent(), 0, 32),
+    final byte[] newVauMessage =
+        ArrayUtils.addAll(
+            Arrays.copyOfRange(oldTargetElement.getRawContent(), 0, 32),
             encrypt(newCleartext, decryptionKey.get().getKey().getEncoded(), oldIv));
-        var splitVauMessage = splitVauMessage(newVauMessage);
-        log.info("splitted into {} and {}",
-            Base64.getEncoder().encodeToString(splitVauMessage.getLeft()),
-            Base64.getEncoder().encodeToString(splitVauMessage.getRight()));
-        return newVauMessage;
-    }
+    var splitVauMessage = splitVauMessage(newVauMessage);
+    log.info(
+        "splitted into {} and {}",
+        Base64.getEncoder().encodeToString(splitVauMessage.getLeft()),
+        Base64.getEncoder().encodeToString(splitVauMessage.getRight()));
+    return newVauMessage;
+  }
 
-    private Pair<byte[], byte[]> splitVauMessage(byte[] vauMessage) {
-        try {
-            byte[] keyID = new byte[32];
-            System.arraycopy(vauMessage, 0, keyID, 0, 32);
-            byte[] enc = new byte[vauMessage.length - 32];
-            System.arraycopy(vauMessage, 32, enc, 0, vauMessage.length - 32);
-            return Pair.of(keyID, enc);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw new RbelModificationException("Unable to write VAU message", e);
-        }
+  private Pair<byte[], byte[]> splitVauMessage(byte[] vauMessage) {
+    try {
+      byte[] keyID = new byte[32];
+      System.arraycopy(vauMessage, 0, keyID, 0, 32);
+      byte[] enc = new byte[vauMessage.length - 32];
+      System.arraycopy(vauMessage, 32, enc, 0, vauMessage.length - 32);
+      return Pair.of(keyID, enc);
+    } catch (ArrayIndexOutOfBoundsException e) {
+      throw new RbelModificationException("Unable to write VAU message", e);
     }
+  }
 }

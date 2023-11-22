@@ -27,10 +27,10 @@ import lombok.Data;
 @AllArgsConstructor
 public class JexlQueryResponseDto {
 
-    private final boolean matchSuccessful;
-    private final Map<String, Object> messageContext;
-    private final String rbelTreeHtml;
-    private final List<String> elements;
+  private final boolean matchSuccessful;
+  private final Map<String, Object> messageContext;
+  private final String rbelTreeHtml;
+  private final List<String> elements;
 
-    private final String errorMessage;
+  private final String errorMessage;
 }

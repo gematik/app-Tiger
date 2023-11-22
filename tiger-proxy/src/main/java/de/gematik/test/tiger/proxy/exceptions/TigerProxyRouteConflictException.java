@@ -22,11 +22,11 @@ import lombok.Getter;
 @Getter
 public class TigerProxyRouteConflictException extends TigerProxyConfigurationException {
 
-    private final TigerRoute existingRoute;
+  private final TigerRoute existingRoute;
 
-    public TigerProxyRouteConflictException(TigerRoute existingRoute) {
-        super("Could not add route. Competing route found: " + existingRoute);
+  public TigerProxyRouteConflictException(TigerRoute existingRoute) {
+    super("Could not add route. Competing route found: " + existingRoute);
 
-        this.existingRoute = existingRoute;
-    }
+    this.existingRoute = existingRoute;
+  }
 }

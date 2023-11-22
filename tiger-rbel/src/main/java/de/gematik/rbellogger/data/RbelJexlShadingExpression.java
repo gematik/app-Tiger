@@ -24,7 +24,7 @@ import lombok.Data;
 @Builder
 public class RbelJexlShadingExpression {
 
-    private final String jexlExpression;
-    private final String shadingValue;
-    private final AtomicInteger numberOfMatches = new AtomicInteger(0);
+  private final String jexlExpression;
+  private final String shadingValue;
+  private final AtomicInteger numberOfMatches = new AtomicInteger(0);
 }

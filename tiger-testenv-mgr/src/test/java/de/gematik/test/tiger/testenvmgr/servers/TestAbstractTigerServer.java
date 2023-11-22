@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
@@ -31,82 +32,83 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class TestAbstractTigerServer {
 
-    @Test
-    void testfindCommandInPath_OK() {
-        TestServer server = new TestServer();
-        if (SystemUtils.IS_OS_WINDOWS) {
-            server.findCommandInPath("cmd.exe");
-        } else {
-            server.findCommandInPath("bash");
-        }
+  @Test
+  void testfindCommandInPath_OK() {
+    TestServer server = new TestServer();
+    if (SystemUtils.IS_OS_WINDOWS) {
+      server.findCommandInPath("cmd.exe");
+    } else {
+      server.findCommandInPath("bash");
     }
+  }
 
-    @Test
-    void testfindCommandInPath_NOK() {
-        TestServer server = new TestServer();
-        assertThatThrownBy(() -> {
-            if (SystemUtils.IS_OS_WINDOWS) {
+  @Test
+  void testfindCommandInPath_NOK() {
+    TestServer server = new TestServer();
+    assertThatThrownBy(
+            () -> {
+              if (SystemUtils.IS_OS_WINDOWS) {
                 server.findCommandInPath("cmdNOTFOUND.exe");
-            } else {
+              } else {
                 server.findCommandInPath("bashNOTFOUND");
-            }
-        }).isInstanceOf(TigerEnvironmentStartupException.class);
-    }
+              }
+            })
+        .isInstanceOf(TigerEnvironmentStartupException.class);
+  }
 
-    @ParameterizedTest
-    @ValueSource(strings = { "emptyList", "emptyList2", "emptyList3"})
-    void testAssertCfgPropertySet_EmptyList(String propName) {
-        TestServer server = new TestServer();
-        TestConfigClass config = new TestConfigClass();
-        assertThatThrownBy(() -> server.assertCfgPropertySet(config, propName)).isInstanceOf(TigerTestEnvException.class)
-            .hasMessageContaining("contain at least one non empty entry");
-    }
-    @ParameterizedTest
-    @CsvSource(value = { "emptyStr, empty", "nullStr, NULL!"})
-    void testAssertCfgPropertySet_EmptyString(String propName, String messagePart) {
-        TestServer server = new TestServer();
-        TestConfigClass config = new TestConfigClass();
-        assertThatThrownBy(() -> server.assertCfgPropertySet(config, propName)).isInstanceOf(TigerTestEnvException.class)
-            .hasMessageContaining("be set and not be " + messagePart);
-    }
+  @ParameterizedTest
+  @ValueSource(strings = {"emptyList", "emptyList2", "emptyList3"})
+  void testAssertCfgPropertySet_EmptyList(String propName) {
+    TestServer server = new TestServer();
+    TestConfigClass config = new TestConfigClass();
+    assertThatThrownBy(() -> server.assertCfgPropertySet(config, propName))
+        .isInstanceOf(TigerTestEnvException.class)
+        .hasMessageContaining("contain at least one non empty entry");
+  }
 
-    @Test
-    void testGetServerTypeToken_NOK() {
-        TestServer server = new TestServer();
-        assertThatThrownBy(server::getServerTypeToken)
-            .isInstanceOf(TigerTestEnvException.class)
-            .hasMessageContaining("has no "
-                + TigerServerType.class.getCanonicalName() + " Annotation!");
-    }
+  @ParameterizedTest
+  @CsvSource(value = {"emptyStr, empty", "nullStr, NULL!"})
+  void testAssertCfgPropertySet_EmptyString(String propName, String messagePart) {
+    TestServer server = new TestServer();
+    TestConfigClass config = new TestConfigClass();
+    assertThatThrownBy(() -> server.assertCfgPropertySet(config, propName))
+        .isInstanceOf(TigerTestEnvException.class)
+        .hasMessageContaining("be set and not be " + messagePart);
+  }
+
+  @Test
+  void testGetServerTypeToken_NOK() {
+    TestServer server = new TestServer();
+    assertThatThrownBy(server::getServerTypeToken)
+        .isInstanceOf(TigerTestEnvException.class)
+        .hasMessageContaining(
+            "has no " + TigerServerType.class.getCanonicalName() + " Annotation!");
+  }
 }
 
 class TestServer extends AbstractTigerServer {
 
-    public TestServer() {
-        super("test", "id", null, new CfgServer());
-    }
+  public TestServer() {
+    super("test", "id", null, new CfgServer());
+  }
 
-    @Override
-    public void performStartup() {
+  @Override
+  public void performStartup() {}
 
-    }
-
-    @Override
-    public void shutdown() {
-
-    }
+  @Override
+  public void shutdown() {}
 }
 
 @Getter
 class TestConfigClass {
-    List<String> emptyList = List.of();
-    List<String> emptyList2 = List.of("", "");
-    List<String> emptyList3 = new ArrayList<>();
+  List<String> emptyList = List.of();
+  List<String> emptyList2 = List.of("", "");
+  List<String> emptyList3 = new ArrayList<>();
 
-    String emptyStr = "";
-    String nullStr = null;
+  String emptyStr = "";
+  String nullStr = null;
 
-    TestConfigClass() {
-        emptyList3.add(null);
-    }
+  TestConfigClass() {
+    emptyList3.add(null);
+  }
 }

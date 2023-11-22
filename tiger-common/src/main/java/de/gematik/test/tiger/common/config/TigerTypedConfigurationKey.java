@@ -22,66 +22,61 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 
 /**
- * Ease-of-use solution to retrieve configuration values from the TigerGlobalConfiguration. This object bundles key, type and default value,
- * allowing to centralize all the information associated with a configuration key.
+ * Ease-of-use solution to retrieve configuration values from the TigerGlobalConfiguration. This
+ * object bundles key, type and default value, allowing to centralize all the information associated
+ * with a configuration key.
  *
  * @param <T>
  */
 public class TigerTypedConfigurationKey<T> {
 
-    @Getter
-    private final TigerConfigurationKey key;
-    private final Optional<T> defaultValue;
-    private final Constructor<T> typeConstructor;
+  @Getter private final TigerConfigurationKey key;
+  private final Optional<T> defaultValue;
+  private final Constructor<T> typeConstructor;
 
-    public TigerTypedConfigurationKey(String key, Class<T> type) {
-        this(new TigerConfigurationKey(key), type);
-    }
+  public TigerTypedConfigurationKey(String key, Class<T> type) {
+    this(new TigerConfigurationKey(key), type);
+  }
 
-    @SneakyThrows
-    public TigerTypedConfigurationKey(TigerConfigurationKey key, Class<T> type) {
-        this.key = key;
-        typeConstructor = type.getConstructor(String.class);
-        this.defaultValue = Optional.empty();
-    }
+  @SneakyThrows
+  public TigerTypedConfigurationKey(TigerConfigurationKey key, Class<T> type) {
+    this.key = key;
+    typeConstructor = type.getConstructor(String.class);
+    this.defaultValue = Optional.empty();
+  }
 
-    public TigerTypedConfigurationKey(String key, Class<T> type, T defaultValue) {
-        this(new TigerConfigurationKey(key), type, defaultValue);
-    }
+  public TigerTypedConfigurationKey(String key, Class<T> type, T defaultValue) {
+    this(new TigerConfigurationKey(key), type, defaultValue);
+  }
 
-    @SneakyThrows
-    public TigerTypedConfigurationKey(TigerConfigurationKey key, Class<T> type, T defaultValue) {
-        this.key = key;
-        typeConstructor = type.getConstructor(String.class);
-        this.defaultValue = Optional.ofNullable(defaultValue);
-    }
+  @SneakyThrows
+  public TigerTypedConfigurationKey(TigerConfigurationKey key, Class<T> type, T defaultValue) {
+    this.key = key;
+    typeConstructor = type.getConstructor(String.class);
+    this.defaultValue = Optional.ofNullable(defaultValue);
+  }
 
-    @SneakyThrows
-    public Optional<T> getValue() {
-        return TigerGlobalConfiguration
-            .readStringOptional(key.downsampleKey())
-            .map(this::getInstance);
-    }
+  @SneakyThrows
+  public Optional<T> getValue() {
+    return TigerGlobalConfiguration.readStringOptional(key.downsampleKey()).map(this::getInstance);
+  }
 
-    @SneakyThrows
-    public Optional<T> getValueWithoutResolving() {
-        return TigerGlobalConfiguration
-            .readStringWithoutResolving(key.downsampleKey())
-            .map(this::getInstance);
-    }
+  @SneakyThrows
+  public Optional<T> getValueWithoutResolving() {
+    return TigerGlobalConfiguration.readStringWithoutResolving(key.downsampleKey())
+        .map(this::getInstance);
+  }
 
-    public T getValueOrDefault() {
-        return getValue()
-            .or(() -> defaultValue)
-            .orElseThrow();
-    }
+  public T getValueOrDefault() {
+    return getValue().or(() -> defaultValue).orElseThrow();
+  }
 
-    @SneakyThrows
-    private T getInstance(String s) {
-        return typeConstructor.newInstance(s);
-    }
+  @SneakyThrows
+  private T getInstance(String s) {
+    return typeConstructor.newInstance(s);
+  }
 
-    public void putValue(T value) {
-        TigerGlobalConfiguration.putValue(key.downsampleKey(), value);
-    }
+  public void putValue(T value) {
+    TigerGlobalConfiguration.putValue(key.downsampleKey(), value);
+  }
 }

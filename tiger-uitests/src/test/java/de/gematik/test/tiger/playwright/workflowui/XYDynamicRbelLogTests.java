@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import com.microsoft.playwright.Download;
 import com.microsoft.playwright.Page;
 import java.util.concurrent.TimeUnit;
@@ -34,194 +35,340 @@ import org.junit.jupiter.api.*;
 @TestMethodOrder(MethodOrderer.MethodName.class)
 class XYDynamicRbelLogTests extends AbstractTests {
 
-    @BeforeEach
-    void printInfoStarted(TestInfo testInfo) {
-        System.out.println("started = " + testInfo.getDisplayName());
-    }
-    @AfterEach
-    void printInfoFinished(TestInfo testInfo) {
-        System.out.println("finished = " + testInfo.getDisplayName());
-    }
+  @BeforeEach
+  void printInfoStarted(TestInfo testInfo) {
+    System.out.println("started = " + testInfo.getDisplayName());
+  }
 
-    @Test
-    void testHExecutionPaneRbelWebUiURLExists() {
-        page.querySelector("#test-execution-pane-tab").click();
-        page.locator("#test-webui-slider").click();
-        assertThat(page.locator("#test-rbel-webui-url").isVisible()).isTrue();
-    }
+  @AfterEach
+  void printInfoFinished(TestInfo testInfo) {
+    System.out.println("finished = " + testInfo.getDisplayName());
+  }
 
-    @Test
-    void testBRbelLogPaneOpensAndCloses() {
-        page.locator("#test-execution-pane-tab").click();
-        page.locator("#test-webui-slider").click();
-        assertThat(page.locator("#rbellog_details_pane").isVisible()).isTrue();
-        page.locator("#test-webui-slider").click();
-        assertThat(page.locator("#rbellog_details_pane").isVisible()).isFalse();
-    }
+  @Test
+  void testHExecutionPaneRbelWebUiURLExists() {
+    page.querySelector("#test-execution-pane-tab").click();
+    page.locator("#test-webui-slider").click();
+    assertThat(page.locator("#test-rbel-webui-url").isVisible()).isTrue();
+  }
 
-    @Test
-    void testDRbelLogPaneHideDetailsButton() {
-        page.locator("#test-execution-pane-tab").click();
-        page.locator("#test-webui-slider").click();
-        assertThat(page.locator("#rbellog_details_pane").isVisible()).isTrue();
-        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
-        page.frameLocator("#rbellog-details-iframe").locator("#pageSelector .dropdown-item").first().click();
-        await()
-            .atMost(10, TimeUnit.SECONDS)
-            .untilAsserted(() -> assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last().textContent()).isEqualTo("20"));
+  @Test
+  void testBRbelLogPaneOpensAndCloses() {
+    page.locator("#test-execution-pane-tab").click();
+    page.locator("#test-webui-slider").click();
+    assertThat(page.locator("#rbellog_details_pane").isVisible()).isTrue();
+    page.locator("#test-webui-slider").click();
+    assertThat(page.locator("#rbellog_details_pane").isVisible()).isFalse();
+  }
 
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#webui-navbar").isVisible()).isTrue();
-        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-hide-button").click();
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageHeaderBtn").isVisible()).isTrue();
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageDetailsBtn").isVisible()).isTrue();
-        page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageDetailsBtn").click();
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-card-content.d-none").count()).isEqualTo(20);
-        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-hide-button").click();
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageDetails.led-error").isVisible()).isTrue();
-        page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageDetailsBtn").click();
-    }
+  @Test
+  void testDRbelLogPaneHideDetailsButton() {
+    page.locator("#test-execution-pane-tab").click();
+    page.locator("#test-webui-slider").click();
+    assertThat(page.locator("#rbellog_details_pane").isVisible()).isTrue();
+    page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
+    page.frameLocator("#rbellog-details-iframe")
+        .locator("#pageSelector .dropdown-item")
+        .first()
+        .click();
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () ->
+                assertThat(
+                        page.frameLocator("#rbellog-details-iframe")
+                            .locator(".test-message-number")
+                            .last()
+                            .textContent())
+                    .isEqualTo("20"));
 
-    @Test
-    void testERbelLogPaneHideHeaderButton() {
-        page.locator("#test-execution-pane-tab").click();
-        page.locator("#test-webui-slider").click();
-        assertThat(page.locator("#rbellog_details_pane").isVisible()).isTrue();
-        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
-        page.frameLocator("#rbellog-details-iframe").locator("#pageSelector .dropdown-item").first().click();
-        await()
-            .atMost(10, TimeUnit.SECONDS)
-            .untilAsserted(() -> assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last().textContent()).isEqualTo("20"));
+    assertThat(page.frameLocator("#rbellog-details-iframe").locator("#webui-navbar").isVisible())
+        .isTrue();
+    page.frameLocator("#rbellog-details-iframe").locator("#dropdown-hide-button").click();
+    assertThat(
+            page.frameLocator("#rbellog-details-iframe")
+                .locator("#collapsibleMessageHeaderBtn")
+                .isVisible())
+        .isTrue();
+    assertThat(
+            page.frameLocator("#rbellog-details-iframe")
+                .locator("#collapsibleMessageDetailsBtn")
+                .isVisible())
+        .isTrue();
+    page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageDetailsBtn").click();
+    assertThat(
+            page.frameLocator("#rbellog-details-iframe")
+                .locator(".test-card-content.d-none")
+                .count())
+        .isEqualTo(20);
+    page.frameLocator("#rbellog-details-iframe").locator("#dropdown-hide-button").click();
+    assertThat(
+            page.frameLocator("#rbellog-details-iframe")
+                .locator("#collapsibleMessageDetails.led-error")
+                .isVisible())
+        .isTrue();
+    page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageDetailsBtn").click();
+  }
 
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#webui-navbar").isVisible()).isTrue();
-        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-hide-button").click();
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageHeaderBtn").isVisible()).isTrue();
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageDetailsBtn").isVisible()).isTrue();
-        page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageHeaderBtn").click();
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-msg-header-content.d-none").count()).isEqualTo(20);
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-msg-body-content.d-none").count()).isZero();
-        page.frameLocator("#rbellog-details-iframe").locator("#dropdown-hide-button").click();
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageHeader.led-error").isVisible()).isTrue();
-        page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageHeaderBtn").click();
-    }
+  @Test
+  void testERbelLogPaneHideHeaderButton() {
+    page.locator("#test-execution-pane-tab").click();
+    page.locator("#test-webui-slider").click();
+    assertThat(page.locator("#rbellog_details_pane").isVisible()).isTrue();
+    page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
+    page.frameLocator("#rbellog-details-iframe")
+        .locator("#pageSelector .dropdown-item")
+        .first()
+        .click();
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () ->
+                assertThat(
+                        page.frameLocator("#rbellog-details-iframe")
+                            .locator(".test-message-number")
+                            .last()
+                            .textContent())
+                    .isEqualTo("20"));
 
-    @Test
-    void testCExecutionPaneRbelOpenWebUiURLCheckNavBarButtons() {
-        page.querySelector("#test-execution-pane-tab").click();
-        page.locator("#test-webui-slider").click();
+    assertThat(page.frameLocator("#rbellog-details-iframe").locator("#webui-navbar").isVisible())
+        .isTrue();
+    page.frameLocator("#rbellog-details-iframe").locator("#dropdown-hide-button").click();
+    assertThat(
+            page.frameLocator("#rbellog-details-iframe")
+                .locator("#collapsibleMessageHeaderBtn")
+                .isVisible())
+        .isTrue();
+    assertThat(
+            page.frameLocator("#rbellog-details-iframe")
+                .locator("#collapsibleMessageDetailsBtn")
+                .isVisible())
+        .isTrue();
+    page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageHeaderBtn").click();
+    assertThat(
+            page.frameLocator("#rbellog-details-iframe")
+                .locator(".test-msg-header-content.d-none")
+                .count())
+        .isEqualTo(20);
+    assertThat(
+            page.frameLocator("#rbellog-details-iframe")
+                .locator(".test-msg-body-content.d-none")
+                .count())
+        .isZero();
+    page.frameLocator("#rbellog-details-iframe").locator("#dropdown-hide-button").click();
+    assertThat(
+            page.frameLocator("#rbellog-details-iframe")
+                .locator("#collapsibleMessageHeader.led-error")
+                .isVisible())
+        .isTrue();
+    page.frameLocator("#rbellog-details-iframe").locator("#collapsibleMessageHeaderBtn").click();
+  }
 
-        Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
-        await()
-            .atMost(10, TimeUnit.SECONDS)
-            .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
-        assertAll(
-            () -> assertThat(externalPage.locator("#test-tiger-logo").isVisible()).isTrue(),
-            () -> assertThat(externalPage.locator("#routeModalBtn").isVisible()).isTrue(),
-            () -> assertThat(externalPage.locator("#scrollLockBtn").isVisible()).isTrue(),
-            () -> assertThat(externalPage.locator("#dropdown-hide-button").isVisible()).isTrue(),
-            () -> assertThat(externalPage.locator("#filterModalBtn").isVisible()).isTrue(),
-            () -> assertThat(externalPage.locator("#resetMsgs").isVisible()).isTrue(),
-            () -> assertThat(externalPage.locator("#saveMsgs").isVisible()).isTrue(),
-            () -> assertThat(externalPage.locator("#dropdown-page-selection").isVisible()).isTrue(),
-            () -> assertThat(externalPage.locator("#dropdown-page-size").isVisible()).isTrue(),
-            () -> assertThat(externalPage.locator("#importMsgs").isVisible()).isTrue()
-        );
-        externalPage.close();
-    }
+  @Test
+  void testCExecutionPaneRbelOpenWebUiURLCheckNavBarButtons() {
+    page.querySelector("#test-execution-pane-tab").click();
+    page.locator("#test-webui-slider").click();
 
-    @Test
-    void testFilterModalSetNonsenseFilter() {
-        page.querySelector("#test-execution-pane-tab").click();
-        page.locator("#test-webui-slider").click();
-        page.frameLocator("#rbellog-details-iframe").locator("#filterModalBtn").click();
-        page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionInput").fill("$.DOESNOTEXIST");
-        page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
-        await()
-            .atMost(10, TimeUnit.SECONDS)
-            .untilAsserted(() -> assertThat(page.frameLocator("#rbellog-details-iframe")
-                .locator("#filteredMessage").textContent()).isEqualTo("0 of 52 did match the filter criteria."));
+    Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
+    assertAll(
+        () -> assertThat(externalPage.locator("#test-tiger-logo").isVisible()).isTrue(),
+        () -> assertThat(externalPage.locator("#routeModalBtn").isVisible()).isTrue(),
+        () -> assertThat(externalPage.locator("#scrollLockBtn").isVisible()).isTrue(),
+        () -> assertThat(externalPage.locator("#dropdown-hide-button").isVisible()).isTrue(),
+        () -> assertThat(externalPage.locator("#filterModalBtn").isVisible()).isTrue(),
+        () -> assertThat(externalPage.locator("#resetMsgs").isVisible()).isTrue(),
+        () -> assertThat(externalPage.locator("#exportMsgs").isVisible()).isTrue(),
+        () -> assertThat(externalPage.locator("#dropdown-page-selection").isVisible()).isTrue(),
+        () -> assertThat(externalPage.locator("#dropdown-page-size").isVisible()).isTrue(),
+        () -> assertThat(externalPage.locator("#importMsgs").isVisible()).isTrue());
+    externalPage.close();
+  }
 
-        String content = page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent();
-        String requestToContent = page.frameLocator("#rbellog-details-iframe").locator("#requestToContent").textContent();
-        String requestFromContent = page.frameLocator("#rbellog-details-iframe").locator("#requestFromContent").textContent();
-        int count = page.frameLocator("#rbellog-details-iframe").locator("#test-rbel-section .test-msg-body-content").count();
-        page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionInput").fill("");
-        page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
-        assertAll(
-            () -> assertThat(requestToContent).contains("no request"),
-            () -> assertThat(requestFromContent).contains("no request"),
-            () -> assertThat(content).isEqualTo("0 of 52 did match the filter criteria."),
-            () -> assertThat(count).isZero()
-        );
-    }
+  @Test
+  void testFilterModalSetNonsenseFilter() {
+    page.querySelector("#test-execution-pane-tab").click();
+    page.locator("#test-webui-slider").click();
+    page.frameLocator("#rbellog-details-iframe").locator("#filterModalBtn").click();
+    page.frameLocator("#rbellog-details-iframe")
+        .locator("#setFilterCriterionInput")
+        .fill("$.DOESNOTEXIST");
+    page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () ->
+                assertThat(
+                        page.frameLocator("#rbellog-details-iframe")
+                            .locator("#filteredMessage")
+                            .textContent())
+                    .isEqualTo("0 of 52 did match the filter criteria."));
 
-    @Test
-    void testFilterModalSetFilter() {
-        page.querySelector("#test-execution-pane-tab").click();
-        page.locator("#test-webui-slider").click();
-        page.frameLocator("#rbellog-details-iframe").locator("#filterModalBtn").click();
-        page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionInput").fill("$.body == \"hello=world\"");
-        page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
-        await()
-            .atMost(10, TimeUnit.SECONDS)
-            .untilAsserted(() -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent()).isEqualTo("4 of 52 did match the filter criteria."));
-        String content = page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent();
-        page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
-        assertThat(content).isEqualTo("4 of 52 did match the filter criteria.");
-    }
+    String content =
+        page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent();
+    String requestToContent =
+        page.frameLocator("#rbellog-details-iframe").locator("#requestToContent").textContent();
+    String requestFromContent =
+        page.frameLocator("#rbellog-details-iframe").locator("#requestFromContent").textContent();
+    int count =
+        page.frameLocator("#rbellog-details-iframe")
+            .locator("#test-rbel-section .test-msg-body-content")
+            .count();
+    page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionInput").fill("");
+    page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
+    assertAll(
+        () -> assertThat(requestToContent).contains("no request"),
+        () -> assertThat(requestFromContent).contains("no request"),
+        () -> assertThat(content).isEqualTo("0 of 52 did match the filter criteria."),
+        () -> assertThat(count).isZero());
+  }
 
-    @Test
-    void testGSaveModal() {
-        page.querySelector("#test-execution-pane-tab").click();
-        page.locator("#test-webui-slider").click();
-        page.frameLocator("#rbellog-details-iframe").locator("#saveMsgs").click();
-        assertAll(
-            () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#saveModalDialog").isVisible()).isTrue(),
-            () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#saveHtmlBtn").isVisible()).isTrue(),
-            () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#saveTrafficBtn").isVisible()).isTrue(),
-            () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#saveModalButtonClose").isVisible()).isTrue(),
-            () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#saveModalDialog .box").isVisible()).isTrue(),
-            () -> assertThat(page.frameLocator("#rbellog-details-iframe").locator("#saveModalDialog .box").allTextContents()).isNotEmpty()
-            );
-        page.frameLocator("#rbellog-details-iframe").locator("#saveModalButtonClose").click();
-        assertThat(page.frameLocator("#rbellog-details-iframe").locator("#saveModalDialog").isVisible()).isFalse();
-    }
+  @Test
+  void testFilterModalSetFilter() {
+    page.querySelector("#test-execution-pane-tab").click();
+    page.locator("#test-webui-slider").click();
+    page.frameLocator("#rbellog-details-iframe").locator("#filterModalBtn").click();
+    page.frameLocator("#rbellog-details-iframe")
+        .locator("#setFilterCriterionInput")
+        .fill("$.body == \"hello=world\"");
+    page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(
+            () ->
+                assertThat(
+                        page.frameLocator("#rbellog-details-iframe")
+                            .locator("#filteredMessage")
+                            .textContent())
+                    .isEqualTo("4 of 52 did match the filter criteria."));
+    String content =
+        page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent();
+    page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
+    assertThat(content).isEqualTo("4 of 52 did match the filter criteria.");
+  }
 
-    @Test
-    void testASaveModalDownloadHtml() throws InterruptedException {
-        page.querySelector("#test-execution-pane-tab").click();
-        page.locator("#test-webui-slider").click();
-        page.frameLocator("#rbellog-details-iframe").locator("#saveMsgs").click();
-        Download download = page.waitForDownload(() -> page.frameLocator("#rbellog-details-iframe").locator("#saveHtmlBtn").click());
-        // wait for download to complete
-        sleep(1000);
-        assertAll(
-            () -> assertThat(download.page().locator("#test-tiger-logo").isVisible()).isTrue(),
-            () -> assertThat(
-                download.page().frameLocator("#rbellog-details-iframe").locator("#test-rbel-section .test-card").count()).isPositive(),
-            () ->assertThat(download.page().frameLocator("#rbellog-details-iframe").locator("#test-rbel-section .test-card-header")
-                .count()).isPositive(),
-            () ->assertThat(download.page().frameLocator("#rbellog-details-iframe").locator("#test-rbel-section .test-card-content")
-                .count()).isPositive()
-        );
-     }
+  @Test
+  void testGSaveModal() {
+    page.querySelector("#test-execution-pane-tab").click();
+    page.locator("#test-webui-slider").click();
+    page.frameLocator("#rbellog-details-iframe").locator("#exportMsgs").click();
+    assertAll(
+        () ->
+            assertThat(
+                    page.frameLocator("#rbellog-details-iframe")
+                        .locator("#saveModalDialog")
+                        .isVisible())
+                .isTrue(),
+        () ->
+            assertThat(
+                    page.frameLocator("#rbellog-details-iframe")
+                        .locator("#saveHtmlBtn")
+                        .isVisible())
+                .isTrue(),
+        () ->
+            assertThat(
+                    page.frameLocator("#rbellog-details-iframe")
+                        .locator("#saveTrafficBtn")
+                        .isVisible())
+                .isTrue(),
+        () ->
+            assertThat(
+                    page.frameLocator("#rbellog-details-iframe")
+                        .locator("#saveModalButtonClose")
+                        .isVisible())
+                .isTrue(),
+        () ->
+            assertThat(
+                    page.frameLocator("#rbellog-details-iframe")
+                        .locator("#saveModalDialog .box")
+                        .isVisible())
+                .isTrue(),
+        () ->
+            assertThat(
+                    page.frameLocator("#rbellog-details-iframe")
+                        .locator("#saveModalDialog .box")
+                        .allTextContents())
+                .isNotEmpty());
+    page.frameLocator("#rbellog-details-iframe").locator("#saveModalButtonClose").click();
+    assertThat(page.frameLocator("#rbellog-details-iframe").locator("#saveModalDialog").isVisible())
+        .isFalse();
+  }
 
-    @Test
-    void testASaveModalDownloadTgr() throws InterruptedException {
-        page.querySelector("#test-execution-pane-tab").click();
-        page.locator("#test-webui-slider").click();
-        page.frameLocator("#rbellog-details-iframe").locator("#saveMsgs").click();
-        Download download = page.waitForDownload(() -> page.frameLocator("#rbellog-details-iframe").locator("#saveTrafficBtn").click());
-        // wait for download to complete
-        sleep(1000);
-        assertAll(
-            () -> assertThat(download.page().locator("#test-tiger-logo").isVisible()).isTrue(),
-            () -> assertThat(
-                download.page().frameLocator("#rbellog-details-iframe").locator("#test-rbel-section .test-card").count()).isPositive(),
-            () ->assertThat(download.page().frameLocator("#rbellog-details-iframe").locator("#test-rbel-section .test-card-header")
-                .count()).isPositive(),
-            () ->assertThat(download.page().frameLocator("#rbellog-details-iframe").locator("#test-rbel-section .test-card-content")
-                .count()).isPositive()
-        );
-     }
+  @Test
+  void testASaveModalDownloadHtml() throws InterruptedException {
+    page.querySelector("#test-execution-pane-tab").click();
+    page.locator("#test-webui-slider").click();
+    page.frameLocator("#rbellog-details-iframe").locator("#exportMsgs").click();
+    Download download =
+        page.waitForDownload(
+            () -> page.frameLocator("#rbellog-details-iframe").locator("#saveHtmlBtn").click());
+    // wait for download to complete
+    sleep(1000);
+    assertAll(
+        () -> assertThat(download.page().locator("#test-tiger-logo").isVisible()).isTrue(),
+        () ->
+            assertThat(
+                    download
+                        .page()
+                        .frameLocator("#rbellog-details-iframe")
+                        .locator("#test-rbel-section .test-card")
+                        .count())
+                .isPositive(),
+        () ->
+            assertThat(
+                    download
+                        .page()
+                        .frameLocator("#rbellog-details-iframe")
+                        .locator("#test-rbel-section .test-card-header")
+                        .count())
+                .isPositive(),
+        () ->
+            assertThat(
+                    download
+                        .page()
+                        .frameLocator("#rbellog-details-iframe")
+                        .locator("#test-rbel-section .test-card-content")
+                        .count())
+                .isPositive());
+  }
 
+  @Test
+  void testASaveModalDownloadTgr() throws InterruptedException {
+    page.querySelector("#test-execution-pane-tab").click();
+    page.locator("#test-webui-slider").click();
+    page.frameLocator("#rbellog-details-iframe").locator("#exportMsgs").click();
+    Download download =
+        page.waitForDownload(
+            () -> page.frameLocator("#rbellog-details-iframe").locator("#saveTrafficBtn").click());
+    // wait for download to complete
+    sleep(1000);
+    assertAll(
+        () -> assertThat(download.page().locator("#test-tiger-logo").isVisible()).isTrue(),
+        () ->
+            assertThat(
+                    download
+                        .page()
+                        .frameLocator("#rbellog-details-iframe")
+                        .locator("#test-rbel-section .test-card")
+                        .count())
+                .isPositive(),
+        () ->
+            assertThat(
+                    download
+                        .page()
+                        .frameLocator("#rbellog-details-iframe")
+                        .locator("#test-rbel-section .test-card-header")
+                        .count())
+                .isPositive(),
+        () ->
+            assertThat(
+                    download
+                        .page()
+                        .frameLocator("#rbellog-details-iframe")
+                        .locator("#test-rbel-section .test-card-content")
+                        .count())
+                .isPositive());
+  }
 }

@@ -8,5 +8,5 @@ import lombok.EqualsAndHashCode;
 @Data
 public class ZionServerConfiguration extends CfgServer {
 
-    private ZionConfiguration zionConfiguration;
+  private ZionConfiguration zionConfiguration;
 }

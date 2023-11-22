@@ -22,9 +22,6 @@ import org.json.JSONObject;
 
 public interface RbelMessagePostProcessor {
 
-    void performMessagePostConversionProcessing(
-        RbelElement message,
-        RbelConverter converter,
-        JSONObject messageObject
-    );
+  void performMessagePostConversionProcessing(
+      RbelElement message, RbelConverter converter, JSONObject messageObject);
 }

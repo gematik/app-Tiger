@@ -26,6 +26,4 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties("tiger-proxy")
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
-public class ApplicationConfiguration extends TigerProxyConfiguration {
-
-}
+public class ApplicationConfiguration extends TigerProxyConfiguration {}

@@ -414,6 +414,8 @@ Additionally you can always reference the current element (via @.) or the root e
 
 For more detailed information on JEXL expressions please refer to xref:tigerUserInterfaces.adoc#_jexl_expression_detail[Detailed JEXL-expressions].
 
+==== Nested RbelPath expressions
+
 Consider the following rbel tree:
 
 image::media/tiger-proxy-nested-array-tree.png[title="Nested RBel tree with array"]
@@ -426,6 +428,19 @@ Here the `@.` references the current element: For each array entry the expressio
 To access elements starting from the root you can use `$.` like so:
 
 `$.body.body.idp_entity.[?(@.iss.content==$.body.body.idp_entity.0.iss.content)]`
+
+You can use recursive descent here as well:
+`$.body.[?(@..content == 'ES256')]` would yield `$.body.header`. Let's unpack this expression:
+
+* `$.body` selects the http body
+* `.` then selects a child (of the http-body, meaning either `header`, `body` or `signature`)
+* The JEXL-selector `[?(@..content == 'ES256')]` is then tested on each of the candidates.
+** In turn `@..` executes a recursive descent, meaning it will select all child nodes individually
+** `content` selects only the elements which have a key matchin `content`. So we end up with all nodes in the respective subtrees that are named `content`.
+** The JEXL-expression `* == 'ES256''` is then selected for every member of the subtree (so for the header it will test `$.body.header.typ.content`, `$.body.header.kid.content` and `$.body.header.alg.content`). The individual results are then reduced using (so the overall expression matches if there is ANY matching element)
+* Since only one of the subtrees does fulfill the expression only this subtree is returned (and NOT the element itself, i.e. `$.body.header.alg.content`)
+
+Please note that since the RbelPath-expressions are executed prior to the JEXL-expression the negation might yield unexpected results. Currently it is not recommended to use these. (e.g. `$.body.[?(not (@.. == 'ES256'))]`)
 
 ==== Debugging Rbel-Expressions
 

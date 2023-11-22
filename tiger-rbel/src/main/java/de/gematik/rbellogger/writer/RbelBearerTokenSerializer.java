@@ -23,18 +23,26 @@ import org.bouncycastle.util.Arrays;
 
 public class RbelBearerTokenSerializer implements RbelSerializer {
 
-    @Override
-    public byte[] render(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
-        final byte[] bearerTokenContent = rbelWriter.renderTree(
-            node.childNode("BearerToken")
-                .orElseThrow(() -> new RbelSerializationException(
-                    "Could not find BearerToken-node needed for BearerToken serialization in node '" + node.getKey() + "'!"))).getContent();
+  @Override
+  public byte[] render(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
+    final byte[] bearerTokenContent =
+        rbelWriter
+            .renderTree(
+                node.childNode("BearerToken")
+                    .orElseThrow(
+                        () ->
+                            new RbelSerializationException(
+                                "Could not find BearerToken-node needed for BearerToken"
+                                    + " serialization in node '"
+                                    + node.getKey()
+                                    + "'!")))
+            .getContent();
 
-        return Arrays.concatenate("Bearer ".getBytes(StandardCharsets.UTF_8), bearerTokenContent);
-    }
+    return Arrays.concatenate("Bearer ".getBytes(StandardCharsets.UTF_8), bearerTokenContent);
+  }
 
-    @Override
-    public byte[] renderNode(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
-        return render(node, rbelWriter);
-    }
+  @Override
+  public byte[] renderNode(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
+    return render(node, rbelWriter);
+  }
 }

@@ -17,33 +17,37 @@
 package de.gematik.test.tiger.proxy.handler;
 
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
+
 import de.gematik.test.tiger.proxy.TigerProxy;
 import org.mockserver.model.HttpRequest;
 
 public class ForwardAllCallback extends AbstractTigerRouteCallback {
 
-    public ForwardAllCallback(TigerProxy tigerProxy) {
-        super(tigerProxy, null);
-    }
+  public ForwardAllCallback(TigerProxy tigerProxy) {
+    super(tigerProxy, null);
+  }
 
-    @Override
-    protected HttpRequest handleRequest(HttpRequest req) {
-        return forwardOverriddenRequest(
+  @Override
+  protected HttpRequest handleRequest(HttpRequest req) {
+    return forwardOverriddenRequest(
             req.withSocketAddress(
                 req.isSecure(),
                 req.socketAddressFromHostHeader().getHostName(),
-                req.socketAddressFromHostHeader().getPort()
-            )).getRequestOverride();
-    }
+                req.socketAddressFromHostHeader().getPort()))
+        .getRequestOverride();
+  }
 
-    @Override
-    protected String extractProtocolAndHostForRequest(HttpRequest request) {
-        return request.getSocketAddress().getScheme() + "://" + request.getSocketAddress().getHost() + ":"
-            + request.getSocketAddress().getPort();
-    }
+  @Override
+  protected String extractProtocolAndHostForRequest(HttpRequest request) {
+    return request.getSocketAddress().getScheme()
+        + "://"
+        + request.getSocketAddress().getHost()
+        + ":"
+        + request.getSocketAddress().getPort();
+  }
 
-    @Override
-    boolean shouldLogTraffic() {
-        return true;
-    }
+  @Override
+  boolean shouldLogTraffic() {
+    return true;
+  }
 }

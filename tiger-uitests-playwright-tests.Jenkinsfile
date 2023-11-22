@@ -21,7 +21,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
     }
-    agent { label 'k8-maven-large' }
+    agent { label 'k8-backend-large' }
 
     tools {
         maven 'Default'
@@ -50,9 +50,9 @@ pipeline {
         stage('Build') {
             steps {
                 sh """
-                  mvn install -DskipTests
+                  mvn -ntp install -DskipTests
                   cd tiger-uitests
-                  mvn test-compile -P start-tiger-dummy
+                  mvn -ntp test-compile -P start-tiger-dummy
                 """
             }
         }

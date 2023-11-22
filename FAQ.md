@@ -5,7 +5,7 @@
 ### FM01 Welches Serenity benutzen wir aktuell
 Das zu jeder Tiger Version kompatible Serenity findet ihr in den [ReleaseNotes](ReleaseNotes.md)
 
-### FM02 Bei der Nutzung von maven, werden keine Tests ausgeführt
+### FM02 Bei der Nutzung von maven werden keine Tests ausgeführt
 
 Bitte stell zuerst sicher, dass entweder das surefire oder das failsafe plugin aktiviert ist und auch in der Konsole als ausgeführt angezeigt wird. Solltest Du Junit4 Test Annotationen verwenden so musst Du noch sicherstellen, dass die junit vintage engine aus der Junit5 Library in den dependencies mit angeführt ist.
 
@@ -22,7 +22,7 @@ Bitte stell zuerst sicher, dass entweder das surefire oder das failsafe plugin a
 
 Genauer geht es um folgenden Fehler:
 ```java
-Exception in thread "main" java.lang.NoSuchMethodError: 'java.util.Set org.json.JSONObject.keySet()'
+Exception in thread 'main' java.lang.NoSuchMethodError: 'java.util.Set org.json.JSONObject.keySet()'
 ```
     
 Der Grund hierfür ist ein Dependency Konflikt und kann durch eine Exklusion in der tiger-test-lib dependency aufgelöst werden:
@@ -55,7 +55,7 @@ Stelle sicher, dass du die tiger-cloud-extension in der aktuellsten Version als 
 </dependency>
 ```
 
-### FE02 Wenn ich die tiger-cloud-extensions nutze schlägt der Healthcheck bei docker Servertypen in der Gematik SW Factory fehl
+### FE02 Wenn ich die tiger-cloud-extensions nutze, schlägt der Healthcheck bei docker Servertypen in der Gematik SW Factory fehl
 
 Normalerweise geht Tiger davon aus, dass der Docker Daemon die Container am lokalen Rechner startet.
 Sollte dies nicht so sein, so kann man Tiger mit der Umgebungsvariable TIGER_DOCKER_HOST mitteilen, auf welchem Rechner die Container gestartet werden und die HealthcheckURL wird dementsprechend angepasst. Für die Gematik SW-Factory empfiehlt sich folgendes Code Snippet für das Pipeline-Skript:

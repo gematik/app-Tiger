@@ -279,6 +279,18 @@ Each part can be one of:
 * password
 * store-type (accepted are P12, PKCS12, JKS, BKS, PKCS1 and PKCS8)
 
+===== PKI identity passwords
+
+Tiger will attempt to decrypt a given P12 file with a list of common passwords.
+----
+"00", "123456", "gematik", "changeit"
+----
+Users can insert additional passwords by configuring the `tiger.yaml` as follows
+----
+lib:
+    additionalKeyStorePasswords: ["foo", "bar", "baz"]
+----
+
 ==== Docker Container node
 
 The docker container node allows to instantiate a local docker container from the configured image.
@@ -798,6 +810,13 @@ tigerProxy:
       - "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
     # Define which TLS protocols the server will allow/use. Available values can be found here:
     # https://docs.oracle.com/javase/7/docs/technotes/guides/security/SunProviders.html
+    clientSupportedGroups:
+      - "brainpoolP256r1"
+      - "brainpoolP384r1"
+      - "prime256v1"
+      - "secp384r1"
+    # Define the groups to be offered in the "client hello" message. More information can be found here:
+    # https://datatracker.ietf.org/doc/html/rfc8446#section-4.2.7
     serverTlsProtocols:
       - "TLSv1.2"
 

@@ -29,20 +29,12 @@ import lombok.*;
 @JsonInclude(Include.NON_NULL)
 public class TigerLibConfig {
 
-    @Builder.Default
-    private boolean rbelPathDebugging = false;
-    @Builder.Default
-    private boolean rbelAnsiColors = true;
-    @Builder.Default
-    private boolean addCurlCommandsForRaCallsToReport = true;
-    @Builder.Default
-    public boolean activateWorkflowUi = false;
-    @Builder.Default
-    public boolean startBrowser = true;
-    @Builder.Default
-    public boolean createRbelHtmlReports = true;
-    @Builder.Default
-    public long pauseExecutionTimeoutSeconds = 18000L;
-    @Builder.Default
-    public TigerHttpClientConfig httpClientConfig = new TigerHttpClientConfig();
+  @Builder.Default private boolean rbelPathDebugging = false;
+  @Builder.Default private boolean rbelAnsiColors = true;
+  @Builder.Default private boolean addCurlCommandsForRaCallsToReport = true;
+  @Builder.Default public boolean activateWorkflowUi = false;
+  @Builder.Default public boolean startBrowser = true;
+  @Builder.Default public boolean createRbelHtmlReports = true;
+  @Builder.Default public long pauseExecutionTimeoutSeconds = 18000L;
+  @Builder.Default public TigerHttpClientConfig httpClientConfig = new TigerHttpClientConfig();
 }

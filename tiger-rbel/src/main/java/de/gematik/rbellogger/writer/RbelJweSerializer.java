@@ -31,67 +31,99 @@ import org.jose4j.lang.JoseException;
 
 public class RbelJweSerializer implements RbelSerializer {
 
-    @Override
-    public byte[] render(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
-        return renderToString(node, rbelWriter).getBytes();
+  @Override
+  public byte[] render(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
+    return renderToString(node, rbelWriter).getBytes();
+  }
+
+  @Override
+  public byte[] renderNode(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
+    return render(node, rbelWriter);
+  }
+
+  public String renderToString(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
+    final JsonWebEncryption jwe = new JsonWebEncryption();
+
+    ProviderContext context = new ProviderContext();
+    context.getGeneralProviderContext().setGeneralProvider("BC");
+    jwe.setProviderContext(context);
+
+    writeHeaderInJwe(node.childNode("header"), jwe, rbelWriter);
+
+    jwe.setPlaintext(
+        rbelWriter
+            .renderTree(
+                node.childNode("body")
+                    .orElseThrow(
+                        () ->
+                            new RbelSerializationException(
+                                "Could not find body-node needed for JWT serialization in node '"
+                                    + node.getKey()
+                                    + "'!")))
+            .getContent());
+    jwe.setKey(findSignerKey(node.childNode("encryptionInfo"), rbelWriter));
+
+    try {
+      return jwe.getCompactSerialization();
+    } catch (JoseException e) {
+      throw new RbelSerializationException("Error writing into Jwt", e);
     }
+  }
 
-    @Override
-    public byte[] renderNode(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
-        return render(node, rbelWriter);
+  private Key findSignerKey(
+      Optional<RbelContentTreeNode> signature, RbelWriterInstance rbelWriter) {
+    if (signature.isEmpty()) {
+      throw new RbelSerializationException(
+          "Could not find signature-node needed for JWT serialization!");
     }
+    return signature
+        .get()
+        .childNode("decryptedUsingKeyWithId")
+        .map(RbelContentTreeNode::getRawStringContent)
+        .map(
+            keyName ->
+                rbelWriter
+                    .getRbelKeyManager()
+                    .findKeyByName(keyName)
+                    .or(() -> rbelWriter.getRbelKeyManager().findKeyByName("puk_" + keyName))
+                    .orElseThrow(
+                        () ->
+                            new RbelSerializationException(
+                                "Could not find key named '" + keyName + "'!")))
+        .map(RbelKey::getKey)
+        .or(
+            () ->
+                signature
+                    .get()
+                    .childNode("decryptedUsingKey")
+                    .map(RbelContentTreeNode::getRawStringContent)
+                    .map(Base64.getUrlDecoder()::decode)
+                    .map(keyBytes -> new SecretKeySpec(keyBytes, "AES")))
+        .orElseThrow(() -> new RbelSerializationException("Unable to find key!"));
+  }
 
-    public String renderToString(RbelContentTreeNode node, RbelWriterInstance rbelWriter) {
-        final JsonWebEncryption jwe = new JsonWebEncryption();
-
-        ProviderContext context = new ProviderContext();
-        context.getGeneralProviderContext().setGeneralProvider("BC");
-        jwe.setProviderContext(context);
-
-        writeHeaderInJwe(node.childNode("header"), jwe, rbelWriter);
-
-        jwe.setPlaintext(rbelWriter.renderTree(
-            node.childNode("body")
-                .orElseThrow(() -> new RbelSerializationException("Could not find body-node needed for JWT serialization in node '" + node.getKey() + "'!"))).getContent());
-        jwe.setKey(findSignerKey(node.childNode("encryptionInfo"), rbelWriter));
-
-        try {
-            return jwe.getCompactSerialization();
-        } catch (JoseException e) {
-            throw new RbelSerializationException("Error writing into Jwt", e);
-        }
-    }
-
-    private Key findSignerKey(Optional<RbelContentTreeNode> signature, RbelWriterInstance rbelWriter) {
-        if (signature.isEmpty()) {
-            throw new RbelSerializationException("Could not find signature-node needed for JWT serialization!");
-        }
-        return signature.get().childNode("decryptedUsingKeyWithId")
-            .map(RbelContentTreeNode::getRawStringContent)
-            .map(keyName -> rbelWriter.getRbelKeyManager().findKeyByName(keyName)
-                .or(() -> rbelWriter.getRbelKeyManager().findKeyByName("puk_" + keyName))
-                .orElseThrow(() -> new RbelSerializationException("Could not find key named '" + keyName + "'!")))
-            .map(RbelKey::getKey)
-            .or(() -> signature.get().childNode("decryptedUsingKey")
-                .map(RbelContentTreeNode::getRawStringContent)
-                .map(Base64.getUrlDecoder()::decode)
-                .map(keyBytes -> new SecretKeySpec(keyBytes, "AES")))
-            .orElseThrow(() -> new RbelSerializationException("Unable to find key!"));
-    }
-
-    private void writeHeaderInJwe(Optional<RbelContentTreeNode> headers, JsonWebEncryption jwe, RbelWriterInstance rbelWriter) {
-        headers
-            .map(RbelContentTreeNode::getChildNodes)
-            .stream()
-            .flatMap(Collection::stream)
-            .forEach(header -> {
-                if (RbelJsonSerializer.isJsonArray(header)) {
-                    jwe.setHeader(header.getKey().orElseThrow(), header.getChildNodes().stream()
-                        .map(childNode -> new String(rbelWriter.renderTree(childNode).getContent(), childNode.getElementCharset()))
+  private void writeHeaderInJwe(
+      Optional<RbelContentTreeNode> headers, JsonWebEncryption jwe, RbelWriterInstance rbelWriter) {
+    headers.map(RbelContentTreeNode::getChildNodes).stream()
+        .flatMap(Collection::stream)
+        .forEach(
+            header -> {
+              if (RbelJsonSerializer.isJsonArray(header)) {
+                jwe.setHeader(
+                    header.getKey().orElseThrow(),
+                    header.getChildNodes().stream()
+                        .map(
+                            childNode ->
+                                new String(
+                                    rbelWriter.renderTree(childNode).getContent(),
+                                    childNode.getElementCharset()))
                         .collect(Collectors.toList()));
-                } else {
-                    jwe.setHeader(header.getKey().orElseThrow(), new String(rbelWriter.renderTree(header).getContent(), header.getElementCharset()));
-                }
+              } else {
+                jwe.setHeader(
+                    header.getKey().orElseThrow(),
+                    new String(
+                        rbelWriter.renderTree(header).getContent(), header.getElementCharset()));
+              }
             });
-    }
+  }
 }

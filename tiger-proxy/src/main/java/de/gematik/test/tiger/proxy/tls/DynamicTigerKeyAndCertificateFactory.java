@@ -30,7 +30,6 @@ import java.security.interfaces.RSAPrivateKey;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.stream.Stream;
 import lombok.Builder;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -48,6 +47,7 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.IPAddress;
+import org.mockserver.configuration.Configuration;
 import org.mockserver.configuration.ConfigurationProperties;
 import org.mockserver.log.model.LogEntry;
 import org.mockserver.logging.MockServerLogger;
@@ -56,178 +56,218 @@ import org.slf4j.event.Level;
 
 public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
 
-    private static final Duration MAXIMUM_VALIDITY = Duration.ofDays(397);
+  private static final Duration MAXIMUM_VALIDITY = Duration.ofDays(397);
 
-    static {
-        Security.addProvider(new BouncyCastleProvider());
+  static {
+    Security.addProvider(new BouncyCastleProvider());
+  }
+
+  private final TigerPkiIdentity caIdentity;
+  private final MockServerLogger mockServerLogger;
+  private final List<X509Certificate> certificateChain;
+  private final String serverName;
+  private final List<String> serverAlternativeNames;
+  private TigerPkiIdentity eeIdentity;
+  private List<String> hostsCoveredByGeneratedIdentity = List.of();
+  private final Configuration mockServerConfiguration;
+
+  @Builder
+  public DynamicTigerKeyAndCertificateFactory(
+      MockServerLogger mockServerLogger,
+      TigerProxyConfiguration tigerProxyConfiguration,
+      TigerPkiIdentity caIdentity,
+      Configuration mockServerConfiguration) {
+    super(
+        ProxyConfigurationConverter.convertToMockServerConfiguration(tigerProxyConfiguration),
+        mockServerLogger);
+    this.certificateChain = new ArrayList<>();
+    this.mockServerLogger = mockServerLogger;
+    this.caIdentity = caIdentity;
+    this.eeIdentity = null;
+    this.serverName = tigerProxyConfiguration.getTls().getDomainName();
+    this.serverAlternativeNames = new ArrayList<>();
+    if (tigerProxyConfiguration.getTls().getAlternativeNames() != null) {
+      serverAlternativeNames.addAll(tigerProxyConfiguration.getTls().getAlternativeNames());
     }
+    this.mockServerConfiguration = mockServerConfiguration;
+  }
 
-    private final TigerPkiIdentity caIdentity;
-    private final MockServerLogger mockServerLogger;
-    private final List<X509Certificate> certificateChain;
-    private final String serverName;
-    private final List<String> serverAlternativeNames;
-    private TigerPkiIdentity eeIdentity;
+  @Override
+  public boolean certificateAuthorityCertificateNotYetCreated() {
+    return false;
+  }
 
-    @Builder
-    public DynamicTigerKeyAndCertificateFactory(MockServerLogger mockServerLogger,
-        TigerProxyConfiguration tigerProxyConfiguration,
-        TigerPkiIdentity caIdentity) {
-        super(ProxyConfigurationConverter.convertToMockServerConfiguration(tigerProxyConfiguration), mockServerLogger);
-        this.certificateChain = new ArrayList<>();
-        this.mockServerLogger = mockServerLogger;
-        this.caIdentity = caIdentity;
-        this.eeIdentity = null;
-        this.serverName = tigerProxyConfiguration.getTls().getDomainName();
-        this.serverAlternativeNames = new ArrayList<>();
-        if (tigerProxyConfiguration.getTls().getAlternativeNames() != null) {
-            serverAlternativeNames.addAll(tigerProxyConfiguration.getTls().getAlternativeNames());
-        }
+  @Override
+  public X509Certificate certificateAuthorityX509Certificate() {
+    buildAndSavePrivateKeyAndX509Certificate();
+    if (caIdentity != null) {
+      return this.caIdentity.getCertificate();
     }
-
-    @Override
-    public boolean certificateAuthorityCertificateNotYetCreated() {
-        return false;
+    if (eeIdentity.getCertificateChain() != null && eeIdentity.getCertificateChain().size() > 0) {
+      return eeIdentity.getCertificateChain().get(0);
     }
-
-    @Override
-    public X509Certificate certificateAuthorityX509Certificate() {
-        buildAndSavePrivateKeyAndX509Certificate();
-        if (caIdentity != null) {
-            return this.caIdentity.getCertificate();
-        }
-        if (eeIdentity.getCertificateChain() != null
-            && eeIdentity.getCertificateChain().size() > 0) {
-            return eeIdentity.getCertificateChain().get(0);
-        }
-        throw new TigerProxyConfigurationException("Discovered illegal configuration in TLS-setup: "
+    throw new TigerProxyConfigurationException(
+        "Discovered illegal configuration in TLS-setup: "
             + "Dynamic certificate generation, but no CA certificate present!");
-    }
+  }
 
-    @Override
-    public PrivateKey privateKey() {
-        buildAndSavePrivateKeyAndX509Certificate();
-        return eeIdentity.getPrivateKey();
-    }
+  @Override
+  public PrivateKey privateKey() {
+    buildAndSavePrivateKeyAndX509Certificate();
+    return eeIdentity.getPrivateKey();
+  }
 
-    @Override
-    public X509Certificate x509Certificate() {
-        buildAndSavePrivateKeyAndX509Certificate();
-        return eeIdentity.getCertificate();
-    }
+  @Override
+  public X509Certificate x509Certificate() {
+    buildAndSavePrivateKeyAndX509Certificate();
+    return eeIdentity.getCertificate();
+  }
 
-    @Override
-    public void buildAndSavePrivateKeyAndX509Certificate() {
-        if (eeIdentity == null) {
-            try {
-                KeyPair keyPair = this.generateRsaKeyPair(2048);
-                X509Certificate x509Certificate =
-                    this.createCertificateSignedByCa(keyPair.getPublic(), this.caIdentity.getCertificate(),
-                        this.caIdentity.getPrivateKey());
+  @Override
+  public void buildAndSavePrivateKeyAndX509Certificate() {
+    assureCurrentCertificateCoversAllNecessaryHosts();
+    if (eeIdentity == null) {
+      try {
+        KeyPair keyPair = this.generateRsaKeyPair(2048);
+        X509Certificate x509Certificate =
+            this.createCertificateSignedByCa(
+                keyPair.getPublic(),
+                this.caIdentity.getCertificate(),
+                this.caIdentity.getPrivateKey());
 
-                eeIdentity = new TigerPkiIdentity(x509Certificate, keyPair.getPrivate());
+        eeIdentity = new TigerPkiIdentity(x509Certificate, keyPair.getPrivate());
 
-                certificateChain.add(x509Certificate);
-                certificateChain.add(caIdentity.getCertificate());
-                if (MockServerLogger.isEnabled(Level.TRACE)) {
-                    this.mockServerLogger.logEvent((new LogEntry()).setLogLevel(Level.TRACE)
-                        .setMessageFormat("created new X509 {} with SAN Domain Names {} and IPs {}").setArguments(
-                            this.x509Certificate(),
-                            Arrays.toString(ConfigurationProperties.sslSubjectAlternativeNameDomains().toArray()),
-                            Arrays.toString(ConfigurationProperties.sslSubjectAlternativeNameIps().toArray())));
-                }
-            } catch (Exception e) {
-                this.mockServerLogger.logEvent(new LogEntry()
-                    .setLogLevel(Level.ERROR)
-                    .setMessageFormat("exception while generating private key and X509 certificate")
-                    .setThrowable(e));
-            }
+        certificateChain.clear();
+        certificateChain.add(x509Certificate);
+        certificateChain.add(caIdentity.getCertificate());
+        if (MockServerLogger.isEnabled(Level.TRACE)) {
+          this.mockServerLogger.logEvent(
+              (new LogEntry())
+                  .setLogLevel(Level.TRACE)
+                  .setMessageFormat("created new X509 {} with SAN Domain Names {} and IPs {}")
+                  .setArguments(
+                      this.x509Certificate(),
+                      Arrays.toString(
+                          ConfigurationProperties.sslSubjectAlternativeNameDomains().toArray()),
+                      Arrays.toString(
+                          ConfigurationProperties.sslSubjectAlternativeNameIps().toArray())));
         }
+      } catch (Exception e) {
+        this.mockServerLogger.logEvent(
+            new LogEntry()
+                .setLogLevel(Level.ERROR)
+                .setMessageFormat("exception while generating private key and X509 certificate")
+                .setThrowable(e));
+      }
     }
+  }
 
-    @Override
-    public List<X509Certificate> certificateChain() {
-        buildAndSavePrivateKeyAndX509Certificate();
-        return certificateChain;
-    }
-
-    private X509Certificate createCertificateSignedByCa(PublicKey publicKey, X509Certificate certificateAuthorityCert,
-                                                        PrivateKey certificateAuthorityPrivateKey)
-        throws GeneralSecurityException, IOException, OperatorCreationException {
-        X500Name issuer = new X509CertificateHolder(certificateAuthorityCert.getEncoded()).getSubject();
-        X500Name subject = new X500Name("CN=" + serverName + ", O=Gematik, L=Berlin, ST=Berlin, C=DE");
-
-        BigInteger serial = BigInteger.valueOf(new Random().nextInt(Integer.MAX_VALUE)); //NOSONAR
-
-        X509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(issuer, serial,
-            Date.from(ZonedDateTime.now().minusDays(10).toInstant()),
-            Date.from(ZonedDateTime.now().plus(MAXIMUM_VALIDITY)
-                .minusDays(10).toInstant()),
-            subject, publicKey);
-        builder.addExtension(Extension.subjectKeyIdentifier, false, createNewSubjectKeyIdentifier(publicKey));
-        builder.addExtension(Extension.basicConstraints, false, new BasicConstraints(false));
-
-        if (!serverAlternativeNames.isEmpty()) {
-            DERSequence subjectAlternativeNamesExtension = new DERSequence(
-                Stream.concat(serverAlternativeNames.stream(), Stream.of(serverName))
-                    .distinct()
-                    .filter(Objects::nonNull)
-                    .map(this::mapAlternativeNameToAsn1Encodable)
-                    .toArray(ASN1Encodable[]::new));
-            builder.addExtension(Extension.subjectAlternativeName, false, subjectAlternativeNamesExtension);
-        }
-
-        return signTheCertificate(builder, certificateAuthorityPrivateKey);
-    }
-
-    private ASN1Encodable mapAlternativeNameToAsn1Encodable(String alternativeName) {
-        if (IPAddress.isValidIPv6WithNetmask(alternativeName)
-            || IPAddress.isValidIPv6(alternativeName)
-            || IPAddress.isValidIPv4WithNetmask(alternativeName)
-            || IPAddress.isValidIPv4(alternativeName)) {
-            return new GeneralName(GeneralName.iPAddress, alternativeName);
-        } else {
-            return new GeneralName(GeneralName.dNSName, alternativeName);
-        }
-    }
-
-    private X509Certificate signTheCertificate(X509v3CertificateBuilder certificateBuilder, PrivateKey privateKey)
-        throws OperatorCreationException, CertificateException {
-        ContentSigner signer;
-        if (privateKey instanceof RSAPrivateKey) {
-            signer = (new JcaContentSignerBuilder("SHA256WithRSAEncryption")).setProvider("BC")
-                .build(privateKey);
-        } else {
-            signer = (new JcaContentSignerBuilder("SHA256withECDSA")).setProvider("BC")
-                .build(privateKey);
-        }
-        return (new JcaX509CertificateConverter()).setProvider("BC").getCertificate(certificateBuilder.build(signer));
-    }
-
-    private KeyPair generateRsaKeyPair(int keySize) throws GeneralSecurityException {
-        KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", "BC");
-        generator.initialize(keySize, new SecureRandom());
-        return generator.generateKeyPair();
-    }
-
-    private SubjectKeyIdentifier createNewSubjectKeyIdentifier(Key key) throws IOException {
-        try (ASN1InputStream is = new ASN1InputStream(new ByteArrayInputStream(key.getEncoded()))) {
-            ASN1Sequence seq = (ASN1Sequence) is.readObject();
-            SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(seq);
-            return new BcX509ExtensionUtils().createSubjectKeyIdentifier(info);
-        }
-    }
-
-    @Override
-    public boolean certificateNotYetCreated() {
-        return eeIdentity == null;
-    }
-
-    public void resetEeCertificate() {
+  private void assureCurrentCertificateCoversAllNecessaryHosts() {
+    for (String hostThatShouldBePresent :
+        mockServerConfiguration.sslSubjectAlternativeNameDomains()) {
+      if (!hostsCoveredByGeneratedIdentity.contains(hostThatShouldBePresent)) {
         eeIdentity = null;
+      }
     }
+  }
 
-    public void addAlternativeName(String host) {
-        serverAlternativeNames.add(host);
+  @Override
+  public List<X509Certificate> certificateChain() {
+    buildAndSavePrivateKeyAndX509Certificate();
+    return certificateChain;
+  }
+
+  private X509Certificate createCertificateSignedByCa(
+      PublicKey publicKey,
+      X509Certificate certificateAuthorityCert,
+      PrivateKey certificateAuthorityPrivateKey)
+      throws GeneralSecurityException, IOException, OperatorCreationException {
+    X500Name issuer = new X509CertificateHolder(certificateAuthorityCert.getEncoded()).getSubject();
+    X500Name subject = new X500Name("CN=" + serverName + ", O=Gematik, L=Berlin, ST=Berlin, C=DE");
+
+    BigInteger serial = BigInteger.valueOf(new Random().nextInt(Integer.MAX_VALUE)); // NOSONAR
+
+    X509v3CertificateBuilder builder =
+        new JcaX509v3CertificateBuilder(
+            issuer,
+            serial,
+            Date.from(ZonedDateTime.now().minusDays(10).toInstant()),
+            Date.from(ZonedDateTime.now().plus(MAXIMUM_VALIDITY).minusDays(10).toInstant()),
+            subject,
+            publicKey);
+    builder.addExtension(
+        Extension.subjectKeyIdentifier, false, createNewSubjectKeyIdentifier(publicKey));
+    builder.addExtension(Extension.basicConstraints, false, new BasicConstraints(false));
+
+    hostsCoveredByGeneratedIdentity = new ArrayList<>();
+    hostsCoveredByGeneratedIdentity.addAll(serverAlternativeNames);
+    hostsCoveredByGeneratedIdentity.addAll(
+        mockServerConfiguration.sslSubjectAlternativeNameDomains());
+    hostsCoveredByGeneratedIdentity.add(serverName);
+    DERSequence subjectAlternativeNamesExtension =
+        new DERSequence(
+            hostsCoveredByGeneratedIdentity.stream()
+                .distinct()
+                .filter(Objects::nonNull)
+                .map(this::mapAlternativeNameToAsn1Encodable)
+                .toArray(ASN1Encodable[]::new));
+    builder.addExtension(Extension.subjectAlternativeName, false, subjectAlternativeNamesExtension);
+
+    return signTheCertificate(builder, certificateAuthorityPrivateKey);
+  }
+
+  private ASN1Encodable mapAlternativeNameToAsn1Encodable(String alternativeName) {
+    if (IPAddress.isValidIPv6WithNetmask(alternativeName)
+        || IPAddress.isValidIPv6(alternativeName)
+        || IPAddress.isValidIPv4WithNetmask(alternativeName)
+        || IPAddress.isValidIPv4(alternativeName)) {
+      return new GeneralName(GeneralName.iPAddress, alternativeName);
+    } else {
+      return new GeneralName(GeneralName.dNSName, alternativeName);
     }
+  }
+
+  private X509Certificate signTheCertificate(
+      X509v3CertificateBuilder certificateBuilder, PrivateKey privateKey)
+      throws OperatorCreationException, CertificateException {
+    ContentSigner signer;
+    if (privateKey instanceof RSAPrivateKey) {
+      signer =
+          (new JcaContentSignerBuilder("SHA256WithRSAEncryption"))
+              .setProvider("BC")
+              .build(privateKey);
+    } else {
+      signer = (new JcaContentSignerBuilder("SHA256withECDSA")).setProvider("BC").build(privateKey);
+    }
+    return (new JcaX509CertificateConverter())
+        .setProvider("BC")
+        .getCertificate(certificateBuilder.build(signer));
+  }
+
+  private KeyPair generateRsaKeyPair(int keySize) throws GeneralSecurityException {
+    KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", "BC");
+    generator.initialize(keySize, new SecureRandom());
+    return generator.generateKeyPair();
+  }
+
+  private SubjectKeyIdentifier createNewSubjectKeyIdentifier(Key key) throws IOException {
+    try (ASN1InputStream is = new ASN1InputStream(new ByteArrayInputStream(key.getEncoded()))) {
+      ASN1Sequence seq = (ASN1Sequence) is.readObject();
+      SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(seq);
+      return new BcX509ExtensionUtils().createSubjectKeyIdentifier(info);
+    }
+  }
+
+  @Override
+  public boolean certificateNotYetCreated() {
+    return eeIdentity == null;
+  }
+
+  public void resetEeCertificate() {
+    eeIdentity = null;
+  }
+
+  public void addAlternativeName(String host) {
+    serverAlternativeNames.add(host);
+  }
 }

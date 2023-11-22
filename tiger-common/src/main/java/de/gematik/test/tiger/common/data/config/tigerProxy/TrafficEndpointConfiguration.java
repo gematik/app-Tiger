@@ -27,10 +27,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class TrafficEndpointConfiguration {
 
-    @Builder.Default
-    private String name = "tigerProxy Tracing Point";
-    @Builder.Default
-    private String wsEndpoint = "/tracing";
-    @Builder.Default
-    private String stompTopic = "/traces";
+  @Builder.Default private String name = "tigerProxy Tracing Point";
+  @Builder.Default private String wsEndpoint = "/tracing";
+  @Builder.Default private String stompTopic = "/traces";
 }

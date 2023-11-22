@@ -5,5 +5,5 @@ import lombok.Data;
 @Data
 public class SpringServerConfiguration {
 
-    private int port;
+  private int port;
 }

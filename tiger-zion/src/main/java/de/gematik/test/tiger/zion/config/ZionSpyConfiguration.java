@@ -1,7 +1,5 @@
 package de.gematik.test.tiger.zion.config;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,6 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ZionSpyConfiguration {
 
-    private String url;
-    private String protocolToPath;
+  private String url;
+  private String protocolToPath;
 }

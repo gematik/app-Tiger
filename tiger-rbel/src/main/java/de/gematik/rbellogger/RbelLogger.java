@@ -42,77 +42,80 @@ import lombok.RequiredArgsConstructor;
 @Builder(access = AccessLevel.PRIVATE)
 public class RbelLogger {
 
-    private final RbelConverter rbelConverter;
-    private final RbelCapturer rbelCapturer;
-    private final RbelValueShader valueShader;
-    private final RbelKeyManager rbelKeyManager;
-    private final RbelModifier rbelModifier;
+  private final RbelConverter rbelConverter;
+  private final RbelCapturer rbelCapturer;
+  private final RbelValueShader valueShader;
+  private final RbelKeyManager rbelKeyManager;
+  private final RbelModifier rbelModifier;
 
-    public static RbelLogger build() {
-        return build(new RbelConfiguration());
-    }
+  public static RbelLogger build() {
+    return build(new RbelConfiguration());
+  }
 
-    public static RbelLogger build(final RbelConfiguration configuration) {
-        Objects.requireNonNull(configuration);
+  public static RbelLogger build(final RbelConfiguration configuration) {
+    Objects.requireNonNull(configuration);
 
-        final RbelConverter rbelConverter = RbelConverter.builder()
+    final RbelConverter rbelConverter =
+        RbelConverter.builder()
             .rbelKeyManager(new RbelKeyManager())
             .manageBuffer(configuration.isManageBuffer())
             .rbelBufferSizeInMb(configuration.getRbelBufferSizeInMb())
-            .skipParsingWhenMessageLargerThanKb(configuration.getSkipParsingWhenMessageLargerThanKb())
+            .skipParsingWhenMessageLargerThanKb(
+                configuration.getSkipParsingWhenMessageLargerThanKb())
             .build();
 
-        configuration.getAdditionalConverters()
-            .forEach(rbelConverter::addConverter);
-        rbelConverter.registerListener(new RbelX5cKeyReader());
-        rbelConverter.registerListener(new RbelJwkReader());
-        rbelConverter.getPostConversionListeners().addAll(configuration.getPostConversionListener());
-        if (configuration.getPreConversionMappers() != null) {
-            configuration.getPreConversionMappers().entrySet().stream()
-                .forEach(entry -> entry.getValue().stream()
-                    .forEach(listener -> rbelConverter.registerMapper(entry.getKey(), listener)));
-            rbelConverter.getPreConversionMappers().putAll(configuration.getPreConversionMappers());
-        }
-
-        rbelConverter.registerListener(rbelConverter.getRbelValueShader().getPostConversionListener());
-
-        for (Consumer<RbelConverter> initializer : configuration.getInitializers()) {
-            initializer.accept(rbelConverter);
-        }
-
-        rbelConverter.getRbelKeyManager().addAll(configuration.getKeys());
-        if (configuration.isActivateAsn1Parsing()) {
-            rbelConverter.addConverter(new RbelAsn1Converter());
-        }
-
-        rbelConverter.addPostConversionListener(new RbelBundledMessagesPlugin());
-
-        if (configuration.getCapturer() != null) {
-            configuration.getCapturer().setRbelConverter(rbelConverter);
-        }
-
-        return RbelLogger.builder()
-            .rbelConverter(rbelConverter)
-            .rbelCapturer(configuration.getCapturer())
-            .rbelKeyManager(rbelConverter.getRbelKeyManager())
-            .rbelModifier(new RbelModifier(rbelConverter.getRbelKeyManager(), rbelConverter))
-            .valueShader(rbelConverter.getRbelValueShader())
-            .build();
+    configuration.getAdditionalConverters().forEach(rbelConverter::addConverter);
+    rbelConverter.registerListener(new RbelX5cKeyReader());
+    rbelConverter.registerListener(new RbelJwkReader());
+    rbelConverter.getPostConversionListeners().addAll(configuration.getPostConversionListener());
+    if (configuration.getPreConversionMappers() != null) {
+      configuration.getPreConversionMappers().entrySet().stream()
+          .forEach(
+              entry ->
+                  entry.getValue().stream()
+                      .forEach(listener -> rbelConverter.registerMapper(entry.getKey(), listener)));
+      rbelConverter.getPreConversionMappers().putAll(configuration.getPreConversionMappers());
     }
 
-    public void addBundleCriterion(RbelBundleCriterion rbelBundleCriterion) {
-        rbelConverter.getBundleCriterionList().add(rbelBundleCriterion);
+    rbelConverter.registerListener(rbelConverter.getRbelValueShader().getPostConversionListener());
+
+    for (Consumer<RbelConverter> initializer : configuration.getInitializers()) {
+      initializer.accept(rbelConverter);
     }
 
-    public List<RbelElement> getMessageList() {
-        return getRbelConverter().getMessageList();
+    rbelConverter.getRbelKeyManager().addAll(configuration.getKeys());
+    if (configuration.isActivateAsn1Parsing()) {
+      rbelConverter.addConverter(new RbelAsn1Converter());
     }
 
-    public Deque<RbelElement> getMessageHistory() {
-        return rbelConverter.getMessageHistory();
+    rbelConverter.addPostConversionListener(new RbelBundledMessagesPlugin());
+
+    if (configuration.getCapturer() != null) {
+      configuration.getCapturer().setRbelConverter(rbelConverter);
     }
 
-    public void clearAllMessages() {
-        rbelConverter.clearAllMessages();
-    }
+    return RbelLogger.builder()
+        .rbelConverter(rbelConverter)
+        .rbelCapturer(configuration.getCapturer())
+        .rbelKeyManager(rbelConverter.getRbelKeyManager())
+        .rbelModifier(new RbelModifier(rbelConverter.getRbelKeyManager(), rbelConverter))
+        .valueShader(rbelConverter.getRbelValueShader())
+        .build();
+  }
+
+  public void addBundleCriterion(RbelBundleCriterion rbelBundleCriterion) {
+    rbelConverter.getBundleCriterionList().add(rbelBundleCriterion);
+  }
+
+  public List<RbelElement> getMessageList() {
+    return getRbelConverter().getMessageList();
+  }
+
+  public Deque<RbelElement> getMessageHistory() {
+    return rbelConverter.getMessageHistory();
+  }
+
+  public void clearAllMessages() {
+    rbelConverter.clearAllMessages();
+  }
 }

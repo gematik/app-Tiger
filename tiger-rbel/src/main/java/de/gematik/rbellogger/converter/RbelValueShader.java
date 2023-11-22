@@ -16,13 +16,11 @@
 
 package de.gematik.rbellogger.converter;
 
-import de.gematik.rbellogger.data.RbelJexlShadingExpression;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.test.tiger.common.jexl.TigerJexlContext;
+import de.gematik.rbellogger.data.RbelJexlShadingExpression;
+import de.gematik.rbellogger.data.facet.RbelNoteFacet;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.*;
-
-import de.gematik.rbellogger.data.facet.RbelNoteFacet;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -31,84 +29,91 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 public class RbelValueShader {
 
-    private final List<RbelJexlShadingExpression> jexlShadingMap = new ArrayList<>();
-    private final List<RbelJexlShadingExpression> jexlNoteMap = new ArrayList<>();
+  private final List<RbelJexlShadingExpression> jexlShadingMap = new ArrayList<>();
+  private final List<RbelJexlShadingExpression> jexlNoteMap = new ArrayList<>();
 
-    public Optional<String> shadeValue(final Object element, final Optional<String> key) {
-        return jexlShadingMap.stream()
-            .filter(entry -> {
-                try {
-                    return TigerJexlExecutor.matchesAsJexlExpression(element, entry.getJexlExpression(), key);
-                } catch (RuntimeException ignored) {
-                    return false;
-                }
+  public Optional<String> shadeValue(final Object element, final Optional<String> key) {
+    return jexlShadingMap.stream()
+        .filter(
+            entry -> {
+              try {
+                return TigerJexlExecutor.matchesAsJexlExpression(
+                    element, entry.getJexlExpression(), key);
+              } catch (RuntimeException ignored) {
+                return false;
+              }
             })
-            .peek(entry -> entry.getNumberOfMatches().incrementAndGet())
-            .map(entry -> String.format(entry.getShadingValue(), toStringValue(element)))
-            .findFirst();
-    }
+        .peek(entry -> entry.getNumberOfMatches().incrementAndGet())
+        .map(entry -> String.format(entry.getShadingValue(), toStringValue(element)))
+        .findFirst();
+  }
 
-    public void addNote(final RbelElement element) {
-        jexlNoteMap.stream()
-            .filter(entry -> {
-                try {
-                    return TigerJexlExecutor.matchesAsJexlExpression(element, entry.getJexlExpression(), element.findKeyInParentElement());
-                } catch (RuntimeException ignored) {
-                    return false;
-                }
+  public void addNote(final RbelElement element) {
+    jexlNoteMap.stream()
+        .filter(
+            entry -> {
+              try {
+                return TigerJexlExecutor.matchesAsJexlExpression(
+                    element, entry.getJexlExpression(), element.findKeyInParentElement());
+              } catch (RuntimeException ignored) {
+                return false;
+              }
             })
-            .peek(entry -> entry.getNumberOfMatches().incrementAndGet())
-            .map(entry -> String.format(entry.getShadingValue(), toStringValue(element)))
-            .map(note -> new RbelNoteFacet(note, RbelNoteFacet.NoteStyling.INFO))
-            .forEach(element::addFacet);
-    }
+        .peek(entry -> entry.getNumberOfMatches().incrementAndGet())
+        .map(entry -> String.format(entry.getShadingValue(), toStringValue(element)))
+        .map(note -> new RbelNoteFacet(note, RbelNoteFacet.NoteStyling.INFO))
+        .forEach(element::addFacet);
+  }
 
-    private String toStringValue(final Object value) {
-        if (value instanceof RbelElement) {
-            return ((RbelElement) value).getRawStringContent();
-        } else {
-            return value.toString();
-        }
+  private String toStringValue(final Object value) {
+    if (value instanceof RbelElement) {
+      return ((RbelElement) value).getRawStringContent();
+    } else {
+      return value.toString();
     }
+  }
 
-    public RbelValueShader addSimpleShadingCriterion(String attributeName, String stringFValue) {
-        jexlShadingMap.add(RbelJexlShadingExpression.builder()
+  public RbelValueShader addSimpleShadingCriterion(String attributeName, String stringFValue) {
+    jexlShadingMap.add(
+        RbelJexlShadingExpression.builder()
             .jexlExpression("key == '" + attributeName + "'")
             .shadingValue(stringFValue)
             .build());
-        return this;
-    }
+    return this;
+  }
 
-    public RbelValueShader addJexlShadingCriterion(String jsonPathExpression, String stringFValue) {
-        jexlShadingMap.add(RbelJexlShadingExpression.builder()
+  public RbelValueShader addJexlShadingCriterion(String jsonPathExpression, String stringFValue) {
+    jexlShadingMap.add(
+        RbelJexlShadingExpression.builder()
             .jexlExpression(jsonPathExpression)
             .shadingValue(stringFValue)
             .build());
-        return this;
-    }
+    return this;
+  }
 
-    public RbelValueShader addJexlNoteCriterion(String jsonPathExpression, String stringFValue) {
-        jexlNoteMap.add(RbelJexlShadingExpression.builder()
+  public RbelValueShader addJexlNoteCriterion(String jsonPathExpression, String stringFValue) {
+    jexlNoteMap.add(
+        RbelJexlShadingExpression.builder()
             .jexlExpression(jsonPathExpression)
             .shadingValue(stringFValue)
             .build());
-        return this;
-    }
+    return this;
+  }
 
-    public RbelConverterPlugin getPostConversionListener() {
-        return (element, converter) -> addNote(element);
-    }
+  public RbelConverterPlugin getPostConversionListener() {
+    return (element, converter) -> addNote(element);
+  }
 
-    @Builder
-    @Data
-    public static class JexlMessage {
+  @Builder
+  @Data
+  public static class JexlMessage {
 
-        public final String method;
-        public final String url;
-        public final boolean isRequest;
-        public final boolean isResponse;
-        public final Map<String, String> headers;
-        public final String bodyAsString;
-        public final RbelElement body;
-    }
+    public final String method;
+    public final String url;
+    public final boolean isRequest;
+    public final boolean isResponse;
+    public final Map<String, String> headers;
+    public final String bodyAsString;
+    public final RbelElement body;
+  }
 }

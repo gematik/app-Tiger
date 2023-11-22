@@ -1,5 +1,31 @@
 # Changelog Tiger Test platform
 
+# Release 2.3.0
+
+## Features
+
+* TGR-912: Healthchecks for externalUrl-Servers now honor the configured forwardProxyInfo of the localTigerProxy
+* TGR-1163: TigerProxy: The groups to be used for the TLS-Handshakes can now be set for client
+* TGR-899: Migrated FAQ.md to FAQ.adoc, translated to english
+
+## Bugfixes
+
+* TGR-1139/TGR-1140: Fixed various minor problems with recursive descent and attributes in RbelPath-expressions
+* TGR-1150: TigerProxy WebUI: Correct escaping in inspect-dialog for RbelPath-generation added
+* TGR-1038: Changed assertThatNo()-exceptions to assertThatNo.isThrownBy so the tests are not ignored
+* TGR-1170: TigerGlobalConfiguration: Fixes for very rare race conditions leading to ConcurrentModification-Exceptions
+* TGR-1162: fixed an issue were the amount of test cases was not reported correctly by serenity.
+
+-------
+
+Serenity BDD 4.0.12
+Cucumber 7.14.0
+RestAssured 5.3.1
+Selenium 4.12.1
+Appium 8.3.0
+Spring Boot 3.1.0
+Logback 1.4.9
+
 # Release 2.2.1
 
 ## Features
@@ -14,16 +40,20 @@
 ## Bugfixes
 
 * TGR-1110: Zion - XML-structures with nodes named 'text' can now be correctly serialized
-* TGR-971: Tiger Proxy UI - when applying filters, the list of senders and receivers is limited to the hosts which send or receive more than two messages. An additional checkbox allows displaying the full list of senders and receivers.
+* TGR-971: Tiger Proxy UI - when applying filters, the list of senders and receivers is limited to the hosts which send
+  or receive more than two messages. An additional checkbox allows displaying the full list of senders and receivers.
+* TGR-1098: Tiger Proxy UI: changed buttons "save" to "export" and changed image of the button accordingly
 * TGR-1108: Allow nested JexlExpression in RbelPaths (up to one level!)
 * TGR-1126: Zion - Honors the encoding information for XML
 * TGR-1112: Fixed that log contained a lot of "curl command unable to parse log" lines
-* TGR-1123: Fixed Rbellogs flood browser window with highlight js warnings rendering browser unusable for larger HTML report files 
-* TGR-1141: Fixed bug in Workflow Ui causing received CETP messages to stop displaying further messages. Also improved display of CETP messages (out of line title)
+* TGR-1123: Fixed Rbellogs flood browser window with highlight js warnings rendering browser unusable for larger HTML
+  report files
+* TGR-1141: Fixed bug in Workflow Ui causing received CETP messages to stop displaying further messages. Also improved
+  display of CETP messages (out of line title)
 * All Spinner icons in Workflow UI are now animated
 
-
 -------
+
 * Serenity BDD 3.6.23
 * Cucumber 7.11.0
 * RestAssured 5.2.0
@@ -36,26 +66,35 @@
 
 ## Features
 
-* TGR-1022: Introduce a new httpbin server type. See User Manual section "Tiger test environment manager > Supported server nodes and their configuration"
-* TGR-1032: With "activateLogs: false" in externalJarOptions for servers the logs are not sent to the workflow UI anymore but are still written to console and log files
-* TGR-1044: During the execution of the playwright tests screenshots of the WorkflowUI and the WebUI are taken and stored in the doc/user_manual directory
-* TGR-1041: a new configuration editor in the WorkflowUI allows to view and edit the global tiger configuration during the execution of a test suite.
-* TGR-567: Tiger Proxy UI - when downloading traffic data, it is now possible to download only the data of the current applied filter.
+* TGR-1022: Introduce a new httpbin server type. See User Manual section "Tiger test environment manager > Supported
+  server nodes and their configuration"
+* TGR-1032: With "activateLogs: false" in externalJarOptions for servers the logs are not sent to the workflow UI
+  anymore but are still written to console and log files
+* TGR-1044: During the execution of the playwright tests screenshots of the WorkflowUI and the WebUI are taken and
+  stored in the doc/user_manual directory
+* TGR-1041: a new configuration editor in the WorkflowUI allows to view and edit the global tiger configuration during
+  the execution of a test suite.
+* TGR-567: Tiger Proxy UI - when downloading traffic data, it is now possible to download only the data of the current
+  applied filter.
 * TGR-1047: Finalising Playwight tests
-
 
 ## Bugfixes
 
-* TGR-1048: Resolved the problems with steps not being found in IntelliJ's Gherkin plugin. Also they were executed, one was not able to look them up with auto complete and if entered manually the step was marked as undefined
-* TGR-1045: With "activateLogs: false" in externalJarOptions for servers deactivates the logs completely, with "activateWorkflowLogs: false" deactivates sending logs to the workflow UI only
-* TGR-1057: modified the test httpclientenv.yaml so that it uses  the new server type httpbin instead of winstone.
+* TGR-1048: Resolved the problems with steps not being found in IntelliJ's Gherkin plugin. Also they were executed, one
+  was not able to look them up with auto complete and if entered manually the step was marked as undefined
+* TGR-1045: With "activateLogs: false" in externalJarOptions for servers deactivates the logs completely, with "
+  activateWorkflowLogs: false" deactivates sending logs to the workflow UI only
+* TGR-1057: modified the test httpclientenv.yaml so that it uses the new server type httpbin instead of winstone.
 * TGR-1058: RbelPath in the Inspect modal on selected element fixed
 * TGR-623: Tiger Proxy UI - when importing a .tgr traffic file, the previously displayed traffic is removed.
 * TGR-1074: Scenario Outlines counter fixed
-* TGR-873: Tiger Proxy UI - when the connection with the backend is lost a visible error dialog is shown in the UI to inform the user.
-* TGR-1079: Tiger Proxy UI - when importing a .tgr traffic file, the request/response message pairs are correctly identified as such and are displayed together when one of the messages matches the applied filter.
+* TGR-873: Tiger Proxy UI - when the connection with the backend is lost a visible error dialog is shown in the UI to
+  inform the user.
+* TGR-1079: Tiger Proxy UI - when importing a .tgr traffic file, the request/response message pairs are correctly
+  identified as such and are displayed together when one of the messages matches the applied filter.
 
 -------
+
 * Serenity BDD 3.6.23
 * Cucumber 7.11.0
 * RestAssured 5.2.0
@@ -69,22 +108,27 @@
 ## Features
 
 * TGR-1027(2): Extend inline jexl to enable eRp Migration
-    * getValue(string) -> string : returns the value of the given variable name. This is extremely helpful for variables with multiline content, where using ${variable} would break the JEXL parsing
+    * getValue(string) -> string : returns the value of the given variable name. This is extremely helpful for variables
+      with multiline content, where using ${variable} would break the JEXL parsing
     * subStringBefore(string) -> string
     * subStringAfter(string) -> string
-* TGR-1039: support generation of JUnit5 driver classes by the Tiger maven plugin. For this a new property has been added to the configuration: ```<junit5Driver>true</junit5Driver>``` which will create driver classes based on Junit5. The following additional dependencies are needed for these:
+* TGR-1039: support generation of JUnit5 driver classes by the Tiger maven plugin. For this a new property has been
+  added to the configuration: ```<junit5Driver>true</junit5Driver>``` which will create driver classes based on Junit5.
+  The following additional dependencies are needed for these:
+
 ```xml
- <dependency>
+
+<dependency>
     <groupId>org.junit.platform</groupId>
     <artifactId>junit-platform-suite</artifactId>
     <version>1.9.2</version>
     <scope>test</scope>
 </dependency>
 <dependency>
-    <groupId>io.cucumber</groupId>
-    <artifactId>cucumber-junit-platform-engine</artifactId>
-    <version>7.11.2</version>
-    <scope>test</scope>
+<groupId>io.cucumber</groupId>
+<artifactId>cucumber-junit-platform-engine</artifactId>
+<version>7.11.2</version>
+<scope>test</scope>
 </dependency>
 ```
 
@@ -94,11 +138,13 @@
 
 * TGR-1028: Fixed bug where the RbelWriter did not serialize an empty json array correctly.
 * TGR-1029: Fixed bug where rewriting of Location headers on redirects would remove other headers from the response.
-* TGR-1032: Fixed a bug where `additionalCriterions` of a Zion mock response was not correctly serialized into the zion configuration properties.
+* TGR-1032: Fixed a bug where `additionalCriterions` of a Zion mock response was not correctly serialized into the zion
+  configuration properties.
 * TGR-915: adding missing content popup buttons to JWE/JWT/VAU elements in rbel logs
 * fixed doc example tigerOnly pom.xml so that it runs out of the box
 
 -------
+
 * Serenity BDD 3.6.23
 * Cucumber 7.11.0
 * RestAssured 5.2.0
@@ -111,51 +157,62 @@
 
 ## Breaking changes
 
-* with TGR-1015 we fixed the http client steps sending form data (GET/POST) to be not URL encoded. 
-  * The affected steps are:
-    * @When("TGR send {requestType} request to {string} with:")
-    * @When("TGR eine {requestType} Anfrage an {string} mit den folgenden Daten sendet:")
-    * @Then("TGR sende eine {requestType} Anfrage an {string} mit folgenden Daten:")
-  * and 
-    * @When("TGR send {requestType} request to {string} without waiting for the response with:")
-    * @Then("TGR sende eine {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Daten:")
-  * Please be aware that validation of the params needs to be handled differently now.
-    * For GET requests you can validate the value of the get request via: $.path.paramname.value which returns the URL decoded value
-    * For POST requests the value is URL encoded in the body, so we can not easily validate it ULR decoded. $.body.paramname will therefore contain the URL encoded value. To ease with validation we have introduced a new JEXL helper function !{rbel:urlEncocded('value')} which will return the URL encoded value of the given string.
-     
+* with TGR-1015 we fixed the http client steps sending form data (GET/POST) to be not URL encoded.
+    * The affected steps are:
+        * @When("TGR send {requestType} request to {string} with:")
+        * @When("TGR eine {requestType} Anfrage an {string} mit den folgenden Daten sendet:")
+        * @Then("TGR sende eine {requestType} Anfrage an {string} mit folgenden Daten:")
+    * and
+        * @When("TGR send {requestType} request to {string} without waiting for the response with:")
+        * @Then("TGR sende eine {requestType} Anfrage an {string} ohne auf Antwort zu warten mit folgenden Daten:")
+    * Please be aware that validation of the params needs to be handled differently now.
+        * For GET requests you can validate the value of the get request via: $.path.paramname.value which returns the
+          URL decoded value
+        * For POST requests the value is URL encoded in the body, so we can not easily validate it ULR decoded.
+          $.body.paramname will therefore contain the URL encoded value. To ease with validation we have introduced a
+          new JEXL helper function !{rbel:urlEncocded('value')} which will return the URL encoded value of the given
+          string.
+
 ## Bugfixes
 
 * Wildcard file filters are now also supported for windows users
 * TGR-956: Fixed a bug for correctly handling concurrent requests in Zion
-* TGR-979: Fixed bug that failed BDD tests in tiger-test-lib were ignored and the build was labelled green. Workaround was to disable the serenity maven plugin in tiger-test-utils
+* TGR-979: Fixed bug that failed BDD tests in tiger-test-lib were ignored and the build was labelled green. Workaround
+  was to disable the serenity maven plugin in tiger-test-utils
 * TGRFHIR-8: URL-Query parameters are no longer twice URL-encoded when using HTTP Glue Code
-* TGR-999: Fixed scenario outlines trigger displaying all subsequent scenarios with data variant counters in titles of workflow UI
+* TGR-999: Fixed scenario outlines trigger displaying all subsequent scenarios with data variant counters in titles of
+  workflow UI
 * TGR-1015: Datatable based param/values of http client GET and POST request steps are now URL encoded per default.
 
 ## Features
 
-* TGR-976: Zion-assignments can now contain any string (including Configuration-Placeholders, JEXL-expression and any combination thereof)
+* TGR-976: Zion-assignments can now contain any string (including Configuration-Placeholders, JEXL-expression and any
+  combination thereof)
 * TGR-976: New annotation `@TigerSkipEvaluation` which skips the evaluation of configuration values.
 * TGR-1010: Added Http client step to send a request with a multiline body (for more complex json requests)
-* TGR-1015: To ease with validation of POST form parameters, we have introduced a new JEXL helper function !{urlEncocded('value')} which will return the URL encoded value of the given string.
-* TGR-977: Zion can now match path variables and assigns them to the values given in the request URL. See User Manual section "Tiger Zion > Matching path variables"
-* TGR-1020: added http client step to clear all default headers. 
-  * @When("TGR clear all default headers")
-  * @When("TGR lösche alle default headers")
+* TGR-1015: To ease with validation of POST form parameters, we have introduced a new JEXL helper function !
+  {urlEncocded('value')} which will return the URL encoded value of the given string.
+* TGR-977: Zion can now match path variables and assigns them to the values given in the request URL. See User Manual
+  section "Tiger Zion > Matching path variables"
+* TGR-1020: added http client step to clear all default headers.
+    * @When("TGR clear all default headers")
+    * @When("TGR lösche alle default headers")
 * TGR-1024: added http client step to allow to specify multiple default headers via key value pairs as doc string
-  * @When("TGR set default headers:")
-  * @Then("TGR setze folgende default headers:")
-  * @When("TGR folgende default headers gesetzt werden:")
+    * @When("TGR set default headers:")
+    * @Then("TGR setze folgende default headers:")
+    * @When("TGR folgende default headers gesetzt werden:")
 * TGR-1027: Extend tiger glue code and inline jexl to enable eRp Migration
-  * new step to print out the value of a stored variable 
-    * @Dann("TGR gebe variable {string} aus")
-    * @Then("TGR print variable {string}")
-  * new inline jexl methods:
-    * resolve(string) -> string : resolves all placeholders and jexl expression in string. Very useful in combination with the file() method
-    * randomHex(int size) -> string : produces a random hex string with size characters
-    * currentLocalDate() -> string : produces a string of format YYYY-MM-DD of today
+    * new step to print out the value of a stored variable
+        * @Dann("TGR gebe variable {string} aus")
+        * @Then("TGR print variable {string}")
+    * new inline jexl methods:
+        * resolve(string) -> string : resolves all placeholders and jexl expression in string. Very useful in
+          combination with the file() method
+        * randomHex(int size) -> string : produces a random hex string with size characters
+        * currentLocalDate() -> string : produces a string of format YYYY-MM-DD of today
 
 -------
+
 * Serenity BDD 3.6.23
 * Cucumber 7.11.0
 * RestAssured 5.2.0
@@ -168,14 +225,16 @@
 
 ## Features
 
-* TGR-954: Rewrite for location Headers in case of forwards with routes with nested paths added: 
+* TGR-954: Rewrite for location Headers in case of forwards with routes with nested paths added:
+
 ```yaml
 tigerProxy:
-  rewriteLocationHeader:  true # default value
+  rewriteLocationHeader: true # default value
 # activates the rewrite. To deactivate set to false
 ```
 
 -------
+
 * Serenity BDD 3.6.23
 * Cucumber 7.11.0
 * RestAssured 5.2.0
@@ -188,18 +247,33 @@ tigerProxy:
 
 ## Breaking changes
 
-* TGR-924: German BDD steps to set local and global variables were grammatically incorrect and have been fixed. So "TGR setze lokale/globale Variable {string} auf {string} setzen" has been changed to "TGR setze lokale/globale Variable {string} auf {string}"
-* TGR-909: all **Gherkin / Feature parser code has been removed** from Tiger as Polarion Toolbox (its only usage) has been refactored to use the Cucumber internal Gherkin parser. If you based your code on the self written parser, check POTO to see how to replace the parsing code in the ```polarion-toolbox-client/src/main/java/de/gematik/polarion/toolbox/worker/FeatureFileParser.java``` source file.
-* TGR-864: The order of parameters for the "TGR send {} request to {} with body {}" has been changed (body now comes as the final parameter). This is done to ensure consistency across languages and to always relegate the potentially longest parameter to the last place, improving readability.
+* TGR-924: German BDD steps to set local and global variables were grammatically incorrect and have been fixed. So "TGR
+  setze lokale/globale Variable {string} auf {string} setzen" has been changed to "TGR setze lokale/globale Variable
+  {string} auf {string}"
+* TGR-909: all **Gherkin / Feature parser code has been removed** from Tiger as Polarion Toolbox (its only usage) has
+  been refactored to use the Cucumber internal Gherkin parser. If you based your code on the self written parser, check
+  POTO to see how to replace the parsing code in
+  the ```polarion-toolbox-client/src/main/java/de/gematik/polarion/toolbox/worker/FeatureFileParser.java``` source file.
+* TGR-864: The order of parameters for the "TGR send {} request to {} with body {}" has been changed (body now comes as
+  the final parameter). This is done to ensure consistency across languages and to always relegate the potentially
+  longest parameter to the last place, improving readability.
 * Removed Tiger Admin-UI (Insufficient users)
-* TGR-931: For externalJar-Servers that use local-jars: The actual path now starts immediately after the colon. While `local://blub.jar` was a working solution as well before, now only `local:blub.jar` is accepted (the slashes were discarded before, now everything after the colon is taken the path).
-* TGR-948: Changed the behavior for trailing slashes in tiger proxy routes: When either the target-path or the request-path end in a slash, a slash will be added to the resulting request. This implicitly fixes a bug that lead to doubled slashes in some resulting requests. Caveat: When the request is for a nested target the trailing slash will only be added if it was present in the actual request (as the route-target references another entity in this case)
+* TGR-931: For externalJar-Servers that use local-jars: The actual path now starts immediately after the colon.
+  While `local://blub.jar` was a working solution as well before, now only `local:blub.jar` is accepted (the slashes
+  were discarded before, now everything after the colon is taken the path).
+* TGR-948: Changed the behavior for trailing slashes in tiger proxy routes: When either the target-path or the
+  request-path end in a slash, a slash will be added to the resulting request. This implicitly fixes a bug that lead to
+  doubled slashes in some resulting requests. Caveat: When the request is for a nested target the trailing slash will
+  only be added if it was present in the actual request (as the route-target references another entity in this case)
 
 ## Bugfixes
 
-* TGR-911: Since 2.0.0 the rbel log files included font awesome v5.4 whereas tiger proxy generated HTML including font awesome 6.4. This caused icons to be not displayed or being displayed as invalid icons.
+* TGR-911: Since 2.0.0 the rbel log files included font awesome v5.4 whereas tiger proxy generated HTML including font
+  awesome 6.4. This caused icons to be not displayed or being displayed as invalid icons.
 * TGR-922: Waiting for non-paired messages now works correctly
-* TGR-841: Non-XML parts in MTOM-Messages are now converted correctly. They are stored in conjunction with their respective XPath-Locations. A sample tree is shown here:
+* TGR-841: Non-XML parts in MTOM-Messages are now converted correctly. They are stored in conjunction with their
+  respective XPath-Locations. A sample tree is shown here:
+
 ```
    └──body (------=_Part_2_1927395369.1677073618377\r\nContent...) (RbelMtomFacet)
    |  ├──contentType (application/xop+xml; charset=utf-8; type="text/xml...) (RbelValueFacet)
@@ -218,22 +292,29 @@ tigerProxy:
    |        └──content (%PDF-1.6\r\n%????\r\n1361 0 obj\r\n<</Linearized 1...) (RbelBinaryFacet) 
 
 ```
+
 ***** TGR-651: Sender (Client) addresses for messages are now again included in parsed messages of the Tiger Proxy.
 
 ## Features
 
 * TGR-920: Non-Blocking mode added for the TGR http steps
-* TGR-934: RbelPath-Expressions are now trimmed before parsing. If you have spaces in keys, escape them like so: `$.body.['foo bar'].key`
-* Custom logos can now be defined for your RBel-Logs. Please use the configuration key "tiger.lib.rbelLogoFilePath" to specify a PNG 
-file to be used in your logs.
-* TGR-931: Local jar-Files can now be found (via the `source`-attribute) relative to the working directory. Wildcards are also supported now. So a source-attribute of `../target/app-*.jar` can now be used.
+* TGR-934: RbelPath-Expressions are now trimmed before parsing. If you have spaces in keys, escape them like
+  so: `$.body.['foo bar'].key`
+* Custom logos can now be defined for your RBel-Logs. Please use the configuration key "tiger.lib.rbelLogoFilePath" to
+  specify a PNG
+  file to be used in your logs.
+* TGR-931: Local jar-Files can now be found (via the `source`-attribute) relative to the working directory. Wildcards
+  are also supported now. So a source-attribute of `../target/app-*.jar` can now be used.
 * TGR-950: To find alternating values, concatenate them using the pipe symbols, like so:
   `$.body.['foo'|'bar'].key`
-* TGR-869: When multiple properties in either System-Properties or Environment-Variables map to the same value and differ in value the startup will 
-be aborted with an exception pointing to the conflicting values. This is done to follow the "fail fast" philosophy and give the user the chance
-to resolve the conflict instead of choosing an arbitrary value automatically.
+* TGR-869: When multiple properties in either System-Properties or Environment-Variables map to the same value and
+  differ in value the startup will
+  be aborted with an exception pointing to the conflicting values. This is done to follow the "fail fast" philosophy and
+  give the user the chance
+  to resolve the conflict instead of choosing an arbitrary value automatically.
 
 -------
+
 * **Serenity BDD 3.6.23**
 * Cucumber 7.11.0
 * RestAssured 5.2.0
@@ -262,9 +343,13 @@ to resolve the conflict instead of choosing an arbitrary value automatically.
 * TGR-866: Glue-Code to change TLS-certificates for local TigerProxy during test execution
 * TGR-888: ${hostname} added as a configuration property
 * TGR-890: Workflow Ui now has a quit button in the left sidebar to abort the currently active test execution
-* TGR-890: Workflow Ui now has a pause button in the left sidebar to pause test execution. Please be aware that timeouts (e.g. while waiting for a rbel message to appear are not affected by the pause mode, thus using pause on these steps will cause a timeout and potentially subsequent test failure).
+* TGR-890: Workflow Ui now has a pause button in the left sidebar to pause test execution. Please be aware that
+  timeouts (e.g. while waiting for a rbel message to appear are not affected by the pause mode, thus using pause on
+  these steps will cause a timeout and potentially subsequent test failure).
 * TGR-901: New server-type "zion" added. Supports adding and configuring zion-Servers directly in a tiger.yaml
-* TGR-730: support changing log level similar to spring boot by specifying package or class name and level in tiger.yaml under logging.level
+* TGR-730: support changing log level similar to spring boot by specifying package or class name and level in tiger.yaml
+  under logging.level
+
 ```yaml
 servers:
   server1:
@@ -279,9 +364,13 @@ logging:
 
 ## Breaking changes
 
-* tiger-<hostname>.yaml is now read additionally to the tiger.yaml, no longer instead of! Migration should be seamless unless you have both a tiger- and a tiger-<hostname>.yaml. In that case manual migration of the properties is required, depending on whether you want them as a default on all machines (tiger.yaml) or simply as a host-specific configuration (tiger-<hostname>.yaml).
+* tiger-<hostname>.yaml is now read additionally to the tiger.yaml, no longer instead of! Migration should be seamless
+  unless you have both a tiger- and a tiger-<hostname>.yaml. In that case manual migration of the properties is
+  required, depending on whether you want them as a default on all machines (tiger.yaml) or simply as a host-specific
+  configuration (tiger-<hostname>.yaml).
 
 -------
+
 * Serenity BDD 3.3.10
 * Cucumber 7.4.1
 * RestAssured 5.2.0
@@ -302,9 +391,12 @@ logging:
 
 * TGR-855: Currently executed step is now highlighted in workflow ui
 * TGR-822: Added a step to read .tgr files
-* TGR-864: all params except for the HTTP method of steps from the http client extension are now resolving ${} expressions
+* TGR-864: all params except for the HTTP method of steps from the http client extension are now resolving ${}
+  expressions
 * Made timeout for execution pause in workflow ui configurable via property tiger.lib.pauseExecutionTimeoutSeconds
-* On quit the background of the sidebar of the workflow ui is now colored coral red to indicate that no backend server functionality is available anymore (reload page, backend calls on the rbel log details pane, access to the proxy webui page)
+* On quit the background of the sidebar of the workflow ui is now colored coral red to indicate that no backend server
+  functionality is available anymore (reload page, backend calls on the rbel log details pane, access to the proxy webui
+  page)
 
 -------
 
@@ -316,7 +408,6 @@ logging:
 * Selenium 4.5.2
 * Appium 8.1.1
 * Spring Boot 2.7.5
-
 
 ## Bugfixes
 
@@ -354,6 +445,7 @@ logging:
 ## Breaking changes
 
 -------
+
 # Release 1.2.1
 
 * Serenity BDD 3.3.10
@@ -365,7 +457,8 @@ logging:
 
 ## Bugfixes
 
-* TGR-592: we are resorting the JUnit driver class template back to run with CucumberWithSerenity ensuring the TigerCucumberListener as plugin is set. This listener will now initialize the Tiger on test run started event.
+* TGR-592: we are resorting the JUnit driver class template back to run with CucumberWithSerenity ensuring the
+  TigerCucumberListener as plugin is set. This listener will now initialize the Tiger on test run started event.
 * TGR-780: outputs of external jar type servers will now be logged
 * TGR-829: When using the RbelKeyFolderInitializer the used files are not used via filenames but rather directly
 * TGR-809: error during selection of nodes in rbel tree in WebUi fixed
@@ -383,13 +476,21 @@ logging:
 
 ## Breaking changes
 
-TGR-714: docker, docker compose server types have been merged with helm chart support into the tiger-cloud-extension a separate project to be published together with this release. **So to keep using docker functionality within tiger make sure to add the additional dependency to your project.** If you don't use docker or helm chart you should not be affected at all.
+TGR-714: docker, docker compose server types have been merged with helm chart support into the tiger-cloud-extension a
+separate project to be published together with this release. **So to keep using docker functionality within tiger make
+sure to add the additional dependency to your project.** If you don't use docker or helm chart you should not be
+affected at all.
 
-* TGR-817: major rewrite of Tiger Serenity integration. We now more closely are integrated with Serenity, fixing bugs like cucumber tag filter property not always being respected, using multiple examples (with Annotations) causes the Workflow UI to show wrong data in the test execution pane. When using the tiger-maven-plugin to generate your test driver classes no modification to your code is necessary. Else, please note that:
-  * the package of the TigerCucumberRunner class has been changed
-  * the TigerCucumberListener is now automatically added in standalone and mvn context, so remove it from your plugins cucumber options.
+* TGR-817: major rewrite of Tiger Serenity integration. We now more closely are integrated with Serenity, fixing bugs
+  like cucumber tag filter property not always being respected, using multiple examples (with Annotations) causes the
+  Workflow UI to show wrong data in the test execution pane. When using the tiger-maven-plugin to generate your test
+  driver classes no modification to your code is necessary. Else, please note that:
+    * the package of the TigerCucumberRunner class has been changed
+    * the TigerCucumberListener is now automatically added in standalone and mvn context, so remove it from your plugins
+      cucumber options.
 
 -------
+
 # Release 1.1.1
 
 * Serenity BDD 3.3.10
@@ -419,18 +520,24 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-575: Added support for CETP messages in tiger-rbel
 * TGR-796: Delayed evaluation for TigerGlobalConfiguration added
 * TGR-559: Code optimized in TigerDirector
-* TGR-696: Added helm chart to User Manual 
+* TGR-696: Added helm chart to User Manual
 * TGR-640: Logs out tiger configuration and environment variables when debug log level is set
 * TGR-732: WorkflowUi: LokalTigerProxy is shown in server list on the left and also appears in the logs
-* TGR-705: Tiger Proxy health endpoint now also checks responsiveness of internal mock server and adds more details to the health status
-* TGR-748: MavenTigerPlugin: add configuration property for opening the browser containing the serenity report when performing the generate-serenity-report goal
+* TGR-705: Tiger Proxy health endpoint now also checks responsiveness of internal mock server and adds more details to
+  the health status
+* TGR-748: MavenTigerPlugin: add configuration property for opening the browser containing the serenity report when
+  performing the generate-serenity-report goal
 
 ## Breaking changes
 
-* TGR-745: VAU traffic is no longer decrypted by default. Please set the appropriate flags to do so (activateErpVauAnalysis and activateEpaVauAnalysis)
-* TGR-640: when using the tiger yaml property ```localProxyActive: false``` the field localTigerProxy in the TigerTestEnvMgr is now returned as null to save test execution time as we don't start it up any longer if no local proxy is desired.
+* TGR-745: VAU traffic is no longer decrypted by default. Please set the appropriate flags to do so (
+  activateErpVauAnalysis and activateEpaVauAnalysis)
+* TGR-640: when using the tiger yaml property ```localProxyActive: false``` the field localTigerProxy in the
+  TigerTestEnvMgr is now returned as null to save test execution time as we don't start it up any longer if no local
+  proxy is desired.
 
 -------
+
 # Release 1.1.0
 
 * Serenity BDD 3.3.10
@@ -456,9 +563,11 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 
 ## Breaking changes
 
-* if you update to 1.1.0 and your tests aren't executed anymore please add the 'junit-vintage-engine'-dependency to your project
+* if you update to 1.1.0 and your tests aren't executed anymore please add the 'junit-vintage-engine'-dependency to your
+  project
 
 -------
+
 # Release 1.0.0
 
 * Serenity BDD 3.3.10
@@ -499,6 +608,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TigerConfigurationHelper now correctly parses multiple keys in a single YAML-line
 
 -------
+
 # Release 0.24.1/0.24.2
 
 * Serenity BDD 3.2.5
@@ -513,7 +623,8 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-657: Enum-Values in TigerProxy are now parsed case-insensitive
 * TGR-638: Workflow UI: It is now possible the show HTML text in the workflow message
 * TGR-663: WebUi: All headers are now collapsable
-* TGR-577: User can ignore scenarios or whole features by adding "@Ignore" above the scenario/feature in the feature file
+* TGR-577: User can ignore scenarios or whole features by adding "@Ignore" above the scenario/feature in the feature
+  file
 * TGR-678: The log files in the target/rbellogs directory are now saved with a timestamp at the end of the file name
 * TGR-596: WebUi: Text based Regex/Search as search filter
 * TGR-683: WebUi: Button for binary content fixed
@@ -523,7 +634,9 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 
 ## Breaking changes
 
-* TGR-540: Migration unto the main-branch mockserver. This breaks the client-address. Rbel-Messages no longer carry the information who sent the request (or who received the response). This will be added back in a later version (Ticket TGR-651)
+* TGR-540: Migration unto the main-branch mockserver. This breaks the client-address. Rbel-Messages no longer carry the
+  information who sent the request (or who received the response). This will be added back in a later version (Ticket
+  TGR-651)
 
 ## Bugfixes
 
@@ -533,13 +646,16 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-660: Admin UI fixed
 
 -------
+
 # Release 0.24.0
 
 ## Features
 
-* TGR-331: In the Workflow UI as well as in the WebUi there is a drop-up in the menu which allows the user to filter the message requests from and to a certain server. The corresponding JEXL expression will be added to the input field
+* TGR-331: In the Workflow UI as well as in the WebUi there is a drop-up in the menu which allows the user to filter the
+  message requests from and to a certain server. The corresponding JEXL expression will be added to the input field
 * TGR-595: Spring boot health endpoints are added to the Tiger Proxy
-* TGR-545: In der WebUI we use a WebSocket now to inform the frontend that new traffic is available instead of pulling regularly or manual
+* TGR-545: In der WebUI we use a WebSocket now to inform the frontend that new traffic is available instead of pulling
+  regularly or manual
 
 ## Breaking changes
 
@@ -550,6 +666,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-624, TGR-630, TGR-633: Small fixes in the WebUi
 
 -------
+
 # Release 0.23.4
 
 ## Dependencies
@@ -561,14 +678,21 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 
 ## Features
 
-* TGR-580: Added two new steps "TGR pause test run execution with message {string}" and "TGR pause test run execution with message {string} and message in case of error {string}". The first one is the same as "TGR pause test run execution" but you can alter the message now. The second one gives you the choice to fail the testcase, if whatever you are waiting for or checking is not like you expected. All three steps are Workflow UI only now
-* TGR-594: optimize vertical spacing of messages in workflow UI rbel log details pane overview. Also changed hide header button to hide details button in bottom nav
+* TGR-580: Added two new steps "TGR pause test run execution with message {string}" and "TGR pause test run execution
+  with message {string} and message in case of error {string}". The first one is the same as "TGR pause test run
+  execution" but you can alter the message now. The second one gives you the choice to fail the testcase, if whatever
+  you are waiting for or checking is not like you expected. All three steps are Workflow UI only now
+* TGR-594: optimize vertical spacing of messages in workflow UI rbel log details pane overview. Also changed hide header
+  button to hide details button in bottom nav
 
 ## Bugfixes
 
 * TGR-561: Generated files from the tiger-maven-plugin now have leading zeros, so they execute in ascending order
-* TGR-589: Massive amount of externalURL servers can lead to concurrentmodification errors in proxy addroute method and will cause the testenv mgr to abort on setup of test environment, fixed by synchronizing the addRoute method in Tiger Proxy
-* TGR-593: Fixing lookup of docker compose files (located in classpath and using relative path references containing "../")
+* TGR-589: Massive amount of externalURL servers can lead to concurrentmodification errors in proxy addroute method and
+  will cause the testenv mgr to abort on setup of test environment, fixed by synchronizing the addRoute method in Tiger
+  Proxy
+* TGR-593: Fixing lookup of docker compose files (located in classpath and using relative path references
+  containing "../")
 * TGR-594: Fixing raw modal popup not working in all scenarios (workflow UI, Proxy webui, rbel log HTML file)
 * TGR-536: Filtering on the website no longer splits up message-pairs
 
@@ -577,6 +701,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-590: we removed tiger-aforeporter-plugin from Tiger
 
 -------
+
 # Release 0.23.3
 
 ## Dependencies
@@ -591,7 +716,8 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-534: When a shutdown is triggered during Startup External-Jars are now terminated correctly
 * TGR-486: Requirements are now correctly reported when using the Tiger maven plugin to create the serenity report
 * TGR-550: Fixed scenario outlines contain background steps multiple times
-* TGR-524: Tiger local proxy and Tiger WorkflowUI are now running on separate ports not interfering with ports from the free.port.x range
+* TGR-524: Tiger local proxy and Tiger WorkflowUI are now running on separate ports not interfering with ports from the
+  free.port.x range
 * TGR-370: Fixed standalone proxy failing on startup with null pointer exception
 
 ## Features
@@ -599,12 +725,15 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-541: Tiger Proxy WebUI now displays message timestamp in the menu
 * TGR-534: Traffic can now be uploaded from the Tiger Proxy WebUI
 * TGR-548: JEXL Debugging/RbelPath Debugging: help text is now collapsible
-* TGR-547: Tiger Workflow UI now links the scenarios in the feature list section in the sidebar with the scenario and its steps shown in the central execution pane for easier navigation
-* TGR-564: Show timestampes for loaded messages too, some optimizations to reduce vertical spacing in rbel log report. Saving traffic data now is stored in a file with it's name containing the current date
+* TGR-547: Tiger Workflow UI now links the scenarios in the feature list section in the sidebar with the scenario and
+  its steps shown in the central execution pane for easier navigation
+* TGR-564: Show timestampes for loaded messages too, some optimizations to reduce vertical spacing in rbel log report.
+  Saving traffic data now is stored in a file with it's name containing the current date
 * TGR-578: Headers im Rbel-Log in the WorkFlowUI and in the Tiger Proxy WebUI are now collapsable
 * TGR-551: Improve JEXL Debugging - each node is now linked to update filter
 
 -------
+
 # Release 0.23.2
 
 ## Dependencies
@@ -616,8 +745,10 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 
 ## Breaking changes
 
-* TGR-487: glue code "TGR current response at {string} matches as {word}:" now accepts an enums (JSON|XML) instead of strings and deprecated glue code "TGR current response at {string} matches as {word}" is removed
-* TGR-493: The Test library no longer produces a test jar as we moved all BDD stuff to src/main, thus including the tiger-test-lib jar will suffice. Please adapt your pom.xml to **not any more depend on tiger-test-lib test-jar**
+* TGR-487: glue code "TGR current response at {string} matches as {word}:" now accepts an enums (JSON|XML) instead of
+  strings and deprecated glue code "TGR current response at {string} matches as {word}" is removed
+* TGR-493: The Test library no longer produces a test jar as we moved all BDD stuff to src/main, thus including the
+  tiger-test-lib jar will suffice. Please adapt your pom.xml to **not any more depend on tiger-test-lib test-jar**
 
 ## Features
 
@@ -630,11 +761,13 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-553: Major resilience overhaul for reconnection in TigerProxy-Mesh-Setups
 
 -------
+
 # Release 0.23.0
 
 ## Breaking changes
 
-* TGR-483 rbel validator steps using a doc string as parameter and not ending with a colon ":" are marked deprecated and are replaced with a correct version ending with ":" The old version will be removed with 0.23.1
+* TGR-483 rbel validator steps using a doc string as parameter and not ending with a colon ":" are marked deprecated and
+  are replaced with a correct version ending with ":" The old version will be removed with 0.23.1
 
 ## Bugfixes
 
@@ -649,9 +782,11 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 
 ## Features
 
-* TGR-483 adding new steps to RbelValidator, allowing to check for existence of node in request / response and allowing to check for mismatching node in response
+* TGR-483 adding new steps to RbelValidator, allowing to check for existence of node in request / response and allowing
+  to check for mismatching node in response
 
 -------
+
 # Release 0.22.2
 
 ## Bugfixes
@@ -659,39 +794,57 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-523: Connection-lost issues for Tiger Proxy mesh-setups fixed.
 
 -------
+
 # Release 0.22.1
 
 ## Breaking Changes
-* Tiger maven plugin now purges the target/generated-test-sources/tigerbdd folder to avoid left over driver class files from previous runs.
-* Tiger maven plugin will by default only search for feature files in src/test/resources/features folder tree from now on, to avoid duplicate feature files also found in target subfolders.
+
+* Tiger maven plugin now purges the target/generated-test-sources/tigerbdd folder to avoid left over driver class files
+  from previous runs.
+* Tiger maven plugin will by default only search for feature files in src/test/resources/features folder tree from now
+  on, to avoid duplicate feature files also found in target subfolders.
 
 ## Features
-* A new step "TGR pause test run execution" will pause the execution and if workflow UI is active will display a nice banner with a continue button. Without workflow UI you can enter "next" in the console and press ENTER to continue test execution
+
+* A new step "TGR pause test run execution" will pause the execution and if workflow UI is active will display a nice
+  banner with a continue button. Without workflow UI you can enter "next" in the console and press ENTER to continue
+  test execution
 
 ## Bugfixes
-* TGR-516 "TGR wait for user abort" is now also working when workflow UI is disabled. You must have a console like environment like Bash or GitBash to be able to enter "quit" and press Enter
+
+* TGR-516 "TGR wait for user abort" is now also working when workflow UI is disabled. You must have a console like
+  environment like Bash or GitBash to be able to enter "quit" and press Enter
 * TGR-519: Fixed propagation in aggregating tiger proxies
 * TGR-521: Race-Condition fixed for heavy-duty TigerProxy settings
 
 ## Features
+
 * TGR-236: Logs of Tiger server instances are now also written to server specific log files
 
 -------
+
 # Release 0.21.0
 
 ## Breaking Changes
+
 * TGR-480: Healthchecks for docker compose services are not any more supported
 * TGR-480: Upgrade testcontainers 1.17.0, exposed ports behaviour has changed
-* TGR-513: The way tests are started and teared down have changed to prepare for workflow UI landing. The quit step is not functional at the moment, but the workflow UI will pause before shutdown and show a quit button to finish the test run (shutting down the test env). If no workflow UI is active the test will finish normally.
+* TGR-513: The way tests are started and teared down have changed to prepare for workflow UI landing. The quit step is
+  not functional at the moment, but the workflow UI will pause before shutdown and show a quit button to finish the test
+  run (shutting down the test env). If no workflow UI is active the test will finish normally.
 * TGR-248: removed OSEnvironment class, functionality is replaced by TigerGlobalConfiguration
 
 ## Features
+
 * TGR-482: TGR findLastRequest added in the glue code
 
 ## Bugfixes
-* TGR-480: docker compose is not working, in the fix a complete rewrite of the compose code part has been done, dropping the healthchecks property.
+
+* TGR-480: docker compose is not working, in the fix a complete rewrite of the compose code part has been done, dropping
+  the healthchecks property.
 
 -------
+
 # Release 0.20.2
 
 ## Breaking Changes
@@ -699,7 +852,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TigerDirector.getProxySettings is renamed to TigerDirector.getLocalTigerProxyUrl. Function remains unchanged.
 * During Startup TigerDirector now sets the localTigerProxy as the default-Proxy.
 * TGR-479: clean up the yaml file
-  * healthcheck renamed to healthcheckUrl and move up one level
+    * healthcheck renamed to healthcheckUrl and move up one level
 
 ## Features
 
@@ -710,26 +863,31 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 ## Bugfixes
 
 * TigerProxy-WebUI can now display traffic again
-* TGR-503: The Testenv-Mgr now by default uses the own JVM to start externalJar-Servers. This can be overriden by setting `tiger.lib.javaHome`
+* TGR-503: The Testenv-Mgr now by default uses the own JVM to start externalJar-Servers. This can be overriden by
+  setting `tiger.lib.javaHome`
 * TGR-508: Remote Tiger-Proxies can now also be supplied with TLS-Identities
 
 -------
+
 # Release 0.20.1
 
 ## Breaking Changes
 
-* RBEL-54: RbelElement now returns RbelMultiMap instead of List<Entry<String, RbelElement>>. Conceptually nothing changed
+* RBEL-54: RbelElement now returns RbelMultiMap instead of List<Entry<String, RbelElement>>. Conceptually nothing
+  changed
 * TGR-469: clean up the yaml file
-  * serverPort is renamed in adminPort
-  * port is renamed to proxyPort
-  * proxyCfg under tigerProxyCfg is omitted
+    * serverPort is renamed in adminPort
+    * port is renamed to proxyPort
+    * proxyCfg under tigerProxyCfg is omitted
 
 ## Features
+
 * TGR-461: Smaller improvements in TigerGlobalConfiguration:
-  * `TigerGlobalConfiguration.localScope()` allows scoped value addition
-  * Placeholders in keys are now resolved
-  * `TigerGlobalConfiguration.putValue()` now resolves nested values from objects
-  * instantiateConfigurationBean now returns an optional, allowing greater control when key was not found in configuration.
+    * `TigerGlobalConfiguration.localScope()` allows scoped value addition
+    * Placeholders in keys are now resolved
+    * `TigerGlobalConfiguration.putValue()` now resolves nested values from objects
+    * instantiateConfigurationBean now returns an optional, allowing greater control when key was not found in
+      configuration.
 * TGR-450,434,347: Updates im User manual (Failsafe plugin, chapter 5.4, smaller glitches)
 * TGR-440: Serenity dependencies are now provided to allow using Tiger without SerenityBDD
 * TGR-456: Useability review of admin ui
@@ -744,14 +902,15 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-461: Base key in `additionalYamls` is now honored
 
 -------
+
 # Release 0.20.0
 
 ## Breaking Changes
 
 * TGR-392: The tiger-bdd-driver-generator-maven-plugin is being replaced by the tiger-maven-plugin.
-  * The configuration is downward compatible
-  * The configuration is no longer strictly required. Sane defaults are supplied and can be used by convention over
-    configuration.
+    * The configuration is downward compatible
+    * The configuration is no longer strictly required. Sane defaults are supplied and can be used by convention over
+      configuration.
 
 ## Features
 
@@ -765,6 +924,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * ExternalJar-Server now correctly configures internal system properties
 
 -------
+
 # Release 0.19.4
 
 ## Breaking Changes
@@ -789,6 +949,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-431: Tiger can now also read traffic-files on startup
 
 -------
+
 # Release 0.19.3
 
 ## Bugfix
@@ -809,6 +970,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-420: Jexl-Debugging dialog added to Tiger-Proxy WebUI
 
 -------
+
 # Release 0.19.2
 
 ## Bugfix
@@ -828,6 +990,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-395: TIGER_ACTIVE is no longer necessary
 
 -------
+
 # Release 0.19.1
 
 ## Bugfix
@@ -835,6 +998,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * Fixing module with incomplete -sources and -javadoc JAR files
 
 -------
+
 # Release 0.19.0
 
 ## Breaking Change
@@ -865,6 +1029,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-341: Upgrade to Serenity BDD v3.1.16 and thus Selenium 4
 
 -------
+
 # Release 0.18.1
 
 ## Bugfix
@@ -877,6 +1042,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-306: Tiger admin UI now has "Duplicate node" feature
 
 -------
+
 # Release 0.18.0
 
 ## Breaking Change
@@ -901,6 +1067,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-264: add support for reason phrases in RBEL
 
 -------
+
 # Release 0.17.1
 
 ## Bugfix
@@ -916,6 +1083,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-250: Tests überarbeiten in TestTokenSubstituteHelper
 
 -------
+
 # Release 0.17.0
 
 ## Breaking Changes
@@ -924,8 +1092,8 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
   separated list of servers that need to be started prior to the given server. Please review & change all testenv.ymls
   accordingly.
 * TGR-193:
-  * PKI Keys' type have been changed from "cert / key" to "Certificate / Key"
-  * disableRbelParsing attribute has been renamed to activateRbelParsing with default value true
+    * PKI Keys' type have been changed from "cert / key" to "Certificate / Key"
+    * disableRbelParsing attribute has been renamed to activateRbelParsing with default value true
 
 ## Features
 
@@ -942,6 +1110,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-171: Banner Helper Klasse unterstützt keine deutschen Umlaute
 
 -------
+
 # Release 0.16.4
 
 ## Bugfix
@@ -949,6 +1118,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-219 bdd driver generator plugin created invalid feature path on windows
 
 -------
+
 # Release 0.16.2
 
 ## Bugfix
@@ -956,6 +1126,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-212 Content-Length now correctly after Rbel-Modifications
 
 -------
+
 # Release 0.16.0
 
 ## Features
@@ -964,6 +1135,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-120 The SSL-Suits of the servers are now configurable
 
 -------
+
 # Release 0.15.0
 
 ## Features
@@ -978,6 +1150,7 @@ TGR-714: docker, docker compose server types have been merged with helm chart su
 * TGR-179 TGR Step "show color text" failed with unknown color name
 
 -------
+
 # Release 0.14.0
 
 ## Neues
@@ -1029,8 +1202,8 @@ servers:
       ...
       active: true
 
-      # ALTE VERSION
-      - name: idp
+        # ALTE VERSION
+        - name: idp
   # NEUE VERSION
   idp2:
     hostname: idp
@@ -1041,6 +1214,7 @@ servers:
 ```
 
 -------
+
 # Release 0.13.0
 
 * Modifications added to tiger-proxy (Documentation still outstanding)
@@ -1048,6 +1222,7 @@ servers:
 * Documentation added
 
 -------
+
 # Release 0.12.0
 
 * Bugfix tiger-proxy: ASN1.Encodable parsing
@@ -1056,12 +1231,14 @@ servers:
 * Reverse-proxy-routes give the target-server as receiver/sender
 
 -------
+
 # Release 0.11.0
 
 Bug fix Release Lokale Resources fix (routeModal.html)
 Messagelist index fixed im Webui WorkingDir wird automatisch angelegt
 
 -------
+
 # Release 0.10.0
 
 * Memory-Leak fixed
@@ -1069,6 +1246,7 @@ Messagelist index fixed im Webui WorkingDir wird automatisch angelegt
 * Manual Update-Bug fixed
 
 -------
+
 # Release 0.9.0
 
 * Longer chains are supported for Tiger Proxy TSL-Identities
@@ -1081,31 +1259,37 @@ Messagelist index fixed im Webui WorkingDir wird automatisch angelegt
 * TigerProxy as type in TestEnv
 
 -------
+
 # Release 0.8.1
 
 Javadoc Fix
 
 -------
+
 # Release 0.8.0
 
 * Bugfix TigerRoute YAML instantiation
 
 -------
+
 # Release 0.7.0
 
 mvn deploy fix
 
 -------
+
 # Release 0.5.0
 
 mvn deploy fix
 
 -------
+
 # Release 0.4.0
 
 mvn central deploy fix
 
 -------
+
 # Release 0.3.0
 
 Initial release

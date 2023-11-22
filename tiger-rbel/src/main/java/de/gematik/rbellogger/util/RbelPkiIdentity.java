@@ -30,7 +30,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RbelPkiIdentity {
 
-    private X509Certificate certificate;
-    private PrivateKey privateKey;
-    private Optional<String> keyId;
+  private X509Certificate certificate;
+  private PrivateKey privateKey;
+  private Optional<String> keyId;
 }

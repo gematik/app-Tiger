@@ -32,77 +32,80 @@ import org.jose4j.lang.JoseException;
 
 public class RbelJweConverter implements RbelConverterPlugin {
 
-    static {
-        BrainpoolCurves.init();
+  static {
+    BrainpoolCurves.init();
+  }
+
+  @Override
+  public void consumeElement(final RbelElement rbel, final RbelConverter context) {
+    final Optional<JsonWebEncryption> jweOptional = initializeJwe(rbel);
+    if (jweOptional.isEmpty()) {
+      return;
     }
+    final JsonWebEncryption jwe = jweOptional.get();
 
-    @Override
-    public void consumeElement(final RbelElement rbel, final RbelConverter context) {
-        final Optional<JsonWebEncryption> jweOptional = initializeJwe(rbel);
-        if (jweOptional.isEmpty()) {
-            return;
-        }
-        final JsonWebEncryption jwe = jweOptional.get();
-
-        final Optional<Pair<String, String>> correctKeyAndPayload = findCorrectKeyAndReturnPayload(context, jwe);
-        RbelJweFacet jweFacet;
-        if (correctKeyAndPayload.isEmpty()) {
-            jweFacet = RbelJweFacet.builder()
-                .header(context.convertElement(jwe.getHeaders().getFullHeaderAsJsonString(), rbel))
-                .body(context.convertElement("<Encrypted Payload>", rbel))
-                .encryptionInfo(buildEncryptionInfo(false, null, rbel))
-                .build();
-        } else {
-            jweFacet = RbelJweFacet.builder()
-                .header(context.convertElement(jwe.getHeaders().getFullHeaderAsJsonString(), rbel))
-                .body(context.convertElement(correctKeyAndPayload.get().getValue(), rbel))
-                .encryptionInfo(buildEncryptionInfo(true, correctKeyAndPayload.get().getKey(), rbel))
-                .build();
-        }
-        rbel.addFacet(jweFacet);
-        rbel.addFacet(new RbelRootFacet<>(jweFacet));
+    final Optional<Pair<String, String>> correctKeyAndPayload =
+        findCorrectKeyAndReturnPayload(context, jwe);
+    RbelJweFacet jweFacet;
+    if (correctKeyAndPayload.isEmpty()) {
+      jweFacet =
+          RbelJweFacet.builder()
+              .header(context.convertElement(jwe.getHeaders().getFullHeaderAsJsonString(), rbel))
+              .body(context.convertElement("<Encrypted Payload>", rbel))
+              .encryptionInfo(buildEncryptionInfo(false, null, rbel))
+              .build();
+    } else {
+      jweFacet =
+          RbelJweFacet.builder()
+              .header(context.convertElement(jwe.getHeaders().getFullHeaderAsJsonString(), rbel))
+              .body(context.convertElement(correctKeyAndPayload.get().getValue(), rbel))
+              .encryptionInfo(buildEncryptionInfo(true, correctKeyAndPayload.get().getKey(), rbel))
+              .build();
     }
+    rbel.addFacet(jweFacet);
+    rbel.addFacet(new RbelRootFacet<>(jweFacet));
+  }
 
-    private RbelElement buildEncryptionInfo(boolean decryptable, String keyId, RbelElement jweElement) {
-        final RbelElement encryptionInfoElement = RbelElement.builder()
-            .parentNode(jweElement)
-            .rawContent(null)
-            .build();
+  private RbelElement buildEncryptionInfo(
+      boolean decryptable, String keyId, RbelElement jweElement) {
+    final RbelElement encryptionInfoElement =
+        RbelElement.builder().parentNode(jweElement).rawContent(null).build();
 
-        encryptionInfoElement.addFacet(RbelJweEncryptionInfo.builder()
+    encryptionInfoElement.addFacet(
+        RbelJweEncryptionInfo.builder()
             .wasDecryptable(RbelElement.wrap(null, encryptionInfoElement, decryptable))
             .decryptedUsingKeyWithId(RbelElement.wrap(null, encryptionInfoElement, keyId))
             .build());
 
-        return encryptionInfoElement;
+    return encryptionInfoElement;
+  }
+
+  private Optional<Pair<String, String>> findCorrectKeyAndReturnPayload(
+      RbelConverter context, JsonWebEncryption jwe) {
+    for (RbelKey keyEntry : context.getRbelKeyManager().getAllKeys().collect(Collectors.toList())) {
+      try {
+        jwe.setKey(keyEntry.getKey());
+        return Optional.of(Pair.of(keyEntry.getKeyName(), jwe.getPayload()));
+      } catch (Exception e) {
+        continue;
+      }
     }
+    return Optional.empty();
+  }
 
-    private Optional<Pair<String, String>> findCorrectKeyAndReturnPayload(RbelConverter context,
-        JsonWebEncryption jwe) {
-        for (RbelKey keyEntry : context.getRbelKeyManager().getAllKeys().collect(Collectors.toList())) {
-            try {
-                jwe.setKey(keyEntry.getKey());
-                return Optional.of(Pair.of(keyEntry.getKeyName(), jwe.getPayload()));
-            } catch (Exception e) {
-                continue;
-            }
-        }
-        return Optional.empty();
+  @SneakyThrows
+  private Optional<JsonWebEncryption> initializeJwe(RbelElement rbel) {
+    final JsonWebEncryption receiverJwe = new JsonWebEncryption();
+
+    receiverJwe.setDoKeyValidation(false);
+    receiverJwe.setAlgorithmConstraints(AlgorithmConstraints.NO_CONSTRAINTS);
+
+    try {
+      receiverJwe.setCompactSerialization(rbel.getRawStringContent());
+      receiverJwe.getHeaders();
+      return Optional.ofNullable(receiverJwe);
+    } catch (final JoseException e) {
+      return Optional.empty();
     }
-
-    @SneakyThrows
-    private Optional<JsonWebEncryption> initializeJwe(RbelElement rbel) {
-        final JsonWebEncryption receiverJwe = new JsonWebEncryption();
-
-        receiverJwe.setDoKeyValidation(false);
-        receiverJwe.setAlgorithmConstraints(AlgorithmConstraints.NO_CONSTRAINTS);
-
-        try {
-            receiverJwe.setCompactSerialization(rbel.getRawStringContent());
-            receiverJwe.getHeaders();
-            return Optional.ofNullable(receiverJwe);
-        } catch (final JoseException e) {
-            return Optional.empty();
-        }
-    }
+  }
 }

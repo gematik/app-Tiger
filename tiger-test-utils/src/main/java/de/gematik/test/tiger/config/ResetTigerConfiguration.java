@@ -25,7 +25,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 @ExtendWith({ResetTigerConfigurationExtension.class})
 public @interface ResetTigerConfiguration {
 
-    boolean beforeAllMethods() default true;
+  boolean beforeAllMethods() default true;
 
-    boolean afterAllMethods() default true;
+  boolean afterAllMethods() default true;
 }

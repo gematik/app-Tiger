@@ -20,6 +20,7 @@ import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.ancestorTi
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.vertParentTitle;
 import static j2html.TagCreator.div;
 import static j2html.TagCreator.pre;
+
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
@@ -38,49 +39,57 @@ import lombok.Data;
 @Builder(toBuilder = true)
 public class RbelXmlFacet implements RbelFacet {
 
-    static {
-        RbelHtmlRenderer.registerFacetRenderer(new RbelHtmlFacetRenderer() {
-            @Override
-            public boolean checkForRendering(RbelElement element) {
-                return element.hasFacet(RbelXmlFacet.class)
-                    && element.getFacet(RbelRootFacet.class)
+  static {
+    RbelHtmlRenderer.registerFacetRenderer(
+        new RbelHtmlFacetRenderer() {
+          @Override
+          public boolean checkForRendering(RbelElement element) {
+            return element.hasFacet(RbelXmlFacet.class)
+                && element
+                    .getFacet(RbelRootFacet.class)
                     .filter(root -> root.getRootFacet() instanceof RbelXmlFacet)
                     .isPresent();
-            }
+          }
 
-            @Override
-            public ContainerTag performRendering(RbelElement element, Optional<String> key,
-                RbelHtmlRenderingToolkit renderingToolkit) {
-                String formattedXml = renderingToolkit.prettyPrintXml(element.getRawStringContent());
-                for (final Entry<UUID, JsonNoteEntry> entry : renderingToolkit.getNoteTags().entrySet()) {
-                    if (formattedXml.contains(entry.getValue().getStringToMatch() + ",")) {
-                        formattedXml = formattedXml.replace(
-                            entry.getValue().getStringToMatch() + ",",
-                            entry.getValue().getTagForKeyReplacement().render() + "," + entry.getValue()
-                                .getTagForValueReplacement().render());
-                    } else if (formattedXml.contains(entry.getValue().getStringToMatch())) {
-                        formattedXml = formattedXml.replace(
-                            entry.getValue().getStringToMatch(),
-                            entry.getValue().getTagForKeyReplacement().render() + entry.getValue()
-                                .getTagForValueReplacement().render());
-                    }
-                }
-                return ancestorTitle()
-                    .with(
-                        vertParentTitle().with(
-                            div().withClass("tile is-child pe-3").with(
-                                pre(new Text(formattedXml))
-                                    .withClass("json language-xml")
-                            ).with(renderingToolkit.convertNested(element))));
+          @Override
+          public ContainerTag performRendering(
+              RbelElement element,
+              Optional<String> key,
+              RbelHtmlRenderingToolkit renderingToolkit) {
+            String formattedXml = renderingToolkit.prettyPrintXml(element.getRawStringContent());
+            for (final Entry<UUID, JsonNoteEntry> entry :
+                renderingToolkit.getNoteTags().entrySet()) {
+              if (formattedXml.contains(entry.getValue().getStringToMatch() + ",")) {
+                formattedXml =
+                    formattedXml.replace(
+                        entry.getValue().getStringToMatch() + ",",
+                        entry.getValue().getTagForKeyReplacement().render()
+                            + ","
+                            + entry.getValue().getTagForValueReplacement().render());
+              } else if (formattedXml.contains(entry.getValue().getStringToMatch())) {
+                formattedXml =
+                    formattedXml.replace(
+                        entry.getValue().getStringToMatch(),
+                        entry.getValue().getTagForKeyReplacement().render()
+                            + entry.getValue().getTagForValueReplacement().render());
+              }
             }
+            return ancestorTitle()
+                .with(
+                    vertParentTitle()
+                        .with(
+                            div()
+                                .withClass("tile is-child pe-3")
+                                .with(pre(new Text(formattedXml)).withClass("json language-xml"))
+                                .with(renderingToolkit.convertNested(element))));
+          }
         });
-    }
+  }
 
-    @Builder.Default
-    private final RbelMultiMap childElements = new RbelMultiMap();
+  @Builder.Default private final RbelMultiMap childElements = new RbelMultiMap();
 
-    @Override
-    public RbelMultiMap getChildElements() {
-        return childElements;
-    }
+  @Override
+  public RbelMultiMap getChildElements() {
+    return childElements;
+  }
 }

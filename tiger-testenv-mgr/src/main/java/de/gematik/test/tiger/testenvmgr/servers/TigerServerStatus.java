@@ -17,6 +17,8 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 public enum TigerServerStatus {
-
-    NEW, STARTING, RUNNING, STOPPED
+  NEW,
+  STARTING,
+  RUNNING,
+  STOPPED
 }

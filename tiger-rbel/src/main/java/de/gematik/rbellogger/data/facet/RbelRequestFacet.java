@@ -21,21 +21,17 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
-/**
- * Empty marker: The element is a request.
- */
+/** Empty marker: The element is a request. */
 @Data
 @Builder
 @RequiredArgsConstructor
 public class RbelRequestFacet implements RbelFacet {
 
-    /**
-     * Short info string describing this request. Will primarily be displayed in the menu.
-     */
-    private final String menuInfoString;
+  /** Short info string describing this request. Will primarily be displayed in the menu. */
+  private final String menuInfoString;
 
-    @Override
-    public RbelMultiMap getChildElements() {
-        return new RbelMultiMap();
-    }
+  @Override
+  public RbelMultiMap getChildElements() {
+    return new RbelMultiMap();
+  }
 }

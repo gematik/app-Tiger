@@ -4,11 +4,9 @@ import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 
 public class RbelObjectJexl {
 
-    private RbelObjectJexl() {
+  private RbelObjectJexl() {}
 
-    }
-
-    public static void initJexl(RbelBuilderManager builder) {
-        TigerJexlExecutor.registerAdditionalNamespace("rbelObject", builder);
-    }
+  public static void initJexl(RbelBuilderManager builder) {
+    TigerJexlExecutor.registerAdditionalNamespace("rbelObject", builder);
+  }
 }

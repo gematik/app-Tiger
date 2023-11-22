@@ -1,2 +1,3 @@
-package de.gematik.test.tiger.testenvmgr;public class TigerTestEnvShutdownManager {
-}
+package de.gematik.test.tiger.testenvmgr;
+
+public class TigerTestEnvShutdownManager {}

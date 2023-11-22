@@ -33,9 +33,10 @@ import org.jose4j.lang.JoseException;
 
 public class RbelJwkReader implements RbelConverterPlugin {
 
-    @Override
-    public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
-        final List<RbelElement> keysList = Optional.of(rbelElement)
+  @Override
+  public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
+    final List<RbelElement> keysList =
+        Optional.of(rbelElement)
             .filter(element -> element.hasFacet(RbelJsonFacet.class))
             .map(element -> element.getAll("keys"))
             .stream()
@@ -49,24 +50,28 @@ public class RbelJwkReader implements RbelConverterPlugin {
             .flatMap(List::stream)
             .collect(Collectors.toList());
 
-        for (RbelElement keyElement : keysList) {
-            tryToConvertKeyAndAddToKeyManager(keyElement, converter);
-        }
+    for (RbelElement keyElement : keysList) {
+      tryToConvertKeyAndAddToKeyManager(keyElement, converter);
     }
+  }
 
-    private void tryToConvertKeyAndAddToKeyManager(RbelElement keyElement, RbelConverter converter) {
-        try {
-            final JsonWebKey jwk = Factory.newJwk(keyElement.getRawStringContent());
-            converter.getRbelKeyManager().addKey(RbelKey.builder()
-                .key(jwk.getKey())
-                .keyName(jwk.getKeyId())
-                .precedence(RbelKey.PRECEDENCE_JWK_VALUE)
-                .build());
-        } catch (RuntimeException | JoseException e) {
-            keyElement.addFacet(RbelNoteFacet.builder()
-                .value("Unable to parse key: " + e.getMessage())
-                .style(NoteStyling.WARN)
-                .build());
-        }
+  private void tryToConvertKeyAndAddToKeyManager(RbelElement keyElement, RbelConverter converter) {
+    try {
+      final JsonWebKey jwk = Factory.newJwk(keyElement.getRawStringContent());
+      converter
+          .getRbelKeyManager()
+          .addKey(
+              RbelKey.builder()
+                  .key(jwk.getKey())
+                  .keyName(jwk.getKeyId())
+                  .precedence(RbelKey.PRECEDENCE_JWK_VALUE)
+                  .build());
+    } catch (RuntimeException | JoseException e) {
+      keyElement.addFacet(
+          RbelNoteFacet.builder()
+              .value("Unable to parse key: " + e.getMessage())
+              .style(NoteStyling.WARN)
+              .build());
     }
+  }
 }

@@ -17,8 +17,8 @@
 "use strict";
 
 import backendClient from '/backendClient.js'
-import SenderReceiversFrequencyCounter from '/senderReceiversFrequencyCounter.js'
-
+import SenderReceiversFrequencyCounter
+  from '/senderReceiversFrequencyCounter.js'
 
 let lastUuid = "";
 let filterCriterion = "";
@@ -31,7 +31,7 @@ let empty = "empty";
 const NO_REQUEST = "no requests";
 
 let resetBtn;
-let saveBtn;
+let exportBtn;
 let quitBtn;
 let importBtn;
 let includeFilterInDownload = false;
@@ -128,7 +128,7 @@ function createDownloadOptionsQueryString() {
 document.addEventListener('DOMContentLoaded', function () {
   rootEl = document.documentElement;
   resetBtn = document.getElementById("resetMsgs");
-  saveBtn = document.getElementById("saveMsgs");
+  exportBtn = document.getElementById("exportMsgs");
   importBtn = document.getElementById("importMsgs");
   quitBtn = document.getElementById("quitProxy");
   jexlInspectionResultDiv = document.getElementById("jexlResult");
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   btnOpenRouteModal.addEventListener('click', showModalsCB);
   btnOpenFilterModal.addEventListener('click', showModalsCB);
-  saveBtn.addEventListener('click', showModalSave);
+  exportBtn.addEventListener('click', showModalSave);
   importBtn.addEventListener('click', showModalImport);
 
   collapsibleDetails = document.getElementById("collapsibleMessageDetails");
@@ -826,12 +826,24 @@ function copyPathToInputField(event, element) {
   var text = element.textContent;
   var el = element.previousElementSibling;
   var marker = el.textContent;
+
+  function stringContainsNonWordCharacters(testString) {
+    return testString.match("\\W") != null;
+  }
+
+  if (stringContainsNonWordCharacters(text)) {
+    text = "['" + text + "']";
+  }
   while (el != null) {
     if (el.classList) {
       if (el.classList.contains('jexlResponseLink')) {
         if (el.previousElementSibling.classList.contains('text-danger') &&
             el.previousElementSibling.textContent.length < marker.length) {
-          text = el.textContent + "." + text;
+          if (stringContainsNonWordCharacters(el.textContent)) {
+            text = "['" + el.textContent + "']." + text;
+          } else {
+            text = el.textContent + "." + text;
+          }
           marker = el.previousElementSibling.textContent;
         }
       }
@@ -1104,6 +1116,8 @@ function updatePageSelector(pagesAvailable) {
         + '</a>';
   }
   selector.innerHTML = selectorInnerHtml;
+  document.getElementById("pageNumberDisplay").textContent =
+      "Page " + (pageNumber + 1);
 }
 
 let tobeScrolledToUUID;

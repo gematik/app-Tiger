@@ -19,7 +19,7 @@ package de.gematik.rbellogger.modifier;
 import de.gematik.rbellogger.data.RbelElement;
 
 public interface RbelElementWriter {
-    boolean canWrite(RbelElement oldTargetElement);
+  boolean canWrite(RbelElement oldTargetElement);
 
-    byte[] write(RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, byte[] newContent);
+  byte[] write(RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, byte[] newContent);
 }

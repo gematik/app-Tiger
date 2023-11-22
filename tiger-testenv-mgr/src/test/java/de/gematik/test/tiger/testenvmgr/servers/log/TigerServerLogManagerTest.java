@@ -18,6 +18,7 @@ package de.gematik.test.tiger.testenvmgr.servers.log;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static uk.org.webcompere.systemstubs.SystemStubs.tapSystemErrNormalized;
+
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -37,39 +38,40 @@ import uk.org.webcompere.systemstubs.stream.SystemErr;
 @Slf4j
 class TigerServerLogManagerTest {
 
-    @BeforeEach
-    @AfterEach
-    void setup() {
-        TigerGlobalConfiguration.reset();
-        Path.of("target", "serverLogs").toFile().deleteOnExit();
-    }
+  @BeforeEach
+  @AfterEach
+  void setup() {
+    TigerGlobalConfiguration.reset();
+    Path.of("target", "serverLogs").toFile().deleteOnExit();
+  }
 
-    @SystemStub
-    private SystemErr systemErr;
+  @SystemStub private SystemErr systemErr;
 
-    @Test
-    void testCheckAddAppenders_OK() throws Exception {
-        String logMessage = "This is a test log!";
-        String logFile = "target/serverLogs/test.log";
-        String serverID = "ExternalJar-001";
-        final CfgServer configuration = new CfgServer();
-        configuration.setExternalJarOptions(new CfgExternalJarOptions());
-        configuration.getExternalJarOptions().setActivateLogs(true);
-        configuration.setType(ExternalJarServer.class.getAnnotation(TigerServerType.class));
-        configuration.setLogFile(logFile);
-        ExternalJarServer server = ExternalJarServer.builder().serverId(serverID).configuration(configuration).build();
-        TigerServerLogManager.addAppenders(server);
-        Logger dummyLog = server.getLog();
-        String text = tapSystemErrNormalized(() -> System.err.println(logMessage));
-        dummyLog.info(logMessage);
+  @Test
+  void testCheckAddAppenders_OK() throws Exception {
+    String logMessage = "This is a test log!";
+    String logFile = "target/serverLogs/test.log";
+    String serverID = "ExternalJar-001";
+    final CfgServer configuration = new CfgServer();
+    configuration.setExternalJarOptions(new CfgExternalJarOptions());
+    configuration.getExternalJarOptions().setActivateLogs(true);
+    configuration.setType(ExternalJarServer.class.getAnnotation(TigerServerType.class));
+    configuration.setLogFile(logFile);
+    ExternalJarServer server =
+        ExternalJarServer.builder().serverId(serverID).configuration(configuration).build();
+    TigerServerLogManager.addAppenders(server);
+    Logger dummyLog = server.getLog();
+    String text = tapSystemErrNormalized(() -> System.err.println(logMessage));
+    dummyLog.info(logMessage);
 
-        assertThat(new File(logFile)).content().contains(logMessage);
-        assertThat(dummyLog.getName()).isEqualTo("TgrSrv-" +serverID);
-        assertThat(text).contains(logMessage);
-    }
+    assertThat(new File(logFile)).content().contains(logMessage);
+    assertThat(dummyLog.getName()).isEqualTo("TgrSrv-" + serverID);
+    assertThat(text).contains(logMessage);
+  }
 
-
-    @TigerTest(tigerYaml = """
+  @TigerTest(
+      tigerYaml =
+          """
             localProxyActive: false
             servers:
               externalJarServer:
@@ -85,13 +87,16 @@ class TigerServerLogManagerTest {
                     - "--httpPort=${free.port.0}"
                     - "--webroot=."
             """)
-    @Test
-    void testCheckAddAppendersEnabledLog_OK() throws Exception {
-        assertThat(new File("target/serverLogs/test1.log")).content()
-                .contains("Winstone Servlet Engine ");
-    }
+  @Test
+  void testCheckAddAppendersEnabledLog_OK() throws Exception {
+    assertThat(new File("target/serverLogs/test1.log"))
+        .content()
+        .contains("Winstone Servlet Engine ");
+  }
 
-    @TigerTest(tigerYaml = """
+  @TigerTest(
+      tigerYaml =
+          """
             localProxyActive: false
             servers:
               externalJarServer:
@@ -108,13 +113,14 @@ class TigerServerLogManagerTest {
                     - "--httpPort=${free.port.0}"
                     - "--webroot=."
             """)
-    @Test
-    void testCheckAddAppendersDisabledLog_OK() {
-        assertThat(new File("target/serverLogs/test2.log")).doesNotExist();
-    }
+  @Test
+  void testCheckAddAppendersDisabledLog_OK() {
+    assertThat(new File("target/serverLogs/test2.log")).doesNotExist();
+  }
 
-
-    @TigerTest(tigerYaml = """
+  @TigerTest(
+      tigerYaml =
+          """
             localProxyActive: false
             servers:
               externalJarServer:
@@ -131,13 +137,16 @@ class TigerServerLogManagerTest {
                     - "--httpPort=${free.port.0}"
                     - "--webroot=."
             """)
-    @Test
-    void testCheckAddAppendersDisabledOnlyWorkflowUiLog_OK() {
-        assertThat(new File("target/serverLogs/test3.log")).content()
-            .contains("Winstone Servlet Engine ");
-    }
+  @Test
+  void testCheckAddAppendersDisabledOnlyWorkflowUiLog_OK() {
+    assertThat(new File("target/serverLogs/test3.log"))
+        .content()
+        .contains("Winstone Servlet Engine ");
+  }
 
-    @TigerTest(tigerYaml = """
+  @TigerTest(
+      tigerYaml =
+          """
             localProxyActive: false
             servers:
               externalJarServer:
@@ -155,8 +164,8 @@ class TigerServerLogManagerTest {
                     - "--httpPort=${free.port.0}"
                     - "--webroot=."
             """)
-    @Test
-    void testCheckAddAppendersDisabledAllButOnlyWorkflowUiLog_OK() {
-        assertThat(new File("target/serverLogs/test4.log")).doesNotExist();
-    }
+  @Test
+  void testCheckAddAppendersDisabledAllButOnlyWorkflowUiLog_OK() {
+    assertThat(new File("target/serverLogs/test4.log")).doesNotExist();
+  }
 }

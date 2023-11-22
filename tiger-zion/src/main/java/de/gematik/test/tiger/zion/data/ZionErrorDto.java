@@ -6,8 +6,7 @@ import lombok.Data;
 @Data
 @Builder
 public class ZionErrorDto {
-    private final String errorMessage;
-    private final String errorType;
-    private final String stacktrace;
-
+  private final String errorMessage;
+  private final String errorType;
+  private final String stacktrace;
 }

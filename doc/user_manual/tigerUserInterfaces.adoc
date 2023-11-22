@@ -29,7 +29,7 @@ The displayed buttons can trigger the following actions:
 * *Toggle Button*  … has two possibilities (hide headers and hide details) which collapses either all headers (request headers as well as response headers) or all the detailed information of the requests and responses.
 * *Filter*  … allows you to filter the received messages with a RbelPath or a JEXL expression. You can also search for text or a regex in this input field, but then you need to place the search text inside quotation marks (").
 * *Reset* … allows you to delete all recorded messages so far. This will delete all messages on the Tiger Proxy!
-* *Save* … allows you to save all or the currently filtered received messages as an HTML page or as a machine-readable tgr file.
+* *Export* … allows you to export all or the currently filtered received messages as an HTML page or as a machine-readable tgr file.
 * *Page* … allows pagination of the messages.
 * *Size* … changes the size of the messages.
 * *Import* … allows you to import the previously stored traffic file.

@@ -28,17 +28,17 @@ import lombok.RequiredArgsConstructor;
 @Data
 public class TigerServerStatusUpdateDto {
 
-    private String statusMessage;
-    private String type;
-    private String baseUrl;
-    private TigerServerStatus status;
+  private String statusMessage;
+  private String type;
+  private String baseUrl;
+  private TigerServerStatus status;
 
-    public static TigerServerStatusUpdateDto fromUpdate(final TigerServerStatusUpdate value) {
-        return TigerServerStatusUpdateDto.builder()
-            .statusMessage(value.getStatusMessage())
-            .type(value.getType())
-            .status(value.getStatus())
-            .baseUrl(value.getBaseUrl())
-            .build();
-    }
+  public static TigerServerStatusUpdateDto fromUpdate(final TigerServerStatusUpdate value) {
+    return TigerServerStatusUpdateDto.builder()
+        .statusMessage(value.getStatusMessage())
+        .type(value.getType())
+        .status(value.getStatus())
+        .baseUrl(value.getBaseUrl())
+        .build();
+  }
 }

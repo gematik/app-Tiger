@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,11 +44,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class TigerSerenityReportMojoTest {
 
-  @Mock
-  private Log log;
+  @Mock private Log log;
 
-  @TempDir
-  private Path reportDir;
+  @TempDir private Path reportDir;
 
   private TigerSerenityReportMojo underTest;
 
@@ -85,43 +84,50 @@ class TigerSerenityReportMojoTest {
 
     // Assertion
     assertAll(
-        () -> assertThat(readAllLines(reportDir.resolve("results.csv")),
-            containsInAnyOrder(
-                startsWith("\"Story\",\"Title\",\"Result\","),
-                startsWith("\"Test Tiger BDD\",\"Simple first test\",\"SUCCESS\","),
-                startsWith("\"Test Tiger BDD\",\"Simple second test\",\"FAILURE\","),
-                startsWith("\"Test Tiger BDD\",\"Simple third test\",\"SUCCESS\",")
-            )),
-        () -> assertThat(readString(reportDir.resolve("serenity-summary.html")),
-            containsString("2 passing tests")),
-        () -> assertThat(readString(reportDir.resolve("serenity-summary.html")),
-            containsString("1 failing test")),
-        () -> assertThat(readString(reportDir.resolve("serenity-summary.html")),
-            containsString(
-                "Assertion error: Expecting actual:  &quot;jetty-dir.css&quot;to match pattern:  &quot;mööööp&quot;")),
-        () -> assertTrue(Files.exists(reportDir.resolve("index.html")), "index.html exists")
-    );
+        () ->
+            assertThat(
+                readAllLines(reportDir.resolve("results.csv")),
+                containsInAnyOrder(
+                    startsWith("\"Story\",\"Title\",\"Result\","),
+                    startsWith("\"Test Tiger BDD\",\"Simple first test\",\"SUCCESS\","),
+                    startsWith("\"Test Tiger BDD\",\"Simple second test\",\"FAILURE\","),
+                    startsWith("\"Test Tiger BDD\",\"Simple third test\",\"SUCCESS\","))),
+        () ->
+            assertThat(
+                readString(reportDir.resolve("serenity-summary.html")),
+                containsString("2 passing tests")),
+        () ->
+            assertThat(
+                readString(reportDir.resolve("serenity-summary.html")),
+                containsString("1 failing test")),
+        () ->
+            assertThat(
+                readString(reportDir.resolve("serenity-summary.html")),
+                containsString(
+                    "Assertion error: Expecting actual:  &quot;jetty-dir.css&quot;to match pattern:"
+                        + "  &quot;mööööp&quot;")),
+        () -> assertTrue(Files.exists(reportDir.resolve("index.html")), "index.html exists"));
   }
 
   @Tag("de.gematik.test.tiger.common.LongrunnerTest")
   @Test
-  @DisplayName("If the property openSerenityReportInBrowser is set, the browser should open with the serenity report")
+  @DisplayName(
+      "If the property openSerenityReportInBrowser is set, the browser should open with the"
+          + " serenity report")
   @SneakyThrows
   void testIfTheBrowserOpensWithSerenityReport() {
-    // Preparation
-    underTest.setOpenSerenityReportInBrowser(true);
-    // Execution
-    underTest.execute();
-
-    // Assertion
-    assertThatNoException();
+    assertThatNoException()
+        .isThrownBy(
+            () -> {
+              underTest.setOpenSerenityReportInBrowser(true);
+              underTest.execute();
+            });
   }
 
   @SneakyThrows
   private void prepareReportDir() {
-    final var repoRessourceDir = Paths.get(
-        getClass().getResource("/serenetyReports/fresh").toURI());
+    final var repoRessourceDir =
+        Paths.get(getClass().getResource("/serenetyReports/fresh").toURI());
     FileUtils.copyDirectory(repoRessourceDir.toFile(), reportDir.toFile());
   }
-
 }

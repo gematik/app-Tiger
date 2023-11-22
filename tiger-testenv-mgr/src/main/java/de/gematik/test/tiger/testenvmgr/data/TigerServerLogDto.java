@@ -26,17 +26,17 @@ import lombok.*;
 @Data
 @EqualsAndHashCode
 public class TigerServerLogDto {
-    private String serverName;
-    private String logLevel;
-    private LocalDateTime localDateTime;
-    private String logMessage;
+  private String serverName;
+  private String logLevel;
+  private LocalDateTime localDateTime;
+  private String logMessage;
 
-    public static TigerServerLogDto createFrom(final TigerServerLogUpdate update) {
-        return TigerServerLogDto.builder()
-            .logLevel(update.getLogLevel())
-            .logMessage(update.getLogMessage())
-            .serverName(update.getServerName())
-            .localDateTime(LocalDateTime.now())
-            .build();
-    }
+  public static TigerServerLogDto createFrom(final TigerServerLogUpdate update) {
+    return TigerServerLogDto.builder()
+        .logLevel(update.getLogLevel())
+        .logMessage(update.getLogMessage())
+        .serverName(update.getServerName())
+        .localDateTime(LocalDateTime.now())
+        .build();
+  }
 }

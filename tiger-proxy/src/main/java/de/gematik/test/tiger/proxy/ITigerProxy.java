@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.proxy;
 
-
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import java.security.Key;
@@ -24,27 +23,27 @@ import java.util.List;
 
 public interface ITigerProxy {
 
-    TigerRoute addRoute(TigerRoute tigerRoute);
+  TigerRoute addRoute(TigerRoute tigerRoute);
 
-    void removeRoute(String routeId);
+  void removeRoute(String routeId);
 
-    void addRbelMessageListener(IRbelMessageListener listener);
+  void addRbelMessageListener(IRbelMessageListener listener);
 
-    void removeRbelMessageListener(IRbelMessageListener listener);
+  void removeRbelMessageListener(IRbelMessageListener listener);
 
-    String getBaseUrl();
+  String getBaseUrl();
 
-    int getProxyPort();
+  int getProxyPort();
 
-    void addKey(String keyid, Key key);
+  void addKey(String keyid, Key key);
 
-    List<TigerRoute> getRoutes();
+  List<TigerRoute> getRoutes();
 
-    void clearAllRoutes();
+  void clearAllRoutes();
 
-    RbelModificationDescription addModificaton(RbelModificationDescription modification);
+  RbelModificationDescription addModificaton(RbelModificationDescription modification);
 
-    List<RbelModificationDescription> getModifications();
+  List<RbelModificationDescription> getModifications();
 
-    void removeModification(String modificationId);
+  void removeModification(String modificationId);
 }

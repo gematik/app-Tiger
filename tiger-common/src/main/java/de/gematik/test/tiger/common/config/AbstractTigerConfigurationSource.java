@@ -16,37 +16,49 @@
 
 package de.gematik.test.tiger.common.config;
 
-import lombok.Getter;
-
 import java.util.List;
 import java.util.Map;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
-/**
- * Base class that stores key/value-pairs from a source.
- */
+/** Base class that stores key/value-pairs from a source. */
 @Getter
-public abstract class AbstractTigerConfigurationSource {
+@EqualsAndHashCode
+public abstract class AbstractTigerConfigurationSource
+    implements Comparable<AbstractTigerConfigurationSource> {
 
-    private final TigerConfigurationKey basePath;
-    private final SourceType sourceType;
+  private final TigerConfigurationKey basePath;
+  private final SourceType sourceType;
 
-    public AbstractTigerConfigurationSource(SourceType sourceType) {
-        this.sourceType = sourceType;
-        this.basePath = new TigerConfigurationKey();
+  AbstractTigerConfigurationSource(SourceType sourceType) {
+    this.sourceType = sourceType;
+    this.basePath = new TigerConfigurationKey();
+  }
+
+  AbstractTigerConfigurationSource(SourceType sourceType, TigerConfigurationKey basePath) {
+    this.sourceType = sourceType;
+    this.basePath = basePath;
+  }
+
+  public abstract Map<TigerConfigurationKey, String> applyTemplatesAndAddValuesToMap(
+      List<TigerTemplateSource> loadedTemplates,
+      Map<TigerConfigurationKey, String> loadedAndSortedProperties);
+
+  public abstract Map<TigerConfigurationKey, String> getValues();
+
+  public abstract void putValue(TigerConfigurationKey key, String value);
+
+  public abstract void removeValue(TigerConfigurationKey key);
+
+  public abstract boolean containsKey(TigerConfigurationKey key);
+
+  public abstract String getValue(TigerConfigurationKey key);
+
+  @Override
+  public int compareTo(AbstractTigerConfigurationSource other) {
+    if (other == null) {
+      throw new NullPointerException();
     }
-
-    public AbstractTigerConfigurationSource(SourceType sourceType, TigerConfigurationKey basePath) {
-        this.sourceType = sourceType;
-        this.basePath = basePath;
-    }
-
-    public abstract Map<TigerConfigurationKey, String> applyTemplatesAndAddValuesToMap(
-        List<TigerTemplateSource> loadedTemplates,
-        Map<TigerConfigurationKey, String> loadedAndSortedProperties);
-
-    public abstract Map<TigerConfigurationKey, String> getValues();
-
-    public abstract void putValue(TigerConfigurationKey key, String value);
-
-    public abstract void removeValue(TigerConfigurationKey key);
+    return Integer.compare(sourceType.getPrecedence(), other.getSourceType().getPrecedence());
+  }
 }

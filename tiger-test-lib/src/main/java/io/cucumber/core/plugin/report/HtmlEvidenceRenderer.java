@@ -21,12 +21,11 @@ public class HtmlEvidenceRenderer {
 
     // Specify the source where the template files come from. Here I set a
     // plain directory for it, but non-file-system sources are possible too:
-    freemarkerConfiguration.setClassLoaderForTemplateLoading(getClass().getClassLoader(),
-        "/" + getClass().getPackageName().replace('.', '/') + "/templates"
-    );
+    freemarkerConfiguration.setClassLoaderForTemplateLoading(
+        getClass().getClassLoader(),
+        "/" + getClass().getPackageName().replace('.', '/') + "/templates");
     freemarkerConfiguration.setDefaultEncoding("UTF-8");
-    freemarkerConfiguration.setTemplateExceptionHandler(
-        TemplateExceptionHandler.RETHROW_HANDLER);
+    freemarkerConfiguration.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
     freemarkerConfiguration.setLogTemplateExceptions(false);
     freemarkerConfiguration.setWrapUncheckedExceptions(true);
     freemarkerConfiguration.setFallbackOnNullLoopVariable(false);
@@ -49,8 +48,8 @@ public class HtmlEvidenceRenderer {
       reportTemplate.process(
           Map.of(
               "report", report,
-              "jsonConverter", me
-          ), resultContainer);
+              "jsonConverter", me),
+          resultContainer);
 
       return resultContainer.toString();
     } catch (TemplateException e) {

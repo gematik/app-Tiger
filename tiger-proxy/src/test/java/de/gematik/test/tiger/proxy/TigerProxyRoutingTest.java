@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
+
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRouteDto;
@@ -44,93 +45,94 @@ import org.springframework.boot.test.context.SpringBootTest;
 @ExtendWith(MockServerExtension.class)
 class TigerProxyRoutingTest {
 
-    private UnirestInstance unirestInstance;
-    @Autowired
-    private TigerProxy tigerProxy;
-    private int backendServerPort;
+  private UnirestInstance unirestInstance;
+  @Autowired private TigerProxy tigerProxy;
+  private int backendServerPort;
 
-    @BeforeEach
-    public void beforeEachLifecyleMethod(MockServerClient client) {
-        tigerProxy.getRoutes()
-            .stream()
-            .filter(route -> !route.getFrom().contains("tiger"))
-            .forEach(tigerRoute -> tigerProxy.removeRoute(tigerRoute.getId()));
+  @BeforeEach
+  public void beforeEachLifecyleMethod(MockServerClient client) {
+    tigerProxy.getRoutes().stream()
+        .filter(route -> !route.getFrom().contains("tiger"))
+        .forEach(tigerRoute -> tigerProxy.removeRoute(tigerRoute.getId()));
 
-        tigerProxy.addRoute(TigerRoute.builder()
+    tigerProxy.addRoute(
+        TigerRoute.builder()
             .from("http://myserv.er")
             .to("http://localhost:" + client.getPort())
             .build());
 
-        client.when(request()
-                .withMethod("GET")
-                .withPath("/foo"))
-            .respond(response()
-                .withBody("bar"));
+    client.when(request().withMethod("GET").withPath("/foo")).respond(response().withBody("bar"));
 
-        backendServerPort = client.getPort();
+    backendServerPort = client.getPort();
 
-        unirestInstance = new UnirestInstance(
-            new Config().proxy("localhost", tigerProxy.getProxyPort()));
-        unirestInstance.get("");
-    }
+    unirestInstance =
+        new UnirestInstance(new Config().proxy("localhost", tigerProxy.getProxyPort()));
+    unirestInstance.get("");
+  }
 
-    @AfterEach
-    public void reset() {
-        tigerProxy.clearAllRoutes();
-    }
+  @AfterEach
+  public void reset() {
+    tigerProxy.clearAllRoutes();
+  }
 
-    @Test
-    void shouldHonorConfiguredRoutes() {
-        assertThat(unirestInstance.get("http://myserv.er/foo").asString().getBody())
-            .isEqualTo("bar");
-    }
+  @Test
+  void shouldHonorConfiguredRoutes() {
+    assertThat(unirestInstance.get("http://myserv.er/foo").asString().getBody()).isEqualTo("bar");
+  }
 
-    @Test
-    void addRoute_shouldWork() {
-        unirestInstance.put("http://tiger.proxy/route")
+  @Test
+  void addRoute_shouldWork() {
+    unirestInstance
+        .put("http://tiger.proxy/route")
+        .header("Content-Type", "application/json")
+        .body(
+            "{\"from\":\"http://anderer.server\","
+                + "\"to\":\"http://localhost:"
+                + backendServerPort
+                + "\"}")
+        .asEmpty()
+        .ifFailure(response -> fail("Cant reach tiger proxy (" + response.toString() + ")"));
+
+    assertThat(unirestInstance.get("http://anderer.server/foo").asString().getBody())
+        .isEqualTo("bar");
+  }
+
+  @Test
+  void deleteRoute_shouldWork() {
+    assertThat(unirestInstance.get("http://temp.server/foo").asEmpty().getStatus()).isEqualTo(404);
+
+    String routeId =
+        unirestInstance
+            .put("http://tiger.proxy/route")
             .header("Content-Type", "application/json")
-            .body("{\"from\":\"http://anderer.server\","
-                + "\"to\":\"http://localhost:" + backendServerPort + "\"}")
-            .asEmpty()
-            .ifFailure(response -> fail("Cant reach tiger proxy (" + response.toString() + ")"));
-
-        assertThat(unirestInstance.get("http://anderer.server/foo").asString().getBody())
-            .isEqualTo("bar");
-    }
-
-    @Test
-    void deleteRoute_shouldWork() {
-        assertThat(unirestInstance.get("http://temp.server/foo").asEmpty().getStatus())
-            .isEqualTo(404);
-
-        String routeId = unirestInstance.put("http://tiger.proxy/route")
-            .header("Content-Type", "application/json")
-            .body("{\"from\":\"http://temp.server\","
-                + "\"to\":\"http://localhost:" + backendServerPort + "\"}")
+            .body(
+                "{\"from\":\"http://temp.server\","
+                    + "\"to\":\"http://localhost:"
+                    + backendServerPort
+                    + "\"}")
             .asObject(TigerRouteDto.class)
-            .getBody().getId();
+            .getBody()
+            .getId();
 
-        assertThat(unirestInstance.get("http://temp.server/foo").asEmpty().getStatus())
-            .isEqualTo(200);
+    assertThat(unirestInstance.get("http://temp.server/foo").asEmpty().getStatus()).isEqualTo(200);
 
-        unirestInstance.delete("http://tiger.proxy/route/" + routeId)
-            .asEmpty()
-            .ifFailure(response -> fail("Cant reach tiger proxy"));
+    unirestInstance
+        .delete("http://tiger.proxy/route/" + routeId)
+        .asEmpty()
+        .ifFailure(response -> fail("Cant reach tiger proxy"));
 
-        assertThat(unirestInstance.get("http://temp.server/foo").asEmpty().getStatus())
-            .isEqualTo(404);
-    }
+    assertThat(unirestInstance.get("http://temp.server/foo").asEmpty().getStatus()).isEqualTo(404);
+  }
 
-    @Test
-    void getRoutes_shouldGiveAllRoutes() {
-        final HttpResponse<List<TigerRouteDto>> tigerRoutesResponse = unirestInstance.get("http://tiger.proxy/route")
-            .asObject(new GenericType<>() {
-            });
+  @Test
+  void getRoutes_shouldGiveAllRoutes() {
+    final HttpResponse<List<TigerRouteDto>> tigerRoutesResponse =
+        unirestInstance.get("http://tiger.proxy/route").asObject(new GenericType<>() {});
 
-        assertThat(tigerRoutesResponse.getStatus()).isEqualTo(200);
-        var tigerRoutes = tigerRoutesResponse.getBody();
-        assertThat(tigerRoutes)
-            .extracting(TigerRouteDto::getFrom)
-            .contains("http://tiger.proxy", "http://myserv.er");
-    }
+    assertThat(tigerRoutesResponse.getStatus()).isEqualTo(200);
+    var tigerRoutes = tigerRoutesResponse.getBody();
+    assertThat(tigerRoutes)
+        .extracting(TigerRouteDto::getFrom)
+        .contains("http://tiger.proxy", "http://myserv.er");
+  }
 }

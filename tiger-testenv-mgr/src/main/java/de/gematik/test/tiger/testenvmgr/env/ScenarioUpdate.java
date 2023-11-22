@@ -29,10 +29,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ScenarioUpdate {
 
-    private Map<String, StepUpdate> steps;
-    private String description;
-    private TestResult status;
-    private List<String> exampleKeys;
-    private Map<String, String> exampleList;
-    private int variantIndex = -1;
+  private Map<String, StepUpdate> steps;
+  private String description;
+  private TestResult status;
+  private List<String> exampleKeys;
+  private Map<String, String> exampleList;
+  private int variantIndex = -1;
 }
