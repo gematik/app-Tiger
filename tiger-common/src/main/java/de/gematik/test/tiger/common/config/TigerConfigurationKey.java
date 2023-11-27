@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.apache.commons.collections.ListUtils;
+import org.apache.commons.collections4.ListUtils;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -31,7 +31,7 @@ public class TigerConfigurationKey extends ArrayList<TigerConfigurationKeyString
   }
 
   public TigerConfigurationKey(TigerConfigurationKey baseKey, String key) {
-    super(ListUtils.sum(baseKey, List.of(new TigerConfigurationKeyString(key))));
+    super(ListUtils.union(baseKey, List.of(new TigerConfigurationKeyString(key))));
   }
 
   public TigerConfigurationKey(List<TigerConfigurationKeyString> list) {

@@ -1,5 +1,12 @@
 # Changelog Tiger Test platform
 
+# Release 2.3.1
+
+## Bugfixes
+
+* TGR-1183: fixed an issue where TigerConfigurationKeys were wrongly ignoring parts of the key when they add a repeated
+  subkey.
+
 # Release 2.3.0
 
 ## Features

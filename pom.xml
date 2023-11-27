@@ -27,6 +27,7 @@
         <version.commons-io>2.13.0</version.commons-io>
         <version.commons-jexl3>3.3</version.commons-jexl3>
         <version.commons-collections>3.2.2</version.commons-collections>
+        <version.commons-collections4>4.4</version.commons-collections4>
         <version.cucumber>7.14.0</version.cucumber>
         <version.datatable>7.14.0</version.datatable>
         <version.gson>2.10.1</version.gson>
@@ -399,6 +400,11 @@
                 <groupId>commons-collections</groupId>
                 <artifactId>commons-collections</artifactId>
                 <version>${version.commons-collections}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-collections4</artifactId>
+                <version>${version.commons-collections4}</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>

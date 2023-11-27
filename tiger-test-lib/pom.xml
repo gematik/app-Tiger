@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tiger-test-lib</artifactId>
@@ -15,7 +15,7 @@
     </parent>
 
     <properties>
-        <version.commons-collections4>4.4</version.commons-collections4>
+
         <version.jsonassert>1.5.1</version.jsonassert>
         <version.xmlunit-core>2.9.1</version.xmlunit-core>
 
@@ -115,7 +115,6 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
-            <version>${version.commons-collections4}</version>
         </dependency>
         <dependency>
             <artifactId>json-unit-spring</artifactId>

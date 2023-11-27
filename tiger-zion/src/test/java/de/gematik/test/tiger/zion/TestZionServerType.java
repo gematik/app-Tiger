@@ -219,4 +219,44 @@ class TestZionServerType {
 
     XmlAssert.assertThat(response.getBody()).and(xmlWithCharset).areIdentical();
   }
+
+  @TigerTest(
+      tigerYaml =
+          """
+servers:
+  serverTestName:
+    type: zion
+    zionConfiguration:
+      serverPort: ${free.port.3}
+      mockResponses:
+        testResponse:
+          nestedResponses:
+            login:
+              request:
+                method: POST
+                path: '/login/{someId}'
+              nestedResponses:
+                firstAlternative:
+                  requestCriterions:
+                    - "'${someId}' == '1'"
+                  response:
+                    statusCode: 888
+                secondAlternative:
+                  requestCriterions:
+                    - "'${someId}' != '1'"
+                  response:
+                    statusCode: 777
+""")
+  @Test
+  void testNestedResponsesInsideNestedResponses(UnirestInstance unirest) {
+    HttpResponse<String> responseEmailConfirmed =
+        unirest.post("http://serverTestName/login/1").asString();
+
+    assertThat(responseEmailConfirmed.getStatus()).isEqualTo(888);
+
+    HttpResponse<String> responseEmailNotConfirmed =
+        unirest.post("http://serverTestName/login/2").asString();
+
+    assertThat(responseEmailNotConfirmed.getStatus()).isEqualTo(777);
+  }
 }
