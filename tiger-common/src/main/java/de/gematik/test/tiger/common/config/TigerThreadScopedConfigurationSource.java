@@ -82,7 +82,8 @@ public class TigerThreadScopedConfigurationSource extends AbstractTigerConfigura
     return retrieveFromCurrentThreadMap(m -> m.get(key));
   }
 
-  private <T> T retrieveFromCurrentThreadMap(Function<Map<TigerConfigurationKey, String>, T> retriever) {
+  private <T> T retrieveFromCurrentThreadMap(
+      Function<Map<TigerConfigurationKey, String>, T> retriever) {
     final long threadId = Thread.currentThread().getId();
     synchronized (threadIdToValuesMap) {
       threadIdToValuesMap.computeIfAbsent(threadId, thid -> new ConcurrentHashMap<>());

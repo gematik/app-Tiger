@@ -336,7 +336,11 @@ class RbelPathExecutorTest {
 
   @Test
   void testEscapingOfElementNamesWithPoints() {
-    assertThat(xmlMessage.findRbelPathMembers("$..['some.other-tag'].text").get(0).getRawStringContent())
-      .isEqualToIgnoringWhitespace("blub");
+    assertThat(
+            xmlMessage
+                .findRbelPathMembers("$..['some.other-tag'].text")
+                .get(0)
+                .getRawStringContent())
+        .isEqualToIgnoringWhitespace("blub");
   }
 }

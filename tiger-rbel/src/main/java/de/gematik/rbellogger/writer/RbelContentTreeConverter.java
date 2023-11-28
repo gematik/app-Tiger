@@ -112,9 +112,7 @@ public class RbelContentTreeConverter {
     final Optional<RbelElement> encodeAs = element.getFirst(TGR_ENCODE_AS);
     if (encodeAs.isPresent()) {
       for (RbelContentTreeNode node : input) {
-        node.setType(
-          RbelContentType.valueOf(
-            encodeAs.get().getRawStringContent()));
+        node.setType(RbelContentType.valueOf(encodeAs.get().getRawStringContent()));
       }
     }
     return input;

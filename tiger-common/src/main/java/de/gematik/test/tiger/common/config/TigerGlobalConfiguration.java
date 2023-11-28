@@ -61,7 +61,8 @@ public class TigerGlobalConfiguration {
     initializeWithCliProperties(Map.of());
   }
 
-  public synchronized static void initializeWithCliProperties(Map<String, String> additionalProperties) {
+  public static synchronized void initializeWithCliProperties(
+      Map<String, String> additionalProperties) {
     if (initialized) {
       return;
     }

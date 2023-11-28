@@ -8,7 +8,6 @@ class RbelKeyFolderInitializerTest {
 
   @Test
   void initialiseKeyFolderInitializer() {
-    assertThat(new RbelKeyFolderInitializer("tiger-common/"))
-            .isNotNull();
+    assertThat(new RbelKeyFolderInitializer("tiger-common/")).isNotNull();
   }
 }

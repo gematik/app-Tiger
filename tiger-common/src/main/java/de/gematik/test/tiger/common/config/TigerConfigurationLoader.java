@@ -295,7 +295,7 @@ public class TigerConfigurationLoader {
 
   public void loadSystemProperties() {
     sourcesManager
-      .getSortedStream()
+        .getSortedStream()
         .filter(source -> source.getSourceType() == SourceType.PROPERTIES)
         .forEach(sourcesManager::removeSource);
 
@@ -337,7 +337,8 @@ public class TigerConfigurationLoader {
   public Map<TigerConfigurationKey, String> retrieveMapUnresolved() {
     Map<TigerConfigurationKey, String> loadedAndSortedProperties = new HashMap<>();
 
-    for (AbstractTigerConfigurationSource configurationSource : sourcesManager.getSortedListReversed()) {
+    for (AbstractTigerConfigurationSource configurationSource :
+        sourcesManager.getSortedListReversed()) {
       loadedAndSortedProperties =
           configurationSource.applyTemplatesAndAddValuesToMap(
               loadedTemplates, loadedAndSortedProperties);
