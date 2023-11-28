@@ -36,6 +36,10 @@ public class RbelContentTreeNode implements RbelContent {
     this.setupChildNodes(childNodes);
   }
 
+  public void setRawStringContent(String newContent) {
+    setContent(newContent.getBytes(charset != null ? charset : StandardCharsets.UTF_8));
+  }
+
   public void setChildNodes(RbelMultiMap<RbelContentTreeNode> childNodes) {
     setupChildNodes(childNodes);
     updateAncestorContent();
@@ -64,9 +68,14 @@ public class RbelContentTreeNode implements RbelContent {
         });
   }
 
-  public void setChildNode(String key, RbelContentTreeNode newChildNode) {
-    childNodes.remove(key);
-    childNodes.put(key, newChildNode);
+  /**
+   * For JSON objects it adds or replaces a unique entry; for all other types it adds the entry
+   *
+   * @param key key of entry to be added or replaced
+   * @param newChildNode new childNode
+   */
+  public void addOrReplaceChild(String key, RbelContentTreeNode newChildNode) {
+    childNodes.addOrReplaceUniqueEntry(key, newChildNode);
     newChildNode.setParentNode(this);
     newChildNode.setKey(key);
     updateAncestorContent();
@@ -180,9 +189,7 @@ public class RbelContentTreeNode implements RbelContent {
   @Override
   public List<RbelContentTreeNode> findRbelPathMembers(String rbelPath) {
     return new RbelPathExecutor(this, rbelPath)
-        .execute(RbelContentTreeNode.class).stream()
-            .map(RbelContentTreeNode::castToRbelContentTreeNode)
-            .toList();
+        .execute(RbelContentTreeNode.class).stream().map(RbelContentTreeNode.class::cast).toList();
   }
 
   @Override
@@ -296,15 +303,6 @@ public class RbelContentTreeNode implements RbelContent {
 
   private boolean isListTypeNode() {
     return attributeMap.containsKey(RbelJsonElementToNodeConverter.JSON_ARRAY);
-  }
-
-  private static RbelContentTreeNode castToRbelContentTreeNode(RbelContent rbelContent) {
-    if (rbelContent instanceof RbelContentTreeNode asRbelContentTreeNode) {
-      return asRbelContentTreeNode;
-    } else {
-      throw new ClassCastException(
-          "RbelPath was attempted to illegally be casted to RbelContentTreeNode.");
-    }
   }
 
   private static class RbelPathNotUniqueException extends RuntimeException {

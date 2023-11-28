@@ -66,6 +66,28 @@ public class RbelMultiMap<T> implements Map<String, T> {
     return null;
   }
 
+  /**
+   * Updates a value of a key that exists once; if multiple entries of the keys exist, then it
+   * throws an {@link UnsupportedOperationException}; if the key does not exist yet, it adds a new
+   * entry
+   *
+   * @param key key of entry to be replaced
+   * @param value new value of entry
+   */
+  public void addOrReplaceUniqueEntry(String key, T value) {
+    var filteredEntries =
+        new ArrayList<>(values.stream().filter(e -> e.getKey().equals(key)).toList());
+    if (filteredEntries.size() > 1) {
+      throw new UnsupportedOperationException(
+          "It was attempted to replace a unique key '%s', but multiple entries with that key existed."
+              .formatted(key));
+    } else if (filteredEntries.size() == 1) {
+      values.replaceAll(e -> e.getKey().equals(key) ? Pair.of(key, value) : e);
+    } else {
+      values.add(Pair.of(key, value));
+    }
+  }
+
   @Override
   public T remove(Object key) {
     return removeAll(key.toString()).stream().findFirst().orElse(null);

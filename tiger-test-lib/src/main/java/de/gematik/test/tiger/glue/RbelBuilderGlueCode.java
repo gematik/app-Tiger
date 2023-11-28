@@ -5,19 +5,29 @@ import static junit.framework.TestCase.assertEquals;
 import de.gematik.rbellogger.builder.RbelBuilder;
 import de.gematik.rbellogger.builder.RbelBuilderManager;
 import de.gematik.rbellogger.builder.RbelObjectJexl;
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelSerializationAssertion;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.lib.TigerDirector;
+import io.cucumber.java.Before;
 import io.cucumber.java.ParameterType;
 import io.cucumber.java.de.Gegebensei;
 import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class RbelBuilderGlueCode {
 
   private final RbelBuilderManager rbelBuilders = new RbelBuilderManager();
+
+  @Before()
+  public void beforeScenario() {
+    TigerDirector.readConfiguration();
+  }
 
   /**
    * Creates a new Rbel object with a given key and string content; the string can be a jexl
@@ -56,6 +66,7 @@ public class RbelBuilderGlueCode {
   public void setValueAt(String objectName, String rbelPath, String newValue) {
     RbelBuilder rbelBuilder = rbelBuilders.get(objectName);
     rbelBuilder.setValueAt(rbelPath, newValue);
+    logRbelBuilderChangesOptionally(objectName, rbelPath, newValue, rbelBuilder);
   }
 
   /**
@@ -70,6 +81,7 @@ public class RbelBuilderGlueCode {
   public void addEntryAt(String objectName, String rbelPath, String newEntry) {
     RbelBuilder rbelBuilder = rbelBuilders.get(objectName);
     rbelBuilder.addEntryAt(rbelPath, newEntry);
+    logRbelBuilderChangesOptionally(objectName, rbelPath, newEntry, rbelBuilder);
   }
 
   /**
@@ -118,5 +130,18 @@ public class RbelBuilderGlueCode {
   @ParameterType("XML|JSON|JWE|JWT|BEARER_TOKEN|URL")
   public RbelContentType rbelContentType(String value) {
     return RbelContentType.seekValueFor(value);
+  }
+
+  private void logMessageOptionally(String message) {
+    if (TigerDirector.getLibConfig().createRbelModificationReports) {
+      log.info(message.translateEscapes());
+    }
+  }
+
+  private void logRbelBuilderChangesOptionally(String objectName, String rbelPath, String newValue, RbelBuilder rbelBuilder) {
+    logMessageOptionally(
+            String.format("Changed Rbel object '%s' at '%s' to '%s'", objectName, rbelPath, newValue));
+    RbelElement asRbelElement = new RbelElement(rbelBuilder.getTreeRootNode().getContent(), null);
+    logMessageOptionally("New Object: %s".formatted(asRbelElement.printTreeStructure()));
   }
 }

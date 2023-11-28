@@ -1,14 +1,25 @@
 package de.gematik.test.tiger.lib.rbel;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.classic.spi.LoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import de.gematik.rbellogger.builder.RbelBuilder;
 import de.gematik.rbellogger.data.RbelSerializationAssertion;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.glue.RbelBuilderGlueCode;
+import de.gematik.test.tiger.lib.TigerDirector;
+import java.util.List;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.slf4j.LoggerFactory;
 
 class RbelBuilderGlueCodeTests {
 
@@ -23,6 +34,11 @@ class RbelBuilderGlueCodeTests {
             """;
   String testFilePath = "src/test/resources/testdata/rbelBuilderTests/blub.json";
   String fileContentFromJexl = "!{file('%s')}".formatted(testFilePath);
+
+  @BeforeAll
+  static void startTigerDirector() {
+    TigerDirector.start();
+  }
 
   @Test
   void createFromContentTestWithStringValue() {
@@ -207,5 +223,47 @@ class RbelBuilderGlueCodeTests {
   @EnumSource(RbelContentType.class)
   void rbelParameterTypeTest(RbelContentType type) {
     Assertions.assertEquals(type, glueCode.rbelContentType(type.toString()));
+  }
+
+  @Test
+  void rbelBuilderChangelogTest() {
+    String valueToSet =
+        """
+                {
+                    "array": [
+                        "blib",
+                        "blab"
+                    ]
+                }
+                """;
+
+    Logger loggerInGlueCode = (Logger) LoggerFactory.getLogger(RbelBuilderGlueCode.class);
+
+    ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+    listAppender.start();
+    loggerInGlueCode.addAppender(listAppender);
+
+    glueCode.createFromContent("test", blub);
+    glueCode.setValueAt("test", "$.blub", valueToSet);
+    // isListTypeNode() does not work -> attributeMap does not contain
+    glueCode.addEntryAt("test", "$.blub.array", "blub");
+
+    List<ILoggingEvent> logsList = listAppender.list;
+
+    LoggingEvent e0 = (LoggingEvent) logsList.get(0);
+    assertThat(e0)
+        .hasFieldOrPropertyWithValue("level", Level.INFO)
+        .extracting(LoggingEvent::getMessage)
+        .asString()
+        .containsIgnoringWhitespaces(
+            "Changed Rbel object 'test' at '$.blub' to '{\r\"array\":\r[\r \"blib\",\r\"blab\"]}'");
+
+    LoggingEvent e3 = (LoggingEvent) logsList.get(3);
+    assertThat(e3)
+        .hasFieldOrPropertyWithValue("level", Level.INFO)
+        .extracting(LoggingEvent::getMessage)
+        .asString()
+        .containsIgnoringWhitespaces(
+            "NewObject:\u001B[0;93m└──\u001B[0m\u001B[1;31m\u001B[0m(\u001B[0;34m{\"blub\":{\"array\":[\"blib\",\"blab\",\"blub\"]}}\u001B[0m)");
   }
 }
