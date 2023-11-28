@@ -4,6 +4,7 @@
 
 ## Bugfixes
 
+* TGR-1125: Tiger-Zion: Fixed assignment-bugs
 * TGR-1183: fixed an issue where TigerConfigurationKeys were wrongly ignoring parts of the key when they add a repeated
   subkey.
 

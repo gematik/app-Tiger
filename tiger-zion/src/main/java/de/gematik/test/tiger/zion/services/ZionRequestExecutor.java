@@ -66,6 +66,7 @@ public class ZionRequestExecutor {
       TigerMockResponse chosenResponse = configuredResponse.get().getLeft();
       TigerJexlContext responseContext = configuredResponse.get().getRight();
       final ResponseEntity<byte[]> responseEntity = renderResponse(chosenResponse, responseContext);
+      responseContext.allNonStandardValues().forEach(TigerGlobalConfiguration::putValue);
       return parseResponseWithRbelLogger(responseEntity);
     } else {
       return spyWithRemoteServer(request)
@@ -216,9 +217,12 @@ public class ZionRequestExecutor {
             .map(r -> r.matchPathVariables(currentRequestRbelMessage, context))
             .orElse(EMPTY_MATCH);
 
+    doAssignments(mockResponse.getAssignments(), currentRequestRbelMessage, context);
+
     if (EMPTY_MATCH.equals(pathMatchingResult) && combinedRequestCriterions.isEmpty()) {
       return true;
     }
+
     doAssignments(pathMatchingResult.capturedVariables(), currentRequestRbelMessage, context);
 
     return combinedRequestCriterions.stream()
