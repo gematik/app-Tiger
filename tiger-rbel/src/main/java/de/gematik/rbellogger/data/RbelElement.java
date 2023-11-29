@@ -22,17 +22,18 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+@SuppressWarnings("unchecked")
 @Getter
 @Slf4j
 public class RbelElement implements RbelContent {
 
-  {
+  static {
     RbelJexlExecutor.initialize();
   }
 
   private final String uuid;
   private final byte[] rawContent;
-  private final transient RbelElement parentNode;
+  private final RbelElement parentNode;
   private final List<RbelFacet> facets = new ArrayList<>();
   @Setter private Optional<Charset> charset;
 
@@ -56,12 +57,7 @@ public class RbelElement implements RbelContent {
     }
     this.rawContent = rawContent;
     this.parentNode = parentNode;
-
-    if (charset == null) {
-      this.charset = Optional.empty();
-    } else {
-      this.charset = charset;
-    }
+    this.charset = Objects.requireNonNullElseGet(charset, Optional::empty);
     if (rawContent != null) {
       this.size = rawContent.length;
     } else {
@@ -105,7 +101,7 @@ public class RbelElement implements RbelContent {
         .flatMap(Collection::stream)
         .map(Map.Entry::getValue)
         .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   @Override
@@ -129,7 +125,7 @@ public class RbelElement implements RbelContent {
     return getChildNodes().stream()
         .map(RbelElement::traverseAndReturnNestedMembersInternal)
         .flatMap(List::stream)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   // Yes, default-visibility (is called recursively)
@@ -137,17 +133,14 @@ public class RbelElement implements RbelContent {
     log.trace(
         "Traversing into {}: facets are {}",
         findNodePath(),
-        getFacets().stream()
-            .map(Object::getClass)
-            .map(Class::getSimpleName)
-            .collect(Collectors.toList()));
+        getFacets().stream().map(Object::getClass).map(Class::getSimpleName).toList());
     if (hasFacet(RbelRootFacet.class)) {
       return List.of(this);
     } else {
       return getChildNodes().stream()
           .map(RbelElement::traverseAndReturnNestedMembersInternal)
           .flatMap(List::stream)
-          .collect(Collectors.toList());
+          .toList();
     }
   }
 
@@ -155,7 +148,7 @@ public class RbelElement implements RbelContent {
   public String findNodePath() {
     LinkedList<Optional<String>> keyList = new LinkedList<>();
     final AtomicReference<RbelElement> ptr = new AtomicReference<>(this);
-    while (!(ptr.get().getParentNode() == null)) {
+    while (ptr.get().getParentNode() != null) {
       keyList.addFirst(
           ptr.get().getParentNode().getChildNodesWithKey().stream()
               .filter(entry -> entry.getValue() == ptr.get())
@@ -182,12 +175,12 @@ public class RbelElement implements RbelContent {
     return getChildNodesWithKey().stream()
         .filter(entry -> entry.getKey().equals(key))
         .map(Map.Entry::getValue)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   @Override
   public Optional<String> findKeyInParentElement() {
-    return Optional.of(this).map(RbelElement::getParentNode).filter(Objects::nonNull).stream()
+    return Optional.of(this).map(RbelElement::getParentNode).stream()
         .flatMap(parent -> parent.getChildNodesWithKey().stream())
         .filter(e -> e.getValue() == this)
         .map(Map.Entry::getKey)
@@ -213,11 +206,7 @@ public class RbelElement implements RbelContent {
   @Override
   public Charset getElementCharset() {
     return charset
-        .or(
-            () ->
-                Optional.ofNullable(parentNode)
-                    .filter(Objects::nonNull)
-                    .map(RbelElement::getElementCharset))
+        .or(() -> Optional.ofNullable(parentNode).map(RbelElement::getElementCharset))
         .orElse(StandardCharsets.UTF_8);
   }
 
@@ -243,20 +232,16 @@ public class RbelElement implements RbelContent {
   }
 
   public Optional<Object> seekValue() {
-    return getFacet(RbelValueFacet.class).map(RbelValueFacet::getValue).filter(Objects::nonNull);
+    return getFacet(RbelValueFacet.class).map(RbelValueFacet::getValue);
   }
 
   public Optional<String> printValue() {
-    return getFacet(RbelValueFacet.class)
-        .map(RbelValueFacet::getValue)
-        .filter(Objects::nonNull)
-        .map(Object::toString);
+    return getFacet(RbelValueFacet.class).map(RbelValueFacet::getValue).map(Object::toString);
   }
 
   public <T> Optional<T> seekValue(Class<T> clazz) {
     return getFacet(RbelValueFacet.class)
         .map(RbelValueFacet::getValue)
-        .filter(Objects::nonNull)
         .filter(clazz::isInstance)
         .map(clazz::cast);
   }
@@ -319,15 +304,15 @@ public class RbelElement implements RbelContent {
     return Collections.unmodifiableList(facets).stream()
         .flatMap(
             facet -> {
-              if (facet instanceof RbelNestedFacet) {
-                return ((RbelNestedFacet) facet).getNestedElement().getFacets().stream();
+              if (facet instanceof RbelNestedFacet asRbelNestedFacet) {
+                return asRbelNestedFacet.getNestedElement().getFacets().stream();
               } else {
                 return Stream.of(facet);
               }
             })
         .filter(RbelNoteFacet.class::isInstance)
         .map(RbelNoteFacet.class::cast)
-        .collect(Collectors.toUnmodifiableList());
+        .toList();
   }
 
   @Override

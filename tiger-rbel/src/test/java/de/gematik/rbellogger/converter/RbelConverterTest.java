@@ -18,12 +18,13 @@ import java.nio.charset.Charset;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import org.apache.commons.io.FileUtils;
+import org.assertj.core.api.ThrowableAssert;
 import org.junit.jupiter.api.Test;
 
-public class RbelConverterTest {
+class RbelConverterTest {
 
   @Test
-  public void errorDuringConversion_shouldBeIgnored() throws IOException {
+  void errorDuringConversion_shouldBeIgnored() throws IOException {
     final String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(
             "src/test/resources/sampleMessages/jwtMessage.curl");
@@ -59,19 +60,17 @@ public class RbelConverterTest {
   }
 
   @Test
-  public void parseMessage_shouldFailBecauseContentIsNull() {
-    byte[] content = null;
-    assertThatExceptionOfType(NullPointerException.class)
-        .isThrownBy(
-            () -> {
-              RbelLogger.build()
-                  .getRbelConverter()
-                  .parseMessage(content, null, null, Optional.of(ZonedDateTime.now()));
-            });
+  void parseMessage_shouldFailBecauseContentIsNull() {
+    ThrowableAssert.ThrowingCallable throwingCallable =
+        () ->
+            RbelLogger.build()
+                .getRbelConverter()
+                .parseMessage((byte[]) null, null, null, Optional.of(ZonedDateTime.now()));
+    assertThatExceptionOfType(NullPointerException.class).isThrownBy(throwingCallable);
   }
 
   @Test
-  public void simulateRaceCondition_PairingShouldBeConserved() {
+  void simulateRaceCondition_PairingShouldBeConserved() {
     RbelElement pair1A = new RbelElement("foo".getBytes(), null);
     RbelElement pair1B = new RbelElement("foo".getBytes(), null);
     RbelElement pair2A = new RbelElement("foo".getBytes(), null);
@@ -101,7 +100,7 @@ public class RbelConverterTest {
   }
 
   @Test
-  public void implicitPairingOfConsecutivePairs() {
+  void implicitPairingOfConsecutivePairs() {
     RbelElement pair1A = new RbelElement("foo".getBytes(), null);
     RbelElement pair1B = new RbelElement("foo".getBytes(), null);
     RbelElement pair2A = new RbelElement("foo".getBytes(), null);

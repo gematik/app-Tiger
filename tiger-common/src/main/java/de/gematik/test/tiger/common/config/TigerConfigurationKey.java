@@ -44,7 +44,7 @@ public class TigerConfigurationKey extends ArrayList<TigerConfigurationKeyString
 
   private static List<TigerConfigurationKeyString> splitKeys(
       String[] baseKeys, String[] additionalKeys) {
-    final List<TigerConfigurationKeyString> keys = splitKeys(baseKeys);
+    final List<TigerConfigurationKeyString> keys = new ArrayList<>(splitKeys(baseKeys));
     keys.addAll(splitKeys(additionalKeys));
     return keys;
   }
@@ -54,18 +54,13 @@ public class TigerConfigurationKey extends ArrayList<TigerConfigurationKeyString
       return Stream.of(key.split("_"))
           .map(String::toLowerCase)
           .map(TigerConfigurationKeyString::wrapAsKey)
-          .collect(Collectors.toList());
+          .toList();
     }
-    return Stream.of(key.split("\\."))
-        .map(TigerConfigurationKeyString::wrapAsKey)
-        .collect(Collectors.toList());
+    return Stream.of(key.split("\\.")).map(TigerConfigurationKeyString::wrapAsKey).toList();
   }
 
   private static List<TigerConfigurationKeyString> splitKeys(String... keys) {
-    return Stream.of(keys)
-        .map(TigerConfigurationKey::splitKey)
-        .flatMap(List::stream)
-        .collect(Collectors.toList());
+    return Stream.of(keys).map(TigerConfigurationKey::splitKey).flatMap(List::stream).toList();
   }
 
   public String downsampleKey() {

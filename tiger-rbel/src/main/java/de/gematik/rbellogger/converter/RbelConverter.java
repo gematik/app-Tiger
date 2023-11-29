@@ -17,7 +17,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import lombok.*;
@@ -30,9 +29,10 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 @Slf4j
 public class RbelConverter {
 
-  @Builder.Default private int rbelBufferSizeInMb = 1024;
-  @Builder.Default private boolean manageBuffer = false;
-  @Builder.Default private long currentBufferSize = 0;
+  static {
+    Security.addProvider(new BouncyCastleProvider());
+  }
+
   private final Deque<RbelElement> messageHistory = new ConcurrentLinkedDeque<>();
   private final Set<String> knownMessageUuids = ConcurrentHashMap.newKeySet();
   private final List<RbelBundleCriterion> bundleCriterionList = new ArrayList<>();
@@ -62,12 +62,11 @@ public class RbelConverter {
               new RbelSicctEnvelopeConverter(),
               new RbelSicctCommandConverter(),
               new RbelCetpConverter()));
+  @Builder.Default private int rbelBufferSizeInMb = 1024;
+  @Builder.Default private boolean manageBuffer = false;
+  @Builder.Default private long currentBufferSize = 0;
   @Builder.Default private long messageSequenceNumber = 0;
   @Builder.Default private int skipParsingWhenMessageLargerThanKb = -1;
-
-  static {
-    Security.addProvider(new BouncyCastleProvider());
-  }
 
   public RbelElement convertElement(final byte[] input, RbelElement parentNode) {
     return convertElement(RbelElement.builder().parentNode(parentNode).rawContent(input).build());
@@ -125,7 +124,7 @@ public class RbelConverter {
     for (var iterator = messageHistory.descendingIterator(); iterator.hasNext(); ) {
       var element = iterator.next();
       if (element.hasFacet(RbelHttpRequestFacet.class)) {
-        return Optional.ofNullable(element);
+        return Optional.of(element);
       }
     }
     return Optional.empty();
@@ -138,7 +137,7 @@ public class RbelConverter {
             .filter(entry -> input.getClass().isAssignableFrom(entry.getKey()))
             .map(Entry::getValue)
             .flatMap(List::stream)
-            .collect(Collectors.toList())) {
+            .toList()) {
       RbelElement newValue = mapper.apply(value, this);
       if (newValue != value) {
         value = filterInputThroughPreConversionMappers(newValue);
@@ -168,7 +167,7 @@ public class RbelConverter {
   }
 
   public RbelElement parseMessage(
-      @NonNull byte[] content,
+      byte[] content,
       RbelHostname sender,
       RbelHostname receiver,
       Optional<ZonedDateTime> transmissionTime) {
@@ -262,7 +261,7 @@ public class RbelConverter {
             exceedingLimit -= messageToDrop.getSize();
             currentBufferSize -= messageToDrop.getSize();
             knownMessageUuids.remove(messageToDrop.getUuid());
-            getMessageHistory().remove(0);
+            messageHistory.removeLast();
           }
         }
       }

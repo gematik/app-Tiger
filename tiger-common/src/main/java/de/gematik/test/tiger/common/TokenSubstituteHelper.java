@@ -9,7 +9,6 @@ import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.Deque;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import lombok.AccessLevel;
@@ -21,7 +20,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class TokenSubstituteHelper {
 
-  public static final Deque<Pair<Character, ReplacerFunction>> REPLACER_ORDER =
+  private static final Deque<Pair<Character, ReplacerFunction>> REPLACER_ORDER =
       new ConcurrentLinkedDeque<>();
   private static final int MAXIMUM_NUMBER_OF_REPLACEMENTS = 1_000;
 
@@ -39,12 +38,8 @@ public final class TokenSubstituteHelper {
               Optional<String> fallbackValue =
                   Optional.of(str).filter(s -> s.contains("|")).map(s -> s.split("\\|")[1]);
               Optional<String> key = Optional.of(str).map(s -> s.split("\\|")[0]);
-              return key.flatMap(s -> source.readStringOptional(s))
-                  .or(
-                      () ->
-                          ctx.map(context -> context.get(str))
-                              .filter(Objects::nonNull)
-                              .map(Object::toString))
+              return key.flatMap(source::readStringOptional)
+                  .or(() -> ctx.map(context -> context.get(str)).map(Object::toString))
                   .or(() -> fallbackValue);
             }));
     REPLACER_ORDER.add(
@@ -120,6 +115,10 @@ public final class TokenSubstituteHelper {
       }
     }
     return Optional.empty();
+  }
+
+  public static Deque<Pair<Character, ReplacerFunction>> getReplacerOrder() {
+    return REPLACER_ORDER;
   }
 
   public interface ReplacerFunction {

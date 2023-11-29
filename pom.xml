@@ -91,7 +91,8 @@
     <scm>
         <url>https://github.com/gematik/app-Tiger</url>
         <connection>scm:git:git://github.com/gematik/app-Tiger.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com:gematik/app-Tiger.git</developerConnection>
+        <developerConnection>scm:git:ssh://git@github.com:gematik/app-Tiger.git
+        </developerConnection>
     </scm>
 
     <issueManagement>
@@ -153,7 +154,7 @@
             </activation>
             <properties>
                 <cucumber.filter.tags>not @FullTests</cucumber.filter.tags>
-                <excludedTestGroups>de.gematik.test.tiger.common.LongrunnerTest</excludedTestGroups>
+                <excludedTestGroups>de.gematik.test.tiger.common.LongRunnerTest</excludedTestGroups>
             </properties>
         </profile>
         <profile>
@@ -541,7 +542,8 @@
                                 <goal>prepare-agent</goal>
                             </goals>
                             <configuration>
-                                <destFile>${project.build.directory}/coverage-reports/jacoco.exec</destFile>
+                                <destFile>${project.build.directory}/coverage-reports/jacoco.exec
+                                </destFile>
                                 <propertyName>surefireJacocoAgent</propertyName>
                             </configuration>
                         </execution>
@@ -551,7 +553,9 @@
                                 <goal>prepare-agent-integration</goal>
                             </goals>
                             <configuration>
-                                <destFile>${project.build.directory}/coverage-reports/jacoco-it.exec</destFile>
+                                <destFile>
+                                    ${project.build.directory}/coverage-reports/jacoco-it.exec
+                                </destFile>
                                 <propertyName>failsafeJacocoAgent</propertyName>
                             </configuration>
                         </execution>
@@ -562,8 +566,10 @@
                                 <goal>report</goal>
                             </goals>
                             <configuration>
-                                <dataFile>${project.build.directory}/coverage-reports/jacoco.exec</dataFile>
-                                <outputDirectory>${project.reporting.outputDirectory}/jacoco</outputDirectory>
+                                <dataFile>${project.build.directory}/coverage-reports/jacoco.exec
+                                </dataFile>
+                                <outputDirectory>${project.reporting.outputDirectory}/jacoco
+                                </outputDirectory>
                             </configuration>
                         </execution>
                         <execution>
@@ -572,8 +578,11 @@
                                 <goal>report-integration</goal>
                             </goals>
                             <configuration>
-                                <dataFile>${project.build.directory}/coverage-reports/jacoco-it.exec</dataFile>
-                                <outputDirectory>${project.reporting.outputDirectory}/jacoco-it</outputDirectory>
+                                <dataFile>
+                                    ${project.build.directory}/coverage-reports/jacoco-it.exec
+                                </dataFile>
+                                <outputDirectory>${project.reporting.outputDirectory}/jacoco-it
+                                </outputDirectory>
                             </configuration>
                         </execution>
                     </executions>

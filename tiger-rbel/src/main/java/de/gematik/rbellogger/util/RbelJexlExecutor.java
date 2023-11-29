@@ -27,31 +27,32 @@ public class RbelJexlExecutor {
 
   private static final String RBEL_PATH_CHARS = "(\\$\\.|\\w|\\.)+.*";
 
-  private static boolean IS_INITIALIZED = false;
+  private static boolean isInitialized = false;
 
   public static synchronized void initialize() {
-    if (IS_INITIALIZED) {
+    if (isInitialized) {
       return;
     }
-    TokenSubstituteHelper.REPLACER_ORDER.addFirst(
-        Pair.of(
-            '?',
-            (str, source, ctx) ->
-                ctx.map(TigerJexlContext::getCurrentElement)
-                    .filter(Objects::nonNull)
-                    .filter(RbelElement.class::isInstance)
-                    .map(RbelElement.class::cast)
-                    .flatMap(el -> el.findElement(str))
-                    .map(el -> el.printValue().orElseGet(el::getRawStringContent))));
+    TokenSubstituteHelper.getReplacerOrder()
+        .addFirst(
+            Pair.of(
+                '?',
+                (str, source, ctx) ->
+                    ctx.map(TigerJexlContext::getCurrentElement)
+                        .filter(RbelElement.class::isInstance)
+                        .map(RbelElement.class::cast)
+                        .flatMap(el -> el.findElement(str))
+                        .map(el -> el.printValue().orElseGet(el::getRawStringContent))));
     TigerJexlExecutor.setExpressionPreMapper(RbelJexlExecutor::evaluateRbelPathExpressions);
     TigerJexlExecutor.addContextDecorator(RbelContextDecorator::buildJexlMapContext);
-    IS_INITIALIZED = true;
+    isInitialized = true;
   }
 
   public static boolean matchAsTextExpression(Object element, String textExpression) {
     try {
       final boolean textMatchResult =
-          ((RbelElement) element).getRawStringContent().contains(textExpression);
+          Objects.requireNonNull(((RbelElement) element).getRawStringContent())
+              .contains(textExpression);
       final boolean regexMatchResult =
           Pattern.compile(textExpression)
               .matcher(((RbelElement) element).getRawStringContent())

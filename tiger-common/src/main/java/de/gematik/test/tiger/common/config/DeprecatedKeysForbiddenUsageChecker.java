@@ -7,10 +7,8 @@ package de.gematik.test.tiger.common.config;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
-import lombok.NoArgsConstructor;
 
 /** A specialized class that checks for old/deprecated keys. */
-@NoArgsConstructor
 public final class DeprecatedKeysForbiddenUsageChecker {
 
   private static final List<DeprecatedKeyDescriptor> deprecatedKeysMap =
@@ -56,6 +54,8 @@ public final class DeprecatedKeysForbiddenUsageChecker {
               .newKey("activateEpaVauAnalysis")
               .build());
 
+  private DeprecatedKeysForbiddenUsageChecker() {}
+
   public static void checkForDeprecatedKeys(Map<TigerConfigurationKey, String> valueMap)
       throws TigerConfigurationException {
     if (valueMap == null) {
@@ -68,7 +68,7 @@ public final class DeprecatedKeysForbiddenUsageChecker {
           .findFirst()
           .ifPresent(
               a -> {
-                if (deprecatedKey.getNewKey().length() > 0) {
+                if (!deprecatedKey.getNewKey().isEmpty()) {
                   joiner.add(
                       "The key ('"
                           + deprecatedKey.getDeprecatedKey()
@@ -83,7 +83,7 @@ public final class DeprecatedKeysForbiddenUsageChecker {
                 }
               });
     }
-    if (joiner.toString().length() > 0) {
+    if (!joiner.toString().isEmpty()) {
       throw new TigerConfigurationException(joiner.toString());
     }
   }
