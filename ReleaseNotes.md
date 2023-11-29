@@ -8,6 +8,8 @@
 * TGR-1183: fixed an issue where TigerConfigurationKeys were wrongly ignoring parts of the key when they add a repeated
   subkey.
 * TGR-1180: fixed position of close button in the configuration editor in the WorkflowUi
+* TGR-1143: in case of missing dependencies for a server type the exception is more clearly stating that there is a
+  dependency missing
 
 # Release 2.3.0
 

@@ -39,6 +39,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
@@ -409,12 +410,17 @@ public class TigerTestEnvMgr
       String serverType = config.getType().value();
       if (!serverClasses.containsKey(serverType)) {
         throw new TigerTestEnvException(
-            "No server class registered for type " + serverType + " used in server " + serverId);
+            MessageFormat.format(
+                "No server class registered for type {0} used in server {1}. "
+                    + "Did you add appropriate dependencies for {0}?",
+                serverType, serverId));
       }
       return serverClasses
           .get(serverType)
           .getDeclaredConstructor(TigerTestEnvMgr.class, String.class, CfgServer.class)
           .newInstance(this, serverId, config);
+    } catch (TigerTestEnvException ttee) {
+      throw ttee;
     } catch (RuntimeException
         | NoSuchMethodException
         | InstantiationException
