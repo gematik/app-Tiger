@@ -348,7 +348,7 @@ class RbelBuilderTests {
 
     RbelBuilder parameterizedRbelBuilder = RbelBuilder.fromString(complexJsonObject);
 
-    if (newValue instanceof String newStringValue)  {
+    if (newValue instanceof String newStringValue) {
       if (expectSuccess) {
         parameterizedRbelBuilder.setValueAt(insertPath, newStringValue);
         JSONAssert.assertEquals(
@@ -357,7 +357,7 @@ class RbelBuilderTests {
         Assertions.assertThrows(
             Exception.class, () -> parameterizedRbelBuilder.setValueAt(insertPath, newStringValue));
       }
-    } 
+    }
   }
 
   static Object convertNonPrimitiveToJson(String value) {

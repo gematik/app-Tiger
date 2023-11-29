@@ -138,9 +138,10 @@ public class RbelBuilderGlueCode {
     }
   }
 
-  private void logRbelBuilderChangesOptionally(String objectName, String rbelPath, String newValue, RbelBuilder rbelBuilder) {
+  private void logRbelBuilderChangesOptionally(
+      String objectName, String rbelPath, String newValue, RbelBuilder rbelBuilder) {
     logMessageOptionally(
-            String.format("Changed Rbel object '%s' at '%s' to '%s'", objectName, rbelPath, newValue));
+        String.format("Changed Rbel object '%s' at '%s' to '%s'", objectName, rbelPath, newValue));
     RbelElement asRbelElement = new RbelElement(rbelBuilder.getTreeRootNode().getContent(), null);
     logMessageOptionally("New Object: %s".formatted(asRbelElement.printTreeStructure()));
   }
