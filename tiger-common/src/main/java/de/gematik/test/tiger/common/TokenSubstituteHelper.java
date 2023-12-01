@@ -11,6 +11,7 @@ import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.Deque;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.function.BiFunction;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -23,25 +24,11 @@ public final class TokenSubstituteHelper {
   private static final Deque<Pair<Character, ReplacerFunction>> REPLACER_ORDER =
       new ConcurrentLinkedDeque<>();
   private static final int MAXIMUM_NUMBER_OF_REPLACEMENTS = 1_000;
+  public static BiFunction<String, TigerConfigurationLoader, Optional<String>> RESOLVE =
+      (key, config) -> config.readStringOptional(key);
 
   static {
-    REPLACER_ORDER.add(
-        Pair.of(
-            '$',
-            (str, source, ctx) -> {
-              if (ctx.isPresent() && ctx.get().has(str)) {
-                return ctx.map(c -> c.get(str).toString());
-              }
-              if (str.contains("{") || str.contains("}")) {
-                return Optional.empty();
-              }
-              Optional<String> fallbackValue =
-                  Optional.of(str).filter(s -> s.contains("|")).map(s -> s.split("\\|")[1]);
-              Optional<String> key = Optional.of(str).map(s -> s.split("\\|")[0]);
-              return key.flatMap(source::readStringOptional)
-                  .or(() -> ctx.map(context -> context.get(str)).map(Object::toString))
-                  .or(() -> fallbackValue);
-            }));
+    REPLACER_ORDER.add(Pair.of('$', TokenSubstituteHelper::replaceWithConfigurationValue));
     REPLACER_ORDER.add(
         Pair.of(
             '!',
@@ -61,7 +48,23 @@ public final class TokenSubstituteHelper {
             }));
   }
 
-  public static String substitute(String value, TigerConfigurationLoader source) {
+  private static Optional<String> replaceWithConfigurationValue(
+      String str, TigerConfigurationLoader source, Optional<TigerJexlContext> ctx) {
+    if (ctx.isPresent() && ctx.get().has(str)) {
+      return ctx.map(c -> c.get(str).toString());
+    }
+    if (str.contains("{") || str.contains("}")) {
+      return Optional.empty();
+    }
+    Optional<String> fallbackValue =
+        Optional.of(str).filter(s -> s.contains("|")).map(s -> s.split("\\|")[1]);
+    Optional<String> key = Optional.of(str).map(s -> s.split("\\|")[0]);
+    return key.flatMap(k -> TokenSubstituteHelper.RESOLVE.apply(k, source))
+        .or(() -> ctx.map(context -> context.get(str)).map(Object::toString))
+        .or(() -> fallbackValue);
+  }
+
+  public static String substitute(final String value, TigerConfigurationLoader source) {
     return substitute(value, source, Optional.empty());
   }
 

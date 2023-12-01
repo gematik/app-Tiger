@@ -259,4 +259,31 @@ servers:
 
     assertThat(responseEmailNotConfirmed.getStatus()).isEqualTo(777);
   }
+
+  @TigerTest(tigerYaml = """
+    servers:
+      zionServer:
+        type: zion
+        zionConfiguration:
+          serverPort: "${free.port.10}"
+          mockResponses:
+            helloWorld:
+              requestCriterions:
+                - message.method == 'GET'
+              assignments:
+                foobar: blub
+              response:
+                body: '${foobar|fallback}'
+    """)
+  @Test
+  void shouldLazyResolveRequestBodies(UnirestInstance unirestInstance) {
+    final HttpResponse<String> response =
+      unirestInstance
+        .get(
+          TigerGlobalConfiguration.resolvePlaceholders(
+            "http://zionServer/blubBlab/helloWorld"))
+        .asString();
+
+    assertThat(response.getBody()).isEqualTo("blub");
+  }
 }

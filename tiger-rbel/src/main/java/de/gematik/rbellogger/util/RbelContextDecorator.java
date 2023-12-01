@@ -276,12 +276,13 @@ public class RbelContextDecorator {
     public final RbelElement body;
   }
 
-  public static String forceStringConvert(RbelElement obj) {
+  public static String forceStringConvert(RbelPathAble obj) {
     if (obj.getFirst("content").isPresent()) {
       return obj.getFirst("content").map(RbelContextDecorator::forceStringConvert).orElse("");
-    } else if (obj.hasFacet(RbelValueFacet.class)) {
-      return obj.getFacetOrFail(RbelValueFacet.class).getValue().toString();
-    } else if (obj.getRawContent() != null) {
+    } else if (obj instanceof RbelElement rbelElement
+        && rbelElement.hasFacet(RbelValueFacet.class)) {
+      return rbelElement.getFacetOrFail(RbelValueFacet.class).getValue().toString();
+    } else if (obj.getRawStringContent() != null) {
       return obj.getRawStringContent();
     } else {
       return "";

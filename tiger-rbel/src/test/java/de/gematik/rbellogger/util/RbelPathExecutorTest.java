@@ -17,6 +17,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.exceptions.RbelPathException;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.time.ZonedDateTime;
@@ -318,6 +319,34 @@ class RbelPathExecutorTest {
             jwtMessage.findElement("$.body.body.nbf").get(),
             jwtMessage.findElement("$.body.body.exp").get(),
             jwtMessage.findElement("$.body.body.iat").get());
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+      value = {
+        "${myMap.anotherLevel.[?(@.value=='foobar')].target}, schmoo",
+        "${myMap..[?(@.target=='schmoo')].target}, schmoo",
+        "${MYMAP..[?(@.tArGeT=='schmoo')].target}, schmoo",
+        "${MYMAP..[?(@.vAlUe=='xMaS')].target}, tree",
+        "${..buried}, deep",
+      })
+  void testSubstituteTokensFromConfigurationUsingRbelPath(String stringToSubstitute, String expectedString) {
+    TigerGlobalConfiguration.readFromYaml(
+        """
+myMap:
+  anotherLevel:
+    key1:
+      value: foobar
+      target: schmoo
+    key2:
+      value: xMaS
+      target: tree
+  hidden:
+    treasure:
+      buried: deep
+""");
+    assertThat(TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute))
+        .isEqualTo(expectedString);
   }
 
   @SneakyThrows

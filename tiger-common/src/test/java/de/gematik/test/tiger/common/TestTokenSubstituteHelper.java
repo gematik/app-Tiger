@@ -25,6 +25,16 @@ class TestTokenSubstituteHelper {
     TigerGlobalConfiguration.putValue("foo.bar", "FOOBARVALUE");
     TigerGlobalConfiguration.putValue("give.me.a.foo", "foo");
     TigerGlobalConfiguration.putValue("some.boolean.value", "true");
+    TigerGlobalConfiguration.readFromYaml(
+        """
+myMap:
+  key1:
+    value: foobar
+    target: schmoo
+  key2:
+    value: xmas
+    target: blublub
+""");
   }
 
   @ParameterizedTest
@@ -57,7 +67,7 @@ class TestTokenSubstituteHelper {
         "${key2|foo}, KEY2VALUE",
         "${!{'no' + 'pe'}|foo}, foo",
         "${!{'key' + '2'}|foo}, KEY2VALUE",
-        "${nope|!{'foo'+'bar'}}, foobar"
+        "${nope|!{'foo'+'bar'}}, foobar",
       })
   void testSubstituteTokenOK(String stringToSubstitute, String expectedString) {
     assertThat(TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute))

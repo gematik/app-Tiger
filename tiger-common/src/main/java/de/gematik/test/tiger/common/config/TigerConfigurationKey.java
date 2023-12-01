@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.lang3.StringUtils;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -60,7 +61,11 @@ public class TigerConfigurationKey extends ArrayList<TigerConfigurationKeyString
   }
 
   private static List<TigerConfigurationKeyString> splitKeys(String... keys) {
-    return Stream.of(keys).map(TigerConfigurationKey::splitKey).flatMap(List::stream).toList();
+    return Stream.of(keys)
+        .map(TigerConfigurationKey::splitKey)
+        .flatMap(List::stream)
+        .filter(TigerConfigurationKeyString::isNotEmptyKey)
+        .toList();
   }
 
   public String downsampleKey() {
@@ -73,6 +78,19 @@ public class TigerConfigurationKey extends ArrayList<TigerConfigurationKeyString
 
   public boolean isBelow(TigerConfigurationKey reference) {
     if (reference == null || reference.size() >= size()) {
+      return false;
+    }
+    for (int i = 0; i < reference.size(); i++) {
+      final TigerConfigurationKeyString key = reference.get(i);
+      if (StringUtils.isNotEmpty(key.asString()) && !key.equals(get(i))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  public boolean isDirectlyBelow(TigerConfigurationKey reference) {
+    if (reference == null || reference.size() + 1 != size()) {
       return false;
     }
     for (int i = 0; i < reference.size(); i++) {
@@ -93,11 +111,25 @@ public class TigerConfigurationKey extends ArrayList<TigerConfigurationKeyString
     return new TigerConfigurationKey(subList(reference.size(), size()));
   }
 
+  public TigerConfigurationKey createWithNewSubkey(String subkey) {
+    final TigerConfigurationKey result = new TigerConfigurationKey(this);
+    result.add(subkey);
+    return result;
+  }
+
   public boolean containsKey(String key) {
     return downsampleKey().matches(key);
   }
 
   public void add(String key) {
     addAll(splitKeys(key));
+  }
+
+  public TigerConfigurationKey getParentNodeOrIdentity() {
+    if (size() > 1) {
+      return new TigerConfigurationKey(subList(0, size() - 1));
+    }else {
+      return this;
+    }
   }
 }

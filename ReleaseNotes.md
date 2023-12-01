@@ -16,6 +16,7 @@
 ## Features
 
 * TGR-912: Healthchecks for externalUrl-Servers now honor the configured forwardProxyInfo of the localTigerProxy
+* TGR-1176: RbelPath-style retrieval now supported for TigerGlobalConfiguration: e.g. `${myMap..[?(@.target=='schmoo')].target}`
 * TGR-1163: TigerProxy: The groups to be used for the TLS-Handshakes can now be set for client
 * TGR-899: Migrated FAQ.md to FAQ.adoc, translated to english
 

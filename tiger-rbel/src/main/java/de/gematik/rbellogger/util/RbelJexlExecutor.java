@@ -7,12 +7,10 @@ package de.gematik.rbellogger.util;
 import com.google.common.base.CharMatcher;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
+import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 import lombok.AccessLevel;
@@ -45,7 +43,17 @@ public class RbelJexlExecutor {
                         .map(el -> el.printValue().orElseGet(el::getRawStringContent))));
     TigerJexlExecutor.setExpressionPreMapper(RbelJexlExecutor::evaluateRbelPathExpressions);
     TigerJexlExecutor.addContextDecorator(RbelContextDecorator::buildJexlMapContext);
+    TokenSubstituteHelper.RESOLVE = RbelJexlExecutor::resolveConfigurationValue;
     isInitialized = true;
+  }
+
+  private static Optional<String> resolveConfigurationValue(
+      String key, TigerConfigurationLoader configuration) {
+    return configuration.readStringOptional(key)
+      .or(() -> new RbelPathExecutor<>(new TigerConfigurationRbelObject(configuration), "$." + key)
+                .execute().stream()
+        .findFirst()
+        .map(TigerConfigurationRbelObject::getRawStringContent));
   }
 
   public static boolean matchAsTextExpression(Object element, String textExpression) {
@@ -159,8 +167,8 @@ public class RbelJexlExecutor {
 
   private static List<String> extractPathAndConvertToString(Object source, String rbelPath) {
     return Optional.ofNullable(source)
-        .filter(RbelElement.class::isInstance)
-        .map(RbelElement.class::cast)
+        .filter(RbelPathAble.class::isInstance)
+        .map(RbelPathAble.class::cast)
         .map(s -> s.findRbelPathMembers(rbelPath))
         .orElse(List.of())
         .stream()

@@ -904,6 +904,36 @@ public class TigerConfigurationTest {
     }
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {
+    "tiger.foo.bar",
+    "TIGER_FOO_BAR",
+    "tIgER.fOO.BaR"
+  })
+  void testKeyTranslations(String key) {
+    try {
+      System.setProperty("TIGER_FOO_BAR", "someValue");
+      TigerGlobalConfiguration.reset();
+      assertThat(TigerGlobalConfiguration.readString(key)).isEqualTo("someValue");
+      assertThat(TigerGlobalConfiguration.resolvePlaceholders("${" + key + "}")).isEqualTo("someValue");
+      System.clearProperty("TIGER_FOO_BAR");
+
+      System.setProperty("tiger.foo.bar", "someValue");
+      TigerGlobalConfiguration.reset();
+      assertThat(TigerGlobalConfiguration.readString(key)).isEqualTo("someValue");
+      assertThat(TigerGlobalConfiguration.resolvePlaceholders("${" + key + "}")).isEqualTo("someValue");
+      System.clearProperty("tiger.foo.bar");
+
+      TigerGlobalConfiguration.reset();
+      TigerGlobalConfiguration.putValue("tiger.foo.bar", "someValue");
+      assertThat(TigerGlobalConfiguration.readString(key)).isEqualTo("someValue");
+      assertThat(TigerGlobalConfiguration.resolvePlaceholders("${" + key + "}")).isEqualTo("someValue");
+    } finally {
+      System.clearProperty("TIGER_FOO_BAR");
+      System.clearProperty("tiger.foo.bar");
+    }
+  }
+
   @Data
   @Builder
   public static class DummyBean {

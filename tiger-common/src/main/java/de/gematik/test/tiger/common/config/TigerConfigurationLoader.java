@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.zion.config.TigerSkipEvaluation;
@@ -108,8 +109,8 @@ public class TigerConfigurationLoader {
   }
 
   private void initializeObjectMapper() {
-    SimpleModule module = new SimpleModule();
-    module.addDeserializer(String.class, new SkipEvaluationDeserializer(this));
+    SimpleModule skipEvaluationModule = new SimpleModule();
+    skipEvaluationModule.addDeserializer(String.class, new SkipEvaluationDeserializer(this));
     objectMapper =
         JsonMapper.builder()
             .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
@@ -118,7 +119,7 @@ public class TigerConfigurationLoader {
             .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
             .addModule(new JavaTimeModule())
             .addModule(new AllowDelayedPrimitiveResolvementModule(this))
-            .addModule(module)
+            .addModule(skipEvaluationModule)
             .build();
     strictObjectMapper =
         JsonMapper.builder()
@@ -127,7 +128,8 @@ public class TigerConfigurationLoader {
             .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CASE)
             .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
             .addModule(new JavaTimeModule())
-            .addModule(module)
+          .addModule(new AllowDelayedPrimitiveResolvementModule(this))
+            .addModule(skipEvaluationModule)
             .build();
   }
 
@@ -197,7 +199,7 @@ public class TigerConfigurationLoader {
       Class<T> configurationBeanClass, ObjectMapper objectMapper, String... baseKeys) {
     initialize();
 
-    TreeNode targetTree = convertToTreeUnresolved();
+    TreeNode targetTree = convertToTree();
     final TigerConfigurationKey configurationKey = new TigerConfigurationKey(baseKeys);
     for (TigerConfigurationKeyString key : configurationKey) {
       if (targetTree.get(key.getValue()) == null) {
@@ -232,7 +234,7 @@ public class TigerConfigurationLoader {
       TypeReference<T> configurationBeanType, String... baseKeys) {
     initialize();
 
-    TreeNode targetTree = convertToTreeUnresolved();
+    TreeNode targetTree = convertToTree();
     final TigerConfigurationKey configurationKey = new TigerConfigurationKey(baseKeys);
     for (TigerConfigurationKeyString key : configurationKey) {
       if (targetTree.get(key.getValue()) == null) {
@@ -352,12 +354,16 @@ public class TigerConfigurationLoader {
             .build());
   }
 
+  /** Generates a map containing all key/value pairs. Placeholders in the values ARE resolved. */
   public Map<TigerConfigurationKey, String> retrieveMap() {
     final Map<TigerConfigurationKey, String> map = retrieveMapUnresolved();
     replacePlaceholders(map);
     return map;
   }
 
+  /**
+   * Generates a map containing all key/value pairs. Placeholders in the values are NOT resolved.
+   */
   public Map<TigerConfigurationKey, String> retrieveMapUnresolved() {
     Map<TigerConfigurationKey, String> loadedAndSortedProperties = new HashMap<>();
 
@@ -368,12 +374,11 @@ public class TigerConfigurationLoader {
               loadedTemplates, loadedAndSortedProperties);
     }
 
-    replacePlaceholders(loadedAndSortedProperties);
-
     return loadedAndSortedProperties;
   }
 
-  private JsonNode convertToTreeUnresolved() {
+  /** Generates a tree containing all key/value pairs. Placeholders in the values ARE resolved. */
+  private JsonNode convertToTree() {
     final ObjectNode result = new ObjectNode(objectMapper.getNodeFactory());
 
     for (var entry : retrieveMapUnresolved().entrySet()) {
@@ -502,7 +507,10 @@ public class TigerConfigurationLoader {
   }
 
   public Map<String, String> readMapWithCaseSensitiveKeys(String... baseKeys) {
-    var reference = new TigerConfigurationKey(baseKeys);
+    return readMapWithCaseSensitiveKeys(new TigerConfigurationKey(baseKeys));
+  }
+
+  public Map<String, String> readMapWithCaseSensitiveKeys(TigerConfigurationKey reference) {
     return retrieveMap().entrySet().stream()
         .filter(entry -> entry.getKey().isBelow(reference))
         .collect(
@@ -605,14 +613,14 @@ public class TigerConfigurationLoader {
   @AllArgsConstructor
   @Slf4j
   public static class SkipEvaluationDeserializer extends JsonDeserializer<String>
-      implements ContextualDeserializer {
+    implements ContextualDeserializer {
 
     private final TigerConfigurationLoader configurationLoader;
     private boolean skipEvaluation;
 
     @Override
     public JsonDeserializer<?> createContextual(
-        DeserializationContext ctxt, BeanProperty property) {
+      DeserializationContext ctxt, BeanProperty property) {
       this.skipEvaluation =
           property != null && property.getAnnotation(TigerSkipEvaluation.class) != null;
       return new SkipEvaluationDeserializer(configurationLoader, skipEvaluation);
@@ -620,7 +628,7 @@ public class TigerConfigurationLoader {
 
     @Override
     public String deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
-        throws IOException {
+      throws IOException {
       final String valueAsString = jsonParser.getValueAsString();
       if (skipEvaluation) {
         return valueAsString;
@@ -628,48 +636,61 @@ public class TigerConfigurationLoader {
         return TokenSubstituteHelper.substitute(valueAsString, configurationLoader);
       }
     }
+
   }
 
   @AllArgsConstructor
   private static class ClazzFallbackConverter extends DeserializationProblemHandler {
 
-    private TigerConfigurationLoader tigerConfigurationLoader;
+    TigerConfigurationLoader tigerConfigurationLoader;
 
     @Override
     public Object handleWeirdStringValue(
         DeserializationContext ctxt, Class<?> targetType, String valueToConvert, String failureMsg)
         throws IOException {
-      if ((valueToConvert.contains("!{") || valueToConvert.contains("${"))
-          && (TokenSubstituteHelper.substitute(valueToConvert, tigerConfigurationLoader)
-              .equals(valueToConvert))) {
-        if (targetType.equals(Boolean.class)
-            || targetType.equals(Integer.class)
-            || targetType.equals(Long.class)
-            || targetType.equals(Character.class)
-            || targetType.equals(Double.class)
-            || targetType.equals(Float.class)
-            || targetType.equals(Byte.class)
-            || targetType.equals(Short.class)) {
-          return null;
-        } else if (targetType.equals(boolean.class)) {
-          return false;
-        } else if (targetType.equals(int.class)) {
-          return -1;
-        } else if (targetType.equals(long.class)) {
-          return (long) -1;
-        } else if (targetType.equals(double.class)) {
-          return -1.;
-        } else if (targetType.equals(float.class)) {
-          return -1f;
-        } else if (targetType.equals(short.class)) {
-          return (short) -1;
-        } else if (targetType.equals(char.class)) {
-          return ' ';
-        } else if (targetType.equals(byte.class)) {
-          return (byte) -1;
+      if (valueToConvert.contains("!{") || valueToConvert.contains("${")) {
+        final String substitute =
+            TokenSubstituteHelper.substitute(valueToConvert, tigerConfigurationLoader);
+        if (!substitute.equals(valueToConvert)) {
+          final TextNode replacedTextNode = ctxt.getNodeFactory().textNode(substitute);
+          return ctxt.readTreeAsValue(replacedTextNode, targetType);
         }
+        return returnTigerSpecificFallbackValue(ctxt, targetType, valueToConvert, failureMsg);
       }
       return super.handleWeirdStringValue(ctxt, targetType, valueToConvert, failureMsg);
+    }
+
+    Object returnTigerSpecificFallbackValue(
+        DeserializationContext ctxt, Class<?> targetType, String valueToConvert, String failureMsg)
+        throws IOException {
+      if (targetType.equals(Boolean.class)
+          || targetType.equals(Integer.class)
+          || targetType.equals(Long.class)
+          || targetType.equals(Character.class)
+          || targetType.equals(Double.class)
+          || targetType.equals(Float.class)
+          || targetType.equals(Byte.class)
+          || targetType.equals(Short.class)) {
+        return null;
+      } else if (targetType.equals(boolean.class)) {
+        return false;
+      } else if (targetType.equals(int.class)) {
+        return -1;
+      } else if (targetType.equals(long.class)) {
+        return (long) -1;
+      } else if (targetType.equals(double.class)) {
+        return -1.;
+      } else if (targetType.equals(float.class)) {
+        return -1f;
+      } else if (targetType.equals(short.class)) {
+        return (short) -1;
+      } else if (targetType.equals(char.class)) {
+        return ' ';
+      } else if (targetType.equals(byte.class)) {
+        return (byte) -1;
+      } else {
+        return super.handleWeirdStringValue(ctxt, targetType, valueToConvert, failureMsg);
+      }
     }
   }
 }

@@ -4,12 +4,12 @@
 
 package de.gematik.rbellogger.data;
 
-import de.gematik.rbellogger.RbelContent;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.util.RbelException;
 import de.gematik.rbellogger.util.RbelJexlExecutor;
+import de.gematik.rbellogger.util.RbelPathAble;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -25,7 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 @SuppressWarnings("unchecked")
 @Getter
 @Slf4j
-public class RbelElement implements RbelContent {
+public class RbelElement extends RbelPathAble {
 
   static {
     RbelJexlExecutor.initialize();
@@ -81,8 +81,7 @@ public class RbelElement implements RbelContent {
         .findFirst();
   }
 
-  @Override
-  public <T extends RbelFacet> boolean hasFacet(Class<T> clazz) {
+  public boolean hasFacet(Class<? extends RbelFacet> clazz) {
     return getFacet(clazz).isPresent();
   }
 
@@ -144,7 +143,6 @@ public class RbelElement implements RbelContent {
     }
   }
 
-  @Override
   public String findNodePath() {
     LinkedList<Optional<String>> keyList = new LinkedList<>();
     final AtomicReference<RbelElement> ptr = new AtomicReference<>(this);
@@ -178,7 +176,6 @@ public class RbelElement implements RbelContent {
         .toList();
   }
 
-  @Override
   public Optional<String> findKeyInParentElement() {
     return Optional.of(this).map(RbelElement::getParentNode).stream()
         .flatMap(parent -> parent.getChildNodesWithKey().stream())
@@ -189,8 +186,8 @@ public class RbelElement implements RbelContent {
 
   @Override
   public List<RbelElement> findRbelPathMembers(String rbelPath) {
-    return new RbelPathExecutor(this, rbelPath)
-        .execute(RbelElement.class).stream().map(RbelElement.class::cast).toList();
+    return new RbelPathExecutor<>(this, rbelPath)
+        .execute();
   }
 
   @Override
@@ -203,7 +200,6 @@ public class RbelElement implements RbelContent {
     }
   }
 
-  @Override
   public Charset getElementCharset() {
     return charset
         .or(() -> Optional.ofNullable(parentNode).map(RbelElement::getElementCharset))
@@ -266,7 +262,6 @@ public class RbelElement implements RbelContent {
     }
   }
 
-  @Override
   public Optional<RbelElement> findElement(String rbelPath) {
     final List<RbelElement> resultList = findRbelPathMembers(rbelPath);
     if (resultList.isEmpty()) {
@@ -315,7 +310,6 @@ public class RbelElement implements RbelContent {
         .toList();
   }
 
-  @Override
   public RbelElement findMessage() {
     RbelElement position = this;
     while (position.getParentNode() != null) {
@@ -335,7 +329,6 @@ public class RbelElement implements RbelContent {
     return Optional.empty();
   }
 
-  @Override
   public RbelElement findRootElement() {
     RbelElement result = this;
     RbelElement newResult = result.getParentNode();
@@ -344,6 +337,24 @@ public class RbelElement implements RbelContent {
       newResult = result.getParentNode();
     }
     return result;
+  }
+
+  @Override
+  public List<RbelPathAble> descendToContentNodeIfAdvised() {
+    if (hasFacet(RbelJsonFacet.class) && hasFacet(RbelNestedFacet.class)) {
+      return List.of(
+        getFacet(RbelNestedFacet.class)
+          .map(RbelNestedFacet::getNestedElement)
+          .orElseThrow(),
+        this);
+    } else {
+      return List.of(this);
+    }
+  }
+
+  @Override
+  public boolean shouldElementBeKeptInFinalResult() {
+    return !(hasFacet(RbelJsonFacet.class) && hasFacet(RbelNestedFacet.class));
   }
 
   private static class RbelPathNotUniqueException extends RuntimeException {
