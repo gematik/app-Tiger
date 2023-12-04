@@ -6,6 +6,8 @@ package de.gematik.test.tiger.common.config;
 
 public class TigerConfigurationKeys {
 
+  private TigerConfigurationKeys() {}
+
   public static final TigerTypedConfigurationKey<Integer> TESTENV_MGR_RESERVED_PORT =
       new TigerTypedConfigurationKey<>("tiger.internal.testenvmgr.port", Integer.class);
   public static final TigerTypedConfigurationKey<Integer> LOCALPROXY_ADMIN_RESERVED_PORT =

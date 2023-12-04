@@ -27,7 +27,6 @@ import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -37,7 +36,8 @@ import org.apache.commons.lang3.StringUtils;
 public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
 
   public static final int DEFAULT_STARTUP_TIMEOUT_IN_SECONDS = 20;
-
+  // protected because implementing servers use this var
+  protected final org.slf4j.Logger log;
   private final String hostname;
   private final String serverId;
   private final List<String> environmentProperties = new ArrayList<>();
@@ -47,9 +47,6 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
   private final List<TigerServerLogListener> logListeners = new ArrayList<>();
   private CfgServer configuration;
   private TigerServerStatus status = TigerServerStatus.NEW;
-
-  // protected because implementing servers use this var
-  protected final org.slf4j.Logger log;
 
   protected AbstractTigerServer(
       String hostname, String serverId, TigerTestEnvMgr tigerTestEnvMgr, CfgServer configuration) {
@@ -66,6 +63,14 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     }
   }
 
+  static String determineHostname(CfgServer configuration, String serverId) {
+    if (StringUtils.isNotBlank(configuration.getHostname())) {
+      return configuration.getHostname();
+    } else {
+      return serverId;
+    }
+  }
+
   @SuppressWarnings("unused")
   public String getServerTypeToken() {
     try {
@@ -77,14 +82,6 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
               + " has no "
               + TigerServerType.class.getCanonicalName()
               + " Annotation!");
-    }
-  }
-
-  static String determineHostname(CfgServer configuration, String serverId) {
-    if (StringUtils.isNotBlank(configuration.getHostname())) {
-      return configuration.getHostname();
-    } else {
-      return serverId;
     }
   }
 
@@ -199,7 +196,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
       log.info("Loading PKI resources for instance {}...", getServerId());
     }
     getConfiguration().getPkiKeys().stream()
-        .filter(key -> key.getType() == PkiType.Certificate)
+        .filter(key -> key.getType() == PkiType.CERTIFICATE)
         .forEach(
             key -> {
               if (StringUtils.isBlank(key.getPem())) {
@@ -220,7 +217,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
                                   .getPublicKey()));
             });
     getConfiguration().getPkiKeys().stream()
-        .filter(key -> key.getType() == PkiType.Key)
+        .filter(key -> key.getType() == PkiType.KEY)
         .forEach(
             key -> {
               if (StringUtils.isBlank(key.getPem())) {
@@ -287,7 +284,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
       }
       if (target instanceof List) {
         assertListCfgPropertySet((List<?>) target, propertyName);
-      } else if (target instanceof String && ((String) target).isBlank()) {
+      } else if (target instanceof String asString && asString.isBlank()) {
         throw new TigerTestEnvException(
             "Server %s must have property %s be set and not be empty!",
             getServerId(), propertyName);
@@ -370,7 +367,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
                             new TigerEnvironmentStartupException(
                                 "Unknown server: '%s' in dependUponList of server '%s'",
                                 serverName, getServerId())))
-        .collect(Collectors.toUnmodifiableList());
+        .toList();
   }
 
   public String getDestinationUrl(String fallbackProtocol) {

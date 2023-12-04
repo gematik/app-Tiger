@@ -76,6 +76,7 @@ public class TigerWebUiController implements ApplicationContextAware {
   private static final String DROPDOWN_MENU = "dropdown-menu";
   private static final String VALUE_MODAL = "modal";
   private static final String HIDE_QUIT = "display:none;";
+  private static final String BUTTON_GROUP_DROPUP = "btn-group dropup";
 
   /**
    * in error responses on http requests, this token causes problems so remove it for better
@@ -237,7 +238,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                                 .with(
                                     div()
                                         .withId("dropdown-hide-button")
-                                        .withClass("btn-group dropup")
+                                        .withClass(BUTTON_GROUP_DROPUP)
                                         .with(
                                             button()
                                                 .withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
@@ -310,7 +311,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                                 .with(
                                     div()
                                         .withId("dropdown-page-selection")
-                                        .withClass("btn-group dropup")
+                                        .withClass(BUTTON_GROUP_DROPUP)
                                         .with(
                                             button()
                                                 .withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
@@ -340,7 +341,7 @@ public class TigerWebUiController implements ApplicationContextAware {
                                 .with(
                                     div()
                                         .withId("dropdown-page-size")
-                                        .withClass("btn-group dropup")
+                                        .withClass(BUTTON_GROUP_DROPUP)
                                         .with(
                                             button()
                                                 .withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)

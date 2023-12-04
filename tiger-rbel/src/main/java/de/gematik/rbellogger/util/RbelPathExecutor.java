@@ -4,14 +4,13 @@
 
 package de.gematik.rbellogger.util;
 
-import static de.gematik.rbellogger.RbelOptions.ACTIVATE_RBEL_PATH_DEBUGGING;
-import static de.gematik.rbellogger.RbelOptions.RBEL_PATH_TREE_VIEW_MINIMUM_DEPTH;
-
+import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.exceptions.RbelPathException;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -27,15 +26,53 @@ public class RbelPathExecutor<T extends RbelPathAble> {
   private final T targetObject;
   private final String rbelPath;
 
-  private static List<RbelPathAble> findAllChildsRecursive(final RbelPathAble content) {
+  private static List<RbelPathAble> findAllChildrenRecursive(final RbelPathAble content) {
     final List<? extends RbelPathAble> childNodes = content.getChildNodes();
     List<RbelPathAble> result = new ArrayList<>(childNodes);
     childNodes.stream()
-        .map(RbelPathExecutor::findAllChildsRecursive)
-        .filter(Objects::nonNull)
+        .map(RbelPathExecutor::findAllChildrenRecursive)
         .flatMap(List::stream)
         .forEach(result::add);
     return result;
+  }
+
+  public static List<String> splitRbelPathIntoKeys(String rbelPath) {
+    final String[] split = rbelPath.substring(1).trim().split("\\.(?!(\\.|[^\\[]*]))");
+    final ArrayList<String> keys = new ArrayList<>();
+    for (String part : split) {
+      if (StringUtils.isBlank(part)) {
+        continue;
+      }
+      if (part.length() > 1 && part.endsWith(".")) {
+        keys.add(part.substring(0, part.length() - 1));
+        keys.add(".");
+      } else {
+        keys.add(part);
+      }
+    }
+
+    if (RbelOptions.isActivateRbelPathDebugging()) {
+      log.debug("Split rbelPath {} into the following keys: {}", rbelPath, keys);
+    }
+
+    return keys;
+  }
+
+  private static List<? extends RbelPathAble> executeNamedSelection(
+      String functionExpression, RbelPathAble content) {
+    return Stream.of(functionExpression.split("\\|"))
+        .map(
+            s -> {
+              if (!s.startsWith("'") || !s.endsWith("'")) {
+                throw new RbelPathException(
+                    "Requiring all name selector to be surrounded by '. Violated by " + s);
+              }
+              return s.substring(1, s.length() - 1);
+            })
+        .map(s1 -> URLDecoder.decode(s1, StandardCharsets.UTF_8))
+        .map(content::getAll)
+        .flatMap(List::stream)
+        .toList();
   }
 
   @SuppressWarnings("unchecked")
@@ -47,7 +84,7 @@ public class RbelPathExecutor<T extends RbelPathAble> {
     checkFurtherPreconditions(keys);
 
     for (String key : keys) {
-      if (ACTIVATE_RBEL_PATH_DEBUGGING) {
+      if (RbelOptions.isActivateRbelPathDebugging()) {
         log.info(
             "Resolving key '{}' with candidates {}",
             key,
@@ -66,7 +103,7 @@ public class RbelPathExecutor<T extends RbelPathAble> {
               .map(o -> (T) o)
               .distinct()
               .toList();
-      if (candidates.isEmpty() && ACTIVATE_RBEL_PATH_DEBUGGING) {
+      if (candidates.isEmpty() && RbelOptions.isActivateRbelPathDebugging()) {
         List<RbelElement> asRbelElements =
             lastIterationCandidates.stream()
                 .filter(RbelElement.class::isInstance)
@@ -84,27 +121,26 @@ public class RbelPathExecutor<T extends RbelPathAble> {
     }
 
     final List<T> resultList =
-        candidates.stream()
-            .filter(RbelPathAble::shouldElementBeKeptInFinalResult)
-            .toList();
-    if (ACTIVATE_RBEL_PATH_DEBUGGING) {
+        candidates.stream().filter(RbelPathAble::shouldElementBeKeptInFinalResult).toList();
+    if (RbelOptions.isActivateRbelPathDebugging()) {
       log.info("Returning {} result elements for RbelPath {}", resultList.size(), rbelPath);
     }
     return resultList;
   }
 
   private void performPreExecutionLogging(List<String> keys) {
-    if (ACTIVATE_RBEL_PATH_DEBUGGING && targetObject instanceof RbelElement asRbelElement) {
+    if (RbelOptions.isActivateFacetsPrinting()
+        && targetObject instanceof RbelElement asRbelElement) {
       log.info(
           "Executing RBelPath {} into root-element (limited view to {} levels)\n{}",
           rbelPath,
-          Math.max(RBEL_PATH_TREE_VIEW_MINIMUM_DEPTH, keys.size()),
+          Math.max(RbelOptions.getRbelPathTreeViewMinimumDepth(), keys.size()),
           asRbelElement.printTreeStructure(
-              Math.max(RBEL_PATH_TREE_VIEW_MINIMUM_DEPTH, keys.size()), false));
+              Math.max(RbelOptions.getRbelPathTreeViewMinimumDepth(), keys.size()), false));
     }
   }
 
-  private <T extends RbelPathAble> void checkFurtherPreconditions(List<String> keys) {
+  private void checkFurtherPreconditions(List<String> keys) {
     if (keys.stream().anyMatch(s -> s.startsWith(" ") || s.endsWith(" "))) {
       throw new RbelPathException(
           "Found key with unescaped spaces in rbel-path '"
@@ -120,32 +156,10 @@ public class RbelPathExecutor<T extends RbelPathAble> {
     }
   }
 
-  public static List<String> splitRbelPathIntoKeys(String rbelPath) {
-    final String[] split = rbelPath.substring(1).trim().split("\\.(?!(\\.|[^\\[]*\\]))");
-    final ArrayList<String> keys = new ArrayList<>();
-    for (String part : split) {
-      if (StringUtils.isBlank(part)) {
-        continue;
-      }
-      if (part.length() > 1 && part.endsWith(".")) {
-        keys.add(part.substring(0, part.length() - 1));
-        keys.add(".");
-      } else {
-        keys.add(part);
-      }
-    }
-
-    if (ACTIVATE_RBEL_PATH_DEBUGGING) {
-      log.debug("Split rbelPath {} into the following keys: {}", rbelPath, keys);
-    }
-
-    return keys;
-  }
-
   private List<? extends RbelPathAble> resolveRbelPathElement(
       final String key, final RbelPathAble content) {
     if (key.equals(".")) {
-      final List<RbelPathAble> wildcardResult = findAllChildsRecursive(content);
+      final List<RbelPathAble> wildcardResult = findAllChildrenRecursive(content);
       wildcardResult.add(content);
       return wildcardResult;
     }
@@ -168,14 +182,14 @@ public class RbelPathExecutor<T extends RbelPathAble> {
             .map(
                 candidate -> executeFunctionalExpression(functionalPart, candidate.getParentNode()))
             .flatMap(List::stream)
-            .collect(Collectors.toList());
+            .toList();
       }
     }
   }
 
   private List<? extends RbelPathAble> executeNonFunctionalExpression(
       String key, RbelPathAble content) {
-    if (key.isEmpty() | key.equals("*")) {
+    if (key.isEmpty() || key.equals("*")) {
       return content.getChildNodes();
     } else {
       return content.getAll(key);
@@ -202,23 +216,6 @@ public class RbelPathExecutor<T extends RbelPathAble> {
     }
   }
 
-  private static List<? extends RbelPathAble> executeNamedSelection(
-      String functionExpression, RbelPathAble content) {
-    return Stream.of(functionExpression.split("\\|"))
-        .peek(
-            s -> {
-              if (!s.startsWith("'") || !s.endsWith("'")) {
-                throw new RbelPathException(
-                    "Requiring all name selector to be surrounded by '. Violated by " + s);
-              }
-            })
-        .map(s -> s.substring(1, s.length() - 1))
-        .map(URLDecoder::decode)
-        .map(content::getAll)
-        .flatMap(List::stream)
-        .toList();
-  }
-
   private List<? extends RbelPathAble> findChildNodesByJexlExpression(
       final RbelPathAble content, final String jexl) {
     return content.getChildNodesWithKey().stream()
@@ -232,6 +229,6 @@ public class RbelPathExecutor<T extends RbelPathAble> {
                         .withCurrentElement(candidate.getValue())
                         .withRootElement(this.targetObject)))
         .map(Map.Entry::getValue)
-        .collect(Collectors.toList());
+        .toList();
   }
 }

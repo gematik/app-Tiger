@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import org.apache.commons.lang3.SystemUtils;
+import org.assertj.core.api.ThrowableAssert;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -21,27 +23,27 @@ import org.junit.jupiter.params.provider.ValueSource;
 class TestAbstractTigerServer {
 
   @Test
-  void testfindCommandInPath_OK() {
+  void testFindCommandInPath_OK() {
     TestServer server = new TestServer();
     if (SystemUtils.IS_OS_WINDOWS) {
-      server.findCommandInPath("cmd.exe");
+      assertThat(server.findCommandInPath("cmd.exe")).isNotBlank();
     } else {
-      server.findCommandInPath("bash");
+      assertThat(server.findCommandInPath("bash")).isNotBlank();
     }
   }
 
   @Test
-  void testfindCommandInPath_NOK() {
+  void testFindCommandInPath_NOK() {
     TestServer server = new TestServer();
-    assertThatThrownBy(
-            () -> {
-              if (SystemUtils.IS_OS_WINDOWS) {
-                server.findCommandInPath("cmdNOTFOUND.exe");
-              } else {
-                server.findCommandInPath("bashNOTFOUND");
-              }
-            })
-        .isInstanceOf(TigerEnvironmentStartupException.class);
+    ThrowableAssert.ThrowingCallable lambda =
+        () -> {
+          if (SystemUtils.IS_OS_WINDOWS) {
+            server.findCommandInPath("cmdNOTFOUND.exe");
+          } else {
+            server.findCommandInPath("bashNOTFOUND");
+          }
+        };
+    assertThatThrownBy(lambda).isInstanceOf(TigerEnvironmentStartupException.class);
   }
 
   @ParameterizedTest

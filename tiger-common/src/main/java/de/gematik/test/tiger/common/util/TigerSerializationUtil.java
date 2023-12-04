@@ -18,7 +18,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.yaml.snakeyaml.Yaml;
 
+@SuppressWarnings("unused")
 public class TigerSerializationUtil {
+
+  private TigerSerializationUtil() {}
 
   private static final ObjectMapper objMapper =
       new ObjectMapper().setSerializationInclusion(Include.NON_NULL);
@@ -56,7 +59,7 @@ public class TigerSerializationUtil {
     return recursiveMapDumping(new JSONObject(toJson(value)), new TigerConfigurationKey(baseKeys))
         .entrySet()
         .stream()
-        .collect(Collectors.toMap(e -> e.getKey().downsampleKey(), e -> e.getValue()));
+        .collect(Collectors.toMap(e -> e.getKey().downsampleKey(), Map.Entry::getValue));
   }
 
   private static Map<TigerConfigurationKey, String> recursiveMapDumping(
@@ -64,12 +67,10 @@ public class TigerSerializationUtil {
     Map<TigerConfigurationKey, String> result = new HashMap<>();
     for (String key : jsonObject.keySet()) {
       final Object value = jsonObject.get(key);
-      if (value instanceof JSONObject) {
-        result.putAll(
-            recursiveMapDumping((JSONObject) value, new TigerConfigurationKey(baseKey, key)));
-      } else if (value instanceof JSONArray) {
-        result.putAll(
-            recursiveMapDumping((JSONArray) value, new TigerConfigurationKey(baseKey, key)));
+      if (value instanceof JSONObject asJsonObject) {
+        result.putAll(recursiveMapDumping(asJsonObject, new TigerConfigurationKey(baseKey, key)));
+      } else if (value instanceof JSONArray asJsonArray) {
+        result.putAll(recursiveMapDumping(asJsonArray, new TigerConfigurationKey(baseKey, key)));
       } else {
         result.put(new TigerConfigurationKey(baseKey, key), value.toString());
       }
@@ -83,12 +84,10 @@ public class TigerSerializationUtil {
     int index = 0;
     for (Object entry : value) {
       String key = Integer.toString(index);
-      if (entry instanceof JSONObject) {
-        result.putAll(
-            recursiveMapDumping((JSONObject) entry, new TigerConfigurationKey(baseKey, key)));
-      } else if (entry instanceof JSONArray) {
-        result.putAll(
-            recursiveMapDumping((JSONArray) entry, new TigerConfigurationKey(baseKey, key)));
+      if (entry instanceof JSONObject asJsonObject) {
+        result.putAll(recursiveMapDumping(asJsonObject, new TigerConfigurationKey(baseKey, key)));
+      } else if (entry instanceof JSONArray asJsonArray) {
+        result.putAll(recursiveMapDumping(asJsonArray, new TigerConfigurationKey(baseKey, key)));
       } else {
         if (entry != null) {
           result.put(new TigerConfigurationKey(baseKey, key), entry.toString());

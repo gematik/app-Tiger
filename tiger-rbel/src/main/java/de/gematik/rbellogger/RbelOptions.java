@@ -5,46 +5,50 @@
 package de.gematik.rbellogger;
 
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import lombok.Getter;
 
 public class RbelOptions {
-  public static boolean ACTIVATE_RBEL_PATH_DEBUGGING = false;
-  public static int RBEL_PATH_TREE_VIEW_MINIMUM_DEPTH = 3;
-  public static int RBEL_PATH_TREE_VIEW_VALUE_OUTPUT_LENGTH = 50;
-  public static boolean ACTIVATE_JEXL_DEBUGGING = false;
-  public static boolean ACTIVATE_FACETS_PRINTING = true;
+
+  @Getter private static boolean activateRbelPathDebugging = false;
+  @Getter private static int rbelPathTreeViewMinimumDepth = 3;
+  @Getter private static int rbelPathTreeViewValueOutputLength = 50;
+  @Getter private static boolean activateJexlDebugging = false;
+  @Getter private static boolean activateFacetsPrinting = true;
+
+  private RbelOptions() {}
 
   public static void activateJexlDebugging() {
-    ACTIVATE_JEXL_DEBUGGING = true;
-    TigerJexlExecutor.ACTIVATE_JEXL_DEBUGGING = true;
+    activateJexlDebugging = true;
+    TigerJexlExecutor.setActivateJexlDebugging(true);
   }
 
   public static void deactivateJexlDebugging() {
-    ACTIVATE_JEXL_DEBUGGING = false;
-    TigerJexlExecutor.ACTIVATE_JEXL_DEBUGGING = false;
+    activateJexlDebugging = false;
+    TigerJexlExecutor.setActivateJexlDebugging(false);
   }
 
   public static void activateRbelPathDebugging() {
-    ACTIVATE_RBEL_PATH_DEBUGGING = true;
+    activateRbelPathDebugging = true;
   }
 
   public static void deactivateRbelPathDebugging() {
-    ACTIVATE_RBEL_PATH_DEBUGGING = false;
+    activateRbelPathDebugging = false;
   }
 
   public static void activateFacetsPrinting() {
-    ACTIVATE_FACETS_PRINTING = true;
+    activateFacetsPrinting = true;
   }
 
   public static void deactivateFacetsPrinting() {
-    ACTIVATE_FACETS_PRINTING = false;
+    activateFacetsPrinting = false;
   }
 
   public static void reset() {
-    ACTIVATE_RBEL_PATH_DEBUGGING = false;
-    TigerJexlExecutor.ACTIVATE_JEXL_DEBUGGING = false;
-    RBEL_PATH_TREE_VIEW_MINIMUM_DEPTH = 3;
-    RBEL_PATH_TREE_VIEW_VALUE_OUTPUT_LENGTH = 50;
-    ACTIVATE_JEXL_DEBUGGING = false;
-    ACTIVATE_FACETS_PRINTING = true;
+    activateRbelPathDebugging = false;
+    TigerJexlExecutor.setActivateJexlDebugging(false);
+    rbelPathTreeViewMinimumDepth = 3;
+    rbelPathTreeViewValueOutputLength = 50;
+    activateJexlDebugging = false;
+    activateFacetsPrinting = true;
   }
 }

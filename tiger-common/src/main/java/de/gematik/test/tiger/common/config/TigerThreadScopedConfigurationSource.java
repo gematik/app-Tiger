@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.LongConsumer;
-import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 
 /**
@@ -36,12 +35,10 @@ public class TigerThreadScopedConfigurationSource extends AbstractTigerConfigura
     finalValues.putAll(loadedAndSortedProperties);
     finalValues.putAll(getValues());
 
-    final List<List<TigerConfigurationKeyString>> appliedTemplates =
-        loadedTemplates.stream()
-            .map(template -> template.applyToAllApplicable(this, finalValues))
-            .flatMap(List::stream)
-            .collect(Collectors.toList());
-    appliedTemplates.forEach(key -> finalValues.remove(key));
+    loadedTemplates.stream()
+        .map(template -> template.applyToAllApplicable(this, finalValues))
+        .flatMap(List::stream)
+        .forEach(finalValues::remove);
 
     return finalValues;
   }
@@ -58,18 +55,12 @@ public class TigerThreadScopedConfigurationSource extends AbstractTigerConfigura
 
   @Override
   public void putValue(TigerConfigurationKey key, String value) {
-    executeWithCurrentThreadMap(
-        threadId -> {
-          threadIdToValuesMap.get(threadId).put(key, value);
-        });
+    executeWithCurrentThreadMap(threadId -> threadIdToValuesMap.get(threadId).put(key, value));
   }
 
   @Override
   public void removeValue(TigerConfigurationKey key) {
-    executeWithCurrentThreadMap(
-        threadId -> {
-          threadIdToValuesMap.get(threadId).remove(key);
-        });
+    executeWithCurrentThreadMap(threadId -> threadIdToValuesMap.get(threadId).remove(key));
   }
 
   @Override

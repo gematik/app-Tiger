@@ -69,19 +69,20 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 public class TigerTestEnvMgr
     implements TigerEnvUpdateSender, TigerUpdateListener, DisposableBean, AutoCloseable {
 
+  public static final String HTTP = "http://";
+  public static final String HTTPS = "https://";
+  public static final String CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT = "tiger.tigerProxy.adminPort";
+  public static final String CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT = "tiger.tigerProxy.proxyPort";
+  public static final String LOCAL_TIGER_PROXY_TYPE = "local_tiger_proxy";
+  private static final String SERVER_PORT = "server.port";
+  private static final String TIGER = "tiger";
+
   static {
     RbelJexlExecutor.initialize();
   }
 
-  public static final String HTTP = "http://";
-  public static final String HTTPS = "https://";
-  private static final String SERVER_PORT = "server.port";
   private final Configuration configuration;
   private final Map<String, Object> environmentVariables;
-  private TigerProxy localTigerProxy;
-  public static final String CFG_PROP_NAME_LOCAL_PROXY_ADMIN_PORT = "tiger.tigerProxy.adminPort";
-  public static final String CFG_PROP_NAME_LOCAL_PROXY_PROXY_PORT = "tiger.tigerProxy.proxyPort";
-  public static final String LOCAL_TIGER_PROXY_TYPE = "local_tiger_proxy";
   private final List<TigerRoute> routesList = new ArrayList<>();
   private final Map<String, AbstractTigerServer> servers = new HashMap<>();
 
@@ -96,10 +97,12 @@ public class TigerTestEnvMgr
       Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
 
   private final List<TigerUpdateListener> listeners = new ArrayList<>();
-
   private final List<TigerServerLogListener> logListeners = new ArrayList<>();
-
   private final DownloadManager downloadManager = new DownloadManager();
+  private final Map<String, Class<? extends AbstractTigerServer>> serverClasses = new HashMap<>();
+  private final org.slf4j.Logger localProxyLog;
+  @Setter public ConfigurableApplicationContext context;
+  private TigerProxy localTigerProxy;
 
   @Getter(AccessLevel.PRIVATE)
   private ServletWebServerApplicationContext localTigerProxyApplicationContext;
@@ -107,14 +110,9 @@ public class TigerTestEnvMgr
   private boolean userAcknowledgedOnWorkflowUi = false;
   private boolean shouldAbortTestExecution = false;
   @Getter private boolean userPressedFailTestExecution = false;
-
   private boolean isShuttingDown = false;
   private boolean isShutDown = false;
-
   @Setter private boolean workflowUiSentFetch = false;
-  private final Map<String, Class<? extends AbstractTigerServer>> serverClasses = new HashMap<>();
-
-  private final org.slf4j.Logger localProxyLog;
 
   public TigerTestEnvMgr() {
     this.configuration = readConfiguration();
@@ -135,11 +133,70 @@ public class TigerTestEnvMgr
     }
   }
 
+  public static Map<String, Object> getConfiguredLoggingLevels() {
+    return TigerGlobalConfiguration.readMapWithCaseSensitiveKeys(TIGER, "logging", "level")
+        .entrySet()
+        .stream()
+        .collect(Collectors.toMap(entry -> "logging.level." + entry.getKey(), Entry::getValue));
+  }
+
+  @SuppressWarnings("unused")
+  private static void readCommandFromInput(
+      String textToEnter, String message, Function<Void, String> readLine) {
+    String cmd = null;
+    while (cmd == null || !cmd.equals(textToEnter)) {
+      log.info(message);
+      if (cmd != null) {
+        log.warn("Received: '{}'", cmd);
+      }
+      cmd = readLine.apply(null);
+      try {
+        TimeUnit.MILLISECONDS.sleep(100);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TigerTestEnvException("Interrupt received while waiting for console input", e);
+      }
+    }
+  }
+
+  private static void readTemplates() {
+    // read configuration from file and templates from classpath resource
+    try {
+      final URL templatesUrl = TigerTestEnvMgr.class.getResource("templates.yaml");
+      final String templatesYaml =
+          IOUtils.toString(Objects.requireNonNull(templatesUrl).toURI(), StandardCharsets.UTF_8);
+      TigerGlobalConfiguration.readTemplates(templatesYaml, TIGER, "servers");
+    } catch (IOException | URISyntaxException e) {
+      throw new TigerConfigurationException("Unable to read templates YAML!", e);
+    }
+  }
+
+  private static Configuration readConfiguration() {
+    TigerGlobalConfiguration.initialize();
+    readTemplates();
+    addDefaults();
+    final Configuration configuration =
+        TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class, TIGER)
+            .orElseGet(Configuration::new);
+    for (CfgServer cfgServer : configuration.getServers().values()) {
+      if (StringUtils.isNotEmpty(cfgServer.getTemplate())) {
+        throw new TigerConfigurationException(
+            "Could not resolve template '" + cfgServer.getTemplate() + "'");
+      }
+    }
+    return configuration;
+  }
+
+  private static void addDefaults() {
+    TigerGlobalConfiguration.putValue(
+        "tiger.tigerProxy.parsingShouldBlockCommunication", "true", SourceType.DEFAULTS);
+  }
+
   public void startLocalTigerProxyIfActivated() {
     if (configuration.isLocalProxyActive()) {
       try {
         TigerServerLogManager.addProxyCustomerAppender(this, localProxyLog);
-      } catch (NoClassDefFoundError ncde) {
+      } catch (NoClassDefFoundError error) {
         log.warn(
             "Unable to detect logback library! Log appender for local proxy status messages not"
                 + " activated");
@@ -147,18 +204,16 @@ public class TigerTestEnvMgr
 
       localTigerProxy = startLocalTigerProxy(configuration);
       proxyStatusMessage(
-          "Local Tiger Proxy URL http://localhost:" + localTigerProxy.getProxyPort(),
-          RbelAnsiColors.BLUE_BOLD);
+          "Local Tiger Proxy URL http://localhost:" + localTigerProxy.getProxyPort());
       proxyStatusMessage(
           "Local Tiger Proxy UI http://localhost:"
               + localTigerProxyApplicationContext.getWebServer().getPort()
-              + "/webui",
-          RbelAnsiColors.BLUE_BOLD);
+              + "/webui");
       environmentVariables.put("PROXYHOST", "host.docker.internal");
       environmentVariables.put("PROXYPORT", localTigerProxy.getProxyPort());
       try {
         TigerServerLogManager.addProxyCustomerAppender(this, localTigerProxy.getLog());
-      } catch (NoClassDefFoundError ncde) {
+      } catch (NoClassDefFoundError error) {
         log.warn(
             "Unable to detect logback library! Log appender feature for local Tiger Proxy not"
                 + " activated");
@@ -170,7 +225,7 @@ public class TigerTestEnvMgr
     }
   }
 
-  private void proxyStatusMessage(String statusMessage, RbelAnsiColors color) {
+  private void proxyStatusMessage(String statusMessage) {
     publishNewStatusUpdate(
         TigerServerStatusUpdate.builder()
             .type(LOCAL_TIGER_PROXY_TYPE)
@@ -182,7 +237,7 @@ public class TigerTestEnvMgr
                     + "/webui")
             .build());
     if (localProxyLog.isInfoEnabled()) {
-      localProxyLog.info(Ansi.colorize(statusMessage, color));
+      localProxyLog.info(Ansi.colorize(statusMessage, RbelAnsiColors.BLUE_BOLD));
     }
   }
 
@@ -261,9 +316,9 @@ public class TigerTestEnvMgr
                   () ->
                       new TigerEnvironmentStartupException(
                           "No free port reserved for local Tiger Proxy admin"));
-      properties.put("server.port", Integer.toString(port));
+      properties.put(SERVER_PORT, Integer.toString(port));
     } else {
-      properties.put("server.port", Integer.toString(configuration.getTigerProxy().getAdminPort()));
+      properties.put(SERVER_PORT, Integer.toString(configuration.getTigerProxy().getAdminPort()));
       LOCALPROXY_ADMIN_RESERVED_PORT.putValue(configuration.getTigerProxy().getAdminPort());
     }
     properties.putAll(getConfiguredLoggingLevels());
@@ -287,13 +342,6 @@ public class TigerTestEnvMgr
     return proxy;
   }
 
-  public static Map<String, Object> getConfiguredLoggingLevels() {
-    return TigerGlobalConfiguration.readMapWithCaseSensitiveKeys("tiger", "logging", "level")
-        .entrySet()
-        .stream()
-        .collect(Collectors.toMap(entry -> "logging.level." + entry.getKey(), Entry::getValue));
-  }
-
   public void publishNewStatusUpdate(TigerServerStatusUpdate update) {
     publishStatusUpdateToListeners(
         TigerStatusUpdate.builder()
@@ -312,60 +360,8 @@ public class TigerTestEnvMgr
       TigerStatusUpdate update, List<TigerUpdateListener> listeners) {
     if (!isShuttingDown) {
       getFixedPoolExecutor()
-          .submit(
-              () -> listeners.stream().forEach(listener -> listener.receiveTestEnvUpdate(update)));
+          .submit(() -> listeners.forEach(listener -> listener.receiveTestEnvUpdate(update)));
     }
-  }
-
-  private static void readCommandFromInput(
-      String textToEnter, String message, Function<Void, String> readLine) {
-    String cmd = null;
-    while (cmd == null || !cmd.equals(textToEnter)) {
-      log.info(message);
-      if (cmd != null) {
-        log.warn("Received: '{}'", cmd);
-      }
-      cmd = readLine.apply(null);
-      try {
-        TimeUnit.MILLISECONDS.sleep(100);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new TigerTestEnvException("Interrupt received while waiting for console input", e);
-      }
-    }
-  }
-
-  private static void readTemplates() {
-    // read configuration from file and templates from classpath resource
-    try {
-      final URL templatesUrl = TigerTestEnvMgr.class.getResource("templates.yaml");
-      final String templatesYaml =
-          IOUtils.toString(Objects.requireNonNull(templatesUrl).toURI(), StandardCharsets.UTF_8);
-      TigerGlobalConfiguration.readTemplates(templatesYaml, "tiger", "servers");
-    } catch (IOException | URISyntaxException e) {
-      throw new TigerConfigurationException("Unable to read templates YAML!", e);
-    }
-  }
-
-  private static Configuration readConfiguration() {
-    TigerGlobalConfiguration.initialize();
-    readTemplates();
-    addDefaults();
-    final Configuration configuration =
-        TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class, "tiger")
-            .orElseGet(Configuration::new);
-    for (CfgServer cfgServer : configuration.getServers().values()) {
-      if (StringUtils.isNotEmpty(cfgServer.getTemplate())) {
-        throw new TigerConfigurationException(
-            "Could not resolve template '" + cfgServer.getTemplate() + "'");
-      }
-    }
-    return configuration;
-  }
-
-  private static void addDefaults() {
-    TigerGlobalConfiguration.putValue(
-        "tiger.tigerProxy.parsingShouldBlockCommunication", "true", SourceType.DEFAULTS);
   }
 
   private void assertNoCyclesInGraph() {
@@ -377,9 +373,7 @@ public class TigerTestEnvMgr
     if (visitedServer.contains(currentPosition)) {
       throw new TigerEnvironmentStartupException(
           "Cyclic graph detected in startup sequence: %s",
-          visitedServer.stream()
-              .map(AbstractTigerServer::getServerId)
-              .collect(Collectors.toList()));
+          visitedServer.stream().map(AbstractTigerServer::getServerId).toList());
     }
     if (currentPosition.getDependUponList().isEmpty()) {
       return;
@@ -419,18 +413,18 @@ public class TigerTestEnvMgr
           .get(serverType)
           .getDeclaredConstructor(TigerTestEnvMgr.class, String.class, CfgServer.class)
           .newInstance(this, serverId, config);
-    } catch (TigerTestEnvException ttee) {
-      throw ttee;
+    } catch (TigerTestEnvException e) {
+      throw e;
     } catch (RuntimeException
         | NoSuchMethodException
         | InstantiationException
         | IllegalAccessException
         | InvocationTargetException e) {
       if (e.getCause() != null) {
-        if (e.getCause() instanceof TigerConfigurationException) {
-          throw (TigerConfigurationException) e.getCause();
-        } else if (e.getCause() instanceof TigerTestEnvException) {
-          throw (TigerTestEnvException) e.getCause();
+        if (e.getCause() instanceof TigerConfigurationException tce) {
+          throw (TigerConfigurationException) tce.getCause();
+        } else if (e.getCause() instanceof TigerTestEnvException tee) {
+          throw (TigerTestEnvException) tee.getCause();
         }
       }
       throw new TigerTestEnvException(
@@ -485,9 +479,7 @@ public class TigerTestEnvMgr
 
     log.info(
         "Booting following server(s): {}",
-        initialServersToBoot.stream()
-            .map(AbstractTigerServer::getHostname)
-            .collect(Collectors.toList()));
+        initialServersToBoot.stream().map(AbstractTigerServer::getHostname).toList());
 
     initialServersToBoot.parallelStream().forEach(this::startServer);
 
@@ -520,13 +512,14 @@ public class TigerTestEnvMgr
           .submit(
               () ->
                   servers.values().parallelStream()
-                      .peek(
-                          toBeStartedServer ->
-                              log.debug(
-                                  "Considering to start server {} with status {}...",
-                                  toBeStartedServer.getServerId(),
-                                  toBeStartedServer.getStatus()))
-                      .filter(candidate -> candidate.getStatus() == TigerServerStatus.NEW)
+                      .filter(
+                          candidate -> {
+                            log.debug(
+                                "Considering to start server {} with status {}...",
+                                candidate.getServerId(),
+                                candidate.getStatus());
+                            return candidate.getStatus() == TigerServerStatus.NEW;
+                          })
                       .filter(
                           candidate ->
                               candidate.getDependUponList().stream()
@@ -535,13 +528,14 @@ public class TigerTestEnvMgr
                                           depending.getStatus() != TigerServerStatus.RUNNING)
                                   .findAny()
                                   .isEmpty())
-                      .peek(
-                          toBeStartedServer ->
-                              log.info(
-                                  "Starting server {} with status {}",
-                                  toBeStartedServer.getServerId(),
-                                  toBeStartedServer.getStatus()))
-                      .forEach(this::startServer))
+                      .forEach(
+                          toBeStartedServer -> {
+                            log.info(
+                                "Starting server {} with status {}",
+                                toBeStartedServer.getServerId(),
+                                toBeStartedServer.getStatus());
+                            startServer(toBeStartedServer);
+                          }))
           .get();
     } catch (RuntimeException e) {
       shutDown();
@@ -599,6 +593,7 @@ public class TigerTestEnvMgr
     listeners.forEach(listener -> listener.receiveTestEnvUpdate(statusUpdate));
   }
 
+  @SuppressWarnings("unused")
   public List<TigerRoute> getRoutes() {
     return servers.values().stream()
         .map(AbstractTigerServer::getRoutes)
@@ -645,6 +640,7 @@ public class TigerTestEnvMgr
     return configuration.isLocalProxyActive();
   }
 
+  @SuppressWarnings("unused")
   public ExecutorService getExecutor() {
     return cachedExecutor;
   }
@@ -681,6 +677,4 @@ public class TigerTestEnvMgr
   public void abortTestExecution() {
     shouldAbortTestExecution = true;
   }
-
-  @Setter public ConfigurableApplicationContext context;
 }

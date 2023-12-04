@@ -5,7 +5,6 @@
 package de.gematik.test.tiger.common.jexl;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -14,12 +13,14 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import lombok.SneakyThrows;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
+@SuppressWarnings("unused")
 public class InlineJexlToolbox {
   /**
    * reads file - not post-processed, no variable substitution
@@ -27,12 +28,9 @@ public class InlineJexlToolbox {
    * @param filename path to file
    * @return content of the file
    */
+  @SneakyThrows
   public static String file(String filename) {
-    try {
-      return Files.readString(Path.of(filename));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return Files.readString(Path.of(filename));
   }
 
   /**
@@ -130,7 +128,7 @@ public class InlineJexlToolbox {
   }
 
   /**
-   * reads base64 encoded tring value and safely decodes to string
+   * reads base64 encoded string value and safely decodes to string
    *
    * @param value base64 encoded string to be read
    * @return if value is not null, base64 decoded value is returned as String, else null

@@ -71,7 +71,7 @@ public class RbelJexlExecutor {
 
       return textMatchResult || regexMatchResult;
     } catch (Exception e) {
-      if (TigerJexlExecutor.ACTIVATE_JEXL_DEBUGGING) {
+      if (TigerJexlExecutor.isActivateJexlDebugging()) {
         log.info("Error during Text search.", e);
       }
       return false;
