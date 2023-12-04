@@ -113,4 +113,29 @@ class TestAssignments {
     HttpResponse<String> response = Unirest.get("http://localhost:" + port).asString();
     assertThat(response.getBody()).isEqualTo("foobar");
   }
+
+  @Test
+  void testAssignmentsWithFallBacks() {
+    configuration.setMockResponses(
+        Map.of(
+            "level1",
+            TigerMockResponse.builder()
+                .assignments(Map.of("level1Assignment", "level1Value"))
+                .nestedResponses(
+                    Map.of(
+                        "level2",
+                        TigerMockResponse.builder()
+                            .response(
+                                TigerMockResponseDescription.builder()
+                                    .statusCode(666)
+                                    .body(
+                                        "${level1Assignment|fallback1} + ${level2AssignmentNotReallyExisting|fallback2}")
+                                    .build())
+                            .build()))
+                .build()));
+
+    HttpResponse<String> response = Unirest.get("http://localhost:" + port).asString();
+    assertThat(response.getStatus()).isEqualTo(666);
+    assertThat(response.getBody()).isEqualTo("level1Value + fallback2");
+  }
 }

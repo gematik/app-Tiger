@@ -10,6 +10,8 @@
 * TGR-1180: fixed position of close button in the configuration editor in the WorkflowUi
 * TGR-1143: in case of missing dependencies for a server type the exception is more clearly stating that there is a
   dependency missing
+* TGR-1190: fixed an issue where when setting fallbacks ( e.g.: ${foo.bar|orThisValue} ) the fallback value would always
+  be used also when the value to resolve was existing in the JexlContext.
 
 # Release 2.3.0
 
@@ -30,13 +32,13 @@
 
 -------
 
-Serenity BDD 4.0.12
-Cucumber 7.14.0
-RestAssured 5.3.1
-Selenium 4.12.1
-Appium 8.3.0
-Spring Boot 3.1.0
-Logback 1.4.9
+* Serenity BDD 4.0.12
+* Cucumber 7.14.0
+* RestAssured 5.3.1
+* Selenium 4.12.1
+* Appium 8.3.0
+* Spring Boot 3.1.0
+* Logback 1.4.9
 
 # Release 2.2.1
 

@@ -9,7 +9,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -121,6 +123,15 @@ myMap:
     assertThat(TigerGlobalConfiguration.resolvePlaceholders("!{foo:asPlaceholder('key1')}"))
         .isEqualTo("value1");
     TigerJexlExecutor.deregisterNamespace("foo");
+  }
+
+  @Test
+  void testValuesFromJexlContext() {
+    TigerJexlContext jexlContext = new TigerJexlContext(Map.of("testKey", "valueFromJexlContext"));
+
+    assertThat(
+            TigerGlobalConfiguration.resolvePlaceholdersWithContext("${testKey|foo}", jexlContext))
+        .isEqualTo("valueFromJexlContext");
   }
 
   public static class FooBarClass {

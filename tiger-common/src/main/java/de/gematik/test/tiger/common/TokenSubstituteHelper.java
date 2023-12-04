@@ -13,8 +13,10 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.BiFunction;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.Setter;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -24,7 +26,9 @@ public final class TokenSubstituteHelper {
   private static final Deque<Pair<Character, ReplacerFunction>> REPLACER_ORDER =
       new ConcurrentLinkedDeque<>();
   private static final int MAXIMUM_NUMBER_OF_REPLACEMENTS = 1_000;
-  public static BiFunction<String, TigerConfigurationLoader, Optional<String>> RESOLVE =
+
+  @Getter @Setter
+  private static BiFunction<String, TigerConfigurationLoader, Optional<String>> resolve =
       (key, config) -> config.readStringOptional(key);
 
   static {
@@ -59,7 +63,8 @@ public final class TokenSubstituteHelper {
     Optional<String> fallbackValue =
         Optional.of(str).filter(s -> s.contains("|")).map(s -> s.split("\\|")[1]);
     Optional<String> key = Optional.of(str).map(s -> s.split("\\|")[0]);
-    return key.flatMap(k -> TokenSubstituteHelper.RESOLVE.apply(k, source))
+    return key.flatMap(k -> TokenSubstituteHelper.resolve.apply(k, source))
+        .or(() -> key.flatMap(k -> ctx.map(context -> context.get(k)).map(Object::toString)))
         .or(() -> ctx.map(context -> context.get(str)).map(Object::toString))
         .or(() -> fallbackValue);
   }

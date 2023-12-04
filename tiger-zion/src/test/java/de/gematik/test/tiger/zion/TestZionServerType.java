@@ -260,7 +260,9 @@ servers:
     assertThat(responseEmailNotConfirmed.getStatus()).isEqualTo(777);
   }
 
-  @TigerTest(tigerYaml = """
+  @TigerTest(
+      tigerYaml =
+          """
     servers:
       zionServer:
         type: zion
@@ -278,12 +280,58 @@ servers:
   @Test
   void shouldLazyResolveRequestBodies(UnirestInstance unirestInstance) {
     final HttpResponse<String> response =
-      unirestInstance
-        .get(
-          TigerGlobalConfiguration.resolvePlaceholders(
-            "http://zionServer/blubBlab/helloWorld"))
-        .asString();
+        unirestInstance
+            .get(
+                TigerGlobalConfiguration.resolvePlaceholders(
+                    "http://zionServer/blubBlab/helloWorld"))
+            .asString();
 
     assertThat(response.getBody()).isEqualTo("blub");
+  }
+
+  @TigerTest(
+      tigerYaml =
+          """
+servers:
+  serverTestName:
+    type: zion
+    zionConfiguration:
+      serverPort: ${free.port.3}
+      mockResponses:
+        validToken:
+          request:
+            method: POST
+          nestedResponses:
+            registerUser:
+              assignments:
+                emailFromToken: hello@example.com
+              nestedResponses:
+                existingAssignment:
+                  request:
+                    path: "/existing"
+                  requestCriterions:
+                  response:
+                    statusCode: 201
+                    body: ${emailFromToken|InvalidEmail}
+                nonExistingAssignment:
+                  request:
+                    path: "/nonExisting"
+                  response:
+                    statusCode: 401
+                    body: ${emailNotExisting|InvalidEmail}
+                    """)
+  @Test
+  void testAssignmentsWithFallbackValue(UnirestInstance unirest) {
+    HttpResponse<String> responseExisting =
+        unirest.post("http://serverTestName/existing/").asString();
+
+    assertThat(responseExisting.getStatus()).isEqualTo(201);
+    assertThat(responseExisting.getBody()).isEqualTo("hello@example.com");
+
+    HttpResponse<String> responseNonExisting =
+        unirest.post("http://serverTestName/nonExisting/").asString();
+
+    assertThat(responseNonExisting.getStatus()).isEqualTo(401);
+    assertThat(responseNonExisting.getBody()).isEqualTo("InvalidEmail");
   }
 }

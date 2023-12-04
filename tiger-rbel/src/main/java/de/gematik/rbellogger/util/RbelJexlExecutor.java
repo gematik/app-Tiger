@@ -43,17 +43,20 @@ public class RbelJexlExecutor {
                         .map(el -> el.printValue().orElseGet(el::getRawStringContent))));
     TigerJexlExecutor.setExpressionPreMapper(RbelJexlExecutor::evaluateRbelPathExpressions);
     TigerJexlExecutor.addContextDecorator(RbelContextDecorator::buildJexlMapContext);
-    TokenSubstituteHelper.RESOLVE = RbelJexlExecutor::resolveConfigurationValue;
+    TokenSubstituteHelper.setResolve(RbelJexlExecutor::resolveConfigurationValue);
     isInitialized = true;
   }
 
   private static Optional<String> resolveConfigurationValue(
       String key, TigerConfigurationLoader configuration) {
-    return configuration.readStringOptional(key)
-      .or(() -> new RbelPathExecutor<>(new TigerConfigurationRbelObject(configuration), "$." + key)
-                .execute().stream()
-        .findFirst()
-        .map(TigerConfigurationRbelObject::getRawStringContent));
+    return configuration
+        .readStringOptional(key)
+        .or(
+            () ->
+                new RbelPathExecutor<>(new TigerConfigurationRbelObject(configuration), "$." + key)
+                    .execute().stream()
+                        .findFirst()
+                        .map(TigerConfigurationRbelObject::getRawStringContent));
   }
 
   public static boolean matchAsTextExpression(Object element, String textExpression) {
