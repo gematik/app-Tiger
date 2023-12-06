@@ -128,7 +128,7 @@ public class TigerConfigurationKey extends ArrayList<TigerConfigurationKeyString
   public TigerConfigurationKey getParentNodeOrIdentity() {
     if (size() > 1) {
       return new TigerConfigurationKey(subList(0, size() - 1));
-    }else {
+    } else {
       return this;
     }
   }

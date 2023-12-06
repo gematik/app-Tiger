@@ -30,6 +30,7 @@ import javax.net.ssl.SSLHandshakeException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.awaitility.core.ConditionTimeoutException;
+import org.bouncycastle.tls.TlsException;
 import org.mockserver.proxyconfiguration.ProxyConfiguration;
 
 public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
@@ -51,7 +52,7 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
     if (getStatus() == TigerServerStatus.NEW) {
       setStatus(TigerServerStatus.STARTING);
     }
-    waitForServiceHalfTime(true);
+    waitForServiceToBeUpForHalfOfTheConnectionTimeout(true);
     TigerTestEnvException exceptionAtStartup =
         new TigerTestEnvException(
             startupException.get(),
@@ -66,7 +67,7 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
           "%s Server %s stopped unexpectedly!",
           getConfiguration().getType().value(), getServerId());
     } else if (getStatus() == TigerServerStatus.STARTING) {
-      waitForServiceHalfTime(false);
+      waitForServiceToBeUpForHalfOfTheConnectionTimeout(false);
       if (startupException.get() != null) {
         throw exceptionAtStartup;
       } else {
@@ -80,7 +81,7 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
     statusMessage(getConfiguration().getType().value() + " " + getServerId() + " started");
   }
 
-  protected void waitForServiceHalfTime(boolean quiet) {
+  protected void waitForServiceToBeUpForHalfOfTheConnectionTimeout(boolean quiet) {
     final long timeOutInMs =
         getStartupTimeoutSec().orElse(DEFAULT_STARTUP_TIMEOUT_IN_SECONDS) * 1000L / 2;
     if (isHealthCheckNone()) {
@@ -113,9 +114,9 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
     }
   }
 
-  public TigerServerStatus updateStatus(boolean quiet) {
+  public TigerServerStatus updateStatus(boolean noErrorLogging) {
     var url = buildHealthcheckUrl();
-    if (!quiet) {
+    if (!noErrorLogging) {
       statusMessage("Waiting for URL '" + url + "' to be healthy...");
     }
     try {
@@ -123,31 +124,47 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
       printServerUpMessage();
       setStatus(TigerServerStatus.RUNNING, "Server " + getServerId() + " up & healthy");
     } catch (ConnectException | SocketTimeoutException cex) {
-      if (!quiet) {
-        log.info("No connection to {} of {}...", url, getServerId());
+      if (!noErrorLogging) {
+        handleNoTcpConnectionException(url);
       }
-    } catch (SSLHandshakeException sslhe) {
-      log.warn(
-          Ansi.colorize(
-              "SSL handshake but server at least seems to be up!" + sslhe.getMessage(),
-              RbelAnsiColors.YELLOW_BOLD));
-      setStatus(TigerServerStatus.RUNNING, "Server " + getServerId() + " up & healthy");
+    } catch (SSLHandshakeException | TlsException sslhe) {
+      handleSslHandshakeErrorAndSetServerRunning(sslhe);
     } catch (SSLException sslex) {
-      if (sslex.getMessage().equals("Unsupported or unrecognized SSL message")) {
-        if (!quiet) {
-          log.error("Unsupported or unrecognized SSL message - MAYBE you mismatched http/httpS?");
-        }
-      } else {
-        if (!quiet) {
-          log.error("SSL Error - " + sslex.getMessage(), sslex);
-        }
-      }
+      handleOtherSslError(noErrorLogging, sslex);
     } catch (Exception e) {
-      if (!quiet) {
-        log.error("Failed to connect - " + e.getMessage(), e);
+      if (!noErrorLogging) {
+        handleOtherException(e);
       }
     }
     return getStatus();
+  }
+
+  private void handleNoTcpConnectionException(URL url) {
+    log.info("No connection to {} of {}...", url, getServerId());
+  }
+
+  private void handleOtherException(Exception e) {
+    log.error("Failed to connect - " + e.getMessage(), e);
+  }
+
+  private void handleOtherSslError(boolean noErrorLogging, SSLException sslex) {
+    if (sslex.getMessage().equals("Unsupported or unrecognized SSL message")) {
+      if (!noErrorLogging) {
+        log.error("Unsupported or unrecognized SSL message - MAYBE you mismatched http/httpS?");
+      }
+    } else {
+      if (!noErrorLogging) {
+        log.error("SSL Error - " + sslex.getMessage(), sslex);
+      }
+    }
+  }
+
+  private void handleSslHandshakeErrorAndSetServerRunning(IOException sslhe) {
+    log.warn(
+        Ansi.colorize(
+            "SSL handshake but server at least seems to be up! {}", RbelAnsiColors.YELLOW_BOLD),
+        sslhe.getMessage());
+    setStatus(TigerServerStatus.RUNNING, "Server " + getServerId() + " up & healthy");
   }
 
   private void checkUrlOrThrowException(URL url) throws IOException {

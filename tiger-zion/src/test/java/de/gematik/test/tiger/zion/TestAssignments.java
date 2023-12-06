@@ -129,7 +129,8 @@ class TestAssignments {
                                 TigerMockResponseDescription.builder()
                                     .statusCode(666)
                                     .body(
-                                        "${level1Assignment|fallback1} + ${level2AssignmentNotReallyExisting|fallback2}")
+                                        "${level1Assignment|fallback1} +"
+                                            + " ${level2AssignmentNotReallyExisting|fallback2}")
                                     .build())
                             .build()))
                 .build()));

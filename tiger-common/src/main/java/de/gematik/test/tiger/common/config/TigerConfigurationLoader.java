@@ -128,7 +128,7 @@ public class TigerConfigurationLoader {
             .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CASE)
             .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
             .addModule(new JavaTimeModule())
-          .addModule(new AllowDelayedPrimitiveResolvementModule(this))
+            .addModule(new AllowDelayedPrimitiveResolvementModule(this))
             .addModule(skipEvaluationModule)
             .build();
   }
@@ -613,14 +613,14 @@ public class TigerConfigurationLoader {
   @AllArgsConstructor
   @Slf4j
   public static class SkipEvaluationDeserializer extends JsonDeserializer<String>
-    implements ContextualDeserializer {
+      implements ContextualDeserializer {
 
     private final TigerConfigurationLoader configurationLoader;
     private boolean skipEvaluation;
 
     @Override
     public JsonDeserializer<?> createContextual(
-      DeserializationContext ctxt, BeanProperty property) {
+        DeserializationContext ctxt, BeanProperty property) {
       this.skipEvaluation =
           property != null && property.getAnnotation(TigerSkipEvaluation.class) != null;
       return new SkipEvaluationDeserializer(configurationLoader, skipEvaluation);
@@ -628,7 +628,7 @@ public class TigerConfigurationLoader {
 
     @Override
     public String deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
-      throws IOException {
+        throws IOException {
       final String valueAsString = jsonParser.getValueAsString();
       if (skipEvaluation) {
         return valueAsString;
@@ -636,7 +636,6 @@ public class TigerConfigurationLoader {
         return TokenSubstituteHelper.substitute(valueAsString, configurationLoader);
       }
     }
-
   }
 
   @AllArgsConstructor

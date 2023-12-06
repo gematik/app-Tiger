@@ -39,9 +39,7 @@ public abstract class RbelPathAble {
     return List.of(this);
   }
 
-  /**
-   * Should this element be present in the final RbelPath results?
-   */
+  /** Should this element be present in the final RbelPath results? */
   public boolean shouldElementBeKeptInFinalResult() {
     return true;
   }

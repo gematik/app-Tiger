@@ -330,7 +330,8 @@ class RbelPathExecutorTest {
         "${MYMAP..[?(@.vAlUe=='xMaS')].target}, tree",
         "${..buried}, deep",
       })
-  void testSubstituteTokensFromConfigurationUsingRbelPath(String stringToSubstitute, String expectedString) {
+  void testSubstituteTokensFromConfigurationUsingRbelPath(
+      String stringToSubstitute, String expectedString) {
     TigerGlobalConfiguration.readFromYaml(
         """
 myMap:

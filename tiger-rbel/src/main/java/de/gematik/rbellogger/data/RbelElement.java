@@ -186,8 +186,7 @@ public class RbelElement extends RbelPathAble {
 
   @Override
   public List<RbelElement> findRbelPathMembers(String rbelPath) {
-    return new RbelPathExecutor<>(this, rbelPath)
-        .execute();
+    return new RbelPathExecutor<>(this, rbelPath).execute();
   }
 
   @Override
@@ -343,10 +342,8 @@ public class RbelElement extends RbelPathAble {
   public List<RbelPathAble> descendToContentNodeIfAdvised() {
     if (hasFacet(RbelJsonFacet.class) && hasFacet(RbelNestedFacet.class)) {
       return List.of(
-        getFacet(RbelNestedFacet.class)
-          .map(RbelNestedFacet::getNestedElement)
-          .orElseThrow(),
-        this);
+          getFacet(RbelNestedFacet.class).map(RbelNestedFacet::getNestedElement).orElseThrow(),
+          this);
     } else {
       return List.of(this);
     }
