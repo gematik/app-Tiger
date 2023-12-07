@@ -14,11 +14,14 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
 import java.io.File;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TigerServerLogManager {
 
   private static final String DEFAULT_LOGFILE_LOCATION = "./target/serverLogs/";
@@ -27,8 +30,7 @@ public class TigerServerLogManager {
       "%date %level [%thread] %logger{10} [%file:%line] %msg%n";
 
   public static void addAppenders(AbstractTigerServer server) {
-    Logger logbackLogger = server.getLog();
-    createAndAddAppenders(server, logbackLogger);
+    createAndAddAppenders(server, (ch.qos.logback.classic.Logger) server.getLog());
   }
 
   public static void setLoggingLevel(String loggerName, String levelString) {
@@ -38,7 +40,8 @@ public class TigerServerLogManager {
     logger.setLevel(ch.qos.logback.classic.Level.toLevel(levelString.toUpperCase(), Level.INFO));
   }
 
-  private static void createAndAddAppenders(AbstractTigerServer server, Logger log) {
+  private static void createAndAddAppenders(
+      AbstractTigerServer server, ch.qos.logback.classic.Logger log) {
     LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
 
     PatternLayoutEncoder patternLayoutEncoder = new PatternLayoutEncoder();
@@ -48,19 +51,16 @@ public class TigerServerLogManager {
 
     if (server.getConfiguration().getExternalJarOptions() == null
         || (server.getConfiguration().getExternalJarOptions().isActivateLogs())) {
-      ((ch.qos.logback.classic.Logger) log)
-          .addAppender(
-              createFileAppender(
-                  server.getServerId(),
-                  server.getConfiguration().getLogFile(),
-                  loggerContext,
-                  patternLayoutEncoder));
-      ((ch.qos.logback.classic.Logger) log)
-          .addAppender(createConsoleAppender(loggerContext, patternLayoutEncoder));
-      ((ch.qos.logback.classic.Logger) log)
-          .addAppender(createCustomerAppender(server, loggerContext));
+      log.addAppender(
+          createFileAppender(
+              server.getServerId(),
+              server.getConfiguration().getLogFile(),
+              loggerContext,
+              patternLayoutEncoder));
+      log.addAppender(createConsoleAppender(loggerContext, patternLayoutEncoder));
+      log.addAppender(createCustomerAppender(server, loggerContext));
     }
-    ((ch.qos.logback.classic.Logger) log).setAdditive(false);
+    log.setAdditive(false);
   }
 
   private static FileAppender<ILoggingEvent> createFileAppender(
