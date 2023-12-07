@@ -1,0 +1,92 @@
+[#_web_ui]
+=== Standalone Tiger Proxy UI (WebUI)
+
+To watch the recorded messages and to be able to analyze issues at test run time already you can visit the Tiger Proxy web user interface at:
+
+[source,http request]
+----
+http://127.0.0.1:${SERVERPORT}/webui
+----
+
+With `ADMINPORT` being the configured server port of the Tiger Proxy.
+
+When the user works with the xref:tigerWorkflowUI.adoc#_workflow_ui[Workflow UI] the Tiger Proxy UI can be opened via a link in the Rbel Log Details view in a new browser tab.
+
+==== Overview
+
+The following screenshot shows the WebUI.
+On the left side the request/response pairs are displayed.
+The user can see the request type and the error code of the response as well as the timestamp of the request.
+
+image::screenshots/webui.png[title="Tiger Proxy UI / WebUI"]
+
+On the top right the tiger version and the build date are displayed.
+In the middle the full request and response messages are shown with detailed header and body.
+
+==== Bottom menu bar
+
+image::media/TigerProxyBottomNavBar.png[title="Tiger Proxy UI bottom menu bar "]
+
+The displayed buttons can trigger the following actions:
+
+* *Routes* … allows you to modify and add the routes configured on this Tiger Proxy
+* *Scroll Lock* … allows you to lock the scroll position.
+Incoming messages will still be added to the list at the bottom of the page.
+* *Toggle Button*  … has two possibilities (hide headers and hide details) which collapses either all headers (request headers as well as response headers) or all the detailed information of the requests and responses.
+* *Filter*  … allows you to filter the received messages with a RbelPath or a JEXL expression.
+You can also search for text or a regex in this input field, but then you need to place the search text inside quotation marks (").
+* *Reset* … allows you to delete all recorded messages so far.
+This will delete all messages on the Tiger Proxy!
+* *Export* … allows you to export all or the currently filtered received messages as an HTML page or as a machine-readable tgr file.
+* *Page* … allows pagination of the messages.
+* *Size* … changes the size of the messages.
+* *Import* … allows you to import the previously stored traffic file.
+* *Quit* … allows you to quit the Tiger Proxy instance
+
+Some modals are explained in more detail in the following sections.
+
+===== Filter Modal
+
+When a lot of messages are recorded, it is sometimes hard to find the message you are looking for.
+Therefore, the user can filter the messages with a Rbel-Path or a regex using either the filter modal as shown in the picture below or the JEXL Debugging modal described xref:_jexl_filter[here].
+
+image::screenshots/webui_filter_open.png[title="Filter Managment"]
+
+===== RBel-Path/JEXL Debugging Modal
+
+When the user wants to inspect a Rbel-Path or have a look at some JEXL expressions, the user can click on the corresponding button in the top right corner of the request or the response that is highlighted in the following screenshot.
+
+image::screenshots/webui_inspect_highlight.png[title="Access RBel-Path/JEXL Debugging"]
+
+The picture below shows the RBel-Path tab.
+The user can execute the RBel-Path on the request or the response and the result is displayed in the bottom part of the modal.
+
+image::screenshots/webui_inspect_rbelpath_highlight.png[title="RBel-Path"]
+
+For more information in the Rbel-Path check out xref:tigerProxy.adoc#_rbel_path_details[this] section.
+
+The picture below shows the JEXL Debugging tab.
+The user can execute the JEXL expression on the request or the response and the result is displayed in the bottom part of the modal.
+Further information on JEXL expressions can be found in xref:tigerUserInterfaces.adoc#_jexl_expression_detail[Explanation of JEXL Expressions].
+
+image::screenshots/webui_inspect_jexl_highlight.png[title="JEXL Debugging"]
+
+[#_jexl_filter]
+When the user wants to filter the messages with a JEXL expression, the user can click on the "Use as filter" button in the modal.
+
+===== Routing Modal
+
+The user can add/delete routes in the routing modal which is shown in the following screenshot.
+
+image::screenshots/webui_routing_open.png[title="Route Managment"]
+
+===== Message Content
+
+The user can have a look at the request/response message content of the header, body or both by clicking on the corresponding button in the top right corner of the request or the response that is highlighted in the following screenshot.
+
+image::screenshots/webui_btn_content_highlight.png[title="Buttons to show message content"]
+
+The picture below shows the content of the whole response.
+
+image::screenshots/webui_btn_content.png[title="Example of the content of a response"]
+

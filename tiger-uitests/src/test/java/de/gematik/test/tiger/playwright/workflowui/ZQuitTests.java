@@ -312,6 +312,7 @@ class ZQuitTests extends AbstractTests {
         () ->
             assertThat(page.querySelector("#workflow-messages.test-messages-quit").isVisible())
                 .isTrue());
+    page.querySelector("#test-tiger-logo").click();
     page.screenshot(
         new Page.ScreenshotOptions().setFullPage(false).setPath(getPath("workflowui_quit.png")));
   }

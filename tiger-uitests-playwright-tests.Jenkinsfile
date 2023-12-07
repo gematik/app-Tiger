@@ -16,6 +16,7 @@ def GITLAB_PROJECT_ID = '644'
 def TAG_NAME = "ci/build"
 def POM_PATH = 'pom.xml'
 def POM_PATH_PRODUCT = 'tiger-testenv-mgr/pom.xml'
+def REPO_URL = createGitUrl('git/Testtools/tiger/tiger')
 
 pipeline {
     options {
@@ -40,6 +41,15 @@ pipeline {
                 gitCreateBranch()
             }
         }
+
+        stage('Checkout') {
+              steps {
+                  git branch: BRANCH,
+                      credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
+                      url: REPO_URL
+              }
+          }
+
 
         stage('set Version') {
             steps {
@@ -93,6 +103,18 @@ pipeline {
                           fi
                         """
                     }
+                }
+            }
+        }
+
+        stage('Commit screenshots') {
+            steps {
+                script {
+                sh """
+                     git add doc/user_manual/screenshots/*.png
+                     git commit -m "TGR-9999: Jenkins adds PNG files"
+                     git push origin ${BRANCH}
+                """
                 }
             }
         }

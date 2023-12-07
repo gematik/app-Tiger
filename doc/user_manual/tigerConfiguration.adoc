@@ -254,9 +254,10 @@ This will immediately return the `href`-attribute of the link in question as a s
 You can easily register additional namespaces by calling `TigerJexlExecutor.registerAdditionalNamespace(<namespace-prefix>, <namespace class or object)`.
 
 
+[#_tiger_configuration_editor]
 === Configuration Editor
 
-The configuration editor allows to view and edit the tiger configuration during a test run. The editor is part of the xref:tigerTestLibrary.adoc#_workflow_ui[Workflow UI] and can be opened by clicking the gears icon in the sidebar (xref:editor_start_button[xrefstyle=short]).
+The configuration editor allows to view and edit the tiger configuration during a test run. The editor is part of the xref:tigerWorkflowUI.adoc#_workflow_ui[Workflow UI] and can be opened by clicking the gears icon in the sidebar (xref:editor_start_button[xrefstyle=short]).
 
 image::media/configuration_editor_start_button.png[id="editor_start_button",alt="workflow UI with action buttons and gears icon highlighted", title="Open the configuration editor by clicking the gears icon in the sidebar.", align="center"]
 

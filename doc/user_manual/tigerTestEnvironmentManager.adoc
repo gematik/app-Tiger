@@ -4,8 +4,8 @@ As outlined in xref:tiger_user_manual.adoc#_overview[the overview section] the t
 Its main task is to start various test server nodes configured in the `tiger.yaml` configuration file and initialize the local Tiger Proxy for the test suite.
 To choose a different test environmental configuration file you may set the environment variable `TIGER_TESTENV_CFGFILE`.
 
-
-The test environment manager first checks if the env variable is set and tries to load the configuration file from this value. If this file does not exist the test environment manager tries to load the configuration from `tiger.yaml`.
+The test environment manager first checks if the env variable is set and tries to load the configuration file from this value.
+If this file does not exist the test environment manager tries to load the configuration from `tiger.yaml`.
 If none of these files exist it will fail the start-up.
 
 If the environment variable is not set it searches for files named `tiger.yaml` or `tiger.yml`.
@@ -13,15 +13,18 @@ If none of these files exist it will fail the start-up.
 
 It then loads further yaml-files:
 
-*  `tiger-${hostname}.yaml` and `tiger-${hostname}.yml` are read and give the possibility to make computer-dependent configuration. The hostname is the of your own computer in the network (on Windows-machines typically the computername).
-* The list given under `tiger.additionalYamls` is read. Each list-entry has two properties:
-** `filename` pointing to the file to be read. This can be relative to the tiger.yaml (primary) or relative to the working-directory (secondary). Keep in mind that placeholders can be used in the filename!
+* `tiger-${hostname}.yaml` and `tiger-${hostname}.yml` are read and give the possibility to make computer-dependent configuration.
+The hostname is the of your own computer in the network (on Windows-machines typically the computername).
+* The list given under `tiger.additionalYamls` is read.
+Each list-entry has two properties:
+** `filename` pointing to the file to be read.
+This can be relative to the tiger.yaml (primary) or relative to the working-directory (secondary).
+Keep in mind that placeholders can be used in the filename!
 ** `baseKey`, an optional attribute, which gives you the chance to prefix every property from the given file with this key (keep in mind that the `tiger.yaml` has a baseKey of `tiger`)
 
 In the start-up phase it also informs the local Tiger Proxy about the hostnames each node has configured, so that the local Tiger Proxy can create appropriate routing entries in its own configuration.
 
-To configure your test environment you can either compose the `tiger.yaml` file manually or much preferred
-use the xref:tiger_user_manual.adoc#_admin_ui[Tiger Admin UI].
+To configure your test environment you can compose the `tiger.yaml` file manually.
 
 The nodes configured in the yaml file will be started asynchronously unless the dependsUpon property is set.
 
@@ -33,14 +36,19 @@ The Tiger testenvironment manager currently supports the following list of serve
 * **Docker compose** is a node that you can use to start a group of services defined in one to several compose yaml files configured in the source list.
 * **Helm charts** is a node that installs/updates a given helm chart on a local or remote kubernetes cluster (configuring a local context for remote clusters has to be done outside of Tiger)
 * **External jar** is a node that is started by running `java -jar XXXX.jar` after downloading a Jar archive from the configured source URL.
-* **External URL** is a symbolic node that is actually maintained outside the realm of the test environment manager. The main purpose is to allow the test suite to access this external server via a constant URL, regardless of what the actual access URL of the server is. So if you change the location of the external server has no adaptations effect on the test suite.
-* **Tiger Proxy** is a specialized external Jar node that allows you to instantiate standalone Tiger Proxy nodes in your test environment in several locations to track, log and validate traffic between any two nodes. For this to work, you must either be able to force a proxy on the nodes or xref:tiger_user_manual.adoc#_excurse_what_are_proxies_reverse_forward[use a reverse proxy set up scenario].
+* **External URL** is a symbolic node that is actually maintained outside the realm of the test environment manager.
+The main purpose is to allow the test suite to access this external server via a constant URL, regardless of what the actual access URL of the server is.
+So if you change the location of the external server has no adaptations effect on the test suite.
+* **Tiger Proxy** is a specialized external Jar node that allows you to instantiate standalone Tiger Proxy nodes in your test environment in several locations to track, log and validate traffic between any two nodes.
+For this to work, you must either be able to force a proxy on the nodes or xref:tiger_user_manual.adoc#_excurse_what_are_proxies_reverse_forward[use a reverse proxy set up scenario].
 * **Helm Chart** is a node that will be added to tiger via a plugin mechanism that starts a helm chart within a kubernetes environment.
-* **httpbin** is a node mainly useful for testing purposes. It starts a https://github.com/gaul/java-httpbin[httpbin] server which provides mock endpoints.
+* **httpbin** is a node mainly useful for testing purposes.
+It starts a https://github.com/gaul/java-httpbin[httpbin] server which provides mock endpoints.
 
 ==== YAML configuration files in a nutshell
 
-Before you start writing your own `tiger.yaml` configuration files, make sure you have worked with yaml files before and know its syntax and structure. If unsure take a https://dev.to/techworld_with_nana/yaml-tutorial-for-beginners-a06[20 minutes primer], although not everything in the video is relevant, it gives a good introduction to indenting properties and structures and specifying values in a yaml file.
+Before you start writing your own `tiger.yaml` configuration files, make sure you have worked with yaml files before and know its syntax and structure.
+If unsure take a https://dev.to/techworld_with_nana/yaml-tutorial-for-beginners-a06[20 minutes primer], although not everything in the video is relevant, it gives a good introduction to indenting properties and structures and specifying values in a yaml file.
 
 ==== General properties
 
@@ -252,7 +260,9 @@ Each entry has to provide a unique id, type and pem property.
 
 ==== Configuring PKI identities in Tiger Proxy's tls section
 
-PKI identities can be supplied in a number of ways (JKS, BKS, PKCS1, PKCS8). In every place a string can be given. It could be one of
+PKI identities can be supplied in a number of ways (JKS, BKS, PKCS1, PKCS8).
+In every place a string can be given.
+It could be one of
 
 * "my/file/name.p12;p12password"
 * "p12password;my/file/name.p12"
@@ -282,10 +292,13 @@ Each part can be one of:
 ===== PKI identity passwords
 
 Tiger will attempt to decrypt a given P12 file with a list of common passwords.
+
 ----
 "00", "123456", "gematik", "changeit"
 ----
+
 Users can insert additional passwords by configuring the `tiger.yaml` as follows
+
 ----
 lib:
     additionalKeyStorePasswords: ["foo", "bar", "baz"]
@@ -348,13 +361,15 @@ dockerContainer_001:
 
 ==== Docker Compose node
 
-The docker compose node is a very tricky type of node because we use testcontainer library, which is not exactly up to date in terms of docker compose support. So many of the yaml compose files will need to be modified to work with the testcontainer library.
+The docker compose node is a very tricky type of node because we use testcontainer library, which is not exactly up to date in terms of docker compose support.
+So many of the yaml compose files will need to be modified to work with the testcontainer library.
 
 For now, we support the ePA2 FD module and the DEMIS Meldeportal.
 
 If you want to use your own compose files, please note that Tiger copies and processes your yml files to the target/tiger-testenv-mgr/${serverId} folder, replacing all variable/property expressions (for details check xref:tigerConfiguration.adoc#_tiger_configuration[this chapter]).
 
-The processing/copying flattens the file hierarchy, thus you must not depend on any additional file resources in your docker compose files. Each copied compose file will have a random UUID appended to its filename.
+The processing/copying flattens the file hierarchy, thus you must not depend on any additional file resources in your docker compose files.
+Each copied compose file will have a random UUID appended to its filename.
 
 NOTE: To use this server type you must include the tiger-cloud-extension dependency!
 
@@ -387,14 +402,16 @@ demis_001:
 
 ==== External Jar node
 
-The External Jar node is along with the Docker container node the most important/used node for test environments. Any Jar archive executable which can be started with the `java -jar` command can be configured as an external Jar node.
+The External Jar node is along with the Docker container node the most important/used node for test environments.
+Any Jar archive executable which can be started with the `java -jar` command can be configured as an external Jar node.
 
 The options list are arguments added immediately after the java executable, while the arguments list is appended after the -jar argument.
 
 The working directory is the place where the jar file is downloaded to and executed from.
 So if your jar archive expects some configuration files make sure to choose the folder appropriately.
 
-If using the `local:` prefix you can also use wildcards to find any matching jar-files. Tiger will use the following order to try to find a matching file:
+If using the `local:` prefix you can also use wildcards to find any matching jar-files.
+Tiger will use the following order to try to find a matching file:
 
 - In the working directory a file with the filename contained in the source
 - From the working directory a file with a relative path equal to the source
@@ -458,11 +475,13 @@ externalJar_001:
   exports: []
 ----
 
-By default, the JVM used to start the JAR-File is the taken from the `java.home` system property, thus using the same JVM with which Tiger was started. To change the JVM used you can set the property `tiger.lib.javaHome` (e.g. by setting `-Dtiger.lib.javaHome`, by setting `TIGER_LIB_JAVAHOME` in the environment or by setting `lib.javaHome` in the `tiger.yaml`).
+By default, the JVM used to start the JAR-File is the taken from the `java.home` system property, thus using the same JVM with which Tiger was started.
+To change the JVM used you can set the property `tiger.lib.javaHome` (e.g. by setting `-Dtiger.lib.javaHome`, by setting `TIGER_LIB_JAVAHOME` in the environment or by setting `lib.javaHome` in the `tiger.yaml`).
 
 ==== External URL node
 
-The symbolic node type that will not start a server instance, but simply allows external services to be used via the configured hostname. This is achieved by the test environment manager instructing the local Tiger Proxy to provide a route for the symbolic hostname to the external URL of the service.
+The symbolic node type that will not start a server instance, but simply allows external services to be used via the configured hostname.
+This is achieved by the test environment manager instructing the local Tiger Proxy to provide a route for the symbolic hostname to the external URL of the service.
 
 So, in the following example, the test suite can send HTTP(S) requests to the server "http://myExternalServer" via the local Tiger Proxy, which will be rerouted to the external URL "https://www.medizin.de".
 If it is ever necessary to change the external URL, the test suite does not have to be modified, only the routing configuration for the node has to be changed.
@@ -505,7 +524,8 @@ externalUrl_001:
 
 ==== Helm Chart node
 
-The helm chart node allows to start a helm chart from the configured source (local helm chart file / folder or remote helm chart). The helm chart is started and the server is ready when all pods are up and running, if port-forward is used (if exposedPorts are set), then port-forwarding is also done and the startup is finished and the service can be used for testing.
+The helm chart node allows to start a helm chart from the configured source (local helm chart file / folder or remote helm chart).
+The helm chart is started and the server is ready when all pods are up and running, if port-forward is used (if exposedPorts are set), then port-forwarding is also done and the startup is finished and the service can be used for testing.
 
 NOTE: To use this server type you must include the tiger-cloud-extension dependency!
 
@@ -555,7 +575,9 @@ servers:
 
 ==== Tiger Proxy node
 
-The most complex and versatile node type. The Tiger Proxy will be started as an embedded spring boot application. This way the start-up time can be minimized, and it is always guaranteed to start the current version.
+The most complex and versatile node type.
+The Tiger Proxy will be started as an embedded spring boot application.
+This way the start-up time can be minimized, and it is always guaranteed to start the current version.
 
 [source,yaml,title="Tiger Proxy configuration"]
 ----
@@ -603,14 +625,15 @@ The configuration of the Tiger Proxy is explained in detail in the section xref:
 
 ==== httpbin node
 
-The httpbin simply starts a https://github.com/gaul/java-httpbin[httpbin] server. This provides several endpoints against which you can perform all kinds of http requests. The server port on which the server starts can be configured.
+The httpbin simply starts a https://github.com/gaul/java-httpbin[httpbin] server.
+This provides several endpoints against which you can perform all kinds of http requests.
+The server port on which the server starts can be configured.
 
 [source,yaml,title=httpbin configuration]
 httpbin:
     type: httpbin
     serverPort: ${free.port.0}
     healthcheckUrl: http://localhost:${free.port.0}/status/200
-
 
 === Provided node templates
 
@@ -642,7 +665,8 @@ myLocalTestERp:
 
 ==== Local IDP reference nodes
 
-This template provides the reference implementation of the IDP server as a local docker container. The docker image is loaded from a gematik internal docker registry server.
+This template provides the reference implementation of the IDP server as a local docker container.
+The docker image is loaded from a gematik internal docker registry server.
 
 The system property IDP_SERVER is set to the URL of the Discovery Document end point and is available for all subsequently initiated test environment nodes.
 
@@ -656,10 +680,12 @@ The idp-rise-tu template provides the TU instance accordingly.
 
 ==== Local ERp reference nodes
 
-This template provides the reference implementation of the eRezept server as a local docker container. The docker image is loaded from a gematik internal docker registry server.
+This template provides the reference implementation of the eRezept server as a local docker container.
+The docker image is loaded from a gematik internal docker registry server.
 Make sure that an IDP server node is instantiated before the ERp FD is started and that it is available under http://idp or adapt the environment variable configuration.
 
-A large list of environment variables is set. But don't worry, it is just the server that uses them.
+A large list of environment variables is set.
+But don't worry, it is just the server that uses them.
 
 ==== Local ePA2 reference nodes
 
@@ -885,7 +911,9 @@ And add the plugin block to your pom.xml
             </plugin>
 ```
 
-If you start the test environment manager standalone, it will keep the nodes running until you enter quit into the console or kill the process with Ctrl + C or the operating equivalent commando to the UNIX command kill ${PROCESS_ID}. In the latter case it is not guaranteed that all processes are cleanly shut down. Please check your process list with operating system specific tools.
+If you start the test environment manager standalone, it will keep the nodes running until you enter quit into the console or kill the process with Ctrl + C or the operating equivalent commando to the UNIX command kill ${PROCESS_ID}.
+In the latter case it is not guaranteed that all processes are cleanly shut down.
+Please check your process list with operating system specific tools.
 
 [source,shell script]
 ----
@@ -897,8 +925,10 @@ In case you also need cloud extension server types (docker, helmchart) make sure
 
 Now before starting your test suite scenarios you need to
 
-* disable / remove the test nodes in your default `tiger.yaml` (either by setting the property active to false or remove the server node entry completely). If you forget to do this, two nodes will be instantiated (one from the standalone test environment manager and the second during test run from the test environment manager started via the test suite hooks).
-* and add routes for each node to the local Tiger Proxy. If you forget to do this, your test suite will not be able to access the test nodes under their configured hostname as this configuration is only known to the standalone test environment manager and NOT to the local tiger proxy started by the test suite hooks.
+* disable / remove the test nodes in your default `tiger.yaml` (either by setting the property active to false or remove the server node entry completely).
+If you forget to do this, two nodes will be instantiated (one from the standalone test environment manager and the second during test run from the test environment manager started via the test suite hooks).
+* and add routes for each node to the local Tiger Proxy.
+If you forget to do this, your test suite will not be able to access the test nodes under their configured hostname as this configuration is only known to the standalone test environment manager and NOT to the local tiger proxy started by the test suite hooks.
 
 Best practice is to have three test environment configuration files:
 
@@ -906,7 +936,8 @@ Best practice is to have three test environment configuration files:
 * tiger-nonodes.yaml for the test suite that will instantiate no nodes but only configure the routes to the nodes from the standalone test environment manager
 * `tiger.yaml` a complete configuration that can be used in CI or after the test suite development is completed.
 
-The first and the latter most of the time are identical besides the root level flag localProxyActive. So you may skip the first and just use it with two different values being set.
+The first and the latter most of the time are identical besides the root level flag localProxyActive.
+So you may skip the first and just use it with two different values being set.
 
 === Using Environment variables and system properties
 
