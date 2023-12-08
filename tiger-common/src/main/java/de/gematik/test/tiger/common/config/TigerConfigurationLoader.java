@@ -381,7 +381,7 @@ public class TigerConfigurationLoader {
   private JsonNode convertToTree() {
     final ObjectNode result = new ObjectNode(objectMapper.getNodeFactory());
 
-    for (var entry : retrieveMapUnresolved().entrySet()) {
+    for (var entry : retrieveMap().entrySet()) {
       createAndReturnDeepPath(entry.getKey(), result)
           .put(entry.getKey().get(entry.getKey().size() - 1).getValue(), entry.getValue());
     }

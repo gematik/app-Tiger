@@ -8,6 +8,7 @@
 * TGR-1183: fixed an issue where TigerConfigurationKeys were wrongly ignoring parts of the key when they add a repeated
   subkey.
 * TGR-1186: Fixed healthcheck-issues with TLS servers
+* TGR-1201: Fixes unresolved environment variables in TigerConfig
 * TGR-1180: fixed position of close button in the configuration editor in the WorkflowUi
 * TGR-1143: in case of missing dependencies for a server type the exception is more clearly stating that there is a
   dependency missing
@@ -19,7 +20,6 @@
 ## Features
 
 * TGR-912: Healthchecks for externalUrl-Servers now honor the configured forwardProxyInfo of the localTigerProxy
-* TGR-1176: RbelPath-style retrieval now supported for TigerGlobalConfiguration: e.g. `${myMap..[?(@.target=='schmoo')].target}`
 * TGR-1163: TigerProxy: The groups to be used for the TLS-Handshakes can now be set for client
 * TGR-899: Migrated FAQ.md to FAQ.adoc, translated to english
 
