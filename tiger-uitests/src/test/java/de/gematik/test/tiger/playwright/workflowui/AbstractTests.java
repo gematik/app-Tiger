@@ -31,15 +31,15 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  *
  * <p>mvn test-compile -P start-tiger-dummy
  *
- * <p>in the first terminal do (this will start the tiger and workflow ui but without starting the
- * browser):
+ * <p>in the first terminal run the following command (this will start the tiger and workflow ui but
+ * without starting the browser):
  *
  * <p>cd tiger-uitests
  *
- * <p>rm -f mvn-playwright-log.txt
+ * <p>./startWorkflowUi.sh
  *
- * <p>mvn --no-transfer-progress -P start-tiger-dummy failsafe:integration-test | tee
- * mvn-playwright-log.txt
+ * <p>This script, located at tiger-uitests/startWorkflowUi.sh, sets environment variables and
+ * properties specifically for the Tiger Global Configuration Editor tests.
  *
  * <p>in the second terminal do (this will start the actual playwright tests):
  *

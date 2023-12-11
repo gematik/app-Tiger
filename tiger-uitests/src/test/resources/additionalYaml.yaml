@@ -1,0 +1,4 @@
+cfgEditor:
+  checkKey: checkAdditionalValue
+  editKey: editAdditionalValue
+  deleteKey: deleteAdditionalValue

@@ -35,7 +35,7 @@
                id="test-sidebar-pause-icon"></i>
           </button>
           <button type="button"
-                  class="btn btn-sm m-1 btn-secondary "
+                  class="btn btn-sm m-1 btn-secondary " id="test-sidebar-tg-config-editor-icon"
                   v-on:click="() => configEditorSidePanelIsOpened = true"
           >
             <i class="fa-lg fa-solid fa-gears fa-fw"></i>
@@ -45,14 +45,12 @@
                         side="left"
                         width="85%"
                         lock-scroll
-                        hide-close-btn
-          >
+                        hide-close-btn>
             <template #header>
               <div class="container">
-                <h1 style="color:var(--gem-primary-400)">Tiger Global Configuration Editor
-                  <span class="float-end" role="button" @click="configEditorSidePanelIsOpened = false"><i
-                      class="fa fa-window-close"></i></span>
-                </h1>
+                <h1 style="color:var(--gem-primary-400)">Tiger Global Configuration Editor<span class="float-end" role="button"
+                                                                                                @click="configEditorSidePanelIsOpened = false"><i
+                    class="fa fa-window-close" id="test-tg-config-editor-btn-close"></i></span></h1>
               </div>
             </template>
             <template #default>

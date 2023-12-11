@@ -4,12 +4,12 @@
 
 <template>
   <div class="row">
-    <code  ref="elementWithValue" class="value col-11 gy-1 hljs"
-               :class="{  'text-truncate': isOverflowed && !expanded, 'text-break': expanded, 'multi-line': expanded}"
-               v-html="highlighted.value">
+    <code ref="elementWithValue" class="value col-11 gy-1 hljs" id="test-tg-config-editor-table-row"
+          :class="{  'text-truncate': isOverflowed && !expanded, 'text-break': expanded, 'multi-line': expanded}"
+          v-html="highlighted.value">
     </code>
     <div class="col-1 py-1" v-if="isOverflowed || expanded"><i v-on:click="clickExpandButton" class="fa-solid"
-                                                   :class="{'fa-up-right-and-down-left-from-center': !expanded, 'fa-down-left-and-up-right-to-center': expanded }"></i>
+                                                               :class="{'fa-up-right-and-down-left-from-center': !expanded, 'fa-down-left-and-up-right-to-center': expanded }"></i>
     </div>
   </div>
 </template>
@@ -36,29 +36,29 @@ const props = defineProps<{
 const elementWithValue = ref<HTMLDivElement | null>(null);
 const isOverflowed = ref(false);
 const expanded = ref(false);
-const resizeObserver : ResizeObserver = new ResizeObserver((entries) => {
-  for(const entry of entries){
+const resizeObserver: ResizeObserver = new ResizeObserver((entries) => {
+  for (const entry of entries) {
     isOverflowed.value = checkOverflow(entry.target)
   }
 })
 
-const highlighted : ComputedRef<AutoHighlightResult> = computed( () => {
+const highlighted: ComputedRef<AutoHighlightResult> = computed(() => {
   return hljs.highlightAuto(props.params.value)
 })
 
 
 onMounted(() => {
-  if(elementWithValue.value){
+  if (elementWithValue.value) {
     resizeObserver.observe(elementWithValue.value)
   }
 });
 
 onUnmounted(() => {
- resizeObserver.disconnect()
+  resizeObserver.disconnect()
 });
 
-function checkOverflow(element : Element) : boolean {
-    return element.scrollWidth > element.clientWidth;
+function checkOverflow(element: Element): boolean {
+  return element.scrollWidth > element.clientWidth;
 }
 
 function clickExpandButton() {

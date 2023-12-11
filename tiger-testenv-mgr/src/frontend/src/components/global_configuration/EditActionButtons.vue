@@ -6,7 +6,7 @@
 </script>
 
 <template>
-      <button type="button" class="btn btn-sm btn-outline-danger" data-action="delete">
-      <i class="fa fa-solid fa-trash" data-action="delete"/>
-    </button>
+  <button type="button" class="btn btn-sm btn-outline-danger" data-action="delete">
+    <i class="fa fa-solid fa-trash" id="test-tg-config-editor-btn-delete" data-action="delete"/>
+  </button>
 </template>

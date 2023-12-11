@@ -74,17 +74,26 @@ pipeline {
         stage('Integration Test') {
             environment {
                 TIGER_DOCKER_HOST = dockerGetCurrentHostname()
+				TGR_TESTENV_CFG_CHECK_MODE = 'myEnv'
+				TGR_TESTENV_CFG_DELETE_MODE = 'deleteEnv'
+				TGR_TESTENV_CFG_EDIT_MODE = 'editEnv'
+				TGR_TESTENV_CFG_MULTILINE_CHECK_MODE = 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. ...'
             }
+
             parallel {
                 stage('Start Tiger and Dummy Featurefile') {
                     steps {
+						script {
+							def mvnProperties = "-DtgrTestPropCfgCheckMode=myProp -DtgrTestPropCfgEditMode=editProp -DtgrTestPropCfgDeleteMode=deleteProp"
+
                         withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
                             sh """
                                 cd tiger-uitests
                                 rm -f mvn-playwright-log.txt
-                                mvn --no-transfer-progress -P start-tiger-dummy failsafe:integration-test | tee mvn-playwright-log.txt
+                                mvn --no-transfer-progress ${mvnProperties} -P start-tiger-dummy failsafe:integration-test | tee mvn-playwright-log.txt
                                """
-                        }
+							}
+						}
                     }
                 }
                 stage('Run playwright test') {

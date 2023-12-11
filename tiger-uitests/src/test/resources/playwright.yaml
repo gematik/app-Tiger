@@ -25,3 +25,11 @@ lib:
   activateWorkflowUi: true
   startBrowser: false
 
+additionalYamls:
+  - filename: additionalYaml.yaml
+    baseKey: tgrTestAdditionalYaml
+
+cfgEditor:
+  checkKey: checkMainValue
+  editKey: editMainValue
+  deleteKey: deleteMainValue

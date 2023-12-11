@@ -148,13 +148,17 @@ class XDynamicSidebarTests extends AbstractTests {
                         .isVisible())
                 .isTrue());
     if (servername != null) {
-      assertThat(
-              page.locator(".test-sidebar-server-logs")
-                  .nth(counter)
-                  .locator(".test-sidebar-server-log")
-                  .last()
-                  .textContent())
-          .contains(servername + " READY");
+      await()
+          .atMost(10, TimeUnit.SECONDS)
+          .untilAsserted(
+              () ->
+                  assertThat(
+                          page.locator(".test-sidebar-server-logs")
+                              .nth(counter)
+                              .locator(".test-sidebar-server-log")
+                              .last()
+                              .textContent())
+                      .contains(servername + " READY"));
     }
   }
 
