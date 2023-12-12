@@ -43,7 +43,7 @@ class TigerServerLogManagerTest {
     final CfgServer configuration = new CfgServer();
     configuration.setExternalJarOptions(new CfgExternalJarOptions());
     configuration.getExternalJarOptions().setActivateLogs(true);
-    configuration.setType(ExternalJarServer.class.getAnnotation(TigerServerType.class));
+    configuration.setType(ExternalJarServer.class.getAnnotation(TigerServerType.class).value());
     configuration.setLogFile(logFile);
     ExternalJarServer server =
         ExternalJarServer.builder().serverId(serverID).configuration(configuration).build();

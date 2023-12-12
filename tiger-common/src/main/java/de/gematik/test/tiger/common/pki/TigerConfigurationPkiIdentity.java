@@ -4,6 +4,8 @@
 
 package de.gematik.test.tiger.common.pki;
 
+import static de.gematik.test.tiger.common.config.TigerConfigurationLoader.TIGER_CONFIGURATION_ATTRIBUTE_KEY;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -13,7 +15,10 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.databind.node.TextNode;
+import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
+import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity.TigerPkiIdentityDeserializer;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity.TigerPkiIdentitySerializer;
 import java.io.IOException;
@@ -41,8 +46,12 @@ public class TigerConfigurationPkiIdentity extends TigerPkiIdentity {
     @Override
     public TigerConfigurationPkiIdentity deserialize(JsonParser p, DeserializationContext ctxt) {
       try {
-        return new TigerConfigurationPkiIdentity(
-            ((com.fasterxml.jackson.databind.node.TextNode) p.readValueAsTree()).asText());
+        final String value = ((TextNode) p.readValueAsTree()).asText();
+        final String substitutedValue =
+            TokenSubstituteHelper.substitute(
+                value,
+                (TigerConfigurationLoader) ctxt.getAttribute(TIGER_CONFIGURATION_ATTRIBUTE_KEY));
+        return new TigerConfigurationPkiIdentity(substitutedValue);
       } catch (IOException e) {
         throw new TigerConfigurationException(
             "Error while deserializing from JSON: " + e.getMessage(), e);

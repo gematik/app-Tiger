@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.cfg.ContextAttributes;
 import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
 import com.fasterxml.jackson.databind.deser.DeserializationProblemHandler;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -38,6 +39,7 @@ import org.yaml.snakeyaml.Yaml;
 @Slf4j
 public class TigerConfigurationLoader {
 
+  public static final String TIGER_CONFIGURATION_ATTRIBUTE_KEY = "tigerConfiguration";
   private final TigerConfigurationSourcesManager sourcesManager =
       new TigerConfigurationSourcesManager();
   @Getter private ObjectMapper objectMapper;
@@ -120,6 +122,9 @@ public class TigerConfigurationLoader {
             .addModule(new JavaTimeModule())
             .addModule(new AllowDelayedPrimitiveResolvementModule(this))
             .addModule(skipEvaluationModule)
+            .defaultAttributes(
+                ContextAttributes.getEmpty()
+                    .withSharedAttributes(Map.of(TIGER_CONFIGURATION_ATTRIBUTE_KEY, this)))
             .build();
     strictObjectMapper =
         JsonMapper.builder()
@@ -130,6 +135,9 @@ public class TigerConfigurationLoader {
             .addModule(new JavaTimeModule())
             .addModule(new AllowDelayedPrimitiveResolvementModule(this))
             .addModule(skipEvaluationModule)
+            .defaultAttributes(
+                ContextAttributes.getEmpty()
+                    .withSharedAttributes(Map.of(TIGER_CONFIGURATION_ATTRIBUTE_KEY, this)))
             .build();
   }
 
@@ -199,7 +207,7 @@ public class TigerConfigurationLoader {
       Class<T> configurationBeanClass, ObjectMapper objectMapper, String... baseKeys) {
     initialize();
 
-    TreeNode targetTree = convertToTree();
+    TreeNode targetTree = convertToTreeUnresolved();
     final TigerConfigurationKey configurationKey = new TigerConfigurationKey(baseKeys);
     for (TigerConfigurationKeyString key : configurationKey) {
       if (targetTree.get(key.getValue()) == null) {
@@ -234,7 +242,7 @@ public class TigerConfigurationLoader {
       TypeReference<T> configurationBeanType, String... baseKeys) {
     initialize();
 
-    TreeNode targetTree = convertToTree();
+    TreeNode targetTree = convertToTreeUnresolved();
     final TigerConfigurationKey configurationKey = new TigerConfigurationKey(baseKeys);
     for (TigerConfigurationKeyString key : configurationKey) {
       if (targetTree.get(key.getValue()) == null) {
@@ -377,11 +385,17 @@ public class TigerConfigurationLoader {
     return loadedAndSortedProperties;
   }
 
-  /** Generates a tree containing all key/value pairs. Placeholders in the values ARE resolved. */
-  private JsonNode convertToTree() {
+  /**
+   * Generates a tree containing all key/value pairs. Placeholders in the values are NOT resolved.
+   */
+  private JsonNode convertToTreeUnresolved() {
+    return convertMapToTree(retrieveMapUnresolved());
+  }
+
+  private JsonNode convertMapToTree(Map<TigerConfigurationKey, String> map) {
     final ObjectNode result = new ObjectNode(objectMapper.getNodeFactory());
 
-    for (var entry : retrieveMap().entrySet()) {
+    for (var entry : map.entrySet()) {
       createAndReturnDeepPath(entry.getKey(), result)
           .put(entry.getKey().get(entry.getKey().size() - 1).getValue(), entry.getValue());
     }

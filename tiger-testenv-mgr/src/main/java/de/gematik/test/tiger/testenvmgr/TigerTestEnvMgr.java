@@ -401,7 +401,7 @@ public class TigerTestEnvMgr
           "Unable to instantiate server of null type! Please check your config");
     }
     try {
-      String serverType = config.getType().value();
+      String serverType = config.getType();
       if (!serverClasses.containsKey(serverType)) {
         throw new TigerTestEnvException(
             MessageFormat.format(
@@ -431,7 +431,7 @@ public class TigerTestEnvMgr
           e,
           "Unable to instantiate server of type %s, does it have a constructor(TigerTestenvMgr,"
               + " String, CfgServer)?",
-          config.getType().value());
+          config.getType());
     }
   }
 
@@ -457,7 +457,7 @@ public class TigerTestEnvMgr
                     AbstractTigerServer::getServerId,
                     server ->
                         TigerServerStatusUpdate.builder()
-                            .type(server.getConfiguration().getType().value())
+                            .type(server.getConfiguration().getType())
                             .status(TigerServerStatus.NEW)
                             .build()));
 

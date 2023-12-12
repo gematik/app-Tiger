@@ -57,15 +57,14 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
         new TigerTestEnvException(
             startupException.get(),
             "Unable to start %s '%s' (Status %s)!",
-            getConfiguration().getType().value(),
+            getConfiguration().getType(),
             getServerId(),
             getStatus().toString());
     if (startupException.get() != null) {
       throw exceptionAtStartup;
     } else if (getStatus() == TigerServerStatus.STOPPED) {
       throw new TigerTestEnvException(
-          "%s Server %s stopped unexpectedly!",
-          getConfiguration().getType().value(), getServerId());
+          "%s Server %s stopped unexpectedly!", getConfiguration().getType(), getServerId());
     } else if (getStatus() == TigerServerStatus.STARTING) {
       waitForServiceToBeUpForHalfOfTheConnectionTimeout(false);
       if (startupException.get() != null) {
@@ -74,11 +73,11 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
         if (getStatus() != TigerServerStatus.RUNNING) {
           throw new TigerTestEnvException(
               "%s Server %s still not running (Status %s)!",
-              getConfiguration().getType().value(), getServerId(), getStatus().toString());
+              getConfiguration().getType(), getServerId(), getStatus().toString());
         }
       }
     }
-    statusMessage(getConfiguration().getType().value() + " " + getServerId() + " started");
+    statusMessage(getConfiguration().getType() + " " + getServerId() + " started");
   }
 
   protected void waitForServiceToBeUpForHalfOfTheConnectionTimeout(boolean quiet) {

@@ -184,7 +184,8 @@ class ConfigurationEditorTest extends AbstractTests {
     String xpathToExpand =
         "//div[@col-id='key' and text()='"
             + ENV_MULTILINE_CHECK_KEY
-            + "']/following-sibling::div[@col-id='value']//i[contains(@class, 'fa-solid') and contains(@class, 'fa-up-right-and-down-left-from-center')]";
+            + "']/following-sibling::div[@col-id='value']//i[contains(@class, 'fa-solid') and"
+            + " contains(@class, 'fa-up-right-and-down-left-from-center')]";
 
     row.forEach(r -> r.locator(xpathToExpand).click());
   }
@@ -213,7 +214,8 @@ class ConfigurationEditorTest extends AbstractTests {
     String xpathToCollapse =
         "//div[@col-id='key' and text()='"
             + ENV_MULTILINE_CHECK_KEY
-            + "']/following-sibling::div[@col-id='value']//i[contains(@class, 'fa-solid') and contains(@class, 'fa-down-left-and-up-right-to-center')]";
+            + "']/following-sibling::div[@col-id='value']//i[contains(@class, 'fa-solid') and"
+            + " contains(@class, 'fa-down-left-and-up-right-to-center')]";
     row.forEach(r -> r.locator(xpathToCollapse).click());
   }
 

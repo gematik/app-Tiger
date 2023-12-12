@@ -26,8 +26,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.util.ReflectionTestUtils;
-import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
-import uk.org.webcompere.systemstubs.jupiter.SystemStub;
 import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
 @Slf4j
@@ -202,28 +200,20 @@ class TestEnvManagerConfigurationCheck {
         .isEqualTo("ftp");
   }
 
-  @SystemStub
-  private final EnvironmentVariables serverVariable =
-      new EnvironmentVariables("ENV_VAR", "httpbin");
-
   @Test
   @TigerTest(
       tigerYaml =
           """
-          servers:
-            httpbinName:
-              startupTimeoutSec: 1
-              type: ${ENV_VAR}
-          """)
+            servers:
+              httpbinName:
+                startupTimeoutSec: 1
+                type: ${ENV_VAR}
+            """,
+      additionalProperties = {"ENV_VAR=httpbin"})
   void testEnvironmentVariables(TigerTestEnvMgr envMgr) {
     final AbstractTigerServer httpbin = envMgr.getServers().get("httpbinName");
     assertThat(httpbin.getServerTypeToken()).isEqualTo("httpbin");
   }
-
-  @SystemStub
-  private final EnvironmentVariables timVariables =
-      new EnvironmentVariables("TIM_KEYSTORE", "src\\test\\resources\\egk_aut_keystore.jks")
-          .and("TIM_KEYSTORE_PW", "gematik");
 
   @Test
   @TigerTest(
@@ -232,7 +222,11 @@ class TestEnvManagerConfigurationCheck {
           tigerProxy:
             tls:
               forwardMutualTlsIdentity: "${TIM_KEYSTORE};${TIM_KEYSTORE_PW};00"
-                  """)
+                  """,
+      additionalProperties = {
+        "tim.keystore = src\\test\\resources\\egk_aut_keystore.jks",
+        "tim.keystore.pw = gematik"
+      })
   void testProxyEnvironmentVariables(TigerTestEnvMgr envMgr) {
     assertThat(
             envMgr
