@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.lib.rbel;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -12,6 +16,7 @@ import de.gematik.rbellogger.data.RbelSerializationAssertion;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.glue.RbelBuilderGlueCode;
+import de.gematik.test.tiger.glue.TigerParameterTypeDefinitions;
 import de.gematik.test.tiger.lib.TigerDirector;
 import java.util.List;
 import org.junit.jupiter.api.Assertions;
@@ -50,7 +55,9 @@ class RbelBuilderGlueCodeTests {
         () -> {
           glueCode.createFromContent("blub", blub);
           glueCode.assertJexlOutputEquals(
-              "!{rbelObject:serialize(\"blub\")}", blub, RbelContentType.JSON);
+              resolve("!{rbelObject:serialize(\"blub\")}"),
+              blub,
+              RbelContentType.JSON);
         });
   }
 
@@ -61,12 +68,12 @@ class RbelBuilderGlueCodeTests {
         expectedBuilder.serialize(),
         TigerGlobalConfiguration.resolvePlaceholders(fileContentFromJexl),
         RbelContentType.JSON);
-
     Assertions.assertDoesNotThrow(
         () -> {
-          glueCode.createFromContent("blub", fileContentFromJexl);
-          glueCode.assertJexlOutputEquals(
-              "!{rbelObject:serialize(\"blub\")}", fileContentFromJexl, RbelContentType.JSON);
+          glueCode.createFromContent("blub", resolve(fileContentFromJexl));
+          glueCode.assertJexlOutputEquals(resolve("!{rbelObject:serialize(\"blub\")}"),
+                  resolve(fileContentFromJexl),
+              RbelContentType.JSON);
         });
   }
 
@@ -100,7 +107,9 @@ class RbelBuilderGlueCodeTests {
     glueCode.setValueAt("blub", "$.blib", "{ \"new\": \"entry\" }");
     glueCode.assertValueAtEquals("blub", "$.blib.new", "entry");
     glueCode.assertJexlOutputEquals(
-        "!{rbelObject:serialize(\"blub\")}", expectedBlub, RbelContentType.JSON);
+        resolve("!{rbelObject:serialize(\"blub\")}"),
+        expectedBlub,
+        RbelContentType.JSON);
   }
 
   @Test
@@ -135,7 +144,9 @@ class RbelBuilderGlueCodeTests {
         "newObject", "$.new", "{ \"object\": { \"with\": \"some\", \"new\": \"values\" } }");
     glueCode.assertValueAtEquals("newObject", "$.new.object.with", "some");
     glueCode.assertJexlOutputEquals(
-        "!{rbelObject:serialize(\"newObject\")}", expectedBuild, RbelContentType.JSON);
+        resolve("!{rbelObject:serialize(\"newObject\")}"),
+        expectedBuild,
+        RbelContentType.JSON);
   }
 
   @Test
@@ -216,54 +227,60 @@ class RbelBuilderGlueCodeTests {
         "arrayTest", "$.array1.1.innerArray", "{ \"innerEntry4\": [\"crazy\", \"stuff\" ] }");
     glueCode.assertValueAtEquals("arrayTest", "$.array1.1.innerArray.3.innerEntry4.1", "stuff");
     glueCode.assertJexlOutputEquals(
-        "!{rbelObject:serialize(\"arrayTest\")}", expectedResult, RbelContentType.JSON);
+        resolve("!{rbelObject:serialize(\"arrayTest\")}"),
+        expectedResult,
+        RbelContentType.JSON);
   }
 
   @ParameterizedTest
   @EnumSource(RbelContentType.class)
   void rbelParameterTypeTest(RbelContentType type) {
-    Assertions.assertEquals(type, glueCode.rbelContentType(type.toString()));
+    Assertions.assertEquals(type, TigerParameterTypeDefinitions.rbelContentType(type.toString()));
   }
 
-  @Test
-  void rbelBuilderChangelogTest() {
-    String valueToSet =
-        """
-                {
-                    "array": [
-                        "blib",
-                        "blab"
-                    ]
-                }
-                """;
-
-    Logger loggerInGlueCode = (Logger) LoggerFactory.getLogger(RbelBuilderGlueCode.class);
-
-    ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
-    listAppender.start();
-    loggerInGlueCode.addAppender(listAppender);
-
-    glueCode.createFromContent("test", blub);
-    glueCode.setValueAt("test", "$.blub", valueToSet);
-    // isListTypeNode() does not work -> attributeMap does not contain
-    glueCode.addEntryAt("test", "$.blub.array", "blub");
-
-    List<ILoggingEvent> logsList = listAppender.list;
-
-    LoggingEvent e0 = (LoggingEvent) logsList.get(0);
-    assertThat(e0)
-        .hasFieldOrPropertyWithValue("level", Level.INFO)
-        .extracting(LoggingEvent::getMessage)
-        .asString()
-        .containsIgnoringWhitespaces(
-            "Changed Rbel object 'test' at '$.blub' to '{\r\"array\":\r[\r \"blib\",\r\"blab\"]}'");
-
-    LoggingEvent e3 = (LoggingEvent) logsList.get(3);
-    assertThat(e3)
-        .hasFieldOrPropertyWithValue("level", Level.INFO)
-        .extracting(LoggingEvent::getMessage)
-        .asString()
-        .containsIgnoringWhitespaces(
-            "NewObject:\u001B[0;93m└──\u001B[0m\u001B[1;31m\u001B[0m(\u001B[0;34m{\"blub\":{\"array\":[\"blib\",\"blab\",\"blub\"]}}\u001B[0m)");
+  private static String resolve(String string) {
+    return TigerParameterTypeDefinitions.tigerResolvedString(string);
   }
+
+    @Test
+    void rbelBuilderChangelogTest() {
+        String valueToSet =
+                """
+                        {
+                            "array": [
+                                "blib",
+                                "blab"
+                            ]
+                        }
+                        """;
+
+        Logger loggerInGlueCode = (Logger) LoggerFactory.getLogger(RbelBuilderGlueCode.class);
+
+        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+        listAppender.start();
+        loggerInGlueCode.addAppender(listAppender);
+
+        glueCode.createFromContent("test", blub);
+        glueCode.setValueAt("test", "$.blub", valueToSet);
+        // isListTypeNode() does not work -> attributeMap does not contain
+        glueCode.addEntryAt("test", "$.blub.array", "blub");
+
+        List<ILoggingEvent> logsList = listAppender.list;
+
+        LoggingEvent e0 = (LoggingEvent) logsList.get(0);
+        assertThat(e0)
+                .hasFieldOrPropertyWithValue("level", Level.INFO)
+                .extracting(LoggingEvent::getMessage)
+                .asString()
+                .containsIgnoringWhitespaces(
+                        "Changed Rbel object 'test' at '$.blub' to '{\r\"array\":\r[\r \"blib\",\r\"blab\"]}'");
+
+        LoggingEvent e3 = (LoggingEvent) logsList.get(3);
+        assertThat(e3)
+                .hasFieldOrPropertyWithValue("level", Level.INFO)
+                .extracting(LoggingEvent::getMessage)
+                .asString()
+                .containsIgnoringWhitespaces(
+                        "NewObject:\u001B[0;93m└──\u001B[0m\u001B[1;31m\u001B[0m(\u001B[0;34m{\"blub\":{\"array\":[\"blib\",\"blab\",\"blub\"]}}\u001B[0m)");
+    }
 }

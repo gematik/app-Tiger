@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.lib.httpclient;
 
+import static de.gematik.test.tiger.glue.TigerParameterTypeDefinitions.tigerResolvedString;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockserver.model.HttpRequest.request;
@@ -12,6 +13,7 @@ import static org.mockserver.model.HttpResponse.response;
 import de.gematik.test.tiger.glue.HttpGlueCode;
 import de.gematik.test.tiger.glue.RBelValidatorGlue;
 import de.gematik.test.tiger.glue.TigerGlue;
+import de.gematik.test.tiger.glue.TigerParameterTypeDefinitions;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
@@ -19,10 +21,12 @@ import io.cucumber.datatable.DataTable;
 import io.cucumber.datatable.DataTableTypeRegistry;
 import io.cucumber.datatable.DataTableTypeRegistryTableConverter;
 import io.restassured.http.Method;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -72,17 +76,23 @@ public class TestHttpClientSteps {
 
   @Test
   void simpleGetRequest() {
-    httpGlueCode.sendEmptyRequest(Method.GET, "http://httpbin/");
+    httpGlueCode.sendEmptyRequest(Method.GET, createAddress("http://httpbin/"));
     rbelValidatorGlueCode.findLastRequestToPath(".*");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}", "GET");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.path')}", "\\/?");
+    tigerGlue.tgrAssertMatches(
+        TigerParameterTypeDefinitions.tigerResolvedString(
+            "!{rbel:currentRequestAsString('$.method')}"),
+        "GET");
+    tigerGlue.tgrAssertMatches(
+        TigerParameterTypeDefinitions.tigerResolvedString(
+            "!{rbel:currentRequestAsString('$.path')}"),
+        "\\/?");
   }
 
   @Test
   void sendComplexPost() {
     httpGlueCode.sendRequestWithMultiLineBody(
         Method.POST,
-        "http://httpbin/post",
+        createAddress("http://httpbin/post"),
         """
                         {
                           "object": { "field": "value" },
@@ -91,18 +101,22 @@ public class TestHttpClientSteps {
                         }
                         """);
     rbelValidatorGlueCode.findLastRequestToPath(".*");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}", "POST");
     tigerGlue.tgrAssertMatches(
-        "!{rbel:currentRequestAsString('$.header.Content-Type')}", "application/json");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.body.object.field')}", "value");
-    tigerGlue.tgrAssertMatches("!{rbel:currentResponseAsString('$.responseCode')}", "200");
+        tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "POST");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.Content-Type')}"),
+        "application/json");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.body.object.field')}"), "value");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentResponseAsString('$.responseCode')}"), "200");
   }
 
   @Test
   void sendComplexPut() {
     httpGlueCode.sendRequestWithMultiLineBody(
         Method.PUT,
-        "http://httpbin/put",
+        createAddress("http://httpbin/put"),
         """
                         {
                           "object": { "field": "value" },
@@ -111,11 +125,15 @@ public class TestHttpClientSteps {
                         }
                         """);
     rbelValidatorGlueCode.findLastRequestToPath(".*");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}", "PUT");
     tigerGlue.tgrAssertMatches(
-        "!{rbel:currentRequestAsString('$.header.Content-Type')}", "application/json");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.body.object.field')}", "value");
-    tigerGlue.tgrAssertMatches("!{rbel:currentResponseAsString('$.responseCode')}", "200");
+        tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "PUT");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.Content-Type')}"),
+        "application/json");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.body.object.field')}"), "value");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentResponseAsString('$.responseCode')}"), "200");
   }
 
   @Test
@@ -131,70 +149,91 @@ public class TestHttpClientSteps {
               return response().withStatusCode(200);
             });
     httpGlueCode.sendEmptyRequestNonBlocking(
-        Method.GET, "http://localhost:" + client.getPort() + "/blockUntilRelease");
+        Method.GET, createAddress("http://localhost:" + client.getPort() + "/blockUntilRelease"));
     // this method returns BEFORE response is returned, so we now can release the response in the
     // server
     log.info("Sent request to /blockUntilRelease, now unblocking");
     blockResponse.set(false);
     rbelValidatorGlueCode.findLastRequestToPath(".*");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}", "GET");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.path')}", "\\/blockUntilRelease");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "GET");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.path')}"), "\\/blockUntilRelease");
   }
 
   @Test
   void getRequestToFolder() {
-    httpGlueCode.sendEmptyRequest(Method.GET, "http://httpbin/get");
+    httpGlueCode.sendEmptyRequest(Method.GET, createAddress("http://httpbin/get"));
     rbelValidatorGlueCode.findLastRequestToPath(".*");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}", "GET");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.path')}", "\\/get\\/?");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "GET");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.path')}"), "\\/get\\/?");
   }
 
   @Test
   void putRequestToFolder() {
-    httpGlueCode.sendEmptyRequest(Method.PUT, "http://httpbin/put");
+    httpGlueCode.sendEmptyRequest(Method.PUT, createAddress("http://httpbin/put"));
     rbelValidatorGlueCode.findLastRequestToPath(".*");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}", "PUT");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.path')}", "\\/put\\/?");
-    tigerGlue.tgrAssertMatches("!{rbel:currentResponseAsString('$.responseCode')}", "200");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "PUT");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.path')}"), "\\/put\\/?");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentResponseAsString('$.responseCode')}"), "200");
   }
 
   @Test
   void putRequestWithBodyToFolder() {
-    httpGlueCode.sendRequestWithBody(Method.PUT, "http://httpbin/put", "{'hello': 'world!'}");
+    httpGlueCode.sendRequestWithBody(
+        Method.PUT, createAddress("http://httpbin/put"), "{'hello': 'world!'}");
     rbelValidatorGlueCode.findLastRequestToPath(".*");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}", "PUT");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.path')}", "\\/put\\/?");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.body.hello')}", "world!");
-    tigerGlue.tgrAssertMatches("!{rbel:currentResponseAsString('$.responseCode')}", "200");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "PUT");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.path')}"), "\\/put\\/?");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.body.hello')}"), "world!");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentResponseAsString('$.responseCode')}"), "200");
   }
 
   @Test
   void putRequestWithBodyFromFileToFolder() {
-    httpGlueCode.sendRequestWithBody(Method.PUT, "http://httpbin/put", "!{file('pom.xml')}");
+    httpGlueCode.sendRequestWithBody(
+        Method.PUT, createAddress("http://httpbin/put"), "!{file('pom.xml')}");
     rbelValidatorGlueCode.findLastRequestToPath(".*");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}", "PUT");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.path')}", "\\/put\\/?");
     tigerGlue.tgrAssertMatches(
-        "!{rbel:currentRequestAsString('$.body.project.modelVersion.text')}", "4.0.0");
+        tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "PUT");
     tigerGlue.tgrAssertMatches(
-        "!{rbel:currentRequestAsString('$.header.Content-Type')}", "application/xml.*");
+        tigerResolvedString("!{rbel:currentRequestAsString('$.path')}"), "\\/put\\/?");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.body.project.modelVersion.text')}"),
+        "4.0.0");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.Content-Type')}"),
+        "application/xml.*");
   }
 
   @Test
   void putWithBodyAndSetContentType() {
     httpGlueCode.setDefaultHeader("Content-Type", "text/plain");
-    httpGlueCode.sendRequestWithBody(Method.PUT, "http://httpbin/put", "!{file('pom.xml')}");
+    httpGlueCode.sendRequestWithBody(
+        Method.PUT, createAddress("http://httpbin/put"), "!{file('pom.xml')}");
     rbelValidatorGlueCode.findLastRequestToPath(".*");
     tigerGlue.tgrAssertMatches(
-        "!{rbel:currentRequestAsString('$.header.Content-Type')}", "text/plain.*");
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.Content-Type')}"),
+        "text/plain.*");
   }
 
   @Test
   void deleteRequestWithoutBody() {
-    httpGlueCode.sendEmptyRequest(Method.DELETE, "http://httpbin/delete");
+    httpGlueCode.sendEmptyRequest(Method.DELETE, createAddress("http://httpbin/delete"));
     rbelValidatorGlueCode.findLastRequestToPath(".*");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.method')}", "DELETE");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.path')}", "\\/delete\\/?");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "DELETE");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.path')}"), "\\/delete\\/?");
   }
 
   private static final DataTableTypeRegistry registry = new DataTableTypeRegistry(Locale.ENGLISH);
@@ -207,22 +246,28 @@ public class TestHttpClientSteps {
     data.add(List.of("schmoo", "lar"));
     data.add(List.of("foo", "bar"));
     httpGlueCode.sendEmptyRequestWithHeaders(
-        Method.GET, "http://httpbin/get", DataTable.create(data, tableConverter));
+        Method.GET, createAddress("http://httpbin/get"), DataTable.create(data, tableConverter));
     rbelValidatorGlueCode.findLastRequestToPath(".*");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.foo')}", "bar");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.schmoo')}", "lar");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.foo')}"), "bar");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.schmoo')}"), "lar");
   }
 
   @Test
   void sendRequestWithDefaultHeader() {
     httpGlueCode.setDefaultHeader("key", "value");
-    httpGlueCode.sendEmptyRequest(Method.GET, "http://httpbin/get");
+    httpGlueCode.sendEmptyRequest(Method.GET, createAddress("http://httpbin/get"));
     rbelValidatorGlueCode.findLastRequestToPath(".*");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.key')}", "value");
-    httpGlueCode.sendRequestWithBody(Method.POST, "http://httpbin/post", "hello world");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.key')}"), "value");
+    httpGlueCode.sendRequestWithBody(
+        Method.POST, createAddress("http://httpbin/post"), "hello world");
     rbelValidatorGlueCode.findLastRequestToPath(".*");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.key')}", "value");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.body')}", "hello world");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.key')}"), "value");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.body')}"), "hello world");
   }
 
   @Test
@@ -231,10 +276,12 @@ public class TestHttpClientSteps {
     List<List<String>> data = new ArrayList<>();
     data.add(List.of("foo", "bar"));
     httpGlueCode.sendEmptyRequestWithHeaders(
-        Method.GET, "http://httpbin/get", DataTable.create(data, tableConverter));
+        Method.GET, createAddress("http://httpbin/get"), DataTable.create(data, tableConverter));
     rbelValidatorGlueCode.findLastRequestToPath(".*");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.key')}", "value");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.foo')}", "bar");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.key')}"), "value");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.foo')}"), "bar");
   }
 
   @Test
@@ -247,14 +294,15 @@ public class TestHttpClientSteps {
     data.add(List.of("${configured_param_name}", "state", "redirect_uri"));
     data.add(List.of("client_id", "${configured_state_value}", "https://my.redirect"));
     httpGlueCode.sendRequestWithParams(
-        Method.POST, "http://httpbin/post", DataTable.create(data, tableConverter));
+        Method.POST, createAddress("http://httpbin/post"), DataTable.create(data, tableConverter));
 
     rbelValidatorGlueCode.findLastRequestToPath(".*");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.body.state')}", "some_value");
     tigerGlue.tgrAssertMatches(
-        "!{rbel:currentRequestAsString('$.body.my_cool_param')}", "client_id");
+        tigerResolvedString("!{rbel:currentRequestAsString('$.body.state')}"), "some_value");
     tigerGlue.tgrAssertMatches(
-        "!{rbel:currentRequestAsString('$.header.Content-Type')}",
+        tigerResolvedString("!{rbel:currentRequestAsString('$.body.my_cool_param')}"), "client_id");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.Content-Type')}"),
         "application/x-www-form-urlencoded.*");
   }
 
@@ -267,26 +315,29 @@ public class TestHttpClientSteps {
     data.add(List.of("${configured_param_name}"));
     data.add(List.of("client_id"));
     httpGlueCode.sendRequestWithParams(
-        Method.POST, "http://httpbin/post", DataTable.create(data, tableConverter));
+        Method.POST, createAddress("http://httpbin/post"), DataTable.create(data, tableConverter));
 
     rbelValidatorGlueCode.findLastRequestToPath(".*");
     tigerGlue.tgrAssertMatches(
-        "!{rbel:currentRequestAsString('$.body')}", "my_cool_param2=client_id");
+        tigerResolvedString("!{rbel:currentRequestAsString('$.body')}"),
+        "my_cool_param2=client_id");
     tigerGlue.tgrAssertMatches(
-        "!{rbel:currentRequestAsString('$.header.Content-Type')}", "application/json");
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.Content-Type')}"),
+        "application/json");
   }
 
   @Test
   void putRequestWithTemplatedBody() {
     httpGlueCode.sendRequestWithBody(
         Method.PUT,
-        "http://httpbin/put",
+        createAddress("http://httpbin/put"),
         "{\"tgrEncodeAs\":\"JWT\",\"header\":{\"alg\": \"BP256R1\",\"typ\":"
             + " \"JWT\"},\"body\":{\"foo\":\"bar\"},"
             + " \"signature\":{\"verifiedUsing\":\"idpSig\"}}");
     rbelValidatorGlueCode.findLastRequestToPath(".*");
     tigerGlue.tgrAssertMatches(
-        "!{rbel:currentRequestAsString('$.body.signature.verifiedUsing')}", "puk_idpSig");
+        tigerResolvedString("!{rbel:currentRequestAsString('$.body.signature.verifiedUsing')}"),
+        "puk_idpSig");
   }
 
   @Test
@@ -306,12 +357,21 @@ public class TestHttpClientSteps {
   void sendRequestWithDefaultHeaders() {
     httpGlueCode.setDefaultHeaders(
         "key1=valueA\nkey2=valueB\nkey3=value=value\n  spacedkey = value with spaces  ");
-    httpGlueCode.sendEmptyRequest(Method.GET, "http://httpbin/get/");
+    httpGlueCode.sendEmptyRequest(Method.GET, createAddress("http://httpbin/get/"));
     rbelValidatorGlueCode.findLastRequestToPath(".*");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.key1')}", "valueA");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.key2')}", "valueB");
-    tigerGlue.tgrAssertMatches("!{rbel:currentRequestAsString('$.header.key3')}", "value=value");
     tigerGlue.tgrAssertMatches(
-        "!{rbel:currentRequestAsString('$.header.spacedkey')}", "value with spaces");
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.key1')}"), "valueA");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.key2')}"), "valueB");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.key3')}"), "value=value");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.spacedkey')}"),
+        "value with spaces");
+  }
+
+  @SneakyThrows
+  private static URI createAddress(String urlString) {
+    return new URI(urlString);
   }
 }

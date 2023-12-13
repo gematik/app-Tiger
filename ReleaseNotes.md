@@ -15,12 +15,20 @@
 * TGR-1190: fixed an issue where when setting fallbacks ( e.g.: ${foo.bar|orThisValue} ) the fallback value would always
   be used also when the value to resolve was existing in the JexlContext.
 
+## Features
+
+* TGR-608: All Tiger core BDD steps are now implicitly using Variable/JEXL resolution on its parameters. So you now may
+  use string values for any parameters containing TigerGlobalConfiguration references such as ```${tiger.myprop}``` and
+  JEXL expressions like ```"!{resolve(file('testfile.json'))}"``` and they will be resolved by implicit magic. All Tiger
+  extensions will be migrating to this automatic resolution with the next version.
+
 # Release 2.3.0
 
 ## Features
 
 * TGR-912: Healthchecks for externalUrl-Servers now honor the configured forwardProxyInfo of the localTigerProxy
-* TGR-1176: RbelPath-style retrieval now supported for TigerGlobalConfiguration: e.g. `${myMap..[?(@.target=='schmoo')].target}`
+* TGR-1176: RbelPath-style retrieval now supported for TigerGlobalConfiguration:
+  e.g. `${myMap..[?(@.target=='schmoo')].target}`
 * TGR-1163: TigerProxy: The groups to be used for the TLS-Handshakes can now be set for client
 * TGR-899: Migrated FAQ.md to FAQ.adoc, translated to english
 

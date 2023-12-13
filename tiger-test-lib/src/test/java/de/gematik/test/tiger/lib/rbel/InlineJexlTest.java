@@ -8,9 +8,16 @@ import static de.gematik.test.tiger.lib.rbel.TestsuiteUtils.addSomeMessagesToTig
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.glue.TigerParameterTypeDefinitions;
+import de.gematik.test.tiger.lib.enums.ModeType;
+import io.restassured.http.Method;
+import java.net.URI;
+import lombok.SneakyThrows;
 import org.apache.commons.jexl3.JexlException;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -57,5 +64,50 @@ public class InlineJexlTest {
   })
   void resolveTestStringsFailuresSilently(String resolve) {
     assertThat(TigerGlobalConfiguration.resolvePlaceholders(resolve)).isEqualTo(resolve);
+  }
+
+  @SneakyThrows
+  @ParameterizedTest
+  @CsvSource({
+    "\"GET\", GET",
+    "GET, GET",
+    "\"PUT\", PUT",
+    "PUT, PUT",
+    "\"POST\", POST",
+    "POST, POST"
+  })
+  void placeholdersRequestTypeResolveHttpRequestType(String resolve, String shouldMatch) {
+    assertThat(TigerParameterTypeDefinitions.requestType(resolve))
+        .isEqualTo(Method.valueOf(shouldMatch));
+  }
+
+  @SneakyThrows
+  @ParameterizedTest
+  @CsvSource({"\"JSON\", JSON", "JSON, JSON", "\"XML\", XML", "XML, XML"})
+  void placeholdersModeTypeCorrectlyResolveToModeType(String resolve, String shouldMatch) {
+    assertThat(TigerParameterTypeDefinitions.modeType(resolve))
+        .isEqualTo(ModeType.valueOf(shouldMatch));
+  }
+
+  @SneakyThrows
+  @ParameterizedTest
+  @CsvSource({
+    "\"XML\", XML",
+    "XML, XML",
+    "\"JSON\", JSON",
+    "JSON, JSON",
+    "\"JWT\", JWT",
+    "JWT, JWT"
+  })
+  void placeholdersStartingWithParenthesesRebelContentType(String resolve, String shouldMatch) {
+    assertThat(TigerParameterTypeDefinitions.rbelContentType(resolve))
+        .isEqualTo(RbelContentType.valueOf(shouldMatch));
+  }
+
+  @SneakyThrows
+  @Test
+  void placeholdersResolvedUrlResolveCorrectlyURL() {
+    assertThat(TigerParameterTypeDefinitions.tigerResolvedUrl("http://someUrl"))
+        .isEqualTo(new URI("http://someUrl"));
   }
 }

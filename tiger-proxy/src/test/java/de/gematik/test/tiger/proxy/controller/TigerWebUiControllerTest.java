@@ -19,6 +19,7 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import io.restassured.RestAssured;
 import java.time.OffsetDateTime;
+import javax.annotation.concurrent.NotThreadSafe;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +44,7 @@ import org.springframework.http.MediaType;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = "tigerProxy.skipDisplayWhenMessageLargerThanKb = 1")
 @ResetTigerConfiguration
+@NotThreadSafe
 @ExtendWith(MockServerExtension.class)
 public class TigerWebUiControllerTest {
 

@@ -35,13 +35,11 @@ public class TigerGlue {
    * @param key key of the context
    * @param value value for the context entry with given key
    */
-  @Wenn("TGR setze globale Variable {string} auf {string}")
-  @When("TGR set global variable {string} to {string}")
+  @Wenn("TGR setze globale Variable {tigerResolvedString} auf {tigerResolvedString}")
+  @When("TGR set global variable {tigerResolvedString} to {tigerResolvedString}")
   public void ctxtISetGlobalVariableTo(final String key, final String value) {
     log.debug("Setting global variable {} to '{}'", key, value);
-    TigerGlobalConfiguration.putValue(
-        TigerGlobalConfiguration.resolvePlaceholders(key),
-        TigerGlobalConfiguration.resolvePlaceholders(value));
+    TigerGlobalConfiguration.putValue(key, value);
   }
 
   /**
@@ -51,14 +49,11 @@ public class TigerGlue {
    * @param key key of the context
    * @param value value for the context entry with given key
    */
-  @Wenn("TGR setze lokale Variable {string} auf {string}")
-  @When("TGR set local variable {string} to {string}")
+  @Wenn("TGR setze lokale Variable {tigerResolvedString} auf {tigerResolvedString}")
+  @When("TGR set local variable {tigerResolvedString} to {tigerResolvedString}")
   public void ctxtISetLocalVariableTo(final String key, final String value) {
     log.debug("Setting local variable {} to '{}'", key, value);
-    TigerGlobalConfiguration.putValue(
-        TigerGlobalConfiguration.resolvePlaceholders(key),
-        TigerGlobalConfiguration.resolvePlaceholders(value),
-        SourceType.THREAD_CONTEXT);
+    TigerGlobalConfiguration.putValue(key, value, SourceType.THREAD_CONTEXT);
   }
 
   /**
@@ -70,19 +65,18 @@ public class TigerGlue {
    * @param key key of entry to check
    * @param regex regular expression (or equals string) to compare the value of the entry to
    */
-  @Dann("TGR prüfe Variable {string} stimmt überein mit {string}")
-  @Then("TGR assert variable {string} matches {string}")
+  @Dann("TGR prüfe Variable {tigerResolvedString} stimmt überein mit {tigerResolvedString}")
+  @Then("TGR assert variable {tigerResolvedString} matches {tigerResolvedString}")
   public void ctxtAssertVariableMatches(final String key, final String regex) {
-    final String resolvedKey = TigerGlobalConfiguration.resolvePlaceholders(key);
     String value =
-        TigerGlobalConfiguration.readStringOptional(resolvedKey)
+        TigerGlobalConfiguration.readStringOptional(key)
             .orElseThrow(
                 () ->
                     new TigerLibraryException(
                         "Wanted to assert value of key "
                             + key
                             + " (resolved to "
-                            + resolvedKey
+                            + key
                             + ") but couldn't find it!"));
     if (!Objects.equals(value, regex)) {
       assertThat(value).matches(regex);
@@ -97,45 +91,35 @@ public class TigerGlue {
    *
    * @param key key of entry to check
    */
-  @Dann("TGR prüfe Variable {string} ist unbekannt")
-  @Then("TGR assert variable {string} is unknown")
+  @Dann("TGR prüfe Variable {tigerResolvedString} ist unbekannt")
+  @Then("TGR assert variable {tigerResolvedString} is unknown")
   public void ctxtAssertVariableUnknown(final String key) {
-    final String resolvedKey = TigerGlobalConfiguration.resolvePlaceholders(key);
-    final Optional<String> optionalValue = TigerGlobalConfiguration.readStringOptional(resolvedKey);
+    final Optional<String> optionalValue = TigerGlobalConfiguration.readStringOptional(key);
     assertThat(optionalValue)
         .withFailMessage(
             "Wanted to assert value of key {} (resolved to {}) is not set " + "but found value {}!",
             key,
-            resolvedKey,
+            key,
             optionalValue)
         .isEmpty();
   }
 
-  @Gegebensei("TGR zeige {word} Banner {string}")
-  @Given("TGR show {word} banner {string}")
+  @Gegebensei("TGR zeige {word} Banner {tigerResolvedString}")
+  @Given("TGR show {word} banner {tigerResolvedString}")
   public void tgrShowColoredBanner(String color, String text) {
-    log.info(
-        "\n"
-            + Banner.toBannerStrWithCOLOR(
-                TigerGlobalConfiguration.resolvePlaceholders(text), color.toUpperCase()));
+    log.info("\n" + Banner.toBannerStrWithCOLOR(text, color.toUpperCase()));
   }
 
-  @Gegebensei("TGR zeige {word} Text {string}")
-  @Given("TGR show {word} text {string}")
+  @Gegebensei("TGR zeige {word} Text {tigerResolvedString}")
+  @Given("TGR show {word} text {tigerResolvedString}")
   public void tgrShowColoredText(String color, String text) {
-    log.info(
-        "\n"
-            + Banner.toTextStr(
-                TigerGlobalConfiguration.resolvePlaceholders(text), color.toUpperCase()));
+    log.info("\n" + Banner.toTextStr(text, color.toUpperCase()));
   }
 
-  @Gegebensei("TGR zeige Banner {string}")
-  @Given("TGR show banner {string}")
+  @Gegebensei("TGR zeige Banner {tigerResolvedString}")
+  @Given("TGR show banner {tigerResolvedString}")
   public void tgrIWantToShowBanner(String text) {
-    log.info(
-        "\n"
-            + Banner.toBannerStrWithCOLOR(
-                TigerGlobalConfiguration.resolvePlaceholders(text), "WHITE"));
+    log.info("\n" + Banner.toBannerStrWithCOLOR(text, "WHITE"));
   }
 
   @When("TGR wait for user abort")
@@ -150,24 +134,23 @@ public class TigerGlue {
     TigerDirector.pauseExecution();
   }
 
-  @When("TGR pause test run execution with message {string}")
-  @Wenn("TGR pausiere Testausführung mit Nachricht {string}")
+  @When("TGR pause test run execution with message {tigerResolvedString}")
+  @Wenn("TGR pausiere Testausführung mit Nachricht {tigerResolvedString}")
   public void tgrPauseExecutionWithMessage(String message) {
-    TigerDirector.pauseExecution(TigerGlobalConfiguration.resolvePlaceholders(message));
+    TigerDirector.pauseExecution(message);
   }
 
-  @When("TGR pause test run execution with message {string} and message in case of error {string}")
-  @Wenn("TGR pausiere Testausführung mit Nachricht {string} und Meldung im Fehlerfall {string}")
+  @When(
+      "TGR pause test run execution with message {tigerResolvedString} and message in case of error {tigerResolvedString}")
+  @Wenn(
+      "TGR pausiere Testausführung mit Nachricht {tigerResolvedString} und Meldung im Fehlerfall {tigerResolvedString}")
   public void tgrPauseExecutionWithMessageAndErrorMessage(String message, String errorMessage) {
-    TigerDirector.pauseExecutionAndFailIfDesired(
-        TigerGlobalConfiguration.resolvePlaceholders(message),
-        TigerGlobalConfiguration.resolvePlaceholders(errorMessage));
+    TigerDirector.pauseExecutionAndFailIfDesired(message, errorMessage);
   }
 
   @When("TGR show HTML Notification:")
   @Wenn("TGR zeige HTML Notification:")
   public void tgrShowHtmlNotification(String message) {
-    // TODO merge this with TigerDirector.pauseExecution
     final String bannerMessage = TigerGlobalConfiguration.resolvePlaceholders(message);
     if (TigerDirector.getLibConfig().isActivateWorkflowUi()) {
       TigerDirector.getTigerTestEnvMgr()
@@ -188,22 +171,19 @@ public class TigerGlue {
     }
   }
 
-  @When("TGR assert {string} matches {string}")
-  @Dann("TGR prüfe das {string} mit {string} überein stimmt")
-  public void tgrAssertMatches(String rawValue1, String rawValue2) {
-    String value1 = TigerGlobalConfiguration.resolvePlaceholders(rawValue1);
-    String value2 = TigerGlobalConfiguration.resolvePlaceholders(rawValue2);
+  @When("TGR assert {tigerResolvedString} matches {tigerResolvedString}")
+  @Dann("TGR prüfe das {tigerResolvedString} mit {tigerResolvedString} überein stimmt")
+  public void tgrAssertMatches(String value1, String value2) {
     if (!Objects.equals(value1, value2)) {
       assertThat(value1).matches(value2);
     }
   }
 
   /** Prints the value of the given variable to the System-out */
-  @Dann("TGR gebe variable {string} aus")
-  @Then("TGR print variable {string}")
+  @Dann("TGR gebe variable {tigerResolvedString} aus")
+  @Then("TGR print variable {tigerResolvedString}")
   public void printVariable(String key) {
-    final String resolvedKey = TigerGlobalConfiguration.resolvePlaceholders(key);
-    final Optional<String> optionalValue = TigerGlobalConfiguration.readStringOptional(resolvedKey);
+    final Optional<String> optionalValue = TigerGlobalConfiguration.readStringOptional(key);
     System.out.println(key + ": '" + optionalValue.orElse("This key is not set!") + "'"); // NOSONAR
   }
 }
