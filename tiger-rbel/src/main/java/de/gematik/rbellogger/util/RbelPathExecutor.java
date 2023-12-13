@@ -129,7 +129,7 @@ public class RbelPathExecutor<T extends RbelPathAble> {
   }
 
   private void performPreExecutionLogging(List<String> keys) {
-    if (RbelOptions.isActivateFacetsPrinting()
+    if (RbelOptions.isActivateRbelPathDebugging()
         && targetObject instanceof RbelElement asRbelElement) {
       log.info(
           "Executing RBelPath {} into root-element (limited view to {} levels)\n{}",
