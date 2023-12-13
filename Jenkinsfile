@@ -12,11 +12,15 @@ pipeline {
     options {
         disableConcurrentBuilds()
     }
-    agent { label 'k8-maven-large' }
+    agent { label 'k8-backend-extra-large' }
 
     tools {
         maven 'Default'
     }
+    environment {
+        JAVA_TOOL_OPTIONS = '-Xmx16g  -Xms1g -Dgwt.extraJvmArgs="-Xmx16g -Xms1g"'
+    }
+
 
     stages {
         stage('Initialize') {

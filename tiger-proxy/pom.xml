@@ -293,8 +293,11 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <!-- very pessimistic value for slow environment. Default is 30. Rare errors observed. -->
-                    <forkedProcessExitTimeoutInSeconds>300</forkedProcessExitTimeoutInSeconds>
-                    <reuseForks>false</reuseForks>
+                    <forkedProcessExitTimeoutInSeconds>1000</forkedProcessExitTimeoutInSeconds>
+                    <forkCount>10</forkCount>
+                    <threadCount>1</threadCount>
+                    <reuseForks>true</reuseForks>
+                    <parallel>classes</parallel>
                 </configuration>
             </plugin>
         </plugins>

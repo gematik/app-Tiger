@@ -31,6 +31,7 @@ import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.mockserver.configuration.Configuration;
 import org.mockserver.model.BinaryProxyListener;
@@ -133,6 +134,9 @@ public abstract class AbstractNonHttpTest {
       } catch (IOException e) {
         log.error("Exception while accepting client socket", e);
         throw new RuntimeException(e);
+      } catch (ConditionTimeoutException cte) {
+        tigerProxy.getRbelMessagesList().forEach(msg -> log.error(msg.printHttpDescription()));
+        throw cte;
       }
 
       try {

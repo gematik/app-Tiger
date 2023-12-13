@@ -5,7 +5,6 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.BufferedReader;
@@ -16,10 +15,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.Arrays;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -27,10 +25,10 @@ import org.junit.jupiter.api.Test;
 @ResetTigerConfiguration
 class TestCetpCommunication extends AbstractNonHttpTest {
 
-  private byte[] message;
+  private static byte[] message;
 
-  @BeforeEach
-  public void setupFixture() throws IOException {
+  @BeforeAll
+  public static void setupFixture() throws IOException {
     String xml = Files.readString(Path.of("pom.xml"));
     message =
         Arrays.concatenate(
@@ -45,14 +43,11 @@ class TestCetpCommunication extends AbstractNonHttpTest {
     executeTestRun(
         socket -> {
           writeSingleRequestMessage(socket);
-          await()
-              .atMost(5, TimeUnit.SECONDS)
-              .pollInterval(100, TimeUnit.MILLISECONDS)
-              .until(() -> !getTigerProxy().getRbelMessages().isEmpty());
+          TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(getTigerProxy(), 1);
           writeSingleRequestMessage(socket);
+          TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(getTigerProxy(), 2);
         },
         (requestCalls, responseCalls, serverCalled) -> {
-          assertThat(getTigerProxy().getRbelMessages()).hasSize(2);
           assertThat(getTigerProxy().getRbelMessages().getFirst().getRawContent())
               .isEqualTo(message);
           assertThat(getTigerProxy().getRbelMessages().getLast().getRawContent())
@@ -65,22 +60,22 @@ class TestCetpCommunication extends AbstractNonHttpTest {
       "Client sends two non-http request, no reply from server, connection closed between each"
           + " client message")
   void sendNonHttpTrafficWithoutResponseAndWithSocketCloseBetweenEachMessage() throws Exception {
+    log.info("RUNNING sendNonHttpTrafficWithoutResponseAndWithSocketCloseBetweenEachMessage");
     executeTestRun(
         socket -> {
           socket.close();
           try (Socket clientSocket = newClientSocketTo(getTigerProxy())) {
             writeSingleRequestMessage(clientSocket);
           }
-          await()
-              .atMost(5, TimeUnit.SECONDS)
-              .pollInterval(100, TimeUnit.MILLISECONDS)
-              .until(() -> getTigerProxy().getRbelMessages().size() >= 1);
+          TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
+              getTigerProxy(), 1, 10);
           try (Socket clientSocket = newClientSocketTo(getTigerProxy())) {
             writeSingleRequestMessage(clientSocket);
+            TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
+                getTigerProxy(), 2, 10);
           }
         },
         (requestCalls, responseCalls, serverCalled) -> {
-          assertThat(getTigerProxy().getRbelMessages()).hasSize(2);
           assertThat(getTigerProxy().getRbelMessages().getFirst().getRawContent())
               .isEqualTo(message);
           assertThat(getTigerProxy().getRbelMessages().getLast().getRawContent())

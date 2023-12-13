@@ -354,6 +354,24 @@ public class RbelElement extends RbelPathAble {
     return !(hasFacet(RbelJsonFacet.class) && hasFacet(RbelNestedFacet.class));
   }
 
+  public String printHttpDescription() {
+    return getFacet(RbelHttpRequestFacet.class)
+            .map(
+                req ->
+                    "HTTP " + req.getMethod().getRawStringContent() + " " + req.getPathAsString())
+            .orElse("")
+        + getFacet(RbelHttpResponseFacet.class)
+            .map(req -> "HTTP " + req.getResponseCode().getRawStringContent())
+            .orElse("")
+        + getFacet(RbelHttpMessageFacet.class)
+            .map(
+                msg ->
+                    " with body '"
+                        + StringUtils.abbreviate(msg.getBody().getRawStringContent(), 30)
+                        + "'")
+            .orElse("");
+  }
+
   private static class RbelPathNotUniqueException extends RuntimeException {
 
     public RbelPathNotUniqueException(String s) {

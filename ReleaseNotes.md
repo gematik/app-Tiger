@@ -15,12 +15,14 @@
 * TGR-1190: fixed an issue where when setting fallbacks ( e.g.: ${foo.bar|orThisValue} ) the fallback value would always
   be used also when the value to resolve was existing in the JexlContext.
 
-## Features
+# Features
 
 * TGR-608: All Tiger core BDD steps are now implicitly using Variable/JEXL resolution on its parameters. So you now may
   use string values for any parameters containing TigerGlobalConfiguration references such as ```${tiger.myprop}``` and
   JEXL expressions like ```"!{resolve(file('testfile.json'))}"``` and they will be resolved by implicit magic. All Tiger
   extensions will be migrating to this automatic resolution with the next version.
+* TGR-1214: Tiger Proxy tests are now run in 10 separate forks, this will put your machine under heavy load and requires
+  at least 32 GB to run. On Linux using ```nice mvn verify``` may be a good idea
 
 # Release 2.3.0
 
