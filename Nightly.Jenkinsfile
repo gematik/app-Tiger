@@ -14,6 +14,9 @@ pipeline {
     tools {
         maven 'Default'
     }
+    environment {
+        JAVA_TOOL_OPTIONS = '-Xmx16g  -Xms1g -Dgwt.extraJvmArgs="-Xmx16g -Xms1g"'
+    }
 
     parameters {
         string(name: 'BRANCH', defaultValue: "master", description: 'Branch gegen den die UI-Tests ausgeführt werden sollen. Default: master')
