@@ -152,4 +152,10 @@ class RbelContentTreeNodeTest {
   void getKeyTest() {
     assertEquals("foo", msg2.findElement("$.blub.foo").orElseThrow().getKey().orElseThrow());
   }
+
+  @Test
+  void setRawStringContent() {
+    msg1.findElement("$.blub.foo").orElseThrow().setRawStringContent("new String");
+    assertEquals("new String", msg1.findElement("$.blub.foo").orElseThrow().getRawStringContent());
+  }
 }

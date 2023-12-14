@@ -17,7 +17,6 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
@@ -29,7 +28,6 @@ import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.File;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
@@ -83,7 +81,7 @@ public class TigerProxyExamplesTest {
       unirestInstance
           .get("http://localhost:" + mockServerClient.getPort() + "/foo?echo=schmoolildu")
           .asString();
-      waitUntilMessagesAreParsedInTheTigerProxy(tigerProxy);
+      TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
 
       assertThat(tigerProxy.getRbelMessagesList().get(1).getRawStringContent())
           .contains("barschmoolildu");
@@ -98,7 +96,7 @@ public class TigerProxyExamplesTest {
       unirestInstance
           .get("http://localhost:" + mockServerClient.getPort() + "/foo?echo=schmoolildu")
           .asString();
-      waitUntilMessagesAreParsedInTheTigerProxy(tigerProxy);
+      TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
 
       assertThat(
               tigerProxy
@@ -122,7 +120,7 @@ public class TigerProxyExamplesTest {
                   + mockServerClient.getPort()
                   + "/read?filename=src/test/resources/test.json")
           .asString();
-      waitUntilMessagesAreParsedInTheTigerProxy(tigerProxy);
+      TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
 
       assertThat(
               tigerProxy
@@ -146,7 +144,7 @@ public class TigerProxyExamplesTest {
                   + mockServerClient.getPort()
                   + "/read?filename=src/test/resources/combined.json")
           .asString();
-      waitUntilMessagesAreParsedInTheTigerProxy(tigerProxy);
+      TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
 
       assertThat(
               tigerProxy
@@ -174,7 +172,7 @@ public class TigerProxyExamplesTest {
         UnirestInstance unirestInstance = Unirest.spawnInstance()) {
       unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
       unirestInstance.get("http://norealserver/foo").asString();
-      waitUntilMessagesAreParsedInTheTigerProxy(tigerProxy);
+      TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
 
       assertThat(
               tigerProxy
@@ -205,7 +203,7 @@ public class TigerProxyExamplesTest {
       unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
       unirestInstance.get("http://norealserver/foo").asString();
 
-      await().atMost(2, TimeUnit.SECONDS).until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
+      TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
     }
   }
 
@@ -225,7 +223,7 @@ public class TigerProxyExamplesTest {
       System.out.println("curl -v http://localhost:" + tigerProxy.getProxyPort() + "/foo");
       Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foo").asString();
 
-      await().atMost(2, TimeUnit.SECONDS).until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
+      TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
     }
   }
 
@@ -245,7 +243,7 @@ public class TigerProxyExamplesTest {
       System.out.println("curl -v http://localhost:" + tigerProxy.getProxyPort() + "/wuff/foo");
       Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/wuff/foo").asString();
 
-      await().atMost(2, TimeUnit.SECONDS).until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
+      TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
     }
   }
 
@@ -267,7 +265,7 @@ public class TigerProxyExamplesTest {
       unirestInstance.config().sslContext(tigerProxy.buildSslContext());
       unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foo").asString();
 
-      await().atMost(2, TimeUnit.SECONDS).until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
+      TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
     }
   }
 
@@ -292,7 +290,7 @@ public class TigerProxyExamplesTest {
       unirestInstance.config().verifySsl(false);
       unirestInstance.get("https://blub/foo").asString();
 
-      await().atMost(2, TimeUnit.SECONDS).until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
+      TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
     }
   }
 
@@ -323,7 +321,7 @@ public class TigerProxyExamplesTest {
       unirestInstance.config().verifySsl(false);
       unirestInstance.get("https://blub/foo").asString();
 
-      await().atMost(2, TimeUnit.SECONDS).until(() -> tigerProxy.getRbelMessagesList().size() >= 2);
+      TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
     }
   }
 
@@ -341,7 +339,7 @@ public class TigerProxyExamplesTest {
       System.out.println(
           "curl -v https://api.twitter.com/1.1/jot/client_event.json -x http://localhost:6666 -k");
 
-      await().atMost(2, TimeUnit.HOURS).until(() -> tigerProxy.getRbelMessagesList().size() >= 4);
+      TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 4);
     }
   }
 
@@ -379,7 +377,7 @@ public class TigerProxyExamplesTest {
 
       unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
       unirestInstance.get("http://blub/foo").asString();
-      waitUntilMessagesAreParsedInTheTigerProxy(tigerProxy);
+      TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
 
       assertThat(
               tigerProxy
@@ -423,9 +421,5 @@ public class TigerProxyExamplesTest {
                   .getCipherSuite())
           .isEqualTo(configuredSslSuite);
     }
-  }
-
-  private static void waitUntilMessagesAreParsedInTheTigerProxy(TigerProxy tigerProxy) {
-    await().until(() -> tigerProxy.getRbelMessages().size() >= 2);
   }
 }

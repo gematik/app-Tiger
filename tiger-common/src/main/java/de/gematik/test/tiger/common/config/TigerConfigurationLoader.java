@@ -22,6 +22,7 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.cfg.ContextAttributes;
 import com.fasterxml.jackson.databind.deser.ContextualDeserializer;
 import com.fasterxml.jackson.databind.deser.DeserializationProblemHandler;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -29,6 +30,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.zion.config.TigerSkipEvaluation;
@@ -38,10 +40,10 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.yaml.snakeyaml.Yaml;
@@ -49,13 +51,60 @@ import org.yaml.snakeyaml.Yaml;
 @Slf4j
 public class TigerConfigurationLoader {
 
-  private ObjectMapper objectMapper;
+  public static final String TIGER_CONFIGURATION_ATTRIBUTE_KEY = "tigerConfiguration";
+  private final TigerConfigurationSourcesManager sourcesManager =
+      new TigerConfigurationSourcesManager();
+  @Getter private ObjectMapper objectMapper;
   private ObjectMapper strictObjectMapper;
-  private TigerConfigurationSourcesManager sourcesManager = new TigerConfigurationSourcesManager();
   private List<TigerTemplateSource> loadedTemplates;
 
   public TigerConfigurationLoader() {
     initialize();
+  }
+
+  private static boolean parseBoolean(String rawValue) {
+    return "1".equals(rawValue) || Boolean.parseBoolean(rawValue);
+  }
+
+  private static String mapConflictResolver(String e1, String e2, String propertySourceName) {
+    if (e1.equals(e2)) {
+      return e1;
+    } else {
+      throw new TigerConfigurationException(
+          "Found two conflicting "
+              + propertySourceName
+              + " with values '"
+              + e1
+              + "' and '"
+              + e2
+              + "'. Resolve this conflict manually!");
+    }
+  }
+
+  public static Map<TigerConfigurationKey, String> addYamlToMap(
+      final Object value,
+      final TigerConfigurationKey baseKeys,
+      final Map<TigerConfigurationKey, String> valueMap) {
+    if (value instanceof Map<?, ?> asMap) {
+      asMap.forEach(
+          (key, value1) -> {
+            var newList = new TigerConfigurationKey(baseKeys);
+            newList.add((String) key);
+            addYamlToMap(value1, newList, valueMap);
+          });
+    } else if (value instanceof List<?> asList) {
+      int counter = 0;
+      for (Object entry : asList) {
+        TigerConfigurationKey newList = new TigerConfigurationKey(baseKeys);
+        newList.add(wrapAsKey(Integer.toString(counter++)));
+        addYamlToMap(entry, newList, valueMap);
+      }
+    } else {
+      if (value != null) {
+        valueMap.put(baseKeys, value.toString());
+      }
+    }
+    return valueMap;
   }
 
   public void reset() {
@@ -74,8 +123,8 @@ public class TigerConfigurationLoader {
   }
 
   private void initializeObjectMapper() {
-    SimpleModule module = new SimpleModule();
-    module.addDeserializer(String.class, new SkipEvaluationDeserializer(this));
+    SimpleModule skipEvaluationModule = new SimpleModule();
+    skipEvaluationModule.addDeserializer(String.class, new SkipEvaluationDeserializer(this));
     objectMapper =
         JsonMapper.builder()
             .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
@@ -84,7 +133,10 @@ public class TigerConfigurationLoader {
             .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
             .addModule(new JavaTimeModule())
             .addModule(new AllowDelayedPrimitiveResolvementModule(this))
-            .addModule(module)
+            .addModule(skipEvaluationModule)
+            .defaultAttributes(
+                ContextAttributes.getEmpty()
+                    .withSharedAttributes(Map.of(TIGER_CONFIGURATION_ATTRIBUTE_KEY, this)))
             .build();
     strictObjectMapper =
         JsonMapper.builder()
@@ -93,7 +145,11 @@ public class TigerConfigurationLoader {
             .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CASE)
             .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
             .addModule(new JavaTimeModule())
-            .addModule(module)
+            .addModule(new AllowDelayedPrimitiveResolvementModule(this))
+            .addModule(skipEvaluationModule)
+            .defaultAttributes(
+                ContextAttributes.getEmpty()
+                    .withSharedAttributes(Map.of(TIGER_CONFIGURATION_ATTRIBUTE_KEY, this)))
             .build();
   }
 
@@ -132,7 +188,6 @@ public class TigerConfigurationLoader {
    *
    * @param configurationBeanClass The class of the configuration bean
    * @param baseKeys Where in the configuration tree should the values be taken from?
-   * @param <T>
    * @return An instance of configurationBeanClass filled with values taken from the configuration
    *     tree
    */
@@ -151,7 +206,6 @@ public class TigerConfigurationLoader {
    *
    * @param configurationBeanClass The class of the configuration bean
    * @param baseKeys Where in the configuration tree should the values be taken from?
-   * @param <T>
    * @return An instance of configurationBeanClass filled with values taken from the configuration
    *     tree
    */
@@ -208,8 +262,8 @@ public class TigerConfigurationLoader {
       }
       targetTree = targetTree.get(key.getValue());
     }
-    try {
-      return objectMapper.treeAsTokens(targetTree).readValueAs(configurationBeanType);
+    try (JsonParser jsonParser = objectMapper.treeAsTokens(targetTree)) {
+      return jsonParser.readValueAs(configurationBeanType);
     } catch (JacksonException e) {
       log.debug(
           "Error while converting the following tree: {}",
@@ -255,34 +309,29 @@ public class TigerConfigurationLoader {
     return readStringOptional(key).map(TigerConfigurationLoader::parseBoolean);
   }
 
-  private static boolean parseBoolean(String rawValue) {
-    return "1".equals(rawValue) ? true : Boolean.parseBoolean(rawValue);
-  }
-
   public void readTemplates(String templatesYaml, String... baseKeys) {
     Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
     final Object loadedYaml = yaml.load(templatesYaml);
 
-    if (!(loadedYaml instanceof Map)
-        || (!((Map) loadedYaml).containsKey("templates"))
-        || (!(((Map) loadedYaml).get("templates") instanceof List))) {
+    if (loadedYaml instanceof Map<?, ?> asMap
+        && asMap.containsKey("templates")
+        && asMap.get("templates") instanceof List<?> aslist) {
+      aslist.stream()
+          .filter(Map.class::isInstance)
+          .map(Map.class::cast)
+          .filter(m -> m.containsKey("templateName"))
+          .forEach(
+              m ->
+                  loadedTemplates.add(
+                      TigerTemplateSource.builder()
+                          .templateName(m.get("templateName").toString())
+                          .targetPath(new TigerConfigurationKey(baseKeys))
+                          .values(addYamlToMap(m, new TigerConfigurationKey(), new HashMap<>()))
+                          .build()));
+    } else {
       throw new TigerConfigurationException(
           "Error while loading templates: Expected templates-nodes with list of templates");
     }
-
-    ((List) ((Map) loadedYaml).get("templates"))
-        .stream()
-            .filter(o -> o instanceof Map)
-            .map(Map.class::cast)
-            .filter(m -> ((Map) m).containsKey("templateName"))
-            .forEach(
-                m ->
-                    loadedTemplates.add(
-                        TigerTemplateSource.builder()
-                            .templateName(((Map) m).get("templateName").toString())
-                            .targetPath(new TigerConfigurationKey(baseKeys))
-                            .values(addYamlToMap(m, new TigerConfigurationKey(), new HashMap<>()))
-                            .build()));
   }
 
   public void loadEnvironmentVariables() {
@@ -307,7 +356,7 @@ public class TigerConfigurationLoader {
 
   public void loadSystemProperties() {
     sourcesManager
-      .getSortedStream()
+        .getSortedStream()
         .filter(source -> source.getSourceType() == SourceType.PROPERTIES)
         .forEach(sourcesManager::removeSource);
 
@@ -325,45 +374,40 @@ public class TigerConfigurationLoader {
             .build());
   }
 
-  private static String mapConflictResolver(String e1, String e2, String propertySourceName) {
-    if (e1.equals(e2)) {
-      return e1;
-    } else {
-      throw new TigerConfigurationException(
-          "Found two conflicting "
-              + propertySourceName
-              + " with values '"
-              + e1
-              + "' and '"
-              + e2
-              + "'. Resolve this conflict manually!");
-    }
-  }
-
+  /** Generates a map containing all key/value pairs. Placeholders in the values ARE resolved. */
   public Map<TigerConfigurationKey, String> retrieveMap() {
     final Map<TigerConfigurationKey, String> map = retrieveMapUnresolved();
     replacePlaceholders(map);
     return map;
   }
 
+  /**
+   * Generates a map containing all key/value pairs. Placeholders in the values are NOT resolved.
+   */
   public Map<TigerConfigurationKey, String> retrieveMapUnresolved() {
     Map<TigerConfigurationKey, String> loadedAndSortedProperties = new HashMap<>();
 
-    for (AbstractTigerConfigurationSource configurationSource : sourcesManager.getSortedListReversed()) {
+    for (AbstractTigerConfigurationSource configurationSource :
+        sourcesManager.getSortedListReversed()) {
       loadedAndSortedProperties =
           configurationSource.applyTemplatesAndAddValuesToMap(
               loadedTemplates, loadedAndSortedProperties);
     }
 
-    replacePlaceholders(loadedAndSortedProperties);
-
     return loadedAndSortedProperties;
   }
 
+  /**
+   * Generates a tree containing all key/value pairs. Placeholders in the values are NOT resolved.
+   */
   private JsonNode convertToTreeUnresolved() {
+    return convertMapToTree(retrieveMapUnresolved());
+  }
+
+  private JsonNode convertMapToTree(Map<TigerConfigurationKey, String> map) {
     final ObjectNode result = new ObjectNode(objectMapper.getNodeFactory());
 
-    for (var entry : retrieveMapUnresolved().entrySet()) {
+    for (var entry : map.entrySet()) {
       createAndReturnDeepPath(entry.getKey(), result)
           .put(entry.getKey().get(entry.getKey().size() - 1).getValue(), entry.getValue());
     }
@@ -384,21 +428,22 @@ public class TigerConfigurationLoader {
   }
 
   private JsonNode mapObjectsToArrayWhereApplicable(JsonNode value, JsonNodeFactory nodeFactory) {
-    if (value instanceof ObjectNode) {
-      if (isArray((ObjectNode) value)) {
+    if (value instanceof ObjectNode asObjectNode) {
+      if (isArray(asObjectNode)) {
         return new ArrayNode(
             nodeFactory,
             StreamSupport.stream(
                     Spliterators.spliteratorUnknownSize(value.fields(), Spliterator.ORDERED), false)
-                .sorted(Comparator.comparing(Map.Entry::getKey))
+                .sorted(Entry.comparingByKey())
                 .map(Map.Entry::getValue)
                 .map(node -> mapObjectsToArrayWhereApplicable(node, nodeFactory))
-                .collect(Collectors.toList()));
+                .toList());
       } else {
         return new ObjectNode(
             nodeFactory,
             StreamSupport.stream(
-                    Spliterators.spliteratorUnknownSize(value.fields(), Spliterator.ORDERED), false)
+                    Spliterators.spliteratorUnknownSize(asObjectNode.fields(), Spliterator.ORDERED),
+                    false)
                 .map(
                     entry ->
                         Pair.of(
@@ -412,13 +457,14 @@ public class TigerConfigurationLoader {
   }
 
   private boolean isArray(ObjectNode value) {
-    if (IteratorUtils.toList(value.fieldNames()).stream()
-        .anyMatch(s -> !NumberUtils.isParsable(s.toString()))) {
+    Spliterator<String> stringSpliterator =
+        Spliterators.spliteratorUnknownSize(value.fieldNames(), Spliterator.ORDERED);
+    if (StreamSupport.stream(stringSpliterator, false).anyMatch(s -> !NumberUtils.isParsable(s))) {
       return false;
     }
     final List<Integer> keys =
-        IteratorUtils.toList(value.fieldNames()).stream()
-            .mapToInt(s -> Integer.parseInt(s.toString()))
+        StreamSupport.stream(stringSpliterator, false)
+            .mapToInt(Integer::parseInt)
             .sorted()
             .boxed()
             .toList();
@@ -453,14 +499,12 @@ public class TigerConfigurationLoader {
       ObjectNode position, TigerConfigurationKeyString key) {
     for (Iterator<String> it = position.fieldNames(); it.hasNext(); ) {
       String toBeReplacedKey = it.next();
-      if (key.getValue().equals(toBeReplacedKey)) {
+      if (key.getValue().equals(toBeReplacedKey)
+          || !key.getValue().equalsIgnoreCase(toBeReplacedKey) /* do we have a clash? */) {
         continue;
       }
-      if (!key.getValue().equalsIgnoreCase(toBeReplacedKey)) { // do we have a clash?
-        continue;
-      }
-      if (!toBeReplacedKey.equals(
-          toBeReplacedKey.toLowerCase())) { // only select cases where field is all lower case
+      if (!toBeReplacedKey.equals(toBeReplacedKey.toLowerCase())) {
+        // only select cases where field is all lower case
         return toBeReplacedKey;
       }
       final JsonNode leaf = position.remove(toBeReplacedKey);
@@ -468,34 +512,6 @@ public class TigerConfigurationLoader {
       return key.getValue();
     }
     return key.getValue();
-  }
-
-  public static Map<TigerConfigurationKey, String> addYamlToMap(
-      final Object value,
-      final TigerConfigurationKey baseKeys,
-      final Map<TigerConfigurationKey, String> valueMap) {
-    if (value instanceof Map) {
-      ((Map<String, ?>) value)
-          .entrySet()
-          .forEach(
-              entry -> {
-                var newList = new TigerConfigurationKey(baseKeys);
-                newList.add(entry.getKey());
-                addYamlToMap(entry.getValue(), newList, valueMap);
-              });
-    } else if (value instanceof List) {
-      int counter = 0;
-      for (Object entry : (List) value) {
-        TigerConfigurationKey newList = new TigerConfigurationKey(baseKeys);
-        newList.add(wrapAsKey(Integer.toString(counter++)));
-        addYamlToMap(entry, newList, valueMap);
-      }
-    } else {
-      if (value != null) {
-        valueMap.put(baseKeys, value.toString());
-      }
-    }
-    return valueMap;
   }
 
   public Map<String, String> readMap(String... baseKeys) {
@@ -517,7 +533,10 @@ public class TigerConfigurationLoader {
   }
 
   public Map<String, String> readMapWithCaseSensitiveKeys(String... baseKeys) {
-    var reference = new TigerConfigurationKey(baseKeys);
+    return readMapWithCaseSensitiveKeys(new TigerConfigurationKey(baseKeys));
+  }
+
+  public Map<String, String> readMapWithCaseSensitiveKeys(TigerConfigurationKey reference) {
     return retrieveMap().entrySet().stream()
         .filter(entry -> entry.getKey().isBelow(reference))
         .collect(
@@ -544,8 +563,8 @@ public class TigerConfigurationLoader {
       throw new TigerConfigurationException(
           "Trying to store null-value. Only non-values are allowed!");
     }
-    if (value instanceof String) {
-      putValue(key, (String) value);
+    if (value instanceof String asString) {
+      putValue(key, asString);
     } else {
       try {
         Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
@@ -594,10 +613,6 @@ public class TigerConfigurationLoader {
     return sourcesManager.removeSource(configurationSource);
   }
 
-  public ObjectMapper getObjectMapper() {
-    return objectMapper;
-  }
-
   @AllArgsConstructor
   private static class AllowDelayedPrimitiveResolvementModule extends Module {
 
@@ -628,15 +643,13 @@ public class TigerConfigurationLoader {
 
     private final TigerConfigurationLoader configurationLoader;
     private boolean skipEvaluation;
-    private BeanProperty property;
 
     @Override
     public JsonDeserializer<?> createContextual(
         DeserializationContext ctxt, BeanProperty property) {
       this.skipEvaluation =
           property != null && property.getAnnotation(TigerSkipEvaluation.class) != null;
-      this.property = property;
-      return new SkipEvaluationDeserializer(configurationLoader, skipEvaluation, property);
+      return new SkipEvaluationDeserializer(configurationLoader, skipEvaluation);
     }
 
     @Override
@@ -654,43 +667,55 @@ public class TigerConfigurationLoader {
   @AllArgsConstructor
   private static class ClazzFallbackConverter extends DeserializationProblemHandler {
 
-    private TigerConfigurationLoader tigerConfigurationLoader;
+    TigerConfigurationLoader tigerConfigurationLoader;
 
     @Override
     public Object handleWeirdStringValue(
         DeserializationContext ctxt, Class<?> targetType, String valueToConvert, String failureMsg)
         throws IOException {
-      if ((valueToConvert.contains("!{") || valueToConvert.contains("${"))
-          && (TokenSubstituteHelper.substitute(valueToConvert, tigerConfigurationLoader)
-              .equals(valueToConvert))) {
-        if (targetType.equals(Boolean.class)
-            || targetType.equals(Integer.class)
-            || targetType.equals(Long.class)
-            || targetType.equals(Character.class)
-            || targetType.equals(Double.class)
-            || targetType.equals(Float.class)
-            || targetType.equals(Byte.class)
-            || targetType.equals(Short.class)) {
-          return null;
-        } else if (targetType.equals(boolean.class)) {
-          return false;
-        } else if (targetType.equals(int.class)) {
-          return -1;
-        } else if (targetType.equals(long.class)) {
-          return (long) -1;
-        } else if (targetType.equals(double.class)) {
-          return -1.;
-        } else if (targetType.equals(float.class)) {
-          return -1f;
-        } else if (targetType.equals(short.class)) {
-          return (short) -1;
-        } else if (targetType.equals(char.class)) {
-          return ' ';
-        } else if (targetType.equals(byte.class)) {
-          return (byte) -1;
+      if (valueToConvert.contains("!{") || valueToConvert.contains("${")) {
+        final String substitute =
+            TokenSubstituteHelper.substitute(valueToConvert, tigerConfigurationLoader);
+        if (!substitute.equals(valueToConvert)) {
+          final TextNode replacedTextNode = ctxt.getNodeFactory().textNode(substitute);
+          return ctxt.readTreeAsValue(replacedTextNode, targetType);
         }
+        return returnTigerSpecificFallbackValue(ctxt, targetType, valueToConvert, failureMsg);
       }
       return super.handleWeirdStringValue(ctxt, targetType, valueToConvert, failureMsg);
+    }
+
+    Object returnTigerSpecificFallbackValue(
+        DeserializationContext ctxt, Class<?> targetType, String valueToConvert, String failureMsg)
+        throws IOException {
+      if (targetType.equals(Boolean.class)
+          || targetType.equals(Integer.class)
+          || targetType.equals(Long.class)
+          || targetType.equals(Character.class)
+          || targetType.equals(Double.class)
+          || targetType.equals(Float.class)
+          || targetType.equals(Byte.class)
+          || targetType.equals(Short.class)) {
+        return null;
+      } else if (targetType.equals(boolean.class)) {
+        return false;
+      } else if (targetType.equals(int.class)) {
+        return -1;
+      } else if (targetType.equals(long.class)) {
+        return (long) -1;
+      } else if (targetType.equals(double.class)) {
+        return -1.;
+      } else if (targetType.equals(float.class)) {
+        return -1f;
+      } else if (targetType.equals(short.class)) {
+        return (short) -1;
+      } else if (targetType.equals(char.class)) {
+        return ' ';
+      } else if (targetType.equals(byte.class)) {
+        return (byte) -1;
+      } else {
+        return super.handleWeirdStringValue(ctxt, targetType, valueToConvert, failureMsg);
+      }
     }
   }
 }

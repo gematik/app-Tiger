@@ -34,13 +34,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.test.util.ReflectionTestUtils;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
 
 @Slf4j
 @Getter
 @TestInstance(Lifecycle.PER_CLASS)
+@ExtendWith(SystemStubsExtension.class)
 class TestEnvManagerConfigurationCheck {
 
   @BeforeEach
@@ -85,31 +88,29 @@ class TestEnvManagerConfigurationCheck {
       skipEnvironmentSetup = true)
   void testCheckCfgPropertiesMissingParamMandatoryServerPortProp_NOK(TigerTestEnvMgr envMgr) {
     CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
-    assertThatThrownBy(
-            () -> envMgr.createServer("testTigerProxy", srv).assertThatConfigurationIsCorrect())
+    AbstractTigerServer server = envMgr.createServer("testTigerProxy", srv);
+    assertThatThrownBy(server::assertThatConfigurationIsCorrect)
         .isInstanceOf(TigerTestEnvException.class);
   }
 
   @Test
   void testCheckDoubleKey_NOK() {
-    assertThatThrownBy(
-            () ->
-                TigerGlobalConfiguration.initializeWithCliProperties(
-                    Map.of(
-                        "TIGER_TESTENV_CFGFILE",
-                        "src/test/resources/de/gematik/test/tiger/testenvmgr/testDoubleKey.yaml")))
+    Map<String, String> yamlMap =
+        Map.of(
+            "TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDoubleKey.yaml");
+    assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
         .isInstanceOf(TigerConfigurationException.class)
         .hasMessage("Duplicate keys in yaml file ('serverDouble')!");
   }
 
   @Test
   void testCheckDeprecatedKey_port_NOK() {
-    assertThatThrownBy(
-            () ->
-                TigerGlobalConfiguration.initializeWithCliProperties(
-                    Map.of(
-                        "TIGER_TESTENV_CFGFILE",
-                        "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
+    Map<String, String> yamlMap =
+        Map.of(
+            "TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml");
+    assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
         .isInstanceOf(TigerConfigurationException.class)
         .hasMessageContaining(
             "The key ('port') in yaml file should not be used anymore, use 'proxyPort' instead!");
@@ -117,12 +118,11 @@ class TestEnvManagerConfigurationCheck {
 
   @Test
   void testCheckDeprecatedKey_tigerport_NOK() {
-    assertThatThrownBy(
-            () ->
-                TigerGlobalConfiguration.initializeWithCliProperties(
-                    Map.of(
-                        "TIGER_TESTENV_CFGFILE",
-                        "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
+    Map<String, String> yamlMap =
+        Map.of(
+            "TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml");
+    assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
         .isInstanceOf(TigerConfigurationException.class)
         .hasMessageContaining(
             "The key ('port') in yaml file should not be used anymore, use 'proxyPort' instead!");
@@ -130,12 +130,11 @@ class TestEnvManagerConfigurationCheck {
 
   @Test
   void testCheckDeprecatedKey_serverPort_NOK() {
-    assertThatThrownBy(
-            () ->
-                TigerGlobalConfiguration.initializeWithCliProperties(
-                    Map.of(
-                        "TIGER_TESTENV_CFGFILE",
-                        "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
+    Map<String, String> yamlMap =
+        Map.of(
+            "TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml");
+    assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
         .isInstanceOf(TigerConfigurationException.class)
         .hasMessageContaining(
             "The key ('serverPort') in yaml file should not be used anymore, use 'adminPort'"
@@ -144,12 +143,11 @@ class TestEnvManagerConfigurationCheck {
 
   @Test
   void testCheckDeprecatedKey_proxyCfg_NOK() {
-    assertThatThrownBy(
-            () ->
-                TigerGlobalConfiguration.initializeWithCliProperties(
-                    Map.of(
-                        "TIGER_TESTENV_CFGFILE",
-                        "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
+    Map<String, String> yamlMap =
+        Map.of(
+            "TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml");
+    assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
         .isInstanceOf(TigerConfigurationException.class)
         .hasMessageContaining(
             "The key ('proxyCfg') in yaml file should not be used anymore, it is omitted!");
@@ -157,12 +155,11 @@ class TestEnvManagerConfigurationCheck {
 
   @Test
   void testCheckDeprecatedKey_healthcheck_NOK() {
-    assertThatThrownBy(
-            () ->
-                TigerGlobalConfiguration.initializeWithCliProperties(
-                    Map.of(
-                        "TIGER_TESTENV_CFGFILE",
-                        "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
+    Map<String, String> yamlMap =
+        Map.of(
+            "TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml");
+    assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
         .isInstanceOf(TigerConfigurationException.class)
         .hasMessageContaining(
             "The key ('tiger.servers.*.externalJarOptions.healthcheck') in yaml file should not be"
@@ -171,12 +168,11 @@ class TestEnvManagerConfigurationCheck {
 
   @Test
   void testCheckDeprecatedKey_healthcheckurl_NOK() {
-    assertThatThrownBy(
-            () ->
-                TigerGlobalConfiguration.initializeWithCliProperties(
-                    Map.of(
-                        "TIGER_TESTENV_CFGFILE",
-                        "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml")))
+    Map<String, String> yamlMap =
+        Map.of(
+            "TIGER_TESTENV_CFGFILE",
+            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml");
+    assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
         .isInstanceOf(TigerConfigurationException.class)
         .hasMessageContaining(
             "The key ('tiger.servers.*.externalJarOptions.healthcheckurl') in yaml file should not"
@@ -214,6 +210,44 @@ class TestEnvManagerConfigurationCheck {
         .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.4").get());
     assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxiedServerProtocol())
         .isEqualTo("ftp");
+  }
+
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+            servers:
+              httpbinName:
+                startupTimeoutSec: 1
+                type: ${ENV_VAR}
+            """,
+      additionalProperties = {"ENV_VAR=httpbin"})
+  void testEnvironmentVariables(TigerTestEnvMgr envMgr) {
+    final AbstractTigerServer httpbin = envMgr.getServers().get("httpbinName");
+    assertThat(httpbin.getServerTypeToken()).isEqualTo("httpbin");
+  }
+
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+          tigerProxy:
+            tls:
+              forwardMutualTlsIdentity: "${TIM_KEYSTORE};${TIM_KEYSTORE_PW};00"
+                  """,
+      additionalProperties = {
+        "tim.keystore = src\\test\\resources\\egk_aut_keystore.jks",
+        "tim.keystore.pw = gematik"
+      })
+  void testProxyEnvironmentVariables(TigerTestEnvMgr envMgr) {
+    assertThat(
+            envMgr
+                .getLocalTigerProxyOrFail()
+                .getTigerProxyConfiguration()
+                .getTls()
+                .getForwardMutualTlsIdentity()
+                .getFileLoadingInformation())
+        .isEqualTo("src\\test\\resources\\egk_aut_keystore.jks;gematik;00");
   }
 
   // -----------------------------------------------------------------------------------------------------------------

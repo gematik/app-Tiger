@@ -57,11 +57,13 @@ import org.apache.commons.lang3.tuple.Pair;
 @Slf4j
 public class TigerGlobalConfiguration {
 
+  public static final String TIGER_BASEKEY = "tiger";
   private static final TigerConfigurationLoader globalConfigurationLoader =
       new TigerConfigurationLoader();
-  public static final String TIGER_BASEKEY = "tiger";
   @Getter @Setter private static boolean requireTigerYaml = false;
   private static boolean initialized = false;
+
+  private TigerGlobalConfiguration() {}
 
   public static synchronized void reset() {
     globalConfigurationLoader.reset();
@@ -73,7 +75,8 @@ public class TigerGlobalConfiguration {
     initializeWithCliProperties(Map.of());
   }
 
-  public synchronized static void initializeWithCliProperties(Map<String, String> additionalProperties) {
+  public static synchronized void initializeWithCliProperties(
+      Map<String, String> additionalProperties) {
     if (initialized) {
       return;
     }

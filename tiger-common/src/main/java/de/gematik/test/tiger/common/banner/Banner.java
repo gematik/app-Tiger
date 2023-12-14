@@ -73,14 +73,6 @@ public class Banner {
     return Arrays.asList(figletRenderer.renderText(msg).split("\n"));
   }
 
-  public static void shout(String msg) {
-    shout(msg, RbelAnsiColors.YELLOW_BOLD.toString());
-  }
-
-  public static void shout(String msg, String ansiColors) {
-    toBannerLines(msg).forEach(line -> System.out.println(Ansi.colorize(line, ansiColors)));
-  }
-
   public static void setFont(String fontName) {
     try {
       figletRenderer = new FigletRenderer(FigFontResources.loadFigFontResource(fontName));

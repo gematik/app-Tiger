@@ -21,7 +21,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -37,6 +39,16 @@ class TestTokenSubstituteHelper {
     TigerGlobalConfiguration.putValue("foo.bar", "FOOBARVALUE");
     TigerGlobalConfiguration.putValue("give.me.a.foo", "foo");
     TigerGlobalConfiguration.putValue("some.boolean.value", "true");
+    TigerGlobalConfiguration.readFromYaml(
+        """
+myMap:
+  key1:
+    value: foobar
+    target: schmoo
+  key2:
+    value: xmas
+    target: blublub
+""");
   }
 
   @ParameterizedTest
@@ -69,7 +81,7 @@ class TestTokenSubstituteHelper {
         "${key2|foo}, KEY2VALUE",
         "${!{'no' + 'pe'}|foo}, foo",
         "${!{'key' + '2'}|foo}, KEY2VALUE",
-        "${nope|!{'foo'+'bar'}}, foobar"
+        "${nope|!{'foo'+'bar'}}, foobar",
       })
   void testSubstituteTokenOK(String stringToSubstitute, String expectedString) {
     assertThat(TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute))
@@ -123,6 +135,15 @@ class TestTokenSubstituteHelper {
     assertThat(TigerGlobalConfiguration.resolvePlaceholders("!{foo:asPlaceholder('key1')}"))
         .isEqualTo("value1");
     TigerJexlExecutor.deregisterNamespace("foo");
+  }
+
+  @Test
+  void testValuesFromJexlContext() {
+    TigerJexlContext jexlContext = new TigerJexlContext(Map.of("testKey", "valueFromJexlContext"));
+
+    assertThat(
+            TigerGlobalConfiguration.resolvePlaceholdersWithContext("${testKey|foo}", jexlContext))
+        .isEqualTo("valueFromJexlContext");
   }
 
   public static class FooBarClass {

@@ -19,6 +19,9 @@ package de.gematik.test.tiger.common;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 
 public class Ansi {
+
+  private Ansi() {}
+
   public static String colorize(String text, String ansiColorCode) {
     return ansiColorCode + text + RbelAnsiColors.RESET;
   }

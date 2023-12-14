@@ -28,6 +28,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+@SuppressWarnings("unchecked")
 class RbelElementTest {
   private static final RbelElement msg;
 
@@ -76,8 +77,7 @@ class RbelElementTest {
       String baseElement, Class<RbelFacet> facet, Optional<String> targetElement) {
     final Optional<RbelElement> ancestorElement =
         msg.findElement(baseElement).get().findAncestorWithFacet(facet);
-    final Optional<RbelElement> expected =
-        targetElement.flatMap(rbelPath -> msg.findElement(rbelPath));
+    final Optional<RbelElement> expected = targetElement.flatMap(msg::findElement);
 
     assertThat(ancestorElement).isEqualTo(expected);
   }

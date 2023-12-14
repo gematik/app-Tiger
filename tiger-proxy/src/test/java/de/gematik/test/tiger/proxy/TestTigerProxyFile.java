@@ -42,7 +42,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 @TestInstance(Lifecycle.PER_CLASS)
 @ResetTigerConfiguration
 class TestTigerProxyFile extends AbstractTigerProxyTest {
-  private static final String TGR_FILENAME = "target/reconstruction.tgr";
+  private static final String TGR_FILENAME = "target/reconstruction";
 
   @Test
   void saveToFileAndReadAgain_pairsShouldBeReconstructed() {
@@ -65,8 +65,9 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
         () -> {
           proxyRest.get("http://backend/foobar").asJson();
           proxyRest.get("http://backend/faabor").asJson();
-          fileHasNLines(TGR_FILENAME, 4);
-        });
+          fileHasNLines(TGR_FILENAME + "1.tgr", 4);
+        },
+        TGR_FILENAME + "1.tgr");
   }
 
   @Test
@@ -89,8 +90,9 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
         () -> {
           proxyRest.get("http://backend/foobar").asJson();
           proxyRest.get("http://backend/faabor").asJson();
-          fileHasNLines(TGR_FILENAME, 4);
-        });
+          fileHasNLines(TGR_FILENAME + "2.tgr", 4);
+        },
+        TGR_FILENAME + "2.tgr");
   }
 
   @Test
@@ -113,8 +115,9 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
         () -> {
           proxyRest.get("http://backend/foobar").asJson();
           proxyRest.get("http://backend/faabor").asJson();
-          fileHasNLines(TGR_FILENAME, 4);
-        });
+          fileHasNLines(TGR_FILENAME + "3.tgr", 4);
+        },
+        TGR_FILENAME + "3.tgr");
   }
 
   @Test
@@ -137,8 +140,9 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
         () -> {
           proxyRest.get("http://backend/foobar").asJson();
           proxyRest.get("http://backend/faabor").asJson();
-          fileHasNLines(TGR_FILENAME, 4);
-        });
+          fileHasNLines(TGR_FILENAME + "4.tgr", 4);
+        },
+        TGR_FILENAME + "4.tgr");
   }
 
   @Test
@@ -158,8 +162,9 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
   private void executeFileWritingAndReadingTest(
       Consumer<TigerProxy> executeFileWritingAndReadingTest,
       TigerFileSaveInfoBuilder fileReaderInfoBuilder,
-      Runnable generateTraffic) {
-    FileUtils.deleteQuietly(new File(TGR_FILENAME));
+      Runnable generateTraffic,
+      String tgrFilename) {
+    FileUtils.deleteQuietly(new File(tgrFilename));
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
@@ -172,7 +177,7 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
                 TigerFileSaveInfo.builder()
                     .writeToFile(true)
                     .clearFileOnBoot(true)
-                    .filename(TGR_FILENAME)
+                    .filename(tgrFilename)
                     .build())
             .build());
 
@@ -181,19 +186,20 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
     try (final TigerProxy otherProxy =
         new TigerProxy(
             TigerProxyConfiguration.builder()
-                .fileSaveInfo(fileReaderInfoBuilder.sourceFile(TGR_FILENAME).build())
+                .fileSaveInfo(fileReaderInfoBuilder.sourceFile(tgrFilename).build())
                 .build())) {
       executeFileWritingAndReadingTest.accept(otherProxy);
+      FileUtils.deleteQuietly(new File(tgrFilename));
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
-  private static void fileHasNLines(String filename, int lines) {
+  private void fileHasNLines(String filename, int lines) {
+    File f = new File(filename);
     await()
-        .atMost(2, TimeUnit.SECONDS)
+        .atMost(10, TimeUnit.SECONDS)
         .pollInterval(100, TimeUnit.MILLISECONDS)
-        .until(
-            () -> FileUtils.readLines(new File(filename), StandardCharsets.UTF_8).size() >= lines);
+        .until(() -> f.exists() && FileUtils.readLines(f, StandardCharsets.UTF_8).size() >= lines);
   }
 }

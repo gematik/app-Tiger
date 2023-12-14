@@ -70,17 +70,20 @@ import org.json.JSONObject;
 public class SerenityReporterCallbacks {
 
   public static final String TARGET_DIR = "target";
+  private static final Object startupMutex = new Object();
   private static RuntimeException tigerStartupFailedException;
-
   @Getter @Setter private static boolean pauseMode;
-
-  @Getter private int currentScenarioDataVariantIndex = -1;
-  private String currentScenarioID = "";
-  private int currentStepIndex = -1;
-
   private final Pattern showSteps =
       Pattern.compile(
           ".*TGR (zeige|show) ([\\w|üß ]*)(Banner|banner|text|Text) \"(.*)\""); // NOSONAR
+  private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+  private final EvidenceRecorder evidenceRecorder = EvidenceRecorderFactory.getEvidenceRecorder();
+  private final EvidenceRenderer evidenceRenderer =
+      new EvidenceRenderer(new HtmlEvidenceRenderer());
+  FeatureFileLoader featureLoader = new FeatureFileLoader();
+  @Getter private int currentScenarioDataVariantIndex = -1;
+  private String currentScenarioID = "";
+  private int currentStepIndex = -1;
 
   /** number of passed scenarios / scenario data variants. */
   @Getter private int scPassed = 0;
@@ -88,13 +91,14 @@ public class SerenityReporterCallbacks {
   /** number of failed scenarios / scenario data variants. */
   @Getter private int scFailed = 0;
 
-  private static final Object startupMutex = new Object();
-
-  private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
-
-  private final EvidenceRecorder evidenceRecorder = EvidenceRecorderFactory.getEvidenceRecorder();
-  private final EvidenceRenderer evidenceRenderer =
-      new EvidenceRenderer(new HtmlEvidenceRenderer());
+  @NotNull
+  private static Path getEvidenceDir() throws IOException {
+    final Path parentDir = Path.of(TARGET_DIR, "evidences");
+    if (Files.notExists(parentDir)) {
+      Files.createDirectories(parentDir);
+    }
+    return parentDir;
+  }
 
   // -------------------------------------------------------------------------------------------------------------------------------------
   //
@@ -182,8 +186,6 @@ public class SerenityReporterCallbacks {
     currentFeature.ifPresent(feature -> informWorkflowUiAboutCurrentScenario(feature, context));
     evidenceRecorder.reset();
   }
-
-  FeatureFileLoader featureLoader = new FeatureFileLoader();
 
   private Optional<Feature> featureFrom(URI currentFeaturePath) {
     return Optional.ofNullable(featureLoader.getFeature(currentFeaturePath));
@@ -489,7 +491,8 @@ public class SerenityReporterCallbacks {
     switch (scenarioStatus) {
       case "PASSED" -> scPassed++;
       case "ERROR", "FAILED" -> scFailed++;
-      default -> {}
+      default -> throw new UnsupportedOperationException(
+          "Unsupported scenario: %s".formatted(scenarioStatus));
     }
     log.info(
         "------------ STATUS: {} passed {}",
@@ -497,8 +500,7 @@ public class SerenityReporterCallbacks {
         scFailed > 0 ? scFailed + " failed or error" : "");
 
     if (TigerDirector.getLibConfig().createRbelHtmlReports) {
-      createRbelLogReport(
-          tscEvent.getTestCase().getName(), tscEvent.getTestCase().getUri(), context);
+      createRbelLogReport(tscEvent.getTestCase().getName(), tscEvent.getTestCase().getUri());
     }
 
     createEvidenceFile((TestCaseFinished) event, context);
@@ -537,15 +539,6 @@ public class SerenityReporterCallbacks {
         StandardOpenOption.TRUNCATE_EXISTING);
   }
 
-  @NotNull
-  private static Path getEvidenceDir() throws IOException {
-    final Path parentDir = Path.of(TARGET_DIR, "evidences");
-    if (Files.notExists(parentDir)) {
-      Files.createDirectories(parentDir);
-    }
-    return parentDir;
-  }
-
   private EvidenceReport getEvidenceReport(
       TestCaseFinished testCaseFinishedEvent, ScenarioContextDelegate scenarioContext) {
     return evidenceRecorder.getEvidenceReportForScenario(
@@ -553,28 +546,14 @@ public class SerenityReporterCallbacks {
             scenarioContext.getScenarioName(), testCaseFinishedEvent.getTestCase().getUri()));
   }
 
-  private void createRbelLogReport(
-      String scenarioName, URI scenarioUri, ScenarioContextDelegate ignoredContext) {
+  private void createRbelLogReport(String scenarioName, URI scenarioUri) {
     try {
       // make sure target/rbellogs folder exists
       final File folder = Paths.get(TARGET_DIR, "rbellogs").toFile();
       if (!folder.exists() && !folder.mkdirs()) {
         throw new TigerOsException("Unable to create folder '" + folder.getAbsolutePath() + "'");
       }
-      var rbelRenderer = new RbelHtmlRenderer();
-      rbelRenderer.setTitle(scenarioName);
-      rbelRenderer.setSubTitle(
-          "<p>"
-              + (currentScenarioDataVariantIndex != -1
-                  ? "<button class=\"js-modal-trigger\""
-                      + " data-bs-target=\"modal-data-variant\">Variant "
-                      + (currentScenarioDataVariantIndex + 1)
-                      + "</button>"
-                  : "")
-              + "</p><p><i>"
-              + scenarioUri
-              + "</i></p>");
-      rbelRenderer.setVersionInfo(getTigerVersionString());
+      var rbelRenderer = getRbelHtmlRenderer(scenarioName, scenarioUri);
 
       String html = rbelRenderer.doRender(LocalProxyRbelMessageListener.getMessages());
 
@@ -594,6 +573,25 @@ public class SerenityReporterCallbacks {
     } finally {
       LocalProxyRbelMessageListener.clearMessages();
     }
+  }
+
+  @NotNull
+  private RbelHtmlRenderer getRbelHtmlRenderer(String scenarioName, URI scenarioUri) {
+    var rbelRenderer = new RbelHtmlRenderer();
+    rbelRenderer.setTitle(scenarioName);
+    rbelRenderer.setSubTitle(
+        "<p>"
+            + (currentScenarioDataVariantIndex != -1
+                ? "<button class=\"js-modal-trigger\""
+                    + " data-bs-target=\"modal-data-variant\">Variant "
+                    + (currentScenarioDataVariantIndex + 1)
+                    + "</button>"
+                : "")
+            + "</p><p><i>"
+            + scenarioUri
+            + "</i></p>");
+    rbelRenderer.setVersionInfo(getTigerVersionString());
+    return rbelRenderer;
   }
 
   public String getFileNameFor(String type, String scenarioName, int dataVariantIndex) {

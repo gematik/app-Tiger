@@ -7,7 +7,7 @@ Feature: RbelBuilder Test feature
     Given TGR creates a new Rbel object 'blub' with content '{"foo":"bar"}'
     When TGR asserts Rbel object 'blub' at '$.foo' equals 'bar'
 
-  Scenario: Read from File And, change and assert changes
+  Scenario: Read from File; change and assert changes
     Given TGR creates a new Rbel object 'blab' with content "!{file('src/test/resources/testdata/rbelBuilderTests/blub.json')}"
 
     When TGR sets Rbel object 'blab' at '$.blub.foo' to new value '{ "a": "new object", "and": "another" }'

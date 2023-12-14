@@ -16,11 +16,10 @@
 
 package de.gematik.rbellogger.writer.tree;
 
-import de.gematik.rbellogger.RbelContent;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.data.facet.RbelFacet;
+import de.gematik.rbellogger.util.RbelPathAble;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.rbellogger.writer.*;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
@@ -33,7 +32,7 @@ import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.Setter;
 
-public class RbelContentTreeNode implements RbelContent {
+public class RbelContentTreeNode extends RbelPathAble {
 
   private RbelMultiMap<RbelContentTreeNode> childNodes;
   private Map<String, String> attributeMap = new HashMap<>();
@@ -46,6 +45,10 @@ public class RbelContentTreeNode implements RbelContent {
   public RbelContentTreeNode(RbelMultiMap<RbelContentTreeNode> childNodes, byte[] content) {
     this.setContent(content);
     this.setupChildNodes(childNodes);
+  }
+
+  public void setRawStringContent(String newContent) {
+    setContent(newContent.getBytes(charset != null ? charset : StandardCharsets.UTF_8));
   }
 
   public void setChildNodes(RbelMultiMap<RbelContentTreeNode> childNodes) {
@@ -76,9 +79,14 @@ public class RbelContentTreeNode implements RbelContent {
         });
   }
 
-  public void setChildNode(String key, RbelContentTreeNode newChildNode) {
-    childNodes.remove(key);
-    childNodes.put(key, newChildNode);
+  /**
+   * For JSON objects it adds or replaces a unique entry; for all other types it adds the entry
+   *
+   * @param key key of entry to be added or replaced
+   * @param newChildNode new childNode
+   */
+  public void addOrReplaceChild(String key, RbelContentTreeNode newChildNode) {
+    childNodes.addOrReplaceUniqueEntry(key, newChildNode);
     newChildNode.setParentNode(this);
     newChildNode.setKey(key);
     updateAncestorContent();
@@ -118,10 +126,11 @@ public class RbelContentTreeNode implements RbelContent {
   }
 
   @Override
-  public Optional<RbelContentTreeNode> getFirst(String key) {
+  public Optional<RbelPathAble> getFirst(String key) {
     return getChildNodesWithKey().stream()
         .filter(entry -> entry.getKey().equals(key))
         .map(Map.Entry::getValue)
+        .map(RbelPathAble.class::cast)
         .findFirst();
   }
 
@@ -143,7 +152,6 @@ public class RbelContentTreeNode implements RbelContent {
     return childNodes.getValues().stream().collect(RbelMultiMap.COLLECTOR);
   }
 
-  @Override
   public Optional<RbelContentTreeNode> findElement(String rbelPath) {
     final List<RbelContentTreeNode> resultList = findRbelPathMembers(rbelPath);
     if (resultList.isEmpty()) {
@@ -160,7 +168,6 @@ public class RbelContentTreeNode implements RbelContent {
             + " elements, expected only one!");
   }
 
-  @Override
   public RbelContentTreeNode findRootElement() {
     RbelContentTreeNode result = this;
     RbelContentTreeNode newResult = result.getParentNode();
@@ -171,7 +178,6 @@ public class RbelContentTreeNode implements RbelContent {
     return result;
   }
 
-  @Override
   public String findNodePath() {
     LinkedList<Optional<String>> keyList = new LinkedList<>();
     final AtomicReference<RbelContentTreeNode> ptr = new AtomicReference<>(this);
@@ -191,13 +197,9 @@ public class RbelContentTreeNode implements RbelContent {
 
   @Override
   public List<RbelContentTreeNode> findRbelPathMembers(String rbelPath) {
-    return new RbelPathExecutor(this, rbelPath)
-        .execute(RbelContentTreeNode.class).stream()
-            .map(RbelContentTreeNode::castToRbelContentTreeNode)
-            .toList();
+    return new RbelPathExecutor<>(this, rbelPath).execute();
   }
 
-  @Override
   public Optional<String> findKeyInParentElement() {
     return Optional.of(this)
         .map(RbelContentTreeNode::getParentNode)
@@ -219,25 +221,10 @@ public class RbelContentTreeNode implements RbelContent {
     }
   }
 
-  @Override
-  public RbelContentTreeNode findMessage() {
-    RbelContentTreeNode position = this;
-    while (position.getParentNode() != null) {
-      position = position.getParentNode();
-    }
-    return position;
-  }
-
-  @Override
-  public <T extends RbelFacet> boolean hasFacet(Class<T> clazz) {
-    return false;
-  }
-
   public Optional<RbelContentTreeNode> childNode(String nodeKey) {
     return Optional.ofNullable(childNodes.get(nodeKey));
   }
 
-  @Override
   public Charset getElementCharset() {
     return Optional.ofNullable(charset).orElse(StandardCharsets.UTF_8);
   }
@@ -308,15 +295,6 @@ public class RbelContentTreeNode implements RbelContent {
 
   private boolean isListTypeNode() {
     return attributeMap.containsKey(RbelJsonElementToNodeConverter.JSON_ARRAY);
-  }
-
-  private static RbelContentTreeNode castToRbelContentTreeNode(RbelContent rbelContent) {
-    if (rbelContent instanceof RbelContentTreeNode asRbelContentTreeNode) {
-      return asRbelContentTreeNode;
-    } else {
-      throw new ClassCastException(
-          "RbelPath was attempted to illegally be casted to RbelContentTreeNode.");
-    }
   }
 
   private static class RbelPathNotUniqueException extends RuntimeException {

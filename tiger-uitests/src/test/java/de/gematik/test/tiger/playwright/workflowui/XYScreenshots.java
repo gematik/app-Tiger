@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -115,15 +116,6 @@ class XYScreenshots extends AbstractTests {
 
   @SuppressWarnings("squid:S2699")
   @Test
-  void screenshotRbelPath() {
-    page.querySelector("#test-execution-pane-tab").click();
-    page.locator("#test-webui-slider").click();
-    screenshot(page, "maincontent_rbelpath.png");
-    screenshot(page, "maincontent_rbelpath_urllink_highlight.png", "test-rbel-webui-url", true);
-  }
-
-  @SuppressWarnings("squid:S2699")
-  @Test
   void screenshotWebUI() {
     page.querySelector("#test-execution-pane-tab").click();
     page.locator("#test-webui-slider").click();
@@ -133,6 +125,7 @@ class XYScreenshots extends AbstractTests {
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(() -> assertNotNull(externalPage.locator(".test-message-number").first()));
     externalPage.locator(".test-message-number").first().click();
+    screenshot(externalPage, "webui.png");
     screenshot(externalPage, "webui_inspect_highlight.png", "test-btn-inspect", false);
 
     externalPage.locator("#dropdown-hide-button").click();
@@ -163,7 +156,10 @@ class XYScreenshots extends AbstractTests {
                 .setPath(getPath("webui_inspect_rbelpath_highlight.png")));
     externalPage.evaluate(
         "document.getElementById(\"rbelTab-name\").style.removeProperty(\"background-color\")");
-
+    await()
+        .atMost(2, TimeUnit.SECONDS)
+        .pollInterval(Duration.ofMillis(200))
+        .untilAsserted(() -> externalPage.locator("#rbelTab-name").getAttribute("style").isEmpty());
     externalPage.evaluate(
         "document.getElementById(\"jexlTab-name\").style.backgroundColor='yellow'");
     externalPage.locator("#jexlTab-name").click();
@@ -188,7 +184,7 @@ class XYScreenshots extends AbstractTests {
     externalPage.locator("#saveModalButtonClose").click();
 
     externalPage.locator("#routeModalBtn").click();
-    screenshot(externalPage, "webui_rounting_open.png");
+    screenshot(externalPage, "webui_routing_open.png");
     externalPage.locator("#routingModalButtonClose").click();
 
     externalPage.evaluate(
@@ -200,6 +196,8 @@ class XYScreenshots extends AbstractTests {
         "document.getElementsByClassName(\"test-modal-content\")[0].style.removeProperty(\"background-color\")");
     externalPage.evaluate(
         "document.getElementsByClassName(\"test-modal-content\")[0].style.removeProperty(\"background-color\")");
+    externalPage.locator(".test-modal-content").nth(2).click();
+    screenshot(externalPage, "webui_btn_content.png");
     externalPage.close();
   }
 }

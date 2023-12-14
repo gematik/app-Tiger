@@ -88,6 +88,31 @@ servers:
 
 WARNING: Placeholders which can not be resolved will not lead to errors but rather they will simply not be replaced.
 
+=== RbelPath-style retrieval
+
+The placeholders also support RbelPath-style expressions to allow for more flexible, dynamic retrieval of properties. Consider for example the following YAML:
+
+[source,YAML]
+----
+myMap:
+  anotherLevel:
+    key1:
+      value: foobar
+      target: schmoo
+    key2:
+      value: xmas
+      target: blublub
+  hidden:
+    treasure:
+      buried: deep
+----
+
+To retrieve values from this map you can use the following expressions:
+
+* `${myMap.anotherLevel.[?(@.value=='foobar')].target}` will resolve to "schmoo", retrieving the node `myMap.anotherLevel.key.target`.
+* The same value can be retrieved via `${..[?(@.target=='schmoo')].target}`. This expression uses the recursive descent mechanic of RbelPath.
+* `${..buried}` will resolve to "deep", retrieving the node `myMap.hidden.treasure.buried`.
+
 === Fallback values
 
 Sometimes a default value is desired when a given key is not set. To define such a value, just use the pipe (|) after the key, like so:
@@ -229,9 +254,10 @@ This will immediately return the `href`-attribute of the link in question as a s
 You can easily register additional namespaces by calling `TigerJexlExecutor.registerAdditionalNamespace(<namespace-prefix>, <namespace class or object)`.
 
 
+[#_tiger_configuration_editor]
 === Configuration Editor
 
-The configuration editor allows to view and edit the tiger configuration during a test run. The editor is part of the xref:tigerTestLibrary.adoc#_workflow_ui[Workflow UI] and can be opened by clicking the gears icon in the sidebar (xref:editor_start_button[xrefstyle=short]).
+The configuration editor allows to view and edit the tiger configuration during a test run. The editor is part of the xref:tigerWorkflowUI.adoc#_workflow_ui[Workflow UI] and can be opened by clicking the gears icon in the sidebar (xref:editor_start_button[xrefstyle=short]).
 
 image::media/configuration_editor_start_button.png[id="editor_start_button",alt="workflow UI with action buttons and gears icon highlighted", title="Open the configuration editor by clicking the gears icon in the sidebar.", align="center"]
 

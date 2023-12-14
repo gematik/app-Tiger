@@ -19,12 +19,10 @@ package de.gematik.rbellogger.util;
 import com.google.common.base.CharMatcher;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
+import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 import lombok.AccessLevel;
@@ -39,31 +37,45 @@ public class RbelJexlExecutor {
 
   private static final String RBEL_PATH_CHARS = "(\\$\\.|\\w|\\.)+.*";
 
-  private static boolean IS_INITIALIZED = false;
+  private static boolean isInitialized = false;
 
   public static synchronized void initialize() {
-    if (IS_INITIALIZED) {
+    if (isInitialized) {
       return;
     }
-    TokenSubstituteHelper.REPLACER_ORDER.addFirst(
-        Pair.of(
-            '?',
-            (str, source, ctx) ->
-                ctx.map(TigerJexlContext::getCurrentElement)
-                    .filter(Objects::nonNull)
-                    .filter(RbelElement.class::isInstance)
-                    .map(RbelElement.class::cast)
-                    .flatMap(el -> el.findElement(str))
-                    .map(el -> el.printValue().orElseGet(el::getRawStringContent))));
+    TokenSubstituteHelper.getReplacerOrder()
+        .addFirst(
+            Pair.of(
+                '?',
+                (str, source, ctx) ->
+                    ctx.map(TigerJexlContext::getCurrentElement)
+                        .filter(RbelElement.class::isInstance)
+                        .map(RbelElement.class::cast)
+                        .flatMap(el -> el.findElement(str))
+                        .map(el -> el.printValue().orElseGet(el::getRawStringContent))));
     TigerJexlExecutor.setExpressionPreMapper(RbelJexlExecutor::evaluateRbelPathExpressions);
     TigerJexlExecutor.addContextDecorator(RbelContextDecorator::buildJexlMapContext);
-    IS_INITIALIZED = true;
+    TokenSubstituteHelper.setResolve(RbelJexlExecutor::resolveConfigurationValue);
+    isInitialized = true;
+  }
+
+  private static Optional<String> resolveConfigurationValue(
+      String key, TigerConfigurationLoader configuration) {
+    return configuration
+        .readStringOptional(key)
+        .or(
+            () ->
+                new RbelPathExecutor<>(new TigerConfigurationRbelObject(configuration), "$." + key)
+                    .execute().stream()
+                        .findFirst()
+                        .map(TigerConfigurationRbelObject::getRawStringContent));
   }
 
   public static boolean matchAsTextExpression(Object element, String textExpression) {
     try {
       final boolean textMatchResult =
-          ((RbelElement) element).getRawStringContent().contains(textExpression);
+          Objects.requireNonNull(((RbelElement) element).getRawStringContent())
+              .contains(textExpression);
       final boolean regexMatchResult =
           Pattern.compile(textExpression)
               .matcher(((RbelElement) element).getRawStringContent())
@@ -71,7 +83,7 @@ public class RbelJexlExecutor {
 
       return textMatchResult || regexMatchResult;
     } catch (Exception e) {
-      if (TigerJexlExecutor.ACTIVATE_JEXL_DEBUGGING) {
+      if (TigerJexlExecutor.isActivateJexlDebugging()) {
         log.info("Error during Text search.", e);
       }
       return false;
@@ -170,8 +182,8 @@ public class RbelJexlExecutor {
 
   private static List<String> extractPathAndConvertToString(Object source, String rbelPath) {
     return Optional.ofNullable(source)
-        .filter(RbelElement.class::isInstance)
-        .map(RbelElement.class::cast)
+        .filter(RbelPathAble.class::isInstance)
+        .map(RbelPathAble.class::cast)
         .map(s -> s.findRbelPathMembers(rbelPath))
         .orElse(List.of())
         .stream()

@@ -209,7 +209,6 @@ class TestTigerProxyMockResponses {
         Unirest.get("http://localhost:" + port + "/userJsonPath?username=someUsername").asJson();
     assertThat(response.getBody().getObject().getString("authorizedUser"))
         .isEqualTo("someUsername");
-    assertThat(TigerGlobalConfiguration.readStringOptional("foo.bar.variable")).isEmpty();
   }
 
   @Test

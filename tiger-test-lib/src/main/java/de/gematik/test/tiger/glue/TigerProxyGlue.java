@@ -39,8 +39,8 @@ public class TigerProxyGlue {
    * @param certificateFile The certificate to use. Use TigerPkiIdentity-syntax (e.g.
    *     "my/file/name.p12;p12password")
    */
-  @Wenn("TGR ändere die forwardMutualTlsIdentity des lokalen TigerProxies zu {string}")
-  @When("TGR change the local TigerProxy forwardMutualTlsIdentity to {string}")
+  @Wenn("TGR ändere die forwardMutualTlsIdentity des lokalen TigerProxies zu {tigerResolvedString}")
+  @When("TGR change the local TigerProxy forwardMutualTlsIdentity to {tigerResolvedString}")
   public void setLocalTigerProxyForwardMutualTlsIdentity(final String certificateFile) {
     changeTlsSettingForLocalTigerProxy(
         certificateFile, (cfg, crt) -> cfg.getTls().setForwardMutualTlsIdentity(crt));
@@ -57,8 +57,8 @@ public class TigerProxyGlue {
    * @param certificateFile The certificate to use. Use TigerPkiIdentity-syntax (e.g.
    *     "my/file/name.p12;p12password")
    */
-  @Wenn("TGR ändere die serverIdentity des lokalen TigerProxies zu {string}")
-  @When("TGR change the local TigerProxy serverIdentity to {string}")
+  @Wenn("TGR ändere die serverIdentity des lokalen TigerProxies zu {tigerResolvedString}")
+  @When("TGR change the local TigerProxy serverIdentity to {tigerResolvedString}")
   public void setLocalTigerProxyServerIdentity(final String certificateFile) {
     changeTlsSettingForLocalTigerProxy(
         certificateFile, (cfg, crt) -> cfg.getTls().setServerIdentity(crt));
@@ -75,8 +75,8 @@ public class TigerProxyGlue {
    * @param certificateFile The certificate to use. Use TigerPkiIdentity-syntax (e.g.
    *     "my/file/name.p12;p12password")
    */
-  @Wenn("TGR ändere die rootCa des lokalen TigerProxies zu {string}")
-  @When("TGR change the local TigerProxy rootCa to {string}")
+  @Wenn("TGR ändere die rootCa des lokalen TigerProxies zu {tigerResolvedString}")
+  @When("TGR change the local TigerProxy rootCa to {tigerResolvedString}")
   public void setLocalTigerProxyRootCa(final String certificateFile) {
     changeTlsSettingForLocalTigerProxy(
         certificateFile, (cfg, crt) -> cfg.getTls().setServerRootCa(crt));

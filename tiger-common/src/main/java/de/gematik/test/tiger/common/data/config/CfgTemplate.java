@@ -16,10 +16,7 @@
 
 package de.gematik.test.tiger.common.data.config;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
@@ -29,9 +26,7 @@ public class CfgTemplate {
 
   private String templateName;
 
-  @JsonDeserialize(using = TigerServerTypeImpl.class)
-  @JsonSerialize(using = TigerServerTypeSerializer.class)
-  private TigerServerType type;
+  private String type;
 
   private List<String> source = new ArrayList<>();
   private String version;

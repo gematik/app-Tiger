@@ -34,21 +34,23 @@ public class RbelKeyFolderInitializer implements Consumer<RbelConverter> {
 
   private final String keyFolderPath;
 
-    @Override
-    public void accept(RbelConverter rbelConverter) {
-        try (final Stream<Path> fileStream = Files.walk(Path.of(keyFolderPath))) {
-            fileStream
-                .map(Path::toFile)
-                .filter(File::isFile)
-                .filter(File::canRead)
-                .filter(file -> file.getName().endsWith(".p12"))
-                .map(file -> TigerPkiIdentityLoader.loadRbelPkiIdentityWithGuessedPassword(file)
-                    .withKeyId(Optional.ofNullable(file.getName().split("\\.")[0])))
-                .map(IdentityBackedRbelKey::generateRbelKeyPairForIdentity)
-                .flatMap(List::stream)
-                .forEach(rbelConverter.getRbelKeyManager()::addKey);
-        } catch (IOException e) {
-            throw new RuntimeException("Error while initializing keys", e);
-        }
+  @Override
+  public void accept(RbelConverter rbelConverter) {
+    try (final Stream<Path> fileStream = Files.walk(Path.of(keyFolderPath))) {
+      fileStream
+          .map(Path::toFile)
+          .filter(File::isFile)
+          .filter(File::canRead)
+          .filter(file -> file.getName().endsWith(".p12"))
+          .map(
+              file ->
+                  TigerPkiIdentityLoader.loadRbelPkiIdentityWithGuessedPassword(file)
+                      .withKeyId(Optional.ofNullable(file.getName().split("\\.")[0])))
+          .map(IdentityBackedRbelKey::generateRbelKeyPairForIdentity)
+          .flatMap(List::stream)
+          .forEach(rbelConverter.getRbelKeyManager()::addKey);
+    } catch (IOException e) {
+      throw new RuntimeException("Error while initializing keys", e);
     }
+  }
 }

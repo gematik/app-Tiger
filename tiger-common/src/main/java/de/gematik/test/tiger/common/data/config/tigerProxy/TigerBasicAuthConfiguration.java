@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.common.data.config.tigerProxy;
 
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import lombok.AllArgsConstructor;
@@ -27,7 +28,7 @@ import lombok.RequiredArgsConstructor;
 @Builder(toBuilder = true)
 @AllArgsConstructor
 @Data
-public class TigerBasicAuthConfiguration {
+public class TigerBasicAuthConfiguration implements Serializable {
 
   private String username;
   private String password;

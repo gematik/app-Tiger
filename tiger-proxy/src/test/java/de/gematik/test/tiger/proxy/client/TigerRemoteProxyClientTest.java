@@ -34,6 +34,7 @@ import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
 import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
 import de.gematik.test.tiger.proxy.tracing.TracingPushController;
 import java.io.File;
@@ -186,9 +187,8 @@ class TigerRemoteProxyClientTest {
         .asString()
         .ifFailure(response -> fail(""));
 
-    await()
-        .atMost(2, TimeUnit.SECONDS)
-        .until(() -> !tigerRemoteProxyClient.getRbelLogger().getMessageHistory().isEmpty());
+    TigerProxyTestHelper.waitUntilMessageListInRemoteProxyClientContainsCountMessagesWithTimeout(
+        tigerRemoteProxyClient, 2, 10);
 
     assertThat(tigerRemoteProxyClient.getRbelMessagesList().get(0))
         .extractChildWithPath("$.body")
@@ -364,7 +364,10 @@ class TigerRemoteProxyClientTest {
     unirestInstance.get("http://myserv.er/foo").asString();
     unirestInstance.get("http://myserv.er/faa").asString();
 
-    await().atMost(2, TimeUnit.SECONDS).until(() -> listenerCallCounter.get() > 0);
+    await()
+        .pollDelay(200, TimeUnit.MILLISECONDS)
+        .atMost(10, TimeUnit.SECONDS)
+        .until(() -> listenerCallCounter.get() > 0);
 
     assertThat(filteredTigerProxy.getRbelMessages()).hasSize(2);
     assertThat(
@@ -392,7 +395,10 @@ class TigerRemoteProxyClientTest {
 
     unirestInstance.get("http://myserv.er").asString();
 
-    await().atMost(2, TimeUnit.SECONDS).until(() -> listenerCallCounter.get() > 0);
+    await()
+        .pollDelay(200, TimeUnit.MILLISECONDS)
+        .atMost(10, TimeUnit.SECONDS)
+        .until(() -> listenerCallCounter.get() > 0);
 
     assertThat(
             tigerRemoteProxyClient
@@ -442,9 +448,8 @@ class TigerRemoteProxyClientTest {
             TigerProxyConfiguration.builder().downloadInitialTrafficFromEndpoints(true).build())) {
       newlyConnectedRemoteClient.connect();
 
-      await()
-          .atMost(2, TimeUnit.SECONDS)
-          .until(() -> !newlyConnectedRemoteClient.getRbelMessagesList().isEmpty());
+      TigerProxyTestHelper.waitUntilMessageListInRemoteProxyClientContainsCountMessagesWithTimeout(
+          newlyConnectedRemoteClient, 2, 10);
 
       Mockito.verify(tigerWebUiController)
           .downloadTraffic(Mockito.isNull(), Mockito.any(), Mockito.any(), Mockito.any());
@@ -475,9 +480,9 @@ class TigerRemoteProxyClientTest {
               masterTigerProxy)) {
         newlyConnectedRemoteClient.connect();
 
-        await()
-            .atMost(2, TimeUnit.SECONDS)
-            .until(() -> masterTigerProxy.getRbelMessagesList().size() >= 4);
+        TigerProxyTestHelper
+            .waitUntilMessageListInRemoteProxyClientContainsCountMessagesWithTimeout(
+                newlyConnectedRemoteClient, 4, 10);
 
         Mockito.verify(tigerWebUiController)
             .downloadTraffic(Mockito.isNull(), Mockito.any(), Mockito.any(), Mockito.any());
@@ -504,7 +509,8 @@ class TigerRemoteProxyClientTest {
       log.info("after generation we now have {} messages", tigerProxy.getRbelMessagesList().size());
 
       await()
-          .atMost(2, TimeUnit.SECONDS)
+          .atMost(20, TimeUnit.SECONDS)
+          .pollDelay(200, TimeUnit.MILLISECONDS)
           .until(
               () ->
                   newlyConnectedRemoteClient.getRbelMessagesList().size()
@@ -537,7 +543,7 @@ class TigerRemoteProxyClientTest {
                 .responseUuid("responseUuid")
                 .build());
 
-    await().atMost(5, TimeUnit.SECONDS).until(() -> receivedMessages.get() >= 2);
+    await().atMost(5, TimeUnit.SECONDS).until(() -> receivedMessages.get() == 2);
   }
 
   @Test
@@ -558,7 +564,7 @@ class TigerRemoteProxyClientTest {
                 .build());
     addMessagePart("responseUuid", 0, 2);
 
-    await().atMost(5, TimeUnit.SECONDS).until(() -> receivedMessages.get() >= 2);
+    await().atMost(5, TimeUnit.SECONDS).until(() -> receivedMessages.get() == 2);
   }
 
   @Test
@@ -579,7 +585,7 @@ class TigerRemoteProxyClientTest {
                 .build());
     addMessagePart("requestUuid", 0, 1);
 
-    await().atMost(5, TimeUnit.SECONDS).until(() -> receivedMessages.get() >= 2);
+    await().atMost(5, TimeUnit.SECONDS).until(() -> receivedMessages.get() == 2);
   }
 
   @Test
@@ -601,12 +607,12 @@ class TigerRemoteProxyClientTest {
 
     tigerRemoteProxyClient.triggerPartialMessageCleanup();
 
-    assertThat(tigerRemoteProxyClient.getPartiallyReceivedMessageMap().size()).isEqualTo(2);
+    assertThat(tigerRemoteProxyClient.getPartiallyReceivedMessageMap()).hasSize(2);
 
     Thread.sleep(110);
     tigerRemoteProxyClient.triggerPartialMessageCleanup();
 
-    assertThat(tigerRemoteProxyClient.getPartiallyReceivedMessageMap().size()).isEqualTo(0);
+    assertThat(tigerRemoteProxyClient.getPartiallyReceivedMessageMap()).isEmpty();
   }
 
   @SneakyThrows

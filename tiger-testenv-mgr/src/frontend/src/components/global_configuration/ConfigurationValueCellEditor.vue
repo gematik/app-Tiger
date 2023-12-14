@@ -95,9 +95,10 @@ export default {
 <template>
   <div class="configuration_value_editor p-2 border-1 border-dark-subtle bmt-2 bg-white rounded"
        :style="{ width: columnWidth + 'px'}">
-    <textarea class="form-control" v-model="editedValue" @keydown.enter="saveEditing" style=" resize: both " rows="3"></textarea>
+    <textarea class="form-control" id="test-tg-config-editor-text-area" v-model="editedValue" @keydown.enter="saveEditing" style=" resize: both "
+              rows="3"></textarea>
     <div class="mt-2 btn-group">
-      <button class="btn btn-primary" @click="saveEditing"><i class="fa fa-floppy-disk"></i> Save</button>
+      <button class="btn btn-primary" @click="saveEditing"><i class="fa fa-floppy-disk" id="test-tg-config-editor-btn-save"></i> Save</button>
       <button class="btn btn-secondary" @click="cancelEditing"><i class="fa fa-ban"></i> Cancel</button>
     </div>
   </div>

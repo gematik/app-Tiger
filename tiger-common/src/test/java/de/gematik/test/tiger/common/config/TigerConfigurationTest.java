@@ -33,6 +33,7 @@ import de.gematik.test.tiger.zion.config.TigerSkipEvaluation;
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
@@ -210,11 +211,12 @@ public class TigerConfigurationTest {
             () -> {
               TigerGlobalConfiguration.reset();
               TigerGlobalConfiguration.readFromYaml(
-                  "string: yamlOuterFoo\n"
-                      + "inner:\n"
-                      + "  foo: yamlMediumFoo\n"
-                      + "  inner:\n"
-                      + "    foo: yamlInnerFoo",
+                  """
+                              string: yamlOuterFoo
+                              inner:
+                                foo: yamlMediumFoo
+                                inner:
+                                  foo: yamlInnerFoo""",
                   "nestedBean");
               var dummyBean =
                   TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class).get();
@@ -243,11 +245,12 @@ public class TigerConfigurationTest {
             () -> {
               TigerGlobalConfiguration.reset();
               TigerGlobalConfiguration.readFromYaml(
-                  "string: yamlOuterFoo\n"
-                      + "inner:\n"
-                      + "  foo: yamlMediumFoo\n"
-                      + "  inner:\n"
-                      + "    foo: yamlInnerFoo",
+                  """
+                              string: yamlOuterFoo
+                              inner:
+                                foo: yamlMediumFoo
+                                inner:
+                                  foo: yamlInnerFoo""",
                   "nestedBean");
               assertThat(TigerGlobalConfiguration.readString("nestedBean.Inner.foo"))
                   .isEqualTo("medium");
@@ -278,7 +281,11 @@ public class TigerConfigurationTest {
             () -> {
               TigerGlobalConfiguration.reset();
               TigerGlobalConfiguration.readFromYaml(
-                  "array:\n" + "  - foo: nonFoo0\n" + "  - foo: nonFoo1\n" + "  - foo: nonFoo2",
+                  """
+                              array:
+                                - foo: nonFoo0
+                                - foo: nonFoo1
+                                - foo: nonFoo2""",
                   "nestedBean");
               var dummyBean =
                   TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class).get();
@@ -295,10 +302,11 @@ public class TigerConfigurationTest {
             () -> {
               TigerGlobalConfiguration.reset();
               TigerGlobalConfiguration.readFromYaml(
-                  "map:\n"
-                      + "  camelCase1: fooBar1\n"
-                      + "  camelCase2: fooBar2\n"
-                      + "  camelCase3: fooBar3");
+                  """
+                              map:
+                                camelCase1: fooBar1
+                                camelCase2: fooBar2
+                                camelCase3: fooBar3""");
               var dummyBean =
                   TigerGlobalConfiguration.instantiateConfigurationBean(Map.class, "map").get();
               assertThat(dummyBean)
@@ -340,7 +348,11 @@ public class TigerConfigurationTest {
   void yamlWithTemplates_shouldLoad() {
     TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.readFromYaml(
-        "array:\n" + "  -\n" + "    template: templateWithList\n" + "    foo: fooYaml",
+        """
+                    array:
+                      -
+                        template: templateWithList
+                        foo: fooYaml""",
         "nestedBean");
     TigerGlobalConfiguration.readTemplates(
         FileUtils.readFileToString(
@@ -365,14 +377,15 @@ public class TigerConfigurationTest {
   void overwriteTemplateList_shouldReplaceNotMerge() {
     TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.readFromYaml(
-        "array:\n"
-            + "  -\n"
-            + "    template: templateWithList\n"
-            + "    foo: fooYaml\n"
-            + "    inner:\n"
-            + "      array:\n"
-            + "        - foo: yamlEntry0\n"
-            + "        - foo: yamlEntry1",
+        """
+                    array:
+                      -
+                        template: templateWithList
+                        foo: fooYaml
+                        inner:
+                          array:
+                            - foo: yamlEntry0
+                            - foo: yamlEntry1""",
         "nestedBean");
     TigerGlobalConfiguration.readTemplates(
         FileUtils.readFileToString(
@@ -393,14 +406,15 @@ public class TigerConfigurationTest {
             () -> {
               TigerGlobalConfiguration.reset();
               TigerGlobalConfiguration.readFromYaml(
-                  "array:\n"
-                      + "  -\n"
-                      + "    template: templateWithList\n"
-                      + "    foo: fooYaml\n"
-                      + "    inner:\n"
-                      + "      array:\n"
-                      + "        - foo: yamlEntry0\n"
-                      + "        - foo: yamlEntry1",
+                  """
+                              array:
+                                -
+                                  template: templateWithList
+                                  foo: fooYaml
+                                  inner:
+                                    array:
+                                      - foo: yamlEntry0
+                                      - foo: yamlEntry1""",
                   "nestedBean");
               TigerGlobalConfiguration.readTemplates(
                   FileUtils.readFileToString(
@@ -424,13 +438,14 @@ public class TigerConfigurationTest {
             () -> {
               TigerGlobalConfiguration.reset();
               TigerGlobalConfiguration.readFromYaml(
-                  "array:\n"
-                      + "  -\n"
-                      + "    foo: fooYaml\n"
-                      + "    inner:\n"
-                      + "      array:\n"
-                      + "        - foo: yamlEntry0\n"
-                      + "        - foo: yamlEntry1",
+                  """
+                              array:
+                                -
+                                  foo: fooYaml
+                                  inner:
+                                    array:
+                                      - foo: yamlEntry0
+                                      - foo: yamlEntry1""",
                   "nestedBean");
               TigerGlobalConfiguration.readTemplates(
                   FileUtils.readFileToString(
@@ -454,7 +469,11 @@ public class TigerConfigurationTest {
             () -> {
               TigerGlobalConfiguration.reset();
               TigerGlobalConfiguration.readFromYaml(
-                  "array:\n" + "  -\n" + "    foo: fooYaml", "nestedBean");
+                  """
+                              array:
+                                -
+                                  foo: fooYaml""",
+                  "nestedBean");
               TigerGlobalConfiguration.readTemplates(
                   FileUtils.readFileToString(
                       new File("src/test/resources/exampleTemplates.yml"), StandardCharsets.UTF_8),
@@ -470,25 +489,27 @@ public class TigerConfigurationTest {
   void fillGenericObjectShouldWork() {
     TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.readFromYaml(
-        "users:\n"
-            + "  -\n"
-            + "     username: admin\n"
-            + "     password: admin1234\n"
-            + "     roles:\n"
-            + "           - READ\n"
-            + "           - WRITE\n"
-            + "           - VIEW\n"
-            + "           - DELETE\n"
-            + "  -\n"
-            + "     username: guest\n"
-            + "     password: guest1234\n"
-            + "     roles:\n"
-            + "        - VIEW\n");
+        """
+                    users:
+                      -
+                         username: admin
+                         password: admin1234
+                         roles:
+                               - READ
+                               - WRITE
+                               - VIEW
+                               - DELETE
+                      -
+                         username: guest
+                         password: guest1234
+                         roles:
+                            - VIEW
+                    """);
     final List<Users> usersList =
         TigerGlobalConfiguration.instantiateConfigurationBean(new TypeReference<>() {}, "users");
-    assertThat(usersList).isNotEmpty();
-    assertThat(usersList).hasSize(2);
     assertThat(usersList)
+        .isNotEmpty()
+        .hasSize(2)
         .containsOnly(
             Users.builder()
                 .username("admin")
@@ -637,7 +658,9 @@ public class TigerConfigurationTest {
     TigerGlobalConfiguration.readFromYaml(
         FileUtils.readFileToString(
             new File(
-                "../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml")),
+                "../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr"
+                    + "/templates.yaml"),
+            Charset.defaultCharset()),
         "tiger");
     assertThat(TigerGlobalConfiguration.instantiateConfigurationBean(TestCfg.class, "tiger"))
         .get()
@@ -769,23 +792,24 @@ public class TigerConfigurationTest {
   void unresolveablePrimitives_shouldBeIgnored() {
     TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.readFromYaml(
-        "integer: '123${this.value.does.not.exist}'\n"
-            + "b: ${this.value.does.not.exist}\n"
-            + "c: ${this.value.does.not.exist}\n"
-            + "d: ${this.value.does.not.exist}\n"
-            + "l: ${this.value.does.not.exist}\n"
-            + "s: ${this.value.does.not.exist}\n"
-            + "by: ${this.value.does.not.exist}\n"
-            + "f: ${this.value.does.not.exist}\n"
-            + "objectInt: ${this.value.does.not.exist}\n"
-            + "nestedBean.bar: ${this.value.does.not.exist}");
+        """
+                    integer: '123${this.value.does.not.exist}'
+                    b: ${this.value.does.not.exist}
+                    c: ${this.value.does.not.exist}
+                    d: ${this.value.does.not.exist}
+                    l: ${this.value.does.not.exist}
+                    s: ${this.value.does.not.exist}
+                    by: ${this.value.does.not.exist}
+                    f: ${this.value.does.not.exist}
+                    objectInt: ${this.value.does.not.exist}
+                    nestedBean.bar: ${this.value.does.not.exist}""");
     var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class).get();
     assertThat(dummyBean.getInteger()).isEqualTo(-1);
     assertThat(dummyBean.isB()).isFalse();
     assertThat(dummyBean.getC()).isEqualTo(' ');
     assertThat(dummyBean.getD()).isEqualTo(-1.0);
     assertThat(dummyBean.getF()).isEqualTo(-1.0f);
-    assertThat(dummyBean.getL()).isEqualTo(-1l);
+    assertThat(dummyBean.getL()).isEqualTo(-1L);
     assertThat(dummyBean.getBy()).isEqualTo((byte) -1);
     assertThat(dummyBean.getS()).isEqualTo((short) -1);
     assertThat(dummyBean.getObjectInt()).isNull();
@@ -797,7 +821,11 @@ public class TigerConfigurationTest {
   void testReadMapWithSubKey() {
     TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.readFromYaml(
-        "key:\n" + "  select:\n" + "    aKey: aValue\n" + "    bKey: bValue");
+        """
+                    key:
+                      select:
+                        aKey: aValue
+                        bKey: bValue""");
     var map = TigerGlobalConfiguration.readMap("key.select");
     assertThat(map)
         .containsAllEntriesOf(
@@ -811,7 +839,11 @@ public class TigerConfigurationTest {
   void testReadMapWithoutSubKey() {
     TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.readFromYaml(
-        "key:\n" + "  select:\n" + "    aKey: aValue\n" + "    bKey: bValue");
+        """
+                    key:
+                      select:
+                        aKey: aValue
+                        bKey: bValue""");
     var map = TigerGlobalConfiguration.readMap();
     assertThat(map)
         .containsAllEntriesOf(
@@ -884,7 +916,9 @@ public class TigerConfigurationTest {
     TigerGlobalConfiguration.readFromYaml(
         FileUtils.readFileToString(
             new File(
-                "../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr/templates.yaml")),
+                "../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr"
+                    + "/templates.yaml"),
+            Charset.defaultCharset()),
         "tiger");
     assertThat(TigerGlobalConfiguration.readString("tiger.templates.0.type")).isEqualTo("docker");
     TigerGlobalConfiguration.listSources()
@@ -913,6 +947,35 @@ public class TigerConfigurationTest {
       assertThat(TigerGlobalConfiguration.readString(keyReplaced)).isEqualTo("someValue");
     } finally {
       System.clearProperty(keyOriginal);
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"tiger.foo.bar", "TIGER_FOO_BAR", "tIgER.fOO.BaR"})
+  void testKeyTranslations(String key) {
+    try {
+      System.setProperty("TIGER_FOO_BAR", "someValue");
+      TigerGlobalConfiguration.reset();
+      assertThat(TigerGlobalConfiguration.readString(key)).isEqualTo("someValue");
+      assertThat(TigerGlobalConfiguration.resolvePlaceholders("${" + key + "}"))
+          .isEqualTo("someValue");
+      System.clearProperty("TIGER_FOO_BAR");
+
+      System.setProperty("tiger.foo.bar", "someValue");
+      TigerGlobalConfiguration.reset();
+      assertThat(TigerGlobalConfiguration.readString(key)).isEqualTo("someValue");
+      assertThat(TigerGlobalConfiguration.resolvePlaceholders("${" + key + "}"))
+          .isEqualTo("someValue");
+      System.clearProperty("tiger.foo.bar");
+
+      TigerGlobalConfiguration.reset();
+      TigerGlobalConfiguration.putValue("tiger.foo.bar", "someValue");
+      assertThat(TigerGlobalConfiguration.readString(key)).isEqualTo("someValue");
+      assertThat(TigerGlobalConfiguration.resolvePlaceholders("${" + key + "}"))
+          .isEqualTo("someValue");
+    } finally {
+      System.clearProperty("TIGER_FOO_BAR");
+      System.clearProperty("tiger.foo.bar");
     }
   }
 

@@ -1,10 +1,9 @@
 package de.gematik.test.tiger.common.jexl;
 
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TreeMap;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.JexlContext;
 
@@ -20,6 +19,12 @@ public class TigerJexlContext extends TreeMap<String, Object> implements JexlCon
   public static final String ROOT_ELEMENT_MARKER = "rootElement";
   public static final String REMAINING_PATH_FROM_REQUEST = "remainingPathToMatch";
   public static final String KEY_ELEMENT_MARKER = "key";
+  private static final Set<String> DEFAULT_KEYS =
+      Set.of(
+          CURRENT_ELEMENT_MARKER.toLowerCase(),
+          ROOT_ELEMENT_MARKER.toLowerCase(),
+          REMAINING_PATH_FROM_REQUEST.toLowerCase(),
+          KEY_ELEMENT_MARKER.toLowerCase());
 
   public TigerJexlContext(Map<String, Object> initialMap) {
     this();
@@ -110,5 +115,11 @@ public class TigerJexlContext extends TreeMap<String, Object> implements JexlCon
 
   public TigerJexlContext cloneContext() {
     return new TigerJexlContext(this);
+  }
+
+  public Map<String, Object> allNonStandardValues() {
+    return entrySet().stream()
+        .filter(e -> !DEFAULT_KEYS.contains(e.getKey().toLowerCase()))
+        .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue));
   }
 }

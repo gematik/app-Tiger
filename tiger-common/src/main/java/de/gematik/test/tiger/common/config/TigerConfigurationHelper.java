@@ -24,6 +24,9 @@ import org.yaml.snakeyaml.Yaml;
 @Slf4j
 @SuppressWarnings("unused")
 public class TigerConfigurationHelper<T> {
+
+  private TigerConfigurationHelper() {}
+
   /**
    * converts a given yaml content string to JSON object.
    *

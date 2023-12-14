@@ -6,10 +6,23 @@ import de.gematik.rbellogger.builder.RbelObjectJexl;
 import de.gematik.rbellogger.data.RbelSerializationAssertion;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.skyscreamer.jsonassert.JSONAssert;
 
+@Slf4j
 class RbelBuilderTests {
 
   String jsonTest =
@@ -37,6 +50,87 @@ class RbelBuilderTests {
                 foo
             </blub>
             """;
+
+  static String complexJsonObject =
+      """
+        {
+            "entry1": {
+                "entry1a": {
+                    "entry1aI": "stringValue1"
+                }
+            },
+            "entry2": [
+                {
+                    "entry2a": {
+                        "entry2aI": 0,
+                        "entry2aII": {
+                            "entry2aIIx": "stringValue2",
+                            "entry2aIIy": "stringValue3"
+                        },
+                        "entry2aIII": [
+                            "some",
+                            "more",
+                            "values",
+                            "and",
+                            "a",
+                            "number",
+                            5,
+                            "and",
+                            "an",
+                            {
+                                "object": {
+                                    "key": "stringValue4"
+                                }
+                            }
+                        ],
+                        "entry2aIV": "stringValue5"
+                    }
+                },
+                "stringValue6",
+                "stringValue7"
+            ],
+            "entry3": {
+                "entry3a": {
+                    "entry3aI": "stringValue8"
+                },
+                "entry3b": {
+                    "entry3bI": "=$/=)$§)(=)$/$=§",
+                    "entry3bII": ":;DFNÖWRGÄ FERJÖÄRHG",
+                    "(/)§=$§)=)§": 3
+                },
+                "entry3c": []
+            }
+        }
+    """;
+
+  static String insertIntoComplexStringAtPathentry1aI(Object newValue) {
+    JSONObject modifiedComplexJsonObject = new JSONObject(complexJsonObject);
+    modifiedComplexJsonObject
+        .getJSONObject("entry1")
+        .getJSONObject("entry1a")
+        .put("entry1aI", newValue);
+    return modifiedComplexJsonObject.toString();
+  }
+
+  static String insertIntoComplexStringAtPathentry2aIII5(Object newValue) {
+    JSONObject modifiedComplexJsonObject = new JSONObject(complexJsonObject);
+    modifiedComplexJsonObject
+        .getJSONArray("entry2")
+        .getJSONObject(0)
+        .getJSONObject("entry2a")
+        .getJSONArray("entry2aIII")
+        .put(5, newValue);
+    return modifiedComplexJsonObject.toString();
+  }
+
+  static String insertIntoComplexStringAtPathentry3bSpecialChars(Object newValue) {
+    JSONObject modifiedComplexJsonObject = new JSONObject(complexJsonObject);
+    modifiedComplexJsonObject
+        .getJSONObject("entry3")
+        .getJSONObject("entry3b")
+        .put("(/)§=$§)=)§", newValue);
+    return modifiedComplexJsonObject.toString();
+  }
 
   @Test
   void readRbelFromScratchTest() {
@@ -191,5 +285,90 @@ class RbelBuilderTests {
     Assertions.assertThrows(
         IllegalArgumentException.class, () -> builder.addEntryAt("$.blub.foo", "new_entry"));
     builder.serialize();
+  }
+
+  private static Stream<Arguments> provideJsonRbelObjectExamples() {
+
+    List<String> successPathParameters =
+        List.of(
+            "$.entry1.entry1a.entry1aI",
+            "$.entry2.0.entry2a.entry2aIII.5",
+            "$.entry3.entry3b.(/)§=$§)=)§");
+
+    List<Object> successNewValueParameters =
+        List.of(
+            "some text",
+            "4",
+            ")(§=?/ß",
+            "{ \"inner\": \"object\" }",
+            "[3, \"other\", \"values\"]",
+            "[]",
+            "");
+
+    List<String> failurePathParameters =
+        List.of("$.not.an.existing.path", "$.entry2.entry2a.entry2aIII");
+
+    List<String> failureNewValueParameters =
+        List.of("\"\"\"\"", "[missingQuotationMarks, 3]", "{missing: quotationMarks}");
+
+    List<Arguments> successParameters = new ArrayList<>();
+    for (String successPath : successPathParameters) {
+      for (Object successNewValue : successNewValueParameters) {
+        String expectedValue =
+            switch (successPath) {
+              case "$.entry1.entry1a.entry1aI" -> insertIntoComplexStringAtPathentry1aI(
+                  convertNonPrimitiveToJson(successNewValue.toString()));
+              case "$.entry2.0.entry2a.entry2aIII.5" -> insertIntoComplexStringAtPathentry2aIII5(
+                  convertNonPrimitiveToJson(successNewValue.toString()));
+              case "$.entry3.entry3b.(/)§=$§)=)§" -> insertIntoComplexStringAtPathentry3bSpecialChars(
+                  convertNonPrimitiveToJson(successNewValue.toString()));
+              default -> throw new NotImplementedException(
+                  "SuccessPath %s is not yet implemented for Parameterized tests."
+                      .formatted(successPath));
+            };
+        successParameters.add(Arguments.of(successPath, successNewValue, true, expectedValue));
+      }
+    }
+    List<Arguments> failureParameters = new ArrayList<>();
+    for (String failurePath : failurePathParameters) {
+      for (Object failureNewValue : failureNewValueParameters) {
+        failureParameters.add(Arguments.of(failurePath, failureNewValue, false, null));
+      }
+    }
+    Stream<Arguments> successParameterStream = successParameters.stream();
+    Stream<Arguments> failureParameterStream = failureParameters.stream();
+
+    return Stream.concat(successParameterStream, failureParameterStream);
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideJsonRbelObjectExamples")
+  void setValueTests(
+      String insertPath, Object newValue, boolean expectSuccess, String expectedResult) {
+
+    RbelBuilder parameterizedRbelBuilder = RbelBuilder.fromString(complexJsonObject);
+
+    if (newValue instanceof String newStringValue) {
+      if (expectSuccess) {
+        parameterizedRbelBuilder.setValueAt(insertPath, newStringValue);
+        JSONAssert.assertEquals(
+            expectedResult, parameterizedRbelBuilder.getTreeRootNode().getRawStringContent(), true);
+      } else {
+        Assertions.assertThrows(
+            Exception.class, () -> parameterizedRbelBuilder.setValueAt(insertPath, newStringValue));
+      }
+    }
+  }
+
+  static Object convertNonPrimitiveToJson(String value) {
+    try {
+      return new JSONObject(value);
+    } catch (JSONException e) {
+      try {
+        return new JSONArray(value);
+      } catch (JSONException ne) {
+        return value;
+      }
+    }
   }
 }

@@ -16,6 +16,7 @@ def GITLAB_PROJECT_ID = '644'
 def TAG_NAME = "ci/build"
 def POM_PATH = 'pom.xml'
 def POM_PATH_PRODUCT = 'tiger-testenv-mgr/pom.xml'
+def REPO_URL = createGitUrl('git/Testtools/tiger/tiger')
 
 pipeline {
     options {
@@ -41,6 +42,15 @@ pipeline {
             }
         }
 
+        stage('Checkout') {
+              steps {
+                  git branch: BRANCH,
+                      credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
+                      url: REPO_URL
+              }
+          }
+
+
         stage('set Version') {
             steps {
                 mavenSetVersionFromJiraProject(JIRA_PROJECT_ID, POM_PATH, true, "", false)
@@ -64,17 +74,26 @@ pipeline {
         stage('Integration Test') {
             environment {
                 TIGER_DOCKER_HOST = dockerGetCurrentHostname()
+				TGR_TESTENV_CFG_CHECK_MODE = 'myEnv'
+				TGR_TESTENV_CFG_DELETE_MODE = 'deleteEnv'
+				TGR_TESTENV_CFG_EDIT_MODE = 'editEnv'
+				TGR_TESTENV_CFG_MULTILINE_CHECK_MODE = 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. ...'
             }
+
             parallel {
                 stage('Start Tiger and Dummy Featurefile') {
                     steps {
+						script {
+							def mvnProperties = "-DtgrTestPropCfgCheckMode=myProp -DtgrTestPropCfgEditMode=editProp -DtgrTestPropCfgDeleteMode=deleteProp"
+
                         withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
                             sh """
                                 cd tiger-uitests
                                 rm -f mvn-playwright-log.txt
-                                mvn --no-transfer-progress -P start-tiger-dummy failsafe:integration-test | tee mvn-playwright-log.txt
+                                mvn --no-transfer-progress ${mvnProperties} -P start-tiger-dummy failsafe:integration-test | tee mvn-playwright-log.txt
                                """
-                        }
+							}
+						}
                     }
                 }
                 stage('Run playwright test') {
@@ -93,6 +112,18 @@ pipeline {
                           fi
                         """
                     }
+                }
+            }
+        }
+
+        stage('Commit screenshots') {
+            steps {
+                script {
+                sh """
+                     git add doc/user_manual/screenshots/*.png
+                     git commit -m "TGR-9999: Jenkins adds PNG files"
+                     git push origin ${BRANCH}
+                """
                 }
             }
         }

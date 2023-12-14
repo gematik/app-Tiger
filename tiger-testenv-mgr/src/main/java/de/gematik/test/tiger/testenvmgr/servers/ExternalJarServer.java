@@ -189,7 +189,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
   }
 
   @Override
-  public TigerServerStatus updateStatus(boolean quiet) {
+  public TigerServerStatus updateStatus(boolean noErrorLogging) {
     if (!processReference.get().isAlive()) {
       log.warn("Process {} for {} is stopped!", processReference.get().pid(), getServerId());
       setStatus(

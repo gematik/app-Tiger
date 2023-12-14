@@ -18,6 +18,7 @@ package de.gematik.test.tiger.common.data.config.tigerProxy;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import java.io.Serializable;
 import lombok.*;
 
 @NoArgsConstructor
@@ -25,7 +26,7 @@ import lombok.*;
 @Builder(toBuilder = true)
 @Data
 @JsonInclude(Include.NON_NULL)
-public class TigerRoute {
+public class TigerRoute implements Serializable {
 
   @With private String id;
   private String from;

@@ -19,14 +19,16 @@ package de.gematik.rbellogger.util;
 import static de.gematik.rbellogger.util.RbelAnsiColors.WHITE;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public class RbelAnsiColorsTest {
+@Slf4j
+class RbelAnsiColorsTest {
 
   @Test
   @DisplayName("WHITE and weiß and weiss should have same toString value")
-  public void whiteAndWeissShouldMatch() {
+  void whiteAndWeissShouldMatch() {
     assertThat(WHITE)
         .isEqualTo(RbelAnsiColors.seekColor("wEiSs"))
         .isEqualTo(RbelAnsiColors.seekColor("Weiß"))
@@ -36,7 +38,7 @@ public class RbelAnsiColorsTest {
 
   @Test
   @DisplayName("Should only give ANSI-values if global constant mandates it")
-  public void ansiOutputShouldHingeOnGlobalConstant() {
+  void ansiOutputShouldHingeOnGlobalConstant() {
     RbelAnsiColors.deactivateAnsiColors();
 
     assertThat(WHITE.toString()).isEmpty();

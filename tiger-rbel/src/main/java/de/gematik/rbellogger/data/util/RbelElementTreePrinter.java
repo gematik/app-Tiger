@@ -16,10 +16,9 @@
 
 package de.gematik.rbellogger.data.util;
 
-import static de.gematik.rbellogger.RbelOptions.ACTIVATE_FACETS_PRINTING;
-import static de.gematik.rbellogger.RbelOptions.RBEL_PATH_TREE_VIEW_VALUE_OUTPUT_LENGTH;
 import static de.gematik.rbellogger.util.RbelAnsiColors.*;
 
+import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.util.RbelAnsiColors;
@@ -97,7 +96,7 @@ public class RbelElementTreePrinter {
   }
 
   private String printFacets(RbelElement value) {
-    if (!ACTIVATE_FACETS_PRINTING) {
+    if (!RbelOptions.isActivateFacetsPrinting()) {
       return "";
     }
     final String facetsString =
@@ -143,8 +142,8 @@ public class RbelElementTreePrinter {
         + StringUtils.substring(
             content.replace("\n", "\\n").replace("\r", "\\r"),
             0,
-            RBEL_PATH_TREE_VIEW_VALUE_OUTPUT_LENGTH)
-        + (content.length() > RBEL_PATH_TREE_VIEW_VALUE_OUTPUT_LENGTH ? "..." : "")
+            RbelOptions.getRbelPathTreeViewValueOutputLength())
+        + (content.length() > RbelOptions.getRbelPathTreeViewValueOutputLength() ? "..." : "")
         + cl(RESET)
         + ")";
   }

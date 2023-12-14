@@ -18,13 +18,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Optional;
 import lombok.SneakyThrows;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class RbelBuilder {
 
   private static RbelLogger rbelLogger;
   private static RbelWriter rbelWriter;
 
-  private final RbelContentTreeNode treeRootNode;
+  private RbelContentTreeNode treeRootNode;
 
   /**
    * Builder that builds and modifies a RbelContentTreeNode from various sources
@@ -96,7 +99,7 @@ public class RbelBuilder {
    * Sets the value at a specific path to a new RbelContentTreeNode; the path or its parent must
    * exist
    *
-   * @param rbelPath path where RbelContenTreeNode is inserted
+   * @param rbelPath path where RbelContentTreeNode is inserted
    * @param newValue primitive String; or object as formatted String
    * @throws RbelPathException if path is not a proper Rbel path or if path and its parent do not
    *     exist
@@ -127,11 +130,10 @@ public class RbelBuilder {
       if (parentNode.getType() == RbelContentType.XML) {
         String newXmlValue = String.format("<%s>%s</%s>", newKey, newValue, newKey);
         RbelContentTreeNode newXmlNode = getContentTreeNodeFromString(newXmlValue);
-        parentNode.setChildNode(
-            newKey, newXmlNode.findElement("$.%s".formatted(newKey)).orElseThrow());
+        parentNode.addOrReplaceChild(newKey, newXmlNode.findElement("$." + newKey).orElseThrow());
       } else {
         RbelContentTreeNode newValueNode = getContentTreeNodeFromString(newValue);
-        parentNode.setChildNode(newKey, newValueNode);
+        parentNode.addOrReplaceChild(newKey, newValueNode);
       }
       return this;
     }
@@ -153,13 +155,28 @@ public class RbelBuilder {
   }
 
   private RbelBuilder setValueAt(RbelContentTreeNode entry, String newValue) {
-    RbelContentTreeNode newContentTreeNode = getContentTreeNodeFromString(newValue);
-    Optional<String> key = entry.getKey();
-    if (key.isPresent()) {
-      entry.getParentNode().setChildNode(key.get(), newContentTreeNode);
+    if (!isJsonObject(newValue)
+        && entry.getParentNode() != null
+        && entry.getParentNode().getType() == RbelContentType.JSON) {
+      RbelContentTreeNode parentNode = entry.getParentNode();
+      String wrappedContent = wrapJsonContentInKey(entry.getKey().orElseThrow(), newValue);
+      RbelContentTreeNode modifiedRbelContentTreeNode =
+          getContentTreeNodeFromString(wrappedContent);
+      if (parentNode.getKey().isPresent()) {
+        parentNode.addOrReplaceChild(
+            entry.getKey().orElseThrow(), modifiedRbelContentTreeNode.getChildNodes().get(0));
+      } else {
+        treeRootNode = modifiedRbelContentTreeNode;
+      }
     } else {
-      throw new NullPointerException(
-          "The key of the node which is to be changed is not set in its parent node.");
+      RbelContentTreeNode newContentTreeNode = getContentTreeNodeFromString(newValue);
+      Optional<String> key = entry.getKey();
+      if (key.isPresent()) {
+        entry.getParentNode().addOrReplaceChild(key.get(), newContentTreeNode);
+      } else {
+        throw new NullPointerException(
+            "The key of the node which is to be changed is not set in its parent node.");
+      }
     }
     return this;
   }
@@ -200,12 +217,40 @@ public class RbelBuilder {
     return new RbelContentTreeConverter(input, new TigerJexlContext()).convertToContentTree();
   }
 
-  private static void assureRbelIsInitialized() {
+  private static String wrapJsonContentInKey(String key, String content) {
+    if (isJsonObject(content) || isJsonArray(content)) {
+      return String.format("{ \"%s\": %s }", key, content);
+    } else {
+      return String.format("{ \"%s\": \"%s\" }", key, content);
+    }
+  }
+
+  private static synchronized void assureRbelIsInitialized() {
     if (rbelLogger == null) {
       rbelLogger = RbelLogger.build();
-    }
-    if (rbelWriter == null) {
       rbelWriter = new RbelWriter(rbelLogger.getRbelConverter());
     }
+  }
+
+  private static boolean isJsonObject(String json) {
+    try {
+      new JSONObject(json);
+      return true;
+    } catch (JSONException e) {
+      return false;
+    }
+  }
+
+  private static boolean isJsonArray(String json) {
+    try {
+      new JSONObject(json);
+    } catch (JSONException e) {
+      try {
+        new JSONArray(json);
+      } catch (JSONException ne) {
+        return false;
+      }
+    }
+    return true;
   }
 }

@@ -37,15 +37,27 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
  * This class reads the workflow ui port out from the log file that mvn creates when executing tiger
- * and the feature file for the playwright tests. local test setup: first compile test classes cd
- * tiger-uitests mvn test-compile -P start-tiger-dummy
+ * and the feature file for the playwright tests. local test setup: first compile test classes
  *
- * <p>in the first terminal do (this will start the tiger and workflow ui but without starting the
- * browser): cd tiger-uitests rm -f mvn-playwright-log.txt mvn --no-transfer-progress -P
- * start-tiger-dummy failsafe:integration-test | tee mvn-playwright-log.txt
+ * <p>cd tiger-uitests
  *
- * <p>in the second terminal do (this will start the actual playwright tests): cd tiger-uitests mvn
- * --no-transfer-progress -P run-playwright-test failsafe:integration-test failsafe:verify
+ * <p>mvn test-compile -P start-tiger-dummy
+ *
+ * <p>in the first terminal run the following command (this will start the tiger and workflow ui but
+ * without starting the browser):
+ *
+ * <p>cd tiger-uitests
+ *
+ * <p>./startWorkflowUi.sh
+ *
+ * <p>This script, located at tiger-uitests/startWorkflowUi.sh, sets environment variables and
+ * properties specifically for the Tiger Global Configuration Editor tests.
+ *
+ * <p>in the second terminal do (this will start the actual playwright tests):
+ *
+ * <p>cd tiger-uitests
+ *
+ * <p>mvn --no-transfer-progress -P run-playwright-test failsafe:integration-test failsafe:verify
  *
  * <p>See tiger-uitests-playwright-tests.Jenkinsfile for further information. It also holds the
  * variables used by the playwright tests such as playwright, browser and page.

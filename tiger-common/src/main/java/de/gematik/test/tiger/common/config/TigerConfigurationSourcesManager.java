@@ -23,7 +23,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 
 /**
- * Capsules the loaded sources in a thread-safe manner. Due to the sources implementing Comparable the list is always in order.
+ * Capsules the loaded sources in a thread-safe manner. Due to the sources implementing Comparable
+ * the list is always in order.
  */
 public class TigerConfigurationSourcesManager {
 
@@ -33,21 +34,16 @@ public class TigerConfigurationSourcesManager {
     loadedSources.clear();
   }
 
-  /**
-   * Get a list that has the most important value at the first position (for findFirst() calls)
-   */
+  /** Get a list that has the most important value at the first position (for findFirst() calls) */
   public Stream<AbstractTigerConfigurationSource> getSortedStream() {
-    return loadedSources.stream()
-      .sorted();
+    return loadedSources.stream().sorted();
   }
 
   /**
    * Get a list that has the most important value at the last position (for looping and replacing)
    */
   public List<AbstractTigerConfigurationSource> getSortedListReversed() {
-    return loadedSources.stream()
-      .sorted(reverseOrder())
-      .toList();
+    return loadedSources.stream().sorted(reverseOrder()).toList();
   }
 
   public void addNewSource(AbstractTigerConfigurationSource source) {

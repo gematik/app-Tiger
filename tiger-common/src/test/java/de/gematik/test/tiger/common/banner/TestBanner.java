@@ -28,10 +28,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class TestBanner {
+class TestBanner {
 
   private static final String REGEX_MATCH_ASCII_COLORS = "\\x1b|\\[|[\\d;]|m|\\n{2,}|={5,}";
 
+  @SuppressWarnings("SpellCheckingInspection")
   private static Stream<Arguments> provideMessageForCheckingSymbols() {
     return Stream.of(
         Arguments.of(
@@ -40,7 +41,7 @@ public class TestBanner {
 
   @ParameterizedTest
   @MethodSource("provideMessageForCheckingSymbols")
-  public void testAllSymbolsArePresentInBannerMessage(String message) {
+  void testAllSymbolsArePresentInBannerMessage(String message) {
     Banner.setFont(FigFontResources.BUBBLE_FLF);
     assertEachSymbolIsPresent(message);
 
@@ -55,7 +56,7 @@ public class TestBanner {
   }
 
   @Test
-  public void testBannerStrRedOK() {
+  void testBannerStrRedOK() {
     Banner.setFont(FigFontResources.STANDARD_FLF);
 
     var colors = new String[] {"roten", "rot", "RED"};
@@ -79,7 +80,7 @@ public class TestBanner {
   }
 
   @Test
-  public void testBannerStrCOLOROK() {
+  void testBannerStrCOLOROK() {
     Banner.setFont(FigFontResources.STANDARD_FLF);
     var colors = new String[] {"roten", "rot", "RED"};
     for (String col : colors) {
@@ -101,8 +102,9 @@ public class TestBanner {
     }
   }
 
+  @SuppressWarnings("SpellCheckingInspection")
   @Test
-  public void testBannerStrCOLORInvalidColorName() {
+  void testBannerStrCOLORInvalidColorName() {
     assertThatThrownBy(() -> Banner.toBannerStrWithCOLOR("TestString", "NOCOLORKNOWN"))
         .isInstanceOf(RuntimeException.class);
   }

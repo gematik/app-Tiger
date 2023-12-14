@@ -26,7 +26,6 @@ import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.lib.json.JsonChecker;
 import de.gematik.test.tiger.lib.rbel.RbelMessageValidator;
 import de.gematik.test.tiger.lib.rbel.RequestParameter;
-import io.cucumber.java.ParameterType;
 import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Gegebensei;
 import io.cucumber.java.de.Wenn;
@@ -80,8 +79,8 @@ public class RBelValidatorGlue {
    *
    * @param hostname host name (regex supported) to filter for
    */
-  @Wenn("TGR filtere Anfragen nach Server {string}")
-  @When("TGR filter requests based on host {string}")
+  @Wenn("TGR filtere Anfragen nach Server {tigerResolvedString}")
+  @When("TGR filter requests based on host {tigerResolvedString}")
   public void tgrFilterBasedOnHost(final String hostname) {
     TigerGlobalConfiguration.putValue(
         "tiger.rbel.request.filter.host", hostname, SourceType.TEST_CONTEXT);
@@ -92,8 +91,8 @@ public class RBelValidatorGlue {
    *
    * @param method method to filter for
    */
-  @Wenn("TGR filtere Anfragen nach HTTP Methode {string}")
-  @When("TGR filter requests based on method {string}")
+  @Wenn("TGR filtere Anfragen nach HTTP Methode {tigerResolvedString}")
+  @When("TGR filter requests based on method {tigerResolvedString}")
   public void tgrFilterBasedOnMethod(final String method) {
     TigerGlobalConfiguration.putValue(
         "tiger.rbel.request.filter.method", method.toUpperCase(), SourceType.TEST_CONTEXT);
@@ -114,13 +113,14 @@ public class RBelValidatorGlue {
    * @param rbelPath rbel path to node/attribute
    * @param value value to match at given node/attribute
    */
-  @Wenn("TGR warte auf eine Nachricht, in der Knoten {string} mit {string} übereinstimmt")
-  @When("TGR wait for message with node {string} matching {string}")
+  @Wenn(
+      "TGR warte auf eine Nachricht, in der Knoten {tigerResolvedString} mit {tigerResolvedString} übereinstimmt")
+  @When("TGR wait for message with node {tigerResolvedString} matching {tigerResolvedString}")
   public void waitForMessageWithValue(final String rbelPath, final String value) {
     rbelValidator.waitForMessageToBePresent(
         RequestParameter.builder()
-            .rbelPath(TigerGlobalConfiguration.resolvePlaceholders(rbelPath))
-            .value(TigerGlobalConfiguration.resolvePlaceholders(value))
+            .rbelPath(rbelPath)
+            .value(value)
             .requireHttpMessage(false)
             .build());
   }
@@ -135,13 +135,14 @@ public class RBelValidatorGlue {
    * @param rbelPath rbel path to node/attribute
    * @param value value to match at given node/attribute
    */
-  @Wenn("TGR warte auf eine neue Nachricht, in der Knoten {string} mit {string} übereinstimmt")
-  @When("TGR wait for new message with node {string} matching {string}")
+  @Wenn(
+      "TGR warte auf eine neue Nachricht, in der Knoten {tigerResolvedString} mit {tigerResolvedString} übereinstimmt")
+  @When("TGR wait for new message with node {tigerResolvedString} matching {tigerResolvedString}")
   public void waitForNewMessageWithValue(final String rbelPath, final String value) {
     rbelValidator.waitForMessageToBePresent(
         RequestParameter.builder()
-            .rbelPath(TigerGlobalConfiguration.resolvePlaceholders(rbelPath))
-            .value(TigerGlobalConfiguration.resolvePlaceholders(value))
+            .rbelPath(rbelPath)
+            .value(value)
             .requireNewMessage(true)
             .requireHttpMessage(false)
             .build());
@@ -310,11 +311,11 @@ public class RBelValidatorGlue {
    * @param value value to match at given node/attribute
    * @deprecated
    */
-  @Wenn("TGR finde eine Nachricht mit Knoten {string} der mit {string} übereinstimmt")
-  @When("TGR any message with attribute {string} matches {string}")
+  @Wenn(
+      "TGR finde eine Nachricht mit Knoten {tigerResolvedString} der mit {tigerResolvedString} übereinstimmt")
+  @When("TGR any message with attribute {tigerResolvedString} matches {tigerResolvedString}")
   public void findAnyMessageAttributeMatches(final String rbelPath, final String value) {
-    rbelValidator.findAnyMessageMatchingAtNode(
-        rbelPath, TigerGlobalConfiguration.resolvePlaceholders(value));
+    rbelValidator.findAnyMessageMatchingAtNode(rbelPath, value);
   }
 
   // =================================================================================================================
@@ -329,8 +330,10 @@ public class RBelValidatorGlue {
    * @param rbelPath path to node/attribute
    * @param varName name of variable to store the node text value in
    */
-  @Dann("TGR speichere Wert des Knotens {string} der aktuellen Antwort in der Variable {string}")
-  @Then("TGR store current response node text value at {string} in variable {string}")
+  @Dann(
+      "TGR speichere Wert des Knotens {tigerResolvedString} der aktuellen Antwort in der Variable {tigerResolvedString}")
+  @Then(
+      "TGR store current response node text value at {tigerResolvedString} in variable {tigerResolvedString}")
   public void storeCurrentResponseNodeTextValueInVariable(
       final String rbelPath, final String varName) {
     final String text =
@@ -356,8 +359,10 @@ public class RBelValidatorGlue {
    * @param replace string to replace all matches with
    * @param varName name of variable to store the node text value in
    */
-  @Dann("TGR ersetze {string} mit {string} im Inhalt der Variable {string}")
-  @Then("TGR replace {string} with {string} in content of variable {string}")
+  @Dann(
+      "TGR ersetze {tigerResolvedString} mit {tigerResolvedString} im Inhalt der Variable {tigerResolvedString}")
+  @Then(
+      "TGR replace {tigerResolvedString} with {tigerResolvedString} in content of variable {tigerResolvedString}")
   public void replaceContentOfVariable(
       final String regexPattern, final String replace, final String varName) {
     String newContent =
@@ -384,7 +389,8 @@ public class RBelValidatorGlue {
   @Dann("TGR prüfe aktuelle Antwort stimmt im Body überein mit:")
   @Then("TGR current response body matches:")
   public void currentResponseBodyMatches(final String docString) {
-    currentResponseMessageAttributeMatches("$.body", docString);
+    currentResponseMessageAttributeMatches(
+        "$.body", TigerParameterTypeDefinitions.tigerResolvedString(docString));
   }
 
   /**
@@ -392,13 +398,10 @@ public class RBelValidatorGlue {
    *
    * @param rbelPath path to node/attribute
    */
-  @Dann("TGR prüfe aktuelle Antwort enthält Knoten {string}")
-  @Then("TGR current response contains node {string}")
+  @Dann("TGR prüfe aktuelle Antwort enthält Knoten {tigerResolvedString}")
+  @Then("TGR current response contains node {tigerResolvedString}")
   public void currentResponseMessageContainsNode(final String rbelPath) {
-    assertThat(
-            rbelValidator.findElementsInCurrentResponse(
-                TigerGlobalConfiguration.resolvePlaceholders(rbelPath)))
-        .isNotEmpty();
+    assertThat(rbelValidator.findElementsInCurrentResponse(rbelPath)).isNotEmpty();
   }
 
   /**
@@ -408,13 +411,11 @@ public class RBelValidatorGlue {
    * @param value value / regex that should equal or match as string content with MultiLine and
    *     DotAll regex option
    */
-  @Dann("TGR prüfe aktuelle Antwort stimmt im Knoten {string} überein mit {string}")
-  @Then("TGR current response with attribute {string} matches {string}")
+  @Dann(
+      "TGR prüfe aktuelle Antwort stimmt im Knoten {tigerResolvedString} überein mit {tigerResolvedString}")
+  @Then("TGR current response with attribute {tigerResolvedString} matches {tigerResolvedString}")
   public void currentResponseMessageAttributeMatches(final String rbelPath, final String value) {
-    rbelValidator.assertAttributeOfCurrentResponseMatches(
-        TigerGlobalConfiguration.resolvePlaceholders(rbelPath),
-        TigerGlobalConfiguration.resolvePlaceholders(value),
-        true);
+    rbelValidator.assertAttributeOfCurrentResponseMatches(rbelPath, value, true);
   }
 
   /**
@@ -424,14 +425,13 @@ public class RBelValidatorGlue {
    * @param value value / regex that should NOT BE equal or should NOT match as string content with
    *     MultiLine and DotAll regex option
    */
-  @Dann("TGR prüfe aktuelle Antwort stimmt im Knoten {string} nicht überein mit {string}")
-  @Then("TGR current response with attribute {string} does not match {string}")
+  @Dann(
+      "TGR prüfe aktuelle Antwort stimmt im Knoten {tigerResolvedString} nicht überein mit {tigerResolvedString}")
+  @Then(
+      "TGR current response with attribute {tigerResolvedString} does not match {tigerResolvedString}")
   public void currentResponseMessageAttributeDoesNotMatch(
       final String rbelPath, final String value) {
-    rbelValidator.assertAttributeOfCurrentResponseMatches(
-        TigerGlobalConfiguration.resolvePlaceholders(rbelPath),
-        TigerGlobalConfiguration.resolvePlaceholders(value),
-        false);
+    rbelValidator.assertAttributeOfCurrentResponseMatches(rbelPath, value, false);
   }
 
   /**
@@ -441,8 +441,8 @@ public class RBelValidatorGlue {
    * @param docString value / regex that should equal or match as string content with MultiLine and
    *     DotAll regex option supplied as DocString
    */
-  @Dann("TGR prüfe aktuelle Antwort im Knoten {string} stimmt überein mit:")
-  @Then("TGR current response at {string} matches:")
+  @Dann("TGR prüfe aktuelle Antwort im Knoten {tigerResolvedString} stimmt überein mit:")
+  @Then("TGR current response at {tigerResolvedString} matches:")
   public void currentResponseMessageAtMatchesDocString(
       final String rbelPath, final String docString) {
     currentResponseMessageAttributeMatches(rbelPath, docString);
@@ -455,14 +455,12 @@ public class RBelValidatorGlue {
    * @param docString value / regex that should equal or match as string content with MultiLine and
    *     DotAll regex option supplied as DocString
    */
-  @Dann("TGR prüfe aktuelle Antwort im Knoten {string} stimmt nicht überein mit:")
-  @Then("TGR current response at {string} does not match:")
+  @Dann("TGR prüfe aktuelle Antwort im Knoten {tigerResolvedString} stimmt nicht überein mit:")
+  @Then("TGR current response at {tigerResolvedString} does not match:")
   public void currentResponseMessageAtDoesNotMatchDocString(
       final String rbelPath, final String docString) {
     rbelValidator.assertAttributeOfCurrentResponseMatches(
-        TigerGlobalConfiguration.resolvePlaceholders(rbelPath),
-        TigerGlobalConfiguration.resolvePlaceholders(docString),
-        false);
+        rbelPath, TigerGlobalConfiguration.resolvePlaceholders(docString), false);
   }
 
   /**
@@ -473,17 +471,9 @@ public class RBelValidatorGlue {
    *     DotAll regex option
    * @deprecated
    */
-  @Then("TGR current response at {string} matches {string}")
+  @Then("TGR current response at {tigerResolvedString} matches {tigerResolvedString}")
   public void currentResponseMessageAtMatches(final String rbelPath, final String value) {
-    rbelValidator.assertAttributeOfCurrentResponseMatches(
-        TigerGlobalConfiguration.resolvePlaceholders(rbelPath),
-        TigerGlobalConfiguration.resolvePlaceholders(value),
-        true);
-  }
-
-  @ParameterType("XML|JSON")
-  public ModeType ModeType(String mode) {
-    return ModeType.valueOf(mode);
+    rbelValidator.assertAttributeOfCurrentResponseMatches(rbelPath, value, true);
   }
 
   /**
@@ -495,14 +485,13 @@ public class RBelValidatorGlue {
    * @param oracleDocStr value / regex that should equal or match as JSON or XML content
    * @see JsonChecker#compareJsonStrings(String, String, boolean)
    */
-  @Dann("TGR prüfe aktuelle Antwort im Knoten {string} stimmt als {ModeType} überein mit:")
-  @Then("TGR current response at {string} matches as {ModeType}:")
+  @Dann(
+      "TGR prüfe aktuelle Antwort im Knoten {tigerResolvedString} stimmt als {modeType} überein mit:")
+  @Then("TGR current response at {tigerResolvedString} matches as {modeType}:")
   public void currentResponseAtMatchesAsJsonOrXml(
       final String rbelPath, final ModeType mode, final String oracleDocStr) {
     rbelValidator.assertAttributeOfCurrentResponseMatchesAs(
-        TigerGlobalConfiguration.resolvePlaceholders(rbelPath),
-        mode,
-        TigerGlobalConfiguration.resolvePlaceholders(oracleDocStr));
+        rbelPath, mode, TigerGlobalConfiguration.resolvePlaceholders(oracleDocStr));
   }
 
   /**
@@ -524,14 +513,14 @@ public class RBelValidatorGlue {
    *     DifferenceEvaluator</a>
    */
   @Dann(
-      "TGR prüfe aktuelle Antwort im Knoten {string} stimmt als XML mit folgenden diff Optionen"
-          + " {string} überein mit:")
-  @Then("TGR current response at {string} matches as XML and diff options {string}:")
+      "TGR prüfe aktuelle Antwort im Knoten {tigerResolvedString} stimmt als XML mit folgenden diff Optionen"
+          + " {tigerResolvedString} überein mit:")
+  @Then(
+      "TGR current response at {tigerResolvedString} matches as XML and diff options {tigerResolvedString}:")
   public void currentResponseAtMatchesAsXMLAndDiffOptions(
       final String rbelPath, String diffOptionsCSV, final String xmlDocStr) {
     rbelValidator.compareXMLStructureOfRbelElement(
-        rbelValidator.findElementInCurrentResponse(
-            TigerGlobalConfiguration.resolvePlaceholders(rbelPath)),
+        rbelValidator.findElementInCurrentResponse(rbelPath),
         TigerGlobalConfiguration.resolvePlaceholders(xmlDocStr),
         diffOptionsCSV);
   }
@@ -553,8 +542,8 @@ public class RBelValidatorGlue {
   }
 
   /** Read TGR file and sends messages to local Tiger proxy */
-  @Dann("TGR liest folgende .tgr Datei {string}")
-  @Then("TGR reads the following .tgr file {string}")
+  @Dann("TGR liest folgende .tgr Datei {tigerResolvedString}")
+  @Then("TGR reads the following .tgr file {tigerResolvedString}")
   public void readTgrFile(String filePath) {
     rbelValidator.readTgrFile(filePath);
   }

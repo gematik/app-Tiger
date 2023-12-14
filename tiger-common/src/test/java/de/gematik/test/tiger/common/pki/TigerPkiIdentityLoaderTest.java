@@ -153,18 +153,20 @@ class TigerPkiIdentityLoaderTest {
   @Test
   void additionalKeystorePasswords() {
     TigerGlobalConfiguration.readFromYaml(
-      """
+        """
       tiger:
         lib:
           additionalKeyStorePasswords: ["foo", "baz", "bar"]
       """);
     List<String> list = TigerPkiIdentityLoader.getAllKeystorePasswords();
     assertThat(list)
-            .containsAll(List.of("00", "123456", "gematik", "changeit", "foo", "baz", "bar"));
+        .containsAll(List.of("00", "123456", "gematik", "changeit", "foo", "baz", "bar"));
   }
 
   @ParameterizedTest
-    @CsvSource(textBlock = """
+  @CsvSource(
+      textBlock =
+          """
            src/test/fdfdxsss/herffssa.p1sddef2;00
            src\\test\\fdfdxsss\\herffssa.p1sddef2;00
             """)

@@ -23,17 +23,16 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelJweFacet;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 
-public class RbelUriConverterTest {
+class RbelUriConverterTest {
 
   @Test
-  public void convertAbsolutePathWithQueryParameters() {
+  void convertAbsolutePathWithQueryParameters() {
     final RbelElement rbelElement =
         RbelLogger.build()
             .getRbelConverter()
@@ -56,7 +55,7 @@ public class RbelUriConverterTest {
   }
 
   @Test
-  public void domainAndProtocolAndQuery_shouldConvertNested() {
+  void domainAndProtocolAndQuery_shouldConvertNested() {
     final RbelElement rbelElement =
         RbelLogger.build()
             .getRbelConverter()
@@ -80,7 +79,7 @@ public class RbelUriConverterTest {
   }
 
   @Test
-  public void urlEscapedParameterValues_shouldContainOriginalContent() {
+  void urlEscapedParameterValues_shouldContainOriginalContent() {
     final RbelElement rbelElement =
         RbelLogger.build()
             .getRbelConverter()
@@ -97,7 +96,7 @@ public class RbelUriConverterTest {
   }
 
   @Test
-  public void simpleUrlWithoutQuery() {
+  void simpleUrlWithoutQuery() {
     final RbelElement rbelElement =
         RbelLogger.build()
             .getRbelConverter()
@@ -110,9 +109,9 @@ public class RbelUriConverterTest {
   }
 
   @Test
-  public void longSpecialCaseParameter() throws UnsupportedEncodingException {
+  void longSpecialCaseParameter() {
     final String sourceParameter = RandomStringUtils.randomPrint(3000);
-    String specialCaseParameter = URLEncoder.encode(sourceParameter, StandardCharsets.UTF_8.name());
+    String specialCaseParameter = URLEncoder.encode(sourceParameter, StandardCharsets.UTF_8);
 
     final String basePath = "http://redirect.gematik.de/foo/bar";
     final String url = basePath + "?foo=" + specialCaseParameter + "&blub=blab";
@@ -128,7 +127,7 @@ public class RbelUriConverterTest {
   }
 
   @Test
-  public void emptyQueryPart_shouldParseCorrectly() {
+  void emptyQueryPart_shouldParseCorrectly() {
     final RbelElement rbelElement =
         RbelLogger.build().getRbelConverter().convertElement("/foobar?", null);
 

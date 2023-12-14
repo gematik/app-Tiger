@@ -30,19 +30,22 @@ class TestZionServerType {
 
   @TigerTest(
       tigerYaml =
-          "servers:\n"
-              + "  zionServer:\n"
-              + "    type: zion\n"
-              + "    zionConfiguration:\n"
-              + "      serverPort: \"${free.port.10}\"\n"
-              + "      mockResponses:\n"
-              + "        helloWorld:\n"
-              + "          requestCriterions:\n"
-              + "            - message.method == 'GET'\n"
-              + "            - message.url =~ '.*/helloWorld'\n"
-              + "          response:\n"
-              + "            statusCode: 222\n"
-              + "            body: '{\"Hello\":\"World\"}'\n")
+          """
+servers:
+  zionServer:
+    type: zion
+    zionConfiguration:
+      serverPort: "${free.port.10}"
+      mockResponses:
+        helloWorld:
+          requestCriterions:
+            - message.method == 'GET'
+            - message.url =~ '.*/helloWorld'
+          response:
+            statusCode: 222
+            body: '{"Hello":"World"}'
+
+""")
   @Test
   void testZionServer(UnirestInstance unirestInstance) {
     final HttpResponse<JsonNode> response =
@@ -58,18 +61,20 @@ class TestZionServerType {
 
   @TigerTest(
       tigerYaml =
-          "servers:\n"
-              + "  zionExternal:\n"
-              + "    type: externalJar\n"
-              + "    healthcheckUrl:\n"
-              + "      http://127.0.0.1:${free.port.10}\n"
-              + "    externalJarOptions:\n"
-              + "      arguments:\n"
-              + "        - --server.port=${free.port.10}\n"
-              + "        - --spring.profiles.active=echoserver\n"
-              + "      workingDir: src/test/resources\n"
-              + "    source:\n"
-              + "      - local:../../../target/tiger-zion-*-executable.jar\n")
+          """
+    servers:
+      zionExternal:
+        type: externalJar
+        healthcheckUrl:
+          http://127.0.0.1:${free.port.10}
+        externalJarOptions:
+          arguments:
+            - --server.port=${free.port.10}
+            - --spring.profiles.active=echoserver
+          workingDir: src/test/resources
+        source:
+          - local:../../../target/tiger-zion-*-executable.jar
+    """)
   @Test
   void testExternalZionServer(UnirestInstance unirest) {
     final HttpResponse<JsonNode> response =
@@ -218,5 +223,120 @@ class TestZionServerType {
             .asString();
 
     XmlAssert.assertThat(response.getBody()).and(xmlWithCharset).areIdentical();
+  }
+
+  @TigerTest(
+      tigerYaml =
+          """
+            servers:
+              serverTestName:
+                type: zion
+                zionConfiguration:
+                  serverPort: ${free.port.3}
+                  mockResponses:
+                    testResponse:
+                      nestedResponses:
+                        login:
+                          request:
+                            method: POST
+                            path: '/login/{someId}'
+                          nestedResponses:
+                            firstAlternative:
+                              requestCriterions:
+                                - "'${someId}' == '1'"
+                              response:
+                                statusCode: 888
+                            secondAlternative:
+                              requestCriterions:
+                                - "'${someId}' != '1'"
+                              response:
+                                statusCode: 777
+            """)
+  @Test
+  void testNestedResponsesInsideNestedResponses(UnirestInstance unirest) {
+    HttpResponse<String> responseEmailConfirmed =
+        unirest.post("http://serverTestName/login/1").asString();
+
+    assertThat(responseEmailConfirmed.getStatus()).isEqualTo(888);
+
+    HttpResponse<String> responseEmailNotConfirmed =
+        unirest.post("http://serverTestName/login/2").asString();
+
+    assertThat(responseEmailNotConfirmed.getStatus()).isEqualTo(777);
+  }
+
+  @TigerTest(
+      tigerYaml =
+          """
+            servers:
+              zionServer:
+                type: zion
+                zionConfiguration:
+                  serverPort: "${free.port.10}"
+                  mockResponses:
+                    helloWorld:
+                      requestCriterions:
+                        - message.method == 'GET'
+                      assignments:
+                        foobar: blub
+                      response:
+                        body: '${foobar|fallback}'
+            """)
+  @Test
+  void shouldLazyResolveRequestBodies(UnirestInstance unirestInstance) {
+    final HttpResponse<String> response =
+        unirestInstance
+            .get(
+                TigerGlobalConfiguration.resolvePlaceholders(
+                    "http://zionServer/blubBlab/helloWorld"))
+            .asString();
+
+    assertThat(response.getBody()).isEqualTo("blub");
+  }
+
+  @TigerTest(
+      tigerYaml =
+          """
+servers:
+  serverTestName:
+    type: zion
+    zionConfiguration:
+      serverPort: ${free.port.3}
+      mockResponses:
+        validToken:
+          request:
+            method: POST
+          nestedResponses:
+            registerUser:
+              assignments:
+                emailFromToken: hello@example.com
+              nestedResponses:
+                existingAssignment:
+                  request:
+                    path: "/existing"
+                  requestCriterions:
+                  response:
+                    statusCode: 201
+                    body: ${emailFromToken|InvalidEmail}
+                nonExistingAssignment:
+                  request:
+                    path: "/nonExisting"
+                  response:
+                    statusCode: 401
+                    body: ${emailNotExisting|InvalidEmail}
+                    """)
+  @Test
+  void testAssignmentsWithFallbackValue(UnirestInstance unirest) {
+    HttpResponse<String> responseExisting =
+        unirest.post("http://serverTestName/existing/").asString();
+
+    assertThat(responseExisting.getStatus()).isEqualTo(201);
+    assertThat(responseExisting.getBody()).isEqualTo("hello@example.com");
+
+    HttpResponse<String> responseNonExisting =
+        unirest.post("http://serverTestName/nonExisting/").asString();
+
+    assertThat(responseNonExisting.getStatus()).isEqualTo(401);
+    assertThat(responseNonExisting.getBody()).isEqualTo("InvalidEmail");
   }
 }

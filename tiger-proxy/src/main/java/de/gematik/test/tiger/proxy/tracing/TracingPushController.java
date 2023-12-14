@@ -115,7 +115,7 @@ public class TracingPushController {
 
       mapRbelMessageAndSent(msg);
     } catch (RuntimeException e) {
-      e.printStackTrace();
+      log.error(e.getMessage());
       throw e;
     }
   }

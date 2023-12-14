@@ -19,7 +19,6 @@ package de.gematik.rbellogger.util;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public enum RbelAnsiColors {
@@ -87,7 +86,7 @@ public enum RbelAnsiColors {
 
   RbelAnsiColors(String value, String... otherNames) {
     this.value = value;
-    this.otherNames = Stream.of(otherNames).map(String::toLowerCase).collect(Collectors.toList());
+    this.otherNames = Stream.of(otherNames).map(String::toLowerCase).toList();
   }
 
   public static void activateAnsiColors() {
@@ -117,7 +116,7 @@ public enum RbelAnsiColors {
     return seekColorSafe(query)
         .orElseThrow(
             () ->
-                new RbelUnkownAnsiColorException(
+                new RbelUnknownAnsiColorException(
                     "Could not match string '" + query + "' to any known color"));
   }
 
@@ -125,8 +124,8 @@ public enum RbelAnsiColors {
     return otherNames.contains(query.toLowerCase());
   }
 
-  private static class RbelUnkownAnsiColorException extends RuntimeException {
-    public RbelUnkownAnsiColorException(String s) {
+  private static class RbelUnknownAnsiColorException extends RuntimeException {
+    public RbelUnknownAnsiColorException(String s) {
       super(s);
     }
   }

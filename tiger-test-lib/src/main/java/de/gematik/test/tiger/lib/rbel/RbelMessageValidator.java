@@ -264,8 +264,7 @@ public class RbelMessageValidator {
 
     for (final RbelElement candidateMessage : candidateMessages) {
       final List<RbelElement> pathExecutionResult =
-          new RbelPathExecutor(candidateMessage, requestParameter.getRbelPath())
-              .execute(RbelElement.class);
+          new RbelPathExecutor<>(candidateMessage, requestParameter.getRbelPath()).execute();
       if (pathExecutionResult.isEmpty()) {
         continue;
       }
@@ -517,8 +516,7 @@ public class RbelMessageValidator {
     if (getRbelMessages().stream()
         .map(
             msg -> {
-              List<RbelElement> findings =
-                  new RbelPathExecutor(msg, rbelPath).execute(RbelElement.class);
+              List<RbelElement> findings = new RbelPathExecutor<>(msg, rbelPath).execute();
 
               if (findings.isEmpty()) {
                 return null;

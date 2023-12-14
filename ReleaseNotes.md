@@ -1,10 +1,36 @@
 # Changelog Tiger Test platform
 
+# Release 2.3.1
+
+## Bugfixes
+
+* TGR-1125: Tiger-Zion: Fixed assignment-bugs
+* TGR-1183: fixed an issue where TigerConfigurationKeys were wrongly ignoring parts of the key when they add a repeated
+  subkey.
+* TGR-1186: Fixed healthcheck-issues with TLS servers
+* TGR-1201: Fixes unresolved environment variables in TigerConfig
+* TGR-1180: fixed position of close button in the configuration editor in the WorkflowUi
+* TGR-1143: in case of missing dependencies for a server type the exception is more clearly stating that there is a
+  dependency missing
+* TGR-1190: fixed an issue where when setting fallbacks ( e.g.: ${foo.bar|orThisValue} ) the fallback value would always
+  be used also when the value to resolve was existing in the JexlContext.
+
+# Features
+
+* TGR-608: All Tiger core BDD steps are now implicitly using Variable/JEXL resolution on its parameters. So you now may
+  use string values for any parameters containing TigerGlobalConfiguration references such as ```${tiger.myprop}``` and
+  JEXL expressions like ```"!{resolve(file('testfile.json'))}"``` and they will be resolved by implicit magic. All Tiger
+  extensions will be migrating to this automatic resolution with the next version.
+* TGR-1214: Tiger Proxy tests are now run in 10 separate forks, this will put your machine under heavy load and requires
+  at least 32 GB to run. On Linux using ```nice mvn verify``` may be a good idea
+
 # Release 2.3.0
 
 ## Features
 
 * TGR-912: Healthchecks for externalUrl-Servers now honor the configured forwardProxyInfo of the localTigerProxy
+* TGR-1176: RbelPath-style retrieval now supported for TigerGlobalConfiguration:
+  e.g. `${myMap..[?(@.target=='schmoo')].target}`
 * TGR-1163: TigerProxy: The groups to be used for the TLS-Handshakes can now be set for client
 * TGR-899: Migrated FAQ.md to FAQ.adoc, translated to english
 
@@ -18,13 +44,13 @@
 
 -------
 
-Serenity BDD 4.0.12
-Cucumber 7.14.0
-RestAssured 5.3.1
-Selenium 4.12.1
-Appium 8.3.0
-Spring Boot 3.1.0
-Logback 1.4.9
+* Serenity BDD 4.0.12
+* Cucumber 7.14.0
+* RestAssured 5.3.1
+* Selenium 4.12.1
+* Appium 8.3.0
+* Spring Boot 3.1.0
+* Logback 1.4.9
 
 # Release 2.2.1
 

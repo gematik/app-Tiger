@@ -28,9 +28,11 @@ import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import io.restassured.RestAssured;
 import java.time.OffsetDateTime;
+import javax.annotation.concurrent.NotThreadSafe;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +45,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.parallel.ResourceLock;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +58,7 @@ import org.springframework.http.MediaType;
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
     properties = "tigerProxy.skipDisplayWhenMessageLargerThanKb = 1")
 @ResetTigerConfiguration
+@NotThreadSafe
 @ExtendWith(MockServerExtension.class)
 public class TigerWebUiControllerTest {
 
@@ -81,14 +85,13 @@ public class TigerWebUiControllerTest {
 
   @BeforeEach
   public void configureTigerProxy() {
-    if (tigerProxy.getRbelMessages().isEmpty()) {
-      val proxyRest = Unirest.spawnInstance();
-      proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());
+    tigerProxy.clearAllMessages();
 
-      proxyRest.get("http://localhost:" + fakeBackendServerPort + "/foobar").asJson();
-
-      proxyRest.post("http://localhost:" + fakeBackendServerPort + "/foobar").asJson();
-    }
+    val proxyRest = Unirest.spawnInstance();
+    proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());
+    proxyRest.get("http://localhost:" + fakeBackendServerPort + "/foobar").asJson();
+    proxyRest.post("http://localhost:" + fakeBackendServerPort + "/foobar").asJson();
+    await().until(() -> tigerProxy.getRbelMessages().size() == 4);
   }
 
   @AfterEach
@@ -105,11 +108,13 @@ public class TigerWebUiControllerTest {
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void checkHtmlIsReturned() {
     RestAssured.given().get(getWebUiUrl()).then().statusCode(200).body(containsString("msgList"));
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void checkMsgIsReturned() {
     RestAssured.given()
         .get(getWebUiUrl() + "/getMsgAfter")
@@ -121,6 +126,7 @@ public class TigerWebUiControllerTest {
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void checkOnlyOneMsgIsReturnedWithLastMsgUuidSupplied() {
     RestAssured.given()
         .get(
@@ -134,6 +140,7 @@ public class TigerWebUiControllerTest {
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void checkAllTrafficSuppliedWhenDownloadWithoutFilteredUuids() {
     RestAssured.given()
         .get(getWebUiUrl() + "/trafficLog.tgr")
@@ -154,6 +161,7 @@ public class TigerWebUiControllerTest {
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void checkSuppliedUuidsAreFilteredOutWhenDownloadingTraffic() {
     RestAssured.given()
         .get(
@@ -179,6 +187,7 @@ public class TigerWebUiControllerTest {
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void checkNoMsgIsReturnedIfNoneExistsAfterRequested() {
     RestAssured.given()
         .get(
@@ -191,6 +200,7 @@ public class TigerWebUiControllerTest {
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void checkNoMsgIsReturnedAfterReset() {
     RestAssured.given().get(getWebUiUrl() + "/resetMsgs").then().statusCode(200);
 
@@ -202,6 +212,7 @@ public class TigerWebUiControllerTest {
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void checkCorrectMenuStringsAreSupplied() {
     RestAssured.given()
         .get(getWebUiUrl() + "/getMsgAfter")
@@ -232,6 +243,7 @@ public class TigerWebUiControllerTest {
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void simulateTrafficDownloadResetAndUpload() {
     final String downloadedTraffic =
         RestAssured.given().get(getWebUiUrl() + "/trafficLog.tgr").body().asString();
@@ -246,10 +258,11 @@ public class TigerWebUiControllerTest {
         .then()
         .statusCode(200);
 
-    assertThat(tigerProxy.getRbelMessages()).hasSize(TOTAL_OF_EXCHANGED_MESSAGES);
+    TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(tigerProxy, TOTAL_OF_EXCHANGED_MESSAGES, 20);
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void filterOutResponses_shouldStillAppearInPairs() {
     RestAssured.given()
         .get(getWebUiUrl() + "/getMsgAfter?filterCriterion=isRequest")
@@ -259,6 +272,7 @@ public class TigerWebUiControllerTest {
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void filterOutRequests_shouldStillAppearInPairs() {
     RestAssured.given()
         .get(getWebUiUrl() + "/getMsgAfter?filterCriterion=isResponse")
@@ -268,6 +282,7 @@ public class TigerWebUiControllerTest {
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void largeMessage_shouldNotBeRenderedCompletelyButStillAppear() {
     tigerProxy.clearAllMessages();
 
@@ -278,7 +293,7 @@ public class TigerWebUiControllerTest {
         .post("http://localhost:" + fakeBackendServerPort + "/foobar")
         .body("{'randomStringForLulz':'" + longString + "'}")
         .asString();
-    await().until(() -> tigerProxy.getRbelMessages().size() >= 2);
+    await().until(() -> tigerProxy.getRbelMessages().size() == 2);
 
     final JsonNode body = Unirest.get(getWebUiUrl() + "/getMsgAfter").asJson().getBody();
     System.out.println(body.toString());
@@ -288,6 +303,7 @@ public class TigerWebUiControllerTest {
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void downloadTraffic_withoutFilterCriterion() {
     RestAssured.given()
         .get(getWebUiUrl() + "/trafficLog12334.tgr")
@@ -309,6 +325,7 @@ public class TigerWebUiControllerTest {
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void downloadTraffic_withFilterCriterion() {
     String filterCriterion = "$.method == 'POST'";
     RestAssured.given()
@@ -335,6 +352,7 @@ public class TigerWebUiControllerTest {
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void downloadHtml_withoutFilterCriterion() {
     var response = RestAssured.given().get(getWebUiUrl() + "/tiger-report12345.html");
 
@@ -354,6 +372,7 @@ public class TigerWebUiControllerTest {
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void downloadHtml_withFilterCriterion() {
     String filterCriterion = "$.method == 'POST'";
     var response =
@@ -376,6 +395,7 @@ public class TigerWebUiControllerTest {
   }
 
   @Test
+  @ResourceLock(value = "TigerWebUiController")
   void uploadingTrafficFile_processesPairedMessageUuid() {
     String filterCriterion = "$.method == 'POST'";
 

@@ -95,7 +95,7 @@ function isClickInActionsColumn(params: CellClickedEvent) {
   return params.column['colId'] === 'action' && (params.event?.target as HTMLElement).dataset.action;
 }
 
-function onClearFilters(){
+function onClearFilters() {
   gridApi.value?.setFilterModel(null);
 }
 
@@ -151,7 +151,7 @@ const columnDefs: ColDef[] = [
     colId: 'action',
     cellClass: "text-end",
     flex: 1,
-    filter:false
+    filter: false
   }
 
 ];
@@ -166,6 +166,7 @@ const columnDefs: ColDef[] = [
     </div>
     <ag-grid-vue
         class="ag-theme-alpine editor-table"
+        id="test-tg-config-editor-table"
         :rowData="configurationProperties"
         :columnDefs="columnDefs"
         :defaultColDef="defaultColDef"

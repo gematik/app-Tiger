@@ -23,7 +23,6 @@ import static org.awaitility.Awaitility.await;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.data.config.TigerServerTypeImpl;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.servers.ExternalUrlServer;
@@ -162,7 +161,7 @@ class TestTigerTestEnvMgrStartupSequence {
       String name, String dependsUpon) {
     final CfgServer configuration = new CfgServer();
     configuration.setDependsUpon(dependsUpon);
-    configuration.setType(new TigerServerTypeImpl("mockserver"));
+    configuration.setType("mockserver");
     configuration.setSource(List.of("blub"));
     final AbstractTigerServer server = new MockTigerServer(name, configuration, envMgr);
     TigerGlobalConfiguration.readFromYaml(
@@ -180,7 +179,7 @@ class TestTigerTestEnvMgrStartupSequence {
       String name, String dependsUpon, String delayStartupUntilThisServerIsRunning) {
     final CfgServer configuration = new CfgServer();
     configuration.setDependsUpon(dependsUpon);
-    configuration.setType(ExternalUrlServer.class.getAnnotation(TigerServerType.class));
+    configuration.setType(ExternalUrlServer.class.getAnnotation(TigerServerType.class).value());
     configuration.setSource(List.of("blub"));
     final AbstractTigerServer server =
         new MockTigerServer(name, configuration, envMgr, delayStartupUntilThisServerIsRunning);
