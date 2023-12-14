@@ -28,6 +28,7 @@
 :example-caption: Example
 :stylesdir: themes
 :stylesheet: ${mvn.asciidoc.css.style}-style.css
+:sectanchors:
 
 = Tiger User Manual
 {author}
