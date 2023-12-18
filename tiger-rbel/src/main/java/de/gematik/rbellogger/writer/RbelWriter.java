@@ -7,10 +7,8 @@ package de.gematik.rbellogger.writer;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKeyManager;
-import de.gematik.rbellogger.util.GenericPrettyPrinter;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import lombok.Getter;
@@ -54,29 +52,6 @@ public class RbelWriter {
   public RbelSerializationResult renderNode(
       RbelContentTreeNode input, TigerJexlContext jexlContext) {
     return new RbelWriterInstance(Optional.empty(), rbelKeyManager, jexlContext).renderNode(input);
-  }
-
-  private static void printTreeStructure(RbelContentTreeNode treeRootNode) {
-    if (log.isDebugEnabled()) {
-      GenericPrettyPrinter<RbelContentTreeNode> printer =
-          new GenericPrettyPrinter<>(
-              node -> node.getChildNodes().isEmpty(),
-              node -> printNodeContent(node),
-              node -> node.getChildNodes().stream());
-      printer.setNodeIntroPrinter(
-          node -> node.getKey().orElse(" _ ") + " (" + node.getType() + ") ");
-      log.debug("Serializing the following tree: \n{}", printer.prettyPrint(treeRootNode));
-    }
-  }
-
-  private static String printNodeContent(RbelContentTreeNode node) {
-    if (node.getContent() == null) {
-      return node.getKey().orElse(" _ ") + ": <null>";
-    } else {
-      return node.getKey().orElse(" _ ")
-          + ": "
-          + new String(node.getContent(), StandardCharsets.UTF_8).trim();
-    }
   }
 
   @RequiredArgsConstructor

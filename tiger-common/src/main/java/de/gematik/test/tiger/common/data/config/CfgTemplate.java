@@ -4,7 +4,7 @@
 
 package de.gematik.test.tiger.common.data.config;
 
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;

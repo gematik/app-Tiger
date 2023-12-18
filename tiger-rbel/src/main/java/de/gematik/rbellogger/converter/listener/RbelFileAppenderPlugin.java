@@ -8,8 +8,9 @@ import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.exceptions.RbelRenderingException;
 import de.gematik.rbellogger.util.RbelFileWriter;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerFileSaveInfo;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -45,11 +46,8 @@ public class RbelFileAppenderPlugin implements RbelConverterPlugin {
             StandardCharsets.UTF_8,
             true);
       } catch (IOException e) {
-        throw new RuntimeException(
-            "Exception while trying to save RbelElement to file '"
-                + fileSaveInfo.getFilename()
-                + "'!",
-            e);
+        throw new RbelRenderingException(
+            "Unable to save RbelElement to file '" + fileSaveInfo.getFilename() + "'!", e);
       }
     }
   }

@@ -19,9 +19,6 @@ import java.util.function.Function;
 import org.apache.commons.lang3.StringUtils;
 
 public class RbelBundledMessagesPlugin implements RbelConverterPlugin {
-
-  private final TigerJexlExecutor executor = new TigerJexlExecutor();
-
   @Override
   public void consumeElement(RbelElement messageElement, RbelConverter converter) {
     if (!messageElement.hasFacet(RbelTcpIpMessageFacet.class)) {
@@ -62,7 +59,7 @@ public class RbelBundledMessagesPlugin implements RbelConverterPlugin {
     }
 
     for (String jexlExpression : jexlExpressionList) {
-      if (executor.matchesAsJexlExpression(message, jexlExpression, Optional.empty())) {
+      if (TigerJexlExecutor.matchesAsJexlExpression(message, jexlExpression, Optional.empty())) {
         message
             .getFacet(RbelTcpIpMessageFacet.class)
             .map(hostnameExtractor)
@@ -109,7 +106,7 @@ public class RbelBundledMessagesPlugin implements RbelConverterPlugin {
                     .flatMap(el -> el.getFacet(RbelTcpIpMessageFacet.class))
                     .map(destinationExtractor)
                     .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
-                    .flatMap(e -> e.getBundledServerName())
+                    .flatMap(RbelHostnameFacet::getBundledServerName)
                     .flatMap(el -> el.seekValue(String.class))
                     .ifPresent(
                         bundledServerName -> changeHostnameFacet(hostname, bundledServerName)));

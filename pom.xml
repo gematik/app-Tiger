@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ ${GEMATIK_COPYRIGHT_STATEMENT}
+  -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -23,6 +27,7 @@
         <version.awaitility>4.2.0</version.awaitility>
         <version.bouncycastle>1.76</version.bouncycastle>
         <version.commons-lang3>3.13.0</version.commons-lang3>
+        <version.commons-text>1.10.0</version.commons-text>
         <version.commons-codec>1.15</version.commons-codec>
         <version.commons-io>2.13.0</version.commons-io>
         <version.commons-jexl3>3.3</version.commons-jexl3>

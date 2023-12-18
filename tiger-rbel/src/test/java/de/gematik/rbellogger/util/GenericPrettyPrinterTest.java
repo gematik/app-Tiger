@@ -15,7 +15,7 @@ import org.bouncycastle.asn1.*;
 import org.bouncycastle.util.Iterable;
 import org.junit.jupiter.api.Test;
 
-public class GenericPrettyPrinterTest {
+class GenericPrettyPrinterTest {
 
   private final Predicate<ASN1Encodable> isLeaf =
       asn1 -> !((asn1 instanceof ASN1Sequence) || (asn1 instanceof ASN1Set));

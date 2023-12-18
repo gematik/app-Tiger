@@ -1,9 +1,14 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.zion.services;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.key.IdentityBackedRbelKey;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import de.gematik.test.tiger.zion.ZionException;
 import jakarta.annotation.PostConstruct;
 import java.security.cert.CertificateEncodingException;
 import java.util.Base64;
@@ -38,12 +43,13 @@ public class KeyManagerFunctions {
               try {
                 return Base64.getEncoder().encodeToString(cert.getEncoded());
               } catch (CertificateEncodingException e) {
-                throw new RuntimeException("Error while encoding certificate", e);
+                throw new ZionException(
+                    "Error while encoding certificate for keyId '" + name + "'", e);
               }
             })
         .orElseThrow(
             () ->
-                new RuntimeException(
+                new ZionException(
                     "Unable to find key or matching certificate for keyId '" + name + "'"));
   }
 }

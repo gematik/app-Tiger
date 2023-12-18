@@ -5,17 +5,16 @@
 package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerFileSaveInfo;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +22,7 @@ import org.junit.jupiter.api.Test;
 class EpaVauParsingTest {
 
   @Test
-  void shouldAddRecordIdFacetToAllHandshakeMessages() {
+  void shouldAddRecordIdFacetToAllHandshakeMessages() throws IOException {
     try (var tigerProxy =
         new TigerProxy(
             TigerProxyConfiguration.builder()
@@ -35,9 +34,8 @@ class EpaVauParsingTest {
                 .activateEpaVauAnalysis(true)
                 .build())) {
 
-      await()
-          .atMost(20, TimeUnit.SECONDS)
-          .until(() -> tigerProxy.getRbelMessagesList().size() >= 36);
+      TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
+          tigerProxy, 36, 40);
 
       final String htmlData =
           RbelHtmlRenderer.render(tigerProxy.getRbelLogger().getMessageHistory());
@@ -74,8 +72,6 @@ class EpaVauParsingTest {
       assertThat(htmlData)
           .contains("P Header (raw):")
           .contains("01 00 00 00 00 00 00 00 07 00 00 01 07");
-    } catch (Exception e) {
-      throw new RuntimeException(e);
     }
   }
 
@@ -91,16 +87,13 @@ class EpaVauParsingTest {
                 .activateEpaVauAnalysis(true)
                 .build())) {
 
-      await()
-          .atMost(20, TimeUnit.SECONDS)
-          .until(() -> tigerProxy.getRbelMessagesList().size() >= 16);
+      TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
+          tigerProxy, 16, 30);
 
       assertThat(tigerProxy.getRbelMessagesList().get(15).findElement("$.body.recordId"))
           .get()
           .extracting(RbelElement::getRawStringContent)
           .isEqualTo("Y243631459");
-    } catch (Exception e) {
-      throw new RuntimeException(e);
     }
   }
 }

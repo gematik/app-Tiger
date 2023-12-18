@@ -51,10 +51,9 @@ public class RbelConfiguration {
 
   public <T extends RbelElement> RbelConfiguration addPreConversionMapper(
       Class<T> clazz, BiFunction<T, RbelConverter, RbelElement> mapper) {
-    if (!preConversionMappers.containsKey(clazz)) {
-      preConversionMappers.put(clazz, new ArrayList<>());
-    }
-    preConversionMappers.get(clazz).add((rawKey, context) -> mapper.apply((T) rawKey, context));
+    preConversionMappers
+        .computeIfAbsent(clazz, k -> new ArrayList<>())
+        .add((rawKey, context) -> mapper.apply((T) rawKey, context));
     return this;
   }
 

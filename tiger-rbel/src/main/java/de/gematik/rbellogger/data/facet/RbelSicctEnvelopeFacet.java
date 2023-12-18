@@ -86,8 +86,8 @@ public class RbelSicctEnvelopeFacet implements RbelFacet {
   private RbelElement command;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap()
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>()
         .with("messageType", messageType)
         .with("srcOrDesAddress", srcOrDesAddress)
         .with("sequenceNumber", sequenceNumber)

@@ -12,6 +12,8 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public class JsonUtils {
 
+  private JsonUtils() {}
+
   public static List<Entry<String, String>> convertJsonObjectStringToMap(String jsonObjectString) {
     return JsonParser.parseString(jsonObjectString).getAsJsonObject().entrySet().stream()
         .map(
@@ -23,6 +25,9 @@ public class JsonUtils {
                 return Pair.of(entry.getKey(), entry.getValue().toString());
               }
             })
-        .collect(Collectors.toList());
+        .collect(Collectors.toList()); // NOSONAR
+    // using toList() leads to issues with the required Map.Entry return type which is abstract and
+    // can't
+    // be instantiated.
   }
 }

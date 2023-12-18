@@ -4,12 +4,11 @@
 
 package de.gematik.test.tiger.proxy.controller;
 
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.TigerRouteDto;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +36,7 @@ public class TigerConfigurationController {
 
   @GetMapping(value = "/route", produces = MediaType.APPLICATION_JSON_VALUE)
   public List<TigerRouteDto> getRoutes() {
-    return tigerProxy.getRoutes().stream().map(TigerRouteDto::from).collect(Collectors.toList());
+    return tigerProxy.getRoutes().stream().map(TigerRouteDto::from).toList();
   }
 
   @DeleteMapping(value = "/route/{id}")

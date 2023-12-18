@@ -55,9 +55,7 @@ class RbelBuilderGlueCodeTests {
         () -> {
           glueCode.createFromContent("blub", blub);
           glueCode.assertJexlOutputEquals(
-              resolve("!{rbelObject:serialize(\"blub\")}"),
-              blub,
-              RbelContentType.JSON);
+              resolve("!{rbelObject:serialize(\"blub\")}"), blub, RbelContentType.JSON);
         });
   }
 
@@ -71,8 +69,9 @@ class RbelBuilderGlueCodeTests {
     Assertions.assertDoesNotThrow(
         () -> {
           glueCode.createFromContent("blub", resolve(fileContentFromJexl));
-          glueCode.assertJexlOutputEquals(resolve("!{rbelObject:serialize(\"blub\")}"),
-                  resolve(fileContentFromJexl),
+          glueCode.assertJexlOutputEquals(
+              resolve("!{rbelObject:serialize(\"blub\")}"),
+              resolve(fileContentFromJexl),
               RbelContentType.JSON);
         });
   }
@@ -107,9 +106,7 @@ class RbelBuilderGlueCodeTests {
     glueCode.setValueAt("blub", "$.blib", "{ \"new\": \"entry\" }");
     glueCode.assertValueAtEquals("blub", "$.blib.new", "entry");
     glueCode.assertJexlOutputEquals(
-        resolve("!{rbelObject:serialize(\"blub\")}"),
-        expectedBlub,
-        RbelContentType.JSON);
+        resolve("!{rbelObject:serialize(\"blub\")}"), expectedBlub, RbelContentType.JSON);
   }
 
   @Test
@@ -144,9 +141,7 @@ class RbelBuilderGlueCodeTests {
         "newObject", "$.new", "{ \"object\": { \"with\": \"some\", \"new\": \"values\" } }");
     glueCode.assertValueAtEquals("newObject", "$.new.object.with", "some");
     glueCode.assertJexlOutputEquals(
-        resolve("!{rbelObject:serialize(\"newObject\")}"),
-        expectedBuild,
-        RbelContentType.JSON);
+        resolve("!{rbelObject:serialize(\"newObject\")}"), expectedBuild, RbelContentType.JSON);
   }
 
   @Test
@@ -227,9 +222,7 @@ class RbelBuilderGlueCodeTests {
         "arrayTest", "$.array1.1.innerArray", "{ \"innerEntry4\": [\"crazy\", \"stuff\" ] }");
     glueCode.assertValueAtEquals("arrayTest", "$.array1.1.innerArray.3.innerEntry4.1", "stuff");
     glueCode.assertJexlOutputEquals(
-        resolve("!{rbelObject:serialize(\"arrayTest\")}"),
-        expectedResult,
-        RbelContentType.JSON);
+        resolve("!{rbelObject:serialize(\"arrayTest\")}"), expectedResult, RbelContentType.JSON);
   }
 
   @ParameterizedTest
@@ -242,10 +235,10 @@ class RbelBuilderGlueCodeTests {
     return TigerParameterTypeDefinitions.tigerResolvedString(string);
   }
 
-    @Test
-    void rbelBuilderChangelogTest() {
-        String valueToSet =
-                """
+  @Test
+  void rbelBuilderChangelogTest() {
+    String valueToSet =
+        """
                         {
                             "array": [
                                 "blib",
@@ -254,33 +247,33 @@ class RbelBuilderGlueCodeTests {
                         }
                         """;
 
-        Logger loggerInGlueCode = (Logger) LoggerFactory.getLogger(RbelBuilderGlueCode.class);
+    Logger loggerInGlueCode = (Logger) LoggerFactory.getLogger(RbelBuilderGlueCode.class);
 
-        ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
-        listAppender.start();
-        loggerInGlueCode.addAppender(listAppender);
+    ListAppender<ILoggingEvent> listAppender = new ListAppender<>();
+    listAppender.start();
+    loggerInGlueCode.addAppender(listAppender);
 
-        glueCode.createFromContent("test", blub);
-        glueCode.setValueAt("test", "$.blub", valueToSet);
-        // isListTypeNode() does not work -> attributeMap does not contain
-        glueCode.addEntryAt("test", "$.blub.array", "blub");
+    glueCode.createFromContent("test", blub);
+    glueCode.setValueAt("test", "$.blub", valueToSet);
+    // isListTypeNode() does not work -> attributeMap does not contain
+    glueCode.addEntryAt("test", "$.blub.array", "blub");
 
-        List<ILoggingEvent> logsList = listAppender.list;
+    List<ILoggingEvent> logsList = listAppender.list;
 
-        LoggingEvent e0 = (LoggingEvent) logsList.get(0);
-        assertThat(e0)
-                .hasFieldOrPropertyWithValue("level", Level.INFO)
-                .extracting(LoggingEvent::getMessage)
-                .asString()
-                .containsIgnoringWhitespaces(
-                        "Changed Rbel object 'test' at '$.blub' to '{\r\"array\":\r[\r \"blib\",\r\"blab\"]}'");
+    LoggingEvent e0 = (LoggingEvent) logsList.get(0);
+    assertThat(e0)
+        .hasFieldOrPropertyWithValue("level", Level.INFO)
+        .extracting(LoggingEvent::getMessage)
+        .asString()
+        .containsIgnoringWhitespaces(
+            "Changed Rbel object 'test' at '$.blub' to '{\r\"array\":\r[\r \"blib\",\r\"blab\"]}'");
 
-        LoggingEvent e3 = (LoggingEvent) logsList.get(3);
-        assertThat(e3)
-                .hasFieldOrPropertyWithValue("level", Level.INFO)
-                .extracting(LoggingEvent::getMessage)
-                .asString()
-                .containsIgnoringWhitespaces(
-                        "NewObject:\u001B[0;93m└──\u001B[0m\u001B[1;31m\u001B[0m(\u001B[0;34m{\"blub\":{\"array\":[\"blib\",\"blab\",\"blub\"]}}\u001B[0m)");
-    }
+    LoggingEvent e3 = (LoggingEvent) logsList.get(3);
+    assertThat(e3)
+        .hasFieldOrPropertyWithValue("level", Level.INFO)
+        .extracting(LoggingEvent::getMessage)
+        .asString()
+        .containsIgnoringWhitespaces(
+            "NewObject:\u001B[0;93m└──\u001B[0m\u001B[1;31m\u001B[0m(\u001B[0;34m{\"blub\":{\"array\":[\"blib\",\"blab\",\"blub\"]}}\u001B[0m)");
+  }
 }

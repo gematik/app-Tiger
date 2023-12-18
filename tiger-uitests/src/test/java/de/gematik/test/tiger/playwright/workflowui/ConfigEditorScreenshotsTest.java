@@ -20,7 +20,8 @@ class ConfigEditorScreenshotsTest extends AbstractTests {
     screenshot(
         page,
         "config_editor_example_filter_popup.png",
-        "ag-labeled ag-label-align-left ag-text-field ag-input-field ag-filter-from ag-filter-filter",
+        "ag-labeled ag-label-align-left ag-text-field ag-input-field ag-filter-from"
+            + " ag-filter-filter",
         false);
     await()
         .atMost(10, TimeUnit.SECONDS)
@@ -49,7 +50,8 @@ class ConfigEditorScreenshotsTest extends AbstractTests {
     String xpathToExpand =
         "//div[@col-id='key' and text()='"
             + ENV_MULTILINE_CHECK_KEY
-            + "']/following-sibling::div[@col-id='value']//i[contains(@class, 'fa-solid') and contains(@class, 'fa-up-right-and-down-left-from-center')]";
+            + "']/following-sibling::div[@col-id='value']//i[contains(@class, 'fa-solid') and"
+            + " contains(@class, 'fa-up-right-and-down-left-from-center')]";
 
     page.locator(xpathToExpand).click();
     await()

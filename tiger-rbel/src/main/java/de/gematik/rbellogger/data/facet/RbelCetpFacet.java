@@ -81,7 +81,7 @@ public class RbelCetpFacet extends RbelResponseFacet {
   }
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap().with("messageLength", messageLength).with("body", body);
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>().with("messageLength", messageLength).with("body", body);
   }
 }

@@ -246,7 +246,8 @@ public class TigerWebUiControllerTest {
         .then()
         .statusCode(200);
 
-    TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(tigerProxy, TOTAL_OF_EXCHANGED_MESSAGES, 20);
+    TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
+        tigerProxy, TOTAL_OF_EXCHANGED_MESSAGES, 20);
   }
 
   @Test

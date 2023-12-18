@@ -56,8 +56,10 @@ public class RbelJwtSignature implements RbelFacet {
   private final RbelElement verifiedUsing;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap().with("isValid", isValid).with("verifiedUsing", verifiedUsing);
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>()
+        .with("isValid", isValid)
+        .with("verifiedUsing", verifiedUsing);
   }
 
   public boolean isValid() {
@@ -66,7 +68,7 @@ public class RbelJwtSignature implements RbelFacet {
 
   private String wasVerifiedUsing() {
     return Optional.ofNullable(verifiedUsing)
-        .flatMap(verifiedUsing -> verifiedUsing.seekValue(String.class))
+        .flatMap(verifiedUsingElement -> verifiedUsingElement.seekValue(String.class))
         .orElse("");
   }
 }

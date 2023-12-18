@@ -28,10 +28,10 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
-public class RbelLoggerTest {
+class RbelLoggerTest {
 
   @Test
-  public void addNoteToHeader() throws IOException {
+  void addNoteToHeader() throws IOException {
     final String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(
             "src/test/resources/sampleMessages/jwtMessage.curl");
@@ -50,7 +50,7 @@ public class RbelLoggerTest {
   }
 
   @Test
-  public void preConversionMapperToShadeUrls() throws IOException {
+  void preConversionMapperToShadeUrls() throws IOException {
     final String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(
             "src/test/resources/sampleMessages/jwtMessage.curl");
@@ -85,7 +85,7 @@ public class RbelLoggerTest {
   }
 
   @Test
-  public void addNoteToHttpHeaderButNotBody() throws IOException {
+  void addNoteToHttpHeaderButNotBody() throws IOException {
     final String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(
             "src/test/resources/sampleMessages/jwtMessage.curl");

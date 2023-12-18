@@ -103,8 +103,8 @@ public class RbelVauErpFacet implements RbelFacet {
   @Builder.Default private final Optional<RbelKey> keyUsed = Optional.empty();
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap()
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>()
         .withSkipIfNull("message", message)
         .withSkipIfNull("encryptedMessage", encryptedMessage)
         .withSkipIfNull("requestId", requestId)

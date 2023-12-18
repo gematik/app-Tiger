@@ -7,7 +7,6 @@ package de.gematik.test.tiger.proxy.data;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import java.time.ZonedDateTime;
-import java.util.Objects;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -42,14 +41,12 @@ public class MessageMetaDataDto {
             .sender(
                 el.getFacet(RbelTcpIpMessageFacet.class)
                     .map(RbelTcpIpMessageFacet::getSender)
-                    .filter(Objects::nonNull)
                     .filter(element -> element.getRawStringContent() != null)
                     .flatMap(element -> Optional.of(element.getRawStringContent()))
                     .orElse(""))
             .recipient(
                 el.getFacet(RbelTcpIpMessageFacet.class)
                     .map(RbelTcpIpMessageFacet::getReceiver)
-                    .filter(Objects::nonNull)
                     .filter(element -> element.getRawStringContent() != null)
                     .flatMap(element -> Optional.of(element.getRawStringContent()))
                     .orElse(""));

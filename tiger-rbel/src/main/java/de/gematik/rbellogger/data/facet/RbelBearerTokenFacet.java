@@ -57,7 +57,7 @@ public class RbelBearerTokenFacet implements RbelFacet {
   private final RbelElement bearerToken;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap().with("BearerToken", bearerToken);
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>().with("BearerToken", bearerToken);
   }
 }

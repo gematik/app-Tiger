@@ -6,7 +6,7 @@ package de.gematik.test.tiger.proxy.handler;
 
 import static org.mockserver.model.Header.header;
 
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import lombok.extern.slf4j.Slf4j;
 import org.mockserver.model.HttpRequest;
@@ -20,6 +20,7 @@ public class ForwardProxyCallback extends AbstractRouteProxyCallback {
   }
 
   @Override
+  @SuppressWarnings("java:S1075")
   public HttpRequest handleRequest(HttpRequest req) {
     applyModifications(req);
     req.replaceHeader(header("Host", getTargetUrl().getHost() + ":" + getPort()));

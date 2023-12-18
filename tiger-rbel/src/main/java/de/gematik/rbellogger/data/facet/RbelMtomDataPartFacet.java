@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.rbellogger.data.facet;
 
 import de.gematik.rbellogger.data.RbelElement;
@@ -12,6 +16,6 @@ public class RbelMtomDataPartFacet implements RbelFacet {
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<>().with("xpath", xpath).with("content", content);
+    return new RbelMultiMap<RbelElement>().with("xpath", xpath).with("content", content);
   }
 }

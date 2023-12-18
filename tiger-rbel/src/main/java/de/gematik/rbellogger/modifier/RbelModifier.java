@@ -11,7 +11,6 @@ import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 import lombok.Builder;
 import org.apache.commons.lang3.StringUtils;
 
@@ -106,7 +105,7 @@ public class RbelModifier {
                 + oldTargetElement.getFacets().stream()
                     .map(Object::getClass)
                     .map(Class::getSimpleName)
-                    .collect(Collectors.toList())
+                    .toList()
                 + "!");
       }
       newContent = found.get();
@@ -146,9 +145,7 @@ public class RbelModifier {
   }
 
   public List<RbelModificationDescription> getModifications() {
-    return modificationsMap.entrySet().stream()
-        .map(Entry::getValue)
-        .collect(Collectors.toUnmodifiableList());
+    return modificationsMap.entrySet().stream().map(Entry::getValue).toList();
   }
 
   public void deleteModification(String modificationsId) {

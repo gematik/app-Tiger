@@ -15,7 +15,6 @@ import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.util.JsonUtils;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import lombok.AllArgsConstructor;
 import org.jose4j.jca.ProviderContext;
 import org.jose4j.jwe.JsonWebEncryption;
@@ -70,7 +69,6 @@ public class RbelJweWriter implements RbelElementWriter {
         .getEncryptionInfo()
         .getFacet(RbelJweEncryptionInfo.class)
         .map(RbelJweEncryptionInfo::getDecryptedUsingKeyWithId)
-        .filter(obj -> Objects.nonNull(obj))
         .flatMap(rbelKeyManager::findKeyByName)
         .flatMap(RbelKey::getMatchingPublicKey)
         .orElseThrow(

@@ -59,8 +59,14 @@ class TestEnvManagerConfigurationCheck {
         envMgr -> {
           CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFile);
           ReflectionTestUtils.setField(srv, prop, null);
-          assertThatThrownBy(
-                  () -> envMgr.createServer("blub", srv).assertThatConfigurationIsCorrect())
+
+          assertThatThrownBy( // NOSONAR
+                  // some test variants fail on createServer and some on the assert method
+                  // so both methods need to be in the clause
+                  () -> {
+                    var server = envMgr.createServer("blub", srv);
+                    server.assertThatConfigurationIsCorrect();
+                  })
               .isInstanceOf(TigerTestEnvException.class);
         });
   }
@@ -92,8 +98,14 @@ class TestEnvManagerConfigurationCheck {
         .hasMessage("Duplicate keys in yaml file ('serverDouble')!");
   }
 
-  @Test
-  void testCheckDeprecatedKey_port_NOK() {
+  @ParameterizedTest
+  @CsvSource({
+    "port,proxyPort",
+    "serverPort,adminPort",
+    "tiger.servers.*.externalJarOptions.healthcheck,tiger.servers.*.healthcheckUrl",
+    "tiger.servers.*.externalJarOptions.healthcheckurl,tiger.servers.*.healthcheckUrl"
+  })
+  void testCheckDeprecatedKeys_NOK(String oldPropertyName, String newPropertyName) {
     Map<String, String> yamlMap =
         Map.of(
             "TIGER_TESTENV_CFGFILE",
@@ -101,32 +113,12 @@ class TestEnvManagerConfigurationCheck {
     assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
         .isInstanceOf(TigerConfigurationException.class)
         .hasMessageContaining(
-            "The key ('port') in yaml file should not be used anymore, use 'proxyPort' instead!");
-  }
-
-  @Test
-  void testCheckDeprecatedKey_tigerport_NOK() {
-    Map<String, String> yamlMap =
-        Map.of(
-            "TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml");
-    assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
-        .isInstanceOf(TigerConfigurationException.class)
-        .hasMessageContaining(
-            "The key ('port') in yaml file should not be used anymore, use 'proxyPort' instead!");
-  }
-
-  @Test
-  void testCheckDeprecatedKey_serverPort_NOK() {
-    Map<String, String> yamlMap =
-        Map.of(
-            "TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml");
-    assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
-        .isInstanceOf(TigerConfigurationException.class)
-        .hasMessageContaining(
-            "The key ('serverPort') in yaml file should not be used anymore, use 'adminPort'"
-                + " instead!");
+            "The key ('"
+                + oldPropertyName
+                + "') in yaml file should not be used anymore, "
+                + "use '"
+                + newPropertyName
+                + "' instead!");
   }
 
   @Test
@@ -139,32 +131,6 @@ class TestEnvManagerConfigurationCheck {
         .isInstanceOf(TigerConfigurationException.class)
         .hasMessageContaining(
             "The key ('proxyCfg') in yaml file should not be used anymore, it is omitted!");
-  }
-
-  @Test
-  void testCheckDeprecatedKey_healthcheck_NOK() {
-    Map<String, String> yamlMap =
-        Map.of(
-            "TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml");
-    assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
-        .isInstanceOf(TigerConfigurationException.class)
-        .hasMessageContaining(
-            "The key ('tiger.servers.*.externalJarOptions.healthcheck') in yaml file should not be"
-                + " used anymore, use 'tiger.servers.*.healthcheckUrl' instead!");
-  }
-
-  @Test
-  void testCheckDeprecatedKey_healthcheckurl_NOK() {
-    Map<String, String> yamlMap =
-        Map.of(
-            "TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml");
-    assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
-        .isInstanceOf(TigerConfigurationException.class)
-        .hasMessageContaining(
-            "The key ('tiger.servers.*.externalJarOptions.healthcheckurl') in yaml file should not"
-                + " be used anymore, use 'tiger.servers.*.healthcheckUrl' instead!");
   }
 
   @Test
@@ -257,7 +223,6 @@ class TestEnvManagerConfigurationCheck {
     assertThatThrownBy(
             () -> {
               final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-              envMgr.setUpEnvironment();
             })
         .isInstanceOf(TigerTestEnvException.class);
   }

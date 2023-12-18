@@ -50,9 +50,8 @@ class RbelSicctConverterTest {
                 .getFirst()
                 .findElement("$.messageType")
                 .get()
-                .seekValue()
-                .get())
-        .isEqualTo(SicctMessageType.C_COMMAND);
+                .seekValue())
+        .contains(SicctMessageType.C_COMMAND);
     assertThat(
             rbelLogger
                 .getMessageHistory()

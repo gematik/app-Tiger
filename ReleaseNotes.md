@@ -14,6 +14,7 @@
   dependency missing
 * TGR-1190: fixed an issue where when setting fallbacks ( e.g.: ${foo.bar|orThisValue} ) the fallback value would always
   be used also when the value to resolve was existing in the JexlContext.
+* TGR-1173: refactorings all over the code (more than 500 sonarqube issues) to increase code maintainability
 
 # Features
 

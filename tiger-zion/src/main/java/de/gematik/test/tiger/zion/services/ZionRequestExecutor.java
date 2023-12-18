@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.zion.services;
 
 import static de.gematik.test.tiger.zion.config.ZionRequestMatchDefinition.PathMatchingResult.EMPTY_MATCH;
@@ -282,6 +286,7 @@ public class ZionRequestExecutor {
         log.trace(
             "About to sent {} with body {} to {}",
             unirestRequest.getHttpMethod().name(),
+            // Why new String and not simply getContent()??
             new String(body.getContent()),
             unirestRequest.getUrl());
       }

@@ -27,6 +27,6 @@ class RbelFileWriterUtilsTest {
     int initialNumberOfMessage = rbelLogger.getMessageHistory().size();
     rbelFileWriter.convertFromRbelFile(rawSavedVauMessages);
 
-    assertThat(rbelLogger.getMessageHistory().size()).isEqualTo(initialNumberOfMessage);
+    assertThat(rbelLogger.getMessageHistory()).hasSize(initialNumberOfMessage);
   }
 }

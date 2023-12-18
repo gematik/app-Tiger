@@ -16,7 +16,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 /** Tests all feature files and scenarios by name. */
 @TestMethodOrder(MethodOrderer.MethodName.class)
-class XYFeatures extends AbstractTests {
+class XyFeaturesTest extends AbstractTests {
   @BeforeEach
   void printInfoStarted(TestInfo testInfo) {
     System.out.println("started = " + testInfo.getDisplayName());
@@ -171,10 +171,9 @@ class XYFeatures extends AbstractTests {
             () ->
                 assertThat(
                         ((Double)
-                                page.evaluate(
-                                    "document.getElementsByClassName('test-execution-pane-scenario-title')[24].getBoundingClientRect().bottom"))
-                            < 800)
-                    .isTrue());
+                            page.evaluate(
+                                "document.getElementsByClassName('test-execution-pane-scenario-title')[24].getBoundingClientRect().bottom")))
+                    .isLessThan(800));
 
     Double bottom =
         (Double)

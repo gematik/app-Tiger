@@ -1,15 +1,18 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package io.cucumber.core.plugin.report;
 
 import java.util.Collection;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.ClassUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class EvidenceReportJsonConverter {
-
-  private EvidenceReportJsonConverter() {
-    // Util
-  }
 
   public static String toJson(Object object) {
 

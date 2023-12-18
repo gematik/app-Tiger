@@ -144,15 +144,17 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                         .redirectErrorStream(true);
                 applyEnvPropertiesToProcess(processBuilder);
                 processReference.set(processBuilder.start());
-                new TigerStreamLogFeeder(log, processReference.get().getInputStream(), Level.INFO);
-                new TigerStreamLogFeeder(log, processReference.get().getErrorStream(), Level.ERROR);
+                new TigerStreamLogFeeder(
+                    getServerId(), log, processReference.get().getInputStream(), Level.INFO);
+                new TigerStreamLogFeeder(
+                    getServerId(), log, processReference.get().getErrorStream(), Level.ERROR);
                 statusMessage(
                     "Started JAR-File for "
                         + getServerId()
                         + " with PID '"
                         + processReference.get().pid()
                         + "'");
-              } catch (Throwable t) {
+              } catch (Exception t) {
                 log.error("Failed to start process", t);
                 startupException.set(t);
               }

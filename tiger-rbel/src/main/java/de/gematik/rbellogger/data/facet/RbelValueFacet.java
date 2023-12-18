@@ -44,7 +44,7 @@ public class RbelValueFacet<T> implements RbelFacet {
   private final T value;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap();
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<>();
   }
 }

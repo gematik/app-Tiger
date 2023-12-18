@@ -10,7 +10,7 @@ import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.File;
 import java.nio.charset.StandardCharsets;

@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
@@ -143,7 +142,7 @@ public class GenerateDriverMojo extends AbstractMojo {
 
       new DriverGenerator(props, getLog())
           .generateDriverForFeatureFiles(
-              featureFiles.stream().map(this::addBasedirPrefix).collect(Collectors.toList()));
+              featureFiles.stream().map(this::addBasedirPrefix).toList());
 
       project.addTestCompileSourceRoot(
           Paths.get(targetFolder, "generated-test-sources", "tigerbdd")

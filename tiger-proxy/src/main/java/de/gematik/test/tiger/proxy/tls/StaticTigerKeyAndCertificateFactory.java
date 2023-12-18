@@ -4,7 +4,7 @@
 
 package de.gematik.test.tiger.proxy.tls;
 
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import java.security.PrivateKey;

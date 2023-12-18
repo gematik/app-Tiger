@@ -75,8 +75,8 @@ public class RbelJweFacet implements RbelFacet {
   private final RbelElement encryptionInfo;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap()
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>()
         .with("header", header)
         .with("body", body)
         .with("encryptionInfo", encryptionInfo);

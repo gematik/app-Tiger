@@ -14,11 +14,11 @@ import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.web.TigerBrowserUtil;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
-import de.gematik.test.tiger.lib.serenityRest.SerenityRestUtils;
+import de.gematik.test.tiger.lib.serenityrest.SerenityRestUtils;
 import de.gematik.test.tiger.proxy.IRbelMessageListener;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
@@ -37,7 +37,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.rest.SerenityRest;
 import org.apache.commons.io.IOUtils;
@@ -62,6 +64,7 @@ import org.springframework.context.ConfigurableApplicationContext;
  */
 @SuppressWarnings("unused") // API
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TigerDirector {
 
   @Getter private static TigerRestAssuredCurlLoggingFilter curlLoggingFilter;
@@ -70,10 +73,6 @@ public class TigerDirector {
 
   @Getter private static TigerLibConfig libConfig;
   private static ConfigurableApplicationContext envMgrApplicationContext;
-
-  private TigerDirector() {
-    // Do not initialize.
-  }
 
   public static synchronized void start() {
     if (initialized) {
@@ -195,7 +194,11 @@ public class TigerDirector {
       if (getLibConfig() != null
           && getLibConfig().isActivateWorkflowUi()
           && shouldUserAcknowledgeShutdown) {
-        System.out.println(
+        // This method is called in the shut down hook of the JVM and we experienced that using the
+        // logger
+        // sometimes kept this message from appearing in the console, so resorting to System.out
+        // here
+        System.out.println( // NOSONAR
             Ansi.colorize(
                 "TGR Workflow UI is active, please press quit in browser window...",
                 RbelAnsiColors.GREEN_BOLD));
@@ -220,16 +223,16 @@ public class TigerDirector {
         }
       } else if (tigerTestEnvMgr != null) {
         tigerTestEnvMgr.receivedConfirmationFromWorkflowUi(false);
-        System.out.println("TGR Shutting down test env...");
+        System.out.println("TGR Shutting down test env..."); // NOSONAR
         tigerTestEnvMgr.shutDown();
       }
     } finally {
       unregisterRestAssuredFilter();
-      System.out.println("TGR Destroying spring boot context after testrun...");
+      System.out.println("TGR Destroying spring boot context after testrun..."); // NOSONAR
       if (envMgrApplicationContext != null) {
         envMgrApplicationContext.close();
       }
-      System.out.println("TGR Tiger shut down orderly");
+      System.out.println("TGR Tiger shut down orderly"); // NOSONAR
     }
   }
 

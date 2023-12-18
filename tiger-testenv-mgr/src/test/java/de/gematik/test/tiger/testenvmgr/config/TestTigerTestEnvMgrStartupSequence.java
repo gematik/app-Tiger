@@ -211,7 +211,7 @@ class TestTigerTestEnvMgrStartupSequence {
           .map(
               potentialOrder -> {
                 try {
-                  assertThat(startupSequence).isEqualTo(potentialOrder);
+                  assertThat(potentialOrder).isEqualTo(startupSequence);
                   return Optional.empty();
                 } catch (AssertionError e) {
                   return Optional.of(e);

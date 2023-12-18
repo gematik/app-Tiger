@@ -13,6 +13,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -84,8 +85,8 @@ public class TigerExtension
           .ifPresent(proxy -> unirestInstance.config().proxy("127.0.0.1", proxy.getProxyPort()));
       return unirestInstance;
     } else {
-      throw new RuntimeException(
-          "Could not instantiate parameter, unsupported typ "
+      throw new TigerTestEnvException(
+          "Could not instantiate parameter, unsupported type "
               + parameterContext.getParameter().getType());
     }
   }
@@ -136,7 +137,7 @@ public class TigerExtension
             .run();
 
     tigerTestEnvMgr = envMgrApplicationContext.getBean(TigerTestEnvMgr.class);
-    if (!SKIP_ENVIRONMENT_SETUP.getValueOrDefault()) {
+    if (Boolean.FALSE.equals(SKIP_ENVIRONMENT_SETUP.getValueOrDefault())) {
       log.info("Starting Test-Env setup");
       tigerTestEnvMgr.setUpEnvironment();
     }

@@ -18,7 +18,7 @@ import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class RbelX509ConverterTest {
+class RbelX509ConverterTest {
 
   private RbelElement xmlMessage;
 

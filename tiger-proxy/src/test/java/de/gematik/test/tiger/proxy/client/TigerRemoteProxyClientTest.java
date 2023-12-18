@@ -18,8 +18,8 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
@@ -233,13 +233,9 @@ class TigerRemoteProxyClientTest {
     tigerRemoteProxyClient.addRoute(
         TigerRoute.builder().from(firstRoute).to("http://localhost:" + client.getPort()).build());
 
-    assertThatThrownBy(
-            () ->
-                tigerRemoteProxyClient.addRoute(
-                    TigerRoute.builder()
-                        .from(secondRoute)
-                        .to("http://localhost:" + client.getPort())
-                        .build()))
+    var route =
+        TigerRoute.builder().from(secondRoute).to("http://localhost:" + client.getPort()).build();
+    assertThatThrownBy(() -> tigerRemoteProxyClient.addRoute(route))
         .isInstanceOf(RuntimeException.class);
   }
 
@@ -597,6 +593,7 @@ class TigerRemoteProxyClientTest {
 
     assertThat(tigerRemoteProxyClient.getPartiallyReceivedMessageMap()).hasSize(2);
 
+    // ensure the 100ms for partial parsing timeout has occured
     Thread.sleep(110);
     tigerRemoteProxyClient.triggerPartialMessageCleanup();
 

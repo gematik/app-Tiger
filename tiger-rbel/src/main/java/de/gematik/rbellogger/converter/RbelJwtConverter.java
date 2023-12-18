@@ -30,6 +30,7 @@ public class RbelJwtConverter implements RbelConverterPlugin {
   }
 
   @Override
+  @SuppressWarnings({"java:S1135", "java:S108"})
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
     try {
       final JsonWebSignature jsonWebSignature = initializeJws(rbelElement);
@@ -77,15 +78,14 @@ public class RbelJwtConverter implements RbelConverterPlugin {
                       RbelJwtSignature.builder()
                           .isValid(
                               new RbelElement(null, signatureElement)
-                                  .addFacet(new RbelValueFacet(false)))
+                                  .addFacet(new RbelValueFacet<>(false)))
                           .verifiedUsing(null)
                           .build()));
       final RbelJwtFacet rbelJwtFacet =
           new RbelJwtFacet(headerElement, bodyElement, signatureElement);
       rbelElement.addFacet(rbelJwtFacet);
       rbelElement.addFacet(new RbelRootFacet<>(rbelJwtFacet));
-    } catch (JoseException e) {
-      return;
+    } catch (JoseException ignored) {
     }
   }
 
@@ -118,9 +118,10 @@ public class RbelJwtConverter implements RbelConverterPlugin {
       if (jsonWebSignature.verifySignature()) {
         return Optional.of(
             RbelJwtSignature.builder()
-                .isValid(new RbelElement(null, signatureElement).addFacet(new RbelValueFacet(true)))
+                .isValid(
+                    new RbelElement(null, signatureElement).addFacet(new RbelValueFacet<>(true)))
                 .verifiedUsing(
-                    new RbelElement(null, signatureElement).addFacet(new RbelValueFacet(keyId)))
+                    new RbelElement(null, signatureElement).addFacet(new RbelValueFacet<>(keyId)))
                 .build());
       } else {
         return Optional.empty();

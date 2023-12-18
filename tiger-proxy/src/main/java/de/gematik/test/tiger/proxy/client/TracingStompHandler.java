@@ -30,8 +30,7 @@ class TracingStompHandler implements StompFrameHandler {
           frameContent.getClass().getSimpleName(),
           remoteProxyClient.getName().orElse("<>"));
     }
-    if (frameContent instanceof TigerTracingDto) {
-      final TigerTracingDto tigerTracingDto = (TigerTracingDto) frameContent;
+    if (frameContent instanceof TigerTracingDto tigerTracingDto) {
       if (log.isDebugEnabled()) {
         log.debug(
             "Received TigerTracingDto with request-uuid {} and response-uuid {} (proxy {})",

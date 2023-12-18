@@ -9,7 +9,7 @@ import static org.awaitility.Awaitility.await;
 
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import de.gematik.test.tiger.proxy.handler.TigerExceptionUtils;
@@ -35,6 +35,8 @@ import org.mockserver.proxyconfiguration.ProxyConfiguration;
 
 public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
 
+  public static final String SERVER = "Server ";
+
   /**
    * Container to store exceptions while performing startup of server, useful if you start external
    * processes and want to monitor them in a separate thread...
@@ -43,7 +45,7 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
    */
   protected final AtomicReference<Throwable> startupException = new AtomicReference<>();
 
-  public AbstractExternalTigerServer(
+  protected AbstractExternalTigerServer(
       String hostname, String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
     super(hostname, serverId, tigerTestEnvMgr, configuration);
   }
@@ -121,7 +123,7 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
     try {
       checkUrlOrThrowException(url);
       printServerUpMessage();
-      setStatus(TigerServerStatus.RUNNING, "Server " + getServerId() + " up & healthy");
+      setStatus(TigerServerStatus.RUNNING, SERVER + getServerId() + " up & healthy");
     } catch (ConnectException | SocketTimeoutException cex) {
       if (!noErrorLogging) {
         handleNoTcpConnectionException(url);
@@ -159,11 +161,13 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
   }
 
   private void handleSslHandshakeErrorAndSetServerRunning(IOException sslhe) {
-    log.warn(
-        Ansi.colorize(
-            "SSL handshake but server at least seems to be up! {}", RbelAnsiColors.YELLOW_BOLD),
-        sslhe.getMessage());
-    setStatus(TigerServerStatus.RUNNING, "Server " + getServerId() + " up & healthy");
+    if (log.isWarnEnabled()) {
+      log.warn(
+          Ansi.colorize(
+              "SSL handshake but server at least seems to be up! {}", RbelAnsiColors.YELLOW_BOLD),
+          sslhe.getMessage());
+    }
+    setStatus(TigerServerStatus.RUNNING, SERVER + getServerId() + " up & healthy");
   }
 
   private void checkUrlOrThrowException(URL url) throws IOException {
@@ -227,7 +231,9 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
     if (getConfiguration().getSource() != null && !getConfiguration().getSource().isEmpty()) {
       message += " downloaded from '" + getConfiguration().getSource().get(0) + "'";
     }
-    log.info(Ansi.colorize(message, RbelAnsiColors.GREEN_BOLD));
+    if (log.isInfoEnabled()) {
+      log.info(Ansi.colorize(message, RbelAnsiColors.GREEN_BOLD));
+    }
   }
 
   private void waitForConfiguredTimeAndSetRunning(long timeOutInMs) {
@@ -241,7 +247,7 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
       Thread.currentThread().interrupt();
     }
     setStatus(
-        TigerServerStatus.RUNNING, "Server " + getServerId() + " up & healthy (default timeout)");
+        TigerServerStatus.RUNNING, SERVER + getServerId() + " up & healthy (default timeout)");
   }
 
   URL buildHealthcheckUrl() {

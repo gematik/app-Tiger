@@ -75,8 +75,8 @@ public class RbelJwtFacet implements RbelFacet {
   private final RbelElement signature;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap()
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>()
         .with("header", header)
         .with("body", body)
         .with("signature", signature);

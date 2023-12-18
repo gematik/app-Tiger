@@ -107,13 +107,13 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
     final List<String> headerList =
         Arrays.stream(content.substring(endOfFirstLine, endOfBodyPosition).split(eol))
             .filter(line -> !line.isEmpty() && !line.startsWith("HTTP"))
-            .collect(Collectors.toList());
+            .toList();
 
     RbelElement headerElement =
         new RbelElement(
             headerList.stream().collect(Collectors.joining(eol)).getBytes(rbel.getElementCharset()),
             rbel);
-    final RbelMultiMap headerMap =
+    final RbelMultiMap<RbelElement> headerMap =
         headerList.stream()
             .map(line -> parseStringToKeyValuePair(line, converter, headerElement))
             .collect(RbelMultiMap.COLLECTOR);

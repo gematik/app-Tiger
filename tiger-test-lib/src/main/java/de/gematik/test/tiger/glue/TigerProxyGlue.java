@@ -4,7 +4,7 @@
 
 package de.gematik.test.tiger.glue;
 
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.proxy.TigerProxy;

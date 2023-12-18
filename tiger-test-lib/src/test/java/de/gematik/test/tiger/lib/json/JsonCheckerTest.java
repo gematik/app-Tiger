@@ -649,11 +649,13 @@ class JsonCheckerTest {
   }
 
   @Test
+  @SuppressWarnings("java:S2699")
   void idpJson() {
     check.compareJsonStrings(IDP_STRUCT, IDP_STRUCT, false);
   }
 
   @Test
+  @SuppressWarnings("java:S2699")
   void nestedFunctionalAttributeValues() {
     check.compareJsonStrings(
         "{jwks: {keys: [{y: \"some-value\"}]}}",

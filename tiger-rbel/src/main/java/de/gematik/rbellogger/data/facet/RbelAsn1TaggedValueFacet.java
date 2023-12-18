@@ -15,11 +15,11 @@ public class RbelAsn1TaggedValueFacet implements RbelFacet {
   private final RbelElement nestedElement;
 
   @Override
-  public RbelMultiMap getChildElements() {
+  public RbelMultiMap<RbelElement> getChildElements() {
     if (nestedElement == null) {
-      return new RbelMultiMap();
+      return new RbelMultiMap<>();
     } else {
-      return new RbelMultiMap().with("content", nestedElement).with("tag", tag);
+      return new RbelMultiMap<RbelElement>().with("content", nestedElement).with("tag", tag);
     }
   }
 }

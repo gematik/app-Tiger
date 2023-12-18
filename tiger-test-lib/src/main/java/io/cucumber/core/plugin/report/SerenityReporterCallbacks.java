@@ -61,9 +61,12 @@ public class SerenityReporterCallbacks {
   private static final Object startupMutex = new Object();
   private static RuntimeException tigerStartupFailedException;
   @Getter @Setter private static boolean pauseMode;
+
+  @SuppressWarnings("java:S5852")
   private final Pattern showSteps =
       Pattern.compile(
           ".*TGR (zeige|show) ([\\w|üß ]*)(Banner|banner|text|Text) \"(.*)\""); // NOSONAR
+
   private final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
   private final EvidenceRecorder evidenceRecorder = EvidenceRecorderFactory.getEvidenceRecorder();
   private final EvidenceRenderer evidenceRenderer =

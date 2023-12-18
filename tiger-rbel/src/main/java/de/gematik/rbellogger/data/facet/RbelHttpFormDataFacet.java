@@ -13,7 +13,6 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 
@@ -53,8 +52,10 @@ public class RbelHttpFormDataFacet implements RbelFacet {
                                                             entry.getValue(),
                                                             Optional.ofNullable(entry.getKey())))
                                                     .withClass("value"))
-                                                .with(renderingToolkit.addNotes(entry.getValue()))))
-                                .collect(Collectors.toList())));
+                                                .with(
+                                                    RbelHtmlRenderingToolkit.addNotes(
+                                                        entry.getValue()))))
+                                .toList()));
           }
         });
   }

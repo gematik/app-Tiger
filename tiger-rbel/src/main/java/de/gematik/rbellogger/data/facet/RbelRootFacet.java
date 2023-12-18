@@ -4,6 +4,7 @@
 
 package de.gematik.rbellogger.data.facet;
 
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -17,7 +18,7 @@ public class RbelRootFacet<T extends RbelFacet> implements RbelFacet {
   private final T rootFacet;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap();
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<>();
   }
 }

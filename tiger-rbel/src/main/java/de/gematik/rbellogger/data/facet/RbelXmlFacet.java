@@ -39,12 +39,14 @@ public class RbelXmlFacet implements RbelFacet {
                     .isPresent();
           }
 
+          @SuppressWarnings({"rawtypes", "java:S3740"})
           @Override
           public ContainerTag performRendering(
               RbelElement element,
               Optional<String> key,
               RbelHtmlRenderingToolkit renderingToolkit) {
-            String formattedXml = renderingToolkit.prettyPrintXml(element.getRawStringContent());
+            String formattedXml =
+                RbelHtmlRenderingToolkit.prettyPrintXml(element.getRawStringContent());
             for (final Entry<UUID, JsonNoteEntry> entry :
                 renderingToolkit.getNoteTags().entrySet()) {
               if (formattedXml.contains(entry.getValue().getStringToMatch() + ",")) {
@@ -74,10 +76,10 @@ public class RbelXmlFacet implements RbelFacet {
         });
   }
 
-  @Builder.Default private final RbelMultiMap childElements = new RbelMultiMap();
+  @Builder.Default private final RbelMultiMap<RbelElement> childElements = new RbelMultiMap<>();
 
   @Override
-  public RbelMultiMap getChildElements() {
+  public RbelMultiMap<RbelElement> getChildElements() {
     return childElements;
   }
 }

@@ -73,9 +73,7 @@ public class RbelHttpResponseWriter implements RbelElementWriter {
         .stream()
         .flatMap(h -> h.getCaseInsensitiveMatches("Transfer-Encoding"))
         .map(RbelElement::getRawStringContent)
-        .filter(value -> value.equalsIgnoreCase("chunked"))
-        .findAny()
-        .isPresent();
+        .anyMatch(value -> value.equalsIgnoreCase("chunked"));
   }
 
   private String patchHeader(String headerRaw, int length) {

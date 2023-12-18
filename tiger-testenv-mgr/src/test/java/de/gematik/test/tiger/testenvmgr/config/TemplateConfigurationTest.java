@@ -14,9 +14,9 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
-public class TemplateConfigurationTest {
+class TemplateConfigurationTest {
   @Test
-  public void testTemplateApplication() throws Exception {
+  void testTemplateApplication() throws Exception {
     new EnvironmentVariables("TIGER_SERVERS_ERP_TEMPLATE", "erzpt-fd-ref")
         .execute(
             () -> {
@@ -42,7 +42,7 @@ public class TemplateConfigurationTest {
 
   @SneakyThrows
   @Test
-  public void readTigerYamlWithLogFile() {
+  void readTigerYamlWithLogFile() {
     TigerGlobalConfiguration.readFromYaml(
         "tiger:\n"
             + "  servers:\n"
@@ -65,7 +65,7 @@ public class TemplateConfigurationTest {
 
   @SneakyThrows
   @Test
-  public void readTigerYamlWithLogDirectory() {
+  void readTigerYamlWithLogDirectory() {
     TigerGlobalConfiguration.readFromYaml(
         FileUtils.readFileToString(
             new File("src/test/resources/testExternalJarDir.yaml"), StandardCharsets.UTF_8));

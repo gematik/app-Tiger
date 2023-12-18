@@ -166,7 +166,7 @@ class XmlConverterTest {
         convertedMessage.findRbelPathMembers("$..textTest.text");
 
     assertThat(rbelPathResult).hasSize(1);
-    assertThat(rbelPathResult.get(0).getRawStringContent()).isEqualTo("");
+    assertThat(rbelPathResult.get(0).getRawStringContent()).isEmpty();
   }
 
   @Test

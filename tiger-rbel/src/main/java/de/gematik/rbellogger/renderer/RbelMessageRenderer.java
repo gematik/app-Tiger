@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
 
+  @SuppressWarnings({"rawtypes", "java:S3740"})
   public static ContainerTag buildAddressInfo(final RbelElement element) {
     if (!element.hasFacet(RbelTcpIpMessageFacet.class)) {
       return span();
@@ -34,7 +35,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
     final String right;
     final String icon;
     final Optional<Boolean> isRequest = determineIsRequest(element);
-    if (isRequest.isEmpty() || isRequest.get()) {
+    if (isRequest.isEmpty() || Boolean.TRUE.equals(isRequest.get())) {
       left =
           messageFacet
               .getSender()
@@ -81,6 +82,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
     }
   }
 
+  @SuppressWarnings({"rawtypes", "java:S3740"})
   public static ContainerTag buildTimingInfo(final RbelElement element) {
     if (!element.hasFacet(RbelMessageTimingFacet.class)) {
       return span();
@@ -150,12 +152,18 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                 span()
                     .with(buildTimingInfo(element), buildAddressInfo(element))
                     .withStyle(
-                        isRequest.map(r -> (isRequest.get() ? "display: block;" : "")).orElse("")))
+                        isRequest
+                            .map(
+                                r ->
+                                    (Boolean.TRUE.equals(isRequest.get()) ? "display: block;" : ""))
+                            .orElse("")))
             .withClasses(
                 "title",
                 "ms-3",
                 "text-ellipsis",
-                isRequest.map(req -> req ? "has-text-link" : "has-text-success").orElse(""))
+                isRequest
+                    .map(req -> Boolean.TRUE.equals(req) ? "has-text-link" : "has-text-success")
+                    .orElse(""))
             .withStyle("overflow: hidden;"));
     messageTitleElements.addAll(addNotes(element));
     //////////////////////////////// HEADER & BODY //////////////////////////////////////
@@ -185,10 +193,10 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         i().withClasses(
                 "fa-solid fa-toggle-on toggle-icon float-end me-3 is-size-3 text-danger"
                     + " header-toggle"));
-    httpMessageFacet.map(
-        a ->
+    httpMessageFacet.ifPresent(
+        facet ->
             headerTitleElements.add(
-                RbelHtmlRenderer.showContentButtonAndDialog(a.getHeader(), renderingToolkit)));
+                RbelHtmlRenderer.showContentButtonAndDialog(facet.getHeader(), renderingToolkit)));
     headerTitleElements.add(
         div(httpRequestFacet.map(f -> t2("REQ Headers")).orElseGet(() -> t2("RES Headers")))
             .withClass("text-danger"));
@@ -198,10 +206,11 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         i().withClasses(
                 "fa-solid fa-toggle-on toggle-icon float-end me-3 is-size-3 text-info"
                     + " body-toggle"));
-    httpMessageFacet.map(
-        a ->
+    httpMessageFacet.ifPresent(
+        facet ->
             bodyTitleElements.add(
-                RbelHtmlRenderer.showContentButtonAndDialog(a.getBody(), renderingToolkit)));
+                RbelHtmlRenderer.showContentButtonAndDialog(facet.getBody(), renderingToolkit)));
+
     bodyTitleElements.add(
         div(httpRequestFacet.map(f -> t2("REQ Body")).orElseGet(() -> t2("RES Body")))
             .withClass("text-info"));
@@ -255,7 +264,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
     return isRequestOptional
         .map(
             isRequest -> {
-              if (isRequest) {
+              if (Boolean.TRUE.equals(isRequest)) {
                 return i().withClass("fas fa-share me-3").withTitle("Request");
               } else {
                 return i().withClass("fas fa-reply me-3").withTitle("Response");

@@ -22,7 +22,7 @@ public class RbelX509Converter implements RbelConverterPlugin {
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
-    tryConversion(element, context, () -> element.getRawContent());
+    tryConversion(element, context, element::getRawContent);
     tryConversion(element, context, () -> Base64.getDecoder().decode(element.getRawContent()));
   }
 

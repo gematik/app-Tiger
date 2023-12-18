@@ -28,7 +28,7 @@ public class CryptoUtils {
   private static final BouncyCastleProvider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
 
   public static byte[] ecka(PrivateKey prk, PublicKey puk)
-      throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException {
+      throws NoSuchAlgorithmException, InvalidKeyException {
     byte[] sharedSecret;
     KeyAgreement ka = KeyAgreement.getInstance("ECDH", BOUNCY_CASTLE_PROVIDER);
     ka.init(prk);

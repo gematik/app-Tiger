@@ -26,8 +26,8 @@ public class RbelHttpRequestFacet implements RbelFacet {
   }
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap().with("method", method).with("path", path);
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>().with("method", method).with("path", path);
   }
 
   public String getPathAsString() {

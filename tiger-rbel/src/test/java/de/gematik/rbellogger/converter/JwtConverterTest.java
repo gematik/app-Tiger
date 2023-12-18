@@ -52,8 +52,8 @@ class JwtConverterTest {
   void convertMessage_shouldContainValidSignature() {
     final RbelElement convertedToken = rbelConverter.convertElement(JWT.getBytes(), null);
 
-    assertThat(convertedToken.findElement("$.signature").get())
-        .isEqualTo(convertedToken.getFacetOrFail(RbelJwtFacet.class).getSignature());
+    assertThat(convertedToken.findElement("$.signature"))
+        .contains(convertedToken.getFacetOrFail(RbelJwtFacet.class).getSignature());
     assertThat(
             convertedToken
                 .findElement("$.signature")
@@ -93,10 +93,10 @@ class JwtConverterTest {
             .get()
             .getFacetOrFail(RbelJwtSignature.class);
 
-    assertThat(convertedMessage.findElement("$.body.challenge.signature").get())
-        .isSameAs(convertedMessage.findElement("$.body.challenge.content.signature").get());
+    assertThat(convertedMessage.findElement("$.body.challenge.signature"))
+        .containsSame(convertedMessage.findElement("$.body.challenge.content.signature").get());
     assertThat(signature.isValid()).isTrue();
-    assertThat(signature.getVerifiedUsing().seekValue(String.class).get()).isEqualTo("idpSig");
+    assertThat(signature.getVerifiedUsing().seekValue(String.class)).contains("idpSig");
   }
 
   @Test
@@ -114,8 +114,8 @@ class JwtConverterTest {
     final RbelElement convertedToken =
         rbelConverter.convertElement(JWT_WITH_SECRET.getBytes(), null);
 
-    assertThat(convertedToken.findElement("$.signature").get())
-        .isEqualTo(convertedToken.getFacetOrFail(RbelJwtFacet.class).getSignature());
+    assertThat(convertedToken.findElement("$.signature"))
+        .contains(convertedToken.getFacetOrFail(RbelJwtFacet.class).getSignature());
     assertThat(
             convertedToken
                 .findElement("$.signature")

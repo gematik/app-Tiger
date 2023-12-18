@@ -14,7 +14,6 @@ import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.key.RbelKey;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.JsonWebKey.Factory;
 import org.jose4j.lang.JoseException;
@@ -36,7 +35,7 @@ public class RbelJwkReader implements RbelConverterPlugin {
             .map(Optional::get)
             .map(RbelListFacet::getChildNodes)
             .flatMap(List::stream)
-            .collect(Collectors.toList());
+            .toList();
 
     for (RbelElement keyElement : keysList) {
       tryToConvertKeyAndAddToKeyManager(keyElement, converter);

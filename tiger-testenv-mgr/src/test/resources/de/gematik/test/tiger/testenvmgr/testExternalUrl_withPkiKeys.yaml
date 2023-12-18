@@ -7,7 +7,7 @@ servers:
     hostname: testExternalUrl_withPkiKeys
     template: idp-ref
     type: externalUrl
-    startupTimeoutSec: 10
+    startupTimeoutSec: 30
     healthcheckUrl: https://idp-test.app.ti-dienste.de/.well-known/openid-configuration
     source:
       - https://idp-test.zentral.idp.splitdns.ti-dienste.de/

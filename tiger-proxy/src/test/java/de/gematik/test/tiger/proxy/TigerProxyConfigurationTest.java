@@ -7,9 +7,9 @@ package de.gematik.test.tiger.proxy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import de.gematik.test.tiger.common.data.config.tigerProxy.ForwardProxyInfo;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyType;
+import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyType;
 import de.gematik.test.tiger.common.exceptions.TigerProxyToForwardProxyException;
 import de.gematik.test.tiger.common.exceptions.TigerUnknownProtocolException;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -102,19 +102,20 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
   @ParameterizedTest
   @CsvSource(value = {"localhost", "http://username@localhost:80", "http://password@localhost:80"})
   void httpProxyWithMissingParamsAsEnvVar_shouldNotBeSet(String httpProxyEnvWithoutType) {
+
     new EnvironmentVariables("http_proxy", httpProxyEnvWithoutType)
         .and("https_proxy", null)
         .execute(
             () -> {
+              var forwrdProxyConfig =
+                  TigerProxyConfiguration.builder()
+                      .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
+                      .build()
+                      .getForwardToProxy();
               assertThatThrownBy(
                       () ->
                           ProxyConfigurationConverter.createMockServerProxyConfiguration(
-                                  TigerProxyConfiguration.builder()
-                                      .forwardToProxy(
-                                          ForwardProxyInfo.builder().hostname("$SYSTEM").build())
-                                      .build()
-                                      .getForwardToProxy())
-                              .get())
+                              forwrdProxyConfig))
                   .isInstanceOf(TigerProxyToForwardProxyException.class);
             });
   }
@@ -192,15 +193,15 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
               setOrClearProperty("http.proxyUser", proxyUser);
               setOrClearProperty("http.proxyPassword", proxyPassword);
 
+              var forwardProxyConfig =
+                  TigerProxyConfiguration.builder()
+                      .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
+                      .build()
+                      .getForwardToProxy();
               assertThatThrownBy(
                       () ->
                           ProxyConfigurationConverter.createMockServerProxyConfiguration(
-                                  TigerProxyConfiguration.builder()
-                                      .forwardToProxy(
-                                          ForwardProxyInfo.builder().hostname("$SYSTEM").build())
-                                      .build()
-                                      .getForwardToProxy())
-                              .get())
+                              forwardProxyConfig))
                   .isInstanceOf(TigerProxyToForwardProxyException.class);
             });
   }
@@ -296,15 +297,15 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         .and("http_proxy", null)
         .execute(
             () -> {
+              var forwardProxyInfo =
+                  TigerProxyConfiguration.builder()
+                      .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
+                      .build()
+                      .getForwardToProxy();
               assertThatThrownBy(
                       () ->
                           ProxyConfigurationConverter.createMockServerProxyConfiguration(
-                                  TigerProxyConfiguration.builder()
-                                      .forwardToProxy(
-                                          ForwardProxyInfo.builder().hostname("$SYSTEM").build())
-                                      .build()
-                                      .getForwardToProxy())
-                              .get())
+                              forwardProxyInfo))
                   .isInstanceOf(TigerProxyToForwardProxyException.class);
             });
   }
@@ -383,15 +384,15 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
               setOrClearProperty("https.proxyUser", proxyUser);
               setOrClearProperty("https.proxyPassword", proxyPassword);
 
+              var forwardProxyInfo =
+                  TigerProxyConfiguration.builder()
+                      .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
+                      .build()
+                      .getForwardToProxy();
               assertThatThrownBy(
                       () ->
                           ProxyConfigurationConverter.createMockServerProxyConfiguration(
-                                  TigerProxyConfiguration.builder()
-                                      .forwardToProxy(
-                                          ForwardProxyInfo.builder().hostname("$SYSTEM").build())
-                                      .build()
-                                      .getForwardToProxy())
-                              .get())
+                              forwardProxyInfo))
                   .isInstanceOf(TigerProxyToForwardProxyException.class);
             });
   }
@@ -595,15 +596,15 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         .and("http_proxy", null)
         .execute(
             () -> {
+              var forwardProxyInfo =
+                  TigerProxyConfiguration.builder()
+                      .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
+                      .build()
+                      .getForwardToProxy();
               assertThatThrownBy(
                       () ->
                           ProxyConfigurationConverter.createMockServerProxyConfiguration(
-                                  TigerProxyConfiguration.builder()
-                                      .forwardToProxy(
-                                          ForwardProxyInfo.builder().hostname("$SYSTEM").build())
-                                      .build()
-                                      .getForwardToProxy())
-                              .get())
+                              forwardProxyInfo))
                   .isInstanceOf(TigerUnknownProtocolException.class);
             });
   }

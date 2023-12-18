@@ -11,7 +11,6 @@ import java.security.Key;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import javax.crypto.spec.SecretKeySpec;
 import org.jose4j.jca.ProviderContext;
 import org.jose4j.jwe.JsonWebEncryption;
@@ -105,7 +104,7 @@ public class RbelJweSerializer implements RbelSerializer {
                                 new String(
                                     rbelWriter.renderTree(childNode).getContent(),
                                     childNode.getElementCharset()))
-                        .collect(Collectors.toList()));
+                        .toList());
               } else {
                 jwe.setHeader(
                     header.getKey().orElseThrow(),

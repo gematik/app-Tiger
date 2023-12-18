@@ -21,7 +21,7 @@ import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.*;
+import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
@@ -113,8 +113,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     awaitMessagesInTiger(2);
 
     assertThat(response.getStatus()).isEqualTo(666);
-    assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
-
+    assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
     assertThat(
             tigerProxy
                 .getRbelMessagesList()
@@ -423,13 +422,12 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                         .build()))
             .build());
 
-    assertThatThrownBy(
-            () ->
-                tigerProxy.addRoute(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
+    var route =
+        TigerRoute.builder()
+            .from("http://backend")
+            .to("http://localhost:" + fakeBackendServerPort)
+            .build();
+    assertThatThrownBy(() -> tigerProxy.addRoute(route))
         .isInstanceOf(TigerProxyConfigurationException.class);
   }
 
@@ -670,7 +668,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   @SneakyThrows
   @Test
   // gemSpec_Krypt, A_21888
-  public void tigerProxyShouldHaveFixedVauKeyLoaded() {
+  void tigerProxyShouldHaveFixedVauKeyLoaded() {
     BrainpoolCurves.init();
     final Key key =
         KeyMgr.readKeyFromPem(

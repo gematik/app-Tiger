@@ -7,18 +7,23 @@ package de.gematik.test.tiger.common.jexl;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import java.util.*;
 import java.util.function.BiFunction;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.jexl3.*;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
 
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TigerJexlExecutor {
 
   private static final Map<String, Object> NAMESPACE_MAP = new HashMap<>();
   private static final List<TigerJexlContextDecorator> CONTEXT_DECORATORS = new ArrayList<>();
   @Setter @Getter private static boolean activateJexlDebugging = false;
+
+  @Setter
   private static BiFunction<String, TigerJexlContext, List<String>> expressionPreMapper =
       (exp, ctx) -> List.of(exp);
 
@@ -65,12 +70,7 @@ public class TigerJexlExecutor {
     CONTEXT_DECORATORS.add(decorator);
   }
 
-  public static void setExpressionPreMapper(
-      BiFunction<String, TigerJexlContext, List<String>> preMapper) {
-    expressionPreMapper = preMapper;
-  }
-
-  private static TigerJexlExecutor createNewExecutor() {
+  public static TigerJexlExecutor createNewExecutor() {
     return new TigerJexlExecutor();
   }
 

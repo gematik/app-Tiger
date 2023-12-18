@@ -51,6 +51,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * variables used by the playwright tests such as playwright, browser and page.
  */
 @Slf4j
+@SuppressWarnings("java:S2187")
 public class AbstractTests implements ExtensionContext.Store.CloseableResource {
 
   static String port;

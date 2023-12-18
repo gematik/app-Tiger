@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.playwright.workflowui;
 
-import static java.lang.Thread.sleep;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -293,7 +292,10 @@ class XYDynamicRbelLogTests extends AbstractTests {
         page.waitForDownload(
             () -> page.frameLocator("#rbellog-details-iframe").locator("#saveHtmlBtn").click());
     // wait for download to complete
-    sleep(1000);
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .pollDelay(100, TimeUnit.MILLISECONDS)
+        .until(() -> download.page().locator("#test-tiger-logo").isVisible());
     assertAll(
         () -> assertThat(download.page().locator("#test-tiger-logo").isVisible()).isTrue(),
         () ->
@@ -331,7 +333,10 @@ class XYDynamicRbelLogTests extends AbstractTests {
         page.waitForDownload(
             () -> page.frameLocator("#rbellog-details-iframe").locator("#saveTrafficBtn").click());
     // wait for download to complete
-    sleep(1000);
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .pollDelay(100, TimeUnit.MILLISECONDS)
+        .until(() -> download.page().locator("#test-tiger-logo").isVisible());
     assertAll(
         () -> assertThat(download.page().locator("#test-tiger-logo").isVisible()).isTrue(),
         () ->

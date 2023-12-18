@@ -44,6 +44,7 @@ import org.apache.commons.collections4.list.UnmodifiableList;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.awaitility.core.ConditionTimeoutException;
+import org.jetbrains.annotations.NotNull;
 import org.xmlunit.builder.DiffBuilder;
 import org.xmlunit.builder.Input;
 import org.xmlunit.diff.ComparisonResult;
@@ -55,6 +56,7 @@ import org.xmlunit.diff.Difference;
 @Slf4j
 public class RbelMessageValidator {
 
+  public static final String FOUND_IN_MESSAGES = "' found in messages";
   RbelLogger rbelLogger;
   RbelFileWriter rbelFileWriter;
 
@@ -157,10 +159,10 @@ public class RbelMessageValidator {
         throw new AssertionError(
             "No request with matching rbelPath '"
                 + requestParameter.getRbelPath()
-                + "' found in messages");
+                + FOUND_IN_MESSAGES);
       } else if (requestParameter.getRbelPath() == null) {
         throw new AssertionError(
-            "No request with path '" + requestParameter.getPath() + "' found in messages");
+            "No request with path '" + requestParameter.getPath() + FOUND_IN_MESSAGES);
       } else {
         throw new AssertionError(
             "No request with path '"
@@ -169,7 +171,7 @@ public class RbelMessageValidator {
                 + requestParameter.getRbelPath()
                 + "' matching '"
                 + StringUtils.abbreviate(requestParameter.getValue(), 300)
-                + "' found in messages");
+                + FOUND_IN_MESSAGES);
       }
     }
     return candidate.get();
@@ -192,39 +194,15 @@ public class RbelMessageValidator {
 
   protected Optional<RbelElement> filterRequests(
       final RequestParameter requestParameter, Optional<RbelElement> startFromMessageExclusively) {
-    List<RbelElement> msgs = getRbelMessages();
-    if (startFromMessageExclusively.isPresent()) {
-      int idx = -1;
-      for (var i = 0; i < msgs.size(); i++) {
-        if (msgs.get(i) == startFromMessageExclusively.get()) {
-          idx = i;
-          break;
-        }
-      }
-      if (idx > 0) {
-        msgs = new ArrayList<>(msgs.subList(idx + 1, msgs.size()));
-      }
-    }
+    List<RbelElement> msgs =
+        getRbelElementsOptionallyFromGivenMessageExclusively(startFromMessageExclusively);
     final String hostFilter =
         TigerGlobalConfiguration.readString("tiger.rbel.request.filter.host", "");
     final String methodFilter =
         TigerGlobalConfiguration.readString("tiger.rbel.request.filter.method", "");
 
     List<RbelElement> candidateMessages =
-        msgs.stream()
-            .filter(
-                el ->
-                    !requestParameter.isRequireHttpMessage()
-                        || el.hasFacet(RbelHttpRequestFacet.class))
-            .filter(req -> doesPathOfMessageMatch(req, requestParameter.getPath()))
-            .filter(
-                req -> hostFilter == null || hostFilter.isEmpty() || doesHostMatch(req, hostFilter))
-            .filter(
-                req ->
-                    methodFilter == null
-                        || methodFilter.isEmpty()
-                        || doesMethodMatch(req, methodFilter))
-            .toList();
+        getCandidateMessages(requestParameter, msgs, hostFilter, methodFilter);
     if (candidateMessages.isEmpty()) {
       return Optional.empty();
     }
@@ -250,6 +228,50 @@ public class RbelMessageValidator {
       candidateMessages = Lists.reverse(candidateMessages);
     }
 
+    return filterMatchingCandidateMessages(requestParameter, candidateMessages);
+  }
+
+  private List<RbelElement> getRbelElementsOptionallyFromGivenMessageExclusively(
+      Optional<RbelElement> startFromMessageExclusively) {
+    List<RbelElement> msgs = getRbelMessages();
+    if (startFromMessageExclusively.isPresent()) {
+      int idx = -1;
+      for (var i = 0; i < msgs.size(); i++) {
+        if (msgs.get(i) == startFromMessageExclusively.get()) {
+          idx = i;
+          break;
+        }
+      }
+      if (idx > 0) {
+        msgs = new ArrayList<>(msgs.subList(idx + 1, msgs.size()));
+      }
+    }
+    return msgs;
+  }
+
+  @NotNull
+  private List<RbelElement> getCandidateMessages(
+      RequestParameter requestParameter,
+      List<RbelElement> msgs,
+      String hostFilter,
+      String methodFilter) {
+    return msgs.stream()
+        .filter(
+            el ->
+                !requestParameter.isRequireHttpMessage() || el.hasFacet(RbelHttpRequestFacet.class))
+        .filter(req -> doesPathOfMessageMatch(req, requestParameter.getPath()))
+        .filter(req -> hostFilter == null || hostFilter.isEmpty() || doesHostMatch(req, hostFilter))
+        .filter(
+            req ->
+                methodFilter == null
+                    || methodFilter.isEmpty()
+                    || doesMethodMatch(req, methodFilter))
+        .toList();
+  }
+
+  @NotNull
+  private Optional<RbelElement> filterMatchingCandidateMessages(
+      RequestParameter requestParameter, List<RbelElement> candidateMessages) {
     for (final RbelElement candidateMessage : candidateMessages) {
       final List<RbelElement> pathExecutionResult =
           new RbelPathExecutor<>(candidateMessage, requestParameter.getRbelPath()).execute();
@@ -414,6 +436,7 @@ public class RbelMessageValidator {
     for (final Function<DiffBuilder, DiffBuilder> src : diffOptions) {
       db = src.apply(db);
     }
+
     db = db.checkForSimilar();
     db.withDifferenceEvaluator(
         (comparison, outcome) -> {

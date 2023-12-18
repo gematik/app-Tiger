@@ -6,7 +6,7 @@ package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.util.stream.Stream;
 import kong.unirest.HttpResponse;

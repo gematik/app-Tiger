@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 
 @Slf4j
 @Getter
-public class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
+class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
 
   @Test
   @TigerTest(

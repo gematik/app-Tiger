@@ -11,6 +11,6 @@ public class RbelXmlAttributeFacet implements RbelFacet {
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
-    return RbelMultiMap.EMPTY;
+    return new RbelMultiMap<>();
   }
 }

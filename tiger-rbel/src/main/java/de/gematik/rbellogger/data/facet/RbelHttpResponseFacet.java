@@ -28,6 +28,8 @@ public class RbelHttpResponseFacet implements RbelFacet {
 
   @Override
   public RbelMultiMap getChildElements() {
-    return new RbelMultiMap().with("responseCode", responseCode).with("reasonPhrase", reasonPhrase);
+    return new RbelMultiMap<RbelElement>()
+        .with("responseCode", responseCode)
+        .with("reasonPhrase", reasonPhrase);
   }
 }

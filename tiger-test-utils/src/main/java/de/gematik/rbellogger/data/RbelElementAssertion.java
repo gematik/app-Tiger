@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.rbellogger.data;
 
 import de.gematik.rbellogger.data.facet.RbelFacet;
@@ -53,6 +57,7 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
     return this.myself;
   }
 
+  @Override
   public StringAssert asString() {
     return new StringAssert(actual.getRawStringContent());
   }

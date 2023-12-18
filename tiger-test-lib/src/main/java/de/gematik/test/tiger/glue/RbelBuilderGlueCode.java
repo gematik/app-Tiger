@@ -67,9 +67,11 @@ public class RbelBuilderGlueCode {
    * @param newValue new value to be set
    */
   @Wenn(
-      "TGR setzt Rbel-Objekt {tigerResolvedString} an Stelle {tigerResolvedString} auf Wert {tigerResolvedString}")
+      "TGR setzt Rbel-Objekt {tigerResolvedString} an Stelle {tigerResolvedString} auf Wert"
+          + " {tigerResolvedString}")
   @When(
-      "TGR sets Rbel object {tigerResolvedString} at {tigerResolvedString} to new value {tigerResolvedString}")
+      "TGR sets Rbel object {tigerResolvedString} at {tigerResolvedString} to new value"
+          + " {tigerResolvedString}")
   public void setValueAt(String objectName, String rbelPath, String newValue) {
     RbelBuilder rbelBuilder = rbelBuilders.get(objectName);
     rbelBuilder.setValueAt(rbelPath, newValue);
@@ -84,9 +86,11 @@ public class RbelBuilderGlueCode {
    * @param newEntry new entry
    */
   @Wenn(
-      "TGR ergänzt Rbel-Objekt {tigerResolvedString} an Stelle {tigerResolvedString} um {tigerResolvedString}")
+      "TGR ergänzt Rbel-Objekt {tigerResolvedString} an Stelle {tigerResolvedString} um"
+          + " {tigerResolvedString}")
   @When(
-      "TGR extends Rbel object {tigerResolvedString} at path {tigerResolvedString} by a new entry {tigerResolvedString}")
+      "TGR extends Rbel object {tigerResolvedString} at path {tigerResolvedString} by a new entry"
+          + " {tigerResolvedString}")
   public void addEntryAt(String objectName, String rbelPath, String newEntry) {
     RbelBuilder rbelBuilder = rbelBuilders.get(objectName);
     rbelBuilder.addEntryAt(rbelPath, newEntry);
@@ -102,9 +106,11 @@ public class RbelBuilderGlueCode {
    * @param expectedValue value to be asserted
    */
   @Wenn(
-      "TGR prüft, dass Rbel-Objekt {tigerResolvedString} an Stelle {tigerResolvedString} gleich {tigerResolvedString} ist")
+      "TGR prüft, dass Rbel-Objekt {tigerResolvedString} an Stelle {tigerResolvedString} gleich"
+          + " {tigerResolvedString} ist")
   @When(
-      "TGR asserts Rbel object {tigerResolvedString} at {tigerResolvedString} equals {tigerResolvedString}")
+      "TGR asserts Rbel object {tigerResolvedString} at {tigerResolvedString} equals"
+          + " {tigerResolvedString}")
   public void assertValueAtEquals(String objectName, String rbelPath, String expectedValue) {
     RbelBuilder rbelBuilder = rbelBuilders.get(objectName);
     assertEquals(
@@ -121,7 +127,8 @@ public class RbelBuilderGlueCode {
    */
   @SneakyThrows
   @Wenn(
-      "TGR prüft, dass {tigerResolvedString} gleich {tigerResolvedString} mit Typ {rbelContentType} ist")
+      "TGR prüft, dass {tigerResolvedString} gleich {tigerResolvedString} mit Typ {rbelContentType}"
+          + " ist")
   @When("TGR asserts {tigerResolvedString} equals {tigerResolvedString} of type {rbelContentType}")
   public void assertJexlOutputEquals(
       String jexlExpressionActual, String jexlExpressionExpected, RbelContentType contentType) {

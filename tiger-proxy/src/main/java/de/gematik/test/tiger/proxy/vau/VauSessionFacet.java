@@ -60,7 +60,7 @@ public class VauSessionFacet implements RbelFacet {
   private final RbelElement recordId;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap().with("recordId", recordId);
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>().with("recordId", recordId);
   }
 }

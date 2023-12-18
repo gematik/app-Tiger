@@ -6,6 +6,8 @@ package de.gematik.rbellogger.util;
 
 public class BinaryClassifier {
 
+  private BinaryClassifier() {}
+
   private static final int BYTES_TO_CHECK = 100;
 
   public static boolean isBinary(byte[] data) {

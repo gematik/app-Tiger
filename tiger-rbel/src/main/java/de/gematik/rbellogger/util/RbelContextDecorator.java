@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 public class RbelContextDecorator {
 
   private static final int MAXIMUM_JEXL_ELEMENT_SIZE = 16_000;
+  public static final String CONTENT = "content";
 
   public static void buildJexlMapContext(
       Object element, Optional<String> key, TigerJexlContext mapContext) {
@@ -31,7 +32,7 @@ public class RbelContextDecorator {
     final Optional<RbelElement> message = findMessage(element);
     mapContext.put("message", message.map(RbelContextDecorator::convertToJexlMessage).orElse(null));
     if (element instanceof RbelElement rbelElement) {
-      mapContext.put("content", getMaxedOutContentOfElement(rbelElement));
+      mapContext.put(CONTENT, getMaxedOutContentOfElement(rbelElement));
       mapContext.put("charset", rbelElement.getElementCharset().displayName());
       mapContext.put("@", buildPositionDescriptor(rbelElement));
       mapContext.put("pos", buildPositionDescriptor(rbelElement));
@@ -277,8 +278,8 @@ public class RbelContextDecorator {
   }
 
   public static String forceStringConvert(RbelPathAble obj) {
-    if (obj.getFirst("content").isPresent()) {
-      return obj.getFirst("content").map(RbelContextDecorator::forceStringConvert).orElse("");
+    if (obj.getFirst(CONTENT).isPresent()) {
+      return obj.getFirst(CONTENT).map(RbelContextDecorator::forceStringConvert).orElse("");
     } else if (obj instanceof RbelElement rbelElement
         && rbelElement.hasFacet(RbelValueFacet.class)) {
       return rbelElement.getFacetOrFail(RbelValueFacet.class).getValue().toString();

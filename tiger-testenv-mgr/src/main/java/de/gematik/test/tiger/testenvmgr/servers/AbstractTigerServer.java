@@ -10,7 +10,7 @@ import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.PkiType;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -85,6 +85,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     }
   }
 
+  @SuppressWarnings("java:S2139")
   public void start(TigerTestEnvMgr testEnvMgr) {
     if (testEnvMgr.isShuttingDown()) {
       log.debug("Skipping startup, already shutting down...");

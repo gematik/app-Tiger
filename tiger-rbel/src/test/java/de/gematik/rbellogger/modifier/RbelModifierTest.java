@@ -16,6 +16,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class RbelModifierTest extends AbstractModifierTest {
 
@@ -34,14 +37,11 @@ class RbelModifierTest extends AbstractModifierTest {
 
     final RbelElement modifiedMessage = modifyMessageAndParseResponse(message);
 
-    assertThat(message.findElement("$.header.Version").map(RbelElement::getRawStringContent).get())
-        .isEqualTo("9.0.0");
+    assertThat(message.findElement("$.header.Version").map(RbelElement::getRawStringContent))
+        .contains("9.0.0");
     assertThat(
-            modifiedMessage
-                .findElement("$.header.Version")
-                .map(RbelElement::getRawStringContent)
-                .get())
-        .isEqualTo("foobar");
+            modifiedMessage.findElement("$.header.Version").map(RbelElement::getRawStringContent))
+        .contains("foobar");
   }
 
   @Test
@@ -89,8 +89,10 @@ class RbelModifierTest extends AbstractModifierTest {
         .isEqualTo("foobar bar bar barsss");
   }
 
-  @Test
-  void reasonPhraseReplaceWithEmptyString() throws IOException {
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {" "})
+  void reasonPhraseReplaceWithNullEmptyOneSpaceString(String replaceString) throws IOException {
     final RbelElement message =
         readAndConvertCurlMessage("src/test/resources/sampleMessages/reasonPhraseMessage.curl");
     rbelLogger
@@ -98,7 +100,7 @@ class RbelModifierTest extends AbstractModifierTest {
         .addModification(
             RbelModificationDescription.builder()
                 .targetElement("$.reasonPhrase")
-                .replaceWith("")
+                .replaceWith(replaceString)
                 .build());
 
     final RbelElement modifiedMessage = modifyMessageAndParseResponse(message);
@@ -108,60 +110,10 @@ class RbelModifierTest extends AbstractModifierTest {
                 .getFacetOrFail(RbelHttpResponseFacet.class)
                 .getReasonPhrase()
                 .getRawStringContent())
-        .isEqualTo(null);
+        .isNull();
 
     assertThat(modifiedMessage.getRawStringContent())
-        .contains("HTTP/1.1 200\r\n" + "Cache-Control: max-age=300");
-  }
-
-  @Test
-  void reasonPhraseReplaceWithNull() throws IOException {
-    final RbelElement message =
-        readAndConvertCurlMessage("src/test/resources/sampleMessages/reasonPhraseMessage.curl");
-    rbelLogger
-        .getRbelModifier()
-        .addModification(
-            RbelModificationDescription.builder()
-                .targetElement("$.reasonPhrase")
-                .replaceWith(null)
-                .build());
-
-    final RbelElement modifiedMessage = modifyMessageAndParseResponse(message);
-
-    assertThat(
-            modifiedMessage
-                .getFacetOrFail(RbelHttpResponseFacet.class)
-                .getReasonPhrase()
-                .getRawStringContent())
-        .isEqualTo(null);
-
-    assertThat(modifiedMessage.getRawStringContent())
-        .contains("HTTP/1.1 200\r\n" + "Cache-Control: max-age=300");
-  }
-
-  @Test
-  void reasonPhraseReplaceWithASpace() throws IOException {
-    final RbelElement message =
-        readAndConvertCurlMessage("src/test/resources/sampleMessages/reasonPhraseMessage.curl");
-    rbelLogger
-        .getRbelModifier()
-        .addModification(
-            RbelModificationDescription.builder()
-                .targetElement("$.reasonPhrase")
-                .replaceWith(" ")
-                .build());
-
-    final RbelElement modifiedMessage = modifyMessageAndParseResponse(message);
-
-    assertThat(
-            modifiedMessage
-                .getFacetOrFail(RbelHttpResponseFacet.class)
-                .getReasonPhrase()
-                .getRawStringContent())
-        .isEqualTo(null);
-
-    assertThat(modifiedMessage.getRawStringContent())
-        .contains("HTTP/1.1 200\r\n" + "Cache-Control: max-age=300");
+        .contains("HTTP/1.1 200\r\nCache-Control: max-age=300");
   }
 
   @Test
@@ -402,11 +354,8 @@ class RbelModifierTest extends AbstractModifierTest {
     final RbelElement modifiedMessage = modifyMessageAndParseResponse(message);
 
     assertThat(
-            modifiedMessage
-                .findElement("$.header.Version")
-                .map(RbelElement::getRawStringContent)
-                .get())
-        .isEqualTo("foobar");
+            modifiedMessage.findElement("$.header.Version").map(RbelElement::getRawStringContent))
+        .contains("foobar");
 
     assertThat(modifiedMessage.findElement("$.body.keys.0.kid"))
         .get()
@@ -452,11 +401,8 @@ class RbelModifierTest extends AbstractModifierTest {
     final RbelElement modifiedMessage = modifyMessageAndParseResponse(message);
 
     assertThat(
-            modifiedMessage
-                .findElement("$.path.with.value")
-                .map(RbelElement::getRawStringContent)
-                .get())
-        .isEqualTo("anotherValue");
+            modifiedMessage.findElement("$.path.with.value").map(RbelElement::getRawStringContent))
+        .contains("anotherValue");
     assertThat(modifiedMessage.findElement("$.path").map(RbelElement::getRawStringContent).get())
         .contains("foo=bar1")
         .contains("foo=bar3")

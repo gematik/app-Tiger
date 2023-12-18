@@ -2,11 +2,11 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone;
+package de.gematik.test.tiger.testenvmgr.config.tigerproxy_standalone;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import lombok.Data;
 
 @Data

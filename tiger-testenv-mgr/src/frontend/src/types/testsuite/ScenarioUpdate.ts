@@ -7,127 +7,131 @@ import StepUpdate, {IJsonSteps} from "./StepUpdate";
 import FeatureUpdate from "./FeatureUpdate";
 
 interface IScenarioUpdate {
-  steps: Map<string, StepUpdate>;
-  description: string;
-  status: TestResult;
-  exampleKeys: Array<string>;
-  exampleList: Map<string, string>;
-  variantIndex: number;
+    steps: Map<string, StepUpdate>;
+    description: string;
+    status: TestResult;
+    exampleKeys: Array<string>;
+    exampleList: Map<string, string>;
+    variantIndex: number;
 }
 
 interface IJsonScenario {
-  steps: IJsonSteps;
-  description: string;
-  status: TestResult;
-  exampleKeys: Array<string>;
-  exampleList: IJsonOutlineList;
-  variantIndex: number;
+    steps: IJsonSteps;
+    description: string;
+    status: TestResult;
+    exampleKeys: Array<string>;
+    exampleList: IJsonOutlineList;
+    variantIndex: number;
 }
 
 export interface IJsonScenarios {
-  [key: string]:IJsonScenario
+    [key: string]: IJsonScenario
 }
 
 export interface IJsonOutlineList {
-  [key: string]: string;
+    [key: string]: string;
 }
 
 export default class ScenarioUpdate implements IScenarioUpdate {
-  steps = new Map<string, StepUpdate>();
-  description = "";
-  status = TestResult.UNUSED;
-  exampleKeys = new Array<string>();
-  exampleList = new Map<string, string>();
-  variantIndex = -1;
+    steps = new Map<string, StepUpdate>();
+    description = "";
+    status = TestResult.UNUSED;
+    exampleKeys = new Array<string>();
+    exampleList = new Map<string, string>();
+    variantIndex = -1;
 
-  public static fromJson(json: IJsonScenario): ScenarioUpdate {
-    const scenario: ScenarioUpdate = new ScenarioUpdate();
-    scenario.steps = StepUpdate.mapFromJson(json.steps);
-    scenario.description = json.description;
-    if (json.exampleKeys) {
-      scenario.exampleKeys = json.exampleKeys;
+    public static fromJson(json: IJsonScenario): ScenarioUpdate {
+        const scenario: ScenarioUpdate = new ScenarioUpdate();
+        scenario.steps = StepUpdate.mapFromJson(json.steps);
+        scenario.description = json.description;
+        if (json.exampleKeys) {
+            scenario.exampleKeys = json.exampleKeys;
+        }
+        if (json.exampleList) {
+            scenario.exampleList = this.mapScenarioOutlineFromJson(json.exampleList);
+        }
+        if (json.variantIndex !== -1) {
+            scenario.variantIndex = json.variantIndex;
+        }
+        if (json.status) {
+            scenario.status = json.status;
+        } else {
+            scenario.status = FeatureUpdate.mapToTestResult(scenario.steps);
+        }
+        return scenario;
     }
-    if (json.exampleList) {
-      scenario.exampleList = this.mapScenarioOutlineFromJson(json.exampleList);
-    }
-    if (json.variantIndex !== -1) {
-      scenario.variantIndex = json.variantIndex;
-    }
-    if (json.status) {
-      scenario.status = json.status;
-    } else {
-      scenario.status = FeatureUpdate.mapToTestResult(scenario.steps);
-    }
-    return scenario;
-  }
 
-  public static mapFromJson(
-    jsonscenarios: IJsonScenarios
-  ): Map<string, ScenarioUpdate> {
-    const map: Map<string, ScenarioUpdate> = new Map<string, ScenarioUpdate>();
-    if (jsonscenarios) {
-      Object.entries(jsonscenarios).forEach(([key, value]) =>
-        map.set(key, this.fromJson(value))
-      );
+    public static mapFromJson(
+        jsonscenarios: IJsonScenarios
+    ): Map<string, ScenarioUpdate> {
+        const map: Map<string, ScenarioUpdate> = new Map<string, ScenarioUpdate>();
+        if (jsonscenarios) {
+            Object.entries(jsonscenarios).forEach(([key, value]) =>
+                map.set(key, this.fromJson(value))
+            );
+        }
+        return map;
     }
-    return map;
-  }
 
-  public static mapScenarioOutlineFromJson(outlineList: IJsonOutlineList): Map<string, string> {
-    const map: Map<string, string> = new Map<string, string>();
-    if (outlineList) {
-      Object.entries(outlineList).forEach(([key, value]) =>
-        map.set(key, value));
+    public static mapScenarioOutlineFromJson(outlineList: IJsonOutlineList): Map<string, string> {
+        const map: Map<string, string> = new Map<string, string>();
+        if (outlineList) {
+            Object.entries(outlineList).forEach(([key, value]) =>
+                map.set(key, value));
+        }
+        return map;
     }
-    return map;
-  }
 
-  public merge(scenario: ScenarioUpdate) {
-    if (scenario.description) {
-      this.description = scenario.description;
+    public merge(scenario: ScenarioUpdate) {
+        if (scenario.description) {
+            this.description = scenario.description;
+        }
+        if (scenario.status) {
+            this.status = scenario.status;
+        }
+        if (scenario.variantIndex !== -1) {
+            this.variantIndex = scenario.variantIndex;
+        }
+        if (scenario.steps) {
+            for (const key of scenario.steps.keys()) {
+                this.mergeStep(key, scenario);
+            }
+            // update scenario status and change pending steps to skipped in case of error
+            this.status = FeatureUpdate.mapToTestResult(this.steps);
+            if (this.status === TestResult.FAILED) {
+                this.steps.forEach((step) => {
+                    if (step.status === TestResult.PENDING)
+                        step.status = TestResult.SKIPPED;
+                });
+            }
+        }
     }
-    if (scenario.status) {
-      this.status = scenario.status;
-    }
-    if (scenario.variantIndex !== -1) {
-      this.variantIndex = scenario.variantIndex;
-    }
-    if (scenario.steps) {
-      for (const key of scenario.steps.keys()) {
+
+    private mergeStep(key: string, scenario: ScenarioUpdate) {
         const step: StepUpdate | undefined = this.steps.get(key);
         const newStep = scenario.steps.get(key);
         if (newStep) {
-          if (step) {
-            step.merge(newStep);
-          } else {
-            this.steps.set(key, newStep);
-          }
+            if (step) {
+                step.merge(newStep);
+            } else {
+                this.steps.set(key, newStep);
+            }
         } else {
-          console.error(`RECEIVED a NULL step in scenario ${scenario.description} for key ${key}`);
+            console.error(`RECEIVED a NULL step in scenario ${scenario.description} for key ${key}`);
         }
-      }
-      // update scenario status and change pending steps to skipped in case of error
-      this.status = FeatureUpdate.mapToTestResult(this.steps);
-      if (this.status === TestResult.FAILED) {
-        this.steps.forEach((step) => {
-          if (step.status === TestResult.PENDING)
-            step.status = TestResult.SKIPPED;
-        });
-      }
     }
-  }
 
-  public getLink(featureName: string): string {
-    if (this.variantIndex === -1) {
-      return encodeURI(featureName.trim() + "_" + this.description.trim());
-    } else {
-      return encodeURI(featureName.trim() + "_" + this.description.trim() + "[" + (this.variantIndex+1)+"]");
+    public getLink(featureName: string): string {
+        if (this.variantIndex === -1) {
+            return encodeURI(featureName.trim() + "_" + this.description.trim());
+        } else {
+            return encodeURI(featureName.trim() + "_" + this.description.trim() + "[" + (this.variantIndex + 1) + "]");
+        }
     }
-  }
 
-  public toString() {
-    return `{ description: "${this.description}",\nstatus: "${
-      this.status
-    }",\nsteps: "${FeatureUpdate.mapToString(this.steps)}"\n}`;
-  }
+    public toString() {
+        return `{ description: "${this.description}",\nstatus: "${
+            this.status
+        }",\nsteps: "${FeatureUpdate.mapToString(this.steps)}"\n}`;
+    }
 }

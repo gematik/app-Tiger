@@ -8,6 +8,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.util.RbelArrayUtils;
 import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
@@ -51,7 +52,7 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
 
     final RbelElement pathElement = converter.convertElement(path, targetElement);
     if (!pathElement.hasFacet(RbelUriFacet.class)) {
-      throw new RuntimeException("Encountered ill-formatted path: " + path);
+      throw new RbelConversionException("Encountered ill-formatted path: " + path);
     }
 
     final byte[] bodyData =
@@ -79,10 +80,8 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
   }
 
   public static String findEolInHttpMessage(String content) {
-    if (content.contains("\r\n")) {
-      if (content.indexOf("\r\n") < content.indexOf("\n")) {
-        return "\r\n";
-      }
+    if (content.contains("\r\n") && content.indexOf("\r\n") < content.indexOf("\n")) {
+      return "\r\n";
     }
     return "\n";
   }

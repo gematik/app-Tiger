@@ -6,7 +6,7 @@ package de.gematik.test.tiger.proxy.controller;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;

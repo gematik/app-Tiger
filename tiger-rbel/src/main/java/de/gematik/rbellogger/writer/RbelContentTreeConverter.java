@@ -15,11 +15,13 @@ import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.*;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 @AllArgsConstructor
 public class RbelContentTreeConverter {
 
-  public static final TigerConfigurationKey ENCODE_AS =
+  public static final TigerConfigurationKey
+      ENCODE_AS = // NOSONAR as it is used from other classes too
       new TigerConfigurationKey("rbel", "conversion", "encodeAs");
   private static final String TGR_ENCODE_AS = "tgrEncodeAs";
   private static final String TGR_FOR = "tgrFor";
@@ -31,7 +33,7 @@ public class RbelContentTreeConverter {
           new RbelJwtElementToNodeConverter(),
           new RbelBearerTokenElementToNodeConverter());
   private final RbelElement input;
-  private final TigerJexlContext jexlContext;
+  @Getter private final TigerJexlContext jexlContext;
   private Set<String> transitiveTypes = Set.of("xml", "json");
 
   public RbelContentTreeConverter(RbelElement input, TigerJexlContext jexlContext) {
@@ -45,8 +47,7 @@ public class RbelContentTreeConverter {
 
   private static TigerConfigurationLoader initializeConversionContext() {
     TigerConfigurationLoader conversionContext = new TigerConfigurationLoader();
-    TigerGlobalConfiguration.listSources().stream()
-        .forEach(conversionContext::addConfigurationSource);
+    TigerGlobalConfiguration.listSources().forEach(conversionContext::addConfigurationSource);
     return conversionContext;
   }
 
@@ -83,10 +84,8 @@ public class RbelContentTreeConverter {
     }
 
     encodingConfigurationSource.ifPresent(conversionContext::removeConfigurationSource);
-    if (encodeAsOptional.isPresent()) {
-      result.stream()
-          .forEach(node -> node.setType(RbelContentType.seekValueFor(encodeAsOptional.get())));
-    }
+    encodeAsOptional.ifPresent(
+        s -> result.forEach(node -> node.setType(RbelContentType.seekValueFor(s))));
 
     return result;
   }
@@ -122,9 +121,9 @@ public class RbelContentTreeConverter {
       RbelElement input, String key, TigerConfigurationLoader conversionContext) {
     String loopStatement = findLoopStatement(input);
     final TigerJexlContext context = buildNewExpressionEvaluationContext();
-    final TigerJexlExecutor rbelJexlExecutor = new TigerJexlExecutor();
+    final TigerJexlExecutor rbelJexlExecutor = TigerJexlExecutor.createNewExecutor();
     final Map<String, Object> jexlMapContext =
-        rbelJexlExecutor.buildJexlMapContext(context.getRootElement(), Optional.ofNullable(key));
+        TigerJexlExecutor.buildJexlMapContext(context.getRootElement(), Optional.ofNullable(key));
     context.putAll(jexlMapContext);
     rbelJexlExecutor.buildScript("t = " + loopStatement.split(":")[1]).execute(context);
     final List<RbelContentTreeNode> resultList = new ArrayList<>();
@@ -191,15 +190,11 @@ public class RbelContentTreeConverter {
           .getFacet(RbelXmlFacet.class)
           .map(RbelXmlFacet::getChildElements)
           .map(childs -> childs.get("text"))
-          .filter(RbelElement.class::isInstance)
-          .map(RbelElement.class::cast)
           .map(RbelElement::getRawStringContent);
     } else if (rbelElement.hasFacet(RbelJsonFacet.class)) {
       return rbelElement
           .getFacet(RbelNestedFacet.class)
           .map(RbelNestedFacet::getNestedElement)
-          .filter(RbelElement.class::isInstance)
-          .map(RbelElement.class::cast)
           .map(RbelElement::getRawStringContent);
     } else {
       return Optional.ofNullable(rbelElement.getRawStringContent());
@@ -220,9 +215,5 @@ public class RbelContentTreeConverter {
     result.setCharset(input.getElementCharset());
     result.setKey(key);
     return List.of(result);
-  }
-
-  public TigerJexlContext getJexlContext() {
-    return jexlContext;
   }
 }

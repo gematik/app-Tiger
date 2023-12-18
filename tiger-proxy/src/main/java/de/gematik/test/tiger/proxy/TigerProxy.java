@@ -8,9 +8,9 @@ import static de.gematik.test.tiger.proxy.tls.TlsCertificateGenerator.generateNe
 import static org.mockserver.model.HttpRequest.request;
 
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;

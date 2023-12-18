@@ -23,8 +23,7 @@ class ErrorsStompHandler implements StompFrameHandler {
 
   @Override
   public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
-    if (frameContent instanceof TigerExceptionDto) {
-      final TigerExceptionDto exceptionDto = (TigerExceptionDto) frameContent;
+    if (frameContent instanceof TigerExceptionDto exceptionDto) {
       log.warn(
           "Received remote exception: ({}) {}: {} ",
           exceptionDto.getClassName(),

@@ -16,6 +16,8 @@ public class BrainpoolAlgorithmSuiteIdentifiers {
   public static final String BRAINPOOL512_USING_SHA512 =
       getValueAndExecuteInitialisation(INTERNAL_BRAINPOOL512_USING_SHA512);
 
+  private BrainpoolAlgorithmSuiteIdentifiers() {}
+
   private static String getValueAndExecuteInitialisation(final String value) {
     BrainpoolCurves.init();
     return value;

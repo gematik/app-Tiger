@@ -116,8 +116,9 @@ class TestTigerDirector {
                     + System.getProperty("https.proxyPort"));
 
             assertThat(TigerDirector.isInitialized()).isTrue();
-            assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
-            assertThatThrownBy(() -> TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail())
+            var testenvMgr = TigerDirector.getTigerTestEnvMgr();
+            assertThat(testenvMgr).isNotNull();
+            assertThatThrownBy(testenvMgr::getLocalTigerProxyOrFail)
                 .isInstanceOf(TigerTestEnvException.class);
 
             final var url = new URL("http://idp-rise-tu-noproxy");

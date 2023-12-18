@@ -22,7 +22,6 @@ import java.util.Optional;
 import lombok.AllArgsConstructor;
 import org.jose4j.jca.ProviderContext;
 import org.jose4j.jws.JsonWebSignature;
-import org.jose4j.jwt.consumer.InvalidJwtSignatureException;
 import org.jose4j.lang.JoseException;
 
 @AllArgsConstructor
@@ -91,30 +90,28 @@ public class RbelJwtWriter implements RbelElementWriter {
   private Key findNewSignerKey(String newContent) {
     final String newSignatureKeyName =
         newContent.substring(RbelJwtSignatureWriter.VERIFIED_USING_MARKER.length);
-    final Key newSignatureKey =
-        rbelKeyManager
-            .findKeyByName(newSignatureKeyName)
-            .map(
-                key -> {
-                  if (key.getKey() instanceof PrivateKey) {
-                    return key;
-                  } else {
-                    return rbelKeyManager
-                        .findCorrespondingPrivateKey(newSignatureKeyName)
-                        .orElseThrow(
-                            () ->
-                                new RbelJwtSignatureModificationException(
-                                    "Could not find private key matching '"
-                                        + newSignatureKeyName
-                                        + "'"));
-                  }
-                })
-            .map(RbelKey::getKey)
-            .orElseThrow(
-                () ->
-                    new RbelJwtSignatureModificationException(
-                        "Could not find key '" + newSignatureKeyName + "'"));
-    return newSignatureKey;
+    return rbelKeyManager
+        .findKeyByName(newSignatureKeyName)
+        .map(
+            key -> {
+              if (key.getKey() instanceof PrivateKey) {
+                return key;
+              } else {
+                return rbelKeyManager
+                    .findCorrespondingPrivateKey(newSignatureKeyName)
+                    .orElseThrow(
+                        () ->
+                            new RbelJwtSignatureModificationException(
+                                "Could not find private key matching '"
+                                    + newSignatureKeyName
+                                    + "'"));
+              }
+            })
+        .map(RbelKey::getKey)
+        .orElseThrow(
+            () ->
+                new RbelJwtSignatureModificationException(
+                    "Could not find key '" + newSignatureKeyName + "'"));
   }
 
   private Key extractJwsKey(RbelJwtFacet jwtFacet) {

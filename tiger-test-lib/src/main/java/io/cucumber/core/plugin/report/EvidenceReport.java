@@ -1,10 +1,13 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package io.cucumber.core.plugin.report;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -30,8 +33,7 @@ public class EvidenceReport {
 
     public Step addEntry(Evidence stepEvidenceToAdd) {
       return withEvidenceEntries(
-          Stream.concat(evidenceEntries.stream(), Stream.of(stepEvidenceToAdd))
-              .collect(Collectors.toUnmodifiableList()));
+          Stream.concat(evidenceEntries.stream(), Stream.of(stepEvidenceToAdd)).toList());
     }
   }
 

@@ -14,7 +14,6 @@ import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -23,9 +22,7 @@ public class RbelX5cKeyReader implements RbelConverterPlugin {
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
     final List<RbelElement> elementList =
-        rbelElement.getAll("x5c").stream()
-            .filter(el -> el.hasFacet(RbelJsonFacet.class))
-            .collect(Collectors.toList());
+        rbelElement.getAll("x5c").stream().filter(el -> el.hasFacet(RbelJsonFacet.class)).toList();
     for (RbelElement x5cElement : elementList) {
       final Optional<byte[]> certificateData = getX509Certificate(x5cElement);
       final Optional<String> keyId = getKeyId(x5cElement);

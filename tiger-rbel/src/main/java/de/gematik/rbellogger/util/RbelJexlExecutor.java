@@ -88,29 +88,34 @@ public class RbelJexlExecutor {
       List<String> previousIterationPaths = new ArrayList<>(resultingPaths);
       List<String> newPaths = new ArrayList<>();
       for (var expression : previousIterationPaths) {
-        final List<String> pathResults =
-            extractPathAndConvertToString(
-                potentialPath.startsWith("@.")
-                    ? mapContext.getCurrentElement()
-                    : mapContext.getRootElement(),
-                potentialPath.startsWith("@.")
-                    ? potentialPath.replaceFirst("@\\.", "\\$.")
-                    : potentialPath);
-        if (pathResults.isEmpty()
-            || pathResults.stream().anyMatch(s -> !CharMatcher.ascii().matchesAllOf(s))) {
-          continue;
-        }
-        for (String pathResult : pathResults) {
-          final String id = "replacedPath_" + RandomStringUtils.randomAlphabetic(20); // NOSONAR
-          mapContext.put(id, pathResult);
-          newPaths.add(expression.replace(potentialPath, id));
-        }
+        evaluateAndCollectSubPaths(mapContext, potentialPath, expression, newPaths);
       }
       if (!newPaths.isEmpty()) {
         resultingPaths = newPaths;
       }
     }
     return resultingPaths;
+  }
+
+  private static void evaluateAndCollectSubPaths(
+      TigerJexlContext mapContext, String potentialPath, String expression, List<String> newPaths) {
+    final List<String> pathResults =
+        extractPathAndConvertToString(
+            potentialPath.startsWith("@.")
+                ? mapContext.getCurrentElement()
+                : mapContext.getRootElement(),
+            potentialPath.startsWith("@.")
+                ? potentialPath.replaceFirst("@\\.", "\\$.")
+                : potentialPath);
+    if (pathResults.isEmpty()
+        || pathResults.stream().anyMatch(s -> !CharMatcher.ascii().matchesAllOf(s))) {
+      return;
+    }
+    for (String pathResult : pathResults) {
+      final String id = "replacedPath_" + RandomStringUtils.randomAlphabetic(20); // NOSONAR
+      mapContext.put(id, pathResult);
+      newPaths.add(expression.replace(potentialPath, id));
+    }
   }
 
   public static List<String> extractPotentialRbelPaths(String jexlExpression) {

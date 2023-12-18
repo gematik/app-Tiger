@@ -54,8 +54,8 @@ public class RbelValueShader {
   }
 
   private String toStringValue(final Object value) {
-    if (value instanceof RbelElement) {
-      return ((RbelElement) value).getRawStringContent();
+    if (value instanceof RbelElement element) {
+      return element.getRawStringContent();
     } else {
       return value.toString();
     }

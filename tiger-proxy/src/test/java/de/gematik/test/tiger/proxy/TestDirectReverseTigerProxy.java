@@ -10,9 +10,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
-import de.gematik.test.tiger.common.data.config.tigerProxy.DirectReverseProxyInfo;
-import de.gematik.test.tiger.common.data.config.tigerProxy.ForwardProxyInfo;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
+import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.IOException;
 import java.net.ServerSocket;

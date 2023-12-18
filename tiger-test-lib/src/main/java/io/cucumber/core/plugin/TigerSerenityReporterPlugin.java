@@ -40,38 +40,40 @@ public class TigerSerenityReporterPlugin extends SerenityReporter {
     publisher.registerHandlerFor(WriteEvent.class, this::handleWriteEvent);
   }
 
+  @Override
   protected void handleTestRunStarted(TestRunStarted event) {
     reporterCallbacks.handleTestRunStarted(event, getScenarioContextDelegate());
     super.handleTestRunStarted(event);
   }
 
+  @Override
   protected void handleTestSourceRead(TestSourceRead event) {
     super.handleTestSourceRead(event);
     reporterCallbacks.handleTestSourceRead(event);
   }
 
+  @Override
   protected void handleTestCaseStarted(TestCaseStarted event) {
     super.handleTestCaseStarted(event);
     reporterCallbacks.handleTestCaseStarted(event, getScenarioContextDelegate());
   }
 
+  @Override
   protected void handleTestStepStarted(TestStepStarted event) {
     super.handleTestStepStarted(event);
     reporterCallbacks.handleTestStepStarted(event, getScenarioContextDelegate());
   }
 
+  @Override
   protected void handleTestStepFinished(TestStepFinished event) {
     reporterCallbacks.handleTestStepFinished(event, getScenarioContextDelegate());
     super.handleTestStepFinished(event);
   }
 
+  @Override
   protected void handleTestCaseFinished(TestCaseFinished event) {
     reporterCallbacks.handleTestCaseFinished(event, getScenarioContextDelegate());
     super.handleTestCaseFinished(event);
-  }
-
-  protected void handleTestRunFinished(TestRunFinished event) {
-    super.handleTestRunFinished(event);
   }
 
   protected void handleWriteEvent(WriteEvent event) {

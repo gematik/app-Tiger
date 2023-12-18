@@ -33,13 +33,12 @@ public class CustomerProxyServerAppender extends AppenderBase<ILoggingEvent> {
                 proxy
                     .getLogListeners()
                     .forEach(
-                        listener -> {
-                          listener.receiveServerLogUpdate(
-                              TigerServerLogUpdate.builder()
-                                  .logLevel(iLoggingEvent.getLevel().levelStr)
-                                  .logMessage(iLoggingEvent.getFormattedMessage())
-                                  .serverName(serverId)
-                                  .build());
-                        }));
+                        listener ->
+                            listener.receiveServerLogUpdate(
+                                TigerServerLogUpdate.builder()
+                                    .logLevel(iLoggingEvent.getLevel().levelStr)
+                                    .logMessage(iLoggingEvent.getFormattedMessage())
+                                    .serverName(serverId)
+                                    .build())));
   }
 }

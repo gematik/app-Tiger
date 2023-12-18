@@ -5,8 +5,11 @@
 package de.gematik.rbellogger;
 
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class RbelOptions {
 
   @Getter private static boolean activateRbelPathDebugging = false;
@@ -14,8 +17,6 @@ public class RbelOptions {
   @Getter private static int rbelPathTreeViewValueOutputLength = 50;
   @Getter private static boolean activateJexlDebugging = false;
   @Getter private static boolean activateFacetsPrinting = true;
-
-  private RbelOptions() {}
 
   public static void activateJexlDebugging() {
     activateJexlDebugging = true;

@@ -279,9 +279,9 @@ public class TigerPkiIdentityLoader {
     @Getter private final boolean isKeystore;
 
     StoreType(boolean isKeystore, String... alternateNames) {
-      List<String> names = new ArrayList<>(List.of(alternateNames));
-      names.add(name());
-      this.names = Collections.unmodifiableList(names);
+      List<String> namesList = new ArrayList<>(List.of(alternateNames));
+      namesList.add(name());
+      this.names = Collections.unmodifiableList(namesList);
       this.isKeystore = isKeystore;
     }
 

@@ -14,7 +14,7 @@ public class RbelAsn1UnparsedBytesFacet implements RbelFacet {
   private final RbelElement unparsedBytes;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap().with("unparsedBytes", unparsedBytes);
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>().with("unparsedBytes", unparsedBytes);
   }
 }

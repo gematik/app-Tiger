@@ -65,31 +65,40 @@ public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNo
       if (entry.getValue().hasFacet(RbelXmlFacet.class)) {
         final List<RbelContentTreeNode> childNodes = new ArrayList<>();
         for (RbelContentTreeNode childNode : node.getChildNodes()) {
-          if (childNode.getType() == null
-              && childNode.getKey().orElseThrow().equals("text")
-              && node.getType() != RbelContentType.XML) {
-            node.setContent(childNode.getContent());
-            node.setupChildNodes(List.of());
-            log.trace("pulling up node '{}'", node.getRawStringContent());
-          } else if (!childNode.hasTypeOptional(RbelContentType.XML).orElse(true)
-              && !childNode.getKey().orElseThrow().equals("text")) {
-            // wrap in text-node (will be rendered as text inside the xml)
-            RbelContentTreeNode wrapperNode =
-                new RbelStrictOrderContentTreeNode(
-                    new RbelMultiMap<>().with(childNode.getKey().orElseThrow(), childNode), null);
-            wrapperNode.setType(childNode.getType());
-            wrapperNode.setKey("text");
-            wrapperNode.setCharset(node.getElementCharset());
-            childNodes.add(wrapperNode);
-            log.trace("wrapping node {}", node.getContent());
-          } else {
-            childNodes.add(childNode);
-          }
+          addChildNode(node, childNode, childNodes);
         }
         node.setupChildNodes(childNodes);
       }
       nodes.add(node);
     }
     return nodes;
+  }
+
+  private static void addChildNode(
+      RbelContentTreeNode node,
+      RbelContentTreeNode childNode,
+      List<RbelContentTreeNode> childNodes) {
+    if (childNode.getType() == null
+        && childNode.getKey().orElseThrow().equals("text")
+        && node.getType() != RbelContentType.XML) {
+      node.setContent(childNode.getContent());
+      node.setupChildNodes(List.of());
+      log.trace("pulling up node '{}'", node.getRawStringContent());
+    } else if (!childNode.hasTypeOptional(RbelContentType.XML).orElse(true)
+        && !childNode.getKey().orElseThrow().equals("text")) {
+      // wrap in text-node (will be rendered as text inside the xml)
+      RbelContentTreeNode wrapperNode =
+          new RbelStrictOrderContentTreeNode(
+              new RbelMultiMap<RbelContentTreeNode>()
+                  .with(childNode.getKey().orElseThrow(), childNode),
+              null);
+      wrapperNode.setType(childNode.getType());
+      wrapperNode.setKey("text");
+      wrapperNode.setCharset(node.getElementCharset());
+      childNodes.add(wrapperNode);
+      log.trace("wrapping node {}", node.getContent());
+    } else {
+      childNodes.add(childNode);
+    }
   }
 }

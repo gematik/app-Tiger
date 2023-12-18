@@ -29,13 +29,12 @@ public class CustomerLocalProxyAppender extends AppenderBase<ILoggingEvent> {
             mgr ->
                 mgr.getLogListeners()
                     .forEach(
-                        listener -> {
-                          listener.receiveServerLogUpdate(
-                              TigerServerLogUpdate.builder()
-                                  .logLevel(iLoggingEvent.getLevel().levelStr)
-                                  .logMessage(iLoggingEvent.getFormattedMessage())
-                                  .serverName("localTigerProxy")
-                                  .build());
-                        }));
+                        listener ->
+                            listener.receiveServerLogUpdate(
+                                TigerServerLogUpdate.builder()
+                                    .logLevel(iLoggingEvent.getLevel().levelStr)
+                                    .logMessage(iLoggingEvent.getFormattedMessage())
+                                    .serverName("localTigerProxy")
+                                    .build())));
   }
 }

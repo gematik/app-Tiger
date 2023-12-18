@@ -47,7 +47,7 @@ public class RbelJsonFacet implements RbelFacet {
               Optional<String> key,
               RbelHtmlRenderingToolkit renderingToolkit) {
             String formatedJson =
-                renderingToolkit.GSON.toJson(
+                RbelHtmlRenderingToolkit.GSON.toJson(
                     renderingToolkit.shadeJson(
                         JsonParser.parseString(element.getRawStringContent()),
                         Optional.empty(),
@@ -86,7 +86,7 @@ public class RbelJsonFacet implements RbelFacet {
   private final JsonElement jsonElement;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap();
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<>();
   }
 }

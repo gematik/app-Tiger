@@ -6,6 +6,7 @@ package de.gematik.rbellogger.modifier;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelVauEpaFacet;
+import de.gematik.rbellogger.exceptions.RbelPkiException;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.modifier.RbelModifier.RbelModificationException;
 import de.gematik.rbellogger.util.CryptoUtils;
@@ -54,7 +55,7 @@ public class RbelVauEpaWriter implements RbelElementWriter {
     final Optional<RbelKey> decryptionKey =
         oldTargetElement.getFacet(RbelVauEpaFacet.class).flatMap(RbelVauEpaFacet::getKeyUsed);
     if (decryptionKey.isEmpty()) {
-      throw new RuntimeException(
+      throw new RbelPkiException(
           "Error while trying to write VAU Erp Message: No decryption-key found!");
     }
     final byte[] oldEncryptedMessage =

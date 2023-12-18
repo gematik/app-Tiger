@@ -58,7 +58,7 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
               + "        - --httpPort=${free.port.0}\n"
               + "        - --webroot=.\n",
       skipEnvironmentSetup = true)
-  public void testCreateStandaloneProxyAsExternalJarViaExternalProcess(TigerTestEnvMgr envMgr) {
+  void testCreateStandaloneProxyAsExternalJarViaExternalProcess(TigerTestEnvMgr envMgr) {
     setUpEnvAndExecuteWithSecureShutdown(
         () -> {
           Process proc = null;
@@ -112,7 +112,7 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
               + "      arguments:\n"
               + "        - --spring.config.location=../../tiger-testenv-mgr/target/\n",
       skipEnvironmentSetup = true)
-  public void testCreateStandaloneProxyAsExternalJarViaTestEnvMgr(TigerTestEnvMgr envMgr)
+  void testCreateStandaloneProxyAsExternalJarViaTestEnvMgr(TigerTestEnvMgr envMgr)
       throws IOException {
     setUpEnvAndExecuteWithSecureShutdown(
         () -> {

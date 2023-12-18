@@ -59,6 +59,7 @@ public class RbelUriFacet implements RbelFacet {
             }
           }
 
+          @SuppressWarnings({"rawtypes", "java:S3740"})
           private ContainerTag renderUrlContent(
               RbelHtmlRenderingToolkit renderingToolkit,
               RbelUriFacet uriFacet,
@@ -93,8 +94,8 @@ public class RbelUriFacet implements RbelFacet {
   private final List<RbelElement> queryParameters;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    RbelMultiMap result = new RbelMultiMap();
+  public RbelMultiMap<RbelElement> getChildElements() {
+    RbelMultiMap<RbelElement> result = new RbelMultiMap<>();
     queryParameters.forEach(
         el -> result.put(el.getFacetOrFail(RbelUriParameterFacet.class).getKeyAsString(), el));
     result.put("basicPath", basicPath);

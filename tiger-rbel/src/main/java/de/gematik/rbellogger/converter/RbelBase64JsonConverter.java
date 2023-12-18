@@ -11,7 +11,6 @@ import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.data.facet.RbelXmlFacet;
 import java.util.Base64;
 import java.util.Base64.Decoder;
-import java.util.Objects;
 import java.util.Optional;
 
 public class RbelBase64JsonConverter extends RbelJsonConverter {
@@ -40,10 +39,9 @@ public class RbelBase64JsonConverter extends RbelJsonConverter {
                 return null;
               }
             })
-        .filter(Objects::nonNull)
         .map(data -> new RbelElement(data, parentNode))
         .stream()
-        .peek(innerNode -> context.convertElement(innerNode))
+        .peek(context::convertElement)
         .filter(innerNode -> innerNode.hasFacet(RbelRootFacet.class))
         .filter(
             innerNode ->
@@ -51,7 +49,7 @@ public class RbelBase64JsonConverter extends RbelJsonConverter {
                         instanceof RbelJsonFacet
                     || innerNode.getFacetOrFail(RbelRootFacet.class).getRootFacet()
                         instanceof RbelXmlFacet)
-        .map(child -> new RbelBase64Facet(child))
+        .map(RbelBase64Facet::new)
         .findAny();
   }
 }

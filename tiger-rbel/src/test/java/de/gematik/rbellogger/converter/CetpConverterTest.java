@@ -70,6 +70,7 @@ class CetpConverterTest {
   }
 
   @Test
+  @SuppressWarnings("java:S2699")
   void checkRendering() throws IOException {
     rbelConverter.parseMessage(cetpMessageAsBytes, null, null, Optional.empty());
     FileUtils.writeStringToFile(

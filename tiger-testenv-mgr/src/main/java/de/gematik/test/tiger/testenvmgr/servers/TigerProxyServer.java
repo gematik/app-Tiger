@@ -6,14 +6,14 @@ package de.gematik.test.tiger.testenvmgr.servers;
 
 import static de.gematik.test.tiger.common.SocketHelper.findFreePort;
 
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
-import de.gematik.test.tiger.testenvmgr.config.tigerProxyStandalone.CfgStandaloneProxy;
+import de.gematik.test.tiger.testenvmgr.config.tigerproxy_standalone.CfgStandaloneProxy;
 import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
@@ -38,6 +38,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
     super(determineHostname(configuration, serverId), serverId, configuration, tigerTestEnvMgr);
   }
 
+  @Override
   public void assertThatConfigurationIsCorrect() {
     super.assertThatConfigurationIsCorrect();
 

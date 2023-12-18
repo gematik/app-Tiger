@@ -24,7 +24,7 @@ public class RbelHttpMessageFacet implements RbelFacet {
   }
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap().with("body", body).with("header", header);
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>().with("body", body).with("header", header);
   }
 }

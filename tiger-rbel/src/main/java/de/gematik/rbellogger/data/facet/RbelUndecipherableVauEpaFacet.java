@@ -60,7 +60,7 @@ public class RbelUndecipherableVauEpaFacet implements RbelFacet {
   private List<RbelNoteFacet> errorNotes;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap();
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<>();
   }
 }

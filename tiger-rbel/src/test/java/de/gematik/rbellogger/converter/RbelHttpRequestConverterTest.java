@@ -35,8 +35,9 @@ class RbelHttpRequestConverterTest {
 
     new RbelHttpRequestConverter().consumeElement(rbelElement, rbelConverter);
 
-    assertThat(rbelElement).hasFacet(RbelHttpRequestFacet.class);
-    assertThat(rbelElement).hasFacet(RbelHttpMessageFacet.class);
+    assertThat(rbelElement)
+        .hasFacet(RbelHttpRequestFacet.class)
+        .hasFacet(RbelHttpMessageFacet.class);
   }
 
   @Test

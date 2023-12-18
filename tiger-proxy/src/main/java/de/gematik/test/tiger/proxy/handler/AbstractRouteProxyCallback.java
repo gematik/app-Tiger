@@ -4,7 +4,7 @@
 
 package de.gematik.test.tiger.proxy.handler;
 
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import java.net.MalformedURLException;
 import java.net.URI;

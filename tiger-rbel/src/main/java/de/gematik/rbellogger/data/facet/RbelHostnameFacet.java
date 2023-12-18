@@ -47,8 +47,8 @@ public class RbelHostnameFacet implements RbelFacet {
   }
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap().with("port", port).with("domain", domain);
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>().with("port", port).with("domain", domain);
   }
 
   public String toString() {
@@ -56,7 +56,9 @@ public class RbelHostnameFacet implements RbelFacet {
             .flatMap(el -> el.seekValue(String.class))
             .or(() -> domain.seekValue(String.class))
             .orElseThrow(() -> new RbelHostnameStructureException("Could not find domain-name!"))
-        + port.seekValue(Integer.class).map(port -> ":" + port).orElse("");
+        + port.seekValue(Integer.class)
+            .map(bundledServerPort -> ":" + bundledServerPort)
+            .orElse("");
   }
 
   public RbelHostname toRbelHostname() {

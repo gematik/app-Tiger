@@ -36,7 +36,7 @@ class EpaTracingpointsTest {
         Unirest.get("http://localhost:" + springBootPort + "/tracingpoints").asJson().getBody();
 
     assertThat(tracingpointsBody.isArray()).isTrue();
-    assertThat(tracingpointsBody.getArray().length()).isGreaterThanOrEqualTo(1);
+    assertThat(tracingpointsBody.getArray().length()).isPositive();
     assertThat(tracingpointsBody.getArray().getJSONObject(0).getString("name"))
         .isEqualTo("tigerProxy Tracing Point");
     assertThat(tracingpointsBody.getArray().getJSONObject(0).getInt("port"))

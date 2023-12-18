@@ -19,7 +19,7 @@ public class RbelHttpFormDataConverter implements RbelConverterPlugin {
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
     if (isBodyOfFormDataRequest(rbelElement)) {
-      final RbelMultiMap formDataMap =
+      final RbelMultiMap<RbelElement> formDataMap =
           Stream.of(rbelElement.getRawStringContent().split("&"))
               .map(param -> param.split("="))
               .filter(params -> params.length == 2)

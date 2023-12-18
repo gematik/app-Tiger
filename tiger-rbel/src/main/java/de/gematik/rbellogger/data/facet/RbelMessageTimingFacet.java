@@ -4,6 +4,7 @@
 
 package de.gematik.rbellogger.data.facet;
 
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import java.time.ZonedDateTime;
 import lombok.Builder;
@@ -21,7 +22,7 @@ public class RbelMessageTimingFacet implements RbelFacet {
   @NonNull private final ZonedDateTime transmissionTime;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap();
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<>();
   }
 }

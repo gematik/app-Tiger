@@ -9,19 +9,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.RbelElement;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 
-public class TestRbelMessageProvider {
+class TestRbelMessageProvider {
 
   @Test
-  public void testTriggerNewReceivedMessageOK() {
+  void testTriggerNewReceivedMessageOK() {
     RbelMessageProvider rmProvider = new RbelMessageProvider();
     rmProvider.triggerNewReceivedMessage(buildMessageWithContent("TestMessage"));
     assertThat(rmProvider.getMessages().get(0).getRawStringContent()).contains("TestMessage");
   }
 
   @Test
-  public void testTriggerNewReceivedMessageTwoOK() {
+  void testTriggerNewReceivedMessageTwoOK() {
     RbelMessageProvider rmProvider = new RbelMessageProvider();
     rmProvider.triggerNewReceivedMessage(buildMessageWithContent("TestMessage1"));
     rmProvider.triggerNewReceivedMessage(buildMessageWithContent("TestMessage2"));
@@ -31,62 +35,62 @@ public class TestRbelMessageProvider {
   }
 
   @Test
-  public void testWaitForMessageOK() {
+  void testWaitForMessageOK() {
     final RbelMessageProvider rmProvider = new RbelMessageProvider();
+    // first add one dummy msg to list
     rmProvider.triggerNewReceivedMessage(buildMessageWithContent("TestMessage1"));
-
-    long startms = System.currentTimeMillis();
-    new Thread(
-            () -> {
-              try {
-                Thread.sleep(1000);
-              } catch (InterruptedException e) {
-                e.printStackTrace();
-                Thread.currentThread().interrupt();
-              }
-              rmProvider.triggerNewReceivedMessage(buildMessageWithContent("TestMessage2"));
-            })
-        .start();
-
     List<RbelElement> msgs = rmProvider.getMessages();
     assertThat(msgs).hasSize(1);
+
+    // remember timestamp and create a task 1 second in the future
+    // to trigger a second message
+    long startms = System.currentTimeMillis();
+    FutureTask<Void> futureTask =
+        new FutureTask<>(
+            () -> {
+              rmProvider.triggerNewReceivedMessage(buildMessageWithContent("TestMessage2"));
+              return null;
+            });
+    ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    executorService.schedule(futureTask, 1, TimeUnit.SECONDS);
+    executorService.shutdown();
+
     rmProvider.waitForMessage();
-    long endms = System.currentTimeMillis();
-    assertThat(endms - startms).isGreaterThan(1000);
-    assertThat(rmProvider.getMessages()).hasSize(2);
-    assertThat(rmProvider.getMessages().get(0).getRawStringContent()).contains("TestMessage1");
-    assertThat(rmProvider.getMessages().get(1).getRawStringContent()).contains("TestMessage2");
+
+    // at least 1 second must have passed
+    assertThat(System.currentTimeMillis() - startms).isGreaterThan(1000);
+    msgs = rmProvider.getMessages();
+    assertThat(msgs).hasSize(2);
+    assertThat(msgs.get(0).getRawStringContent()).contains("TestMessage1");
+    assertThat(msgs.get(1).getRawStringContent()).contains("TestMessage2");
   }
 
   @Test
-  public void testWaitForMessageStartStepOK() {
+  void testWaitForMessageStartStepOK() {
     final RbelMessageProvider rmProvider = new RbelMessageProvider();
     rmProvider.triggerNewReceivedMessage(buildMessageWithContent("TestMessage1"));
-
-    long startms = System.currentTimeMillis();
-    new Thread(
-            () -> {
-              try {
-                Thread.sleep(1000);
-              } catch (InterruptedException e) {
-                e.printStackTrace();
-                Thread.currentThread().interrupt();
-              }
-              rmProvider.clearMessageQueue();
-            })
-        .start();
-
     List<RbelElement> msgs = rmProvider.getMessages();
     assertThat(msgs).hasSize(1);
+
+    long startms = System.currentTimeMillis();
+    FutureTask<Void> futureTask =
+        new FutureTask<>(
+            () -> {
+              rmProvider.clearMessageQueue();
+              return null;
+            });
+    ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    executorService.schedule(futureTask, 1, TimeUnit.SECONDS);
+    executorService.shutdown();
+
     rmProvider.waitForMessage();
-    long endms = System.currentTimeMillis();
-    assertThat(endms - startms).isGreaterThan(1000);
+    assertThat(System.currentTimeMillis() - startms).isGreaterThan(1000);
     msgs = rmProvider.getMessages();
     assertThat(msgs).isEmpty();
   }
 
   @Test
-  public void testStartStepOK() {
+  void testStartStepOK() {
     final RbelMessageProvider rmProvider = new RbelMessageProvider();
     rmProvider.triggerNewReceivedMessage(buildMessageWithContent("TestMessage1"));
     rmProvider.triggerNewReceivedMessage(buildMessageWithContent("TestMessage2"));
@@ -102,7 +106,8 @@ public class TestRbelMessageProvider {
   }
 
   @Test
-  public void jexlToolboxTest() {
+  // TODO what does this test
+  void jexlToolboxTest() {
     final RbelMessageProvider rmProvider = new RbelMessageProvider();
     rmProvider.triggerNewReceivedMessage(buildMessageWithContent("TestMessage1"));
     rmProvider.triggerNewReceivedMessage(buildMessageWithContent("TestMessage2"));

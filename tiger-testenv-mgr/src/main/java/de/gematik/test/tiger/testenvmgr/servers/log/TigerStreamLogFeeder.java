@@ -12,7 +12,8 @@ import org.slf4j.Logger;
 import org.slf4j.event.Level;
 
 public class TigerStreamLogFeeder {
-  public TigerStreamLogFeeder(Logger log, InputStream inputStream, Level logLevel) {
+  public TigerStreamLogFeeder(
+      String serverId, Logger log, InputStream inputStream, Level logLevel) {
     new Thread(
             () -> {
               try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
@@ -26,7 +27,8 @@ public class TigerStreamLogFeeder {
                   line = reader.readLine();
                 }
               } catch (IOException e) {
-                throw new RuntimeException(e);
+                log.error(
+                    "Error while reading log from input stream for server '" + serverId + "'", e);
               }
             })
         .start();

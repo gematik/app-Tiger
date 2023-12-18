@@ -27,8 +27,8 @@ public class RbelTcpIpMessageFacet implements RbelFacet {
   private final RbelElement receiver;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap().with("sender", sender).with("receiver", receiver);
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>().with("sender", sender).with("receiver", receiver);
   }
 
   public RbelHostname getSenderHostname() {

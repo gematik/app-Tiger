@@ -14,4 +14,5 @@ import org.junit.runner.RunWith;
     plugin = {"json:target/cucumber-parallel/1.json"},
     glue = {"de.gematik.test.tiger.glue"},
     tags = "not @Ignore")
-public class TestContextFeatureTest {}
+public class TestContextFeatureTest { // NOSONAR
+}

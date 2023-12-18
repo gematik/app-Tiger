@@ -72,9 +72,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.text.StringEscapeUtils;
 import org.bouncycastle.util.encoders.Hex;
 import org.dom4j.DocumentHelper;
 import org.dom4j.io.OutputFormat;
@@ -94,6 +94,7 @@ public class RbelHtmlRenderingToolkit {
   public static final String CLS_PKINOK = "is-primary";
   private static final String HEX_STYLE =
       "display: inline-flex;padding-bottom: 0.2rem;padding-top: 0.2rem;white-space: revert;";
+  public static final String JSON_NOTE = "json-note";
 
   @Getter private final Map<UUID, JsonNoteEntry> noteTags = new HashMap<>();
   private final RbelHtmlRenderer rbelHtmlRenderer;
@@ -101,6 +102,7 @@ public class RbelHtmlRenderingToolkit {
       new TigerTypedConfigurationKey<>(
           new TigerConfigurationKey("tiger", "lib", "rbelLogoFilePath"), String.class);
 
+  @SuppressWarnings({"rawtypes", "java:S3740"})
   public static ContainerTag icon(final String iconName) {
     return span().withClass("icon").with(i().withClass("fas " + iconName));
   }
@@ -138,26 +140,32 @@ public class RbelHtmlRenderingToolkit {
         .withStyle("word-break: normal;");
   }
 
+  @SuppressWarnings({"rawtypes", "java:S3740"})
   public static EmptyTag link2CSS(final String url) {
     return link().attr("rel", "stylesheet").withHref(url);
   }
 
+  @SuppressWarnings({"rawtypes", "java:S3740"})
   public static ContainerTag ancestorTitle() {
     return div().withClass("tile is-ancestor pe-3");
   }
 
+  @SuppressWarnings({"rawtypes", "java:S3740"})
   public static ContainerTag vertParentTitle() {
     return div().withClass("tile is-vertical is-parent pe-3");
   }
 
+  @SuppressWarnings({"rawtypes", "java:S3740"})
   public static ContainerTag childBoxNotifTitle(final String addClasses) {
     return div().withClass("tile is-child box notification pe-3 " + addClasses);
   }
 
+  @SuppressWarnings({"rawtypes", "java:S3740"})
   public static ContainerTag t1ms(final String text) {
     return h1(text).withClass("font-monospace title");
   }
 
+  @SuppressWarnings({"rawtypes", "java:S3740"})
   public static ContainerTag t2(final String text) {
     return h2(text).withClass("title");
   }
@@ -170,21 +178,23 @@ public class RbelHtmlRenderingToolkit {
         .withClass("msg-sequence tag is-info is-light me-3 is-size-4 test-message-number");
   }
 
+  @SuppressWarnings({"rawtypes", "java:S3740"})
   public ContainerTag convert(final RbelElement element) {
-    final ContainerTag elementTag = convert(element, Optional.empty());
-    return elementTag;
+    return convert(element, Optional.empty());
   }
 
+  @SuppressWarnings({"rawtypes", "java:S3740"})
   private static ContainerTag addNotes(RbelElement element, ContainerTag elementTag) {
     elementTag.with(
         element.getFacets().stream()
             .filter(RbelNoteFacet.class::isInstance)
             .map(RbelNoteFacet.class::cast)
             .map(note -> div(i(note.getValue())).withClass(note.getStyle().toCssClass()))
-            .collect(Collectors.toList()));
+            .toList());
     return elementTag;
   }
 
+  @SuppressWarnings({"rawtypes", "java:S3740"})
   public ContainerTag convert(final RbelElement element, final Optional<String> key) {
     if (element.getRawContent() != null
         && !shouldRenderEntitiesWithSize(element.getRawContent().length)) {
@@ -213,20 +223,22 @@ public class RbelHtmlRenderingToolkit {
             () ->
                 Optional.ofNullable(el)
                     .map(RbelElement::getRawStringContent)
-                    .filter(Objects::nonNull)
                     .map(str -> str.replace("\n", "<br/>")))
         .orElse("");
   }
 
+  @SuppressWarnings({"rawtypes", "java:S3740"})
   public Optional<ContainerTag> convertUnforced(
       final RbelElement element, final Optional<String> key) {
     return rbelHtmlRenderer.convert(element, key, this);
   }
 
+  @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
   public Optional<String> shadeValue(RbelElement element, Optional<String> key) {
     return rbelHtmlRenderer.getRbelValueShader().shadeValue(element, key);
   }
 
+  @SuppressWarnings({"rawtypes", "java:S3740"})
   public ContainerTag printAsBinary(final RbelElement el) {
     return div(pre()
             .withStyle(HEX_STYLE)
@@ -251,7 +263,7 @@ public class RbelHtmlRenderingToolkit {
                                         + getLineAsHexString(el.getRawContent(), line)
                                         + " | "
                                         + getLineAsAsciiString(el.getRawContent(), line))))
-                .collect(Collectors.toList()));
+                .toList());
   }
 
   private String getLineAsHexString(byte[] rawContent, int start) {
@@ -277,7 +289,7 @@ public class RbelHtmlRenderingToolkit {
         ' ');
   }
 
-  public DomContent renderMenu(final List<RbelElement> elements) {
+  public DomContent renderMenu() {
     return div()
         .withClass(" col is-one-fifth menu is-size-4 sidebar")
         .with(
@@ -420,7 +432,7 @@ public class RbelHtmlRenderingToolkit {
                             .withClass("row is-fullheight")
                             .withId("test-rbel-section")
                             .with(
-                                renderMenu(elements),
+                                renderMenu(),
                                 div()
                                     .withClass("col ms-6")
                                     .with(
@@ -436,7 +448,7 @@ public class RbelHtmlRenderingToolkit {
                                                     // .filter(el ->
                                                     // el.hasFacet(RbelTcpIpMessageFacet.class))
                                                     .map(this::convertMessage)
-                                                    .collect(Collectors.toList())),
+                                                    .toList()),
                                         div("Created "
                                                 + DateTimeFormatter.RFC_1123_DATE_TIME.format(
                                                     ZonedDateTime.now()))
@@ -481,116 +493,130 @@ public class RbelHtmlRenderingToolkit {
   public JsonElement shadeJson(
       final JsonElement input, final Optional<String> key, final RbelElement originalElement) {
     if (input.isJsonPrimitive()) {
-      final JsonElement jsonElement =
-          rbelHtmlRenderer
-              .getRbelValueShader()
-              .shadeValue(input, key)
-              .map(
-                  shadedValue ->
-                      (JsonElement) new JsonPrimitive(StringEscapeUtils.escapeHtml4(shadedValue)))
-              .orElse(input);
-
-      if (!originalElement.getNotes().isEmpty()) {
-        final UUID uuid = UUID.randomUUID();
-        noteTags.put(
-            uuid,
-            JsonNoteEntry.builder()
-                .stringToMatch("\"" + uuid + "\"")
-                .tagForKeyReplacement(span(jsonElement.toString()))
-                .tagForValueReplacement(
-                    span()
-                        .with(
-                            originalElement.getNotes().stream()
-                                .map(
-                                    note ->
-                                        div(i(note.getValue()))
-                                            .withClass(note.getStyle().toCssClass()))
-                                .collect(Collectors.toList()))
-                        .withClass("json-note"))
-                .build());
-        return new JsonPrimitive(uuid.toString());
-      } else {
-        return jsonElement;
-      }
+      return shadeJsonPrimitive(input, key, originalElement);
     } else if (input.isJsonObject()) {
-      final JsonObject output = new JsonObject();
-      if (originalElement.hasFacet(RbelNoteFacet.class)) {
-        final UUID uuid = UUID.randomUUID();
-
-        noteTags.put(
-            uuid,
-            JsonNoteEntry.builder()
-                .stringToMatch(
-                    "\"note\": \"" + uuid + "\"" + (input.getAsJsonObject().size() == 0 ? "" : ","))
-                .tagForKeyReplacement(span())
-                .tagForValueReplacement(
-                    span()
-                        .with(
-                            originalElement.getNotes().stream()
-                                .map(
-                                    note ->
-                                        div(i(note.getValue()))
-                                            .withClass(note.getStyle().toCssClass()))
-                                .collect(Collectors.toList()))
-                        .withClass("json-note"))
-                .build());
-        output.addProperty("note", uuid.toString());
-      }
-      for (final Entry<String, JsonElement> element : input.getAsJsonObject().entrySet()) {
-        output.add(
-            element.getKey(),
-            shadeJson(
-                element.getValue(),
-                Optional.of(element.getKey()),
-                originalElement
-                    .getFirst(element.getKey())
-                    .orElseThrow(
-                        () ->
-                            new RuntimeException(
-                                "Unable to find matching Element for key " + element.getKey()))));
-      }
-      return output;
+      return shadeJsonObject(input, originalElement);
     } else if (input.isJsonArray()) {
-      final JsonArray output = new JsonArray();
-      if (originalElement.hasFacet(RbelNoteFacet.class)) {
-        final UUID uuid = UUID.randomUUID();
-        noteTags.put(
-            uuid,
-            JsonNoteEntry.builder()
-                .stringToMatch("\"" + uuid + "\"")
-                .tagForKeyReplacement(span())
-                .tagForValueReplacement(
-                    span()
-                        .with(
-                            originalElement.getNotes().stream()
-                                .map(
-                                    note ->
-                                        div(i(note.getValue()))
-                                            .withClass(note.getStyle().toCssClass()))
-                                .collect(Collectors.toList()))
-                        .withClass("json-note"))
-                .build());
-        output.add(uuid.toString());
-      }
-      for (int i = 0; i < input.getAsJsonArray().size(); i++) {
-        final int finalI = i;
-        final List<? extends RbelElement> rbelListElements =
-            originalElement.getFacetOrFail(RbelListFacet.class).getChildNodes();
-        output.add(
-            shadeJson(
-                input.getAsJsonArray().get(i),
-                key.map(v -> v + "." + finalI),
-                rbelListElements.get(i)));
-      }
-      return output;
+      return shadeJsonArray(input, key, originalElement);
     } else if (input.isJsonNull()) {
       return input;
     } else {
-      throw new RuntimeException("Unshadeable JSON-Type " + input.getClass().getSimpleName());
+      throw new RbelRenderingException("Unshadeable JSON-Type " + input.getClass().getSimpleName());
     }
   }
 
-  public List<ContainerTag> convertNested(final RbelElement el) {
+  private JsonArray shadeJsonArray(
+      JsonElement input, Optional<String> key, RbelElement originalElement) {
+    final JsonArray output = new JsonArray();
+    if (originalElement.hasFacet(RbelNoteFacet.class)) {
+      final UUID uuid = UUID.randomUUID();
+      noteTags.put(
+          uuid,
+          JsonNoteEntry.builder()
+              .stringToMatch("\"" + uuid + "\"")
+              .tagForKeyReplacement(span())
+              .tagForValueReplacement(
+                  span()
+                      .with(
+                          originalElement.getNotes().stream()
+                              .map(
+                                  note ->
+                                      div(i(note.getValue()))
+                                          .withClass(note.getStyle().toCssClass()))
+                              .toList())
+                      .withClass(JSON_NOTE))
+              .build());
+      output.add(uuid.toString());
+    }
+    for (int i = 0; i < input.getAsJsonArray().size(); i++) {
+      final int finalI = i;
+      final List<? extends RbelElement> rbelListElements =
+          originalElement.getFacetOrFail(RbelListFacet.class).getChildNodes();
+      output.add(
+          shadeJson(
+              input.getAsJsonArray().get(i),
+              key.map(v -> v + "." + finalI),
+              rbelListElements.get(i)));
+    }
+    return output;
+  }
+
+  private JsonObject shadeJsonObject(JsonElement input, RbelElement originalElement) {
+    final JsonObject output = new JsonObject();
+    if (originalElement.hasFacet(RbelNoteFacet.class)) {
+      final UUID uuid = UUID.randomUUID();
+
+      noteTags.put(
+          uuid,
+          JsonNoteEntry.builder()
+              .stringToMatch(
+                  "\"note\": \"" + uuid + "\"" + (input.getAsJsonObject().isEmpty() ? "" : ","))
+              .tagForKeyReplacement(span())
+              .tagForValueReplacement(
+                  span()
+                      .with(
+                          originalElement.getNotes().stream()
+                              .map(
+                                  note ->
+                                      div(i(note.getValue()))
+                                          .withClass(note.getStyle().toCssClass()))
+                              .toList())
+                      .withClass(JSON_NOTE))
+              .build());
+      output.addProperty("note", uuid.toString());
+    }
+    for (final Entry<String, JsonElement> element : input.getAsJsonObject().entrySet()) {
+      output.add(
+          element.getKey(),
+          shadeJson(
+              element.getValue(),
+              Optional.of(element.getKey()),
+              originalElement
+                  .getFirst(element.getKey())
+                  .orElseThrow(
+                      () ->
+                          new RuntimeException(
+                              "Unable to find matching Element for key " + element.getKey()))));
+    }
+    return output;
+  }
+
+  private JsonElement shadeJsonPrimitive(
+      JsonElement input, Optional<String> key, RbelElement originalElement) {
+    final JsonElement jsonElement =
+        rbelHtmlRenderer
+            .getRbelValueShader()
+            .shadeValue(input, key)
+            .map(
+                shadedValue ->
+                    (JsonElement) new JsonPrimitive(StringEscapeUtils.escapeHtml4(shadedValue)))
+            .orElse(input);
+
+    if (!originalElement.getNotes().isEmpty()) {
+      final UUID uuid = UUID.randomUUID();
+      noteTags.put(
+          uuid,
+          JsonNoteEntry.builder()
+              .stringToMatch("\"" + uuid + "\"")
+              .tagForKeyReplacement(span(jsonElement.toString()))
+              .tagForValueReplacement(
+                  span()
+                      .with(
+                          originalElement.getNotes().stream()
+                              .map(
+                                  note ->
+                                      div(i(note.getValue()))
+                                          .withClass(note.getStyle().toCssClass()))
+                              .toList())
+                      .withClass(JSON_NOTE))
+              .build());
+      return new JsonPrimitive(uuid.toString());
+    } else {
+      return jsonElement;
+    }
+  }
+
+  public List<? extends ContainerTag> convertNested(final RbelElement el) {
     return el.traverseAndReturnNestedMembers().stream()
         .filter(entry -> !entry.getFacets().isEmpty())
         .map(
@@ -617,7 +643,7 @@ public class RbelHtmlRenderingToolkit {
                                     .withClass("notification tile is-child box pe-3"))
                                 .withClass("notification tile is-parent pe-3"))
                             .withClass("message-body px-0")))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   public List<DomContent> packAsInfoLine(String parameterName, DomContent... contentObject) {
@@ -646,6 +672,7 @@ public class RbelHtmlRenderingToolkit {
   @Builder
   @AllArgsConstructor
   @Getter
+  @SuppressWarnings({"rawtypes", "java:S3740"})
   public static class JsonNoteEntry {
 
     private final String stringToMatch;

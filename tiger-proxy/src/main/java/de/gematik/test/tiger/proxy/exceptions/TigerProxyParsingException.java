@@ -8,4 +8,8 @@ public class TigerProxyParsingException extends RuntimeException {
   public TigerProxyParsingException(String s) {
     super(s);
   }
+
+  public TigerProxyParsingException(String msg, Exception e) {
+    super(msg, e);
+  }
 }

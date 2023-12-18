@@ -29,14 +29,13 @@ public class CustomerAppender extends AppenderBase<ILoggingEvent> {
       server
           .getLogListeners()
           .forEach(
-              listener -> {
-                listener.receiveServerLogUpdate(
-                    TigerServerLogUpdate.builder()
-                        .logLevel(iLoggingEvent.getLevel().levelStr)
-                        .logMessage(iLoggingEvent.getFormattedMessage())
-                        .serverName(server.getServerId())
-                        .build());
-              });
+              listener ->
+                  listener.receiveServerLogUpdate(
+                      TigerServerLogUpdate.builder()
+                          .logLevel(iLoggingEvent.getLevel().levelStr)
+                          .logMessage(iLoggingEvent.getFormattedMessage())
+                          .serverName(server.getServerId())
+                          .build()));
     }
   }
 }

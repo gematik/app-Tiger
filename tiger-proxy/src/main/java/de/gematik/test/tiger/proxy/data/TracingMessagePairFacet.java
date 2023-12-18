@@ -20,7 +20,7 @@ public class TracingMessagePairFacet implements RbelFacet {
   private final RbelElement request;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap();
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<>();
   }
 }

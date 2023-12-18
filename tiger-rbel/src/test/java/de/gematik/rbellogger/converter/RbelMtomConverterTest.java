@@ -84,7 +84,7 @@ class RbelMtomConverterTest {
     final RbelElement convertedMessage =
         rbelLogger.getRbelConverter().convertElement(curlMessage.getBytes(), null);
 
-    assertThat(convertedMessage)
+    assertThat(convertedMessage) // NOSONAR
         .extractChildWithPath("$..Envelope..MandantId.text")
         .hasStringContentEqualTo("m_raf");
     assertThat(convertedMessage)

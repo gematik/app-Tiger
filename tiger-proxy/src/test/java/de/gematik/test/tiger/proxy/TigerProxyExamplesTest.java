@@ -9,9 +9,9 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.File;
@@ -22,7 +22,6 @@ import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FileUtils;
-import org.intellij.lang.annotations.Language;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -174,6 +173,7 @@ public class TigerProxyExamplesTest {
   }
 
   @Test
+  @SuppressWarnings("java:S2699")
   void forwardProxyRoute_waitForMessageSent(MockServerClient mockServerClient) {
     try (TigerProxy tigerProxy =
             new TigerProxy(
@@ -196,6 +196,7 @@ public class TigerProxyExamplesTest {
   }
 
   @Test
+  @SuppressWarnings("java:S2699")
   void reverseProxyRoute_waitForMessageSent(MockServerClient mockServerClient) {
     try (TigerProxy tigerProxy =
         new TigerProxy(
@@ -216,6 +217,7 @@ public class TigerProxyExamplesTest {
   }
 
   @Test
+  @SuppressWarnings("java:S2699")
   void reverseProxyDeepRoute_waitForMessageSent(MockServerClient mockServerClient) {
     try (TigerProxy tigerProxy =
         new TigerProxy(
@@ -236,6 +238,7 @@ public class TigerProxyExamplesTest {
   }
 
   @Test
+  @SuppressWarnings("java:S2699")
   void reverseProxyWithTls_waitForMessageSent(MockServerClient mockServerClient) {
     try (TigerProxy tigerProxy =
             new TigerProxy(
@@ -247,7 +250,7 @@ public class TigerProxyExamplesTest {
                                 .to("http://localhost:" + mockServerClient.getPort())
                                 .build()))
                     .build());
-        final UnirestInstance unirestInstance = Unirest.spawnInstance(); ) {
+        final UnirestInstance unirestInstance = Unirest.spawnInstance()) {
 
       System.out.println("curl -v https://localhost:" + tigerProxy.getProxyPort() + "/foo");
       unirestInstance.config().sslContext(tigerProxy.buildSslContext());
@@ -258,6 +261,7 @@ public class TigerProxyExamplesTest {
   }
 
   @Test
+  @SuppressWarnings("java:S2699")
   void forwardProxyWithTls_waitForMessageSent(MockServerClient mockServerClient) {
     try (TigerProxy tigerProxy =
             new TigerProxy(
@@ -270,7 +274,7 @@ public class TigerProxyExamplesTest {
                                 .build()))
                     .tls(TigerTlsConfiguration.builder().domainName("blub").build())
                     .build());
-        final UnirestInstance unirestInstance = Unirest.spawnInstance(); ) {
+        final UnirestInstance unirestInstance = Unirest.spawnInstance()) {
 
       System.out.println(
           "curl -v https://blub/foo -x http://localhost:" + tigerProxy.getProxyPort() + " -k");
@@ -301,7 +305,7 @@ public class TigerProxyExamplesTest {
                                     "../tiger-proxy/src/test/resources/customCa.p12;00"))
                             .build())
                     .build());
-        final UnirestInstance unirestInstance = Unirest.spawnInstance(); ) {
+        final UnirestInstance unirestInstance = Unirest.spawnInstance()) {
 
       System.out.println(
           "curl -v https://blub/foo -x http://localhost:" + tigerProxy.getProxyPort() + " -k");
@@ -314,7 +318,8 @@ public class TigerProxyExamplesTest {
   }
 
   @Test
-  @Disabled
+  @Disabled("Needs manual opening of web ui")
+  @SuppressWarnings("java:S2699")
   void twoProxiesWithTrafficForwarding_shouldShowTraffic() {
     // standalone-application starten!
     // webui öffnen
@@ -349,19 +354,7 @@ public class TigerProxyExamplesTest {
                                 .replaceWith("horridoh!")
                                 .build()))
                     .build());
-        final UnirestInstance unirestInstance = Unirest.spawnInstance(); ) {
-      @Language("yaml")
-      String yamlConfiguration =
-          "tigerProxy:\n"
-              + "  modifications:\n"
-              + "    # wird nur für antworten ausgeführt: Anfragen haben keinen statusCode (fails"
-              + " silently)\n"
-              + "    - targetElement: \"$.header.statusCode\"\n"
-              + "      replaceWith: \"400\"\n"
-              + "    - targetElement: \"$.body\"\n"
-              + "      condition: \"isRequest\"\n"
-              + "      replaceWith: \"my.host\"\n"
-              + "      regexFilter: \"hostToBeReplaced:\\d{3,5}\"";
+        final UnirestInstance unirestInstance = Unirest.spawnInstance()) {
 
       unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
       unirestInstance.get("http://blub/foo").asString();

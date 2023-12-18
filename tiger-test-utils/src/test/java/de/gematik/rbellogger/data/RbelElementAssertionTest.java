@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.rbellogger.data;
 
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
@@ -37,8 +41,8 @@ class RbelElementAssertionTest {
     assertThat(sampleElement)
         .extractChildWithPath("$.body.keys")
         .hasFacet(RbelJsonFacet.class)
-        .hasFacet(RbelListFacet.class);
-    assertThat(sampleElement).doesNotHaveFacet(RbelAsn1Facet.class);
+        .hasFacet(RbelListFacet.class)
+        .doesNotHaveFacet(RbelAsn1Facet.class);
     assertThatThrownBy(
             () ->
                 assertThat(sampleElement)

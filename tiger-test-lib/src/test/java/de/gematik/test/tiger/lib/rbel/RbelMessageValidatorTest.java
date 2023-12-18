@@ -363,15 +363,15 @@ class RbelMessageValidatorTest {
   @Test
   void testFilterRequestsRbelPathNotMatching_OK() {
     addTwoRequestsToTigerTestHooks();
-    RbelMessageValidator validator = RbelMessageValidator.instance;
+    var reuqest =
+        RequestParameter.builder()
+            .path(".*")
+            .rbelPath("$.header.User-Agent")
+            .value("mypersonalagentXXXX")
+            .build();
     assertThatThrownBy(
             () -> {
-              validator.filterRequestsAndStoreInContext(
-                  RequestParameter.builder()
-                      .path(".*")
-                      .rbelPath("$.header.User-Agent")
-                      .value("mypersonalagentXXXX")
-                      .build());
+              RbelMessageValidator.instance.filterRequestsAndStoreInContext(reuqest);
             })
         .isInstanceOf(AssertionError.class);
   }
@@ -410,11 +410,10 @@ class RbelMessageValidatorTest {
   @Test
   void testFilterRequestsRbelPathExists_NOK() {
     addTwoRequestsToTigerTestHooks();
-    RbelMessageValidator validator = RbelMessageValidator.instance;
+    var request = RequestParameter.builder().path(".*").rbelPath("$.header.User-AgentXXX").build();
     assertThatThrownBy(
             () -> {
-              validator.filterRequestsAndStoreInContext(
-                  RequestParameter.builder().path(".*").rbelPath("$.header.User-AgentXXX").build());
+              RbelMessageValidator.instance.filterRequestsAndStoreInContext(request);
             })
         .isInstanceOf(AssertionError.class);
   }

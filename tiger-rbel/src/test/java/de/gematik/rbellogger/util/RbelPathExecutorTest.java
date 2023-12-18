@@ -55,7 +55,7 @@ class RbelPathExecutorTest {
 
   @Test
   void assertThatPathValueFollowsConvention() {
-    assertThat(jwtMessage.findNodePath()).isEqualTo("");
+    assertThat(jwtMessage.findNodePath()).isEmpty();
     assertThat(jwtMessage.getFirst("header").get().findNodePath()).isEqualTo("header");
     assertThat(jwtMessage.getFirst("header").get().getChildNodes().get(0).findNodePath())
         .startsWith("header.");
@@ -209,8 +209,8 @@ class RbelPathExecutorTest {
             .parseMessage(
                 challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
 
-    Assertions.assertThat(convertedMessage.findElement("$.body.challenge.signature").get())
-        .isSameAs(convertedMessage.findElement("$.body.challenge.content.signature").get());
+    Assertions.assertThat(convertedMessage.findElement("$.body.challenge.signature"))
+        .containsSame(convertedMessage.findElement("$.body.challenge.content.signature").get());
   }
 
   @Test

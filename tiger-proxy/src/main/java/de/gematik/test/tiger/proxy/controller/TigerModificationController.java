@@ -9,7 +9,6 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.ModificationDto;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,9 +41,7 @@ public class TigerModificationController {
 
   @GetMapping(value = "/modification", produces = MediaType.APPLICATION_JSON_VALUE)
   public List<ModificationDto> getModifications() {
-    return tigerProxy.getModifications().stream()
-        .map(ModificationDto::from)
-        .collect(Collectors.toList());
+    return tigerProxy.getModifications().stream().map(ModificationDto::from).toList();
   }
 
   @DeleteMapping(value = "/modification/{name}")

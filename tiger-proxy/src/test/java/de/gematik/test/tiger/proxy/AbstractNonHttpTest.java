@@ -8,8 +8,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.test.tiger.common.data.config.tigerProxy.DirectReverseProxyInfo;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import java.io.*;
 import java.net.InetSocketAddress;

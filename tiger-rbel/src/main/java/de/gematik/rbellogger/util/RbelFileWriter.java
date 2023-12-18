@@ -17,7 +17,6 @@ import java.nio.file.Path;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -93,8 +92,7 @@ public class RbelFileWriter {
   }
 
   private List<RbelElement> readRbelFileStream(Stream<String> rbelFileStream) {
-    final List<String> rawMessageStrings =
-        rbelFileStream.filter(StringUtils::isNotEmpty).collect(Collectors.toList());
+    final List<String> rawMessageStrings = rbelFileStream.filter(StringUtils::isNotEmpty).toList();
     List<RbelElement> list = new ArrayList<>();
     log.info("Found {} messages in file, starting parsing...", rawMessageStrings.size());
     int numberOfParsedMessages = 0;

@@ -4,6 +4,7 @@
 
 package de.gematik.rbellogger.data.facet;
 
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import lombok.Data;
 
@@ -15,7 +16,7 @@ public class RbelResponseFacet implements RbelFacet {
   private final String menuInfoString;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap();
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<>();
   }
 }

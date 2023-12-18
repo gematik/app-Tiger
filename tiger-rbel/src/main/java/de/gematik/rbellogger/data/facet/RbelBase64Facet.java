@@ -14,7 +14,7 @@ public class RbelBase64Facet implements RbelFacet {
   private final RbelElement child;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap().with("decoded", child);
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>().with("decoded", child);
   }
 }

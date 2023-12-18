@@ -16,7 +16,7 @@ import de.gematik.rbellogger.data.facet.RbelNoteFacet;
 import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
@@ -228,7 +228,6 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
           getTigerProxy()
               .getMockServerToRbelConverter()
               .convertRequest(req, extractProtocolAndHostForRequest(req));
-      // TODO TGR-651 null ersetzen durch echten wert
       final RbelElement response =
           getTigerProxy()
               .getMockServerToRbelConverter()

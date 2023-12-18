@@ -9,6 +9,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyParsingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -93,7 +94,8 @@ public class MockServerToRbelConverter {
       new URI(protocolAndHost);
       return (RbelHostname) RbelHostname.generateFromUrl(protocolAndHost).orElse(null);
     } catch (URISyntaxException e) {
-      throw new RuntimeException(e);
+      throw new TigerProxyParsingException(
+          "Unable to parse hostname from '" + protocolAndHost + "'", e);
     }
   }
 
@@ -117,8 +119,7 @@ public class MockServerToRbelConverter {
                 + "\r\n\r\n")
             .getBytes();
 
-    final byte[] httpMessage = Arrays.concatenate(httpRequestHeader, request.getBodyAsRawBytes());
-    return httpMessage;
+    return Arrays.concatenate(httpRequestHeader, request.getBodyAsRawBytes());
   }
 
   private byte[] responseToRawMessage(HttpResponse response) {
@@ -132,8 +133,7 @@ public class MockServerToRbelConverter {
                 + "\r\n\r\n")
             .getBytes(StandardCharsets.US_ASCII);
 
-    final byte[] httpMessage = Arrays.concatenate(httpResponseHeader, response.getBodyAsRawBytes());
-    return httpMessage;
+    return Arrays.concatenate(httpResponseHeader, response.getBodyAsRawBytes());
   }
 
   private String formatHeaderList(List<Header> headerList) {

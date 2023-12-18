@@ -203,10 +203,10 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
   }
 
   private RbelHostname toRbelHostname(SocketAddress socketAddress) {
-    if (socketAddress instanceof InetSocketAddress) {
+    if (socketAddress instanceof InetSocketAddress inetSocketAddress) {
       return RbelHostname.builder()
-          .hostname(((InetSocketAddress) socketAddress).getHostName())
-          .port(((InetSocketAddress) socketAddress).getPort())
+          .hostname(inetSocketAddress.getHostName())
+          .port(inetSocketAddress.getPort())
           .build();
     } else {
       log.warn(

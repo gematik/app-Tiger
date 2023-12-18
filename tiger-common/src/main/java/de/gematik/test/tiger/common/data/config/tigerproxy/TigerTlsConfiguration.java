@@ -2,7 +2,7 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.common.data.config.tigerProxy;
+package de.gematik.test.tiger.common.data.config.tigerproxy;
 
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import java.util.List;

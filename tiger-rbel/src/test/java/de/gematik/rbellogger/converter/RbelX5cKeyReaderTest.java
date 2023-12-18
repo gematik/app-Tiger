@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 class RbelX5cKeyReaderTest {
 
   @Test
-  public void multipleKeyIds_shouldFindCorrectOne() throws IOException {
+  void multipleKeyIds_shouldFindCorrectOne() throws IOException {
     RbelLogger logger = RbelLogger.build();
     logger
         .getRbelConverter()

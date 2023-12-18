@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.common.pki;
 
+import de.gematik.test.tiger.common.exceptions.TigerPkiException;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
@@ -67,12 +68,12 @@ public class KeyMgr {
       KeyFactory keyFactory = KeyFactory.getInstance("ECDSA", BOUNCY_CASTLE_PROVIDER);
 
       ECParameterSpec ecSpec = privateKey.getParameters();
-      ECPoint Q = ecSpec.getG().multiply(privateKey.getD());
+      ECPoint q = ecSpec.getG().multiply(privateKey.getD());
 
-      ECPublicKeySpec pubSpec = new ECPublicKeySpec(Q, ecSpec);
+      ECPublicKeySpec pubSpec = new ECPublicKeySpec(q, ecSpec);
       return new KeyPair(keyFactory.generatePublic(pubSpec), privateKey);
     } catch (final NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
-      throw new RuntimeException(e);
+      throw new TigerPkiException("Unable to read key pair from Pkcs8 pem data", e);
     }
   }
 }

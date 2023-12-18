@@ -48,7 +48,8 @@
                         hide-close-btn>
             <template #header>
               <div class="container">
-                <h1 style="color:var(--gem-primary-400)">Tiger Global Configuration Editor<span class="float-end" role="button"
+                <h1 style="color:var(--gem-primary-400)">Tiger Global Configuration Editor<span class="float-end"
+                                                                                                role="button"
                                                                                                 @click="configEditorSidePanelIsOpened = false"><i
                     class="fa fa-window-close" id="test-tg-config-editor-btn-close"></i></span></h1>
               </div>
@@ -278,6 +279,44 @@ function showTab(tabid: string, event: MouseEvent) {
 
 let reloadTimeoutHandle: number;
 
+function checkMessageOrderAndProcessAccordingly(pushedMessage: TestEnvStatusDto) {
+  if (pushedMessage.index > currentMessageIndex + 1) {
+    // out of order message received
+    if (firstOutOfOrderTimestamp === -1) {
+      firstOutOfOrderTimestamp = Date.now();
+    }
+    if (Date.now() - firstOutOfOrderTimestamp > 200) {
+      // resorting to re fetch the status
+      firstOutOfOrderTimestamp = -1;
+      currentServerStatus.value.clear();
+      console.warn(Date.now() + ` Missing push messages for more then 1 second in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Triggering refetch`);
+      currentMessageIndex = -1;
+      preFetchMessageList = new Array<TestEnvStatusDto>();
+      preFetchMessageList.push(pushedMessage);
+      fetchInitialServerStatus();
+    } else {
+      // adding message to cache
+      outOfOrderMessageList.push(pushedMessage);
+      TestEnvStatusDto.sortArray(outOfOrderMessageList);
+      console.warn(Date.now() + ` Missing push messages in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Cached message ${pushedMessage.index} firstOutOfOrderMsgTimestamp ` + firstOutOfOrderTimestamp);
+      reloadTimeoutHandle = setTimeout(() => {
+        firstOutOfOrderTimestamp = -1;
+        currentServerStatus.value.clear();
+        console.warn(Date.now() + ` TO handler - Missing push messages for more then 1 second in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Triggering refetch`);
+        currentMessageIndex = -1;
+        preFetchMessageList = new Array<TestEnvStatusDto>();
+        preFetchMessageList.push(pushedMessage);
+        fetchInitialServerStatus();
+      }, 1000)
+    }
+  } else {
+    // TODO evt. there could be earlier messages coming very late??
+    mergeMessage(currentServerStatus.value, pushedMessage);
+    replayingCachedMessages();
+    debug("MERGE DONE " + currentMessageIndex);
+  }
+}
+
 /** process any incoming messages. */
 function connectToWebSocket() {
   socket = new SockJS(baseURL + "testEnv");
@@ -319,41 +358,7 @@ function connectToWebSocket() {
           replayingCachedMessages();
 
           debug("Check push message order " + pushedMessage.index + " ?== " + (currentMessageIndex + 1));
-          if (pushedMessage.index > currentMessageIndex + 1) {
-            // out of order message received
-            if (firstOutOfOrderTimestamp === -1) {
-              firstOutOfOrderTimestamp = Date.now();
-            }
-            if (Date.now() - firstOutOfOrderTimestamp > 200) {
-              // resorting to re fetch the status
-              firstOutOfOrderTimestamp = -1;
-              currentServerStatus.value.clear();
-              console.warn(Date.now() + ` Missing push messages for more then 1 second in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Triggering refetch`);
-              currentMessageIndex = -1;
-              preFetchMessageList = new Array<TestEnvStatusDto>();
-              preFetchMessageList.push(pushedMessage);
-              fetchInitialServerStatus();
-            } else {
-              // adding message to cache
-              outOfOrderMessageList.push(pushedMessage);
-              TestEnvStatusDto.sortArray(outOfOrderMessageList);
-              console.warn(Date.now() + ` Missing push messages in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Cached message ${pushedMessage.index} firstOutOfOrderMsgTimestamp ` + firstOutOfOrderTimestamp);
-              reloadTimeoutHandle = setTimeout(() => {
-                firstOutOfOrderTimestamp = -1;
-                currentServerStatus.value.clear();
-                console.warn(Date.now() + ` TO handler - Missing push messages for more then 1 second in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Triggering refetch`);
-                currentMessageIndex = -1;
-                preFetchMessageList = new Array<TestEnvStatusDto>();
-                preFetchMessageList.push(pushedMessage);
-                fetchInitialServerStatus();
-              }, 1000)
-            }
-          } else {
-            // TODO evt. there could be earlier messages coming very late??
-            mergeMessage(currentServerStatus.value, pushedMessage);
-            replayingCachedMessages();
-            debug("MERGE DONE " + currentMessageIndex);
-          }
+          checkMessageOrderAndProcessAccordingly(pushedMessage);
         });
       },
       (error: Frame | CloseEvent) => {
@@ -635,11 +640,6 @@ function pauseTestrun(ev: MouseEvent) {
 .sidebar-collapsed button.resizer-left-icon, .sidebar-collapsed .container {
   display: none;
 }
-
-btnXXXXX.resizer-left-icon i {
-  color: var(--gem-primary-400);
-}
-
 
 .sidebar-collapsed h4, .sidebar-collapsed h3 {
   text-align: center;

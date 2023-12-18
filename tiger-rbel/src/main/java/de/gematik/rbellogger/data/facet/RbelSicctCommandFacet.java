@@ -60,7 +60,7 @@ public class RbelSicctCommandFacet implements RbelFacet {
   private RbelElement body;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap().with("header", header).with("body", body);
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>().with("header", header).with("body", body);
   }
 }

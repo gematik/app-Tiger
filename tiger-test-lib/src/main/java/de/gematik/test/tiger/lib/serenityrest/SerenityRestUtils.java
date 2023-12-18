@@ -2,13 +2,16 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.lib.serenityRest;
+package de.gematik.test.tiger.lib.serenityrest;
 
 import de.gematik.test.tiger.proxy.TigerProxy;
 import io.restassured.RestAssured;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class SerenityRestUtils {
 
   public static void setupSerenityRest(TigerProxy localTigerProxyProxy) {

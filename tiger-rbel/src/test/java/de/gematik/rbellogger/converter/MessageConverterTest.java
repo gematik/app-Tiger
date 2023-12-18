@@ -16,10 +16,10 @@ import java.io.IOException;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 
-public class MessageConverterTest {
+class MessageConverterTest {
 
   @Test
-  public void convertMessage_shouldGiveCorrectType() throws IOException {
+  void convertMessage_shouldGiveCorrectType() throws IOException {
     final String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(
             "src/test/resources/sampleMessages/jsonMessage.curl");
@@ -31,7 +31,7 @@ public class MessageConverterTest {
   }
 
   @Test
-  public void noReasonPhrase_shouldGiveEmptyOptional() throws IOException {
+  void noReasonPhrase_shouldGiveEmptyOptional() throws IOException {
     final String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(
             "src/test/resources/sampleMessages/jsonMessage.curl");
@@ -45,11 +45,11 @@ public class MessageConverterTest {
                 .get()
                 .getReasonPhrase()
                 .getRawStringContent())
-        .isEqualTo(null);
+        .isNull();
   }
 
   @Test
-  public void convertMessage_shouldGiveHeaderFields() throws IOException {
+  void convertMessage_shouldGiveHeaderFields() throws IOException {
     final String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(
             "src/test/resources/sampleMessages/jsonMessage.curl");

@@ -59,8 +59,8 @@ public class RbelJweEncryptionInfo implements RbelFacet {
   private final RbelElement decryptedUsingKeyWithId;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap()
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>()
         .with("wasDecryptable", wasDecryptable)
         .with("decryptedUsingKeyWithId", decryptedUsingKeyWithId);
   }

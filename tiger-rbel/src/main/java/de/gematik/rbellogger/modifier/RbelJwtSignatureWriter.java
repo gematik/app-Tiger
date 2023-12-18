@@ -15,7 +15,7 @@ import org.bouncycastle.util.Arrays;
 @AllArgsConstructor
 public class RbelJwtSignatureWriter implements RbelElementWriter {
 
-  public static final byte[] VERIFIED_USING_MARKER = "NewVerifiedUsing: ".getBytes(UTF_8);
+  protected static final byte[] VERIFIED_USING_MARKER = "NewVerifiedUsing: ".getBytes(UTF_8);
 
   static {
     BrainpoolCurves.init();

@@ -81,8 +81,8 @@ public class RbelX509Facet implements RbelFacet {
   }
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap()
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>()
         .with("serialnumber", serialnumber)
         .with("issuer", issuer)
         .with("validFrom", validFrom)

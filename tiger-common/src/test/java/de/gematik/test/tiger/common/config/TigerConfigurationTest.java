@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.TextNode;
 import de.gematik.test.tiger.common.data.config.CfgTemplate;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyType;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyType;
 import de.gematik.test.tiger.zion.config.TigerSkipEvaluation;
 import java.io.File;
 import java.io.IOException;
@@ -36,7 +36,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
-public class TigerConfigurationTest {
+public class TigerConfigurationTest { // NOSONAR
 
   @BeforeEach
   @AfterEach

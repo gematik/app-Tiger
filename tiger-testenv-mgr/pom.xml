@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ ${GEMATIK_COPYRIGHT_STATEMENT}
+  -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -163,7 +167,6 @@
     <build>
         <plugins>
             <plugin>
-                <!-- FIXME: marmer 10.03.2022 Fieser Hack, mus weg (mit tiger-testenv-yml -->
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>3.6.0</version>
@@ -232,16 +235,16 @@
                         </configuration>
                     </execution>
                     <!-- Run Unit tests with Jest -->
-                   <execution>
-                       <id>npm-unit-test</id>
-                       <goals>
-                           <goal>npm</goal>
-                       </goals>
-                       <phase>test</phase>
-                       <configuration>
-                           <arguments>run test</arguments>
-                       </configuration>
-                   </execution>
+                    <execution>
+                        <id>npm-unit-test</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <phase>test</phase>
+                        <configuration>
+                            <arguments>run test</arguments>
+                        </configuration>
+                    </execution>
                 </executions>
                 <configuration>
                     <nodeVersion>${version.node}</nodeVersion>

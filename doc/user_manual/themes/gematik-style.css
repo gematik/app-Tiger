@@ -57,6 +57,7 @@ h1 {
     border: 0;
     margin-top: -40px;
 }
+
 /* end of to be kept locally */
 
 h2 {
@@ -75,7 +76,7 @@ h3 {
 
 /* code blocks */
 .listingblock > .content > pre.CodeRay, code, pre {
-    font-family: "Fira Code";
+    font-family: "Fira Code", monospace;
     font-size: 82%;
 }
 
@@ -90,7 +91,7 @@ h3 {
 .admonitionblock td.content > .title, .audioblock > .title, .exampleblock > .title, .imageblock > .title, .listingblock > .title, .literalblock > .title, .stemblock > .title, .openblock > .title, .paragraph > .title, .quoteblock > .title, table.tableblock > .title, .verseblock > .title, .videoblock > .title, .dlist > .title, .olist > .title, .ulist > .title, .qlist > .title, .hdlist > .title
 */
 .title {
-    font-family: "Verdana" !important;
+    font-family: "Verdana", sans-serif !important;
     font-style: italic !important;
     color: #000000 !important;
 }

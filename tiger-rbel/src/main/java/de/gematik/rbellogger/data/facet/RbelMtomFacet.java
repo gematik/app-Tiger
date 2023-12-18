@@ -125,8 +125,8 @@ public class RbelMtomFacet implements RbelFacet {
   @Nullable private final RbelElement dataParts;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap()
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>()
         .with("contentType", contentType)
         .with("reconstructedMessage", reconstructedMessage)
         .withSkipIfNull("dataParts", dataParts);

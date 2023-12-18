@@ -11,7 +11,9 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -27,12 +29,13 @@ import lombok.extern.slf4j.Slf4j;
  */
 @SuppressWarnings("unused")
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class LocalProxyRbelMessageListener {
 
   /**
    * List of messages received via local Tiger Proxy. You may clear/manipulate this list if you know
    * what you do. It is used by the TGR validation steps. The list is not cleared at the end of /
-   * start of new scenarios! TODO add test to ensure this statement
+   * start of new scenarios!
    */
   @Getter
   private static final Deque<RbelElement> validatableRbelMessages = new ConcurrentLinkedDeque<>();

@@ -41,7 +41,7 @@ class AsynchronousNonHttpCommunicationTest extends AbstractNonHttpTest {
         serverSocket -> {},
         (requestCalls, responseCalls, serverCalled) -> {
           assertThat(requestCalls.get()).isEqualTo(2);
-          assertThat(responseCalls.get()).isEqualTo(0);
+          assertThat(responseCalls.get()).isZero();
           assertThat(serverCalled.get()).isEqualTo(2);
         });
   }

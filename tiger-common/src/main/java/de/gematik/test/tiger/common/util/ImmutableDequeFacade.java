@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
-@SuppressWarnings({"java:S6355", "java:S1133"})
+@SuppressWarnings({"java:S6355", "java:S1133", "java:S1123"})
 public class ImmutableDequeFacade<T> implements Deque<T> {
 
   private final Deque<T> remoteDeque;

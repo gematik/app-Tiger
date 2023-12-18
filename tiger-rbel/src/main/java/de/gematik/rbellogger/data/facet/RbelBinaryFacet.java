@@ -9,6 +9,6 @@ import de.gematik.rbellogger.data.RbelMultiMap;
 public class RbelBinaryFacet implements RbelFacet {
   @Override
   public RbelMultiMap getChildElements() {
-    return new RbelMultiMap();
+    return new RbelMultiMap<>();
   }
 }

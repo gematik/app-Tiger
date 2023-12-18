@@ -1,10 +1,14 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package io.cucumber.core.plugin.report;
 
-public class EvidenceRecorderFactory {
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
-  private EvidenceRecorderFactory() {
-    // no reason for an instance yet
-  }
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public class EvidenceRecorderFactory {
 
   private static final EvidenceRecorder context = new EvidenceRecorder();
 

@@ -493,6 +493,7 @@ public class TigerWebUiController implements ApplicationContextAware {
   }
 
   @GetMapping(value = "/testRbelExpression", produces = MediaType.APPLICATION_JSON_VALUE)
+  @SuppressWarnings("java:S5852")
   public JexlQueryResponseDto testRbelExpression(
       @RequestParam(name = "msgUuid") final String msgUuid,
       @RequestParam(name = "rbelPath") final String rbelPath) {

@@ -41,11 +41,8 @@ class JwtModifierTest extends AbstractModifierTest {
 
     assertThat(modifiedMessage.findElement("$.body").get().hasFacet(RbelJwtFacet.class)).isTrue();
     assertThat(
-            modifiedMessage
-                .findElement("$.body.header.kid")
-                .map(RbelElement::getRawStringContent)
-                .get())
-        .isEqualTo("not the real header");
+            modifiedMessage.findElement("$.body.header.kid").map(RbelElement::getRawStringContent))
+        .contains("not the real header");
   }
 
   @Test
@@ -73,15 +70,13 @@ class JwtModifierTest extends AbstractModifierTest {
     assertThat(
             modifiedMessage
                 .findElement("$.body.body.authorization_endpoint")
-                .map(RbelElement::getRawStringContent)
-                .get())
-        .isEqualTo("not the auth endpoint");
+                .map(RbelElement::getRawStringContent))
+        .contains("not the auth endpoint");
     assertThat(
             modifiedMessage
                 .findElement("$.body.body.token_endpoint")
-                .map(RbelElement::getRawStringContent)
-                .get())
-        .isEqualTo("not the token endpoint");
+                .map(RbelElement::getRawStringContent))
+        .contains("not the token endpoint");
   }
 
   @Test
@@ -105,8 +100,8 @@ class JwtModifierTest extends AbstractModifierTest {
             .getFacetOrFail(RbelJwtSignature.class);
 
     assertThat(signature.isValid()).isTrue();
-    assertThat(signature.getVerifiedUsing().seekValue(String.class).get())
-        .isEqualTo("puk_idp-fd-sig-refimpl-3");
+    assertThat(signature.getVerifiedUsing().seekValue(String.class))
+        .contains("puk_idp-fd-sig-refimpl-3");
   }
 
   @Test
@@ -130,8 +125,8 @@ class JwtModifierTest extends AbstractModifierTest {
             .getFacetOrFail(RbelJwtSignature.class);
 
     assertThat(signature.isValid()).isTrue();
-    assertThat(signature.getVerifiedUsing().seekValue(String.class).get())
-        .isEqualTo("puk_idp-fd-sig-refimpl-3");
+    assertThat(signature.getVerifiedUsing().seekValue(String.class))
+        .contains("puk_idp-fd-sig-refimpl-3");
   }
 
   @Test

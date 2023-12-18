@@ -12,6 +12,7 @@ public interface RbelHtmlFacetRenderer {
 
   boolean checkForRendering(RbelElement element);
 
+  @SuppressWarnings({"java:S3740", "rawtypes", "OptionalUsedAsFieldOrParameterType"})
   ContainerTag performRendering(
       RbelElement element, Optional<String> key, RbelHtmlRenderingToolkit renderingToolkit);
 

@@ -84,44 +84,39 @@ public class RbelAsn1ConverterTest {
   }
 
   @Test
-  public void testVariousRbelPathInPcap() {
+  void testVariousRbelPathInPcap() {
     parseRezepsCapture();
     // check OID
     final RbelElement rbelMessage = rbelLogger.getMessageList().get(58);
-    assertThat(rbelMessage)
+    // The extractChildPath moves the pointer from the given element to its child so subsequent
+    // chaining
+    // starts from the "new root" element and thus the code will fail,
+    assertThat(rbelMessage) // NOSONAR
         .extractChildWithPath("$.body.0.2.0")
         .hasValueEqualTo("1.2.840.10045.4.3.2");
-
     // check X509-Version (Tagged-sequence)
     assertThat(rbelMessage)
         .extractChildWithPath("$.body.0.0.content")
         .hasValueEqualTo(BigInteger.valueOf(2));
-
     // check OCSP URL
     assertThat(rbelMessage)
         .extractChildWithPath("$.body.0.7.content.3.1.content.0.1.content.content")
         .hasFacet(RbelUriFacet.class);
-
     assertThat(rbelMessage)
         .extractChildWithPath("$.body.0.7.content.3.1.content.0")
         .hasFacet(RbelAsn1Facet.class);
-
     assertThat(rbelMessage)
         .extractChildWithPath("$.body.0.7.content.3.1.content.0")
         .hasFacet(RbelAsn1Facet.class);
-
     assertThat(rbelMessage)
         .extractChildWithPath("$.body.0.7.content.3.1.content.0.1")
         .hasFacet(RbelAsn1TaggedValueFacet.class);
-
     assertThat(rbelMessage)
         .extractChildWithPath("$.body.0.7.content.3.1.content.0.1.tag")
         .hasValueEqualTo(6);
-
     assertThat(rbelMessage)
         .extractChildWithPath("$.body.0.7.content.3.1.content.0.1.content.content")
         .hasStringContentEqualTo("http://ehca.gematik.de/ocsp/");
-
     // Parse y-coordinate of signature (Nested in BitString)
     assertThat(rbelMessage)
         .extractChildWithPath("$.body.2.content.1")
