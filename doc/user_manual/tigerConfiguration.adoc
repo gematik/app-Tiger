@@ -1,11 +1,14 @@
 [#_tiger_configuration]
 == Tiger Configuration
 
-Configuration is an integral part of testing. To make this task easier for you and to make configuration the various parts of the system as easy as possible Tiger has a central configuration store: TigerGlobalConfiguration. It combines properties from multiple source and feeds into various parts of the system.
+Configuration is an integral part of testing.
+To make this task easier for you and to make configuration the various parts of the system as easy as possible Tiger has a central configuration store: TigerGlobalConfiguration.
+It combines properties from multiple source and feeds into various parts of the system.
 
 image::media/tiger-configuration-global.svg[title="The TigerGlobalConfiguration with inlets and outlets"]
 
-This allows a vastly simplified retrieval and configuration of nearly all aspects of the system. It is therefore recommended reusing this system for your own testsuite as well.
+This allows a vastly simplified retrieval and configuration of nearly all aspects of the system.
+It is therefore recommended reusing this system for your own testsuite as well.
 
 [#_inlets]
 === Inlets
@@ -33,7 +36,8 @@ To easily convert between the multiple sources the TigerGlobalConfiguration offe
 
 * When the key consists only of letters and underscores then the underscores are converted to points.
 * Names are compared without considering the case.
-* Keys that contain '{', '}' or '|' are forbidden. To allow a clean startup on systems that have values like this configured the given characters are replaced by '_'.
+* Keys that contain '{', '}' or '|' are forbidden.
+To allow a clean startup on systems that have values like this configured the given characters are replaced by '_'.
 
 === Thread-based configuration
 
@@ -50,9 +54,14 @@ When retrieving the variable you could simply ask for `foo.value`: Only when you
 
 === Placeholders
 
-The TigerGlobalConfiguration supports the use of placeholders. Say for example you have a test-environment with two servers, "A" and "B". For the server "A" you have two choices: Either a real URL in the internet or a locally booted server. The use can choose which to activate by setting "active" of the server to use. The server "B" should now use the activated server, without having to set it manually while booting.
+The TigerGlobalConfiguration supports the use of placeholders.
+Say for example you have a test-environment with two servers, "A" and "B".
+For the server "A" you have two choices: Either a real URL in the internet or a locally booted server.
+The use can choose which to activate by setting "active" of the server to use.
+The server "B" should now use the activated server, without having to set it manually while booting.
 
-You could achieve this by exporting the URL (`servers.myServer.exports`) and referencing it in an argument which is passed into server "B" (`serverAUrl=${serverA.url}`. The first part here before the equal is the name of the environment variable passed into server "B" while booting, the second part behind the equal is the name of the property. compare this to the exports in the two serverA-options):
+You could achieve this by exporting the URL (`servers.myServer.exports`) and referencing it in an argument which is passed into server "B" (`serverAUrl=${serverA.url}`.
+The first part here before the equal is the name of the environment variable passed into server "B" while booting, the second part behind the equal is the name of the property. compare this to the exports in the two serverA-options):
 
 [source,YAML,title="Configuring using placeholders and exports"]
 ----
@@ -90,7 +99,8 @@ WARNING: Placeholders which can not be resolved will not lead to errors but rath
 
 === RbelPath-style retrieval
 
-The placeholders also support RbelPath-style expressions to allow for more flexible, dynamic retrieval of properties. Consider for example the following YAML:
+The placeholders also support RbelPath-style expressions to allow for more flexible, dynamic retrieval of properties.
+Consider for example the following YAML:
 
 [source,YAML]
 ----
@@ -110,20 +120,25 @@ myMap:
 To retrieve values from this map you can use the following expressions:
 
 * `${myMap.anotherLevel.[?(@.value=='foobar')].target}` will resolve to "schmoo", retrieving the node `myMap.anotherLevel.key.target`.
-* The same value can be retrieved via `${..[?(@.target=='schmoo')].target}`. This expression uses the recursive descent mechanic of RbelPath.
+* The same value can be retrieved via `${..[?(@.target=='schmoo')].target}`.
+This expression uses the recursive descent mechanic of RbelPath.
 * `${..buried}` will resolve to "deep", retrieving the node `myMap.hidden.treasure.buried`.
 
 === Fallback values
 
-Sometimes a default value is desired when a given key is not set. To define such a value, just use the pipe (|) after the key, like so:
+Sometimes a default value is desired when a given key is not set.
+To define such a value, just use the pipe (|) after the key, like so:
 
 `${foo.bar|orThisValue}`
 
-This will first test for the presence of "foo.bar" as a configuration key. If that key is not found, the fallback value "orThisValue" will be used.
+This will first test for the presence of "foo.bar" as a configuration key.
+If that key is not found, the fallback value "orThisValue" will be used.
 
 === Localized configuration
 
-Sometimes scope-creep can be a concern: Say you want to add a bunch of values right for one specific call but want to avoid that those values can be seen from everywhere else. By default, TigerGlobalConfiguration does not honor scope, which is a deliberate design-choice. To give you greater control over scope-behavior use the `.localScope()`-method:
+Sometimes scope-creep can be a concern: Say you want to add a bunch of values right for one specific call but want to avoid that those values can be seen from everywhere else.
+By default, TigerGlobalConfiguration does not honor scope, which is a deliberate design-choice.
+To give you greater control over scope-behavior use the `.localScope()`-method:
 
 [source,java]
 ----
@@ -134,7 +149,8 @@ TigerGlobalConfiguration.localScope()
         .isEqualTo("localValue"));
 ----
 
-Bear in mind that this does not work with threading: The values are added to the global store and will remain in the store for the duration of the execution of the given runnable. If you execute multiple tests in parallel you should look into the `TigerThreadScopedConfigurationSource` (which comes with other drawbacks, threading is not an easy problem to solve).
+Bear in mind that this does not work with threading: The values are added to the global store and will remain in the store for the duration of the execution of the given runnable.
+If you execute multiple tests in parallel you should look into the `TigerThreadScopedConfigurationSource` (which comes with other drawbacks, threading is not an easy problem to solve).
 
 === Examples
 
@@ -142,7 +158,11 @@ Some examples to clarify:
 
 ==== Example 1
 
-Say you have an environment configured in your testenv.yaml. You want the Tiger Proxy to forward traffic on one route to your backend-server. This will normally be a local server, but on the build-server you want to address another host. You can simply set an environment variable to do the job for you. Below are the relevant snippets:
+Say you have an environment configured in your testenv.yaml.
+You want the Tiger Proxy to forward traffic on one route to your backend-server.
+This will normally be a local server, but on the build-server you want to address another host.
+You can simply set an environment variable to do the job for you.
+Below are the relevant snippets:
 
 [source,YAML,title="tiger.yaml with the Tiger Proxy routing everything to the local server"]
 ----
@@ -161,7 +181,8 @@ export TIGERPROXY_PROXYROUTES_0_TO = "http://real.server"
 
 ==== Example 2
 
-In the above example let's say you only want to customize the port. This can be done by using placeholders:
+In the above example let's say you only want to customize the port.
+This can be done by using placeholders:
 
 [source,YAML,title="tiger.yaml with the Tiger Proxy routing everything to the local server"]
 ----
@@ -253,28 +274,51 @@ This will immediately return the `href`-attribute of the link in question as a s
 
 You can easily register additional namespaces by calling `TigerJexlExecutor.registerAdditionalNamespace(<namespace-prefix>, <namespace class or object)`.
 
-
 [#_tiger_configuration_editor]
 === Configuration Editor
 
-The configuration editor allows to view and edit the tiger configuration during a test run. The editor is part of the xref:tigerWorkflowUI.adoc#_workflow_ui[Workflow UI] and can be opened by clicking the gears icon in the sidebar (xref:editor_start_button[xrefstyle=short]).
+The configuration editor allows to view and edit the tiger configuration during a test run.
+The editor is part of the xref:tigerWorkflowUI.adoc#_workflow_ui[Workflow UI] and can be opened by clicking the gears icon in the sidebar (xref:editor_start_button[xrefstyle=short]).
 
-image::media/configuration_editor_start_button.png[id="editor_start_button",alt="workflow UI with action buttons and gears icon highlighted", title="Open the configuration editor by clicking the gears icon in the sidebar.", align="center"]
+image::screenshots/sidebar_config_editor.png[id="editor_start_button",alt="workflow UI with action buttons and gears icon highlighted",title="Open the configuration editor by clicking the gears icon in the sidebar.",align="center"]
 
-The configuration editor displays a table where you can view the current configuration properties loaded in the Tiger global configuration (xref:editor_table[xrefstyle=short]). This includes properties from all xref:_inlets[inlet sources]. If a property is defined multiple times in different sources, only the one with higher importance is displayed.
+The configuration editor displays a table where you can view the current configuration properties loaded in the Tiger global configuration (xref:editor_table[xrefstyle=short]).
+This includes properties from all xref:_inlets[inlet sources].
+If a property is defined multiple times in different sources, only the one with higher importance is displayed.
 
-image::media/configuration_editor_table.png[id="editor_table", alt="view of the configuration editor table showing several properties", title="The Tiger global configuration editor"]
+image::screenshots/tg_global_config_editor.png[id="editor_table",alt="view of the configuration editor table showing several properties",title="The Tiger global configuration editor",align="center"]
 
-The editor allows sorting and filtering each column so that you can easily find a specific property (xref:editor_column_filter[xrefstyle=short]). Given that the Tiger global configuration includes many environment variables and system properties which are not directly relevant to Tiger, the filtering functionally proves to be especially useful.
+The editor allows sorting and filtering each column so that you can easily find a specific property (xref:editor_column_filter[xrefstyle=short]).
+Given that the Tiger global configuration includes many environment variables and system properties which are not directly relevant to Tiger, the filtering functionally proves to be especially useful.
 
-image::media/configuration_editor_example_filter_popup.png[id="editor_column_filter", alt="screenshot of Key column displaying a filter popup filtering by the word tiger",title="Example of filtering the column key by the text 'tiger'"]
+image::screenshots/config_editor_example_filter_popup.png[id="editor_column_filter",alt="screenshot of Key column displaying a filter popup filtering by the word tgr",title="Example of filtering the column key by the text 'tgr'"]
 
-The values of existing configuration properties can be edited by double-clicking the value cells. This opens an input field where you can input a new value (xref:cell_editor[xrefstyle=short]).
+The values of existing configuration properties can be edited by double-clicking the value cells.
+This opens an input field where you can input a new value (xref:cell_editor[xrefstyle=short]).
 
-image::media/configuration_editor_cell_editor_example.png[id="cell_editor", alt="cell editor popup showing how to edit a property value", title="Double clicking a value cell opens the cell editor."]
+image::screenshots/config_editor_cell_editor_example.png[id="cell_editor",alt="cell editor popup showing how to edit a property value",title="Double clicking a value cell opens the cell editor."]
 
 Additionally, you can remove existing configuration properties by clicking the delete button (xref:delete_button[xrefstyle=short])
 
-image::media/configuration_editor_delete_button.png[id="delete_button", alt="screenshot of editor table highlighting the delete button", title="Clicking the delete button removes the property from the Tiger global configuration."]
+image::screenshots/config_editor_delete_button.png[id="delete_button",alt="screenshot of editor table highlighting the delete button",title="Clicking the delete button removes the property from the Tiger global configuration."]
 
-TIP: Editing or removing configuration properties will not affect already ran tests. If you want to use edited properties in a specific test, then you should pause the test before editing the configuration. In xref:_workflow_ui[Workflow UI] you can see how to use custom steps to pause the test suite.
+TIP: Editing or removing configuration properties will not affect already ran tests.
+If you want to use edited properties in a specific test, then you should pause the test before editing the configuration.
+In xref:_workflow_ui[Workflow UI] you can see how to use custom steps to pause the test suite.
+
+Some variables in the table have multiline values, causing the text to appear truncated initially.
+These cells are equipped with an expand icon (xref:collapse_icon[xrefstyle=short]), indicating the availability of additional content.
+
+image::screenshots/config_editor_collapse_icon.png[id="collapse_icon",alt="collapse icon example",title="Clicking on the expand icon reveals the full multiline content."]
+
+Clicking the expand icon uncover the complete multiline content, ensuring it is fully visible within the cell.
+
+image::screenshots/config_editor_expand_icon.png[id="expand_icon",alt="expand icon example",title="Click the expand icon to view the full multiline content."]
+
+To hide the multiline content and return to a truncated view, simply click on the collapse icon.
+This action collapses the multiline content, returning the text to its truncated state.
+
+
+
+
+

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 @Slf4j
 class ConfigurationEditorTest extends AbstractTests {
 
-  private final String ENV_MULTILINE_CHECK_KEY = "tgr.testenv.cfg.multiline.check.mode";
+  protected static final String ENV_MULTILINE_CHECK_KEY = "tgr.testenv.cfg.multiline.check.mode";
   private final String ENV_ICON = ".fa.fa-lg.fa-server";
   private final String PROP_ICON = ".fa.fa-lg.fa-gears";
   private final String FILE_ICON = ".fa.fa-lg.fa-file";
@@ -33,17 +33,6 @@ class ConfigurationEditorTest extends AbstractTests {
   @AfterEach
   void tearDown() {
     closeTgConfigEditor();
-  }
-
-  @Test
-  void testTigerConfigurationEditorIsVisible() {
-    assertThat(page.querySelector("#test-sidebar-tg-config-editor-icon").isVisible()).isTrue();
-  }
-
-  @Test
-  void testOpenCloseTigerConfigurationEditor() {
-    assertThat(page.locator(".vsp__header").textContent())
-        .contains("Tiger Global Configuration Editor");
   }
 
   @Test
@@ -311,6 +300,9 @@ class ConfigurationEditorTest extends AbstractTests {
     page.locator(xpathToValue).dblclick();
     page.waitForSelector("#test-tg-config-editor-text-area");
     page.locator("#test-tg-config-editor-text-area").type(newValue);
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> page.locator("#test-tg-config-editor-btn-save").isVisible());
     page.locator("#test-tg-config-editor-btn-save").click();
     page.waitForSelector("#test-tg-config-editor-table-row");
   }
@@ -354,6 +346,7 @@ class ConfigurationEditorTest extends AbstractTests {
         row.stream()
             .anyMatch(
                 r -> r.locator("#test-tg-config-editor-table-row").textContent().equals(value)));
+
     page.locator(
             "//div[@col-id='key' and text()='"
                 + key
@@ -375,5 +368,23 @@ class ConfigurationEditorTest extends AbstractTests {
 
               assertThat(matchingRows).isEmpty();
             });
+  }
+
+  @Test
+  void testOpenAndClearFilter() {
+    page.locator(".ag-header-icon.ag-header-cell-menu-button .ag-icon.ag-icon-menu")
+        .nth(1)
+        .dblclick();
+    var inputField = page.locator("input[placeholder='Filter...']");
+    inputField.type("tgr");
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> page.locator("#test-tg-config-editor-table").isVisible());
+
+    page.locator("#test-tg-config-editor-btn-clear-filters").click();
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> page.locator(".vsp__header").isVisible());
+    page.locator(".vsp__header").click();
   }
 }

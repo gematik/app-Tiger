@@ -150,7 +150,7 @@ const columnDefs: ColDef[] = [
 <template>
   <div class="container flex items-center">
     <div class="text-start py-1">
-      <button type="button" @click="onClearFilters">Clear filters</button>
+      <button type="button" id="test-tg-config-editor-btn-clear-filters" @click="onClearFilters">Clear filters</button>
     </div>
     <ag-grid-vue
         class="ag-theme-alpine editor-table"

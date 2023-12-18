@@ -10,7 +10,7 @@
 <font SIZE="24"/>
 <stylenode LOCALIZED_TEXT="styles.predefined" POSITION="bottom_or_right" STYLE="bubble">
 <stylenode LOCALIZED_TEXT="default" ID="ID_602083445" ICON_SIZE="12 pt" FORMAT_AS_HYPERLINK="false" COLOR="#3c3836" BACKGROUND_COLOR="#fbf1c7" STYLE="bubble" SHAPE_HORIZONTAL_MARGIN="8 pt" SHAPE_VERTICAL_MARGIN="5 pt" BORDER_WIDTH_LIKE_EDGE="false" BORDER_WIDTH="1.9 px" BORDER_COLOR_LIKE_EDGE="true" BORDER_COLOR="#f0f0f0" BORDER_DASH_LIKE_EDGE="true" BORDER_DASH="SOLID" VGAP_QUANTITY="3 pt">
-<arrowlink SHAPE="CUBIC_CURVE" COLOR="#a89984" WIDTH="2" TRANSPARENCY="255" DASH="" FONT_SIZE="9" FONT_FAMILY="SansSerif" DESTINATION="ID_602083445" STARTINCLINATION="102.6 pt;-19.5 pt;" ENDINCLINATION="102.6 pt;3.3 pt;" STARTARROW="NONE" ENDARROW="DEFAULT"/>
+<arrowlink SHAPE="CUBIC_CURVE" COLOR="#a89984" WIDTH="2" TRANSPARENCY="255" DASH="" FONT_SIZE="9" FONT_FAMILY="SansSerif" DESTINATION="ID_602083445" STARTINCLINATION="102.6 pt;-19.2 pt;" ENDINCLINATION="102.6 pt;3.3 pt;" STARTARROW="NONE" ENDARROW="DEFAULT"/>
 <font NAME="SansSerif" SIZE="11" BOLD="false" STRIKETHROUGH="false" ITALIC="false"/>
 <edge STYLE="bezier" COLOR="#93a1a1" WIDTH="3" DASH="SOLID"/>
 <richcontent TYPE="DETAILS" CONTENT-TYPE="plain/auto"/>
@@ -225,7 +225,6 @@
     </div>
   </body>
 </html>
-
 </richcontent>
 </node>
 </node>
@@ -271,6 +270,20 @@
 </richcontent>
 </node>
 </node>
+</node>
+</node>
+</node>
+</node>
+<node TEXT="Filter Key" POSITION="bottom_or_right" ID="ID_957587390" CREATED="1702563010320" MODIFIED="1702563025834">
+<node TEXT="Click on key menu" ID="ID_757239304" CREATED="1702563062489" MODIFIED="1702563099510">
+<node TEXT="Add filter text &quot;tgr&quot;" ID="ID_301163576" CREATED="1702563102554" MODIFIED="1702563119050">
+<node TEXT="ConfigEditor shows only sources which contains &quot;tgr&quot;" ID="ID_542498112" CREATED="1702563120497" MODIFIED="1702563146497">
+<node TEXT="testOpenAndClearFilter()" ID="ID_215601281" CREATED="1702563146504" MODIFIED="1702563153452"/>
+</node>
+</node>
+<node TEXT="Click on button &quot;Clear filters&quot;" ID="ID_1249956216" CREATED="1702563161345" MODIFIED="1702563177873">
+<node TEXT="Config Editor shows table all sources" ID="ID_505253204" CREATED="1702563177878" MODIFIED="1702563201795">
+<node TEXT="testOpenAndClearFilter()" ID="ID_612633721" CREATED="1702563204088" MODIFIED="1702563213052"/>
 </node>
 </node>
 </node>

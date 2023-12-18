@@ -87,7 +87,7 @@ export default {
               rows="3"></textarea>
     <div class="mt-2 btn-group">
       <button class="btn btn-primary" @click="saveEditing"><i class="fa fa-floppy-disk" id="test-tg-config-editor-btn-save"></i> Save</button>
-      <button class="btn btn-secondary" @click="cancelEditing"><i class="fa fa-ban"></i> Cancel</button>
+      <button class="btn btn-secondary" @click="cancelEditing"><i class="fa fa-ban" id="test-tg-config-editor-btn-cancel"></i> Cancel</button>
     </div>
   </div>
 </template>
