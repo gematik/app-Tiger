@@ -2,6 +2,11 @@
 
 # Release 2.3.1
 
+## Breaking changes
+
+* TGR-1173 removed the long deprecated step ```TGR current response at {string} matches {string}```. Replace it with the
+  step ```TGR current response with attribute {tigerResolvedString} matches {tigerResolvedString}```.
+
 ## Bugfixes
 
 * TGR-1125: Tiger-Zion: Fixed assignment-bugs
