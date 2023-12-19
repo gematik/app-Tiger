@@ -5,8 +5,7 @@
 <template>
   <div class="tab-pane execution-pane-tabs" id="logs_pane" role="tabpanel">
     <div class="ps-3">
-      <table>
-        <caption>Filter and search toolbar of the server log tab pane</caption>
+      <table aria-label="Filter and search toolbar of the server log tab pane">
         <thead>
         <tr>
           <th>Filter servers:</th>

@@ -32,8 +32,7 @@
                 <div v-for="anzahl in getTableCountForScenarioOutlineKeysLength(scenario[1].exampleKeys)"
                      :key="anzahl"
                      class="d-inline-block">
-                  <table class="table table-sm table-data-variant">
-                    <caption>Data used when executing this scenario</caption>
+                  <table class="table table-sm table-data-variant" aria-label="Data used when executing this scenario">
                     <thead>
                     <tr>
                       <th v-for="(key, index) in getScenarioOutlineKeysParts(scenario[1].exampleKeys, anzahl)"
@@ -53,8 +52,7 @@
                   </table>
                 </div>
               </div>
-              <table class="table table-borderless">
-                <caption>Test steps performed when executing this scenario</caption>
+              <table class="table table-borderless" aria-label="Test steps performed when executing this scenario">
                 <tbody>
                 <tr v-for="(step, index) in scenario[1].steps" :key="index">
                   <td :class="`${step[1].status.toLowerCase()} step_status test-step-status-${step[1].status.toLowerCase()}`">

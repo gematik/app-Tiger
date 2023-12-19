@@ -413,26 +413,32 @@ public class TigerTestEnvMgr
           .get(serverType)
           .getDeclaredConstructor(TigerTestEnvMgr.class, String.class, CfgServer.class)
           .newInstance(this, serverId, config);
-    } catch (TigerTestEnvException e) {
-      throw e;
     } catch (RuntimeException
         | NoSuchMethodException
         | InstantiationException
         | IllegalAccessException
         | InvocationTargetException e) {
-      if (e.getCause() != null) {
-        if (e.getCause() instanceof TigerConfigurationException tce) {
-          throw (TigerConfigurationException) tce.getCause();
-        } else if (e.getCause() instanceof TigerTestEnvException tee) {
-          throw (TigerTestEnvException) tee.getCause();
-        }
-      }
-      throw new TigerTestEnvException(
-          e,
-          "Unable to instantiate server of type %s, does it have a constructor(TigerTestenvMgr,"
-              + " String, CfgServer)?",
-          config.getType());
+      throw handleExceptionMinimizingStackTrace(config, e);
     }
+  }
+
+  private static RuntimeException handleExceptionMinimizingStackTrace(
+      CfgServer config, Exception e) {
+    if (e instanceof TigerTestEnvException tte) {
+      return tte;
+    }
+    if (e.getCause() != null) {
+      if (e.getCause() instanceof TigerConfigurationException tce) {
+        return (TigerConfigurationException) (tce.getCause() == null ? tce : tce.getCause());
+      } else if (e.getCause() instanceof TigerTestEnvException tee) {
+        return (TigerTestEnvException) (tee.getCause() == null ? tee : tee.getCause());
+      }
+    }
+    return new TigerTestEnvException(
+        e,
+        "Unable to instantiate server of type %s, does it have a constructor(TigerTestenvMgr,"
+            + " String, CfgServer)?",
+        config.getType());
   }
 
   public void setUpEnvironment() {
