@@ -59,7 +59,7 @@
         <version.spring-boot>3.1.0</version.spring-boot>
         <version.system-stubs>2.0.2</version.system-stubs>
         <version.unirest>3.14.2</version.unirest>
-        <version.wiremock>2.35.0</version.wiremock>
+        <version.wiremock>3.3.1</version.wiremock>
         <spotless-maven-plugin.version>2.40.0</spotless-maven-plugin.version>
         <spotless.google-java-format.version>1.18.1</spotless.google-java-format.version>
 
@@ -428,8 +428,8 @@
                 <version>${version.javaparser}</version>
             </dependency>
             <dependency>
-                <groupId>com.github.tomakehurst</groupId>
-                <artifactId>wiremock-jre8-standalone</artifactId>
+                <groupId>org.wiremock</groupId>
+                <artifactId>wiremock</artifactId>
                 <version>${version.wiremock}</version>
             </dependency>
             <dependency>
