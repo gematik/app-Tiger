@@ -38,6 +38,7 @@ pipeline {
             steps {
                 sh """
                 cd doc/examples/tigerOnly
+                grep -q version.tiger ${POM_PATH}
                 sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM_PATH}
                 """
             }

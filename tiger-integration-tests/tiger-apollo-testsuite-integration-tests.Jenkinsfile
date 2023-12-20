@@ -39,6 +39,7 @@ pipeline {
 
           stage('Set Tiger version in Apollo Testsuite') {
               steps {
+                   sh "grep -q version.tiger-test-lib ${POM_PATH}"
                    sh "sed -i -e 's@<version.tiger-test-lib>.*</version.tiger-test-lib>@<version.tiger-test-lib>${TIGER_VERSION}</version.tiger-test-lib>@' ${POM_PATH}"
               }
           }

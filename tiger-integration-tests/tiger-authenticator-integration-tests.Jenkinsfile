@@ -37,6 +37,7 @@ pipeline {
 
         stage('Set Tiger version in Authenticator') {
             steps {
+                 sh "grep -q version.tiger ${POM_PATH}"
                  sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
             }
         }

@@ -37,6 +37,7 @@ pipeline {
 
           stage('Set Tiger version in FHIR') {
               steps {
+                   sh "grep -q tiger.version ${POM_PATH}"
                    sh "sed -i -e 's@<tiger.version>.*</tiger.version>@<tiger.version>${TIGER_VERSION}</tiger.version>@' pom.xml"
               }
           }

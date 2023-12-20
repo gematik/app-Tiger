@@ -36,7 +36,8 @@ pipeline {
 
           stage('Set Tiger version in eAU') {
               steps {
-                   sh "sed -i -e 's@<tiger.version>.*</tiger.version>@<tiger.version>${TIGER_VERSION}</tiger.version>@' pom.xml"
+                   sh "grep -q version.tiger ${POM_PATH}"
+                   sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
               }
           }
 
@@ -77,7 +78,7 @@ pipeline {
                     script {
                         if (params.UPDATE == 'YES') {
                             catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                                sh "sed -i -e 's@<tiger.version>.*</tiger.version>@<tiger.version>${TIGER_VERSION}</tiger.version>@' pom.xml"
+                                sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
                                 sh """
                                          git add -A
                                          git commit -m "Tiger version updated"

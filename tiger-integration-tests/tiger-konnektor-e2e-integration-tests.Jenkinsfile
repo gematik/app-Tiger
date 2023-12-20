@@ -4,7 +4,7 @@ def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
 def REPO_URL = createGitUrl('git/Testtools/tiger-konnektor-e2e')
 def BRANCH = 'Development_1.x'
 def POM_PATH_BUILD = 'pom.xml'
-def POM_PATH_TEST = 'tigkone2e-testsuite/pom.xml'
+def POM_PATH_TEST = 'pom.xml'
 
 pipeline {
       options {
@@ -38,6 +38,7 @@ pipeline {
 
           stage('Set Tiger version in tiger-konnektor-e2e') {
               steps {
+                   sh "grep -q tiger.version ${POM_PATH_TEST}"
                    sh "sed -i -e 's@ <tiger.version>.*</tiger.version>@<tiger.version>${TIGER_VERSION}</tiger.version>@' ${POM_PATH_TEST}"
               }
           }
