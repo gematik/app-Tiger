@@ -23,7 +23,7 @@ public class TigerTemplateSource {
   private final List<TigerConfigurationKeyString> targetPath;
   private final Map<TigerConfigurationKey, String> values;
 
-  public List<TigerConfigurationKey> applyToAllApplicable(
+  public List<TigerConfigurationKey> applyToApplicablesAndReturnAppliedTemplateKeys(
       final AbstractTigerConfigurationSource tigerConfigurationSource,
       final Map<TigerConfigurationKey, String> finalValues) {
     List<TigerConfigurationKey> appliedTemplateKeys = new ArrayList<>();

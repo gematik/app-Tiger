@@ -36,7 +36,7 @@ pipeline {
 
           stage('Set Tiger version in eAU') {
               steps {
-                   sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
+                   sh "sed -i -e 's@<tiger.version>.*</tiger.version>@<tiger.version>${TIGER_VERSION}</tiger.version>@' pom.xml"
               }
           }
 
@@ -49,11 +49,7 @@ pipeline {
               }
           }
 
-          stage('Build') {
-              steps {
-                   mavenBuild(POM_PATH)
-              }
-          }
+          // do not build with skipTests flag first as the serenity maven plugin will bail out not finding any report
 
           stage('Tests and Konnektor connection') {
               steps {
@@ -81,7 +77,7 @@ pipeline {
                     script {
                         if (params.UPDATE == 'YES') {
                             catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                                sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' pom.xml"
+                                sh "sed -i -e 's@<tiger.version>.*</tiger.version>@<tiger.version>${TIGER_VERSION}</tiger.version>@' pom.xml"
                                 sh """
                                          git add -A
                                          git commit -m "Tiger version updated"
@@ -101,14 +97,14 @@ pipeline {
           success {
              script {
                 if (params.UPDATE == 'YES')
-                    sendEMailNotification("yana.stasevich@gematik.de" + "," + "rafael.schirru@gematik.de" + "," + "thomas.eitzenberger@gematik.de" + "," + "juliane.baerwind@gematik.de")
+                    sendEMailNotification("rafael.schirru@gematik.de" + "," + "thomas.eitzenberger@gematik.de" + "," + "juliane.baerwind@gematik.de")
              }
           }
 
           failure {
              script {
                 if (params.UPDATE == 'YES')
-                    sendEMailNotification("yana.stasevich@gematik.de" + "," + "rafael.schirru@gematik.de" + "," + "thomas.eitzenberger@gematik.de" + "," + "juliane.baerwind@gematik.de")
+                    sendEMailNotification("rafael.schirru@gematik.de" + "," + "thomas.eitzenberger@gematik.de" + "," + "juliane.baerwind@gematik.de")
              }
           }
       }

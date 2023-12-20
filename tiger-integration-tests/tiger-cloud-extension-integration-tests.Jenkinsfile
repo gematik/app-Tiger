@@ -45,7 +45,7 @@ pipeline {
 
           stage('Set Tiger version in Tiger Cloud Extension Testsuite') {
               steps {
-                   sh "sed -i -e 's@<version.tiger.testenv>.*</version.tiger.testenv>@<version.tiger.testenv>${TIGER_VERSION}</version.tiger.testenv>@' ${POM_PATH}"
+                   sh "sed -i -e 's@<tiger.testenv.version>.*</tiger.testenv.version>@<tiger.testenv.version>${TIGER_VERSION}</tiger.testenv.version>@' ${POM_PATH}"
               }
           }
 
@@ -82,7 +82,7 @@ pipeline {
                              script {
                                 if (params.UPDATE == 'YES') {
                                       catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                                          sh "sed -i -e 's@<version.tiger.testenv>.*</version.tiger.testenv>@<version.tiger.testenv>${TIGER_VERSION}</version.tiger.testenv>@' ${POM_PATH}"
+                                          sh "sed -i -e 's@<tiger.testenv.version>.*</tiger.testenv.version>@<tiger.testenv.version>${TIGER_VERSION}</tiger.testenv.version>@' ${POM_PATH}"
                                           sh """
                                               git add -A
                                               git commit -m "Tiger version updated"

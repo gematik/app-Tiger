@@ -7,6 +7,7 @@ package de.gematik.test.tiger.common.config;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+// TODO explain types and how precedence is used to obtain the value to a property
 @AllArgsConstructor
 @Getter
 public enum SourceType {

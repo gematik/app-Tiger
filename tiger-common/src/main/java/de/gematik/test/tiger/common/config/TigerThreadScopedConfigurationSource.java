@@ -36,7 +36,7 @@ public class TigerThreadScopedConfigurationSource extends AbstractTigerConfigura
     finalValues.putAll(getValues());
 
     loadedTemplates.stream()
-        .map(template -> template.applyToAllApplicable(this, finalValues))
+        .map(template -> template.applyToApplicablesAndReturnAppliedTemplateKeys(this, finalValues))
         .flatMap(List::stream)
         .forEach(finalValues::remove);
 

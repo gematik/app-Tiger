@@ -39,7 +39,7 @@ pipeline {
 
           stage('Set Tiger version in Tiger Pssim Extension') {
               steps {
-                   sh "sed -i -e 's@<version.tiger-common>.*</version.tiger-common>@<version.tiger-common>${TIGER_VERSION}</version.tiger-common>@' ${POM_PATH}"
+                   sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM_PATH}"
               }
           }
 
@@ -60,7 +60,7 @@ pipeline {
                              script {
                                 if (params.UPDATE == 'YES') {
                                       catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                                          sh "sed -i -e 's@<version.tiger-common>.*</version.tiger-common>@<version.tiger-common>${TIGER_VERSION}</version.tiger-common>@' ${POM_PATH}"
+                                          sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM_PATH}"
                                           sh """
                                               git add -A
                                               git commit -m "Tiger version updated"

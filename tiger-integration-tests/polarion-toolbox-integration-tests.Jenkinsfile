@@ -14,12 +14,6 @@ pipeline {
       tools {
           maven 'Default'
       }
-
-      parameters {
-           string(name: 'TIGER_VERSION', description: 'Bitte die aktuelle Version für das Projekt eingeben, format [0-9]+.[0-9]+.[0-9]+ \nHinweis: Version 0.0.[0-9] ist keine gültige Version!')
-           choice(name: 'UPDATE', choices: ['NO', 'YES'], description: 'Flag, um zu prüfen, ob die neue Tiger-Version in einigen Projekten aktualisiert werden soll')
-      }
-
       stages {
           stage('Initialise') {
               steps {
@@ -32,12 +26,6 @@ pipeline {
                   git branch: BRANCH,
                       credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
                       url: REPO_URL
-              }
-          }
-
-          stage('Set Tiger version in Polarion Toolbox') {
-              steps {
-                   sh "sed -i -e 's@<version.tiger-test-lib>.*</version.tiger-test-lib>@<version.tiger-test-lib>${TIGER_VERSION}</version.tiger-test-lib>@' ${POM_PATH}"
               }
           }
 
@@ -55,23 +43,6 @@ pipeline {
                 mavenVerify(POM_PATH, "-DPolarionPassword=$POLARION_CREDENTIALS_PSW")
             }
         }
-
-          stage('Commit new Tiger version when needed') {
-                        steps {
-                             script {
-                                if (params.UPDATE == 'YES') {
-                                      catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                                          sh "sed -i -e 's@<version.tiger-test-lib>.*</version.tiger-test-lib>@<version.tiger-test-lib>${TIGER_VERSION}</version.tiger-test-lib>@' ${POM_PATH}"
-                                          sh """
-                                              git add -A
-                                              git commit -m "Tiger version updated"
-                                              git push origin ${BRANCH}
-                                          """
-                                      }
-                                 }
-                             }
-                        }
-          }
       }
 
        post {
