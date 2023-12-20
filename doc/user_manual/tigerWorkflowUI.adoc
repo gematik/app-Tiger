@@ -92,6 +92,12 @@ TGR banner step will be displayed at the bottom of the Workflow UI and will stay
 This way you can instruct manual testers to follow a specified test workflow.
 This feature is used in the EAU Konnektorfarm validation test suite to guide the Primärsystem manufacturers through the interoperability combinations of signing/verifying documents against all Konnektors available.
 
+Additionally, a test scenario can be replayed.
+When clicking the replay button, the scenario will be rerun again.
+If placeholder variables were modified with the configuration editor, the new values will be used when replaying the scenario.
+
+image::screenshots/maincontent_replaybutton.png[title="The replay button"]
+
 [#_rbel_logs]
 The communication requests that are called during the step execution are displayed beneath the step that initated the request.
 When the user clicks on the light blue rectangle with the number (whereas uneven numbers are requests, even number are responses) of the request then the Rbel Log view opens on the right hand side of the Workflow UI as shown on the screenshot below.

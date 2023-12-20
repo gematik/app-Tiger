@@ -5,82 +5,93 @@
 import TestResult from "./TestResult";
 import StepUpdate, {IJsonSteps} from "./StepUpdate";
 import FeatureUpdate from "./FeatureUpdate";
+import ScenarioIdentifier from "./ScenarioIdentifier";
 
 interface IScenarioUpdate {
-    steps: Map<string, StepUpdate>;
-    description: string;
-    status: TestResult;
-    exampleKeys: Array<string>;
-    exampleList: Map<string, string>;
-    variantIndex: number;
+  steps: Map<string, StepUpdate>;
+  description: string;
+  status: TestResult;
+  exampleKeys: Array<string>;
+  exampleList: Map<string, string>;
+  variantIndex: number;
 }
 
 interface IJsonScenario {
-    steps: IJsonSteps;
-    description: string;
-    status: TestResult;
-    exampleKeys: Array<string>;
-    exampleList: IJsonOutlineList;
-    variantIndex: number;
+  steps: IJsonSteps;
+  description: string;
+  status: TestResult;
+  exampleKeys: Array<string>;
+  exampleList: IJsonOutlineList;
+  variantIndex: number;
+  uri: string;
+  location: { line: number, column: number };
 }
 
 export interface IJsonScenarios {
-    [key: string]: IJsonScenario
+  [key: string]: IJsonScenario
 }
 
 export interface IJsonOutlineList {
-    [key: string]: string;
+  [key: string]: string;
 }
 
 export default class ScenarioUpdate implements IScenarioUpdate {
-    steps = new Map<string, StepUpdate>();
-    description = "";
-    status = TestResult.UNUSED;
-    exampleKeys = new Array<string>();
-    exampleList = new Map<string, string>();
-    variantIndex = -1;
+  steps = new Map<string, StepUpdate>();
+  description = "";
+  status = TestResult.UNUSED;
+  exampleKeys = new Array<string>();
+  exampleList = new Map<string, string>();
+  variantIndex = -1;
+  uri: string = ""
+  location: { line: number, column: number } = {line: NaN, column: NaN};
 
-    public static fromJson(json: IJsonScenario): ScenarioUpdate {
-        const scenario: ScenarioUpdate = new ScenarioUpdate();
-        scenario.steps = StepUpdate.mapFromJson(json.steps);
-        scenario.description = json.description;
-        if (json.exampleKeys) {
-            scenario.exampleKeys = json.exampleKeys;
-        }
-        if (json.exampleList) {
-            scenario.exampleList = this.mapScenarioOutlineFromJson(json.exampleList);
-        }
-        if (json.variantIndex !== -1) {
-            scenario.variantIndex = json.variantIndex;
-        }
-        if (json.status) {
-            scenario.status = json.status;
-        } else {
-            scenario.status = FeatureUpdate.mapToTestResult(scenario.steps);
-        }
-        return scenario;
+  public static fromJson(json: IJsonScenario): ScenarioUpdate {
+    const scenario: ScenarioUpdate = new ScenarioUpdate();
+    scenario.steps = StepUpdate.mapFromJson(json.steps);
+    scenario.description = json.description;
+    if (json.exampleKeys) {
+      scenario.exampleKeys = json.exampleKeys;
     }
+    if (json.exampleList) {
+      scenario.exampleList = this.mapScenarioOutlineFromJson(json.exampleList);
+    }
+    if (json.variantIndex !== -1) {
+      scenario.variantIndex = json.variantIndex;
+    }
+    if (json.status) {
+      scenario.status = json.status;
+    } else {
+      scenario.status = FeatureUpdate.mapToTestResult(scenario.steps);
+    }
+    if (json.uri) {
+      scenario.uri = json.uri
+    }
+    if (json.location) {
+      scenario.location = json.location
+    }
+    return scenario;
+  }
 
-    public static mapFromJson(
-        jsonscenarios: IJsonScenarios
-    ): Map<string, ScenarioUpdate> {
-        const map: Map<string, ScenarioUpdate> = new Map<string, ScenarioUpdate>();
-        if (jsonscenarios) {
-            Object.entries(jsonscenarios).forEach(([key, value]) =>
-                map.set(key, this.fromJson(value))
-            );
-        }
-        return map;
+  public static mapFromJson(
+    jsonscenarios: IJsonScenarios
+  ): Map<string, ScenarioUpdate> {
+    const map: Map<string, ScenarioUpdate> = new Map<string, ScenarioUpdate>();
+    if (jsonscenarios) {
+      Object.entries(jsonscenarios).forEach(([key, value]) =>
+        map.set(key, this.fromJson(value))
+      );
     }
+    return map;
+  }
 
-    public static mapScenarioOutlineFromJson(outlineList: IJsonOutlineList): Map<string, string> {
-        const map: Map<string, string> = new Map<string, string>();
-        if (outlineList) {
-            Object.entries(outlineList).forEach(([key, value]) =>
-                map.set(key, value));
-        }
-        return map;
+  public static mapScenarioOutlineFromJson(outlineList: IJsonOutlineList): Map<string, string> {
+    const map: Map<string, string> = new Map<string, string>();
+    if (outlineList) {
+      Object.entries(outlineList).forEach(([key, value]) =>
+        map.set(key, value));
     }
+    return map;
+  }
 
     public merge(scenario: ScenarioUpdate) {
         if (scenario.description) {
@@ -121,17 +132,26 @@ export default class ScenarioUpdate implements IScenarioUpdate {
         }
     }
 
-    public getLink(featureName: string): string {
-        if (this.variantIndex === -1) {
-            return encodeURI(featureName.trim() + "_" + this.description.trim());
-        } else {
-            return encodeURI(featureName.trim() + "_" + this.description.trim() + "[" + (this.variantIndex + 1) + "]");
-        }
-    }
+  public getScenarioIdentifier(): ScenarioIdentifier {
+    return new ScenarioIdentifier(this.uri, this.location, this.variantIndex);
+  }
 
-    public toString() {
-        return `{ description: "${this.description}",\nstatus: "${
-            this.status
-        }",\nsteps: "${FeatureUpdate.mapToString(this.steps)}"\n}`;
+  public getLink(featureName: string): string {
+    return encodeURIComponent(this.combineScenarioWithFeatureName(featureName));
+  }
+
+  public combineScenarioWithFeatureName(featureName: string): string {
+    if (this.variantIndex === -1) {
+      return featureName.trim() + "_" + this.description.trim();
+    } else {
+      return featureName.trim() + "_" + this.description.trim() + "[" + (this.variantIndex + 1) + "]";
     }
+  }
+
+
+  public toString() {
+    return `{ description: "${this.description}",\nstatus: "${
+      this.status
+    }",\nsteps: "${FeatureUpdate.mapToString(this.steps)}"\n}`;
+  }
 }

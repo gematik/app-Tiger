@@ -27,6 +27,8 @@
                     :text="`${scenario[1].description} ${scenario[1].variantIndex !== -1 ? '[' + (scenario[1].variantIndex + 1) + ']' : ''}`"
                     :link="scenario[1].getLink(feature[1].description)">
                 </TestStatusBadge>
+                <replay-button
+                    :scenario="scenario[1].getScenarioIdentifier()"></replay-button>
               </h4>
               <div v-if="scenario[1].variantIndex !== -1">
                 <div v-for="anzahl in getTableCountForScenarioOutlineKeysLength(scenario[1].exampleKeys)"
@@ -97,7 +99,8 @@
           <i class="fa-solid fa-up-right-from-square" title="pop out pane"></i>
         </a>
       </h2>
-      <iframe v-if="localProxyWebUiUrl" id="rbellog-details-iframe" allow="clipboard-write" class="h-100 w-100"
+      <iframe v-if="localProxyWebUiUrl" id="rbellog-details-iframe" allow="clipboard-write"
+              class="h-100 w-100"
               :src="`${localProxyWebUiUrl}?embedded=true`" title="Rbel log view"/>
       <div v-else class="w-100 no-connection-local-proxy serverstatus-stopped">
         <i class="fas fa-project-diagram left"></i>
@@ -116,6 +119,7 @@ import TestStatusBadge from "@/components/testsuite/TestStatusBadge.vue";
 import BannerMessageWindow from "@/components/testsuite/BannerMessageWindow.vue";
 import {getTestResultIcon} from "@/types/testsuite/TestResult";
 import Ui from "@/types/ui/Ui";
+import ReplayButton from "@/components/testsuite/ReplayButton.vue";
 
 defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;

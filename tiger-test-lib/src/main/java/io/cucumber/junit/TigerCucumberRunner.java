@@ -4,6 +4,7 @@
 
 package io.cucumber.junit;
 
+import de.gematik.test.tiger.lib.TigerDirector;
 import io.cucumber.core.eventbus.EventBus;
 import io.cucumber.core.feature.FeatureParser;
 import io.cucumber.core.options.*;
@@ -55,6 +56,7 @@ public class TigerCucumberRunner extends CucumberSerenityBaseRunner {
     setRuntimeOptions(runtimeOptions);
     Runtime runtime = using(classLoaderSupplier, runtimeOptions);
     runtime.run();
+
     return runtime.exitStatus();
   }
 
@@ -70,28 +72,36 @@ public class TigerCucumberRunner extends CucumberSerenityBaseRunner {
       Supplier<ClassLoader> classLoaderSupplier,
       RuntimeOptions runtimeOptions,
       Configuration<?> systemConfiguration) {
+
     RuntimeOptionsBuilder runtimeOptionsBuilder = new RuntimeOptionsBuilder();
     Collection<String> allTagFilters = environmentSpecifiedTags(runtimeOptions.getTagExpressions());
+
     for (String tagFilter : allTagFilters) {
       runtimeOptionsBuilder.addTagFilter(new LiteralExpression(tagFilter));
     }
+
     runtimeOptionsBuilder.build(runtimeOptions);
     setRuntimeOptions(runtimeOptions);
 
     EventBus bus = new TimeServiceEventBus(Clock.systemUTC(), UUID::randomUUID);
     FeatureParser parser = new FeatureParser(bus::generateId);
-    FeaturePathFeatureSupplier featureSupplier =
+    FeatureSupplier featureSupplier =
         new FeaturePathFeatureSupplier(classLoaderSupplier, runtimeOptions, parser);
 
     TigerSerenityReporterPlugin reporter = new TigerSerenityReporterPlugin(systemConfiguration);
 
-    return Runtime.builder()
-        .withClassLoader(classLoaderSupplier)
-        .withRuntimeOptions(runtimeOptions)
-        .withAdditionalPlugins(reporter)
-        .withEventBus(bus)
-        .withFeatureSupplier(featureSupplier)
-        .build();
+    Runtime runtime =
+        Runtime.builder()
+            .withClassLoader(classLoaderSupplier)
+            .withRuntimeOptions(runtimeOptions)
+            .withAdditionalPlugins(reporter)
+            .withEventBus(bus)
+            .withFeatureSupplier(featureSupplier)
+            .build();
+
+    TigerDirector.registerRuntime(runtime);
+
+    return runtime;
   }
 
   public TigerCucumberRunner(Class clazz) throws InitializationError {

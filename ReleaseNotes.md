@@ -10,7 +10,7 @@
 ## Bugfixes
 
 * TGR-1125: Tiger-Zion: Fixed assignment-bugs
-* TGR-1183: fixed an issue where TigerConfigurationKeys were wrongly ignoring parts of the key when they add a repeated
+* TGR-1183: fixed an issue where TigerConfigurationKeys were wrongly ignoring parts of the key when they had a repeated
   subkey.
 * TGR-1186: Fixed healthcheck-issues with TLS servers
 * TGR-1201: Fixes unresolved environment variables in TigerConfig
@@ -29,6 +29,7 @@
   extensions will be migrating to this automatic resolution with the next version.
 * TGR-1214: Tiger Proxy tests are now run in 10 separate forks, this will put your machine under heavy load and requires
   at least 32 GB to run. On Linux using ```nice mvn verify``` may be a good idea
+* TGR-1096: it is now possible to replay a test scenario from the Workflow UI.
 
 # Release 2.3.0
 

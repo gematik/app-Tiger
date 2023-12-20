@@ -24,11 +24,13 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
 import de.gematik.test.tiger.testenvmgr.controller.TestExecutionController;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
+import de.gematik.test.tiger.testenvmgr.env.ScenarioReplayer;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
+import io.cucumber.core.runtime.Runtime;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -73,6 +75,7 @@ public class TigerDirector {
 
   @Getter private static TigerLibConfig libConfig;
   private static ConfigurableApplicationContext envMgrApplicationContext;
+  private static Runtime runtime;
 
   public static synchronized void start() {
     if (initialized) {
@@ -94,6 +97,7 @@ public class TigerDirector {
     try {
       // get free port
       startTestEnvMgr();
+      setupScenarioReplayer(runtime);
       startWorkflowUi();
       setupTestEnvironment(Optional.of(LocalProxyRbelMessageListener.rbelMessageListener));
       setDefaultProxyToLocalTigerProxy();
@@ -103,6 +107,11 @@ public class TigerDirector {
     }
 
     initialized = true;
+  }
+
+  private static void setupScenarioReplayer(Runtime runtime) {
+    ScenarioReplayer scenarioReplayer = envMgrApplicationContext.getBean(ScenarioReplayer.class);
+    scenarioReplayer.setRuntime(runtime);
   }
 
   public static synchronized void startStandaloneTestEnvironment() {
@@ -168,7 +177,7 @@ public class TigerDirector {
     shutdownHookRegistered = true;
 
     log.info("Registering shutdown hook...");
-    Runtime.getRuntime()
+    java.lang.Runtime.getRuntime()
         .addShutdownHook(
             new Thread(
                 () -> {
@@ -526,5 +535,13 @@ public class TigerDirector {
           message,
           errorMessage);
     }
+  }
+
+  public static void registerRuntime(Runtime runtime) {
+    TigerDirector.runtime = runtime;
+  }
+
+  public static Optional<Runtime> loadRuntime() {
+    return Optional.ofNullable(TigerDirector.runtime);
   }
 }

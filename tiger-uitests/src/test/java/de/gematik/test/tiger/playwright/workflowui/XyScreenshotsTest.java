@@ -92,6 +92,21 @@ class XyScreenshotsTest extends AbstractTests {
 
   @SuppressWarnings("squid:S2699")
   @Test
+  void screenshotReplayButton() {
+
+    page.querySelector("#test-execution-pane-tab").click();
+    page.evaluate(
+        "document.getElementsByClassName(\"replay-button\")[0].style.backgroundColor='yellow'");
+    page.locator(".test-execution-pane-scenario-title")
+        .first()
+        .screenshot(
+            new Locator.ScreenshotOptions().setPath(getPath("maincontent_replaybutton.png")));
+    page.evaluate(
+        "document.getElementsByClassName(\"replay-button\")[0].style.removeProperty(\"background-color\")");
+  }
+
+  @SuppressWarnings("squid:S2699")
+  @Test
   void screenshotServerLog() {
     page.querySelector("#test-server-log-tab").click();
     screenshot(page, "maincontent_serverlog.png");

@@ -53,7 +53,7 @@ onUnmounted(() => {
 
 async function onCellValueSaved(data: TigerConfigurationPropertyDto) {
   try {
-    const response = await fetch(process.env.BASE_URL + "global_configuration",
+    const response = await fetch(process.env.BASE_URL + CONFIGURATION_EDITOR_URL,
         {
           method: "PUT",
           headers: {

@@ -22,7 +22,7 @@ interface IJsonFeatures {
   [key: string]: IJsonFeature
 }
 
-export default class FeatureUpdate implements IFeatureUpdate{
+export default class FeatureUpdate implements IFeatureUpdate {
   scenarios = new Map<string, ScenarioUpdate>();
   description = "";
   status = TestResult.UNUSED;
@@ -51,7 +51,7 @@ export default class FeatureUpdate implements IFeatureUpdate{
     }
   }
 
-  public merge(feature: FeatureUpdate) : FeatureUpdate {
+  public merge(feature: FeatureUpdate): FeatureUpdate {
     if (feature.description) {
       this.description = feature.description;
     }
@@ -61,12 +61,12 @@ export default class FeatureUpdate implements IFeatureUpdate{
     if (feature.scenarios) {
       for (const key of feature.scenarios.keys()) {
         const scenario: ScenarioUpdate | undefined = this.scenarios.get(key)
-        const newScneario = feature.scenarios.get(key);
-        if (newScneario) {
+        const newScenario = feature.scenarios.get(key);
+        if (newScenario) {
           if (scenario) {
-            scenario.merge(newScneario)
+            scenario.merge(newScenario)
           } else {
-            this.scenarios.set(key, newScneario)
+            this.scenarios.set(key, newScenario)
           }
         } else {
           console.error(`No or empty scenario ${key} provided`);

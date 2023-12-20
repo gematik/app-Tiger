@@ -17,6 +17,7 @@ import de.gematik.test.tiger.proxy.data.MessageMetaDataDto;
 import de.gematik.test.tiger.testenvmgr.env.FeatureUpdate;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioUpdate;
 import de.gematik.test.tiger.testenvmgr.env.StepUpdate;
+import de.gematik.test.tiger.testenvmgr.env.TestResult;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import io.cucumber.core.plugin.FeatureFileLoader;
 import io.cucumber.core.plugin.ScenarioContextDelegate;
@@ -24,6 +25,7 @@ import io.cucumber.core.plugin.report.EvidenceReport.ReportContext;
 import io.cucumber.messages.types.Feature;
 import io.cucumber.messages.types.Scenario;
 import io.cucumber.messages.types.Step;
+import io.cucumber.messages.types.TableRow;
 import io.cucumber.plugin.event.*;
 import io.cucumber.plugin.event.Event;
 import java.awt.*;
@@ -154,8 +156,10 @@ public class SerenityReporterCallbacks {
   // test case start
   //
   public void handleTestCaseStarted(
-      Event ignoredEvent, ScenarioContextDelegate context) /* NOSONAR */ {
+      TestCaseStarted testCaseStartedEvent, ScenarioContextDelegate context) {
     shouldAbortTestExecution();
+
+    Optional<Feature> currentFeature = featureFrom(context.currentFeaturePath());
 
     if (StringUtils.isEmpty(currentScenarioID)) {
       currentScenarioID = context.getCurrentScenarioId();
@@ -167,15 +171,29 @@ public class SerenityReporterCallbacks {
     }
     // TGR
     if (context.isAScenarioOutline()) {
-      currentScenarioDataVariantIndex++;
+      currentScenarioDataVariantIndex =
+          extractScenarioDataVariantIndex(testCaseStartedEvent, context);
     } else {
       currentScenarioDataVariantIndex = -1;
       currentScenarioID = context.getCurrentScenarioId();
     }
     currentStepIndex = 0;
-    Optional<Feature> currentFeature = featureFrom(context.currentFeaturePath());
+
     currentFeature.ifPresent(feature -> informWorkflowUiAboutCurrentScenario(feature, context));
     evidenceRecorder.reset();
+  }
+
+  private int extractScenarioDataVariantIndex(
+      TestCaseStarted event, ScenarioContextDelegate context) {
+    var converter = new LocationConverter();
+
+    List<io.cucumber.messages.types.Location> exampleLocations =
+        context.currentScenarioOutline().getExamples().stream()
+            .flatMap(e -> e.getTableBody().stream())
+            .map(TableRow::getLocation)
+            .toList();
+
+    return exampleLocations.indexOf(converter.convertLocation(event.getTestCase().getLocation()));
   }
 
   private Optional<Feature> featureFrom(URI currentFeaturePath) {
@@ -200,8 +218,7 @@ public class SerenityReporterCallbacks {
     List<Step> steps = getStepsIncludingBackgroundFromFeatureForScenario(feature, scenario);
 
     log.info("Scenario location {}", scenario.getLocation());
-    Map<String, String> variantDataMap =
-        context.isAScenarioOutline() ? context.getTable().currentRow().toStringMap() : null;
+    Map<String, String> variantDataMap = getVariantDataMap(context);
     log.debug(
         "Current row for scenario variant {} {}", currentScenarioDataVariantIndex, variantDataMap);
     TigerDirector.getTigerTestEnvMgr()
@@ -222,6 +239,8 @@ public class SerenityReporterCallbacks {
                                                 .description(
                                                     replaceLineWithCurrentDataVariantValues(
                                                         scenario.getName(), variantDataMap))
+                                                .location(scenario.getLocation())
+                                                .uri(context.currentFeaturePath())
                                                 .variantIndex(currentScenarioDataVariantIndex)
                                                 .exampleKeys(
                                                     context.isAScenarioOutline()
@@ -237,6 +256,12 @@ public class SerenityReporterCallbacks {
                                                 .build())))
                                 .build())))
                 .build());
+  }
+
+  private Map<String, String> getVariantDataMap(ScenarioContextDelegate context) {
+    return context.isAScenarioOutline()
+        ? context.getTable().row(currentScenarioDataVariantIndex).toStringMap()
+        : Map.of();
   }
 
   private String mapScenarioToScenarioUpdateMap(Scenario scenario, boolean outline) {
@@ -301,7 +326,7 @@ public class SerenityReporterCallbacks {
               Integer.toString(stepIndex),
               StepUpdate.builder()
                   .description(postProduction.apply(getStepDescription(steps.get(stepIndex))))
-                  .status(de.gematik.test.tiger.testenvmgr.env.TestResult.PENDING)
+                  .status(TestResult.PENDING)
                   .stepIndex(stepIndex)
                   .build())
           != null) {
@@ -418,8 +443,7 @@ public class SerenityReporterCallbacks {
         new ArrayList<>(LocalProxyRbelMessageListener.getStepRbelMessages())
             .stream().map(MessageMetaDataDto::createFrom).toList();
 
-    Map<String, String> variantDataMap =
-        context.isAScenarioOutline() ? context.getTable().currentRow().toStringMap() : null;
+    Map<String, String> variantDataMap = getVariantDataMap(context);
 
     addBannerMessageToUpdate(variantDataMap, pickleTestStep, builder);
 
@@ -441,6 +465,8 @@ public class SerenityReporterCallbacks {
                                                 .description(
                                                     replaceLineWithCurrentDataVariantValues(
                                                         scenario.getName(), variantDataMap))
+                                                .uri(context.currentFeaturePath())
+                                                .location(scenario.getLocation())
                                                 .variantIndex(currentScenarioDataVariantIndex)
                                                 .steps(
                                                     new HashMap<>(
@@ -453,10 +479,7 @@ public class SerenityReporterCallbacks {
                                                                             context
                                                                                 .getCurrentStep()),
                                                                         variantDataMap))
-                                                                .status(
-                                                                    de.gematik.test.tiger.testenvmgr
-                                                                        .env.TestResult.valueOf(
-                                                                        status))
+                                                                .status(TestResult.valueOf(status))
                                                                 .stepIndex(currentStepIndex)
                                                                 .rbelMetaData(
                                                                     stepMessagesMetaDataList)

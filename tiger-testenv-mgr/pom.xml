@@ -62,6 +62,10 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-proxy</artifactId>
             <version>${project.version}</version>
@@ -161,6 +165,12 @@
             <artifactId>system-stubs-jupiter</artifactId>
             <version>${version.system-stubs}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-core</artifactId>
+            <version>${version.cucumber}</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
