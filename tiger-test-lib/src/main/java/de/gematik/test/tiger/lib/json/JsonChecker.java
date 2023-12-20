@@ -217,7 +217,8 @@ public class JsonChecker {
     if (IGNORE_JSON_VALUE.equals(oracleTarget)) {
       return;
     }
-    if (!jsonTarget.getClass().equals(oracleTarget.getClass())) {
+    if (!(oracleTarget instanceof String)
+        && !jsonTarget.getClass().equals(oracleTarget.getClass())) {
       throw new JsonCheckerAssertionError(
           "Expected an '"
               + oracleTarget.getClass().getSimpleName()

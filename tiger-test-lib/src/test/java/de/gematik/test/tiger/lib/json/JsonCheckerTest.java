@@ -24,25 +24,27 @@ import org.junit.jupiter.params.provider.MethodSource;
 class JsonCheckerTest {
 
   private static final String IDP_STRUCT =
-      "{\n"
-          + "  iss: 'http.*',\n"
-          + "  sub: 'http.*',\n"
-          + "  iat: \"${json-unit.ignore}\",\n"
-          + "  exp: \"${json-unit.ignore}\",\n"
-          + "  jwks: {\n"
-          + "    keys: [\n"
-          + "      {\n"
-          + "        use: \"sig\",\n"
-          + "        kid: \"puk_fachdienst_sig\",\n"
-          + "        kty: \"EC\",\n"
-          + "        crv: \"P-256\",\n"
-          + "        x: \"${json-unit.ignore}\",\n"
-          + "        y: \"${json-unit.ignore}\"\n"
-          + "      }\n"
-          + "    ]\n"
-          + "  },\n"
-          + "  authority_hints: [\"todo Bezeichnung des Federation Master\"]\n"
-          + "}\n";
+      """
+                  {
+                    iss: 'http.*',
+                    sub: 'http.*',
+                    iat: "${json-unit.ignore}",
+                    exp: "${json-unit.ignore}",
+                    jwks: {
+                      keys: [
+                        {
+                          use: "sig",
+                          kid: "puk_fachdienst_sig",
+                          kty: "EC",
+                          crv: "P-256",
+                          x: "${json-unit.ignore}",
+                          y: "${json-unit.ignore}"
+                        }
+                      ]
+                    },
+                    authority_hints: ["todo Bezeichnung des Federation Master"]
+                  }
+                  """;
   final JsonChecker check = new JsonChecker();
 
   private Stream<Arguments> provideDataForMatchingJsonObjects() {
@@ -663,5 +665,13 @@ class JsonCheckerTest {
         false);
     check.compareJsonStrings(
         "{'blub':[{'foo':'bar'}]}", "{'blub':[{'foo': '${json-unit.ignore}'}]}", false);
+  }
+
+  @Test
+  void testMatchOContainInAnyOrderJsonValues() {
+    check.assertJsonObjectShouldMatchOrContainInAnyOrder(
+        "{\"name\":\"myVeryCoolUserName\",\"exp\":1702893262,\"userId\":0, \"iat\":1702892662, \"dummyStr\":\"\", \"dummyBoolean\":true}",
+        "{\"name\":\"\\\\w+\", \"userId\":\"\\\\d+\", \"exp\":\"\\\\d+\", \"iat\":\"\\\\d+\", \"dummyStr\":\"\\\\w*\", \"dummyBoolean\":\"true\"}",
+        false);
   }
 }
