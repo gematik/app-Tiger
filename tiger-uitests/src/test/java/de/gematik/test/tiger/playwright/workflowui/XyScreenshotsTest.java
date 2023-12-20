@@ -92,7 +92,7 @@ class XyScreenshotsTest extends AbstractTests {
 
   @SuppressWarnings("squid:S2699")
   @Test
-  void screenshotReplayButton() {
+  void screenshotLargeReplayButton() {
 
     page.querySelector("#test-execution-pane-tab").click();
     page.evaluate(
@@ -103,6 +103,20 @@ class XyScreenshotsTest extends AbstractTests {
             new Locator.ScreenshotOptions().setPath(getPath("maincontent_replaybutton.png")));
     page.evaluate(
         "document.getElementsByClassName(\"replay-button\")[0].style.removeProperty(\"background-color\")");
+  }
+
+  @SuppressWarnings("squid:S2699")
+  @Test
+  void screenshotSmallReplayButton() {
+
+    page.querySelector("#test-tiger-logo").click();
+    page.evaluate(
+        "document.getElementsByClassName(\"small-replay-button\")[0].style.backgroundColor='yellow'");
+    page.locator("#test-sidebar-featurelistbox")
+        .screenshot(new Locator.ScreenshotOptions().setPath(getPath("sidebar_replaybutton.png")));
+    page.evaluate(
+        "document.getElementsByClassName(\"small-replay-button\")[0].style.removeProperty(\"background-color\")");
+    page.querySelector("#test-tiger-logo").click();
   }
 
   @SuppressWarnings("squid:S2699")

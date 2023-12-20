@@ -32,16 +32,8 @@ class XDynamicSidebarTests extends AbstractTests {
     assertAll(
         () -> assertThat(page.querySelector("#test-sidebar-title").isVisible()).isFalse(),
         () -> assertThat(page.locator("#test-sidebar-statusbox").isVisible()).isFalse(),
-        () ->
-            assertThat(
-                    page.locator("#test-sidebar-statusbox .test-sidebar-status-features")
-                        .isVisible())
-                .isFalse(),
-        () ->
-            assertThat(
-                    page.locator("#test-sidebar-statusbox .test-sidebar-status-scenarios")
-                        .isVisible())
-                .isFalse(),
+        () -> assertThat(page.locator("#test-sidebar-statusbox").isVisible()).isFalse(),
+        () -> assertThat(page.locator("#test-sidebar-statusbox").isVisible()).isFalse(),
         () -> assertThat(page.locator("#test-sidebar-status-started").isVisible()).isFalse(),
         () -> assertThat(page.querySelector("#test-sidebar-quit-icon").isVisible()).isTrue(),
         () -> assertThat(page.querySelector("#test-sidebar-pause-icon").isVisible()).isTrue(),
@@ -51,9 +43,9 @@ class XDynamicSidebarTests extends AbstractTests {
   }
 
   @Test
-  void testFeatureBoxClickOnLastSecnario() {
+  void testFeatureBoxClickOnLastScenario() {
     page.querySelector("#test-tiger-logo").click();
-    page.locator(".test-sidebar-scenario-name").last().click();
+    page.locator(".test-sidebar-scenario-name").last().locator(".scenarioLink").click();
     String sidebarTitle = page.locator(".test-sidebar-scenario-name").last().getAttribute("title");
     String featureTitle = page.locator(".test-execution-pane-scenario-title").last().textContent();
     assertAll(() -> assertThat(featureTitle.trim()).startsWith(sidebarTitle));

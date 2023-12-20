@@ -34,7 +34,7 @@ class XDynamicMainContentTests extends AbstractTests {
     page.querySelector("#test-server-log-pane-server-" + server).click();
     page.locator(".test-server-log-pane-log-1")
         .all()
-        .forEach(log -> assertThat(log.textContent().equals(server)));
+        .forEach(log -> assertThat(log.textContent()).isEqualTo(server));
   }
 
   @Test
