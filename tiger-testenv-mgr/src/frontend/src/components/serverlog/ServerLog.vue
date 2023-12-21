@@ -104,7 +104,7 @@ function setServer(selectedServers: Array<string>, serverId: string, event: Mous
     }
   }
   for (let button of buttons) {
-    if (button.textContent === "Show all logs") {
+    if (button.textContent.trim() === "Show all logs") {
       button.classList.toggle("active", false);
       const index = selectedServers.findIndex((server) => server === ALL);
       if (index > -1) {
