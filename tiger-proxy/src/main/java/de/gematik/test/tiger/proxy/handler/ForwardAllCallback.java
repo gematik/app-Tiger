@@ -9,6 +9,11 @@ import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverridde
 import de.gematik.test.tiger.proxy.TigerProxy;
 import org.mockserver.model.HttpRequest;
 
+/**
+ * Callback used for as a forward-all route in the TigerProxy. The messages received here are simply
+ * forwarded to the intended host. No rewriting of host or path is being done. It essentially serves
+ * as a fallback when no specialised route is found matching the request.
+ */
 public class ForwardAllCallback extends AbstractTigerRouteCallback {
 
   public ForwardAllCallback(TigerProxy tigerProxy) {

@@ -34,10 +34,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -918,6 +915,61 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .getFacetOrFail(RbelMessageTimingFacet.class)
                 .getTransmissionTime())
         .isCloseTo(ZonedDateTime.now(), new TemporalUnitWithinOffset(1, ChronoUnit.SECONDS));
+  }
+
+  /**
+   * Request to a mainserver, which in turns queries a backend-server. The timing information should be correct,
+   * the order in the Rbel-Log should be different.
+   */
+  @Test
+  void querySecondBackendServer_timingInformationShouldBeCorrect() {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("http://server")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build(),
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .build());
+
+    fakeBackendServerClient
+        .when(request().withPath("/mainserver"))
+        .forward(
+            forwardOverriddenRequest(
+                request("/foobar").withSocketAddress("localhost", tigerProxy.getProxyPort()))
+              .withResponseOverride(response().withStatusCode(777)));
+
+    proxyRest.get("http://server/mainserver").asString();
+    awaitMessagesInTiger(4);
+
+    assertThat(
+            tigerProxy.getRbelMessages().stream()
+                .sorted(
+                    Comparator.comparing(
+                        el ->
+                            el.getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime()))
+                .map(RbelElement::printHttpDescription)
+                .toList())
+        .containsExactly(
+            "HTTP GET /mainserver with body ''",
+            "HTTP GET /foobar with body ''",
+            "HTTP 666 with body '{\"foo\":\"bar\"}'",
+            "HTTP 777 with body '{\"foo\":\"bar\"}'");
+
+    assertThat(
+            tigerProxy.getRbelMessages().stream()
+                .map(RbelElement::printHttpDescription)
+                .toList())
+        .containsExactly(
+            "HTTP GET /foobar with body ''",
+            "HTTP 666 with body '{\"foo\":\"bar\"}'",
+            "HTTP GET /mainserver with body ''",
+            "HTTP 777 with body '{\"foo\":\"bar\"}'");
   }
 
   @Test

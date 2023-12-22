@@ -12,6 +12,9 @@ import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.mockserver.model.HttpRequest;
 
+/**
+ * Callback used for all Reverse-Proxy routes in the TigerProxy.
+ */
 @Slf4j
 @EqualsAndHashCode(callSuper = true)
 public class ReverseProxyCallback extends AbstractRouteProxyCallback {

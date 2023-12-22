@@ -1,6 +1,6 @@
 # Changelog Tiger Test platform
 
-# Release 2.3.1
+# Release 2.3.2
 
 ## Breaking changes
 
@@ -9,10 +9,21 @@
 
 ## Bugfixes
 
+* TGR-1173: refactorings all over the code (more than 500 sonarqube issues) to increase code maintainability
+* TGR-1229: Added fallback for RbelPaths in JEXL-expressions that yield no results
+* TGR-1231: TigerProxy: The timestamps on messages are no longer wrong if asynchronous parsing is enabled
+
+## Features
+
+* TGR-1096: it is now possible to replay a test scenario from the Workflow UI.
+
+# Release 2.3.1
+
+## Bugfixes
+
 * TGR-1125: Tiger-Zion: Fixed assignment-bugs
 * TGR-1183: fixed an issue where TigerConfigurationKeys were wrongly ignoring parts of the key when they had a repeated
   subkey.
-* TGR-1229: Added fallback for RbelPaths in JEXL-expressions that yield no results
 * TGR-1186: Fixed healthcheck-issues with TLS servers
 * TGR-1201: Fixes unresolved environment variables in TigerConfig
 * TGR-1180: fixed position of close button in the configuration editor in the WorkflowUi
@@ -20,7 +31,6 @@
   dependency missing
 * TGR-1190: fixed an issue where when setting fallbacks ( e.g.: ${foo.bar|orThisValue} ) the fallback value would always
   be used also when the value to resolve was existing in the JexlContext.
-* TGR-1173: refactorings all over the code (more than 500 sonarqube issues) to increase code maintainability
 
 # Features
 
@@ -30,7 +40,6 @@
   extensions will be migrating to this automatic resolution with the next version.
 * TGR-1214: Tiger Proxy tests are now run in 10 separate forks, this will put your machine under heavy load and requires
   at least 32 GB to run. On Linux using ```nice mvn verify``` may be a good idea
-* TGR-1096: it is now possible to replay a test scenario from the Workflow UI.
 
 # Release 2.3.0
 

@@ -62,7 +62,7 @@ public class MockServerToRbelConverter {
     return element;
   }
 
-  public RbelElement convertRequest(HttpRequest request, String protocolAndHost) {
+  public RbelElement convertRequest(HttpRequest request, String protocolAndHost, Optional<ZonedDateTime> timestamp) {
     if (log.isTraceEnabled()) {
       log.trace(
           "Converting request {}, headers {}, body {}",
@@ -76,7 +76,7 @@ public class MockServerToRbelConverter {
             requestToRbelMessage(request),
             RbelHostname.fromString(request.getRemoteAddress()).orElse(null),
             convertUri(protocolAndHost),
-            Optional.of(ZonedDateTime.now()));
+            timestamp);
 
     if (!element.hasFacet(RbelHttpRequestFacet.class)) {
       element.addFacet(

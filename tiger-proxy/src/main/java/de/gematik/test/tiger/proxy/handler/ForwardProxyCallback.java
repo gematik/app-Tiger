@@ -11,6 +11,9 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import lombok.extern.slf4j.Slf4j;
 import org.mockserver.model.HttpRequest;
 
+/**
+ * Callback used for all Forward-Proxy routes in the TigerProxy.
+ */
 @Slf4j
 public class ForwardProxyCallback extends AbstractRouteProxyCallback {
 
