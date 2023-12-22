@@ -334,18 +334,18 @@ class RbelPathExecutorTest {
       String stringToSubstitute, String expectedString) {
     TigerGlobalConfiguration.readFromYaml(
         """
-myMap:
-  anotherLevel:
-    key1:
-      value: foobar
-      target: schmoo
-    key2:
-      value: xMaS
-      target: tree
-  hidden:
-    treasure:
-      buried: deep
-""");
+                myMap:
+                  anotherLevel:
+                    key1:
+                      value: foobar
+                      target: schmoo
+                    key2:
+                      value: xMaS
+                      target: tree
+                  hidden:
+                    treasure:
+                      buried: deep
+          """);
     assertThat(TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute))
         .isEqualTo(expectedString);
   }
@@ -364,13 +364,10 @@ myMap:
         .containsExactlyInAnyOrderElementsOf(jsonElement.findRbelPathMembers(rbelPath2));
   }
 
-  @Test
-  void testEscapingOfElementNamesWithPoints() {
-    assertThat(
-            xmlMessage
-                .findRbelPathMembers("$..['some.other-tag'].text")
-                .get(0)
-                .getRawStringContent())
-        .isEqualToIgnoringWhitespace("blub");
+  @ParameterizedTest
+  @CsvSource({"$..['some.other-tag'].text, blub", "$..['urn:telematik:claims:email'], blab"})
+  void testEscapingOfSpecialCharacters(String rbelPath, String expectedResult) {
+    assertThat(xmlMessage.findRbelPathMembers(rbelPath).get(0).getRawStringContent())
+        .isEqualToIgnoringWhitespace(expectedResult);
   }
 }

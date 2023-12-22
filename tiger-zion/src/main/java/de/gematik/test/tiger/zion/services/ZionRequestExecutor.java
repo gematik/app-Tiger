@@ -71,7 +71,8 @@ public class ZionRequestExecutor {
       TigerJexlContext responseContext = configuredResponse.get().getRight();
       final ResponseEntity<byte[]> responseEntity = renderResponse(chosenResponse, responseContext);
       responseContext.allNonStandardValues().forEach(TigerGlobalConfiguration::putValue);
-      return parseResponseWithRbelLogger(responseEntity);
+      parseResponseWithRbelLogger(responseEntity);
+      return responseEntity;
     } else {
       return spyWithRemoteServer(request)
           .orElseThrow(
@@ -99,8 +100,10 @@ public class ZionRequestExecutor {
             "Considering response without body, nested responses: {}",
             response.getNestedResponses().keySet());
       }
-      final TigerJexlContext localResponseContext =
-          context.withCurrentElement(requestRbelMessage).withRootElement(requestRbelMessage);
+      final TigerJexlContext localResponseContext = context
+            .withCurrentElement(requestRbelMessage)
+            .withRootElement(requestRbelMessage)
+            .withShouldIgnoreEmptyRbelPaths(true);
       doAssignments(response.getAssignments(), requestRbelMessage, localResponseContext);
       executeBackendRequestsBeforeDecision(response, localResponseContext);
       final Optional<Pair<TigerMockResponse, TigerJexlContext>> responseCandidate =
@@ -364,9 +367,10 @@ public class ZionRequestExecutor {
       unirestRequest.body(request.getBody());
     }
     final HttpResponse<byte[]> unirestResponse = unirestRequest.asBytes();
-    final ResponseEntity<byte[]> responseEntity =
-        parseResponseWithRbelLogger(
-            ResponseEntity.status(unirestResponse.getStatus()).body(unirestResponse.getBody()));
+    final ResponseEntity<byte[]> responseEntity = ResponseEntity.status(unirestResponse.getStatus())
+      .body(unirestResponse.getBody());
+
+    parseResponseWithRbelLogger(responseEntity);
     final RbelElement responseRbelMessage = rbelLogger.getMessageHistory().getLast();
     final TigerMockResponse mockResponse =
         TigerMockResponse.builder()
@@ -404,7 +408,7 @@ public class ZionRequestExecutor {
     }
   }
 
-  private ResponseEntity<byte[]> parseResponseWithRbelLogger(ResponseEntity<byte[]> el) {
+  private void parseResponseWithRbelLogger(ResponseEntity<byte[]> el) {
     rbelLogger
         .getRbelConverter()
         .parseMessage(
@@ -412,8 +416,6 @@ public class ZionRequestExecutor {
             serverHostname,
             clientHostname,
             Optional.of(ZonedDateTime.now()));
-
-    return el;
   }
 
   private byte[] buildRawMessageApproximate(ResponseEntity<byte[]> response) {

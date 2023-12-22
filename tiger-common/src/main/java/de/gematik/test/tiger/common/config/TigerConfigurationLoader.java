@@ -362,10 +362,13 @@ public class TigerConfigurationLoader {
             .build());
   }
 
-  /** Generates a map containing all key/value pairs. Placeholders in the values ARE resolved. */
-  public Map<TigerConfigurationKey, String> retrieveMap() {
+  /**
+   * Generates a map containing all key/value pairs. All placeholders below the reference in the
+   * values are resolved.
+   */
+  public Map<TigerConfigurationKey, String> retrieveMap(TigerConfigurationKey reference) {
     final Map<TigerConfigurationKey, String> map = retrieveMapUnresolved();
-    replacePlaceholders(map);
+    replacePlaceholders(map, reference);
     return map;
   }
 
@@ -402,10 +405,13 @@ public class TigerConfigurationLoader {
     return mapObjectsToArrayWhereApplicable(result, objectMapper.getNodeFactory());
   }
 
-  private void replacePlaceholders(Map<TigerConfigurationKey, String> loadedAndSortedProperties) {
+  private void replacePlaceholders(
+      Map<TigerConfigurationKey, String> loadedAndSortedProperties,
+      TigerConfigurationKey reference) {
     final Map<TigerConfigurationKey, String> updatedValues =
         loadedAndSortedProperties.entrySet().stream()
             .filter(entry -> entry.getValue().contains("${") && entry.getValue().contains("}"))
+            .filter(entry -> entry.getKey().isBelow(reference))
             .map(
                 entry ->
                     Pair.of(
@@ -504,7 +510,7 @@ public class TigerConfigurationLoader {
 
   public Map<String, String> readMap(String... baseKeys) {
     var reference = new TigerConfigurationKey(baseKeys);
-    return retrieveMap().entrySet().stream()
+    return retrieveMap(reference).entrySet().stream()
         .filter(entry -> entry.getKey().isBelow(reference))
         .collect(
             Collectors.toMap(
@@ -514,7 +520,7 @@ public class TigerConfigurationLoader {
 
   public List<String> readList(String... baseKeys) {
     var reference = new TigerConfigurationKey(baseKeys);
-    return retrieveMap().entrySet().stream()
+    return retrieveMap(reference).entrySet().stream()
         .filter(entry -> entry.getKey().isBelow(reference))
         .map(Entry::getValue)
         .toList();
@@ -525,7 +531,7 @@ public class TigerConfigurationLoader {
   }
 
   public Map<String, String> readMapWithCaseSensitiveKeys(TigerConfigurationKey reference) {
-    return retrieveMap().entrySet().stream()
+    return retrieveMap(reference).entrySet().stream()
         .filter(entry -> entry.getKey().isBelow(reference))
         .collect(
             Collectors.toMap(

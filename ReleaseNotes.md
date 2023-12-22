@@ -12,6 +12,7 @@
 * TGR-1125: Tiger-Zion: Fixed assignment-bugs
 * TGR-1183: fixed an issue where TigerConfigurationKeys were wrongly ignoring parts of the key when they had a repeated
   subkey.
+* TGR-1229: Added fallback for RbelPaths in JEXL-expressions that yield no results
 * TGR-1186: Fixed healthcheck-issues with TLS servers
 * TGR-1201: Fixes unresolved environment variables in TigerConfig
 * TGR-1180: fixed position of close button in the configuration editor in the WorkflowUi

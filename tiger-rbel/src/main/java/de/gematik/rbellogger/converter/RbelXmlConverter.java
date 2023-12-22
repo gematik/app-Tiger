@@ -37,7 +37,7 @@ public class RbelXmlConverter implements RbelConverterPlugin {
         final Document parsedXml = parseXml(source);
         buildXmlElementForNode(parsedXml, rbel, context);
         setCharset(parsedXml, rbel);
-        rbel.addFacet(new RbelRootFacet<RbelXmlFacet>(rbel.getFacetOrFail(RbelXmlFacet.class)));
+        rbel.addFacet(new RbelRootFacet<>(rbel.getFacetOrFail(RbelXmlFacet.class)));
       } catch (DocumentException e) {
         log.trace(
             "Exception while trying to parse XML. Trying as HTML (more lenient SAX parsing)", e);
@@ -47,7 +47,7 @@ public class RbelXmlConverter implements RbelConverterPlugin {
                 document -> {
                   htmlConverter.buildXmlElementForNode(document, rbel, context);
                   rbel.addFacet(
-                      new RbelRootFacet<RbelXmlFacet>(rbel.getFacetOrFail(RbelXmlFacet.class)));
+                      new RbelRootFacet<>(rbel.getFacetOrFail(RbelXmlFacet.class)));
                 });
       }
     }

@@ -339,4 +339,80 @@ servers:
     assertThat(responseNonExisting.getStatus()).isEqualTo(401);
     assertThat(responseNonExisting.getBody()).isEqualTo("InvalidEmail");
   }
+
+  @TigerTest(
+    tigerYaml =
+      """
+    servers:
+      serverTestName:
+        type: zion
+        zionConfiguration:
+          serverPort: ${free.port.3}
+          mockResponses:
+            testResponse:
+              request:
+                method: POST
+              requestCriterions:
+                - "$.body.['urn:telematik:claims:email'] == 'test'"
+              response:
+                statusCode: 777
+                body: "?{$.body.['urn:telematik:claims:email']}"
+                        """)
+  @Test
+  void testWithColonInPropertyname(UnirestInstance unirest) {
+    HttpResponse<String> responseExisting =
+      unirest
+        .post("http://serverTestName/")
+        .body("""
+              {"urn:telematik:claims:email": "test"}
+              """)
+        .asString();
+
+    assertThat(responseExisting.getStatus()).isEqualTo(777);
+    assertThat(responseExisting.getBody()).isEqualTo("test");
+  }
+
+  @TigerTest(
+    tigerYaml =
+      """
+        logging.level.de.gematik.test.tiger.zion: TRACE
+        servers:
+          zionServer:
+            type: zion
+            zionConfiguration:
+              serverPort: "${free.port.10}"
+              mockResponses:
+                noSpecialKey:
+                  requestCriterions:
+                    - '$..specialKey == null'
+                  response:
+                    body: 'hassenich!'
+                yesSpecialKey:
+                  requestCriterions:
+                    - '$..specialKey != null'
+                  response:
+                    body: 'baaam'
+        """)
+  @Test
+  void testRbelPathElementNotPresentCriterions(UnirestInstance unirestInstance) {
+    HttpResponse<String> response =
+      unirestInstance
+        .put(
+          TigerGlobalConfiguration.resolvePlaceholders(
+            "http://zionServer/blub"))
+        .body("{'somethingElse':'fdsafds'}")
+        .asString();
+
+    assertThat(response.getBody()).isEqualTo("hassenich!");
+
+    response =
+      unirestInstance
+        .put(
+          TigerGlobalConfiguration.resolvePlaceholders(
+            "http://zionServer/blub"))
+        .body("{'specialKey':'fdsafds'}")
+        .asString();
+
+    assertThat(response.getBody()).isEqualTo("baaam");
+  }
 }

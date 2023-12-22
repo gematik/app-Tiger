@@ -170,7 +170,8 @@ class RbelJexlExecutorTest {
         "$.body.header =~ '.*discSig.*'",
         "$.body.body.scopes_supported.[?(@.content == 'e-rezept')] =~ '.*'",
         "$.body.body.scopes_supported.[?(@.content == 'e-rezept')] =~ '.*'",
-        "$.header.['Cache-Control'] =~ 'max-age=300'"
+        "$.header.['Cache-Control'] =~ 'max-age=300'",
+        "$..['urn:telematik:claims:email'] == 'emailValue'"
       })
   void testVariousJexlExpressions(String jexlExpression) {
     assertThat(TigerJexlExecutor.matchesAsJexlExpression(response, jexlExpression)).isTrue();
@@ -196,9 +197,10 @@ class RbelJexlExecutorTest {
          $..scopes.[?(@.content == 'test')],$..scopes.[?(@.content == 'test')]
          $.header.['Cache-Control'] =~ 'max-age=300',$.header.['Cache-Control']
          $.header.['Cache-Control'].blub =~ 'max-age=300',$.header.['Cache-Control'].blub
+         $.body.['urn:telematik:claims:email'].test =~ 'max-age=300',$.body.['urn:telematik:claims:email'].test
         """)
   void testRbelPathExtractor(String jexlExpression, String firstRbelPath) {
-    assertThat(RbelJexlExecutor.extractPotentialRbelPaths(jexlExpression)).contains(firstRbelPath);
+    assertThat(RbelJexlExecutor.extractPotentialRbelPaths(jexlExpression)).containsOnly(firstRbelPath);
   }
 
   @ParameterizedTest

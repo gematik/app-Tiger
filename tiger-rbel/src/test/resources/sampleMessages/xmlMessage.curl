@@ -21,6 +21,9 @@ Date: Fri, 13 Feb 2021 11:34:34 GMT
             <textTest hier="ist kein text"></textTest>
             <urlText>http://url.text.de</urlText>
             <charsetTest>אבגדהוזחטיךכלםמן</charsetTest>
+            <escaping>
+                {"urn:telematik:claims:email":"blab"}
+            </escaping>
         </ns2:RegistryError>
     </ns2:RegistryErrorList>
 </ns:RegistryResponse>
