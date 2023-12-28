@@ -142,26 +142,36 @@ class TestEnvManagerConfigurationCheck {
               + "    type: tigerProxy\n"
               + "    exports: \n"
               + "      - FOO_BAR=${custom.value}\n"
-              + "      - OTHER_PORT=${FREE_PORT_3}\n"
+              + "      - OTHER_PORT=${FREE_PORT_203}\n"
               + "    tigerProxyCfg:\n"
-              + "      adminPort: ${FREE_PORT_1}\n"
-              + "      proxyPort: ${FREE_PORT_2}\n"
+              + "      adminPort: ${FREE_PORT_201}\n"
+              + "      proxyPort: ${FREE_PORT_202}\n"
               + "  tigerServer2:\n"
               + "    hostname: ${foo.bar}\n"
               + "    type: tigerProxy\n"
               + "    dependsUpon: tigerServer1\n"
               + "    tigerProxyCfg:\n"
-              + "      adminPort: ${free.port.3}\n"
+              + "      adminPort: ${free.port.203}\n"
               + "      proxiedServerProtocol: ${FOO_BAR}\n"
-              + "      proxyPort: ${free.port.4}\n"
+              + "      proxyPort: ${free.port.204}\n"
               + "localProxyActive: false",
       additionalProperties = {"custom.value = ftp"})
+  /**
+   * we test here that (1) exports are working as expected (other.port is exported by server 1). (2)
+   * exports can be used in subsequent server configs (foo.bar is used by server 2). (3) exports can
+   * contain references to other properties which are resolved appropriately (custom.value is
+   * referenced)
+   */
   void testPlaceholderAndExports(TigerTestEnvMgr envMgr) {
     final AbstractTigerServer tigerServer2 = envMgr.getServers().get("tigerServer2");
+    String port203 = TigerGlobalConfiguration.readString("free.port.203");
     assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getAdminPort())
-        .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.3").get());
+        .asString()
+        .isEqualTo(port203);
     assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxyPort())
-        .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.4").get());
+        .asString()
+        .isEqualTo(TigerGlobalConfiguration.readString("free.port.204"));
+    assertThat(TigerGlobalConfiguration.readString("other.port")).isEqualTo(port203);
     assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxiedServerProtocol())
         .isEqualTo("ftp");
   }

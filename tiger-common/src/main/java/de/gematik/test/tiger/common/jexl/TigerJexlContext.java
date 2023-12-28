@@ -59,8 +59,9 @@ public class TigerJexlContext extends TreeMap<String, Object> implements JexlCon
   }
 
   /**
-   * Clones the context and returns a new copy which might ignore empty RbelPaths when a JEXL-expression
-   * is evaluated. If not then a exception is thrown, otherwise an empty string is taken as the fallback.
+   * Clones the context and returns a new copy which might ignore empty RbelPaths when a
+   * JEXL-expression is evaluated. If not then a exception is thrown, otherwise an empty string is
+   * taken as the fallback.
    */
   public TigerJexlContext withShouldIgnoreEmptyRbelPaths(boolean value) {
     final TigerJexlContext context = new TigerJexlContext(this);
@@ -116,9 +117,9 @@ public class TigerJexlContext extends TreeMap<String, Object> implements JexlCon
 
   public boolean shouldIgnoreEmptyRbelPaths() {
     return getOptional(RBELPATH_FALLBACK_MARKER)
-      .filter(Boolean.class::isInstance)
-      .map(Boolean.class::cast)
-      .orElse(Boolean.FALSE);
+        .filter(Boolean.class::isInstance)
+        .map(Boolean.class::cast)
+        .orElse(Boolean.FALSE);
   }
 
   public String getKey() {

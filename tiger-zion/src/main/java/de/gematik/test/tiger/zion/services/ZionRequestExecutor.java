@@ -100,10 +100,11 @@ public class ZionRequestExecutor {
             "Considering response without body, nested responses: {}",
             response.getNestedResponses().keySet());
       }
-      final TigerJexlContext localResponseContext = context
-            .withCurrentElement(requestRbelMessage)
-            .withRootElement(requestRbelMessage)
-            .withShouldIgnoreEmptyRbelPaths(true);
+      final TigerJexlContext localResponseContext =
+          context
+              .withCurrentElement(requestRbelMessage)
+              .withRootElement(requestRbelMessage)
+              .withShouldIgnoreEmptyRbelPaths(true);
       doAssignments(response.getAssignments(), requestRbelMessage, localResponseContext);
       executeBackendRequestsBeforeDecision(response, localResponseContext);
       final Optional<Pair<TigerMockResponse, TigerJexlContext>> responseCandidate =
@@ -367,8 +368,8 @@ public class ZionRequestExecutor {
       unirestRequest.body(request.getBody());
     }
     final HttpResponse<byte[]> unirestResponse = unirestRequest.asBytes();
-    final ResponseEntity<byte[]> responseEntity = ResponseEntity.status(unirestResponse.getStatus())
-      .body(unirestResponse.getBody());
+    final ResponseEntity<byte[]> responseEntity =
+        ResponseEntity.status(unirestResponse.getStatus()).body(unirestResponse.getBody());
 
     parseResponseWithRbelLogger(responseEntity);
     final RbelElement responseRbelMessage = rbelLogger.getMessageHistory().getLast();

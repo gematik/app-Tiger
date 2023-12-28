@@ -13,12 +13,14 @@ import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeAll;
@@ -26,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 @Slf4j
 @Getter
+@NotThreadSafe
 public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
 
   static File standaloneJar;
@@ -47,25 +50,29 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
   @Test
   @TigerTest(
       tigerYaml =
-          "servers:\n"
-              + "  winstone:\n"
-              + "    type: externalJar\n"
-              + "    source:\n"
-              + "      - local:target/winstone.jar\n"
-              + "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
-              + "    externalJarOptions:\n"
-              + "      arguments:\n"
-              + "        - --httpPort=${free.port.0}\n"
-              + "        - --webroot=.\n",
+          """
+              servers:
+                winstoneStandaloneProxy120:
+                  type: externalJar
+                  startupTimeoutSec: 60
+                  source:
+                    - local:target/winstone.jar
+                  healthcheckUrl: http://127.0.0.1:${free.port.120}
+                  externalJarOptions:
+                    arguments:
+                      - --httpPort=${free.port.120}
+                      - --webroot=.
+              """,
       skipEnvironmentSetup = true)
   void testCreateStandaloneProxyAsExternalJarViaExternalProcess(TigerTestEnvMgr envMgr) {
     setUpEnvAndExecuteWithSecureShutdown(
+        "12",
         () -> {
           Process proc = null;
           try {
             proc =
                 new ProcessBuilder()
-                    .directory(new File("target"))
+                    .directory(new File("target/12"))
                     .command("java", "-jar", standaloneJar.getAbsolutePath())
                     .inheritIO()
                     .start();
@@ -74,10 +81,10 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
           }
 
           try {
-            await()
-                .atMost(30, TimeUnit.SECONDS)
+            await("checkProxyOnline for offset '12'")
+                .atMost(50, TimeUnit.SECONDS)
                 .pollInterval(500, TimeUnit.MILLISECONDS)
-                .until(this::checkProxyOnline);
+                .until(() -> checkProxyOnline("12"));
           } finally {
             proc.destroy();
             if (proc.isAlive()) {
@@ -91,42 +98,46 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
   @Test
   @TigerTest(
       tigerYaml =
-          "servers:\n"
-              + "  winstone:\n"
-              + "    type: externalJar\n"
-              + "    source:\n"
-              + "      - local:target/winstone.jar\n"
-              + "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
-              + "    externalJarOptions:\n"
-              + "      arguments:\n"
-              + "        - --httpPort=${free.port.0}\n"
-              + "        - --webroot=.\n"
-              + "  externalProxy:\n"
-              + "    type: externalJar\n"
-              + "    startupTimeoutSec: 40\n"
-              + "    source:\n"
-              + "      - local:test.jar\n"
-              + "    healthcheckUrl: http://127.0.0.1:${free.port.5}\n"
-              + "    externalJarOptions:\n"
-              + "      workingDir: ../tiger-standalone-proxy/target/\n"
-              + "      arguments:\n"
-              + "        - --spring.config.location=../../tiger-testenv-mgr/target/\n",
+          """
+                servers:
+                  winstoneStandaloneProxy110:
+                    type: externalJar
+                    startupTimeoutSec: 60
+                    source:
+                      - local:target/winstone.jar
+                    healthcheckUrl: http://127.0.0.1:${free.port.110}
+                    externalJarOptions:
+                      arguments:
+                        - --httpPort=${free.port.110}
+                        - --webroot=.
+                  externalProxy110:
+                    type: externalJar
+                    startupTimeoutSec: 60
+                    source:
+                      - local:test.jar
+                    healthcheckUrl: http://127.0.0.1:${free.port.115}
+                    externalJarOptions:
+                      workingDir: ../tiger-standalone-proxy/target
+                      arguments:
+                        - --spring.config.location=../../tiger-testenv-mgr/target/11/
+                """,
       skipEnvironmentSetup = true)
-  void testCreateStandaloneProxyAsExternalJarViaTestEnvMgr(TigerTestEnvMgr envMgr)
-      throws IOException {
+  void testCreateStandaloneProxyAsExternalJarViaTestEnvMgr(TigerTestEnvMgr envMgr) {
     setUpEnvAndExecuteWithSecureShutdown(
+        "11",
         () -> {
-          await()
+          await("checkProxyOnline for offset '11'")
               .atMost(50, TimeUnit.SECONDS)
               .pollInterval(500, TimeUnit.MILLISECONDS)
-              .until(() -> checkProxyOnline());
+              .until(() -> checkProxyOnline("11"));
         },
         envMgr);
   }
 
-  private void setUpEnvAndExecuteWithSecureShutdown(Runnable test, TigerTestEnvMgr envMgr) {
+  private void setUpEnvAndExecuteWithSecureShutdown(
+      String offset, Runnable test, TigerTestEnvMgr envMgr) {
     try {
-      prepareApplicationConfigForProxy();
+      prepareApplicationConfigForProxy(offset);
       envMgr.setUpEnvironment();
       test.run();
     } finally {
@@ -134,41 +145,45 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
     }
   }
 
-  private void prepareApplicationConfigForProxy() {
+  private void prepareApplicationConfigForProxy(String offset) {
     String appyaml =
         "tigerProxy:\n"
             + "      adminPort: "
-            + TigerGlobalConfiguration.readString("free.port.4")
+            + TigerGlobalConfiguration.readString("free.port." + offset + "4")
             + "\n"
             + "      proxyPort: "
-            + TigerGlobalConfiguration.readString("free.port.5")
+            + TigerGlobalConfiguration.readString("free.port." + offset + "5")
             + "\n"
             + "      proxyRoutes: \n"
             + "      - from: http://127.0.0.1:"
-            + TigerGlobalConfiguration.readString("free.port.5")
+            + TigerGlobalConfiguration.readString("free.port." + offset + "5")
             + "\n"
             + "        to: http://127.0.0.1:"
-            + TigerGlobalConfiguration.readString("free.port.0")
+            + TigerGlobalConfiguration.readString("free.port." + offset + "0")
             + "\n";
 
     try {
-      Files.write(appyaml, new File("target/application.yml"), StandardCharsets.UTF_8);
+      File f = Path.of("target", offset, "application.yml").toFile();
+      Files.createParentDirs(f);
+      Files.asCharSink(f, StandardCharsets.UTF_8).write(appyaml);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
   @NotNull
-  private Boolean checkProxyOnline() {
+  private Boolean checkProxyOnline(String offset) {
     try {
       log.info(
           "connecting to admin api:"
               + "http://127.0.0.1:"
-              + TigerGlobalConfiguration.readString("free.port.5")
+              + TigerGlobalConfiguration.readString("free.port." + offset + "5")
               + "/");
       HttpResponse<String> response =
           Unirest.get(
-                  "http://127.0.0.1:" + TigerGlobalConfiguration.readString("free.port.5") + "/")
+                  "http://127.0.0.1:"
+                      + TigerGlobalConfiguration.readString("free.port." + offset + "5")
+                      + "/")
               .asString();
       // check routing to winstone works
       if (response.isSuccess()) {
@@ -176,13 +191,13 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
         log.info(
             "connecting to proxy api:"
                 + "http://127.0.0.1:"
-                + TigerGlobalConfiguration.readString("free.port.4")
+                + TigerGlobalConfiguration.readString("free.port." + offset + "4")
                 + "/webui");
         // check webui is "working"
         response =
             Unirest.get(
                     "http://127.0.0.1:"
-                        + TigerGlobalConfiguration.readString("free.port.4")
+                        + TigerGlobalConfiguration.readString("free.port." + offset + "4")
                         + "/webui")
                 .asString();
         if (response.isSuccess()) {

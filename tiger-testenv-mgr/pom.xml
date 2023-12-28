@@ -316,6 +316,21 @@
                     <classifier>springboot</classifier>
                 </configuration>
             </plugin>
+
+
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${version.maven.surefire}</version>
+                <configuration>
+                    <!-- very pessimistic value for slow environment. Default is 30. Rare errors observed. -->
+                    <forkedProcessExitTimeoutInSeconds>1000</forkedProcessExitTimeoutInSeconds>
+                    <forkCount>3</forkCount>
+                    <threadCount>1</threadCount>
+                    <reuseForks>true</reuseForks>
+                    <parallel>suitesAndClasses</parallel>
+                    <rerunFailingTestsCount>2</rerunFailingTestsCount>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

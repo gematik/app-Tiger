@@ -118,13 +118,14 @@ public class RbelJexlExecutor {
   private static void evaluatePathsAndCollectAllResults(
       TigerJexlContext mapContext, String potentialPath, String expression, List<String> newPaths) {
     final List<String> pathResults =
-        new ArrayList<>(extractPathAndConvertToString(
-            potentialPath.startsWith("@.")
-                ? mapContext.getCurrentElement()
-                : mapContext.getRootElement(),
-            potentialPath.startsWith("@.")
-                ? potentialPath.replaceFirst("@\\.", "\\$.")
-                : potentialPath));
+        new ArrayList<>(
+            extractPathAndConvertToString(
+                potentialPath.startsWith("@.")
+                    ? mapContext.getCurrentElement()
+                    : mapContext.getRootElement(),
+                potentialPath.startsWith("@.")
+                    ? potentialPath.replaceFirst("@\\.", "\\$.")
+                    : potentialPath));
     if (pathResults.isEmpty()
         || pathResults.stream().anyMatch(s -> !CharMatcher.ascii().matchesAllOf(s))) {
       if (mapContext.shouldIgnoreEmptyRbelPaths()) {
@@ -137,7 +138,8 @@ public class RbelJexlExecutor {
       }
     }
     for (String pathResult : pathResults) {
-      final String id = "replacedPath_" + RandomStringUtils.randomAlphabetic(20).toLowerCase(); // NOSONAR
+      final String id =
+          "replacedPath_" + RandomStringUtils.randomAlphabetic(20).toLowerCase(); // NOSONAR
       mapContext.put(id, pathResult);
       newPaths.add(expression.replace(potentialPath, id));
     }

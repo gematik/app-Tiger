@@ -918,8 +918,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   }
 
   /**
-   * Request to a mainserver, which in turns queries a backend-server. The timing information should be correct,
-   * the order in the Rbel-Log should be different.
+   * Request to a mainserver, which in turns queries a backend-server. The timing information should
+   * be correct, the order in the Rbel-Log should be different.
    */
   @Test
   void querySecondBackendServer_timingInformationShouldBeCorrect() {
@@ -941,8 +941,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         .when(request().withPath("/mainserver"))
         .forward(
             forwardOverriddenRequest(
-                request("/foobar").withSocketAddress("localhost", tigerProxy.getProxyPort()))
-              .withResponseOverride(response().withStatusCode(777)));
+                    request("/foobar").withSocketAddress("localhost", tigerProxy.getProxyPort()))
+                .withResponseOverride(response().withStatusCode(777)));
 
     proxyRest.get("http://server/mainserver").asString();
     awaitMessagesInTiger(4);
@@ -962,9 +962,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             "HTTP 777 with body '{\"foo\":\"bar\"}'");
 
     assertThat(
-            tigerProxy.getRbelMessages().stream()
-                .map(RbelElement::printHttpDescription)
-                .toList())
+            tigerProxy.getRbelMessages().stream().map(RbelElement::printHttpDescription).toList())
         .containsExactly(
             "HTTP GET /foobar with body ''",
             "HTTP 666 with body '{\"foo\":\"bar\"}'",

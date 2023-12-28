@@ -46,8 +46,7 @@ public class RbelXmlConverter implements RbelConverterPlugin {
             .ifPresent(
                 document -> {
                   htmlConverter.buildXmlElementForNode(document, rbel, context);
-                  rbel.addFacet(
-                      new RbelRootFacet<>(rbel.getFacetOrFail(RbelXmlFacet.class)));
+                  rbel.addFacet(new RbelRootFacet<>(rbel.getFacetOrFail(RbelXmlFacet.class)));
                 });
       }
     }

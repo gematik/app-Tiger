@@ -21,7 +21,6 @@ import java.util.Map;
 import kong.unirest.UnirestInstance;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -40,6 +39,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
   @ValueSource(strings = {"testTigerProxy", "testExternalJar", "testExternalUrl"})
   void testCheckCfgPropertiesMinimumConfigPasses_OK(String cfgFileName) {
     log.info("Starting testCheckCfgPropertiesMinimumConfigPasses_OK for {}", cfgFileName);
+    TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.initializeWithCliProperties(
         Map.of(
             "TIGER_TESTENV_CFGFILE",
@@ -56,7 +56,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
   @ValueSource(strings = {"testTigerProxy", "testExternalJarMVP", "testExternalUrl"})
   void testSetUpEnvironmentNShutDownMinimumConfigPasses_OK(String cfgFileName) throws IOException {
     log.info("Starting testSetUpEnvironmentNShutDownMinimumConfigPasses_OK for {}", cfgFileName);
-    FileUtils.deleteDirectory(new File("WinstoneHTTPServer"));
+    TigerGlobalConfiguration.reset();
     createTestEnvMgrSafelyAndExecute(
         envMgr -> {
           envMgr.setUpEnvironment();
@@ -66,6 +66,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
 
   @Test
   void testHostnameIsAutosetIfMissingK() {
+    TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.initializeWithCliProperties(
         Map.of(
             "TIGER_TESTENV_CFGFILE",
@@ -89,6 +90,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     assertThatNoException()
         .isThrownBy(
             () -> {
+              TigerGlobalConfiguration.reset();
               TigerGlobalConfiguration.initializeWithCliProperties(
                   Map.of(
                       "TIGER_TESTENV_CFGFILE",
@@ -103,6 +105,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
     assertThatNoException()
         .isThrownBy(
             () -> {
+              TigerGlobalConfiguration.reset();
               TigerGlobalConfiguration.initializeWithCliProperties(
                   Map.of(
                       "TIGER_TESTENV_CFGFILE",

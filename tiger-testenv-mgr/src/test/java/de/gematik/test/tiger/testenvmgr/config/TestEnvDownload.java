@@ -17,10 +17,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.ThrowingConsumer;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,6 +34,7 @@ import org.mockserver.netty.MockServer;
 
 @Slf4j
 @ResetTigerConfiguration
+@NotThreadSafe
 class TestEnvDownload {
   private static final Path DOWNLOAD_FOLDER_PATH = Path.of("target", "jarDownloadTest");
 
@@ -47,11 +48,7 @@ class TestEnvDownload {
   public void cleanDownloadFolder() throws IOException {
     log.info("Cleaning download folder...");
     if (DOWNLOAD_FOLDER_PATH.toFile().exists()) {
-      Files.walk(DOWNLOAD_FOLDER_PATH)
-          .sorted(Comparator.reverseOrder())
-          .map(Path::toFile)
-          .filter(File::isFile)
-          .forEach(File::delete);
+      FileUtils.deleteDirectory(DOWNLOAD_FOLDER_PATH.toFile());
     } else {
       FileUtils.forceMkdir(DOWNLOAD_FOLDER_PATH.toFile());
     }
@@ -181,38 +178,39 @@ class TestEnvDownload {
     System.clearProperty("TIGER_TESTENV_CFGFILE");
     TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.initialize();
-    String yamlSource =
-        "testenv:\n" + "   cfgfile: src/test/resources/tiger-testenv.yaml\n" + "servers:\n";
+    StringBuilder yamlSource =
+        new StringBuilder(
+            """
+                    testenv:
+                    cfgfile: src/test/resources/tiger-testenv.yaml
+                    servers:
+                    """);
     for (int i = 0; i < jarDownloadUrl.length; i++) {
-      yamlSource +=
-          "  externalJarServer"
-              + i
-              + ":\n"
-              + "    type: externalJar\n"
-              + "    startupTimeoutSec: 50\n"
-              + "    source:\n"
-              + "      - "
-              + jarDownloadUrl[i]
-              + "\n"
-              + "    healthcheckUrl: http://127.0.0.1:${free.port."
-              + (10 + i)
-              + "}\n"
-              + "    externalJarOptions:\n"
-              + "      workingDir: \"target/jarDownloadTest\"\n"
-              + "      startupTimeoutSec: 30\n"
-              + "      arguments:\n";
+      yamlSource.append(
+          """
+                externalJarServer%d:
+                  type: externalJar
+                  startupTimeoutSec: 50
+                  source:
+                  - %s
+                  healthcheckUrl: http://127.0.0.1:${free.port.%d}
+                  externalJarOptions:
+                    workingDir: "target/jarDownloadTest"
+                    arguments:
+              """
+              .formatted(i, jarDownloadUrl[i], 10 + i));
       if (jarDownloadUrl[i].contains("tiger")) {
-        yamlSource += "        - \"--server.port=${free.port." + (10 + i) + "}\"\n";
+        yamlSource.append("        - --server.port=${free.port.").append(10 + i).append("}\n");
       } else {
-        yamlSource +=
-            "        - \"--httpPort=${free.port."
-                + (10 + i)
-                + "}\"\n"
-                + "        - \"--webroot=.\"\n";
+        yamlSource
+            .append("        - --httpPort=${free.port.")
+            .append(10 + i)
+            .append("}\n")
+            .append("        - --webroot=.\n");
       }
     }
 
-    TigerGlobalConfiguration.readFromYaml(yamlSource, "tiger");
+    TigerGlobalConfiguration.readFromYaml(yamlSource.toString(), "tiger");
   }
 
   private void createTestEnvMgrSafelyAndExecute(

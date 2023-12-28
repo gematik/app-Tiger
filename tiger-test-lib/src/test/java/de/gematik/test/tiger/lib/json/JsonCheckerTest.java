@@ -670,8 +670,10 @@ class JsonCheckerTest {
   @Test
   void testMatchOContainInAnyOrderJsonValues() {
     check.assertJsonObjectShouldMatchOrContainInAnyOrder(
-        "{\"name\":\"myVeryCoolUserName\",\"exp\":1702893262,\"userId\":0, \"iat\":1702892662, \"dummyStr\":\"\", \"dummyBoolean\":true}",
-        "{\"name\":\"\\\\w+\", \"userId\":\"\\\\d+\", \"exp\":\"\\\\d+\", \"iat\":\"\\\\d+\", \"dummyStr\":\"\\\\w*\", \"dummyBoolean\":\"true\"}",
+        "{\"name\":\"myVeryCoolUserName\",\"exp\":1702893262,\"userId\":0, \"iat\":1702892662,"
+            + " \"dummyStr\":\"\", \"dummyBoolean\":true}",
+        "{\"name\":\"\\\\w+\", \"userId\":\"\\\\d+\", \"exp\":\"\\\\d+\", \"iat\":\"\\\\d+\","
+            + " \"dummyStr\":\"\\\\w*\", \"dummyBoolean\":\"true\"}",
         false);
   }
 }

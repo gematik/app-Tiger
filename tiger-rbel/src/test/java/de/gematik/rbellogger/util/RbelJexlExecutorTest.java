@@ -200,7 +200,8 @@ class RbelJexlExecutorTest {
          $.body.['urn:telematik:claims:email'].test =~ 'max-age=300',$.body.['urn:telematik:claims:email'].test
         """)
   void testRbelPathExtractor(String jexlExpression, String firstRbelPath) {
-    assertThat(RbelJexlExecutor.extractPotentialRbelPaths(jexlExpression)).containsOnly(firstRbelPath);
+    assertThat(RbelJexlExecutor.extractPotentialRbelPaths(jexlExpression))
+        .containsOnly(firstRbelPath);
   }
 
   @ParameterizedTest

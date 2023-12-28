@@ -9,6 +9,7 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.microsoft.playwright.Page;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -277,7 +278,10 @@ class ZQuitTests extends AbstractTests {
     assertAll(
         () -> assertThat(requestToContent).contains("no request"),
         () -> assertThat(requestFromContent).contains("no request"),
-        () -> assertTrue(filteredMessage.equals("0 of 52 did match the filter criteria.") || filteredMessage.equals("Filter didn't match any of the 52 messages.")));
+        () ->
+            assertTrue(
+                filteredMessage.equals("0 of 52 did match the filter criteria.")
+                    || filteredMessage.equals("Filter didn't match any of the 52 messages.")));
   }
 
   @Test
@@ -288,7 +292,8 @@ class ZQuitTests extends AbstractTests {
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
     await()
         .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isPositive());
+        .untilAsserted(
+            () -> assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isPositive());
     assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isPositive();
     externalPage.locator("#resetMsgs").click();
     await()

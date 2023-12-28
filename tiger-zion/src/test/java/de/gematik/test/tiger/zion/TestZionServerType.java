@@ -341,8 +341,8 @@ servers:
   }
 
   @TigerTest(
-    tigerYaml =
-      """
+      tigerYaml =
+          """
     servers:
       serverTestName:
         type: zion
@@ -361,20 +361,20 @@ servers:
   @Test
   void testWithColonInPropertyname(UnirestInstance unirest) {
     HttpResponse<String> responseExisting =
-      unirest
-        .post("http://serverTestName/")
-        .body("""
+        unirest
+            .post("http://serverTestName/")
+            .body("""
               {"urn:telematik:claims:email": "test"}
               """)
-        .asString();
+            .asString();
 
     assertThat(responseExisting.getStatus()).isEqualTo(777);
     assertThat(responseExisting.getBody()).isEqualTo("test");
   }
 
   @TigerTest(
-    tigerYaml =
-      """
+      tigerYaml =
+          """
         logging.level.de.gematik.test.tiger.zion: TRACE
         servers:
           zionServer:
@@ -396,22 +396,18 @@ servers:
   @Test
   void testRbelPathElementNotPresentCriterions(UnirestInstance unirestInstance) {
     HttpResponse<String> response =
-      unirestInstance
-        .put(
-          TigerGlobalConfiguration.resolvePlaceholders(
-            "http://zionServer/blub"))
-        .body("{'somethingElse':'fdsafds'}")
-        .asString();
+        unirestInstance
+            .put(TigerGlobalConfiguration.resolvePlaceholders("http://zionServer/blub"))
+            .body("{'somethingElse':'fdsafds'}")
+            .asString();
 
     assertThat(response.getBody()).isEqualTo("hassenich!");
 
     response =
-      unirestInstance
-        .put(
-          TigerGlobalConfiguration.resolvePlaceholders(
-            "http://zionServer/blub"))
-        .body("{'specialKey':'fdsafds'}")
-        .asString();
+        unirestInstance
+            .put(TigerGlobalConfiguration.resolvePlaceholders("http://zionServer/blub"))
+            .body("{'specialKey':'fdsafds'}")
+            .asString();
 
     assertThat(response.getBody()).isEqualTo("baaam");
   }
