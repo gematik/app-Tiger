@@ -1,10 +1,13 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.playwright.workflowui;
 
 import static de.gematik.test.tiger.playwright.workflowui.ConfigurationEditorTest.ENV_MULTILINE_CHECK_KEY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 
 class ConfigEditorScreenshotsTest extends AbstractTests {
@@ -23,15 +26,11 @@ class ConfigEditorScreenshotsTest extends AbstractTests {
         "ag-labeled ag-label-align-left ag-text-field ag-input-field ag-filter-from"
             + " ag-filter-filter",
         false);
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> page.locator(".vsp__header").isVisible());
+    await().untilAsserted(() -> page.locator(".vsp__header").isVisible());
     page.locator(".vsp__header").click();
     screenshot(page, "tg_global_config_editor.png", "vsp__header", false);
 
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> page.locator("#test-tg-config-editor-btn-delete").nth(1).hover());
+    await().untilAsserted(() -> page.locator("#test-tg-config-editor-btn-delete").nth(1).hover());
     screenshot(page, "config_editor_delete_button.png", "test-tg-config-editor-btn-delete", true);
 
     String xpathToValue = "//code[@id='test-tg-config-editor-table-row' and text()='myEnv']";
@@ -55,7 +54,6 @@ class ConfigEditorScreenshotsTest extends AbstractTests {
 
     page.locator(xpathToExpand).click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 page.locator("#test-tg-config-editor-table-row.text-break.multi-line").isVisible());
@@ -76,8 +74,6 @@ class ConfigEditorScreenshotsTest extends AbstractTests {
         .dblclick();
     var inputField = page.locator("input[placeholder='Filter...']");
     inputField.type("tgr");
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> page.locator("#test-tg-config-editor-table").isVisible());
+    await().untilAsserted(() -> page.locator("#test-tg-config-editor-table").isVisible());
   }
 }

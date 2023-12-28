@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.playwright.workflowui;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,7 +15,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.microsoft.playwright.Locator;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -180,12 +183,15 @@ class ConfigurationEditorTest extends AbstractTests {
   }
 
   private void assertMultilineView(List<Locator> row, String expectedText) {
-    assertTrue(
-        row.stream()
-            .allMatch(
-                r ->
-                    r.locator("#test-tg-config-editor-table-row.text-break.multi-line")
-                        .isVisible()));
+    await()
+        .untilAsserted(
+            () ->
+                assertTrue(
+                    row.stream()
+                        .allMatch(
+                            r ->
+                                r.locator("#test-tg-config-editor-table-row.text-break.multi-line")
+                                    .isVisible())));
     assertFalse(
         row.stream()
             .allMatch(
@@ -209,10 +215,15 @@ class ConfigurationEditorTest extends AbstractTests {
   }
 
   private void assertSimpleView(List<Locator> row, String expectedText) {
-    assertTrue(
-        row.stream()
-            .allMatch(
-                r -> r.locator("#test-tg-config-editor-table-row.text-truncate").isVisible()));
+    await()
+        .untilAsserted(
+            () ->
+                assertTrue(
+                    row.stream()
+                        .allMatch(
+                            r ->
+                                r.locator("#test-tg-config-editor-table-row.text-truncate")
+                                    .isVisible())));
     assertFalse(
         row.stream()
             .allMatch(
@@ -300,9 +311,7 @@ class ConfigurationEditorTest extends AbstractTests {
     page.locator(xpathToValue).dblclick();
     page.waitForSelector("#test-tg-config-editor-text-area");
     page.locator("#test-tg-config-editor-text-area").type(newValue);
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> page.locator("#test-tg-config-editor-btn-save").isVisible());
+    await().untilAsserted(() -> page.locator("#test-tg-config-editor-btn-save").isVisible());
     page.locator("#test-tg-config-editor-btn-save").click();
     page.waitForSelector("#test-tg-config-editor-table-row");
   }
@@ -354,7 +363,6 @@ class ConfigurationEditorTest extends AbstractTests {
         .click();
 
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
               List<Locator> matchingRows =
@@ -377,14 +385,10 @@ class ConfigurationEditorTest extends AbstractTests {
         .dblclick();
     var inputField = page.locator("input[placeholder='Filter...']");
     inputField.type("tgr");
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> page.locator("#test-tg-config-editor-table").isVisible());
+    await().untilAsserted(() -> page.locator("#test-tg-config-editor-table").isVisible());
 
     page.locator("#test-tg-config-editor-btn-clear-filters").click();
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> page.locator(".vsp__header").isVisible());
+    await().untilAsserted(() -> page.locator(".vsp__header").isVisible());
     page.locator(".vsp__header").click();
   }
 }

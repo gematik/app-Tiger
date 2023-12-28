@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.playwright.workflowui;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -139,7 +140,6 @@ class XyScreenshotsTest extends AbstractTests {
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(() -> assertNotNull(externalPage.locator(".test-message-number").first()));
     externalPage.locator(".test-message-number").first().click();
     screenshot(externalPage, "webui.png");
@@ -176,7 +176,9 @@ class XyScreenshotsTest extends AbstractTests {
     await()
         .atMost(2, TimeUnit.SECONDS)
         .pollInterval(Duration.ofMillis(200))
-        .untilAsserted(() -> externalPage.locator("#rbelTab-name").getAttribute("style").isEmpty());
+        .untilAsserted(
+            () ->
+                assertThat(externalPage.locator("#rbelTab-name").getAttribute("style")).isEmpty());
     externalPage.evaluate(
         "document.getElementById(\"jexlTab-name\").style.backgroundColor='yellow'");
     externalPage.locator("#jexlTab-name").click();
@@ -188,9 +190,7 @@ class XyScreenshotsTest extends AbstractTests {
         "document.getElementById(\"jexlTab-name\").style.removeProperty(\"background-color\")");
 
     externalPage.locator("#jexlModalButtonClose").click();
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> assertNotNull(externalPage.locator("#filterModalBtn")));
+    await().untilAsserted(() -> assertNotNull(externalPage.locator("#filterModalBtn")));
 
     externalPage.locator("#filterModalBtn").click();
     screenshot(externalPage, "webui_filter_open.png");

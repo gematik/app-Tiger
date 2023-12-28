@@ -9,7 +9,6 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -166,7 +165,6 @@ class XyFeaturesTest extends AbstractTests {
     page.querySelector("#test-tiger-logo").click();
     page.locator(".test-sidebar-scenario-name").last().locator(".scenarioLink").click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(

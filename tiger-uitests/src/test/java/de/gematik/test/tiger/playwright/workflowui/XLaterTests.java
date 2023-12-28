@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.microsoft.playwright.Page;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -128,7 +127,6 @@ class XLaterTests extends AbstractTests {
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
     externalPage.locator("#routeModalBtn").click();
     assertAll(
@@ -151,7 +149,6 @@ class XLaterTests extends AbstractTests {
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
     assertAll(
         () -> assertThat(externalPage.locator("#test-tiger-logo").isVisible()).isTrue(),

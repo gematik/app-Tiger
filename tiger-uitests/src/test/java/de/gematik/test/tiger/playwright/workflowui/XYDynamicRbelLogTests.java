@@ -59,7 +59,6 @@ class XYDynamicRbelLogTests extends AbstractTests {
         .first()
         .click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -108,7 +107,6 @@ class XYDynamicRbelLogTests extends AbstractTests {
         .first()
         .click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -157,9 +155,7 @@ class XYDynamicRbelLogTests extends AbstractTests {
     page.locator("#test-webui-slider").click();
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
+    await().untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
     assertAll(
         () -> assertThat(externalPage.locator("#test-tiger-logo").isVisible()).isTrue(),
         () -> assertThat(externalPage.locator("#routeModalBtn").isVisible()).isTrue(),
@@ -184,7 +180,6 @@ class XYDynamicRbelLogTests extends AbstractTests {
         .fill("$.DOESNOTEXIST");
     page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -222,7 +217,6 @@ class XYDynamicRbelLogTests extends AbstractTests {
         .fill("$.body == \"hello=world\"");
     page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -284,7 +278,7 @@ class XYDynamicRbelLogTests extends AbstractTests {
   }
 
   @Test
-  void testASaveModalDownloadHtml() throws InterruptedException {
+  void testASaveModalDownloadHtml() {
     page.querySelector("#test-execution-pane-tab").click();
     page.locator("#test-webui-slider").click();
     page.frameLocator("#rbellog-details-iframe").locator("#exportMsgs").click();
@@ -293,7 +287,6 @@ class XYDynamicRbelLogTests extends AbstractTests {
             () -> page.frameLocator("#rbellog-details-iframe").locator("#saveHtmlBtn").click());
     // wait for download to complete
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .pollDelay(100, TimeUnit.MILLISECONDS)
         .until(() -> download.page().locator("#test-tiger-logo").isVisible());
     assertAll(
@@ -325,7 +318,7 @@ class XYDynamicRbelLogTests extends AbstractTests {
   }
 
   @Test
-  void testASaveModalDownloadTgr() throws InterruptedException {
+  void testASaveModalDownloadTgr() {
     page.querySelector("#test-execution-pane-tab").click();
     page.locator("#test-webui-slider").click();
     page.frameLocator("#rbellog-details-iframe").locator("#exportMsgs").click();
@@ -334,7 +327,6 @@ class XYDynamicRbelLogTests extends AbstractTests {
             () -> page.frameLocator("#rbellog-details-iframe").locator("#saveTrafficBtn").click());
     // wait for download to complete
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .pollDelay(100, TimeUnit.MILLISECONDS)
         .until(() -> download.page().locator("#test-tiger-logo").isVisible());
     assertAll(

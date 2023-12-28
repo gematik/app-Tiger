@@ -54,7 +54,6 @@ class ZQuitTests extends AbstractTests {
         (String) page.evaluate("document.getElementsByClassName('test-rbel-link')[25].textContent");
 
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertNotNull(
@@ -83,7 +82,6 @@ class ZQuitTests extends AbstractTests {
     page.locator(".test-rbel-link").last().click();
     // somehow I need to wait
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertNotNull(
@@ -113,7 +111,6 @@ class ZQuitTests extends AbstractTests {
         .first()
         .click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -219,7 +216,6 @@ class ZQuitTests extends AbstractTests {
         .fill("$.body == \"hello=world\"");
     page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -235,7 +231,6 @@ class ZQuitTests extends AbstractTests {
             .count();
     page.frameLocator("#rbellog-details-iframe").locator("#resetFilterCriterionBtn").click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -262,7 +257,6 @@ class ZQuitTests extends AbstractTests {
         .fill("$.sender == \"put\"");
     page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertNotNull(
@@ -291,13 +285,11 @@ class ZQuitTests extends AbstractTests {
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () -> assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isPositive());
     assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isPositive();
     externalPage.locator("#resetMsgs").click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () -> assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isZero());
     assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isZero();
@@ -332,7 +324,6 @@ class ZQuitTests extends AbstractTests {
         .first()
         .click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -359,7 +350,6 @@ class ZQuitTests extends AbstractTests {
         .last()
         .click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -386,7 +376,6 @@ class ZQuitTests extends AbstractTests {
         .first()
         .click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -413,7 +402,6 @@ class ZQuitTests extends AbstractTests {
         .last()
         .click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
