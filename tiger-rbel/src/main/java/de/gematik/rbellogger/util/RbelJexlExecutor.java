@@ -24,7 +24,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class RbelJexlExecutor {
 
-  private static final String RBEL_PATH_CHARS = "(\\$\\.|\\w|\\.)+.*";
+  private static final String RBEL_PATH_CHARS = "(\\$\\.|\\w|\\.|\\*)+.*";
 
   private static boolean isInitialized = false;
 

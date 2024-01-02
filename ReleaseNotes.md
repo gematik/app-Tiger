@@ -11,6 +11,7 @@
 
 * TGR-1173: refactorings all over the code (more than 500 sonarqube issues) to increase code maintainability
 * TGR-1229: Added fallback for RbelPaths in JEXL-expressions that yield no results
+* TGR-1242: JEXL-expressions that contain RbelPaths that terminate in a star (*) are now working again correctly
 * TGR-1231: TigerProxy: The timestamps on messages are no longer wrong if asynchronous parsing is enabled
 
 ## Features
