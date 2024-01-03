@@ -47,7 +47,7 @@
         <version.lombok>1.18.28</version.lombok>
         <version.maven>3.9.4</version.maven>
         <version.maven-deploy-plugin>3.1.1</version.maven-deploy-plugin>
-        <version.maven.failsafe>3.1.2</version.maven.failsafe>
+        <version.maven.failsafe>3.2.3</version.maven.failsafe>
         <version.maven.surefire>3.1.0</version.maven.surefire>
         <version.maven-plugin-tools>3.9.0</version.maven-plugin-tools>
         <version.mockito>5.4.0</version.mockito>
