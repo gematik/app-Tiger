@@ -70,6 +70,8 @@ myMap:
         "${!{'no' + 'pe'}|foo}, foo",
         "${!{'key' + '2'}|foo}, KEY2VALUE",
         "${nope|!{'foo'+'bar'}}, foobar",
+        "${nope|}, ''",
+        "${nope|this|is|sparta}, this|is|sparta"
       })
   void testSubstituteTokenOK(String stringToSubstitute, String expectedString) {
     assertThat(TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute))
