@@ -23,7 +23,7 @@
         <encoding>UTF-8</encoding>
         <skipSurefire>false</skipSurefire>
 
-        <version.assertj>3.24.2</version.assertj>
+        <version.assertj>3.25.1</version.assertj>
         <version.awaitility>4.2.0</version.awaitility>
         <version.bouncycastle>1.76</version.bouncycastle>
         <version.commons-lang3>3.13.0</version.commons-lang3>
