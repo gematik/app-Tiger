@@ -94,7 +94,7 @@
         <dependency>
             <groupId>de.gematik.idp</groupId>
             <artifactId>idp-client</artifactId>
-            <version>24.1.0</version>
+            <version>25.0.5</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
