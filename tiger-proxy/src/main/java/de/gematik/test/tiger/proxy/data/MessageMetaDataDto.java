@@ -27,6 +27,8 @@ public class MessageMetaDataDto {
   private Integer responseCode;
   private String recipient;
   private String sender;
+  private String bundledServerNameSender;
+  private String bundledServerNameReceiver;
   private long sequenceNumber;
   private String menuInfoString;
   private ZonedDateTime timestamp;
@@ -47,6 +49,22 @@ public class MessageMetaDataDto {
             .recipient(
                 el.getFacet(RbelTcpIpMessageFacet.class)
                     .map(RbelTcpIpMessageFacet::getReceiver)
+                    .filter(element -> element.getRawStringContent() != null)
+                    .flatMap(element -> Optional.of(element.getRawStringContent()))
+                    .orElse(""))
+            .bundledServerNameSender(
+                el.getFacet(RbelTcpIpMessageFacet.class)
+                    .map(RbelTcpIpMessageFacet::getSender)
+                    .flatMap(sender -> sender.getFacet(RbelHostnameFacet.class))
+                    .flatMap(RbelHostnameFacet::getBundledServerName)
+                    .filter(element -> element.getRawStringContent() != null)
+                    .flatMap(element -> Optional.of(element.getRawStringContent()))
+                    .orElse(""))
+            .bundledServerNameReceiver(
+                el.getFacet(RbelTcpIpMessageFacet.class)
+                    .map(RbelTcpIpMessageFacet::getReceiver)
+                    .flatMap(receiver -> receiver.getFacet(RbelHostnameFacet.class))
+                    .flatMap(RbelHostnameFacet::getBundledServerName)
                     .filter(element -> element.getRawStringContent() != null)
                     .flatMap(element -> Optional.of(element.getRawStringContent()))
                     .orElse(""));

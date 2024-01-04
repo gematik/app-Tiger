@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import static de.gematik.rbellogger.util.GlobalServerMap.updateGlobalServerMap;
 import static java.time.LocalDateTime.now;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -154,6 +155,8 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                         + " with PID '"
                         + processReference.get().pid()
                         + "'");
+                updateGlobalServerMap(
+                    buildHealthcheckUrl(), this.processReference, this.getServerId());
               } catch (Exception t) {
                 log.error("Failed to start process", t);
                 startupException.set(t);
@@ -179,7 +182,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
   }
 
   @Override
-  public TigerServerStatus updateStatus(boolean noErrorLogging) {
+  public TigerServerStatus updateStatus(boolean quiet) {
     if (!processReference.get().isAlive()) {
       log.warn("Process {} for {} is stopped!", processReference.get().pid(), getServerId());
       setStatus(
@@ -239,7 +242,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
             .orElseThrow(
                 () ->
                     new TigerEnvironmentStartupException(
-                        "Could not determine java-home. Expected either 'tiger.lib.javaHome' oder"
+                        "Could not determine java-home. Expected either 'tiger.lib.javaHome' or"
                             + " 'java.home' to be set, but neither was!"));
     if (System.getProperty("os.name").startsWith("Win")) {
       return javaHomeDirectory + File.separator + "bin" + File.separator + "java.exe";

@@ -1,0 +1,21 @@
+zion:
+  mockResponses:
+    passwordCheck:
+      request:
+        method: POST
+        path: "/checkPassword"
+      nestedResponses:
+        correctPassword:
+          requestCriterions:
+            - $.body == 'secret'
+          response:
+            statusCode: 200
+        wrongPassword:
+          response:
+            statusCode: 400
+    healthCheck:
+      request:
+        method: "GET"
+        path: "/healthcheck"
+      response:
+        statusCode: 200

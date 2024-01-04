@@ -9,7 +9,10 @@ export default class MessageMetaDataDto {
   responseCode: number = -1;
   recipient: string = '';
   sender: string = '';
-  sequenceNumber : number = -1;
+  bundledServerNameSender: string = '';
+  bundledServerNameReceiver: string = '';
+  sequenceNumber: number = -1;
+  timestamp: Date | string = '';
 
   public toString() {
     return `{ uuid: "${this.uuid}" }\n`;

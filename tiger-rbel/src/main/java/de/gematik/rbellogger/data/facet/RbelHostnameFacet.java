@@ -21,7 +21,7 @@ public class RbelHostnameFacet implements RbelFacet {
 
   private final RbelElement port;
   private final RbelElement domain;
-  private final Optional<RbelElement> bundledServerName;
+  private Optional<RbelElement> bundledServerName;
 
   public static RbelElement buildRbelHostnameFacet(
       RbelElement parentNode, RbelHostname rbelHostname) {
@@ -48,7 +48,10 @@ public class RbelHostnameFacet implements RbelFacet {
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>().with("port", port).with("domain", domain);
+    return new RbelMultiMap<RbelElement>()
+        .withSkipIfNull("bundledServerName", bundledServerName.orElse(null))
+        .with("port", port)
+        .with("domain", domain);
   }
 
   public String toString() {

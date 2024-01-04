@@ -11,6 +11,7 @@ import de.gematik.test.tiger.zion.config.ZionConfiguration;
 import java.nio.charset.Charset;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
+import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -338,6 +339,46 @@ servers:
 
     assertThat(responseNonExisting.getStatus()).isEqualTo(401);
     assertThat(responseNonExisting.getBody()).isEqualTo("InvalidEmail");
+  }
+
+  @TigerTest(
+      tigerYaml =
+          """
+              servers:
+                mainServer:
+                  type: externalJar
+                  healthcheckUrl:
+                    http://127.0.0.1:${free.port.30}
+                  externalJarOptions:
+                    arguments:
+                      - --server.port=${free.port.30}
+                      - --backendServer.port=${free.port.20}
+                      - --spring.profiles.active=mainserver
+                    workingDir: src/test/resources
+                  source:
+                    - local:../../../target/tiger-zion-*-executable.jar
+                backendServer:
+                  type: externalJar
+                  healthcheckUrl:
+                    http://127.0.0.1:${free.port.20}
+                  externalJarOptions:
+                    arguments:
+                      - --server.port=${free.port.20}
+                      - --spring.profiles.active=backendServer
+                    workingDir: src/test/resources
+                  source:
+                    - local:../../../target/tiger-zion-*-executable.jar
+                      """)
+  @Test
+  void testMultipleZionServerWithProfiles() {
+    final HttpResponse<JsonNode> response =
+        Unirest.get(
+                TigerGlobalConfiguration.resolvePlaceholders(
+                    "http://localhost:${free.port.30}/helloWorld"))
+            .asJson();
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.getBody().getObject().getString("Hello")).isEqualTo("World");
   }
 
   @TigerTest(

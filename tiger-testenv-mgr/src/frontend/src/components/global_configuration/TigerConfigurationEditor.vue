@@ -17,6 +17,9 @@ import {CellClickedEvent, ColDef, GridApi} from "ag-grid-community";
 import {ColumnApi} from "ag-grid-community/dist/lib/columns/columnApi";
 import ConfigurationValueCellEditor from "@/components/global_configuration/ConfigurationValueCellEditor.vue";
 import {Emitter} from "mitt";
+import {useConfigurationLoader} from "@/components/global_configuration/ConfigurationLoader";
+
+const {loadConfigurationProperties} = useConfigurationLoader();
 
 
 const CONFIGURATION_EDITOR_URL = 'global_configuration';
@@ -28,18 +31,7 @@ const gridOptions: Ref<GridOptions> = ref({});
 const gridApi: Ref<GridApi | null | undefined> = ref(undefined);
 const gridColumnApi: Ref<ColumnApi | null | undefined> = ref(undefined);
 
-
-async function loadConfigurationProperties() {
-  try {
-    const response = await fetch(process.env.BASE_URL + CONFIGURATION_EDITOR_URL);
-    configurationProperties.value = await response.json();
-  } catch (error) {
-    console.error('Error fetching data:', error);
-  }
-}
-
-onMounted(() => {
-  loadConfigurationProperties();
+onMounted(async () => {
   if (gridOptions.value) {
     gridApi.value = gridOptions.value.api;
     gridColumnApi.value = gridOptions.value.columnApi;
@@ -63,7 +55,7 @@ async function onCellValueSaved(data: TigerConfigurationPropertyDto) {
         }
     )
     if (response.ok) {
-      await loadConfigurationProperties();
+      configurationProperties.value = await loadConfigurationProperties();
     }
   } catch (error) {
     console.error("Error updating configuration entry " + error)
@@ -99,7 +91,7 @@ async function deleteRow(params: CellClickedEvent) {
         }
     )
     if (response.ok) {
-      await loadConfigurationProperties();
+      configurationProperties.value = await loadConfigurationProperties();
     }
   } catch (error) {
     console.error("Error deleting configuration entry " + error)

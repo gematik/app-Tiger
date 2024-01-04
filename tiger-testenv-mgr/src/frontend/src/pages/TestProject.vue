@@ -107,6 +107,9 @@
                 execution</a>
               <a id="test-server-log-tab" class="btn execution-pane-buttons" @click="showTab('logs_pane', $event)">Server
                 Logs</a>
+              <a v-if="experimentalFeatures.trafficVisualization" class="btn execution-pane-buttons"
+                 @click="showTab('visualization_pane', $event)">Traffic
+                Visualization</a>
             </div>
             <div class="navbar-nav justify-content-end px-5">
               <img alt="gematik logo" class="gematik-logo" id="test-gematik-logo" src="/img/gematik.svg">
@@ -126,6 +129,10 @@
               :shutdownTestrunOngoing="shutdownTestrunOngoing"/>
           <ServerLog :serverLogs="serverLogList" :logServers="logServers" :selectedServers="selectedServers"
                      :selectedLoglevel="LogLevel.ALL.toString()" :selected-text="''"/>
+          <traffic-visualization
+              v-if="experimentalFeatures.trafficVisualization"
+              :featureUpdateMap="featureUpdateMap"
+              :ui="ui"/>
         </div>
       </div>
     </div>
@@ -183,6 +190,13 @@ import mitt, {Emitter} from "mitt";
 import TigerConfigurationEditor from "@/components/global_configuration/TigerConfigurationEditor.vue";
 import 'vue3-side-panel/dist/vue3-side-panel.css';
 import {VueSidePanel} from "vue3-side-panel";
+import TrafficVisualization from "@/components/sequence_diagram/TrafficVisualization.vue";
+import {useConfigurationLoader} from "@/components/global_configuration/ConfigurationLoader";
+import {ExperimentalFeatures} from "@/types/ExperimentalFeatures";
+
+
+const {loadSubsetOfProperties} = useConfigurationLoader();
+const experimentalFeatures = ref(new ExperimentalFeatures());
 
 
 let baseURL = process.env.BASE_URL;
@@ -245,6 +259,10 @@ provide("emitter", emitter);
 
 const configEditorSidePanelIsOpened: Ref<boolean> = ref(false);
 
+async function loadExperimentalFeaturesFlags() {
+  experimentalFeatures.value = ExperimentalFeatures.fromMap(await loadSubsetOfProperties("tiger.lib.experimental"));
+}
+
 onMounted(() => {
   ui = ref(new Ui(process.env.BASE_URL));
   emitter.on('confirmShutdownPressed', () => {
@@ -255,6 +273,7 @@ onMounted(() => {
   fetchInitialServerStatus();
   fetchTigerVersion();
   fetchTigerBuild();
+  loadExperimentalFeaturesFlags()
 });
 
 const DEBUG = true;

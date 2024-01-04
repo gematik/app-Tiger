@@ -1,0 +1,41 @@
+tigerProxy:
+  proxyRoutes:
+    - from: /checkPassword
+      to: http://127.0.0.1:${free.port.20}/checkPassword
+
+servers:
+  mainServer:
+    type: externalJar
+    healthcheckUrl:
+      http://127.0.0.1:${free.port.30}
+    externalJarOptions:
+      arguments:
+        - --server.port=${free.port.30}
+        - --backendServer.port=${tiger.tigerProxy.proxyPort}
+        - --spring.profiles.active=mainserver
+      workingDir: C:\repos\tiger\tiger-zion\src\test\resources
+    source:
+      - local:../../../../tiger-zion/target/tiger-zion-*-executable.jar
+
+  backendServer:
+    type: externalJar
+    healthcheckUrl:
+      http://127.0.0.1:${free.port.20}/healthcheck
+    externalJarOptions:
+      arguments:
+        - --server.port=${free.port.20}
+        - --spring.profiles.active=backendServer
+      workingDir: C:\repos\tiger\tiger-zion\src\test\resources
+    source:
+      - local:../../../../tiger-zion/target/tiger-zion-*-executable.jar
+
+lib:
+  rbelPathDebugging: false
+  activateWorkflowUi: true
+  experimental:
+    trafficVisualization: true
+
+
+logging:
+  level:
+    de.gematik.test.tiger.zion: TRACE

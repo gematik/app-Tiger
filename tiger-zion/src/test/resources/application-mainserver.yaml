@@ -1,0 +1,16 @@
+zion:
+  mockResponses:
+    passwordCheckResponse:
+      requestCriterions:
+        - message.method == 'GET'
+        - message.path == '/helloWorld'
+      backendRequests:
+        tokenCheck:
+          method: POST
+          url: "http://localhost:${backendServer.port}/checkPassword"
+          body: $.header.password
+          assignments:
+            correctPassword: "$.responseCode == '200'"
+      response:
+        statusCode: 200
+        body: '{"Hello":"World"}'

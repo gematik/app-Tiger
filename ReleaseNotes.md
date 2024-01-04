@@ -17,6 +17,14 @@
 ## Features
 
 * TGR-1096: it is now possible to replay a test scenario from the Workflow UI.
+* TGR-1040: we can now observe the traffic in a sequence diagram. This is an experimental feature that needs to be
+  activated in the configuration with:
+
+```yaml
+lib:
+  experimental:
+    trafficVisualization: true
+```
 
 # Release 2.3.1
 
