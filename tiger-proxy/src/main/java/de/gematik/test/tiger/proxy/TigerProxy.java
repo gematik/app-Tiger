@@ -279,8 +279,13 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
               .map(
                   proxyConfiguration ->
                       new MockServer(
-                          proxyConfiguration, getTigerProxyConfiguration().getPortAsArray()))
-              .orElseGet(() -> new MockServer(getTigerProxyConfiguration().getPortAsArray()));
+                          mockServerConfiguration,
+                          List.of(proxyConfiguration),
+                          getTigerProxyConfiguration().getPortAsArray()))
+              .orElseGet(
+                  () ->
+                      new MockServer(
+                          mockServerConfiguration, getTigerProxyConfiguration().getPortAsArray()));
     } else {
       mockServer = spawnDirectInverseTigerProxy(mockServerConfiguration, forwardProxyConfig);
     }
