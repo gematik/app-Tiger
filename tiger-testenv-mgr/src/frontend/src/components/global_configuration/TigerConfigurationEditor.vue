@@ -32,6 +32,7 @@ const gridApi: Ref<GridApi | null | undefined> = ref(undefined);
 const gridColumnApi: Ref<ColumnApi | null | undefined> = ref(undefined);
 
 onMounted(async () => {
+  configurationProperties.value = await loadConfigurationProperties();
   if (gridOptions.value) {
     gridApi.value = gridOptions.value.api;
     gridColumnApi.value = gridOptions.value.columnApi;
