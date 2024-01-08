@@ -117,7 +117,7 @@ class TestTigerProxyMockResponses {
 
       final TigerMockResponse mockResponse =
           objectMapper.readValue(
-              Files.list(Path.of("target", "zionResponses")).findAny().get().toFile(),
+              Files.list(Path.of("target", "zionResponses")).findAny().orElseThrow().toFile(),
               TigerMockResponse.class);
 
       assertThat(mockResponse.getRequestCriterions())
@@ -293,11 +293,12 @@ class TestTigerProxyMockResponses {
 
       assertThat(mockResponse.getResponse().getBody())
           .containsIgnoringWhitespaces(
-              "{\n"
-                  + "  \"sub\": \"1234567890\",\n"
-                  + "  \"name\": \"John Doe\",\n"
-                  + "  \"iat\": 1516239022\n"
-                  + "}");
+              """
+                          {
+                            "sub": "1234567890",
+                            "name": "John Doe",
+                            "iat": 1516239022
+                          }""");
     }
   }
 
@@ -333,8 +334,10 @@ class TestTigerProxyMockResponses {
                      workingDir: src/test/resources
                    source:
                      - local:../../../target/tiger-zion-*-executable.jar
+               lib:
+                 experimental:
+                   trafficVisualization: true
                """)
-  @Disabled("does not run on jenkins because of missing lsof programm - see TGR-1243")
   void testMultipleZionServer(TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {
     testEnvMgr.getLocalTigerProxyOrFail().clearAllMessages();
 
@@ -379,19 +382,23 @@ class TestTigerProxyMockResponses {
   @Test
   @TigerTest(
       tigerYaml =
-          "servers:\n"
-              + "  zionExternal:\n"
-              + "    type: externalJar\n"
-              + "    healthcheckUrl:\n"
-              + "      http://127.0.0.1:${free.port.10}\n"
-              + "    externalJarOptions:\n"
-              + "      arguments:\n"
-              + "        - --server.port=${free.port.10}\n"
-              + "        - --spring.profiles.active=echoserver\n"
-              + "      workingDir: src/test/resources\n"
-              + "    source:\n"
-              + "      - local:../../../target/tiger-zion-*-executable.jar"
-              + "\n")
+          """
+              servers:
+                zionExternal:
+                  type: externalJar
+                  healthcheckUrl:
+                    http://127.0.0.1:${free.port.10}
+                  externalJarOptions:
+                    arguments:
+                      - --server.port=${free.port.10}
+                      - --spring.profiles.active=echoserver
+                    workingDir: src/test/resources
+                  source:
+                    - local:../../../target/tiger-zion-*-executable.jar
+              lib:
+                experimental:
+                  trafficVisualization: true
+                      """)
   void testOneZionServer(TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {
 
     unirestInstance
@@ -407,7 +414,7 @@ class TestTigerProxyMockResponses {
                 .getRbelMessagesList()
                 .get(0)
                 .findElement("$.receiver.bundledServerName")
-                .get()
+                .orElseThrow()
                 .getRawStringContent())
         .isEqualTo("zionExternal");
   }

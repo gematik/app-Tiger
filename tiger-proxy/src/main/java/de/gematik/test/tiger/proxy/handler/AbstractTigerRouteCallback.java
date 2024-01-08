@@ -8,18 +8,16 @@ import static org.mockserver.model.Header.header;
 import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.decorator.AddBundledServerNamesModifier;
+import de.gematik.rbellogger.data.decorator.MessageMetadataModifier;
 import de.gematik.rbellogger.data.facet.RbelFacet;
-import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelListFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelNoteFacet;
 import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
-import de.gematik.rbellogger.util.GlobalServerMap;
-import de.gematik.rbellogger.util.PortToProcessMapper;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.certificate.TlsFacet;
@@ -32,7 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentMap;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +57,8 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
   private final TigerProxy tigerProxy;
   private final TigerRoute tigerRoute;
   private final Map<String, ZonedDateTime> requestTimingMap = new HashMap<>();
+  private final MessageMetadataModifier rbelHostnameMetadataModifier =
+      AddBundledServerNamesModifier.createModifier();
 
   public void applyModifications(HttpRequest request) {
     if (!tigerProxy.getModifications().isEmpty()) {
@@ -261,53 +260,12 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
       getTigerProxy().triggerListener(request);
       getTigerProxy().triggerListener(response);
 
-      addBundledServerNamesToMessage(request);
-      addBundledServerNamesToMessage(response);
+      rbelHostnameMetadataModifier.modifyMetadata(request);
+      rbelHostnameMetadataModifier.modifyMetadata(response);
     } catch (RuntimeException e) {
       propagateExceptionMessageSafe(e);
       log.error("Rbel-parsing failed!", e);
     }
-  }
-
-  private void addBundledServerNamesToMessage(RbelElement message) {
-    message
-        .getFacet(RbelTcpIpMessageFacet.class)
-        .ifPresent(
-            rbelTcpIpMessageFacet -> {
-              setBundledServerNameBasedOnServerType(rbelTcpIpMessageFacet.getSender());
-              setBundledServerNameBasedOnServerType(rbelTcpIpMessageFacet.getReceiver());
-            });
-  }
-
-  private void setBundledServerNameBasedOnServerType(RbelElement serverType) {
-    serverType
-        .getFacet(RbelHostnameFacet.class)
-        .ifPresent(
-            rbelHostnameFacet ->
-                rbelHostnameFacet.setBundledServerName(
-                    findBundledServerNameForHostnameFacet(rbelHostnameFacet, serverType)));
-  }
-
-  private Optional<RbelElement> findBundledServerNameForHostnameFacet(
-      RbelHostnameFacet rbelHostnameFacet, RbelElement serverType) {
-    Optional<Integer> optionalPort = rbelHostnameFacet.getPort().seekValue(Integer.class);
-    if (!optionalPort.isEmpty()) {
-      Integer port = optionalPort.get();
-      Long processId = GlobalServerMap.getPortToProcessId().get(port);
-
-      if (processId == null) {
-        ConcurrentMap<Integer, Long> updatedMapWithPortsAndProcessIds =
-            PortToProcessMapper.runPortMappingCommand(port);
-        processId = updatedMapWithPortsAndProcessIds.get(port);
-      }
-
-      if (GlobalServerMap.getProcessIdToBundledServerName().containsKey(processId)
-          && processId != null) {
-        String bundledServerName = GlobalServerMap.getProcessIdToBundledServerName().get(processId);
-        return Optional.of(RbelElement.wrap(serverType, bundledServerName));
-      }
-    }
-    return Optional.empty();
   }
 
   private boolean isHealthEndpointRequest(HttpRequest request) {

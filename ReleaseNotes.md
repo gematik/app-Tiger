@@ -27,6 +27,8 @@ lib:
     trafficVisualization: true
 ```
 
+In unix systems the tool 'lsof' is required to be installed in the system.
+
 # Release 2.3.1
 
 ## Bugfixes
