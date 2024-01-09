@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public class JsonUtils {
 
+  private JsonUtils() {}
+
   public static List<Entry<String, String>> convertJsonObjectStringToMap(String jsonObjectString) {
     return JsonParser.parseString(jsonObjectString).getAsJsonObject().entrySet().stream()
         .map(
@@ -35,6 +37,9 @@ public class JsonUtils {
                 return Pair.of(entry.getKey(), entry.getValue().toString());
               }
             })
-        .collect(Collectors.toList());
+        .collect(Collectors.toList()); // NOSONAR
+    // using toList() leads to issues with the required Map.Entry return type which is abstract and
+    // can't
+    // be instantiated.
   }
 }

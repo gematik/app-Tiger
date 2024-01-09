@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
             .getAllKeys()
             .filter(key -> key.getKeyName().startsWith(Hex.toHexString(splitVauMessage.getKey())))
             .filter(key -> key.getKey() instanceof SecretKey)
-            .collect(Collectors.toList());
+            .toList();
 
     for (RbelKey rbelKey : potentialVauKeys) {
       Optional<byte[]> decryptedBytes;
@@ -178,15 +178,15 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
     byte[] pHeaderInformation = new byte[1 + 8 + 4];
     System.arraycopy(decryptedBytes, 0, pHeaderInformation, 0, pHeaderInformation.length);
 
-    byte[] numberOfBytes_inBytes = new byte[4];
-    System.arraycopy(raw, 0, numberOfBytes_inBytes, 0, 4);
-    int numberOfBytes = java.nio.ByteBuffer.wrap(numberOfBytes_inBytes).getInt();
+    byte[] numberOfBytesInBytes = new byte[4];
+    System.arraycopy(raw, 0, numberOfBytesInBytes, 0, 4);
+    int numberOfBytes = java.nio.ByteBuffer.wrap(numberOfBytesInBytes).getInt();
 
-    byte[] headerField_inBytes = new byte[numberOfBytes];
-    System.arraycopy(raw, 4, headerField_inBytes, 0, numberOfBytes);
-    String headerField = new String(headerField_inBytes, StandardCharsets.US_ASCII);
+    byte[] headerFieldInBytes = new byte[numberOfBytes];
+    System.arraycopy(raw, 4, headerFieldInBytes, 0, numberOfBytes);
+    String headerField = new String(headerFieldInBytes, StandardCharsets.US_ASCII);
 
-    RbelElement headerElement = new RbelElement(headerField_inBytes, parentNode);
+    RbelElement headerElement = new RbelElement(headerFieldInBytes, parentNode);
     RbelHttpHeaderFacet header = new RbelHttpHeaderFacet();
     headerElement.addFacet(header);
     Arrays.stream(headerField.split("\r\n"))

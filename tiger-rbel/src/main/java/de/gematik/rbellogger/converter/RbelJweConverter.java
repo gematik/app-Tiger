@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import de.gematik.rbellogger.data.facet.RbelJweFacet;
 import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.key.RbelKey;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jose4j.jwa.AlgorithmConstraints;
@@ -80,14 +79,14 @@ public class RbelJweConverter implements RbelConverterPlugin {
     return encryptionInfoElement;
   }
 
+  @SuppressWarnings("java:S108")
   private Optional<Pair<String, String>> findCorrectKeyAndReturnPayload(
       RbelConverter context, JsonWebEncryption jwe) {
-    for (RbelKey keyEntry : context.getRbelKeyManager().getAllKeys().collect(Collectors.toList())) {
+    for (RbelKey keyEntry : context.getRbelKeyManager().getAllKeys().toList()) {
       try {
         jwe.setKey(keyEntry.getKey());
         return Optional.of(Pair.of(keyEntry.getKeyName(), jwe.getPayload()));
-      } catch (Exception e) {
-        continue;
+      } catch (Exception ignored) {
       }
     }
     return Optional.empty();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -43,10 +42,13 @@ class XDynamicMainContentTests extends AbstractTests {
   void testServerLogsLogsOfServerShown(String server) {
     page.querySelector("#test-server-log-tab").click();
     page.locator("#test-server-log-pane-select").selectOption("5");
+    // as the server buttons are toggling, we need to reset all previous activated ones by selecting
+    // the "Show all logs" button, then we can select a single server
+    page.querySelector("#test-server-log-pane-server-all").click();
     page.querySelector("#test-server-log-pane-server-" + server).click();
     page.locator(".test-server-log-pane-log-1")
         .all()
-        .forEach(log -> assertThat(log.textContent().equals(server)));
+        .forEach(log -> assertThat(log.textContent()).isEqualTo(server));
   }
 
   @Test
@@ -69,7 +71,6 @@ class XDynamicMainContentTests extends AbstractTests {
     assertThat(page.locator(".test-server-log-pane-log-1").all()).hasSize(5);
     page.locator("#test-server-log-pane-input-text").fill("");
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(page.locator("#test-server-log-pane-input-text").textContent())
@@ -85,7 +86,6 @@ class XDynamicMainContentTests extends AbstractTests {
     assertThat(page.locator(".test-server-log-pane-log-1").isVisible()).isFalse();
     page.locator("#test-server-log-pane-input-text").fill("");
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(page.locator("#test-server-log-pane-input-text").textContent())
@@ -102,7 +102,6 @@ class XDynamicMainContentTests extends AbstractTests {
     assertThat(page.locator(".test-server-log-pane-log-1").all()).hasSize(2);
     page.locator("#test-server-log-pane-input-text").fill("");
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(page.locator("#test-server-log-pane-input-text").textContent())
@@ -125,7 +124,6 @@ class XDynamicMainContentTests extends AbstractTests {
     assertThat(page.locator(".test-server-log-pane-log-1").isVisible()).isFalse();
     page.locator("#test-server-log-pane-input-text").fill("");
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(page.locator("#test-server-log-pane-input-text").textContent())

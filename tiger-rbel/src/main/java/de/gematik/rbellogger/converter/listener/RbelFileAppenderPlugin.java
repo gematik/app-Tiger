@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,9 @@ import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.exceptions.RbelRenderingException;
 import de.gematik.rbellogger.util.RbelFileWriter;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerFileSaveInfo;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -57,11 +58,8 @@ public class RbelFileAppenderPlugin implements RbelConverterPlugin {
             StandardCharsets.UTF_8,
             true);
       } catch (IOException e) {
-        throw new RuntimeException(
-            "Exception while trying to save RbelElement to file '"
-                + fileSaveInfo.getFilename()
-                + "'!",
-            e);
+        throw new RbelRenderingException(
+            "Unable to save RbelElement to file '" + fileSaveInfo.getFilename() + "'!", e);
       }
     }
   }

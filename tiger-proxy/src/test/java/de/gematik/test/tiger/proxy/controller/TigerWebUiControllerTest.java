@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,11 @@ import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import io.restassured.RestAssured;
 import java.time.OffsetDateTime;
-import javax.annotation.concurrent.NotThreadSafe;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
@@ -258,7 +258,8 @@ public class TigerWebUiControllerTest {
         .then()
         .statusCode(200);
 
-    TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(tigerProxy, TOTAL_OF_EXCHANGED_MESSAGES, 20);
+    TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
+        tigerProxy, TOTAL_OF_EXCHANGED_MESSAGES, 20);
   }
 
   @Test

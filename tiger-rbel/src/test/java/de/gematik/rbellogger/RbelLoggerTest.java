@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -40,10 +40,10 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
-public class RbelLoggerTest {
+class RbelLoggerTest {
 
   @Test
-  public void addNoteToHeader() throws IOException {
+  void addNoteToHeader() throws IOException {
     final String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(
             "src/test/resources/sampleMessages/jwtMessage.curl");
@@ -62,7 +62,7 @@ public class RbelLoggerTest {
   }
 
   @Test
-  public void preConversionMapperToShadeUrls() throws IOException {
+  void preConversionMapperToShadeUrls() throws IOException {
     final String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(
             "src/test/resources/sampleMessages/jwtMessage.curl");
@@ -97,7 +97,7 @@ public class RbelLoggerTest {
   }
 
   @Test
-  public void addNoteToHttpHeaderButNotBody() throws IOException {
+  void addNoteToHttpHeaderButNotBody() throws IOException {
     final String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(
             "src/test/resources/sampleMessages/jwtMessage.curl");

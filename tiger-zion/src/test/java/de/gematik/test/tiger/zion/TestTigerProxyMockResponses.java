@@ -5,22 +5,20 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
+import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.zion.config.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
-import kong.unirest.Empty;
-import kong.unirest.HttpResponse;
-import kong.unirest.JsonNode;
-import kong.unirest.Unirest;
+import kong.unirest.*;
 import lombok.SneakyThrows;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.netty.MockServer;
@@ -119,7 +117,7 @@ class TestTigerProxyMockResponses {
 
       final TigerMockResponse mockResponse =
           objectMapper.readValue(
-              Files.list(Path.of("target", "zionResponses")).findAny().get().toFile(),
+              Files.list(Path.of("target", "zionResponses")).findAny().orElseThrow().toFile(),
               TigerMockResponse.class);
 
       assertThat(mockResponse.getRequestCriterions())
@@ -295,11 +293,129 @@ class TestTigerProxyMockResponses {
 
       assertThat(mockResponse.getResponse().getBody())
           .containsIgnoringWhitespaces(
-              "{\n"
-                  + "  \"sub\": \"1234567890\",\n"
-                  + "  \"name\": \"John Doe\",\n"
-                  + "  \"iat\": 1516239022\n"
-                  + "}");
+              """
+                          {
+                            "sub": "1234567890",
+                            "name": "John Doe",
+                            "iat": 1516239022
+                          }""");
     }
+  }
+
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+               tigerProxy:
+                 proxyRoutes:
+                   - from: /checkPassword
+                     to: http://127.0.0.1:${free.port.20}/checkPassword
+               servers:
+                 mainServer:
+                   type: externalJar
+                   healthcheckUrl:
+                     http://127.0.0.1:${free.port.30}
+                   externalJarOptions:
+                     arguments:
+                       - --server.port=${free.port.30}
+                       - --backendServer.port=${tiger.tigerProxy.proxyPort}
+                       - --spring.profiles.active=mainserver
+                     workingDir: src/test/resources
+                   source:
+                     - local:../../../target/tiger-zion-*-executable.jar
+                 backendServer:
+                   type: externalJar
+                   healthcheckUrl:
+                     http://127.0.0.1:${free.port.20}
+                   externalJarOptions:
+                     arguments:
+                       - --server.port=${free.port.20}
+                       - --spring.profiles.active=backendserver
+                     workingDir: src/test/resources
+                   source:
+                     - local:../../../target/tiger-zion-*-executable.jar
+               lib:
+                 experimental:
+                   trafficVisualization: true
+               """)
+  void testMultipleZionServer(TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {
+    testEnvMgr.getLocalTigerProxyOrFail().clearAllMessages();
+
+    unirestInstance
+        .get(
+            TigerGlobalConfiguration.resolvePlaceholders(
+                "http://localhost:${free.port.30}/helloWorld"))
+        .header("password", "secret")
+        .asJson();
+
+    RbelElementAssertion.assertThat(
+            testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(0))
+        .extractChildWithPath("$.sender.bundledServerName")
+        .hasStringContentEqualTo("mainServer");
+
+    RbelElementAssertion.assertThat(
+            testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(0))
+        .extractChildWithPath("$.receiver.bundledServerName")
+        .hasStringContentEqualTo("backendServer");
+
+    RbelElementAssertion.assertThat(
+            testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(1))
+        .extractChildWithPath("$.sender.bundledServerName")
+        .hasStringContentEqualTo("backendServer");
+
+    RbelElementAssertion.assertThat(
+            testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(1))
+        .extractChildWithPath("$.receiver.bundledServerName")
+        .hasStringContentEqualTo("mainServer");
+
+    RbelElementAssertion.assertThat(
+            testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(2))
+        .extractChildWithPath("$.receiver.bundledServerName")
+        .hasStringContentEqualTo("mainServer");
+
+    RbelElementAssertion.assertThat(
+            testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(3))
+        .extractChildWithPath("$.sender.bundledServerName")
+        .hasStringContentEqualTo("mainServer");
+  }
+
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+              servers:
+                zionExternal:
+                  type: externalJar
+                  healthcheckUrl:
+                    http://127.0.0.1:${free.port.10}
+                  externalJarOptions:
+                    arguments:
+                      - --server.port=${free.port.10}
+                      - --spring.profiles.active=echoserver
+                    workingDir: src/test/resources
+                  source:
+                    - local:../../../target/tiger-zion-*-executable.jar
+              lib:
+                experimental:
+                  trafficVisualization: true
+                      """)
+  void testOneZionServer(TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {
+
+    unirestInstance
+        .get(
+            TigerGlobalConfiguration.resolvePlaceholders(
+                "http://localhost:${free.port.10}/helloWorld"))
+        .header("password", "secret")
+        .asJson();
+
+    assertThat(
+            testEnvMgr
+                .getLocalTigerProxyOrFail()
+                .getRbelMessagesList()
+                .get(0)
+                .findElement("$.receiver.bundledServerName")
+                .orElseThrow()
+                .getRawStringContent())
+        .isEqualTo("zionExternal");
   }
 }

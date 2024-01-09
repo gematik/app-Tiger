@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -73,7 +73,14 @@ public final class TokenSubstituteHelper {
       return Optional.empty();
     }
     Optional<String> fallbackValue =
-        Optional.of(str).filter(s -> s.contains("|")).map(s -> s.split("\\|")[1]);
+        Optional.of(str)
+            .filter(s -> s.contains("|"))
+            .map(
+                s ->
+                    Optional.of(s.split("\\|", 2))
+                        .filter(split -> split.length == 2)
+                        .map(split -> split[1])
+                        .orElse(""));
     Optional<String> key = Optional.of(str).map(s -> s.split("\\|")[0]);
     return key.flatMap(k -> TokenSubstituteHelper.resolve.apply(k, source))
         .or(() -> key.flatMap(k -> ctx.map(context -> context.get(k)).map(Object::toString)))

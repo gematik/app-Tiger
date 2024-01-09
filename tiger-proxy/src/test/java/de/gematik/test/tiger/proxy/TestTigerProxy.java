@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.*;
+import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
@@ -46,10 +46,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -125,8 +122,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     awaitMessagesInTiger(2);
 
     assertThat(response.getStatus()).isEqualTo(666);
-    assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
-
+    assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
     assertThat(
             tigerProxy
                 .getRbelMessagesList()
@@ -435,13 +431,12 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                         .build()))
             .build());
 
-    assertThatThrownBy(
-            () ->
-                tigerProxy.addRoute(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
+    var route =
+        TigerRoute.builder()
+            .from("http://backend")
+            .to("http://localhost:" + fakeBackendServerPort)
+            .build();
+    assertThatThrownBy(() -> tigerProxy.addRoute(route))
         .isInstanceOf(TigerProxyConfigurationException.class);
   }
 
@@ -682,7 +677,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   @SneakyThrows
   @Test
   // gemSpec_Krypt, A_21888
-  public void tigerProxyShouldHaveFixedVauKeyLoaded() {
+  void tigerProxyShouldHaveFixedVauKeyLoaded() {
     BrainpoolCurves.init();
     final Key key =
         KeyMgr.readKeyFromPem(
@@ -932,6 +927,59 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .getFacetOrFail(RbelMessageTimingFacet.class)
                 .getTransmissionTime())
         .isCloseTo(ZonedDateTime.now(), new TemporalUnitWithinOffset(1, ChronoUnit.SECONDS));
+  }
+
+  /**
+   * Request to a mainserver, which in turns queries a backend-server. The timing information should
+   * be correct, the order in the Rbel-Log should be different.
+   */
+  @Test
+  void querySecondBackendServer_timingInformationShouldBeCorrect() {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("http://server")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build(),
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .build());
+
+    fakeBackendServerClient
+        .when(request().withPath("/mainserver"))
+        .forward(
+            forwardOverriddenRequest(
+                    request("/foobar").withSocketAddress("localhost", tigerProxy.getProxyPort()))
+                .withResponseOverride(response().withStatusCode(777)));
+
+    proxyRest.get("http://server/mainserver").asString();
+    awaitMessagesInTiger(4);
+
+    assertThat(
+            tigerProxy.getRbelMessages().stream()
+                .sorted(
+                    Comparator.comparing(
+                        el ->
+                            el.getFacetOrFail(RbelMessageTimingFacet.class).getTransmissionTime()))
+                .map(RbelElement::printHttpDescription)
+                .toList())
+        .containsExactly(
+            "HTTP GET /mainserver with body ''",
+            "HTTP GET /foobar with body ''",
+            "HTTP 666 with body '{\"foo\":\"bar\"}'",
+            "HTTP 777 with body '{\"foo\":\"bar\"}'");
+
+    assertThat(
+            tigerProxy.getRbelMessages().stream().map(RbelElement::printHttpDescription).toList())
+        .containsExactly(
+            "HTTP GET /foobar with body ''",
+            "HTTP 666 with body '{\"foo\":\"bar\"}'",
+            "HTTP GET /mainserver with body ''",
+            "HTTP 777 with body '{\"foo\":\"bar\"}'");
   }
 
   @Test

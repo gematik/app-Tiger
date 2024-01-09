@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class RbelHttpHeaderFacet implements RbelFacet, Map<String, RbelElement> {
@@ -68,7 +67,7 @@ public class RbelHttpHeaderFacet implements RbelFacet, Map<String, RbelElement> 
                                                 .with(
                                                     RbelHtmlRenderingToolkit.addNotes(
                                                         entry.getValue()))))
-                                .collect(Collectors.toList())));
+                                .toList()));
           }
         });
   }
@@ -76,10 +75,10 @@ public class RbelHttpHeaderFacet implements RbelFacet, Map<String, RbelElement> 
   private final RbelMultiMap<RbelElement> values;
 
   public RbelHttpHeaderFacet() {
-    this.values = new RbelMultiMap();
+    this.values = new RbelMultiMap<>();
   }
 
-  public RbelHttpHeaderFacet(RbelMultiMap values) {
+  public RbelHttpHeaderFacet(RbelMultiMap<RbelElement> values) {
     this.values = values;
   }
 
@@ -100,7 +99,7 @@ public class RbelHttpHeaderFacet implements RbelFacet, Map<String, RbelElement> 
 
   @Override
   public boolean containsValue(Object value) {
-    return values.containsKey(value);
+    return values.containsValue(value);
   }
 
   @Override
@@ -136,14 +135,19 @@ public class RbelHttpHeaderFacet implements RbelFacet, Map<String, RbelElement> 
 
   @Override
   public List<RbelElement> values() {
-    return values.stream().map(Entry::getValue).collect(Collectors.toUnmodifiableList());
+    return values.stream().map(Entry::getValue).toList();
   }
 
-  /** not supported: will lose order. Use .entries() instead */
+  /**
+   * not supported: will lose order. Use .entries() instead
+   *
+   * @deprecated
+   */
   @Override
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public Set<Entry<String, RbelElement>> entrySet() {
-    return values.entrySet();
+    throw new UnsupportedOperationException(
+        "This method is not supported as it would not respect the order of the entries");
   }
 
   public List<Entry<String, RbelElement>> entries() {

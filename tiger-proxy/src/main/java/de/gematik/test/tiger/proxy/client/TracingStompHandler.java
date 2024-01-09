@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,7 @@ class TracingStompHandler implements StompFrameHandler {
           frameContent.getClass().getSimpleName(),
           remoteProxyClient.getName().orElse("<>"));
     }
-    if (frameContent instanceof TigerTracingDto) {
-      final TigerTracingDto tigerTracingDto = (TigerTracingDto) frameContent;
+    if (frameContent instanceof TigerTracingDto tigerTracingDto) {
       if (log.isDebugEnabled()) {
         log.debug(
             "Received TigerTracingDto with request-uuid {} and response-uuid {} (proxy {})",

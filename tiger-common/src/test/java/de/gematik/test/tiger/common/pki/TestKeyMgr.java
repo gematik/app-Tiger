@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.bouncycastle.openssl.PEMException;
 import org.junit.jupiter.api.Test;
 
-public class TestKeyMgr {
+class TestKeyMgr {
 
   final String prkPkcs8 =
       "-----BEGIN PRIVATE KEY-----\n"
@@ -69,13 +69,13 @@ public class TestKeyMgr {
           + "-----END CERTIFICATE-----";
 
   @Test
-  public void testCertOK() {
+  void testCertOK() {
     Certificate k = KeyMgr.readCertificateFromPem(certPem);
     assertThat(k).isInstanceOf(Certificate.class);
   }
 
   @Test
-  public void testCertInvalid() {
+  void testCertInvalid() {
     assertThatThrownBy(
             () -> {
               KeyMgr.readCertificateFromPem("This is no PEM Cert");
@@ -84,13 +84,13 @@ public class TestKeyMgr {
   }
 
   @Test
-  public void testPrKeyOK() {
+  void testPrKeyOK() {
     Key k = KeyMgr.readPrivateKeyFromPem(prKPem);
     assertThat(k).isInstanceOf(PrivateKey.class);
   }
 
   @Test
-  public void testPrKInvalid() {
+  void testPrKInvalid() {
     assertThatThrownBy(
             () -> {
               KeyMgr.readPrivateKeyFromPem("This is no PEM Cert");
@@ -99,7 +99,7 @@ public class TestKeyMgr {
   }
 
   @Test
-  public void testPubKeyNotImplementedPrKOK() {
+  void testPubKeyNotImplementedPrKOK() {
     assertThatThrownBy(
             () -> {
               KeyMgr.readKeyFromPem(puKPem);
@@ -110,7 +110,7 @@ public class TestKeyMgr {
   }
 
   @Test
-  public void readKeyPairFromEcdsaPkcs8Pem() {
+  void readKeyPairFromEcdsaPkcs8Pem() {
     assertThat(KeyMgr.readEcdsaKeypairFromPkcs8Pem(prKPem.getBytes(StandardCharsets.UTF_8)))
         .isNotNull();
   }

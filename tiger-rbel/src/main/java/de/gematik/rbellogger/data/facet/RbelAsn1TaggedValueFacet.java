@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -27,11 +27,11 @@ public class RbelAsn1TaggedValueFacet implements RbelFacet {
   private final RbelElement nestedElement;
 
   @Override
-  public RbelMultiMap getChildElements() {
+  public RbelMultiMap<RbelElement> getChildElements() {
     if (nestedElement == null) {
-      return new RbelMultiMap();
+      return new RbelMultiMap<>();
     } else {
-      return new RbelMultiMap().with("content", nestedElement).with("tag", tag);
+      return new RbelMultiMap<RbelElement>().with("content", nestedElement).with("tag", tag);
     }
   }
 }

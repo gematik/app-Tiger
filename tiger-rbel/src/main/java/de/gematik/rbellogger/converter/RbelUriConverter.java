@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,12 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelUriFacet.RbelUriFacetBuilder;
 import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
+import de.gematik.rbellogger.exceptions.RbelConversionException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 
@@ -67,7 +67,7 @@ public class RbelUriConverter implements RbelConverterPlugin {
               }
               return paramPair;
             })
-        .collect(Collectors.toList());
+        .toList();
   }
 
   public boolean canConvertElement(final RbelElement rbel) {
@@ -104,7 +104,8 @@ public class RbelUriConverter implements RbelConverterPlugin {
     try {
       return new URI(target.getRawStringContent());
     } catch (URISyntaxException e) {
-      throw new RuntimeException("Unable to convert Path-Element", e);
+      throw new RbelConversionException(
+          "Unable to convert Path-Element '" + target.getRawStringContent() + "'", e);
     }
   }
 }

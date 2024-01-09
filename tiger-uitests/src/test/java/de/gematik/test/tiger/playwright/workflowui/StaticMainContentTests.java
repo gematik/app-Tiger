@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -64,35 +64,36 @@ class StaticMainContentTests extends AbstractTests {
   @Test
   void testPassedScenario() {
     page.querySelector("#test-tiger-logo").click();
-    assertThat(
-            page.locator("#test-sidebar-featurelistbox")
-                .locator(".scenarioLink")
-                .first()
-                .locator(".test-passed")
-                .first()
-                .isVisible())
-        .isTrue();
+    await()
+        .atMost(30, TimeUnit.SECONDS)
+        .untilAsserted(
+            () ->
+                assertThat(
+                        page.locator("#test-sidebar-featurelistbox")
+                            .locator(".scenarioLink")
+                            .first()
+                            .locator("xpath=..")
+                            .locator(".test-passed")
+                            .first()
+                            .isVisible())
+                    .isTrue());
   }
 
   @Test
   void testExecutingScenario() {
     page.querySelector("#test-tiger-logo").click();
     await()
-        .pollInterval(500, TimeUnit.MILLISECONDS)
+        .pollInterval(200, TimeUnit.MILLISECONDS)
         .atMost(60, TimeUnit.SECONDS)
-        .until(
+        .untilAsserted(
             () ->
-                page.locator("#test-sidebar-featurelistbox")
-                    .locator(".test-pending")
-                    .first()
-                    .isVisible());
+                assertThat(
+                        page.locator("#test-sidebar-featurelistbox")
+                            .locator(".test-pending")
+                            .first()
+                            .isVisible())
+                    .isTrue());
 
-    assertThat(
-            page.locator("#test-sidebar-featurelistbox")
-                .locator(".test-pending")
-                .first()
-                .isVisible())
-        .isTrue();
     page.locator("#workflow-messages").locator(".btn-success").first().click();
   }
 
@@ -100,21 +101,16 @@ class StaticMainContentTests extends AbstractTests {
   void testFailedScenario() {
     page.querySelector("#test-tiger-logo").click();
     await()
-        .pollInterval(500, TimeUnit.MILLISECONDS)
+        .pollInterval(200, TimeUnit.MILLISECONDS)
         .atMost(60, TimeUnit.SECONDS)
-        .until(
+        .untilAsserted(
             () ->
-                page.locator("#test-sidebar-featurelistbox")
-                    .locator(".test-failed")
-                    .first()
-                    .isVisible());
-
-    assertThat(
-            page.locator("#test-sidebar-featurelistbox")
-                .locator(".test-failed")
-                .first()
-                .isVisible())
-        .isTrue();
+                assertThat(
+                        page.locator("#test-sidebar-featurelistbox")
+                            .locator(".test-failed")
+                            .first()
+                            .isVisible())
+                    .isTrue());
   }
 
   @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ public class TestHttpClientSteps {
   }
 
   @Test
-  void simpleGetRequest() {
+  void simpleGetRequest() { // NOSONAR
     httpGlueCode.sendEmptyRequest(Method.GET, createAddress("http://httpbin/"));
     rbelValidatorGlueCode.findLastRequestToPath(".*");
     tigerGlue.tgrAssertMatches(
@@ -101,7 +101,7 @@ public class TestHttpClientSteps {
   }
 
   @Test
-  void sendComplexPost() {
+  void sendComplexPost() { // NOSONAR
     httpGlueCode.sendRequestWithMultiLineBody(
         Method.POST,
         createAddress("http://httpbin/post"),
@@ -125,7 +125,7 @@ public class TestHttpClientSteps {
   }
 
   @Test
-  void sendComplexPut() {
+  void sendComplexPut() { // NOSONAR
     httpGlueCode.sendRequestWithMultiLineBody(
         Method.PUT,
         createAddress("http://httpbin/put"),
@@ -174,7 +174,7 @@ public class TestHttpClientSteps {
   }
 
   @Test
-  void getRequestToFolder() {
+  void getRequestToFolder() { // NOSONAR
     httpGlueCode.sendEmptyRequest(Method.GET, createAddress("http://httpbin/get"));
     rbelValidatorGlueCode.findLastRequestToPath(".*");
     tigerGlue.tgrAssertMatches(
@@ -184,7 +184,7 @@ public class TestHttpClientSteps {
   }
 
   @Test
-  void putRequestToFolder() {
+  void putRequestToFolder() { // NOSONAR
     httpGlueCode.sendEmptyRequest(Method.PUT, createAddress("http://httpbin/put"));
     rbelValidatorGlueCode.findLastRequestToPath(".*");
     tigerGlue.tgrAssertMatches(
@@ -196,7 +196,7 @@ public class TestHttpClientSteps {
   }
 
   @Test
-  void putRequestWithBodyToFolder() {
+  void putRequestWithBodyToFolder() { // NOSONAR
     httpGlueCode.sendRequestWithBody(
         Method.PUT, createAddress("http://httpbin/put"), "{'hello': 'world!'}");
     rbelValidatorGlueCode.findLastRequestToPath(".*");
@@ -211,7 +211,7 @@ public class TestHttpClientSteps {
   }
 
   @Test
-  void putRequestWithBodyFromFileToFolder() {
+  void putRequestWithBodyFromFileToFolder() { // NOSONAR
     httpGlueCode.sendRequestWithBody(
         Method.PUT, createAddress("http://httpbin/put"), "!{file('pom.xml')}");
     rbelValidatorGlueCode.findLastRequestToPath(".*");
@@ -228,7 +228,7 @@ public class TestHttpClientSteps {
   }
 
   @Test
-  void putWithBodyAndSetContentType() {
+  void putWithBodyAndSetContentType() { // NOSONAR
     httpGlueCode.setDefaultHeader("Content-Type", "text/plain");
     httpGlueCode.sendRequestWithBody(
         Method.PUT, createAddress("http://httpbin/put"), "!{file('pom.xml')}");
@@ -239,7 +239,7 @@ public class TestHttpClientSteps {
   }
 
   @Test
-  void deleteRequestWithoutBody() {
+  void deleteRequestWithoutBody() { // NOSONAR
     httpGlueCode.sendEmptyRequest(Method.DELETE, createAddress("http://httpbin/delete"));
     rbelValidatorGlueCode.findLastRequestToPath(".*");
     tigerGlue.tgrAssertMatches(
@@ -253,7 +253,7 @@ public class TestHttpClientSteps {
       new DataTableTypeRegistryTableConverter(registry);
 
   @Test
-  void sendRequestWithCustomHeader() {
+  void sendRequestWithCustomHeader() { // NOSONAR
     List<List<String>> data = new ArrayList<>();
     data.add(List.of("schmoo", "lar"));
     data.add(List.of("foo", "bar"));
@@ -267,7 +267,7 @@ public class TestHttpClientSteps {
   }
 
   @Test
-  void sendRequestWithDefaultHeader() {
+  void sendRequestWithDefaultHeader() { // NOSONAR
     httpGlueCode.setDefaultHeader("key", "value");
     httpGlueCode.sendEmptyRequest(Method.GET, createAddress("http://httpbin/get"));
     rbelValidatorGlueCode.findLastRequestToPath(".*");
@@ -283,7 +283,7 @@ public class TestHttpClientSteps {
   }
 
   @Test
-  void sendGetRequestWithCustomAndDefaultHeader() {
+  void sendGetRequestWithCustomAndDefaultHeader() { // NOSONAR
     httpGlueCode.setDefaultHeader("key", "value");
     List<List<String>> data = new ArrayList<>();
     data.add(List.of("foo", "bar"));
@@ -297,7 +297,7 @@ public class TestHttpClientSteps {
   }
 
   @Test
-  void sendPostRequestWithCustomAndDefaultHeader() {
+  void sendPostRequestWithCustomAndDefaultHeader() { // NOSONAR
     tigerGlue.ctxtISetLocalVariableTo("configured_state_value", "some_value");
     tigerGlue.ctxtISetLocalVariableTo("configured_param_name", "my_cool_param");
 
@@ -319,7 +319,7 @@ public class TestHttpClientSteps {
   }
 
   @Test
-  void sendPostRequestWithCustomAndDefaultHeader2() {
+  void sendPostRequestWithCustomAndDefaultHeader2() { // NOSONAR
     tigerGlue.ctxtISetLocalVariableTo("configured_param_name", "my_cool_param2");
 
     httpGlueCode.setDefaultHeader("Content-Type", "application/json");
@@ -339,7 +339,7 @@ public class TestHttpClientSteps {
   }
 
   @Test
-  void putRequestWithTemplatedBody() {
+  void putRequestWithTemplatedBody() { // NOSONAR
     httpGlueCode.sendRequestWithBody(
         Method.PUT,
         createAddress("http://httpbin/put"),
@@ -366,7 +366,7 @@ public class TestHttpClientSteps {
   }
 
   @Test
-  void sendRequestWithDefaultHeaders() {
+  void sendRequestWithDefaultHeaders() { // NOSONAR
     httpGlueCode.setDefaultHeaders(
         "key1=valueA\nkey2=valueB\nkey3=value=value\n  spacedkey = value with spaces  ");
     httpGlueCode.sendEmptyRequest(Method.GET, createAddress("http://httpbin/get/"));

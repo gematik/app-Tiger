@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package de.gematik.test.tiger.common.config;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+// TODO explain types and how precedence is used to obtain the value to a property
 @AllArgsConstructor
 @Getter
 public enum SourceType {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package de.gematik.rbellogger.data;
 
-import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.exceptions.RbelHostnameFormatException;
 import java.net.URI;
 import java.util.Optional;
@@ -26,7 +25,6 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.validator.routines.UrlValidator;
 
 @Data
 @Builder
@@ -80,14 +78,6 @@ public class RbelHostname {
     } catch (Exception e) {
       log.debug("Error while trying to parse URL '{}'", url, e);
       return Optional.empty();
-    }
-  }
-
-  private static void checkIfUrlIsValid(String url) {
-    UrlValidator urlValidator = new UrlValidator(UrlValidator.ALLOW_LOCAL_URLS);
-    if (!urlValidator.isValid(url)) {
-      throw new RbelConversionException(
-          "The given URL '" + url + "' is invalid. Please check your configuration.");
     }
   }
 

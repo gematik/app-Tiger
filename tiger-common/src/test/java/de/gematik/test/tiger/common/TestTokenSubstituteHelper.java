@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -82,6 +82,8 @@ myMap:
         "${!{'no' + 'pe'}|foo}, foo",
         "${!{'key' + '2'}|foo}, KEY2VALUE",
         "${nope|!{'foo'+'bar'}}, foobar",
+        "${nope|}, ''",
+        "${nope|this|is|sparta}, this|is|sparta"
       })
   void testSubstituteTokenOK(String stringToSubstitute, String expectedString) {
     assertThat(TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute))

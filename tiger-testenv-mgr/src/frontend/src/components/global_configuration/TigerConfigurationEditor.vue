@@ -1,5 +1,5 @@
 <!--
-  - Copyright (c) 2023 gematik GmbH
+  - Copyright (c) 2024 gematik GmbH
   - 
   - Licensed under the Apache License, Version 2.0 (the License);
   - you may not use this file except in compliance with the License.
@@ -29,6 +29,9 @@ import {CellClickedEvent, ColDef, GridApi} from "ag-grid-community";
 import {ColumnApi} from "ag-grid-community/dist/lib/columns/columnApi";
 import ConfigurationValueCellEditor from "@/components/global_configuration/ConfigurationValueCellEditor.vue";
 import {Emitter} from "mitt";
+import {useConfigurationLoader} from "@/components/global_configuration/ConfigurationLoader";
+
+const {loadConfigurationProperties} = useConfigurationLoader();
 
 
 const CONFIGURATION_EDITOR_URL = 'global_configuration';
@@ -40,18 +43,8 @@ const gridOptions: Ref<GridOptions> = ref({});
 const gridApi: Ref<GridApi | null | undefined> = ref(undefined);
 const gridColumnApi: Ref<ColumnApi | null | undefined> = ref(undefined);
 
-
-async function loadConfigurationProperties() {
-  try {
-    const response = await fetch(process.env.BASE_URL + CONFIGURATION_EDITOR_URL);
-    configurationProperties.value = await response.json();
-  } catch (error) {
-    console.error('Error fetching data:', error);
-  }
-}
-
-onMounted(() => {
-  loadConfigurationProperties();
+onMounted(async () => {
+  configurationProperties.value = await loadConfigurationProperties();
   if (gridOptions.value) {
     gridApi.value = gridOptions.value.api;
     gridColumnApi.value = gridOptions.value.columnApi;
@@ -65,7 +58,7 @@ onUnmounted(() => {
 
 async function onCellValueSaved(data: TigerConfigurationPropertyDto) {
   try {
-    const response = await fetch(process.env.BASE_URL + "global_configuration",
+    const response = await fetch(process.env.BASE_URL + CONFIGURATION_EDITOR_URL,
         {
           method: "PUT",
           headers: {
@@ -75,7 +68,7 @@ async function onCellValueSaved(data: TigerConfigurationPropertyDto) {
         }
     )
     if (response.ok) {
-      await loadConfigurationProperties();
+      configurationProperties.value = await loadConfigurationProperties();
     }
   } catch (error) {
     console.error("Error updating configuration entry " + error)
@@ -111,7 +104,7 @@ async function deleteRow(params: CellClickedEvent) {
         }
     )
     if (response.ok) {
-      await loadConfigurationProperties();
+      configurationProperties.value = await loadConfigurationProperties();
     }
   } catch (error) {
     console.error("Error deleting configuration entry " + error)
@@ -162,7 +155,7 @@ const columnDefs: ColDef[] = [
 <template>
   <div class="container flex items-center">
     <div class="text-start py-1">
-      <button type="button" @click="onClearFilters">Clear filters</button>
+      <button type="button" id="test-tg-config-editor-btn-clear-filters" @click="onClearFilters">Clear filters</button>
     </div>
     <ag-grid-vue
         class="ag-theme-alpine editor-table"

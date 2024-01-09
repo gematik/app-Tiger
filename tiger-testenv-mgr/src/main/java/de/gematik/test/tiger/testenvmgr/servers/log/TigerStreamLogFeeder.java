@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.event.Level;
 
 public class TigerStreamLogFeeder {
-  public TigerStreamLogFeeder(Logger log, InputStream inputStream, Level logLevel) {
+  public TigerStreamLogFeeder(
+      String serverId, Logger log, InputStream inputStream, Level logLevel) {
     new Thread(
             () -> {
               try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
@@ -38,7 +39,8 @@ public class TigerStreamLogFeeder {
                   line = reader.readLine();
                 }
               } catch (IOException e) {
-                throw new RuntimeException(e);
+                log.error(
+                    "Error while reading log from input stream for server '" + serverId + "'", e);
               }
             })
         .start();

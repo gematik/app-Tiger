@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package de.gematik.rbellogger.data.facet;
 
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import lombok.Builder;
 import lombok.Data;
@@ -28,10 +29,10 @@ import lombok.extern.slf4j.Slf4j;
 @Builder(toBuilder = true)
 public class RbelMapFacet implements RbelFacet {
 
-  private final RbelMultiMap childNodes;
+  private final RbelMultiMap<RbelElement> childNodes;
 
   @Override
-  public RbelMultiMap getChildElements() {
+  public RbelMultiMap<RbelElement> getChildElements() {
     return childNodes;
   }
 }

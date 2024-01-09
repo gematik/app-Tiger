@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import de.gematik.rbellogger.data.facet.RbelXmlAttributeFacet;
 import de.gematik.rbellogger.data.facet.RbelXmlFacet;
 import de.gematik.rbellogger.util.RbelException;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.util.Map;
@@ -34,7 +33,6 @@ import org.dom4j.io.SAXReader;
 import org.dom4j.tree.AbstractBranch;
 import org.dom4j.tree.DefaultComment;
 import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 @Slf4j
 public class RbelXmlConverter implements RbelConverterPlugin {
@@ -51,21 +49,17 @@ public class RbelXmlConverter implements RbelConverterPlugin {
         final Document parsedXml = parseXml(source);
         buildXmlElementForNode(parsedXml, rbel, context);
         setCharset(parsedXml, rbel);
-        rbel.addFacet(new RbelRootFacet(rbel.getFacetOrFail(RbelXmlFacet.class)));
+        rbel.addFacet(new RbelRootFacet<>(rbel.getFacetOrFail(RbelXmlFacet.class)));
       } catch (DocumentException e) {
         log.trace(
             "Exception while trying to parse XML. Trying as HTML (more lenient SAX parsing)", e);
-        try {
-          htmlConverter
-              .parseHtml(content.trim())
-              .ifPresent(
-                  document -> {
-                    htmlConverter.buildXmlElementForNode(document, rbel, context);
-                    rbel.addFacet(new RbelRootFacet(rbel.getFacetOrFail(RbelXmlFacet.class)));
-                  });
-        } catch (IOException | SAXException e2) {
-          log.trace("Exception while trying to parse XML. Skipping", e);
-        }
+        htmlConverter
+            .parseHtml(content.trim())
+            .ifPresent(
+                document -> {
+                  htmlConverter.buildXmlElementForNode(document, rbel, context);
+                  rbel.addFacet(new RbelRootFacet<>(rbel.getFacetOrFail(RbelXmlFacet.class)));
+                });
       }
     }
   }
@@ -95,23 +89,21 @@ public class RbelXmlConverter implements RbelConverterPlugin {
 
   private void buildXmlElementForNode(
       Branch branch, RbelElement parentElement, RbelConverter converter) {
-    final RbelMultiMap<RbelElement> childElements = new RbelMultiMap();
+    final RbelMultiMap<RbelElement> childElements = new RbelMultiMap<>();
     parentElement.addFacet(RbelXmlFacet.builder().childElements(childElements).build());
     for (Object child : branch.content()) {
-      if (child instanceof Text) {
-        childElements.put(
-            XML_TEXT_KEY, converter.convertElement(((Text) child).getText(), parentElement));
-      } else if (child instanceof AbstractBranch) {
+      if (child instanceof Text text) {
+        childElements.put(XML_TEXT_KEY, converter.convertElement(text.getText(), parentElement));
+      } else if (child instanceof AbstractBranch abstractBranch) {
         final RbelElement element =
             new RbelElement(
-                ((AbstractBranch) child).asXML().getBytes(parentElement.getElementCharset()),
-                parentElement);
-        buildXmlElementForNode((AbstractBranch) child, element, converter);
+                abstractBranch.asXML().getBytes(parentElement.getElementCharset()), parentElement);
+        buildXmlElementForNode(abstractBranch, element, converter);
         childElements.put(((AbstractBranch) child).getName(), element);
-      } else if (child instanceof Namespace) {
-        final String childXmlName = ((Namespace) child).getPrefix();
+      } else if (child instanceof Namespace namespace) {
+        final String childXmlName = namespace.getPrefix();
         childElements.put(
-            childXmlName, converter.convertElement(((Namespace) child).getText(), parentElement));
+            childXmlName, converter.convertElement(namespace.getText(), parentElement));
       } else if (child instanceof DefaultComment) {
         // do nothing
       } else {
@@ -124,8 +116,8 @@ public class RbelXmlConverter implements RbelConverterPlugin {
       childElements.put(XML_TEXT_KEY, new RbelElement(new byte[] {}, parentElement));
     }
 
-    if (branch instanceof Element) {
-      for (Attribute attribute : ((Element) branch).attributes()) {
+    if (branch instanceof Element element) {
+      for (Attribute attribute : element.attributes()) {
         final RbelElement value = converter.convertElement(attribute.getText(), parentElement);
         value.addFacet(new RbelXmlAttributeFacet());
         childElements.put(attribute.getName(), value);

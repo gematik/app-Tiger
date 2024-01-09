@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,12 @@ import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelMapFacet;
 import de.gematik.rbellogger.data.facet.RbelValueFacet;
 import java.io.IOException;
-import java.time.ZoneId;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.x500.style.X500NameTokenizer;
 import org.bouncycastle.jce.X509Principal;
 
 @Slf4j
 public class RbelX500Converter implements RbelConverterPlugin {
-  private static final ZoneId utcZone = ZoneId.of("UTC");
-
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
     try {

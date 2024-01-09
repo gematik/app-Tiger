@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.playwright.workflowui;
 
-import static java.lang.Thread.sleep;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -72,7 +71,6 @@ class XYDynamicRbelLogTests extends AbstractTests {
         .first()
         .click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -121,7 +119,6 @@ class XYDynamicRbelLogTests extends AbstractTests {
         .first()
         .click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -170,9 +167,7 @@ class XYDynamicRbelLogTests extends AbstractTests {
     page.locator("#test-webui-slider").click();
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
+    await().untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
     assertAll(
         () -> assertThat(externalPage.locator("#test-tiger-logo").isVisible()).isTrue(),
         () -> assertThat(externalPage.locator("#routeModalBtn").isVisible()).isTrue(),
@@ -197,7 +192,6 @@ class XYDynamicRbelLogTests extends AbstractTests {
         .fill("$.DOESNOTEXIST");
     page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -235,7 +229,6 @@ class XYDynamicRbelLogTests extends AbstractTests {
         .fill("$.body == \"hello=world\"");
     page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -297,7 +290,7 @@ class XYDynamicRbelLogTests extends AbstractTests {
   }
 
   @Test
-  void testASaveModalDownloadHtml() throws InterruptedException {
+  void testASaveModalDownloadHtml() {
     page.querySelector("#test-execution-pane-tab").click();
     page.locator("#test-webui-slider").click();
     page.frameLocator("#rbellog-details-iframe").locator("#exportMsgs").click();
@@ -305,7 +298,9 @@ class XYDynamicRbelLogTests extends AbstractTests {
         page.waitForDownload(
             () -> page.frameLocator("#rbellog-details-iframe").locator("#saveHtmlBtn").click());
     // wait for download to complete
-    sleep(1000);
+    await()
+        .pollDelay(100, TimeUnit.MILLISECONDS)
+        .until(() -> download.page().locator("#test-tiger-logo").isVisible());
     assertAll(
         () -> assertThat(download.page().locator("#test-tiger-logo").isVisible()).isTrue(),
         () ->
@@ -335,7 +330,7 @@ class XYDynamicRbelLogTests extends AbstractTests {
   }
 
   @Test
-  void testASaveModalDownloadTgr() throws InterruptedException {
+  void testASaveModalDownloadTgr() {
     page.querySelector("#test-execution-pane-tab").click();
     page.locator("#test-webui-slider").click();
     page.frameLocator("#rbellog-details-iframe").locator("#exportMsgs").click();
@@ -343,7 +338,9 @@ class XYDynamicRbelLogTests extends AbstractTests {
         page.waitForDownload(
             () -> page.frameLocator("#rbellog-details-iframe").locator("#saveTrafficBtn").click());
     // wait for download to complete
-    sleep(1000);
+    await()
+        .pollDelay(100, TimeUnit.MILLISECONDS)
+        .until(() -> download.page().locator("#test-tiger-logo").isVisible());
     assertAll(
         () -> assertThat(download.page().locator("#test-tiger-logo").isVisible()).isTrue(),
         () ->

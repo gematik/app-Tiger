@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -20,16 +20,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
 
-public class BinaryClassifierTest {
+class BinaryClassifierTest {
 
   @Test
-  public void someTextExamples() {
+  void someTextExamples() {
     assertThat(BinaryClassifier.isBinary("hello world".getBytes())).isFalse();
     assertThat(BinaryClassifier.isBinary("hello world\n".getBytes())).isFalse();
   }
 
   @Test
-  public void someBinaryExamples() {
+  void someBinaryExamples() {
     assertThat(BinaryClassifier.isBinary(new byte[] {0x00, 0x01})).isTrue();
     assertThat(BinaryClassifier.isBinary(new byte[] {0x11, 0x7F})).isTrue();
   }

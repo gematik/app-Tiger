@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ public class CryptoUtils {
   private static final BouncyCastleProvider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
 
   public static byte[] ecka(PrivateKey prk, PublicKey puk)
-      throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException {
+      throws NoSuchAlgorithmException, InvalidKeyException {
     byte[] sharedSecret;
     KeyAgreement ka = KeyAgreement.getInstance("ECDH", BOUNCY_CASTLE_PROVIDER);
     ka.init(prk);

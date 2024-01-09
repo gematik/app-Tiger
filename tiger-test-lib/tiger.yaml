@@ -35,7 +35,7 @@ additionalYamls:
 
 editorExamples:
   plainTextExample: just some text
-  xmlExample: | 
+  xmlExample: |
     <example>
       <content>This is an example XML</content>
     </example>

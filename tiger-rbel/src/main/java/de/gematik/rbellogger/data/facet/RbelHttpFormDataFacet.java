@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Data;
 
@@ -65,8 +64,10 @@ public class RbelHttpFormDataFacet implements RbelFacet {
                                                             entry.getValue(),
                                                             Optional.ofNullable(entry.getKey())))
                                                     .withClass("value"))
-                                                .with(renderingToolkit.addNotes(entry.getValue()))))
-                                .collect(Collectors.toList())));
+                                                .with(
+                                                    RbelHtmlRenderingToolkit.addNotes(
+                                                        entry.getValue()))))
+                                .toList()));
           }
         });
   }

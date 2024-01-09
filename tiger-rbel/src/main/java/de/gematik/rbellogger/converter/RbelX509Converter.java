@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ public class RbelX509Converter implements RbelConverterPlugin {
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
-    tryConversion(element, context, () -> element.getRawContent());
+    tryConversion(element, context, element::getRawContent);
     tryConversion(element, context, () -> Base64.getDecoder().decode(element.getRawContent()));
   }
 

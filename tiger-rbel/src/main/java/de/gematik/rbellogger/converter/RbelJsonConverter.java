@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,8 @@ public class RbelJsonConverter implements RbelConverterPlugin {
     }
     if (jsonOptional.get().isJsonObject() || jsonOptional.get().isJsonArray()) {
       augmentRbelElementWithJsonFacet(jsonOptional.get(), converter, rbelElement);
-      rbelElement.addFacet(new RbelRootFacet(rbelElement.getFacetOrFail(RbelJsonFacet.class)));
+      rbelElement.addFacet(
+          new RbelRootFacet<RbelFacet>(rbelElement.getFacetOrFail(RbelJsonFacet.class)));
     }
   }
 
@@ -55,7 +56,7 @@ public class RbelJsonConverter implements RbelConverterPlugin {
       final JsonElement jsonElement, final RbelConverter context, final RbelElement parentElement) {
     parentElement.addFacet(RbelJsonFacet.builder().jsonElement(jsonElement).build());
     if (jsonElement.isJsonObject()) {
-      final RbelMultiMap<RbelElement> elementMap = new RbelMultiMap();
+      final RbelMultiMap<RbelElement> elementMap = new RbelMultiMap<>();
       parentElement.addFacet(RbelMapFacet.builder().childNodes(elementMap).build());
       for (Entry<String, JsonElement> entry : jsonElement.getAsJsonObject().entrySet()) {
         RbelElement newChild =

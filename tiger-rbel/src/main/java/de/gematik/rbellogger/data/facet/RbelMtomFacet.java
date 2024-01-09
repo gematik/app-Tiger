@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -137,8 +137,8 @@ public class RbelMtomFacet implements RbelFacet {
   @Nullable private final RbelElement dataParts;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap()
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>()
         .with("contentType", contentType)
         .with("reconstructedMessage", reconstructedMessage)
         .withSkipIfNull("dataParts", dataParts);

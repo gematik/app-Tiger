@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class VauModifierTest {
+class VauModifierTest {
 
   static {
     Security.addProvider(new BouncyCastleProvider());
@@ -59,7 +59,7 @@ public class VauModifierTest {
   }
 
   @Test
-  public void modifyErpVauRequestBody() throws IOException {
+  void modifyErpVauRequestBody() throws IOException {
     final RbelElement message = readAndConvertRawMessage("src/test/resources/vauErpRequest.b64");
 
     rbelLogger
@@ -75,13 +75,12 @@ public class VauModifierTest {
     assertThat(
             modifiedMessage
                 .findElement("$.body.message.body.New.text")
-                .map(RbelElement::getRawStringContent)
-                .get())
-        .isEqualTo("Vau inner body");
+                .map(RbelElement::getRawStringContent))
+        .contains("Vau inner body");
   }
 
   @Test
-  public void modifyErpVauResponseBody() throws IOException {
+  void modifyErpVauResponseBody() throws IOException {
     rbelLogger
         .getRbelKeyManager()
         .addKey(
@@ -102,13 +101,12 @@ public class VauModifierTest {
     assertThat(
             modifiedMessage
                 .findElement("$.body.message.body.New.text")
-                .map(RbelElement::getRawStringContent)
-                .get())
-        .isEqualTo("Vau inner body");
+                .map(RbelElement::getRawStringContent))
+        .contains("Vau inner body");
   }
 
   @Test
-  public void modifyEpaVauRequestBody() {
+  void modifyEpaVauRequestBody() {
     rbelLogger =
         RbelLogger.build(
             new RbelConfiguration()

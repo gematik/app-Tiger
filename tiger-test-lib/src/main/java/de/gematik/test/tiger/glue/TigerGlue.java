@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -153,9 +153,11 @@ public class TigerGlue {
   }
 
   @When(
-      "TGR pause test run execution with message {tigerResolvedString} and message in case of error {tigerResolvedString}")
+      "TGR pause test run execution with message {tigerResolvedString} and message in case of error"
+          + " {tigerResolvedString}")
   @Wenn(
-      "TGR pausiere Testausführung mit Nachricht {tigerResolvedString} und Meldung im Fehlerfall {tigerResolvedString}")
+      "TGR pausiere Testausführung mit Nachricht {tigerResolvedString} und Meldung im Fehlerfall"
+          + " {tigerResolvedString}")
   public void tgrPauseExecutionWithMessageAndErrorMessage(String message, String errorMessage) {
     TigerDirector.pauseExecutionAndFailIfDesired(message, errorMessage);
   }

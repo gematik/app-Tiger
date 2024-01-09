@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -128,8 +128,9 @@ class TestTigerDirector {
                     + System.getProperty("https.proxyPort"));
 
             assertThat(TigerDirector.isInitialized()).isTrue();
-            assertThat(TigerDirector.getTigerTestEnvMgr()).isNotNull();
-            assertThatThrownBy(() -> TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail())
+            var testenvMgr = TigerDirector.getTigerTestEnvMgr();
+            assertThat(testenvMgr).isNotNull();
+            assertThatThrownBy(testenvMgr::getLocalTigerProxyOrFail)
                 .isInstanceOf(TigerTestEnvException.class);
 
             final var url = new URL("http://idp-rise-tu-noproxy");

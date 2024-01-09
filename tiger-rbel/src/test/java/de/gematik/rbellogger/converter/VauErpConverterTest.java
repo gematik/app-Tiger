@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.util.Base64;
-import java.util.stream.Collectors;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -96,9 +95,8 @@ public class VauErpConverterTest {
                 .get(47)
                 .findElement("$.body.keyId")
                 .get()
-                .seekValue(String.class)
-                .get())
-        .isEqualTo("VAU Secret Key krTNhsSUEfXvy6BZFp5G4g");
+                .seekValue(String.class))
+        .contains("VAU Secret Key krTNhsSUEfXvy6BZFp5G4g");
   }
 
   @Test
@@ -110,18 +108,9 @@ public class VauErpConverterTest {
                 .findRbelPathMembers("$.body.message.body.Task.identifier.system.value")
                 .stream()
                 .map(RbelElement::getRawStringContent)
-                .collect(Collectors.toList()))
+                .toList())
         .containsExactly(
             "https://gematik.de/fhir/NamingSystem/PrescriptionID",
             "https://gematik.de/fhir/NamingSystem/AccessCode");
-  }
-
-  @Test
-  void testNestedRbelPathIntoSignedErpVauMessage() {
-    //          assertThat(rbelLogger.getMessageList().get(95)
-    //
-    // .findRbelPathMembers("$.body.message.body.Bundle.entry.resource.Binary.data.value.1.content.2.1.content")
-    //            .get(0).getFacet(RbelXmlElement.class))
-    //            .isPresent();
   }
 }

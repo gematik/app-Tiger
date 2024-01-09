@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 import lombok.Builder;
 import org.apache.commons.lang3.StringUtils;
 
@@ -118,7 +117,7 @@ public class RbelModifier {
                 + oldTargetElement.getFacets().stream()
                     .map(Object::getClass)
                     .map(Class::getSimpleName)
-                    .collect(Collectors.toList())
+                    .toList()
                 + "!");
       }
       newContent = found.get();
@@ -158,9 +157,7 @@ public class RbelModifier {
   }
 
   public List<RbelModificationDescription> getModifications() {
-    return modificationsMap.entrySet().stream()
-        .map(Entry::getValue)
-        .collect(Collectors.toUnmodifiableList());
+    return modificationsMap.entrySet().stream().map(Entry::getValue).toList();
   }
 
   public void deleteModification(String modificationsId) {

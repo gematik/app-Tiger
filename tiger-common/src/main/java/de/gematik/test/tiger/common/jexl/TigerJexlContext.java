@@ -18,6 +18,7 @@ public class TigerJexlContext extends TreeMap<String, Object> implements JexlCon
   public static final String CURRENT_ELEMENT_MARKER = "currentElement";
   public static final String ROOT_ELEMENT_MARKER = "rootElement";
   public static final String REMAINING_PATH_FROM_REQUEST = "remainingPathToMatch";
+  private static final String RBELPATH_FALLBACK_MARKER = "rbelPathFallback";
   public static final String KEY_ELEMENT_MARKER = "key";
   private static final Set<String> DEFAULT_KEYS =
       Set.of(
@@ -54,6 +55,17 @@ public class TigerJexlContext extends TreeMap<String, Object> implements JexlCon
   public TigerJexlContext withKey(String key) {
     final TigerJexlContext context = new TigerJexlContext(this);
     context.put(KEY_ELEMENT_MARKER, key);
+    return context;
+  }
+
+  /**
+   * Clones the context and returns a new copy which might ignore empty RbelPaths when a
+   * JEXL-expression is evaluated. If not then a exception is thrown, otherwise an empty string is
+   * taken as the fallback.
+   */
+  public TigerJexlContext withShouldIgnoreEmptyRbelPaths(boolean value) {
+    final TigerJexlContext context = new TigerJexlContext(this);
+    context.put(RBELPATH_FALLBACK_MARKER, value);
     return context;
   }
 
@@ -101,6 +113,13 @@ public class TigerJexlContext extends TreeMap<String, Object> implements JexlCon
 
   public Object getRootElement() {
     return getOptional(ROOT_ELEMENT_MARKER).orElseGet(() -> get(CURRENT_ELEMENT_MARKER));
+  }
+
+  public boolean shouldIgnoreEmptyRbelPaths() {
+    return getOptional(RBELPATH_FALLBACK_MARKER)
+        .filter(Boolean.class::isInstance)
+        .map(Boolean.class::cast)
+        .orElse(Boolean.FALSE);
   }
 
   public String getKey() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,13 @@ import kong.unirest.Unirest;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import net.jcip.annotations.NotThreadSafe;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
 @Getter
 @ResetTigerConfiguration
+@NotThreadSafe
 class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
 
   /**
@@ -271,8 +273,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
           .atMost(10, TimeUnit.SECONDS)
           .until(
               () ->
-                  envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size()
-                      >= 1);
+                  !envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().isEmpty());
     }
     waitShortTime();
   }

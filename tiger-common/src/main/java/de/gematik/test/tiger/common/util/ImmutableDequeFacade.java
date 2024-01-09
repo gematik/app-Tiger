@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
-@SuppressWarnings({"java:S6355", "java:S1133"})
+@SuppressWarnings({"java:S6355", "java:S1133", "java:S1123"})
 public class ImmutableDequeFacade<T> implements Deque<T> {
 
   private final Deque<T> remoteDeque;

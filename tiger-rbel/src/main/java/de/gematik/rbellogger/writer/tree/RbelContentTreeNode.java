@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import lombok.Setter;
 public class RbelContentTreeNode extends RbelPathAble {
 
   private RbelMultiMap<RbelContentTreeNode> childNodes;
-  private Map<String, String> attributeMap = new HashMap<>();
+  private final Map<String, String> attributeMap = new HashMap<>();
   @Setter private Charset charset;
   @Setter private String key;
   @Getter @Setter private RbelContentType type;
@@ -66,7 +66,7 @@ public class RbelContentTreeNode extends RbelPathAble {
       this.setChildNodes(new RbelMultiMap<>());
     } else {
       this.childNodes = childNodes;
-      this.childNodes.forEach((k, e) -> e.setParentNode(this));
+      this.childNodes.getValues().forEach((e) -> e.getValue().setParentNode(this));
     }
   }
 
@@ -201,10 +201,7 @@ public class RbelContentTreeNode extends RbelPathAble {
   }
 
   public Optional<String> findKeyInParentElement() {
-    return Optional.of(this)
-        .map(RbelContentTreeNode::getParentNode)
-        .filter(Objects::nonNull)
-        .stream()
+    return Optional.of(this).map(RbelContentTreeNode::getParentNode).stream()
         .flatMap(parent -> parent.getChildNodesWithKey().stream())
         .filter(e -> e.getValue() == this)
         .map(Map.Entry::getKey)

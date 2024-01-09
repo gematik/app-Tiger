@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 class RbelX5cKeyReaderTest {
 
   @Test
-  public void multipleKeyIds_shouldFindCorrectOne() throws IOException {
+  void multipleKeyIds_shouldFindCorrectOne() throws IOException {
     RbelLogger logger = RbelLogger.build();
     logger
         .getRbelConverter()

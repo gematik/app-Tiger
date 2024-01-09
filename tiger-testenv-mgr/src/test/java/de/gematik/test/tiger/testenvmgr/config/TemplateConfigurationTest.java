@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,9 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
-public class TemplateConfigurationTest {
+class TemplateConfigurationTest {
   @Test
-  public void testTemplateApplication() throws Exception {
+  void testTemplateApplication() throws Exception {
     new EnvironmentVariables("TIGER_SERVERS_ERP_TEMPLATE", "erzpt-fd-ref")
         .execute(
             () -> {
@@ -54,7 +54,7 @@ public class TemplateConfigurationTest {
 
   @SneakyThrows
   @Test
-  public void readTigerYamlWithLogFile() {
+  void readTigerYamlWithLogFile() {
     TigerGlobalConfiguration.readFromYaml(
         "tiger:\n"
             + "  servers:\n"
@@ -77,7 +77,7 @@ public class TemplateConfigurationTest {
 
   @SneakyThrows
   @Test
-  public void readTigerYamlWithLogDirectory() {
+  void readTigerYamlWithLogDirectory() {
     TigerGlobalConfiguration.readFromYaml(
         FileUtils.readFileToString(
             new File("src/test/resources/testExternalJarDir.yaml"), StandardCharsets.UTF_8));

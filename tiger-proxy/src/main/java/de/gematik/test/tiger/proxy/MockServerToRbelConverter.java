@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyParsingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -73,7 +74,8 @@ public class MockServerToRbelConverter {
     return element;
   }
 
-  public RbelElement convertRequest(HttpRequest request, String protocolAndHost) {
+  public RbelElement convertRequest(
+      HttpRequest request, String protocolAndHost, Optional<ZonedDateTime> timestamp) {
     if (log.isTraceEnabled()) {
       log.trace(
           "Converting request {}, headers {}, body {}",
@@ -87,7 +89,7 @@ public class MockServerToRbelConverter {
             requestToRbelMessage(request),
             RbelHostname.fromString(request.getRemoteAddress()).orElse(null),
             convertUri(protocolAndHost),
-            Optional.of(ZonedDateTime.now()));
+            timestamp);
 
     if (!element.hasFacet(RbelHttpRequestFacet.class)) {
       element.addFacet(
@@ -105,7 +107,8 @@ public class MockServerToRbelConverter {
       new URI(protocolAndHost);
       return (RbelHostname) RbelHostname.generateFromUrl(protocolAndHost).orElse(null);
     } catch (URISyntaxException e) {
-      throw new RuntimeException(e);
+      throw new TigerProxyParsingException(
+          "Unable to parse hostname from '" + protocolAndHost + "'", e);
     }
   }
 
@@ -129,8 +132,7 @@ public class MockServerToRbelConverter {
                 + "\r\n\r\n")
             .getBytes();
 
-    final byte[] httpMessage = Arrays.concatenate(httpRequestHeader, request.getBodyAsRawBytes());
-    return httpMessage;
+    return Arrays.concatenate(httpRequestHeader, request.getBodyAsRawBytes());
   }
 
   private byte[] responseToRawMessage(HttpResponse response) {
@@ -144,8 +146,7 @@ public class MockServerToRbelConverter {
                 + "\r\n\r\n")
             .getBytes(StandardCharsets.US_ASCII);
 
-    final byte[] httpMessage = Arrays.concatenate(httpResponseHeader, response.getBodyAsRawBytes());
-    return httpMessage;
+    return Arrays.concatenate(httpResponseHeader, response.getBodyAsRawBytes());
   }
 
   private String formatHeaderList(List<Header> headerList) {

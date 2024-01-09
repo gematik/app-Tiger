@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -291,9 +291,9 @@ public class TigerPkiIdentityLoader {
     @Getter private final boolean isKeystore;
 
     StoreType(boolean isKeystore, String... alternateNames) {
-      List<String> names = new ArrayList<>(List.of(alternateNames));
-      names.add(name());
-      this.names = Collections.unmodifiableList(names);
+      List<String> namesList = new ArrayList<>(List.of(alternateNames));
+      namesList.add(name());
+      this.names = Collections.unmodifiableList(namesList);
       this.isKeystore = isKeystore;
     }
 

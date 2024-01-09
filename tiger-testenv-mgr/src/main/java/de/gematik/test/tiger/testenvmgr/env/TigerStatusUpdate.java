@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package de.gematik.test.tiger.testenvmgr.env;
 
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Objects;
 import lombok.Builder;
 import lombok.Data;
@@ -30,16 +31,20 @@ public class TigerStatusUpdate {
   static long lastIndex;
   static final Object indexMutex = new Object();
 
+  @SuppressWarnings("unused")
   public TigerStatusUpdate(
+      // for the lastIndex member we need a long param in the ctor too
+      // it's unused on purpose as it's set via unique counter approach
       long dummyIndexForJackson,
-      LinkedHashMap<String, FeatureUpdate> featureMap,
-      LinkedHashMap<String, TigerServerStatusUpdate> serverUpdate,
+      Map<String, FeatureUpdate> featureMap,
+      Map<String, TigerServerStatusUpdate> serverUpdate,
       String bannerMessage,
       String bannerColor,
       BannerType bannerType,
       boolean isHtml) {
-    this.featureMap = Objects.requireNonNullElseGet(featureMap, LinkedHashMap::new);
-    this.serverUpdate = Objects.requireNonNullElseGet(serverUpdate, LinkedHashMap::new);
+    this.featureMap = featureMap == null ? new LinkedHashMap<>() : new LinkedHashMap<>(featureMap);
+    this.serverUpdate =
+        serverUpdate == null ? new LinkedHashMap<>() : new LinkedHashMap<>(serverUpdate);
     this.bannerMessage = bannerMessage;
     this.bannerColor = bannerColor;
     this.bannerIsHtml = isHtml;
@@ -52,8 +57,8 @@ public class TigerStatusUpdate {
 
   public TigerStatusUpdate(
       long dummyIndexForJackson,
-      LinkedHashMap<String, FeatureUpdate> featureMap,
-      LinkedHashMap<String, TigerServerStatusUpdate> serverUpdate,
+      Map<String, FeatureUpdate> featureMap,
+      Map<String, TigerServerStatusUpdate> serverUpdate,
       String bannerMessage,
       String bannerColor,
       BannerType bannerType) {

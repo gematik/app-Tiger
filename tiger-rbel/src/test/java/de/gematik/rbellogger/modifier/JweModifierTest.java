@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -30,10 +30,10 @@ import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
-public class JweModifierTest extends AbstractModifierTest {
+class JweModifierTest extends AbstractModifierTest {
 
   @Test
-  public void modifyJweHeaderEnc_cantBeModified() throws IOException {
+  void modifyJweHeaderEnc_cantBeModified() throws IOException {
     final RbelElement message =
         readAndConvertCurlMessage("src/test/resources/sampleMessages/jweMessage.curl");
 
@@ -54,7 +54,7 @@ public class JweModifierTest extends AbstractModifierTest {
   }
 
   @Test
-  public void modifyJweHeaderAddField_canBeModified() throws IOException {
+  void modifyJweHeaderAddField_canBeModified() throws IOException {
     final RbelElement message =
         readAndConvertCurlMessage("src/test/resources/sampleMessages/jweMessage.curl");
 
@@ -76,17 +76,14 @@ public class JweModifierTest extends AbstractModifierTest {
             .getFacetOrFail(RbelJweEncryptionInfo.class);
 
     assertThat(
-            modifiedMessage
-                .findElement("$.body.header.foo")
-                .map(RbelElement::getRawStringContent)
-                .get())
-        .isEqualTo("1234");
+            modifiedMessage.findElement("$.body.header.foo").map(RbelElement::getRawStringContent))
+        .contains("1234");
     assertThat(encryptionInfo.wasDecryptable()).isTrue();
     assertThat(encryptionInfo.getDecryptedUsingKeyWithId().equals("prk_idpEnc"));
   }
 
   @Test
-  public void modifyJweHeaderAddField_jweEncrypted() throws IOException {
+  void modifyJweHeaderAddField_jweEncrypted() throws IOException {
     final RbelElement message =
         readAndConvertCurlMessage("src/test/resources/sampleMessages/jweMessage.curl");
 
@@ -112,7 +109,7 @@ public class JweModifierTest extends AbstractModifierTest {
   }
 
   @Test
-  public void modifyJweHeader_cantEditAlg() throws IOException {
+  void modifyJweHeader_cantEditAlg() throws IOException {
     final RbelElement message =
         readAndConvertCurlMessage("src/test/resources/sampleMessages/jweMessage.curl");
 
@@ -130,7 +127,7 @@ public class JweModifierTest extends AbstractModifierTest {
   }
 
   @Test
-  public void modifyJweBody_shouldContainModifiedContent() throws IOException {
+  void modifyJweBody_shouldContainModifiedContent() throws IOException {
     final RbelElement message =
         readAndConvertCurlMessage("src/test/resources/sampleMessages/jweMessage.curl");
 
@@ -148,13 +145,12 @@ public class JweModifierTest extends AbstractModifierTest {
     assertThat(
             modifiedMessage
                 .findElement("$.body.body.token_key")
-                .map(RbelElement::getRawStringContent)
-                .get())
-        .isEqualTo("not the token key");
+                .map(RbelElement::getRawStringContent))
+        .contains("not the token key");
   }
 
   @Test
-  public void modifyJweBody_jweEncrypted() throws IOException {
+  void modifyJweBody_jweEncrypted() throws IOException {
     final RbelElement message =
         readAndConvertCurlMessage("src/test/resources/sampleMessages/jweMessage.curl");
 
@@ -179,7 +175,7 @@ public class JweModifierTest extends AbstractModifierTest {
   }
 
   @Test
-  public void modifyJweBodyWithString_jweEncrypted() throws IOException {
+  void modifyJweBodyWithString_jweEncrypted() throws IOException {
     final RbelElement message =
         readAndConvertCurlMessage("src/test/resources/sampleMessages/jweMessage.curl");
 
@@ -193,9 +189,8 @@ public class JweModifierTest extends AbstractModifierTest {
 
     final RbelElement modifiedMessage = modifyMessageAndParseResponse(message);
 
-    assertThat(
-            modifiedMessage.findElement("$.body.body").map(RbelElement::getRawStringContent).get())
-        .isEqualTo("not the proper body");
+    assertThat(modifiedMessage.findElement("$.body.body").map(RbelElement::getRawStringContent))
+        .contains("not the proper body");
     final RbelJweEncryptionInfo encryptionInfo =
         modifiedMessage
             .findElement("$.body.encryptionInfo")
@@ -207,7 +202,7 @@ public class JweModifierTest extends AbstractModifierTest {
   }
 
   @Test
-  public void modifyJweEncryptionInfo_cantBeRewritten() throws IOException {
+  void modifyJweEncryptionInfo_cantBeRewritten() throws IOException {
     final RbelElement message =
         readAndConvertCurlMessage("src/test/resources/sampleMessages/jweMessage.curl");
 
@@ -225,7 +220,7 @@ public class JweModifierTest extends AbstractModifierTest {
   }
 
   @Test
-  public void jweCantBeEncrypted() throws IOException, IllegalAccessException {
+  void jweCantBeEncrypted() throws IOException, IllegalAccessException {
     final RbelElement message =
         readAndConvertCurlMessage("src/test/resources/sampleMessages/jweMessage.curl");
     var rbelLoggerWithoutKeys = RbelLogger.build();
@@ -244,7 +239,7 @@ public class JweModifierTest extends AbstractModifierTest {
   }
 
   @Test
-  public void modifyInvalidJwe_cantBeDecrypted() throws IOException {
+  void modifyInvalidJwe_cantBeDecrypted() throws IOException {
     final RbelElement message =
         readAndConvertCurlMessage("src/test/resources/sampleMessages/falseJweMessage.curl");
 

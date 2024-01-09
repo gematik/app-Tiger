@@ -11,6 +11,7 @@ import de.gematik.test.tiger.zion.config.ZionConfiguration;
 import java.nio.charset.Charset;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
+import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -338,5 +339,117 @@ servers:
 
     assertThat(responseNonExisting.getStatus()).isEqualTo(401);
     assertThat(responseNonExisting.getBody()).isEqualTo("InvalidEmail");
+  }
+
+  @TigerTest(
+      tigerYaml =
+          """
+              servers:
+                mainServer:
+                  type: externalJar
+                  healthcheckUrl:
+                    http://127.0.0.1:${free.port.30}
+                  externalJarOptions:
+                    arguments:
+                      - --server.port=${free.port.30}
+                      - --backendServer.port=${free.port.20}
+                      - --spring.profiles.active=mainserver
+                    workingDir: src/test/resources
+                  source:
+                    - local:../../../target/tiger-zion-*-executable.jar
+                backendServer:
+                  type: externalJar
+                  healthcheckUrl:
+                    http://127.0.0.1:${free.port.20}
+                  externalJarOptions:
+                    arguments:
+                      - --server.port=${free.port.20}
+                      - --spring.profiles.active=backendServer
+                    workingDir: src/test/resources
+                  source:
+                    - local:../../../target/tiger-zion-*-executable.jar
+                      """)
+  @Test
+  void testMultipleZionServerWithProfiles() {
+    final HttpResponse<JsonNode> response =
+        Unirest.get(
+                TigerGlobalConfiguration.resolvePlaceholders(
+                    "http://localhost:${free.port.30}/helloWorld"))
+            .asJson();
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(response.getBody().getObject().getString("Hello")).isEqualTo("World");
+  }
+
+  @TigerTest(
+      tigerYaml =
+          """
+    servers:
+      serverTestName:
+        type: zion
+        zionConfiguration:
+          serverPort: ${free.port.3}
+          mockResponses:
+            testResponse:
+              request:
+                method: POST
+              requestCriterions:
+                - "$.body.['urn:telematik:claims:email'] == 'test'"
+              response:
+                statusCode: 777
+                body: "?{$.body.['urn:telematik:claims:email']}"
+                        """)
+  @Test
+  void testWithColonInPropertyname(UnirestInstance unirest) {
+    HttpResponse<String> responseExisting =
+        unirest
+            .post("http://serverTestName/")
+            .body("""
+              {"urn:telematik:claims:email": "test"}
+              """)
+            .asString();
+
+    assertThat(responseExisting.getStatus()).isEqualTo(777);
+    assertThat(responseExisting.getBody()).isEqualTo("test");
+  }
+
+  @TigerTest(
+      tigerYaml =
+          """
+        logging.level.de.gematik.test.tiger.zion: TRACE
+        servers:
+          zionServer:
+            type: zion
+            zionConfiguration:
+              serverPort: "${free.port.10}"
+              mockResponses:
+                noSpecialKey:
+                  requestCriterions:
+                    - '$..specialKey == null'
+                  response:
+                    body: 'hassenich!'
+                yesSpecialKey:
+                  requestCriterions:
+                    - '$..specialKey != null'
+                  response:
+                    body: 'baaam'
+        """)
+  @Test
+  void testRbelPathElementNotPresentCriterions(UnirestInstance unirestInstance) {
+    HttpResponse<String> response =
+        unirestInstance
+            .put(TigerGlobalConfiguration.resolvePlaceholders("http://zionServer/blub"))
+            .body("{'somethingElse':'fdsafds'}")
+            .asString();
+
+    assertThat(response.getBody()).isEqualTo("hassenich!");
+
+    response =
+        unirestInstance
+            .put(TigerGlobalConfiguration.resolvePlaceholders("http://zionServer/blub"))
+            .body("{'specialKey':'fdsafds'}")
+            .asString();
+
+    assertThat(response.getBody()).isEqualTo("baaam");
   }
 }

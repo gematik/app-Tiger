@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class RbelBundledMessagesPluginTest {
+class RbelBundledMessagesPluginTest {
 
   private RbelLogger rbelLogger;
 
@@ -46,7 +46,7 @@ public class RbelBundledMessagesPluginTest {
   }
 
   @Test
-  public void testBundledMessagesWithOnlyRequests() throws IOException {
+  void testBundledMessagesWithOnlyRequests() throws IOException {
     rbelLogger.addBundleCriterion(
         RbelBundleCriterion.builder()
             .bundledServerName("kombi")
@@ -65,24 +65,14 @@ public class RbelBundledMessagesPluginTest {
             localhostWithPort(54321),
             localhostWithPort(6543));
 
-    assertThat(
-            requestLeft
-                .findElement("$.receiver")
-                .get()
-                .getFacetOrFail(RbelHostnameFacet.class)
-                .toString())
-        .isEqualTo("kombi:5432");
-    assertThat(
-            requestRight
-                .findElement("$.sender")
-                .get()
-                .getFacetOrFail(RbelHostnameFacet.class)
-                .toString())
-        .isEqualTo("kombi:54321");
+    assertThat(requestLeft.findElement("$.receiver").get().getFacetOrFail(RbelHostnameFacet.class))
+        .hasToString("kombi:5432");
+    assertThat(requestRight.findElement("$.sender").get().getFacetOrFail(RbelHostnameFacet.class))
+        .hasToString("kombi:54321");
   }
 
   @Test
-  public void testBundledMessagesWithOnlyResponses() throws IOException {
+  void testBundledMessagesWithOnlyResponses() throws IOException {
     rbelLogger.addBundleCriterion(
         RbelBundleCriterion.builder()
             .bundledServerName("kombi")
@@ -112,39 +102,20 @@ public class RbelBundledMessagesPluginTest {
             localhostWithPort(5432),
             localhostWithPort(44444));
 
-    assertThat(
-            requestLeft
-                .findElement("$.receiver")
-                .get()
-                .getFacetOrFail(RbelHostnameFacet.class)
-                .toString())
-        .isEqualTo("kombi:5432");
-    assertThat(
-            responseLeft
-                .findElement("$.sender")
-                .get()
-                .getFacetOrFail(RbelHostnameFacet.class)
-                .toString())
-        .isEqualTo("kombi:5432");
+    assertThat(requestLeft.findElement("$.receiver").get().getFacetOrFail(RbelHostnameFacet.class))
+        .hasToString("kombi:5432");
+    assertThat(responseLeft.findElement("$.sender").get().getFacetOrFail(RbelHostnameFacet.class))
+        .hasToString("kombi:5432");
 
+    assertThat(requestRight.findElement("$.sender").get().getFacetOrFail(RbelHostnameFacet.class))
+        .hasToString("kombi:54321");
     assertThat(
-            requestRight
-                .findElement("$.sender")
-                .get()
-                .getFacetOrFail(RbelHostnameFacet.class)
-                .toString())
-        .isEqualTo("kombi:54321");
-    assertThat(
-            responseRight
-                .findElement("$.receiver")
-                .get()
-                .getFacetOrFail(RbelHostnameFacet.class)
-                .toString())
-        .isEqualTo("kombi:54321");
+            responseRight.findElement("$.receiver").get().getFacetOrFail(RbelHostnameFacet.class))
+        .hasToString("kombi:54321");
   }
 
   @Test
-  public void shouldAddNothingBecausePortIsWrong() throws IOException {
+  void shouldAddNothingBecausePortIsWrong() throws IOException {
     rbelLogger.addBundleCriterion(
         RbelBundleCriterion.builder()
             .bundledServerName("kombi")
@@ -170,7 +141,7 @@ public class RbelBundledMessagesPluginTest {
   }
 
   @Test
-  public void shouldAddNothingBecauseListsAreEmpty() throws IOException {
+  void shouldAddNothingBecauseListsAreEmpty() throws IOException {
     rbelLogger.addBundleCriterion(
         RbelBundleCriterion.builder()
             .bundledServerName("kombi")
@@ -210,7 +181,7 @@ public class RbelBundledMessagesPluginTest {
   }
 
   @Test
-  public void verifyCorrectSenderAndReceiverHostnames() throws IOException {
+  void verifyCorrectSenderAndReceiverHostnames() throws IOException {
     rbelLogger.addBundleCriterion(
         RbelBundleCriterion.builder()
             .bundledServerName("kombi")
@@ -229,15 +200,10 @@ public class RbelBundledMessagesPluginTest {
             localhostWithPort(54321),
             localhostWithPort(6543));
 
-    assertThat(
-            requestLeft
-                .getFacetOrFail(RbelTcpIpMessageFacet.class)
-                .getReceiverHostname()
-                .toString())
-        .isEqualTo("kombi:5432");
-    assertThat(
-            requestLeft.getFacetOrFail(RbelTcpIpMessageFacet.class).getSenderHostname().toString())
-        .isEqualTo("localhost:44444");
+    assertThat(requestLeft.getFacetOrFail(RbelTcpIpMessageFacet.class).getReceiverHostname())
+        .hasToString("kombi:5432");
+    assertThat(requestLeft.getFacetOrFail(RbelTcpIpMessageFacet.class).getSenderHostname())
+        .hasToString("localhost:44444");
   }
 
   private RbelElement modifyMessageAndParseResponse(

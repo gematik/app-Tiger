@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -62,9 +62,8 @@ public class EnvStatusController implements TigerUpdateListener {
         tigerEnvStatus.setBannerIsHtml(update.isBannerIsHtml());
       }
       // TODO make sure to check that the index is the expected next number, if not we do have to
-      // cache this and wait for the correct message
-      //  TODO to be received and then process the cached messages in order, currently this is done
-      // on the client side
+      // cache this and wait for the correct message to be received and then process
+      // the cached messages in order, currently this is done on the client side
 
       // This synchronized block is needed to ensure there is no concurrency when for example
       // receiving updates very fast!
@@ -88,44 +87,7 @@ public class EnvStatusController implements TigerUpdateListener {
                 feature.setStatus(value.getStatus());
               }
               feature.setDescription(value.getDescription());
-              value
-                  .getScenarios()
-                  .forEach(
-                      (skey, svalue) -> {
-                        if (feature.getScenarios().containsKey(skey)) {
-                          ScenarioUpdate scenario = feature.getScenarios().get(skey);
-                          if (svalue.getStatus() != TestResult.UNUSED) {
-                            scenario.setStatus(svalue.getStatus());
-                          }
-                          scenario.setDescription(svalue.getDescription());
-                          scenario.setExampleKeys(svalue.getExampleKeys());
-                          scenario.setExampleList(svalue.getExampleList());
-                          scenario.setVariantIndex(svalue.getVariantIndex());
-                          svalue
-                              .getSteps()
-                              .forEach(
-                                  (stkey, stvalue) -> {
-                                    if (scenario.getSteps().containsKey(stkey)) {
-                                      StepUpdate step = scenario.getSteps().get(stkey);
-                                      if (stvalue.getStatus() != TestResult.UNUSED) {
-                                        step.setStatus(stvalue.getStatus());
-                                      }
-                                      step.setDescription(stvalue.getDescription());
-                                      step.setStepIndex(stvalue.getStepIndex());
-                                      if (stvalue.getRbelMetaData() != null) {
-                                        if (step.getRbelMetaData() == null) {
-                                          step.setRbelMetaData(new ArrayList<>());
-                                        }
-                                        step.getRbelMetaData().addAll(stvalue.getRbelMetaData());
-                                      }
-                                    } else {
-                                      scenario.getSteps().put(stkey, stvalue);
-                                    }
-                                  });
-                        } else {
-                          feature.getScenarios().put(skey, svalue);
-                        }
-                      });
+              fillInScenarioData(value, feature);
             } else {
               tigerEnvStatus.getFeatureMap().put(key, value);
             }
@@ -133,6 +95,51 @@ public class EnvStatusController implements TigerUpdateListener {
             log.error("Unable to parse update", e);
           }
         });
+  }
+
+  private static void fillInScenarioData(FeatureUpdate value, FeatureUpdate feature) {
+    value
+        .getScenarios()
+        .forEach(
+            (skey, svalue) -> {
+              if (feature.getScenarios().containsKey(skey)) {
+                ScenarioUpdate scenario = feature.getScenarios().get(skey);
+                if (svalue.getStatus() != TestResult.UNUSED) {
+                  scenario.setStatus(svalue.getStatus());
+                }
+                scenario.setDescription(svalue.getDescription());
+                scenario.setExampleKeys(svalue.getExampleKeys());
+                scenario.setExampleList(svalue.getExampleList());
+                scenario.setVariantIndex(svalue.getVariantIndex());
+                fillInStepData(svalue, scenario);
+              } else {
+                feature.getScenarios().put(skey, svalue);
+              }
+            });
+  }
+
+  private static void fillInStepData(ScenarioUpdate svalue, ScenarioUpdate scenario) {
+    svalue
+        .getSteps()
+        .forEach(
+            (stkey, stvalue) -> {
+              if (scenario.getSteps().containsKey(stkey)) {
+                StepUpdate step = scenario.getSteps().get(stkey);
+                if (stvalue.getStatus() != TestResult.UNUSED) {
+                  step.setStatus(stvalue.getStatus());
+                }
+                step.setDescription(stvalue.getDescription());
+                step.setStepIndex(stvalue.getStepIndex());
+                if (stvalue.getRbelMetaData() != null) {
+                  if (step.getRbelMetaData() == null) {
+                    step.setRbelMetaData(new ArrayList<>());
+                  }
+                  step.getRbelMetaData().addAll(stvalue.getRbelMetaData());
+                }
+              } else {
+                scenario.getSteps().put(stkey, stvalue);
+              }
+            });
   }
 
   private synchronized void receiveServerStatusUpdate(

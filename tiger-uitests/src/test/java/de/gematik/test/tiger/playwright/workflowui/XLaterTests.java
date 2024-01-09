@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.microsoft.playwright.Page;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -140,7 +139,6 @@ class XLaterTests extends AbstractTests {
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
     externalPage.locator("#routeModalBtn").click();
     assertAll(
@@ -163,7 +161,6 @@ class XLaterTests extends AbstractTests {
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
     assertAll(
         () -> assertThat(externalPage.locator("#test-tiger-logo").isVisible()).isTrue(),

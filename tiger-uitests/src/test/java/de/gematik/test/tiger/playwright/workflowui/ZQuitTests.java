@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Page;
 import java.util.concurrent.TimeUnit;
@@ -65,7 +66,6 @@ class ZQuitTests extends AbstractTests {
         (String) page.evaluate("document.getElementsByClassName('test-rbel-link')[25].textContent");
 
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertNotNull(
@@ -94,7 +94,6 @@ class ZQuitTests extends AbstractTests {
     page.locator(".test-rbel-link").last().click();
     // somehow I need to wait
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertNotNull(
@@ -124,7 +123,6 @@ class ZQuitTests extends AbstractTests {
         .first()
         .click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -230,7 +228,6 @@ class ZQuitTests extends AbstractTests {
         .fill("$.body == \"hello=world\"");
     page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -246,7 +243,6 @@ class ZQuitTests extends AbstractTests {
             .count();
     page.frameLocator("#rbellog-details-iframe").locator("#resetFilterCriterionBtn").click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -273,7 +269,6 @@ class ZQuitTests extends AbstractTests {
         .fill("$.sender == \"put\"");
     page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertNotNull(
@@ -289,7 +284,10 @@ class ZQuitTests extends AbstractTests {
     assertAll(
         () -> assertThat(requestToContent).contains("no request"),
         () -> assertThat(requestFromContent).contains("no request"),
-        () -> assertThat(filteredMessage).isEqualTo("0 of 52 did match the filter criteria."));
+        () ->
+            assertTrue(
+                filteredMessage.equals("0 of 52 did match the filter criteria.")
+                    || filteredMessage.equals("Filter didn't match any of the 52 messages.")));
   }
 
   @Test
@@ -299,12 +297,11 @@ class ZQuitTests extends AbstractTests {
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
     await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> assertNotNull(externalPage.locator("#rbelmsglist .test-card")));
+        .untilAsserted(
+            () -> assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isPositive());
     assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isPositive();
     externalPage.locator("#resetMsgs").click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () -> assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isZero());
     assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isZero();
@@ -339,7 +336,6 @@ class ZQuitTests extends AbstractTests {
         .first()
         .click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -366,7 +362,6 @@ class ZQuitTests extends AbstractTests {
         .last()
         .click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -393,7 +388,6 @@ class ZQuitTests extends AbstractTests {
         .first()
         .click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -420,7 +414,6 @@ class ZQuitTests extends AbstractTests {
         .last()
         .click();
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(

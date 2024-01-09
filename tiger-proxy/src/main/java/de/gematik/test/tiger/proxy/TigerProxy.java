@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import static de.gematik.test.tiger.proxy.tls.TlsCertificateGenerator.generateNe
 import static org.mockserver.model.HttpRequest.request;
 
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
@@ -291,8 +291,13 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
               .map(
                   proxyConfiguration ->
                       new MockServer(
-                          proxyConfiguration, getTigerProxyConfiguration().getPortAsArray()))
-              .orElseGet(() -> new MockServer(getTigerProxyConfiguration().getPortAsArray()));
+                          mockServerConfiguration,
+                          List.of(proxyConfiguration),
+                          getTigerProxyConfiguration().getPortAsArray()))
+              .orElseGet(
+                  () ->
+                      new MockServer(
+                          mockServerConfiguration, getTigerProxyConfiguration().getPortAsArray()));
     } else {
       mockServer = spawnDirectInverseTigerProxy(mockServerConfiguration, forwardProxyConfig);
     }

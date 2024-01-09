@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import java.security.Key;
 import java.util.Collection;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.jose4j.jca.ProviderContext;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.lang.JoseException;
@@ -113,7 +112,7 @@ public class RbelJwtSerializer implements RbelSerializer {
                                 new String(
                                     rbelWriter.renderTree(childNode).getContent(),
                                     childNode.getElementCharset()))
-                        .collect(Collectors.toList()));
+                        .toList());
               } else {
                 jws.setHeader(
                     header.getKey().orElseThrow(),

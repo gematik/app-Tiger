@@ -1,11 +1,40 @@
 # Changelog Tiger Test platform
 
+# Release 2.3.2
+
+## Breaking changes
+
+* TGR-1173 removed the long deprecated step ```TGR current response at {string} matches {string}```. Replace it with the
+  step ```TGR current response with attribute {tigerResolvedString} matches {tigerResolvedString}```.
+
+## Bugfixes
+
+* TGR-1173: refactorings all over the code (more than 500 sonarqube issues) to increase code maintainability
+* TGR-1177: Empty fallback values can now be correctly resolved (to an empty string)
+* TGR-1229: Added fallback for RbelPaths in JEXL-expressions that yield no results
+* TGR-1242: JEXL-expressions that contain RbelPaths that terminate in a star (*) are now working again correctly
+* TGR-1231: TigerProxy: The timestamps on messages are no longer wrong if asynchronous parsing is enabled
+
+## Features
+
+* TGR-1096: it is now possible to replay a test scenario from the Workflow UI.
+* TGR-1040: we can now observe the traffic in a sequence diagram. This is an experimental feature that needs to be
+  activated in the configuration with:
+
+```yaml
+lib:
+  experimental:
+    trafficVisualization: true
+```
+
+In unix systems the tool 'lsof' is required to be installed in the system.
+
 # Release 2.3.1
 
 ## Bugfixes
 
 * TGR-1125: Tiger-Zion: Fixed assignment-bugs
-* TGR-1183: fixed an issue where TigerConfigurationKeys were wrongly ignoring parts of the key when they add a repeated
+* TGR-1183: fixed an issue where TigerConfigurationKeys were wrongly ignoring parts of the key when they had a repeated
   subkey.
 * TGR-1186: Fixed healthcheck-issues with TLS servers
 * TGR-1201: Fixes unresolved environment variables in TigerConfig

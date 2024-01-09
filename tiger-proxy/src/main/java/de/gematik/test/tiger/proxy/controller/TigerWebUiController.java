@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -505,6 +505,7 @@ public class TigerWebUiController implements ApplicationContextAware {
   }
 
   @GetMapping(value = "/testRbelExpression", produces = MediaType.APPLICATION_JSON_VALUE)
+  @SuppressWarnings("java:S5852")
   public JexlQueryResponseDto testRbelExpression(
       @RequestParam(name = "msgUuid") final String msgUuid,
       @RequestParam(name = "rbelPath") final String rbelPath) {

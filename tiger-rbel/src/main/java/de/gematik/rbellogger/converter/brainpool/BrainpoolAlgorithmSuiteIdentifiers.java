@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ public class BrainpoolAlgorithmSuiteIdentifiers {
       getValueAndExecuteInitialisation(INTERNAL_BRAINPOOL384_USING_SHA384);
   public static final String BRAINPOOL512_USING_SHA512 =
       getValueAndExecuteInitialisation(INTERNAL_BRAINPOOL512_USING_SHA512);
+
+  private BrainpoolAlgorithmSuiteIdentifiers() {}
 
   private static String getValueAndExecuteInitialisation(final String value) {
     BrainpoolCurves.init();

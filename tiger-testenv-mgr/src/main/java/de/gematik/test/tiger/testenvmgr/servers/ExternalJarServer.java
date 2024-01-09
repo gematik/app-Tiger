@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import static de.gematik.rbellogger.util.GlobalServerMap.updateGlobalServerMap;
 import static java.time.LocalDateTime.now;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -156,15 +157,19 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                         .redirectErrorStream(true);
                 applyEnvPropertiesToProcess(processBuilder);
                 processReference.set(processBuilder.start());
-                new TigerStreamLogFeeder(log, processReference.get().getInputStream(), Level.INFO);
-                new TigerStreamLogFeeder(log, processReference.get().getErrorStream(), Level.ERROR);
+                new TigerStreamLogFeeder(
+                    getServerId(), log, processReference.get().getInputStream(), Level.INFO);
+                new TigerStreamLogFeeder(
+                    getServerId(), log, processReference.get().getErrorStream(), Level.ERROR);
                 statusMessage(
                     "Started JAR-File for "
                         + getServerId()
                         + " with PID '"
                         + processReference.get().pid()
                         + "'");
-              } catch (Throwable t) {
+                updateGlobalServerMap(
+                    buildHealthcheckUrl(), this.processReference, this.getServerId());
+              } catch (Exception t) {
                 log.error("Failed to start process", t);
                 startupException.set(t);
               }
@@ -189,7 +194,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
   }
 
   @Override
-  public TigerServerStatus updateStatus(boolean noErrorLogging) {
+  public TigerServerStatus updateStatus(boolean quiet) {
     if (!processReference.get().isAlive()) {
       log.warn("Process {} for {} is stopped!", processReference.get().pid(), getServerId());
       setStatus(
@@ -249,7 +254,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
             .orElseThrow(
                 () ->
                     new TigerEnvironmentStartupException(
-                        "Could not determine java-home. Expected either 'tiger.lib.javaHome' oder"
+                        "Could not determine java-home. Expected either 'tiger.lib.javaHome' or"
                             + " 'java.home' to be set, but neither was!"));
     if (System.getProperty("os.name").startsWith("Win")) {
       return javaHomeDirectory + File.separator + "bin" + File.separator + "java.exe";

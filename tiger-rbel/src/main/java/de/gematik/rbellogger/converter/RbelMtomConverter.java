@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@ import org.dom4j.*;
 
 @Slf4j
 public class RbelMtomConverter implements RbelConverterPlugin {
+
+  public static final String CONTENT_ID = "Content-ID";
 
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
@@ -76,7 +78,7 @@ public class RbelMtomConverter implements RbelConverterPlugin {
                   mtomPart ->
                       mtomPart
                           .getMessageHeader()
-                          .getOrDefault("Content-ID", "")
+                          .getOrDefault(CONTENT_ID, "")
                           .equals(
                               vauContentType.get().parameters().get("start").stream()
                                   .findAny()
@@ -102,10 +104,10 @@ public class RbelMtomConverter implements RbelConverterPlugin {
 
         Map<String, String> mtomMap =
             mtomParts.stream()
-                .filter(part -> StringUtils.isNotEmpty(part.getMessageHeader().get("Content-ID")))
+                .filter(part -> StringUtils.isNotEmpty(part.getMessageHeader().get(CONTENT_ID)))
                 .collect(
                     Collectors.toMap(
-                        p -> p.getMessageHeader().get("Content-ID"), MtomPart::getMessageContent));
+                        p -> p.getMessageHeader().get(CONTENT_ID), MtomPart::getMessageContent));
 
         final XPath xPath = DocumentHelper.createXPath("//xop:Include");
         xPath.setNamespaceURIs(Map.of("xop", "http://www.w3.org/2004/08/xop/include"));

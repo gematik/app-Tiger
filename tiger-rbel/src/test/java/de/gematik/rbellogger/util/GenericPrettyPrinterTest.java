@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import org.bouncycastle.asn1.*;
 import org.bouncycastle.util.Iterable;
 import org.junit.jupiter.api.Test;
 
-public class GenericPrettyPrinterTest {
+class GenericPrettyPrinterTest {
 
   private final Predicate<ASN1Encodable> isLeaf =
       asn1 -> !((asn1 instanceof ASN1Sequence) || (asn1 instanceof ASN1Set));

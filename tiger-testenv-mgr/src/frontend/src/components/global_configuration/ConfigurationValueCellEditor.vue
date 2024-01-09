@@ -1,5 +1,5 @@
 <!--
-  - Copyright (c) 2023 gematik GmbH
+  - Copyright (c) 2024 gematik GmbH
   - 
   - Licensed under the Apache License, Version 2.0 (the License);
   - you may not use this file except in compliance with the License.
@@ -99,7 +99,7 @@ export default {
               rows="3"></textarea>
     <div class="mt-2 btn-group">
       <button class="btn btn-primary" @click="saveEditing"><i class="fa fa-floppy-disk" id="test-tg-config-editor-btn-save"></i> Save</button>
-      <button class="btn btn-secondary" @click="cancelEditing"><i class="fa fa-ban"></i> Cancel</button>
+      <button class="btn btn-secondary" @click="cancelEditing"><i class="fa fa-ban" id="test-tg-config-editor-btn-cancel"></i> Cancel</button>
     </div>
   </div>
 </template>

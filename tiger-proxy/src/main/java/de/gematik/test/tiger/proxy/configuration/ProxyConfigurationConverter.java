@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,9 @@ import static org.mockserver.proxyconfiguration.ProxyConfiguration.Type.HTTP;
 import static org.mockserver.proxyconfiguration.ProxyConfiguration.proxyConfiguration;
 
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
-import de.gematik.test.tiger.common.data.config.tigerProxy.ForwardProxyInfo;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyType;
+import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyType;
 import de.gematik.test.tiger.common.exceptions.TigerProxyToForwardProxyException;
 import de.gematik.test.tiger.common.exceptions.TigerUnknownProtocolException;
 import java.net.URI;

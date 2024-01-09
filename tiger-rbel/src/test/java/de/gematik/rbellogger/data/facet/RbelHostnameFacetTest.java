@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -20,46 +20,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class RbelHostnameFacetTest {
 
-  @Test
-  void generateRbelHostnameFacet() {
+  @ParameterizedTest
+  @CsvSource({"https://foo,foo,443", "http://foo,foo,80", "https://foo:8080,foo,8080"})
+  void generateRbelHostnameFacet(String url, String hostname, String port) {
     RbelElement element =
         RbelHostnameFacet.buildRbelHostnameFacet(
-            new RbelElement(null, null),
-            (RbelHostname) RbelHostname.generateFromUrl("https://foo:8080").get());
+            new RbelElement(null, null), (RbelHostname) RbelHostname.generateFromUrl(url).get());
     assertThat(element.hasFacet(RbelHostnameFacet.class)).isTrue();
     assertThat(element.getFacetOrFail(RbelHostnameFacet.class).getDomain().getRawStringContent())
-        .isEqualTo("foo");
+        .isEqualTo(hostname);
     assertThat(element.getFacetOrFail(RbelHostnameFacet.class).getPort().getRawStringContent())
-        .isEqualTo("8080");
-  }
-
-  @Test
-  void generateRbelHostnameFacet_withoutPortAndHttps() {
-    RbelElement element =
-        RbelHostnameFacet.buildRbelHostnameFacet(
-            new RbelElement(null, null),
-            (RbelHostname) RbelHostname.generateFromUrl("https://foo").get());
-    assertThat(element.hasFacet(RbelHostnameFacet.class)).isTrue();
-    assertThat(element.getFacetOrFail(RbelHostnameFacet.class).getDomain().getRawStringContent())
-        .isEqualTo("foo");
-    assertThat(element.getFacetOrFail(RbelHostnameFacet.class).getPort().getRawStringContent())
-        .isEqualTo("443");
-  }
-
-  @Test
-  void generateRbelHostnameFacet_withoutPortAndHttp() {
-    RbelElement element =
-        RbelHostnameFacet.buildRbelHostnameFacet(
-            new RbelElement(null, null),
-            (RbelHostname) RbelHostname.generateFromUrl("http://foo").get());
-    assertThat(element.hasFacet(RbelHostnameFacet.class)).isTrue();
-    assertThat(element.getFacetOrFail(RbelHostnameFacet.class).getDomain().getRawStringContent())
-        .isEqualTo("foo");
-    assertThat(element.getFacetOrFail(RbelHostnameFacet.class).getPort().getRawStringContent())
-        .isEqualTo("80");
+        .isEqualTo(port);
   }
 }

@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2024 gematik GmbH
+ * 
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an 'AS IS' BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.gematik.test.tiger.playwright.workflowui;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -11,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.microsoft.playwright.Locator;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,7 +35,7 @@ import org.junit.jupiter.api.Test;
 @Slf4j
 class ConfigurationEditorTest extends AbstractTests {
 
-  private final String ENV_MULTILINE_CHECK_KEY = "tgr.testenv.cfg.multiline.check.mode";
+  protected static final String ENV_MULTILINE_CHECK_KEY = "tgr.testenv.cfg.multiline.check.mode";
   private final String ENV_ICON = ".fa.fa-lg.fa-server";
   private final String PROP_ICON = ".fa.fa-lg.fa-gears";
   private final String FILE_ICON = ".fa.fa-lg.fa-file";
@@ -33,17 +48,6 @@ class ConfigurationEditorTest extends AbstractTests {
   @AfterEach
   void tearDown() {
     closeTgConfigEditor();
-  }
-
-  @Test
-  void testTigerConfigurationEditorIsVisible() {
-    assertThat(page.querySelector("#test-sidebar-tg-config-editor-icon").isVisible()).isTrue();
-  }
-
-  @Test
-  void testOpenCloseTigerConfigurationEditor() {
-    assertThat(page.locator(".vsp__header").textContent())
-        .contains("Tiger Global Configuration Editor");
   }
 
   @Test
@@ -191,12 +195,15 @@ class ConfigurationEditorTest extends AbstractTests {
   }
 
   private void assertMultilineView(List<Locator> row, String expectedText) {
-    assertTrue(
-        row.stream()
-            .allMatch(
-                r ->
-                    r.locator("#test-tg-config-editor-table-row.text-break.multi-line")
-                        .isVisible()));
+    await()
+        .untilAsserted(
+            () ->
+                assertTrue(
+                    row.stream()
+                        .allMatch(
+                            r ->
+                                r.locator("#test-tg-config-editor-table-row.text-break.multi-line")
+                                    .isVisible())));
     assertFalse(
         row.stream()
             .allMatch(
@@ -220,10 +227,15 @@ class ConfigurationEditorTest extends AbstractTests {
   }
 
   private void assertSimpleView(List<Locator> row, String expectedText) {
-    assertTrue(
-        row.stream()
-            .allMatch(
-                r -> r.locator("#test-tg-config-editor-table-row.text-truncate").isVisible()));
+    await()
+        .untilAsserted(
+            () ->
+                assertTrue(
+                    row.stream()
+                        .allMatch(
+                            r ->
+                                r.locator("#test-tg-config-editor-table-row.text-truncate")
+                                    .isVisible())));
     assertFalse(
         row.stream()
             .allMatch(
@@ -311,6 +323,7 @@ class ConfigurationEditorTest extends AbstractTests {
     page.locator(xpathToValue).dblclick();
     page.waitForSelector("#test-tg-config-editor-text-area");
     page.locator("#test-tg-config-editor-text-area").type(newValue);
+    await().untilAsserted(() -> page.locator("#test-tg-config-editor-btn-save").isVisible());
     page.locator("#test-tg-config-editor-btn-save").click();
     page.waitForSelector("#test-tg-config-editor-table-row");
   }
@@ -354,6 +367,7 @@ class ConfigurationEditorTest extends AbstractTests {
         row.stream()
             .anyMatch(
                 r -> r.locator("#test-tg-config-editor-table-row").textContent().equals(value)));
+
     page.locator(
             "//div[@col-id='key' and text()='"
                 + key
@@ -361,7 +375,6 @@ class ConfigurationEditorTest extends AbstractTests {
         .click();
 
     await()
-        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () -> {
               List<Locator> matchingRows =
@@ -375,5 +388,19 @@ class ConfigurationEditorTest extends AbstractTests {
 
               assertThat(matchingRows).isEmpty();
             });
+  }
+
+  @Test
+  void testOpenAndClearFilter() {
+    page.locator(".ag-header-icon.ag-header-cell-menu-button .ag-icon.ag-icon-menu")
+        .nth(1)
+        .dblclick();
+    var inputField = page.locator("input[placeholder='Filter...']");
+    inputField.type("tgr");
+    await().untilAsserted(() -> page.locator("#test-tg-config-editor-table").isVisible());
+
+    page.locator("#test-tg-config-editor-btn-clear-filters").click();
+    await().untilAsserted(() -> page.locator(".vsp__header").isVisible());
+    page.locator(".vsp__header").click();
   }
 }

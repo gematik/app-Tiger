@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -375,15 +375,15 @@ class RbelMessageValidatorTest {
   @Test
   void testFilterRequestsRbelPathNotMatching_OK() {
     addTwoRequestsToTigerTestHooks();
-    RbelMessageValidator validator = RbelMessageValidator.instance;
+    var reuqest =
+        RequestParameter.builder()
+            .path(".*")
+            .rbelPath("$.header.User-Agent")
+            .value("mypersonalagentXXXX")
+            .build();
     assertThatThrownBy(
             () -> {
-              validator.filterRequestsAndStoreInContext(
-                  RequestParameter.builder()
-                      .path(".*")
-                      .rbelPath("$.header.User-Agent")
-                      .value("mypersonalagentXXXX")
-                      .build());
+              RbelMessageValidator.instance.filterRequestsAndStoreInContext(reuqest);
             })
         .isInstanceOf(AssertionError.class);
   }
@@ -422,11 +422,10 @@ class RbelMessageValidatorTest {
   @Test
   void testFilterRequestsRbelPathExists_NOK() {
     addTwoRequestsToTigerTestHooks();
-    RbelMessageValidator validator = RbelMessageValidator.instance;
+    var request = RequestParameter.builder().path(".*").rbelPath("$.header.User-AgentXXX").build();
     assertThatThrownBy(
             () -> {
-              validator.filterRequestsAndStoreInContext(
-                  RequestParameter.builder().path(".*").rbelPath("$.header.User-AgentXXX").build());
+              RbelMessageValidator.instance.filterRequestsAndStoreInContext(request);
             })
         .isInstanceOf(AssertionError.class);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public class TigerTemplateSource {
   private final List<TigerConfigurationKeyString> targetPath;
   private final Map<TigerConfigurationKey, String> values;
 
-  public List<TigerConfigurationKey> applyToAllApplicable(
+  public List<TigerConfigurationKey> applyToApplicablesAndReturnAppliedTemplateKeys(
       final AbstractTigerConfigurationSource tigerConfigurationSource,
       final Map<TigerConfigurationKey, String> finalValues) {
     List<TigerConfigurationKey> appliedTemplateKeys = new ArrayList<>();

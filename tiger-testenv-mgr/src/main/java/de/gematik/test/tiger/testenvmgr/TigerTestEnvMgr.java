@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,8 @@ import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.IRbelMessageListener;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -425,26 +425,32 @@ public class TigerTestEnvMgr
           .get(serverType)
           .getDeclaredConstructor(TigerTestEnvMgr.class, String.class, CfgServer.class)
           .newInstance(this, serverId, config);
-    } catch (TigerTestEnvException e) {
-      throw e;
     } catch (RuntimeException
         | NoSuchMethodException
         | InstantiationException
         | IllegalAccessException
         | InvocationTargetException e) {
-      if (e.getCause() != null) {
-        if (e.getCause() instanceof TigerConfigurationException tce) {
-          throw (TigerConfigurationException) tce.getCause();
-        } else if (e.getCause() instanceof TigerTestEnvException tee) {
-          throw (TigerTestEnvException) tee.getCause();
-        }
-      }
-      throw new TigerTestEnvException(
-          e,
-          "Unable to instantiate server of type %s, does it have a constructor(TigerTestenvMgr,"
-              + " String, CfgServer)?",
-          config.getType());
+      throw handleExceptionMinimizingStackTrace(config, e);
     }
+  }
+
+  private static RuntimeException handleExceptionMinimizingStackTrace(
+      CfgServer config, Exception e) {
+    if (e instanceof TigerTestEnvException tte) {
+      return tte;
+    }
+    if (e.getCause() != null) {
+      if (e.getCause() instanceof TigerConfigurationException tce) {
+        return (TigerConfigurationException) (tce.getCause() == null ? tce : tce.getCause());
+      } else if (e.getCause() instanceof TigerTestEnvException tee) {
+        return (TigerTestEnvException) (tee.getCause() == null ? tee : tee.getCause());
+      }
+    }
+    return new TigerTestEnvException(
+        e,
+        "Unable to instantiate server of type %s, does it have a constructor(TigerTestenvMgr,"
+            + " String, CfgServer)?",
+        config.getType());
   }
 
   public void setUpEnvironment() {

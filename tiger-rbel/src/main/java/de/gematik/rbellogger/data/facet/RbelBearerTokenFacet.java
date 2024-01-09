@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ public class RbelBearerTokenFacet implements RbelFacet {
   private final RbelElement bearerToken;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap().with("BearerToken", bearerToken);
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>().with("BearerToken", bearerToken);
   }
 }

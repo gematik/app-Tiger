@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ class EpaTracingpointsTest {
         Unirest.get("http://localhost:" + springBootPort + "/tracingpoints").asJson().getBody();
 
     assertThat(tracingpointsBody.isArray()).isTrue();
-    assertThat(tracingpointsBody.getArray().length()).isGreaterThanOrEqualTo(1);
+    assertThat(tracingpointsBody.getArray().length()).isPositive();
     assertThat(tracingpointsBody.getArray().getJSONObject(0).getString("name"))
         .isEqualTo("tigerProxy Tracing Point");
     assertThat(tracingpointsBody.getArray().getJSONObject(0).getInt("port"))

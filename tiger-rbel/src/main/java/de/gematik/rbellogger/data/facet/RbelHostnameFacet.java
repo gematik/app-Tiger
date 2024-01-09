@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ public class RbelHostnameFacet implements RbelFacet {
 
   private final RbelElement port;
   private final RbelElement domain;
-  private final Optional<RbelElement> bundledServerName;
+  private Optional<RbelElement> bundledServerName;
 
   public static RbelElement buildRbelHostnameFacet(
       RbelElement parentNode, RbelHostname rbelHostname) {
@@ -59,8 +59,11 @@ public class RbelHostnameFacet implements RbelFacet {
   }
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap().with("port", port).with("domain", domain);
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>()
+        .withSkipIfNull("bundledServerName", bundledServerName.orElse(null))
+        .with("port", port)
+        .with("domain", domain);
   }
 
   public String toString() {
@@ -68,7 +71,9 @@ public class RbelHostnameFacet implements RbelFacet {
             .flatMap(el -> el.seekValue(String.class))
             .or(() -> domain.seekValue(String.class))
             .orElseThrow(() -> new RbelHostnameStructureException("Could not find domain-name!"))
-        + port.seekValue(Integer.class).map(port -> ":" + port).orElse("");
+        + port.seekValue(Integer.class)
+            .map(bundledServerPort -> ":" + bundledServerPort)
+            .orElse("");
   }
 
   public RbelHostname toRbelHostname() {

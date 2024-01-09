@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -41,8 +41,7 @@ class DataStompHandler implements StompFrameHandler {
           frameContent.getClass().getSimpleName(),
           remoteProxyClient.getName().orElse("<>"));
     }
-    if (frameContent instanceof TracingMessagePart) {
-      final TracingMessagePart tracingMessagePart = (TracingMessagePart) frameContent;
+    if (frameContent instanceof TracingMessagePart tracingMessagePart) {
       log.trace(
           "Received part {} of {} for UUID {}",
           tracingMessagePart.getIndex() + 1,

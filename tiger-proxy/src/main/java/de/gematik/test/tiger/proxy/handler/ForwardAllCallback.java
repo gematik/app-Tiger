@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,11 @@ import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverridde
 import de.gematik.test.tiger.proxy.TigerProxy;
 import org.mockserver.model.HttpRequest;
 
+/**
+ * Callback used for as a forward-all route in the TigerProxy. The messages received here are simply
+ * forwarded to the intended host. No rewriting of host or path is being done. It essentially serves
+ * as a fallback when no specialised route is found matching the request.
+ */
 public class ForwardAllCallback extends AbstractTigerRouteCallback {
 
   public ForwardAllCallback(TigerProxy tigerProxy) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.key.RbelKey;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.JsonWebKey.Factory;
 import org.jose4j.lang.JoseException;
@@ -48,7 +47,7 @@ public class RbelJwkReader implements RbelConverterPlugin {
             .map(Optional::get)
             .map(RbelListFacet::getChildNodes)
             .flatMap(List::stream)
-            .collect(Collectors.toList());
+            .toList();
 
     for (RbelElement keyElement : keysList) {
       tryToConvertKeyAndAddToKeyManager(keyElement, converter);

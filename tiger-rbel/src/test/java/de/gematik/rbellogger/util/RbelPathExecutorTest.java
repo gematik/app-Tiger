@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ class RbelPathExecutorTest {
 
   @Test
   void assertThatPathValueFollowsConvention() {
-    assertThat(jwtMessage.findNodePath()).isEqualTo("");
+    assertThat(jwtMessage.findNodePath()).isEmpty();
     assertThat(jwtMessage.getFirst("header").get().findNodePath()).isEqualTo("header");
     assertThat(jwtMessage.getFirst("header").get().getChildNodes().get(0).findNodePath())
         .startsWith("header.");
@@ -221,8 +221,8 @@ class RbelPathExecutorTest {
             .parseMessage(
                 challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
 
-    Assertions.assertThat(convertedMessage.findElement("$.body.challenge.signature").get())
-        .isSameAs(convertedMessage.findElement("$.body.challenge.content.signature").get());
+    Assertions.assertThat(convertedMessage.findElement("$.body.challenge.signature"))
+        .containsSame(convertedMessage.findElement("$.body.challenge.content.signature").get());
   }
 
   @Test
@@ -346,18 +346,18 @@ class RbelPathExecutorTest {
       String stringToSubstitute, String expectedString) {
     TigerGlobalConfiguration.readFromYaml(
         """
-myMap:
-  anotherLevel:
-    key1:
-      value: foobar
-      target: schmoo
-    key2:
-      value: xMaS
-      target: tree
-  hidden:
-    treasure:
-      buried: deep
-""");
+                myMap:
+                  anotherLevel:
+                    key1:
+                      value: foobar
+                      target: schmoo
+                    key2:
+                      value: xMaS
+                      target: tree
+                  hidden:
+                    treasure:
+                      buried: deep
+          """);
     assertThat(TigerGlobalConfiguration.resolvePlaceholders(stringToSubstitute))
         .isEqualTo(expectedString);
   }
@@ -376,13 +376,10 @@ myMap:
         .containsExactlyInAnyOrderElementsOf(jsonElement.findRbelPathMembers(rbelPath2));
   }
 
-  @Test
-  void testEscapingOfElementNamesWithPoints() {
-    assertThat(
-            xmlMessage
-                .findRbelPathMembers("$..['some.other-tag'].text")
-                .get(0)
-                .getRawStringContent())
-        .isEqualToIgnoringWhitespace("blub");
+  @ParameterizedTest
+  @CsvSource({"$..['some.other-tag'].text, blub", "$..['urn:telematik:claims:email'], blab"})
+  void testEscapingOfSpecialCharacters(String rbelPath, String expectedResult) {
+    assertThat(xmlMessage.findRbelPathMembers(rbelPath).get(0).getRawStringContent())
+        .isEqualToIgnoringWhitespace(expectedResult);
   }
 }

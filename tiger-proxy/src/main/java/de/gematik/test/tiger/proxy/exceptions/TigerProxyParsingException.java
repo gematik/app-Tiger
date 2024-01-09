@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -19,5 +19,9 @@ package de.gematik.test.tiger.proxy.exceptions;
 public class TigerProxyParsingException extends RuntimeException {
   public TigerProxyParsingException(String s) {
     super(s);
+  }
+
+  public TigerProxyParsingException(String msg, Exception e) {
+    super(msg, e);
   }
 }

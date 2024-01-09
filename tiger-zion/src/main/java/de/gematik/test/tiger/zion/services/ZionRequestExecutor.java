@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2024 gematik GmbH
+ * 
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an 'AS IS' BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.gematik.test.tiger.zion.services;
 
 import static de.gematik.test.tiger.zion.config.ZionRequestMatchDefinition.PathMatchingResult.EMPTY_MATCH;
@@ -67,7 +83,8 @@ public class ZionRequestExecutor {
       TigerJexlContext responseContext = configuredResponse.get().getRight();
       final ResponseEntity<byte[]> responseEntity = renderResponse(chosenResponse, responseContext);
       responseContext.allNonStandardValues().forEach(TigerGlobalConfiguration::putValue);
-      return parseResponseWithRbelLogger(responseEntity);
+      parseResponseWithRbelLogger(responseEntity);
+      return responseEntity;
     } else {
       return spyWithRemoteServer(request)
           .orElseThrow(
@@ -96,7 +113,10 @@ public class ZionRequestExecutor {
             response.getNestedResponses().keySet());
       }
       final TigerJexlContext localResponseContext =
-          context.withCurrentElement(requestRbelMessage).withRootElement(requestRbelMessage);
+          context
+              .withCurrentElement(requestRbelMessage)
+              .withRootElement(requestRbelMessage)
+              .withShouldIgnoreEmptyRbelPaths(true);
       doAssignments(response.getAssignments(), requestRbelMessage, localResponseContext);
       executeBackendRequestsBeforeDecision(response, localResponseContext);
       final Optional<Pair<TigerMockResponse, TigerJexlContext>> responseCandidate =
@@ -282,6 +302,7 @@ public class ZionRequestExecutor {
         log.trace(
             "About to sent {} with body {} to {}",
             unirestRequest.getHttpMethod().name(),
+            // Why new String and not simply getContent()??
             new String(body.getContent()),
             unirestRequest.getUrl());
       }
@@ -360,8 +381,9 @@ public class ZionRequestExecutor {
     }
     final HttpResponse<byte[]> unirestResponse = unirestRequest.asBytes();
     final ResponseEntity<byte[]> responseEntity =
-        parseResponseWithRbelLogger(
-            ResponseEntity.status(unirestResponse.getStatus()).body(unirestResponse.getBody()));
+        ResponseEntity.status(unirestResponse.getStatus()).body(unirestResponse.getBody());
+
+    parseResponseWithRbelLogger(responseEntity);
     final RbelElement responseRbelMessage = rbelLogger.getMessageHistory().getLast();
     final TigerMockResponse mockResponse =
         TigerMockResponse.builder()
@@ -399,7 +421,7 @@ public class ZionRequestExecutor {
     }
   }
 
-  private ResponseEntity<byte[]> parseResponseWithRbelLogger(ResponseEntity<byte[]> el) {
+  private void parseResponseWithRbelLogger(ResponseEntity<byte[]> el) {
     rbelLogger
         .getRbelConverter()
         .parseMessage(
@@ -407,8 +429,6 @@ public class ZionRequestExecutor {
             serverHostname,
             clientHostname,
             Optional.of(ZonedDateTime.now()));
-
-    return el;
   }
 
   private byte[] buildRawMessageApproximate(ResponseEntity<byte[]> response) {

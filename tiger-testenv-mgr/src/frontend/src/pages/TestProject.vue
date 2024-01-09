@@ -1,5 +1,5 @@
 <!--
-  - Copyright (c) 2023 gematik GmbH
+  - Copyright (c) 2024 gematik GmbH
   - 
   - Licensed under the Apache License, Version 2.0 (the License);
   - you may not use this file except in compliance with the License.
@@ -60,7 +60,8 @@
                         hide-close-btn>
             <template #header>
               <div class="container">
-                <h1 style="color:var(--gem-primary-400)">Tiger Global Configuration Editor<span class="float-end" role="button"
+                <h1 style="color:var(--gem-primary-400)">Tiger Global Configuration Editor<span class="float-end"
+                                                                                                role="button"
                                                                                                 @click="configEditorSidePanelIsOpened = false"><i
                     class="fa fa-window-close" id="test-tg-config-editor-btn-close"></i></span></h1>
               </div>
@@ -118,6 +119,9 @@
                 execution</a>
               <a id="test-server-log-tab" class="btn execution-pane-buttons" @click="showTab('logs_pane', $event)">Server
                 Logs</a>
+              <a v-if="experimentalFeatures.trafficVisualization" class="btn execution-pane-buttons"
+                 @click="showTab('visualization_pane', $event)">Traffic
+                Visualization</a>
             </div>
             <div class="navbar-nav justify-content-end px-5">
               <img alt="gematik logo" class="gematik-logo" id="test-gematik-logo" src="/img/gematik.svg">
@@ -137,6 +141,10 @@
               :shutdownTestrunOngoing="shutdownTestrunOngoing"/>
           <ServerLog :serverLogs="serverLogList" :logServers="logServers" :selectedServers="selectedServers"
                      :selectedLoglevel="LogLevel.ALL.toString()" :selected-text="''"/>
+          <traffic-visualization
+              v-if="experimentalFeatures.trafficVisualization"
+              :featureUpdateMap="featureUpdateMap"
+              :ui="ui"/>
         </div>
       </div>
     </div>
@@ -194,6 +202,13 @@ import mitt, {Emitter} from "mitt";
 import TigerConfigurationEditor from "@/components/global_configuration/TigerConfigurationEditor.vue";
 import 'vue3-side-panel/dist/vue3-side-panel.css';
 import {VueSidePanel} from "vue3-side-panel";
+import TrafficVisualization from "@/components/sequence_diagram/TrafficVisualization.vue";
+import {useConfigurationLoader} from "@/components/global_configuration/ConfigurationLoader";
+import {ExperimentalFeatures} from "@/types/ExperimentalFeatures";
+
+
+const {loadSubsetOfProperties} = useConfigurationLoader();
+const experimentalFeatures = ref(new ExperimentalFeatures());
 
 
 let baseURL = process.env.BASE_URL;
@@ -256,6 +271,10 @@ provide("emitter", emitter);
 
 const configEditorSidePanelIsOpened: Ref<boolean> = ref(false);
 
+async function loadExperimentalFeaturesFlags() {
+  experimentalFeatures.value = ExperimentalFeatures.fromMap(await loadSubsetOfProperties("tiger.lib.experimental"));
+}
+
 onMounted(() => {
   ui = ref(new Ui(process.env.BASE_URL));
   emitter.on('confirmShutdownPressed', () => {
@@ -266,6 +285,7 @@ onMounted(() => {
   fetchInitialServerStatus();
   fetchTigerVersion();
   fetchTigerBuild();
+  loadExperimentalFeaturesFlags()
 });
 
 const DEBUG = true;
@@ -289,6 +309,44 @@ function showTab(tabid: string, event: MouseEvent) {
 }
 
 let reloadTimeoutHandle: number;
+
+function checkMessageOrderAndProcessAccordingly(pushedMessage: TestEnvStatusDto) {
+  if (pushedMessage.index > currentMessageIndex + 1) {
+    // out of order message received
+    if (firstOutOfOrderTimestamp === -1) {
+      firstOutOfOrderTimestamp = Date.now();
+    }
+    if (Date.now() - firstOutOfOrderTimestamp > 200) {
+      // resorting to re fetch the status
+      firstOutOfOrderTimestamp = -1;
+      currentServerStatus.value.clear();
+      console.warn(Date.now() + ` Missing push messages for more then 1 second in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Triggering refetch`);
+      currentMessageIndex = -1;
+      preFetchMessageList = new Array<TestEnvStatusDto>();
+      preFetchMessageList.push(pushedMessage);
+      fetchInitialServerStatus();
+    } else {
+      // adding message to cache
+      outOfOrderMessageList.push(pushedMessage);
+      TestEnvStatusDto.sortArray(outOfOrderMessageList);
+      console.warn(Date.now() + ` Missing push messages in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Cached message ${pushedMessage.index} firstOutOfOrderMsgTimestamp ` + firstOutOfOrderTimestamp);
+      reloadTimeoutHandle = setTimeout(() => {
+        firstOutOfOrderTimestamp = -1;
+        currentServerStatus.value.clear();
+        console.warn(Date.now() + ` TO handler - Missing push messages for more then 1 second in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Triggering refetch`);
+        currentMessageIndex = -1;
+        preFetchMessageList = new Array<TestEnvStatusDto>();
+        preFetchMessageList.push(pushedMessage);
+        fetchInitialServerStatus();
+      }, 1000)
+    }
+  } else {
+    // TODO evt. there could be earlier messages coming very late??
+    mergeMessage(currentServerStatus.value, pushedMessage);
+    replayingCachedMessages();
+    debug("MERGE DONE " + currentMessageIndex);
+  }
+}
 
 /** process any incoming messages. */
 function connectToWebSocket() {
@@ -331,41 +389,7 @@ function connectToWebSocket() {
           replayingCachedMessages();
 
           debug("Check push message order " + pushedMessage.index + " ?== " + (currentMessageIndex + 1));
-          if (pushedMessage.index > currentMessageIndex + 1) {
-            // out of order message received
-            if (firstOutOfOrderTimestamp === -1) {
-              firstOutOfOrderTimestamp = Date.now();
-            }
-            if (Date.now() - firstOutOfOrderTimestamp > 200) {
-              // resorting to re fetch the status
-              firstOutOfOrderTimestamp = -1;
-              currentServerStatus.value.clear();
-              console.warn(Date.now() + ` Missing push messages for more then 1 second in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Triggering refetch`);
-              currentMessageIndex = -1;
-              preFetchMessageList = new Array<TestEnvStatusDto>();
-              preFetchMessageList.push(pushedMessage);
-              fetchInitialServerStatus();
-            } else {
-              // adding message to cache
-              outOfOrderMessageList.push(pushedMessage);
-              TestEnvStatusDto.sortArray(outOfOrderMessageList);
-              console.warn(Date.now() + ` Missing push messages in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Cached message ${pushedMessage.index} firstOutOfOrderMsgTimestamp ` + firstOutOfOrderTimestamp);
-              reloadTimeoutHandle = setTimeout(() => {
-                firstOutOfOrderTimestamp = -1;
-                currentServerStatus.value.clear();
-                console.warn(Date.now() + ` TO handler - Missing push messages for more then 1 second in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Triggering refetch`);
-                currentMessageIndex = -1;
-                preFetchMessageList = new Array<TestEnvStatusDto>();
-                preFetchMessageList.push(pushedMessage);
-                fetchInitialServerStatus();
-              }, 1000)
-            }
-          } else {
-            // TODO evt. there could be earlier messages coming very late??
-            mergeMessage(currentServerStatus.value, pushedMessage);
-            replayingCachedMessages();
-            debug("MERGE DONE " + currentMessageIndex);
-          }
+          checkMessageOrderAndProcessAccordingly(pushedMessage);
         });
       },
       (error: Frame | CloseEvent) => {
@@ -647,11 +671,6 @@ function pauseTestrun(ev: MouseEvent) {
 .sidebar-collapsed button.resizer-left-icon, .sidebar-collapsed .container {
   display: none;
 }
-
-btnXXXXX.resizer-left-icon i {
-  color: var(--gem-primary-400);
-}
-
 
 .sidebar-collapsed h4, .sidebar-collapsed h3 {
   text-align: center;

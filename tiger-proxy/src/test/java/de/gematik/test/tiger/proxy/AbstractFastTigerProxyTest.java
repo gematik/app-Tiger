@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.proxy;
 
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
@@ -27,6 +27,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
 @ResetTigerConfiguration
+@SuppressWarnings("java:S2187")
 class AbstractFastTigerProxyTest extends AbstractTigerProxyTest {
 
   @BeforeAll

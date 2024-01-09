@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package de.gematik.test.tiger.testenvmgr.env;
 
+import io.cucumber.messages.types.Location;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -35,4 +37,6 @@ public class ScenarioUpdate {
   private List<String> exampleKeys;
   private Map<String, String> exampleList;
   private int variantIndex = -1;
+  private URI uri;
+  private Location location;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import org.bouncycastle.util.Arrays;
 @AllArgsConstructor
 public class RbelJwtSignatureWriter implements RbelElementWriter {
 
-  public static final byte[] VERIFIED_USING_MARKER = "NewVerifiedUsing: ".getBytes(UTF_8);
+  protected static final byte[] VERIFIED_USING_MARKER = "NewVerifiedUsing: ".getBytes(UTF_8);
 
   static {
     BrainpoolCurves.init();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -34,9 +34,7 @@ public class RbelMultiMap<T> implements Map<String, T> {
             m1.putAll(m2);
             return m1;
           });
-  public static final RbelMultiMap<RbelElement> EMPTY = new RbelMultiMap<>();
-
-  private final List<Entry<String, T>> values = new ArrayList();
+  private final List<Entry<String, T>> values = new ArrayList<>();
 
   @Override
   public int size() {
@@ -122,10 +120,10 @@ public class RbelMultiMap<T> implements Map<String, T> {
   }
 
   @Override
-  public void putAll(Map m) {
-    for (Object entryRaw : m.entrySet()) {
-      Entry entry = (Entry) entryRaw;
-      values.add(Pair.of((String) entry.getKey(), (T) entry.getValue()));
+  @SuppressWarnings("java:S4968")
+  public void putAll(Map<? extends String, ? extends T> m) {
+    for (Entry<? extends String, ? extends T> entry : m.entrySet()) {
+      values.add(Pair.of(entry.getKey(), entry.getValue()));
     }
   }
 
@@ -140,38 +138,33 @@ public class RbelMultiMap<T> implements Map<String, T> {
   }
 
   @Override
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public List<T> values() {
-    return stream().map(Entry::getValue).collect(Collectors.toUnmodifiableList());
+    throw new UnsupportedOperationException(
+        "This method is not supported as it would not respect the order of the entries");
   }
 
   @Override
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public Set<Entry<String, T>> entrySet() {
-    return stream().collect(Collectors.toUnmodifiableSet());
+    throw new UnsupportedOperationException(
+        "This method is not supported as it would not respect the order of the entries");
   }
 
   public Stream<Entry<String, T>> stream() {
     return values.stream();
   }
 
-  public RbelMultiMap with(String key, T value) {
+  public RbelMultiMap<T> with(String key, T value) {
     put(key, value);
     return this;
   }
 
-  public RbelMultiMap withSkipIfNull(String key, T value) {
+  public RbelMultiMap<T> withSkipIfNull(String key, T value) {
     if (value != null) {
       put(key, value);
     }
     return this;
-  }
-
-  public List<T> getAll(String key) {
-    return values.stream()
-        .filter(entry -> entry.getKey().equals(key))
-        .map(Entry::getValue)
-        .collect(Collectors.toUnmodifiableList());
   }
 
   public Iterator<Entry<String, T>> iterator() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -18,22 +18,25 @@ package de.gematik.test.tiger.playwright.workflowui;
 
 import static org.awaitility.Awaitility.await;
 
-import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.*;
 import com.microsoft.playwright.BrowserType.LaunchOptions;
-import com.microsoft.playwright.Page;
-import com.microsoft.playwright.Playwright;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.TestWatcher;
 
 /**
  * This class reads the workflow ui port out from the log file that mvn creates when executing tiger
@@ -63,6 +66,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * variables used by the playwright tests such as playwright, browser and page.
  */
 @Slf4j
+@SuppressWarnings("java:S2187")
+@ExtendWith(AbstractTests.SaveArtifactsOnTestFailed.class)
 public class AbstractTests implements ExtensionContext.Store.CloseableResource {
 
   static String port;
@@ -76,14 +81,14 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
     }
     Path path = Paths.get("mvn-playwright-log.txt");
     await()
-        .pollInterval(1, TimeUnit.SECONDS)
+        .pollInterval(200, TimeUnit.MILLISECONDS)
         .atMost(60, TimeUnit.SECONDS)
         .until(
             () -> {
               if (Files.exists(path)) {
                 FileInputStream fis = new FileInputStream(path.toString());
                 await()
-                    .pollInterval(50, TimeUnit.MILLISECONDS)
+                    .pollInterval(200, TimeUnit.MILLISECONDS)
                     .atMost(30, TimeUnit.SECONDS)
                     .until(() -> getPort(fis) != null);
                 return true;
@@ -100,7 +105,7 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
       for (String line : lines) {
         if (line.contains("Workflow UI http://localhost:")) {
           port = line.substring(line.indexOf("Workflow UI http://localhost:") + 29).trim();
-          log.info("BrowserPort:" + port + "");
+          log.info("BrowserPort:" + port);
           return port;
         }
       }
@@ -116,7 +121,7 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
   static Page page;
 
   @BeforeAll
-  static synchronized void launchBrowser() {
+  static synchronized void launchBrowser() throws IOException {
     if (playwright != null) {
       return;
     }
@@ -129,9 +134,13 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
     log.info("new page");
     page.navigate("http://localhost:" + port);
     log.info("to http://localhost:" + port + " navigated");
+
+    File artefactsFolder =
+        Path.of(System.getProperty("buildDirectory", "target"), "playwright-artifacts").toFile();
+    FileUtils.deleteDirectory(artefactsFolder);
+    FileUtils.forceMkdir(artefactsFolder);
   }
 
-  @AfterEach
   void setBackToNormalState() {
     // check if sidebar is closed
     if (page.querySelector("#test-sidebar-title").isVisible()) {
@@ -177,8 +186,52 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
   }
 
   @Override
-  public void close() throws Throwable {
+  public void close() {
     browser.close();
     playwright.close();
+  }
+
+  protected static class SaveArtifactsOnTestFailed implements TestWatcher {
+
+    // defined in the config of maven-failsafe-plugin in pom.xml
+    private final String buildDirectory = System.getProperty("buildDirectory", "target");
+
+    @Override
+    public void testFailed(ExtensionContext context, Throwable cause) {
+      AbstractTests testInstance = getTestInstance(context);
+      String fileName = getFileName(context);
+      saveScreenshot(fileName);
+      testInstance.setBackToNormalState();
+    }
+
+    @Override
+    public void testSuccessful(ExtensionContext context) {
+      AbstractTests testInstance = getTestInstance(context);
+      testInstance.setBackToNormalState();
+    }
+
+    private AbstractTests getTestInstance(ExtensionContext context) {
+      return (AbstractTests) context.getRequiredTestInstance();
+    }
+
+    private String getFileName(ExtensionContext context) {
+      return String.format(
+          "%s.%s-%s",
+          context.getRequiredTestClass().getSimpleName(),
+          context.getRequiredTestMethod().getName(),
+          new SimpleDateFormat("yyyy-MM-dd--HH-mm-ss").format(new Date()));
+    }
+
+    private void saveScreenshot(String fileName) {
+      try {
+        byte[] screenshot = page.screenshot();
+        String directory = "playwright-artifacts";
+        Files.write(Paths.get(buildDirectory, directory, fileName + ".png"), screenshot);
+        String html = page.innerHTML("html");
+        Files.writeString(Paths.get(buildDirectory, directory, fileName + ".html"), html);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 }

@@ -1,4 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2024 gematik GmbH
+  ~ 
+  ~ Licensed under the Apache License, Version 2.0 (the License);
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~ 
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~ 
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an 'AS IS' BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -6,7 +22,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>2.3.1</version>
+    <version>2.3.2</version>
 
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
@@ -23,6 +39,7 @@
         <version.awaitility>4.2.0</version.awaitility>
         <version.bouncycastle>1.76</version.bouncycastle>
         <version.commons-lang3>3.13.0</version.commons-lang3>
+        <version.commons-text>1.10.0</version.commons-text>
         <version.commons-codec>1.15</version.commons-codec>
         <version.commons-io>2.13.0</version.commons-io>
         <version.commons-jexl3>3.3</version.commons-jexl3>
@@ -54,7 +71,7 @@
         <version.spring-boot>3.1.0</version.spring-boot>
         <version.system-stubs>2.0.2</version.system-stubs>
         <version.unirest>3.14.2</version.unirest>
-        <version.wiremock>2.35.0</version.wiremock>
+        <version.wiremock>3.3.1</version.wiremock>
         <spotless-maven-plugin.version>2.40.0</spotless-maven-plugin.version>
         <spotless.google-java-format.version>1.18.1</spotless.google-java-format.version>
 
@@ -423,8 +440,8 @@
                 <version>${version.javaparser}</version>
             </dependency>
             <dependency>
-                <groupId>com.github.tomakehurst</groupId>
-                <artifactId>wiremock-jre8-standalone</artifactId>
+                <groupId>org.wiremock</groupId>
+                <artifactId>wiremock</artifactId>
                 <version>${version.wiremock}</version>
             </dependency>
             <dependency>

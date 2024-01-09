@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.data.facet.RbelVauErpFacet;
+import de.gematik.rbellogger.exceptions.RbelPkiException;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.util.CryptoUtils;
 import java.math.BigInteger;
@@ -130,13 +131,13 @@ public class RbelErpVauDecrpytionConverter implements RbelConverterPlugin {
   }
 
   private Optional<byte[]> decrypt(byte[] content, Key key) {
-    if (key instanceof ECPrivateKey) {
-      return decrypt(content, (ECPrivateKey) key);
+    if (key instanceof ECPrivateKey ecPrivateKey) {
+      return decrypt(content, ecPrivateKey);
     } else if (key instanceof SecretKey) {
       return CryptoUtils.decrypt(content, key, 96 / 8, 128 / 8);
     } else {
-      throw new RuntimeException(
-          "Unexpected key-type encountered (" + key.getClass().getSimpleName() + ")");
+      throw new RbelPkiException(
+          "Unexpected key-type encountered '" + key.getClass().getSimpleName() + "'");
     }
   }
 
@@ -186,7 +187,7 @@ public class RbelErpVauDecrpytionConverter implements RbelConverterPlugin {
     try {
       return new SecretKeySpec(Hex.decode(hexEncodedKey), "AES");
     } catch (DecoderException e) {
-      throw new RuntimeException("Error during Key decoding from '" + hexEncodedKey + "'", e);
+      throw new RbelPkiException("Error during Key decoding from '" + hexEncodedKey + "'", e);
     }
   }
 }

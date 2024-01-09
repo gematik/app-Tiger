@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package de.gematik.rbellogger.converter.initializers;
 
 import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.exceptions.RbelPkiException;
 import de.gematik.rbellogger.key.IdentityBackedRbelKey;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader;
 import java.io.File;
@@ -25,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -36,8 +38,10 @@ public class RbelKeyFolderInitializer implements Consumer<RbelConverter> {
 
   @Override
   public void accept(RbelConverter rbelConverter) {
+    AtomicReference<Path> currentFile = new AtomicReference<>();
     try (final Stream<Path> fileStream = Files.walk(Path.of(keyFolderPath))) {
       fileStream
+          .peek(currentFile::set)
           .map(Path::toFile)
           .filter(File::isFile)
           .filter(File::canRead)
@@ -50,7 +54,11 @@ public class RbelKeyFolderInitializer implements Consumer<RbelConverter> {
           .flatMap(List::stream)
           .forEach(rbelConverter.getRbelKeyManager()::addKey);
     } catch (IOException e) {
-      throw new RuntimeException("Error while initializing keys", e);
+      throw new RbelPkiException(
+          "Error while initializing keys, failed at file '"
+              + currentFile.get().toAbsolutePath().toString()
+              + "'",
+          e);
     }
   }
 }

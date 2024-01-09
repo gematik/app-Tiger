@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -35,8 +35,7 @@ class ErrorsStompHandler implements StompFrameHandler {
 
   @Override
   public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
-    if (frameContent instanceof TigerExceptionDto) {
-      final TigerExceptionDto exceptionDto = (TigerExceptionDto) frameContent;
+    if (frameContent instanceof TigerExceptionDto exceptionDto) {
       log.warn(
           "Received remote exception: ({}) {}: {} ",
           exceptionDto.getClassName(),

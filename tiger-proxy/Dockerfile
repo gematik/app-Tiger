@@ -1,4 +1,4 @@
-FROM adoptopenjdk/maven-openjdk11:latest
+FROM maven:3.8.8-eclipse-temurin-17
 
 EXPOSE 8080
 RUN mkdir /app

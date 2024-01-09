@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.google.common.base.CharMatcher;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
+import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.*;
@@ -35,7 +36,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class RbelJexlExecutor {
 
-  private static final String RBEL_PATH_CHARS = "(\\$\\.|\\w|\\.)+.*";
+  private static final String RBEL_PATH_CHARS = "(\\$\\.|\\w|\\.|\\*)+.*";
 
   private static boolean isInitialized = false;
 
@@ -90,8 +91,25 @@ public class RbelJexlExecutor {
     }
   }
 
+  /**
+   * This method expands one expression to a list of all possible concrete-value interpretations.
+   * Every containing RbelPath-expression is resolved to ALL POSSIBLE concrete values (there can be
+   * more then one). Since the resulting expressions are static there will be a value added for
+   * every result. For two RbelPath-expressions referencing three different elements each the
+   * resulting list will contain all six combinations.
+   *
+   * @param jexlExpression The expression to be analyzed
+   * @param mapContext The map-context to be used
+   * @return A list of all concrete JEXL-expressions
+   */
   private static List<String> evaluateRbelPathExpressions(
       String jexlExpression, TigerJexlContext mapContext) {
+    // always skip the evaluation if there is no element in the current context
+    // necessary hack, remove with AST
+    if (mapContext.getRootElement() == null) {
+      return List.of(jexlExpression);
+    }
+
     List<String> resultingPaths = List.of(jexlExpression);
     for (var potentialPath : extractPotentialRbelPaths(jexlExpression)) {
       if (!(potentialPath.startsWith("$.") || potentialPath.startsWith("@."))) {
@@ -100,29 +118,43 @@ public class RbelJexlExecutor {
       List<String> previousIterationPaths = new ArrayList<>(resultingPaths);
       List<String> newPaths = new ArrayList<>();
       for (var expression : previousIterationPaths) {
-        final List<String> pathResults =
-            extractPathAndConvertToString(
-                potentialPath.startsWith("@.")
-                    ? mapContext.getCurrentElement()
-                    : mapContext.getRootElement(),
-                potentialPath.startsWith("@.")
-                    ? potentialPath.replaceFirst("@\\.", "\\$.")
-                    : potentialPath);
-        if (pathResults.isEmpty()
-            || pathResults.stream().anyMatch(s -> !CharMatcher.ascii().matchesAllOf(s))) {
-          continue;
-        }
-        for (String pathResult : pathResults) {
-          final String id = "replacedPath_" + RandomStringUtils.randomAlphabetic(20); // NOSONAR
-          mapContext.put(id, pathResult);
-          newPaths.add(expression.replace(potentialPath, id));
-        }
+        evaluatePathsAndCollectAllResults(mapContext, potentialPath, expression, newPaths);
       }
       if (!newPaths.isEmpty()) {
         resultingPaths = newPaths;
       }
     }
     return resultingPaths;
+  }
+
+  private static void evaluatePathsAndCollectAllResults(
+      TigerJexlContext mapContext, String potentialPath, String expression, List<String> newPaths) {
+    final List<String> pathResults =
+        new ArrayList<>(
+            extractPathAndConvertToString(
+                potentialPath.startsWith("@.")
+                    ? mapContext.getCurrentElement()
+                    : mapContext.getRootElement(),
+                potentialPath.startsWith("@.")
+                    ? potentialPath.replaceFirst("@\\.", "\\$.")
+                    : potentialPath));
+    if (pathResults.isEmpty()
+        || pathResults.stream().anyMatch(s -> !CharMatcher.ascii().matchesAllOf(s))) {
+      if (mapContext.shouldIgnoreEmptyRbelPaths()) {
+        pathResults.add(null);
+      } else {
+        throw new TigerJexlException(
+            "Error while pre-processing JEXL-expression: No values found for RbelPath '"
+                + potentialPath
+                + "'!");
+      }
+    }
+    for (String pathResult : pathResults) {
+      final String id =
+          "replacedPath_" + RandomStringUtils.randomAlphabetic(20).toLowerCase(); // NOSONAR
+      mapContext.put(id, pathResult);
+      newPaths.add(expression.replace(potentialPath, id));
+    }
   }
 
   public static List<String> extractPotentialRbelPaths(String jexlExpression) {

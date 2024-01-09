@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -26,4 +26,5 @@ import org.junit.runner.RunWith;
     plugin = {"json:target/cucumber-parallel/1.json"},
     glue = {"de.gematik.test.tiger.glue"},
     tags = "not @Ignore")
-public class TestContextFeatureTest {}
+public class TestContextFeatureTest { // NOSONAR
+}

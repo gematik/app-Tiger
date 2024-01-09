@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-public class RbelHostnameTest {
+class RbelHostnameTest {
 
   @ParameterizedTest
   @CsvSource(
@@ -33,8 +33,7 @@ public class RbelHostnameTest {
         "'https://not.real.server',     'not.real.server',  443",
         "'frummel://not.real.server',   'not.real.server',  0"
       })
-  public void generateFromUrlAndAssertResult(
-      String rawUrl, String expectedHostname, int expectedPort) {
+  void generateFromUrlAndAssertResult(String rawUrl, String expectedHostname, int expectedPort) {
     assertThat(RbelHostname.generateFromUrl(rawUrl))
         .get()
         .hasFieldOrPropertyWithValue("hostname", expectedHostname)
@@ -43,7 +42,7 @@ public class RbelHostnameTest {
 
   @ParameterizedTest
   @CsvSource(value = {"''", "foo:666", "https://foo__:666", "https://foo:-1"})
-  public void generateFromUrlAndExpectEmptyResult(String rawUrl) {
+  void generateFromUrlAndExpectEmptyResult(String rawUrl) {
     assertThat(RbelHostname.generateFromUrl(rawUrl)).isEmpty();
   }
 
@@ -58,8 +57,7 @@ public class RbelHostnameTest {
         "'test__',        test__,         0",
         "'test__:111',    test__,         111"
       })
-  public void generateFromStringAndAssertResult(
-      String rawUrl, String expectedHostname, int expectedPort) {
+  void generateFromStringAndAssertResult(String rawUrl, String expectedHostname, int expectedPort) {
     assertThat(RbelHostname.fromString(rawUrl))
         .get()
         .hasFieldOrPropertyWithValue("hostname", expectedHostname)
@@ -68,7 +66,7 @@ public class RbelHostnameTest {
 
   @ParameterizedTest
   @CsvSource(value = {"''"})
-  public void generateFromStringAndExpectEmptyResult(String rawUrl) {
+  void generateFromStringAndExpectEmptyResult(String rawUrl) {
     assertThat(RbelHostname.fromString(rawUrl)).isEmpty();
   }
 }

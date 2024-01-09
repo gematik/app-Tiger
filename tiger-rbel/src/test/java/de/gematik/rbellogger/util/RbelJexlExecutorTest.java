@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -182,7 +182,9 @@ class RbelJexlExecutorTest {
         "$.body.header =~ '.*discSig.*'",
         "$.body.body.scopes_supported.[?(@.content == 'e-rezept')] =~ '.*'",
         "$.body.body.scopes_supported.[?(@.content == 'e-rezept')] =~ '.*'",
-        "$.header.['Cache-Control'] =~ 'max-age=300'"
+        "$.header.['Cache-Control'] =~ 'max-age=300'",
+        "$..['urn:telematik:claims:email'] == 'emailValue'",
+        "$..kid.* =~ 'discSig'"
       })
   void testVariousJexlExpressions(String jexlExpression) {
     assertThat(TigerJexlExecutor.matchesAsJexlExpression(response, jexlExpression)).isTrue();
@@ -208,9 +210,12 @@ class RbelJexlExecutorTest {
          $..scopes.[?(@.content == 'test')],$..scopes.[?(@.content == 'test')]
          $.header.['Cache-Control'] =~ 'max-age=300',$.header.['Cache-Control']
          $.header.['Cache-Control'].blub =~ 'max-age=300',$.header.['Cache-Control'].blub
+         $.body.['urn:telematik:claims:email'].test =~ 'max-age=300',$.body.['urn:telematik:claims:email'].test
+         $.body.['urn:telematik:claims:email'].* =~ 'max-age=300',$.body.['urn:telematik:claims:email'].*
         """)
   void testRbelPathExtractor(String jexlExpression, String firstRbelPath) {
-    assertThat(RbelJexlExecutor.extractPotentialRbelPaths(jexlExpression)).contains(firstRbelPath);
+    assertThat(RbelJexlExecutor.extractPotentialRbelPaths(jexlExpression))
+        .containsOnly(firstRbelPath);
   }
 
   @ParameterizedTest

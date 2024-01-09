@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,10 @@ public class RbelJwtSignature implements RbelFacet {
   private final RbelElement verifiedUsing;
 
   @Override
-  public RbelMultiMap getChildElements() {
-    return new RbelMultiMap().with("isValid", isValid).with("verifiedUsing", verifiedUsing);
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<RbelElement>()
+        .with("isValid", isValid)
+        .with("verifiedUsing", verifiedUsing);
   }
 
   public boolean isValid() {
@@ -78,7 +80,7 @@ public class RbelJwtSignature implements RbelFacet {
 
   private String wasVerifiedUsing() {
     return Optional.ofNullable(verifiedUsing)
-        .flatMap(verifiedUsing -> verifiedUsing.seekValue(String.class))
+        .flatMap(verifiedUsingElement -> verifiedUsingElement.seekValue(String.class))
         .orElse("");
   }
 }

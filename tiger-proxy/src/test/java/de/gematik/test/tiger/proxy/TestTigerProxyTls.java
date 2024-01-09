@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,9 @@ import static org.awaitility.Awaitility.await;
 
 import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.util.CryptoLoader;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerTlsConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -139,7 +139,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     final HttpResponse<JsonNode> response = proxyRest.get("https://backend/foobar").asJson();
 
     assertThat(response.getStatus()).isEqualTo(666);
-    assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+    assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
   }
 
   @Test
@@ -221,22 +221,15 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     final HttpResponse<JsonNode> response = proxyRest.get("https://backend/foobar").asJson();
 
     assertThat(response.getStatus()).isEqualTo(666);
-    assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+    assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
   }
 
   @Test
   void defunctCertificate_expectException() throws UnirestException {
     assertThatThrownBy(
             () ->
-                new TigerProxy(
-                    TigerProxyConfiguration.builder()
-                        .tls(
-                            TigerTlsConfiguration.builder()
-                                .serverRootCa(
-                                    new TigerConfigurationPkiIdentity(
-                                        "src/test/resources/selfSignedCa/rootCa.p12;wrongPassword"))
-                                .build())
-                        .build()))
+                new TigerConfigurationPkiIdentity(
+                    "src/test/resources/selfSignedCa/rootCa.p12;wrongPassword"))
         .isInstanceOf(RuntimeException.class);
   }
 
@@ -272,7 +265,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
           unirestInstance.get("https://backend/foobar").asJson();
 
       assertThat(response.getStatus()).isEqualTo(666);
-      assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+      assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
     }
   }
 
@@ -291,7 +284,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     final HttpResponse<JsonNode> response = proxyRest.get("http://backend/foobar").asJson();
 
     assertThat(response.getStatus()).isEqualTo(666);
-    assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+    assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
   }
 
   @Test
@@ -671,7 +664,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         restInstanceWithSslContextConfigured.get("https://backend/foobar").asJson();
 
     assertThat(response.getStatus()).isEqualTo(666);
-    assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+    assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
   }
 
   @Test
@@ -698,7 +691,6 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   }
 
   @Test
-  @Disabled
   void autoconfigureSslContextOkHttp_shouldTrustTigerProxy() throws IOException {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
@@ -871,9 +863,9 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             new TigerConfigurationPkiIdentity("src/test/resources/selfSignedCa/rootCa.p12;00"));
     tigerProxy.restartMockserver();
 
+    var request = proxyRest.get("https://backend/foobar");
     // should use new certificate
-    assertThatThrownBy(() -> proxyRest.get("https://backend/foobar").asJson())
-        .isInstanceOf(RuntimeException.class);
+    assertThatThrownBy(() -> request.asJson()).isInstanceOf(RuntimeException.class);
     var newRestClient = Unirest.spawnInstance();
     newRestClient
         .config()
@@ -883,6 +875,6 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     final HttpResponse<JsonNode> response = newRestClient.get("https://backend/foobar").asJson();
 
     assertThat(response.getStatus()).isEqualTo(666);
-    assertThat(response.getBody().getObject().get("foo").toString()).isEqualTo("bar");
+    assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
   }
 }

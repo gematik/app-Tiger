@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -88,6 +88,8 @@ public class BrainpoolCurves {
           1);
   private static boolean initialized;
 
+  private BrainpoolCurves() {}
+
   private static void addCurve(final String name, final ECParameterSpec spec) {
     try {
       final Method method =
@@ -95,7 +97,7 @@ public class BrainpoolCurves {
       method.setAccessible(true); // NOSONAR
       method.invoke(BrainpoolCurves.class, name, spec);
     } catch (final InvocationTargetException | IllegalAccessException | NoSuchMethodException e) {
-      throw new RuntimeException(
+      throw new BrainpoolCurveException(
           "Error while adding BrainPool-Curves " + name + " to internal Algorithm-Suite repository",
           e);
     }

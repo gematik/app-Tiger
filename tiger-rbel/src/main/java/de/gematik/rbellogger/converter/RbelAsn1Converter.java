@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -35,10 +35,9 @@ public class RbelAsn1Converter implements RbelConverterPlugin {
 
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter context) {
-    if (!tryToParseAsn1Structure(rbelElement.getRawContent(), context, rbelElement)) {
-      if (!safeConvertBase64Using(rbelElement, Base64.getDecoder(), context)) {
-        safeConvertBase64Using(rbelElement, Base64.getUrlDecoder(), context);
-      }
+    if (!tryToParseAsn1Structure(rbelElement.getRawContent(), context, rbelElement)
+        && !safeConvertBase64Using(rbelElement, Base64.getDecoder(), context)) {
+      safeConvertBase64Using(rbelElement, Base64.getUrlDecoder(), context);
     }
   }
 
@@ -62,7 +61,6 @@ public class RbelAsn1Converter implements RbelConverterPlugin {
       ASN1Primitive primitive;
       while ((primitive = input.readObject()) != null) {
         if (parentNode.hasFacet(RbelAsn1Facet.class)) {
-          // RBEL-38 TODO hacky workaround
           if (Arrays.equals(primitive.getEncoded(), parentNode.getRawContent())) {
             return true;
           } else {
@@ -71,13 +69,11 @@ public class RbelAsn1Converter implements RbelConverterPlugin {
           }
         }
 
-        ASN1Sequence asn1;
         try {
-          asn1 = ASN1Sequence.getInstance(primitive);
+          convertToAsn1Facets(ASN1Sequence.getInstance(primitive), converter, parentNode);
         } catch (IllegalArgumentException e) {
           return false;
         }
-        convertToAsn1Facets(asn1, converter, parentNode);
         if (input.available() != 0) {
           log.warn(
               "Found a ASN.1-Stream with more then a single element. The rest of the element will"

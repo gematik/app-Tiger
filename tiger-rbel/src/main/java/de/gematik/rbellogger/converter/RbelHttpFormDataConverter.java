@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public class RbelHttpFormDataConverter implements RbelConverterPlugin {
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
     if (isBodyOfFormDataRequest(rbelElement)) {
-      final RbelMultiMap formDataMap =
+      final RbelMultiMap<RbelElement> formDataMap =
           Stream.of(rbelElement.getRawStringContent().split("&"))
               .map(param -> param.split("="))
               .filter(params -> params.length == 2)

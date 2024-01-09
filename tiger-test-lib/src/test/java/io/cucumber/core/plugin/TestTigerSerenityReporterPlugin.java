@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -146,6 +146,8 @@ public class TestTigerSerenityReporterPlugin {
     assertThat(scenarios.get(scenarioId0).getDescription()).isEqualTo(scenarioOutlineName);
     assertThat(scenarios.get(scenarioId0).getVariantIndex()).isZero();
 
+    // moving to next variant
+    ((ScenarioOutlineTestCaseAdapter) startedEvent.getTestCase()).incrementLocationLine();
     listener.handleTestCaseStarted(startedEvent);
     assertThat(listener.getReporterCallbacks().getCurrentScenarioDataVariantIndex()).isEqualTo(1);
     status = envStatusController.getStatus();
@@ -392,14 +394,17 @@ public class TestTigerSerenityReporterPlugin {
 
   private class ScenarioOutlineTestCaseAdapter extends TestcaseAdapter {
 
+    // Line refers to first example in src/test/resources/testdata/parser/bdd/authentication.feature
+    private int line = 181;
+
     @Override
     public Integer getLine() {
-      return 164;
+      return line;
     }
 
     @Override
     public Location getLocation() {
-      return new Location(164, 21);
+      return new Location(line, 7);
     }
 
     @Override
@@ -410,6 +415,10 @@ public class TestTigerSerenityReporterPlugin {
     @Override
     public UUID getId() {
       return UUID.fromString(scenarioOutlineId);
+    }
+
+    public void incrementLocationLine() {
+      line++;
     }
   }
 }

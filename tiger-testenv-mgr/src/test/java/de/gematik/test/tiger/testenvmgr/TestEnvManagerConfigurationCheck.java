@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -71,8 +71,14 @@ class TestEnvManagerConfigurationCheck {
         envMgr -> {
           CfgServer srv = envMgr.getConfiguration().getServers().get(cfgFile);
           ReflectionTestUtils.setField(srv, prop, null);
-          assertThatThrownBy(
-                  () -> envMgr.createServer("blub", srv).assertThatConfigurationIsCorrect())
+
+          assertThatThrownBy( // NOSONAR
+                  // some test variants fail on createServer and some on the assert method
+                  // so both methods need to be in the clause
+                  () -> {
+                    var server = envMgr.createServer("blub", srv);
+                    server.assertThatConfigurationIsCorrect();
+                  })
               .isInstanceOf(TigerTestEnvException.class);
         });
   }
@@ -104,8 +110,14 @@ class TestEnvManagerConfigurationCheck {
         .hasMessage("Duplicate keys in yaml file ('serverDouble')!");
   }
 
-  @Test
-  void testCheckDeprecatedKey_port_NOK() {
+  @ParameterizedTest
+  @CsvSource({
+    "port,proxyPort",
+    "serverPort,adminPort",
+    "tiger.servers.*.externalJarOptions.healthcheck,tiger.servers.*.healthcheckUrl",
+    "tiger.servers.*.externalJarOptions.healthcheckurl,tiger.servers.*.healthcheckUrl"
+  })
+  void testCheckDeprecatedKeys_NOK(String oldPropertyName, String newPropertyName) {
     Map<String, String> yamlMap =
         Map.of(
             "TIGER_TESTENV_CFGFILE",
@@ -113,32 +125,12 @@ class TestEnvManagerConfigurationCheck {
     assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
         .isInstanceOf(TigerConfigurationException.class)
         .hasMessageContaining(
-            "The key ('port') in yaml file should not be used anymore, use 'proxyPort' instead!");
-  }
-
-  @Test
-  void testCheckDeprecatedKey_tigerport_NOK() {
-    Map<String, String> yamlMap =
-        Map.of(
-            "TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml");
-    assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
-        .isInstanceOf(TigerConfigurationException.class)
-        .hasMessageContaining(
-            "The key ('port') in yaml file should not be used anymore, use 'proxyPort' instead!");
-  }
-
-  @Test
-  void testCheckDeprecatedKey_serverPort_NOK() {
-    Map<String, String> yamlMap =
-        Map.of(
-            "TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml");
-    assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
-        .isInstanceOf(TigerConfigurationException.class)
-        .hasMessageContaining(
-            "The key ('serverPort') in yaml file should not be used anymore, use 'adminPort'"
-                + " instead!");
+            "The key ('"
+                + oldPropertyName
+                + "') in yaml file should not be used anymore, "
+                + "use '"
+                + newPropertyName
+                + "' instead!");
   }
 
   @Test
@@ -154,32 +146,6 @@ class TestEnvManagerConfigurationCheck {
   }
 
   @Test
-  void testCheckDeprecatedKey_healthcheck_NOK() {
-    Map<String, String> yamlMap =
-        Map.of(
-            "TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml");
-    assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
-        .isInstanceOf(TigerConfigurationException.class)
-        .hasMessageContaining(
-            "The key ('tiger.servers.*.externalJarOptions.healthcheck') in yaml file should not be"
-                + " used anymore, use 'tiger.servers.*.healthcheckUrl' instead!");
-  }
-
-  @Test
-  void testCheckDeprecatedKey_healthcheckurl_NOK() {
-    Map<String, String> yamlMap =
-        Map.of(
-            "TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml");
-    assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
-        .isInstanceOf(TigerConfigurationException.class)
-        .hasMessageContaining(
-            "The key ('tiger.servers.*.externalJarOptions.healthcheckurl') in yaml file should not"
-                + " be used anymore, use 'tiger.servers.*.healthcheckUrl' instead!");
-  }
-
-  @Test
   @TigerTest(
       tigerYaml =
           "servers:\n"
@@ -188,26 +154,36 @@ class TestEnvManagerConfigurationCheck {
               + "    type: tigerProxy\n"
               + "    exports: \n"
               + "      - FOO_BAR=${custom.value}\n"
-              + "      - OTHER_PORT=${FREE_PORT_3}\n"
+              + "      - OTHER_PORT=${FREE_PORT_203}\n"
               + "    tigerProxyCfg:\n"
-              + "      adminPort: ${FREE_PORT_1}\n"
-              + "      proxyPort: ${FREE_PORT_2}\n"
+              + "      adminPort: ${FREE_PORT_201}\n"
+              + "      proxyPort: ${FREE_PORT_202}\n"
               + "  tigerServer2:\n"
               + "    hostname: ${foo.bar}\n"
               + "    type: tigerProxy\n"
               + "    dependsUpon: tigerServer1\n"
               + "    tigerProxyCfg:\n"
-              + "      adminPort: ${free.port.3}\n"
+              + "      adminPort: ${free.port.203}\n"
               + "      proxiedServerProtocol: ${FOO_BAR}\n"
-              + "      proxyPort: ${free.port.4}\n"
+              + "      proxyPort: ${free.port.204}\n"
               + "localProxyActive: false",
       additionalProperties = {"custom.value = ftp"})
+  /**
+   * we test here that (1) exports are working as expected (other.port is exported by server 1). (2)
+   * exports can be used in subsequent server configs (foo.bar is used by server 2). (3) exports can
+   * contain references to other properties which are resolved appropriately (custom.value is
+   * referenced)
+   */
   void testPlaceholderAndExports(TigerTestEnvMgr envMgr) {
     final AbstractTigerServer tigerServer2 = envMgr.getServers().get("tigerServer2");
+    String port203 = TigerGlobalConfiguration.readString("free.port.203");
     assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getAdminPort())
-        .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.3").get());
+        .asString()
+        .isEqualTo(port203);
     assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxyPort())
-        .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.4").get());
+        .asString()
+        .isEqualTo(TigerGlobalConfiguration.readString("free.port.204"));
+    assertThat(TigerGlobalConfiguration.readString("other.port")).isEqualTo(port203);
     assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxiedServerProtocol())
         .isEqualTo("ftp");
   }
@@ -269,7 +245,6 @@ class TestEnvManagerConfigurationCheck {
     assertThatThrownBy(
             () -> {
               final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-              envMgr.setUpEnvironment();
             })
         .isInstanceOf(TigerTestEnvException.class);
   }

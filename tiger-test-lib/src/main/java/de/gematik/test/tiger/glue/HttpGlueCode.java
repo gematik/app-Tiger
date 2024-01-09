@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ public class HttpGlueCode {
   }
 
   private static void executeCommandWithContingentWait(ThrowingRunnable command) {
-    if (executeBlocking.getValueOrDefault()) {
+    if (Boolean.TRUE.equals(executeBlocking.getValueOrDefault())) {
       executeCommandInBackground(command);
     } else {
       try {
@@ -209,7 +209,8 @@ public class HttpGlueCode {
   @SneakyThrows
   @When("TGR send empty {requestType} request to {tigerResolvedUrl} with headers:")
   @Wenn(
-      "TGR eine leere {requestType} Anfrage an {tigerResolvedUrl} und den folgenden Headern sendet:")
+      "TGR eine leere {requestType} Anfrage an {tigerResolvedUrl} und den folgenden Headern"
+          + " sendet:")
   @Dann("TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} mit folgenden Headern:")
   public void sendEmptyRequestWithHeaders(Method method, URI address, DataTable customHeaders) {
     log.info("Sending empty {} request with headers to {}", method, address);
@@ -234,9 +235,11 @@ public class HttpGlueCode {
    */
   @SneakyThrows
   @When(
-      "TGR send empty {requestType} request to {tigerResolvedUrl} without waiting for the response with headers:")
+      "TGR send empty {requestType} request to {tigerResolvedUrl} without waiting for the response"
+          + " with headers:")
   @Dann(
-      "TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten mit folgenden Headern:")
+      "TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten"
+          + " mit folgenden Headern:")
   public void sendEmptyRequestWithHeadersNonBlocking(
       Method method, URI address, DataTable customHeaders) {
     log.info("Sending empty {} request with headers to {}", method, address);
@@ -259,7 +262,8 @@ public class HttpGlueCode {
   @SneakyThrows
   @When("TGR send {requestType} request to {tigerResolvedUrl} with body {string}")
   @Wenn(
-      "TGR eine leere {requestType} Anfrage an {tigerResolvedUrl} und dem folgenden body {string} sendet")
+      "TGR eine leere {requestType} Anfrage an {tigerResolvedUrl} und dem folgenden body {string}"
+          + " sendet")
   @Dann("TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit Body {string}")
   public void sendRequestWithBody(Method method, URI address, String body) {
     log.info("Sending {} request with body to {}", method, address);
@@ -285,11 +289,11 @@ public class HttpGlueCode {
    */
   @SneakyThrows
   @When(
-      "TGR send {requestType} request to {tigerResolvedUrl} with body {string} without waiting for the"
-          + " response")
+      "TGR send {requestType} request to {tigerResolvedUrl} with body {string} without waiting for"
+          + " the response")
   @Dann(
-      "TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit Body {string} ohne auf Antwort zu"
-          + " warten")
+      "TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit Body {string} ohne auf"
+          + " Antwort zu warten")
   public void sendRequestWithBodyNonBlocking(Method method, URI address, String body) {
     log.info("Sending {} request with body to {}", method, address);
     executeCommandInBackground(() -> sendResolvedBody(method, address, body));
@@ -376,9 +380,11 @@ public class HttpGlueCode {
   @SneakyThrows
   @When("TGR send {requestType} request to {tigerResolvedUrl} with multiline body:")
   @Wenn(
-      "TGR eine {requestType} Anfrage an {tigerResolvedUrl} mit den folgenden mehrzeiligen Daten sendet:")
+      "TGR eine {requestType} Anfrage an {tigerResolvedUrl} mit den folgenden mehrzeiligen Daten"
+          + " sendet:")
   @Dann(
-      "TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit folgenden mehrzeiligen Daten:")
+      "TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit folgenden mehrzeiligen"
+          + " Daten:")
   public void sendRequestWithMultiLineBody(Method method, URI address, String body) {
     log.info("Sending complex {} request with body to {}", method, address);
     executeCommandWithContingentWait(() -> sendResolvedBody(method, address, body));
@@ -402,8 +408,8 @@ public class HttpGlueCode {
   @When(
       "TGR send {requestType} request to {tigerResolvedUrl} without waiting for the response with:")
   @Dann(
-      "TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten mit folgenden"
-          + " Daten:")
+      "TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten mit"
+          + " folgenden Daten:")
   public void sendRequestWithParamsNonBlocking(Method method, URI address, DataTable parameters) {
     List<Map<String, String>> dataAsMaps = parameters.asMaps();
     if (dataAsMaps.size() != 1) {

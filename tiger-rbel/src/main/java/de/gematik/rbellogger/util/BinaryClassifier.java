@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 package de.gematik.rbellogger.util;
 
 public class BinaryClassifier {
+
+  private BinaryClassifier() {}
 
   private static final int BYTES_TO_CHECK = 100;
 

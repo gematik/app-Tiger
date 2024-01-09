@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import de.gematik.rbellogger.util.BinaryClassifier;
 import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
 import java.util.*;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.Setter;
@@ -42,6 +41,7 @@ public class RbelHtmlRenderer {
   private static final List<RbelHtmlFacetRenderer> htmlRenderer = new ArrayList<>();
   public static final String OVERSIZE_REPLACEMENT_TEXT_PRE = "<...redacted due to size of ";
   public static final String OVERSIZE_REPLACEMENT_TEXT_POST = " Mb...>";
+  public static final String MODAL = "modal";
   private final RbelValueShader rbelValueShader;
   @Setter private boolean renderAsn1Objects = false;
   @Setter private boolean renderNestedObjectsWithoutFacetRenderer = false;
@@ -67,6 +67,7 @@ public class RbelHtmlRenderer {
     return new RbelHtmlRenderer(valueShader).performRendering(elements, false);
   }
 
+  @SuppressWarnings({"rawtypes", "java:S3740"})
   public static ContainerTag collapsibleCard(
       final ContainerTag title,
       final ContainerTag body,
@@ -97,10 +98,10 @@ public class RbelHtmlRenderer {
         .with(
             a().withClass("btn modal-button modal-button-details float-end mx-3 test-modal-content")
                 .attr("data-bs-target", "#" + id)
-                .attr("data-bs-toggle", "modal")
+                .attr("data-bs-toggle", MODAL)
                 .with(span().withClass("icon is-small").with(i().withClass("fas fa-align-left"))),
             div()
-                .withClass("modal")
+                .withClass(MODAL)
                 .withId(id)
                 .attr("role", "dialog")
                 .with(
@@ -130,7 +131,7 @@ public class RbelHtmlRenderer {
                                                         .with(i().withClass("fa fa-clipboard"))),
                                             button()
                                                 .withClass("btn btn-close btn-close-white")
-                                                .attr("data-bs-dismiss", "modal")
+                                                .attr("data-bs-dismiss", MODAL)
                                                 .attr("aria-label", "Close")),
                                     article()
                                         .withClass("message")
@@ -162,7 +163,7 @@ public class RbelHtmlRenderer {
 
   public static String buildOversizeReplacementString(RbelElement el) {
     return OVERSIZE_REPLACEMENT_TEXT_PRE
-        + ((el.getRawContent().length / 10_000) / 100.)
+        + ((el.getRawContent().length / 10_000D) / 100.)
         + OVERSIZE_REPLACEMENT_TEXT_POST;
   }
 
@@ -180,6 +181,7 @@ public class RbelHtmlRenderer {
     return renderingToolkit.renderDocument(new ArrayList<>(elements), localRessources);
   }
 
+  @SuppressWarnings({"OptionalUsedAsFieldOrParameterType", "rawtypes", "java:S3740"})
   public Optional<ContainerTag> convert(
       final RbelElement element,
       final Optional<String> key,
@@ -199,7 +201,7 @@ public class RbelHtmlRenderer {
             .filter(renderer -> renderer.checkForRendering(element))
             .sorted(Comparator.comparing(RbelHtmlFacetRenderer::order))
             .map(renderer -> renderer.performRendering(element, key, renderingToolkit))
-            .collect(Collectors.toList());
+            .toList();
     if (renderedFacets.isEmpty()) {
       return Optional.empty();
     } else if (renderedFacets.size() == 1) {

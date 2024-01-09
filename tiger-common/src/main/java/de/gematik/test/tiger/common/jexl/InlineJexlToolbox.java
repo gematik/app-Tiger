@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -102,6 +102,7 @@ public class InlineJexlToolbox {
    * @param value string to be read
    * @return encoded values in md5 format
    */
+  @SuppressWarnings("java:S4790")
   public String md5(String value) {
     return value != null ? Hex.encodeHexString(DigestUtils.md5(value)) : null;
   }
@@ -112,6 +113,7 @@ public class InlineJexlToolbox {
    * @param value string to be read
    * @return if value is not null, encoded md5 values in base64 format are returned, else null
    */
+  @SuppressWarnings("java:S4790")
   public String md5Base64(String value) {
     return value != null ? Base64.encodeBase64String(DigestUtils.md5(value)) : null;
   }
@@ -156,7 +158,8 @@ public class InlineJexlToolbox {
    * @return array of random hex chars of given size
    */
   public String randomHex(int size) {
-    return RandomStringUtils.random(size, "abcdef9876543210");
+    return RandomStringUtils.random(size, "abcdef9876543210"); // NOSONAR
+    // as test platform we are safe to use any pseudo random string return here
   }
 
   /**

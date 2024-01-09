@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 import TestResult from "./TestResult";
 import StepUpdate, {IJsonSteps} from "./StepUpdate";
 import FeatureUpdate from "./FeatureUpdate";
+import ScenarioIdentifier from "./ScenarioIdentifier";
 
 interface IScenarioUpdate {
   steps: Map<string, StepUpdate>;
@@ -34,10 +35,12 @@ interface IJsonScenario {
   exampleKeys: Array<string>;
   exampleList: IJsonOutlineList;
   variantIndex: number;
+  uri: string;
+  location: { line: number, column: number };
 }
 
 export interface IJsonScenarios {
-  [key: string]:IJsonScenario
+  [key: string]: IJsonScenario
 }
 
 export interface IJsonOutlineList {
@@ -51,6 +54,8 @@ export default class ScenarioUpdate implements IScenarioUpdate {
   exampleKeys = new Array<string>();
   exampleList = new Map<string, string>();
   variantIndex = -1;
+  uri: string = ""
+  location: { line: number, column: number } = {line: NaN, column: NaN};
 
   public static fromJson(json: IJsonScenario): ScenarioUpdate {
     const scenario: ScenarioUpdate = new ScenarioUpdate();
@@ -69,6 +74,12 @@ export default class ScenarioUpdate implements IScenarioUpdate {
       scenario.status = json.status;
     } else {
       scenario.status = FeatureUpdate.mapToTestResult(scenario.steps);
+    }
+    if (json.uri) {
+      scenario.uri = json.uri
+    }
+    if (json.location) {
+      scenario.location = json.location
     }
     return scenario;
   }
@@ -94,48 +105,61 @@ export default class ScenarioUpdate implements IScenarioUpdate {
     return map;
   }
 
-  public merge(scenario: ScenarioUpdate) {
-    if (scenario.description) {
-      this.description = scenario.description;
+    public merge(scenario: ScenarioUpdate) {
+        if (scenario.description) {
+            this.description = scenario.description;
+        }
+        if (scenario.status) {
+            this.status = scenario.status;
+        }
+        if (scenario.variantIndex !== -1) {
+            this.variantIndex = scenario.variantIndex;
+        }
+        if (scenario.steps) {
+            for (const key of scenario.steps.keys()) {
+                this.mergeStep(key, scenario);
+            }
+            // update scenario status and change pending steps to skipped in case of error
+            this.status = FeatureUpdate.mapToTestResult(this.steps);
+            if (this.status === TestResult.FAILED) {
+                this.steps.forEach((step) => {
+                    if (step.status === TestResult.PENDING)
+                        step.status = TestResult.SKIPPED;
+                });
+            }
+        }
     }
-    if (scenario.status) {
-      this.status = scenario.status;
-    }
-    if (scenario.variantIndex !== -1) {
-      this.variantIndex = scenario.variantIndex;
-    }
-    if (scenario.steps) {
-      for (const key of scenario.steps.keys()) {
+
+    private mergeStep(key: string, scenario: ScenarioUpdate) {
         const step: StepUpdate | undefined = this.steps.get(key);
         const newStep = scenario.steps.get(key);
         if (newStep) {
-          if (step) {
-            step.merge(newStep);
-          } else {
-            this.steps.set(key, newStep);
-          }
+            if (step) {
+                step.merge(newStep);
+            } else {
+                this.steps.set(key, newStep);
+            }
         } else {
-          console.error(`RECEIVED a NULL step in scenario ${scenario.description} for key ${key}`);
+            console.error(`RECEIVED a NULL step in scenario ${scenario.description} for key ${key}`);
         }
-      }
-      // update scenario status and change pending steps to skipped in case of error
-      this.status = FeatureUpdate.mapToTestResult(this.steps);
-      if (this.status === TestResult.FAILED) {
-        this.steps.forEach((step) => {
-          if (step.status === TestResult.PENDING)
-            step.status = TestResult.SKIPPED;
-        });
-      }
     }
+
+  public getScenarioIdentifier(): ScenarioIdentifier {
+    return new ScenarioIdentifier(this.uri, this.location, this.variantIndex);
   }
 
   public getLink(featureName: string): string {
+    return encodeURIComponent(this.combineScenarioWithFeatureName(featureName));
+  }
+
+  public combineScenarioWithFeatureName(featureName: string): string {
     if (this.variantIndex === -1) {
-      return encodeURI(featureName.trim() + "_" + this.description.trim());
+      return featureName.trim() + "_" + this.description.trim();
     } else {
-      return encodeURI(featureName.trim() + "_" + this.description.trim() + "[" + (this.variantIndex+1)+"]");
+      return featureName.trim() + "_" + this.description.trim() + "[" + (this.variantIndex + 1) + "]";
     }
   }
+
 
   public toString() {
     return `{ description: "${this.description}",\nstatus: "${

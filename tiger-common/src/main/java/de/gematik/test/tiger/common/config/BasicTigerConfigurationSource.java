@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ public class BasicTigerConfigurationSource extends AbstractTigerConfigurationSou
       TigerConfigurationKey basePath,
       Map<TigerConfigurationKey, String> values) {
     super(sourceType, basePath);
-    this.values = values;
+    this.values = values; // TODO deep copy
   }
 
   public BasicTigerConfigurationSource(SourceType sourceType) {
@@ -43,6 +43,14 @@ public class BasicTigerConfigurationSource extends AbstractTigerConfigurationSou
     this.values = new HashMap<>();
   }
 
+  /**
+   * merges all properties of this source with loadedAndSortedProperties, then applying all
+   * referenced templates from the loadedTemplates list.
+   *
+   * @param loadedTemplates list of loaded tiger server templates
+   * @param loadedAndSortedProperties current set of tiger properties
+   * @return a new merged map of properties
+   */
   public synchronized Map<TigerConfigurationKey, String> applyTemplatesAndAddValuesToMap(
       List<TigerTemplateSource> loadedTemplates,
       Map<TigerConfigurationKey, String> loadedAndSortedProperties) {
@@ -53,7 +61,9 @@ public class BasicTigerConfigurationSource extends AbstractTigerConfigurationSou
 
     final List<TigerConfigurationKey> appliedTemplates =
         loadedTemplates.stream()
-            .map(template -> template.applyToAllApplicable(this, finalValues))
+            .map(
+                template ->
+                    template.applyToApplicablesAndReturnAppliedTemplateKeys(this, finalValues))
             .flatMap(List::stream)
             .toList();
     appliedTemplates.forEach(finalValues::remove);

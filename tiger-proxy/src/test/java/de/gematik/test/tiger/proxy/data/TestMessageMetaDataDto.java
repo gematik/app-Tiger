@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverridde
 import static org.mockserver.model.HttpRequest.request;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.AbstractTigerProxyTest;
 import java.util.List;
@@ -91,7 +91,7 @@ public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
     assertThat(message0.getRecipient()).isEqualTo("backend:80");
     // TODO TGR-651 wieder reaktivieren
     // assertThat(message0.getSender()).matches("(view-|)localhost:\\d*");
-    assertThat(message0.getSequenceNumber()).isEqualTo(0);
+    assertThat(message0.getSequenceNumber()).isZero();
 
     MessageMetaDataDto message1 =
         MessageMetaDataDto.createFrom(tigerProxy.getRbelMessagesList().get(1));

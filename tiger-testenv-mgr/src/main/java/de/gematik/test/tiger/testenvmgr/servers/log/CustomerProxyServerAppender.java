@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -45,13 +45,12 @@ public class CustomerProxyServerAppender extends AppenderBase<ILoggingEvent> {
                 proxy
                     .getLogListeners()
                     .forEach(
-                        listener -> {
-                          listener.receiveServerLogUpdate(
-                              TigerServerLogUpdate.builder()
-                                  .logLevel(iLoggingEvent.getLevel().levelStr)
-                                  .logMessage(iLoggingEvent.getFormattedMessage())
-                                  .serverName(serverId)
-                                  .build());
-                        }));
+                        listener ->
+                            listener.receiveServerLogUpdate(
+                                TigerServerLogUpdate.builder()
+                                    .logLevel(iLoggingEvent.getLevel().levelStr)
+                                    .logMessage(iLoggingEvent.getFormattedMessage())
+                                    .serverName(serverId)
+                                    .build())));
   }
 }

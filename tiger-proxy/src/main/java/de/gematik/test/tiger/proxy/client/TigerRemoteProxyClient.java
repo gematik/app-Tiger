@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -149,11 +149,11 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         tigerProxyStompClient.connect(tracingWebSocketUrl, tigerStompSessionHandler);
 
     connectFuture.addCallback(
-        stompSession -> {
+        stompSessionInCallback -> {
           log.info(
               "{}Successfully opened stomp session {} to url {}",
               proxyName(),
-              stompSession.getSessionId(),
+              stompSessionInCallback.getSessionId(),
               tracingWebSocketUrl);
           if (downloadTraffic) {
             downloadTrafficFromRemoteProxy();
@@ -280,7 +280,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
       Optional<ZonedDateTime> transmissionTime,
       String uuid) {
     if (messageBytes != null) {
-      log.trace("{}Received new message with ID '{}'", proxyName(), uuid);
+      if (log.isTraceEnabled()) {
+        log.trace("{}Received new message with ID '{}'", proxyName(), uuid);
+      }
 
       final RbelElement rbelMessage =
           getRbelLogger()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,6 @@ import org.skyscreamer.jsonassert.comparator.CustomComparator;
  *
  * <p>JSON object attributes starting with four underscores "____" are optional and allow the oracle
  * string to contain attributes to be checked for value ONLY if it exists in the test JSON
- *
- * <p>TODO TGR-256 check JSONObject as parameter yields unreadable output in serenity output, maybe
- * reintroduce SerenityJSONObject
  */
 @Slf4j
 public class JsonChecker {
@@ -75,12 +72,12 @@ public class JsonChecker {
               jsonValue.getClass().getSimpleName(), oracleValue.getClass().getSimpleName()));
     }
 
-    if (jsonValue instanceof JSONObject) {
+    if (jsonValue instanceof JSONObject jsonObject) {
       assertJsonObjectShouldMatchOrContainInAnyOrder(
-          (JSONObject) jsonValue, (JSONObject) oracleValue, checkExtraAttributes);
-    } else if (jsonValue instanceof JSONArray) {
+          jsonObject, (JSONObject) oracleValue, checkExtraAttributes);
+    } else if (jsonValue instanceof JSONArray jsonArray) {
       assertJsonArrayShouldMatchInAnyOrder(
-          jsonValue.toString(), oracleValue.toString(), checkExtraAttributes);
+          jsonArray.toString(), oracleValue.toString(), checkExtraAttributes);
     } else {
       compareValues(jsonValue, oracleValue);
     }
@@ -232,7 +229,8 @@ public class JsonChecker {
     if (IGNORE_JSON_VALUE.equals(oracleTarget)) {
       return;
     }
-    if (!jsonTarget.getClass().equals(oracleTarget.getClass())) {
+    if (!(oracleTarget instanceof String)
+        && !jsonTarget.getClass().equals(oracleTarget.getClass())) {
       throw new JsonCheckerAssertionError(
           "Expected an '"
               + oracleTarget.getClass().getSimpleName()

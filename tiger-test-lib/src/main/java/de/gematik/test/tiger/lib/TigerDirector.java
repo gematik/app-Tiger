@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -26,21 +26,25 @@ import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.toolschecker.DependencyCheckResult;
+import de.gematik.test.tiger.common.toolschecker.DependencyToolsChecker;
 import de.gematik.test.tiger.common.web.TigerBrowserUtil;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
-import de.gematik.test.tiger.lib.serenityRest.SerenityRestUtils;
+import de.gematik.test.tiger.lib.serenityrest.SerenityRestUtils;
 import de.gematik.test.tiger.proxy.IRbelMessageListener;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
 import de.gematik.test.tiger.testenvmgr.controller.TestExecutionController;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
+import de.gematik.test.tiger.testenvmgr.env.ScenarioReplayer;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
+import io.cucumber.core.runtime.Runtime;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -49,7 +53,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.rest.SerenityRest;
 import org.apache.commons.io.IOUtils;
@@ -74,6 +80,7 @@ import org.springframework.context.ConfigurableApplicationContext;
  */
 @SuppressWarnings("unused") // API
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class TigerDirector {
 
   @Getter private static TigerRestAssuredCurlLoggingFilter curlLoggingFilter;
@@ -82,10 +89,9 @@ public class TigerDirector {
 
   @Getter private static TigerLibConfig libConfig;
   private static ConfigurableApplicationContext envMgrApplicationContext;
+  private static Runtime runtime;
 
-  private TigerDirector() {
-    // Do not initialize.
-  }
+  private static DependencyToolsChecker dependencyToolsChecker = new DependencyToolsChecker();
 
   public static synchronized void start() {
     if (initialized) {
@@ -95,6 +101,7 @@ public class TigerDirector {
     try {
       showTigerBanner();
       readConfiguration();
+      ensureDependenciesAreAvailable();
       registerRestAssuredFilter();
       applyLoggingLevels();
       applyTestLibConfig();
@@ -107,6 +114,7 @@ public class TigerDirector {
     try {
       // get free port
       startTestEnvMgr();
+      setupScenarioReplayer(runtime);
       startWorkflowUi();
       setupTestEnvironment(Optional.of(LocalProxyRbelMessageListener.rbelMessageListener));
       setDefaultProxyToLocalTigerProxy();
@@ -116,6 +124,19 @@ public class TigerDirector {
     }
 
     initialized = true;
+  }
+
+  private static void ensureDependenciesAreAvailable() {
+    DependencyCheckResult result = dependencyToolsChecker.areNecessaryDependenciesAvailable();
+    if (!result.isValid()) {
+      throw new TigerStartupException(
+          "Dependencies not met: " + String.join(";\n", result.validationMessage()));
+    }
+  }
+
+  private static void setupScenarioReplayer(Runtime runtime) {
+    ScenarioReplayer scenarioReplayer = envMgrApplicationContext.getBean(ScenarioReplayer.class);
+    scenarioReplayer.setRuntime(runtime);
   }
 
   public static synchronized void startStandaloneTestEnvironment() {
@@ -181,7 +202,7 @@ public class TigerDirector {
     shutdownHookRegistered = true;
 
     log.info("Registering shutdown hook...");
-    Runtime.getRuntime()
+    java.lang.Runtime.getRuntime()
         .addShutdownHook(
             new Thread(
                 () -> {
@@ -207,7 +228,11 @@ public class TigerDirector {
       if (getLibConfig() != null
           && getLibConfig().isActivateWorkflowUi()
           && shouldUserAcknowledgeShutdown) {
-        System.out.println(
+        // This method is called in the shut down hook of the JVM and we experienced that using the
+        // logger
+        // sometimes kept this message from appearing in the console, so resorting to System.out
+        // here
+        System.out.println( // NOSONAR
             Ansi.colorize(
                 "TGR Workflow UI is active, please press quit in browser window...",
                 RbelAnsiColors.GREEN_BOLD));
@@ -232,16 +257,16 @@ public class TigerDirector {
         }
       } else if (tigerTestEnvMgr != null) {
         tigerTestEnvMgr.receivedConfirmationFromWorkflowUi(false);
-        System.out.println("TGR Shutting down test env...");
+        System.out.println("TGR Shutting down test env..."); // NOSONAR
         tigerTestEnvMgr.shutDown();
       }
     } finally {
       unregisterRestAssuredFilter();
-      System.out.println("TGR Destroying spring boot context after testrun...");
+      System.out.println("TGR Destroying spring boot context after testrun..."); // NOSONAR
       if (envMgrApplicationContext != null) {
         envMgrApplicationContext.close();
       }
-      System.out.println("TGR Tiger shut down orderly");
+      System.out.println("TGR Tiger shut down orderly"); // NOSONAR
     }
   }
 
@@ -535,5 +560,13 @@ public class TigerDirector {
           message,
           errorMessage);
     }
+  }
+
+  public static void registerRuntime(Runtime runtime) {
+    TigerDirector.runtime = runtime;
+  }
+
+  public static Optional<Runtime> loadRuntime() {
+    return Optional.ofNullable(TigerDirector.runtime);
   }
 }

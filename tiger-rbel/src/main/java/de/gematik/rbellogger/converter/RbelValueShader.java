@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -66,8 +66,8 @@ public class RbelValueShader {
   }
 
   private String toStringValue(final Object value) {
-    if (value instanceof RbelElement) {
-      return ((RbelElement) value).getRawStringContent();
+    if (value instanceof RbelElement element) {
+      return element.getRawStringContent();
     } else {
       return value.toString();
     }

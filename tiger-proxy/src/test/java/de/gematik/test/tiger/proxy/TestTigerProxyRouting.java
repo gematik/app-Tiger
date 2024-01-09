@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockserver.model.HttpRequest.request;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.test.tiger.common.data.config.tigerProxy.*;
+import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.util.stream.Stream;
 import kong.unirest.*;
@@ -52,7 +52,11 @@ class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
     awaitMessagesInTiger(2);
     final RbelElement request = tigerProxy.getRbelMessagesList().get(0);
 
-    assertThat(request)
+    // the extractChildWithPath will return an element inside of the original to asserted element,
+    // consecutive calls in an assertion chain would fail as they wouldn't start from the root
+    // element but from
+    // the child extracted by the first assertion
+    assertThat(request) // NOSONAR
         .extractChildWithPath("$.header.Host")
         .hasStringContentEqualTo("localhost:" + fakeBackendServerPort);
     assertThat(request).extractChildWithPath("$.path").hasStringContentEqualTo(actualPath);

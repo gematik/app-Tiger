@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -96,7 +96,7 @@ class RbelMtomConverterTest {
     final RbelElement convertedMessage =
         rbelLogger.getRbelConverter().convertElement(curlMessage.getBytes(), null);
 
-    assertThat(convertedMessage)
+    assertThat(convertedMessage) // NOSONAR
         .extractChildWithPath("$..Envelope..MandantId.text")
         .hasStringContentEqualTo("m_raf");
     assertThat(convertedMessage)

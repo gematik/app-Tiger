@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -66,12 +66,13 @@ public class RbelElementTreePrinter {
     if (remainingLevels <= 0) {
       return "";
     }
-    String result = "";
+    StringBuilder result = new StringBuilder();
     for (Iterator<Map.Entry<String, RbelElement>> iterator =
             position.getChildNodesWithKey().iterator();
         iterator.hasNext(); ) {
       Map.Entry<String, RbelElement> childNode = iterator.next();
-      String switchString, padString;
+      String switchString;
+      String padString;
       if (iterator.hasNext()) {
         switchString = "├──";
         padString = "|  ";
@@ -80,19 +81,20 @@ public class RbelElementTreePrinter {
         padString = "   ";
       }
       // the tree structure
-      result += cl(YELLOW_BRIGHT) + padding + switchString + cl(RESET);
+      result.append(cl(YELLOW_BRIGHT)).append(padding).append(switchString).append(cl(RESET));
       // name of the node
-      result += cl(RED_BOLD) + childNode.getKey() + cl(RESET);
+      result.append(cl(RED_BOLD)).append(childNode.getKey()).append(cl(RESET));
       // print content
-      result += printContentOf(childNode.getValue());
+      result.append(printContentOf(childNode.getValue()));
       // print facet
-      result += printFacets(childNode.getValue());
-      result += "\n";
+      result.append(printFacets(childNode.getValue()));
+      result.append("\n");
       if (!childNode.getValue().getChildNodes().isEmpty()) {
-        result += executeRecursive(childNode.getValue(), padding + padString, remainingLevels - 1);
+        result.append(
+            executeRecursive(childNode.getValue(), padding + padString, remainingLevels - 1));
       }
     }
-    return result;
+    return result.toString();
   }
 
   private String printFacets(RbelElement value) {
@@ -112,13 +114,6 @@ public class RbelElementTreePrinter {
       return "";
     }
     return cl(CYAN) + " (" + facetsString + ")" + cl(RESET);
-  }
-
-  private String printKeyOf(RbelElement value) {
-    if (!printKeys) {
-      return "";
-    }
-    return " " + cl(GREEN) + "[$." + value.findNodePath() + "]" + cl(RESET);
   }
 
   private String printContentOf(RbelElement value) {

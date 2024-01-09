@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.proxy.tls;
 
-import de.gematik.test.tiger.common.data.config.tigerProxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
@@ -103,7 +103,7 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
     if (caIdentity != null) {
       return this.caIdentity.getCertificate();
     }
-    if (eeIdentity.getCertificateChain() != null && eeIdentity.getCertificateChain().size() > 0) {
+    if (eeIdentity.getCertificateChain() != null && !eeIdentity.getCertificateChain().isEmpty()) {
       return eeIdentity.getCertificateChain().get(0);
     }
     throw new TigerProxyConfigurationException(

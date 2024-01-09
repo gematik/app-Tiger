@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -188,7 +188,14 @@ public class DownloadManager {
           Optional.of(localJarString).filter(file -> !file.contains("*"));
       ThrowingFunction<Path, Stream<Path>> relativeJarResolver =
           dir ->
-              Files.find(dir, 1, (p, a) -> new WildcardFileFilter(jarFileName).accept(p.toFile()));
+              Files.find(
+                  dir,
+                  1,
+                  (p, a) ->
+                      WildcardFileFilter.builder()
+                          .setWildcards(jarFileName)
+                          .get()
+                          .accept(p.toFile()));
       List<Supplier<Optional<File>>> candidateFileSuppliers =
           List.of(
               () -> jarFileFiltered.map(filename -> Paths.get(workingDir, filename).toFile()),
@@ -196,7 +203,9 @@ public class DownloadManager {
               () ->
                   Optional.ofNullable(
                           new File(workingDir)
-                              .listFiles((FilenameFilter) new WildcardFileFilter(jarFileName)))
+                              .listFiles(
+                                  (FilenameFilter)
+                                      WildcardFileFilter.builder().setWildcards(jarFileName).get()))
                       .filter(ar -> ar.length > 0)
                       .map(ar -> ar[0]),
               () ->

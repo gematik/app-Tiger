@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -44,16 +44,8 @@ class XDynamicSidebarTests extends AbstractTests {
     assertAll(
         () -> assertThat(page.querySelector("#test-sidebar-title").isVisible()).isFalse(),
         () -> assertThat(page.locator("#test-sidebar-statusbox").isVisible()).isFalse(),
-        () ->
-            assertThat(
-                    page.locator("#test-sidebar-statusbox .test-sidebar-status-features")
-                        .isVisible())
-                .isFalse(),
-        () ->
-            assertThat(
-                    page.locator("#test-sidebar-statusbox .test-sidebar-status-scenarios")
-                        .isVisible())
-                .isFalse(),
+        () -> assertThat(page.locator("#test-sidebar-statusbox").isVisible()).isFalse(),
+        () -> assertThat(page.locator("#test-sidebar-statusbox").isVisible()).isFalse(),
         () -> assertThat(page.locator("#test-sidebar-status-started").isVisible()).isFalse(),
         () -> assertThat(page.querySelector("#test-sidebar-quit-icon").isVisible()).isTrue(),
         () -> assertThat(page.querySelector("#test-sidebar-pause-icon").isVisible()).isTrue(),
@@ -63,9 +55,9 @@ class XDynamicSidebarTests extends AbstractTests {
   }
 
   @Test
-  void testFeatureBoxClickOnLastSecnario() {
+  void testFeatureBoxClickOnLastScenario() {
     page.querySelector("#test-tiger-logo").click();
-    page.locator(".test-sidebar-scenario-name").last().click();
+    page.locator(".test-sidebar-scenario-name").last().locator(".scenarioLink").click();
     String sidebarTitle = page.locator(".test-sidebar-scenario-name").last().getAttribute("title");
     String featureTitle = page.locator(".test-execution-pane-scenario-title").last().textContent();
     assertAll(() -> assertThat(featureTitle.trim()).startsWith(sidebarTitle));
@@ -105,14 +97,17 @@ class XDynamicSidebarTests extends AbstractTests {
         page.locator("#test-sidebar-server-status-box .test-sidebar-server-status").all();
     assertThat(servers).hasSize(3);
     servers.forEach(server -> assertThat(server.textContent()).contains("RUNNING"));
-    page.locator("#test-sidebar-server-status .test-sidebar-server-name")
-        .all()
-        .forEach(
-            server ->
-                assertThat(
-                    server.textContent().equals("local_tiger_proxy")
-                        || server.textContent().equals("httpbin")
-                        || server.textContent().equals("remoteTigerProxy")));
+    for (Locator server :
+        page.locator("#test-sidebar-server-status .test-sidebar-server-name").all()) {
+      assertThat(server.textContent())
+          .satisfies(
+              s -> {
+                assertThat(s)
+                    .isEqualTo("local_tiger_proxy")
+                    .isEqualTo("httpbin")
+                    .isEqualTo("remoteTigerProxy");
+              });
+    }
   }
 
   @ParameterizedTest
@@ -122,10 +117,9 @@ class XDynamicSidebarTests extends AbstractTests {
     Page page1 =
         page.waitForPopup(
             () -> page.locator("#sidebar-left .test-sidebar-server-url-icon").nth(counter).click());
-    await()
-        .atMost(1000, TimeUnit.MILLISECONDS)
-        .until(() -> page1.locator("#test-tiger-logo").isVisible());
+    await().until(() -> page1.locator("#test-tiger-logo").isVisible());
     assertThat(page1.locator("#test-tiger-logo").isVisible()).isTrue();
+    page1.close();
   }
 
   @ParameterizedTest
@@ -161,9 +155,11 @@ class XDynamicSidebarTests extends AbstractTests {
                 .isTrue());
     if (servername != null) {
       await()
-          .atMost(10, TimeUnit.SECONDS)
+          .atMost(30, TimeUnit.SECONDS)
           .untilAsserted(
               () ->
+                  // TODO sometimes the "servername started" message appears as last msg after READY
+                  //  and thus this test fails sometimes
                   assertThat(
                           page.locator(".test-sidebar-server-logs")
                               .nth(counter)

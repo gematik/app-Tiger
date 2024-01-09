@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -215,10 +215,10 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
   }
 
   private RbelHostname toRbelHostname(SocketAddress socketAddress) {
-    if (socketAddress instanceof InetSocketAddress) {
+    if (socketAddress instanceof InetSocketAddress inetSocketAddress) {
       return RbelHostname.builder()
-          .hostname(((InetSocketAddress) socketAddress).getHostName())
-          .port(((InetSocketAddress) socketAddress).getPort())
+          .hostname(inetSocketAddress.getHostName())
+          .port(inetSocketAddress.getPort())
           .build();
     } else {
       log.warn(

@@ -1,5 +1,5 @@
 <!--
-  - Copyright (c) 2023 gematik GmbH
+  - Copyright (c) 2024 gematik GmbH
   - 
   - Licensed under the Apache License, Version 2.0 (the License);
   - you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
   -->
 
 <template>
-  <span :class="`${highlightText ? 'statustext' : ''}`" >
+  <span :class="`${highlightText ? 'statustext' : ''}`">
     <i :class="`statusbadge ${testStatus.toLowerCase()} left ${getTestResultIcon(testStatus, 'solid')}`"
        :title="`${testStatus}`"
-       :id="`${link}`" ></i>
+       :id="`${link}`"></i>
     {{ text }}
   </span>
   <span :class="`statusbadge ${getStatusFGAndBGColorClass(testStatus)} badge rounded-pill test-feature-status-word`">
@@ -38,7 +38,7 @@ defineProps<{
 }>();
 
 function getStatusFGAndBGColorClass(status: string): string {
-  return status.toLowerCase() + ' bg-' + status.toLowerCase() + 'test-status-'+ status.toLowerCase();
+  return status.toLowerCase() + ' bg-' + status.toLowerCase() + 'test-status-' + status.toLowerCase();
 }
 
 </script>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package de.gematik.rbellogger.modifier;
 import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelVauErpFacet;
+import de.gematik.rbellogger.exceptions.RbelPkiException;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.util.CryptoUtils;
 import java.math.BigInteger;
@@ -79,7 +80,7 @@ public class RbelVauErpWriter implements RbelElementWriter {
     final Optional<RbelKey> decryptionKey =
         oldTargetElement.getFacet(RbelVauErpFacet.class).flatMap(RbelVauErpFacet::getKeyUsed);
     if (decryptionKey.isEmpty()) {
-      throw new RuntimeException(
+      throw new RbelPkiException(
           "Error while trying to write VAU Erp Message: No decryption-key found!");
     }
     if (decryptionKey.get().getKey() instanceof ECPrivateKey) {

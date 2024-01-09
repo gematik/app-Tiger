@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,11 @@
 package de.gematik.rbellogger;
 
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class RbelOptions {
 
   @Getter private static boolean activateRbelPathDebugging = false;
@@ -26,8 +29,6 @@ public class RbelOptions {
   @Getter private static int rbelPathTreeViewValueOutputLength = 50;
   @Getter private static boolean activateJexlDebugging = false;
   @Getter private static boolean activateFacetsPrinting = true;
-
-  private RbelOptions() {}
 
   public static void activateJexlDebugging() {
     activateJexlDebugging = true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -85,9 +85,7 @@ public class RbelHttpResponseWriter implements RbelElementWriter {
         .stream()
         .flatMap(h -> h.getCaseInsensitiveMatches("Transfer-Encoding"))
         .map(RbelElement::getRawStringContent)
-        .filter(value -> value.equalsIgnoreCase("chunked"))
-        .findAny()
-        .isPresent();
+        .anyMatch(value -> value.equalsIgnoreCase("chunked"));
   }
 
   private String patchHeader(String headerRaw, int length) {

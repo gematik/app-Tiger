@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 gematik GmbH
+ * Copyright (c) 2024 gematik GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the License);
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.commons.lang3.StringUtils;
@@ -155,7 +154,7 @@ public class GenerateDriverMojo extends AbstractMojo {
 
       new DriverGenerator(props, getLog())
           .generateDriverForFeatureFiles(
-              featureFiles.stream().map(this::addBasedirPrefix).collect(Collectors.toList()));
+              featureFiles.stream().map(this::addBasedirPrefix).toList());
 
       project.addTestCompileSourceRoot(
           Paths.get(targetFolder, "generated-test-sources", "tigerbdd")
