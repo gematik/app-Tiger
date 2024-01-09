@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>2.3.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>tiger-test-utils</artifactId>
@@ -122,28 +122,29 @@
                     <forkCount>2</forkCount>
                 </configuration>
             </plugin>
-<!-- TGR-979           <plugin>
-                <groupId>net.serenity-bdd.maven.plugins</groupId>
-                <artifactId>serenity-maven-plugin</artifactId>
-                <version>${version.serenity.maven.plugin}</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>net.serenity-bdd</groupId>
-                        <artifactId>serenity-core</artifactId>
-                        <version>${version.serenity.core}</version>
-                    </dependency>
-                </dependencies>
-                <executions>
-                    <execution>
-                        <phase>post-integration-test</phase>
-                        <goals>
-                            <goal>aggregate</goal>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
--->            <plugin>
+            <!-- TGR-979           <plugin>
+                            <groupId>net.serenity-bdd.maven.plugins</groupId>
+                            <artifactId>serenity-maven-plugin</artifactId>
+                            <version>${version.serenity.maven.plugin}</version>
+                            <dependencies>
+                                <dependency>
+                                    <groupId>net.serenity-bdd</groupId>
+                                    <artifactId>serenity-core</artifactId>
+                                    <version>${version.serenity.core}</version>
+                                </dependency>
+                            </dependencies>
+                            <executions>
+                                <execution>
+                                    <phase>post-integration-test</phase>
+                                    <goals>
+                                        <goal>aggregate</goal>
+                                        <goal>check</goal>
+                                    </goals>
+                                </execution>
+                            </executions>
+                        </plugin>
+            -->
+            <plugin>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <groupId>org.jacoco</groupId>
             </plugin>

@@ -103,13 +103,14 @@ pipeline {
                           docker cp tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata/doc/user_manual/tiger_user_manual.pdf .
                           docker cp tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata/doc/user_manual/tiger_user_manual.html .
                           docker cp tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata/doc/user_manual/media .
+                          docker cp tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata/doc/user_manual/screenshots .
                           docker rm tiger-gemdoc-'''+BUILD_NUMBER+'''
                         '''
                         // to test local:
                         // docker run --name tiger-gemdoc --rm -v $(pwd):/tmpdata eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
                         // or for windows users:
                         // docker run --name tiger-gemdoc --rm -v %cd%:/tmpdata eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
-                        stash includes: 'tiger_user_manual.pdf,tiger_user_manual.html,media/**/*', name: 'manual'
+                        stash includes: 'tiger_user_manual.pdf,tiger_user_manual.html,media/**/*,screenshots/*.png', name: 'manual'
 
                         sh label: 'checkoutGhPages', script: """
                             git checkout gh-pages
