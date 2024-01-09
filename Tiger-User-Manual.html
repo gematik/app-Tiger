@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 2.3.1-SNAPSHOT - 2023-12-14</span>
+<span id="revdate">Version 2.3.2-SNAPSHOT - 2024-01-09</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -4268,6 +4268,7 @@ This applies also to objects and arrays as seen in the dummyarray2 entry.</p>
 */</span>
 <span class="annotation">@Wenn</span>(
 <span class="annotation">@When</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR any message with attribute {tigerResolvedString} matches {tigerResolvedString}</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@Deprecated</span>(forRemoval = <span class="predefined-constant">true</span>)
 
 <span class="comment">/*
 * store given rbel path node/attribute text value of current response.
@@ -4345,16 +4346,6 @@ This applies also to objects and arrays as seen in the dummyarray2 entry.</p>
 <span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR current response at {tigerResolvedString} does not match:</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/*
-* assert that response of filtered request matches at given rbel path node/attribute.
-*
-* @param rbelPath path to node/attribute
-* @param value value / regex that should equal or match as string content with MultiLine and
-*     DotAll regex option
-* @deprecated
-*/</span>
-<span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR current response at {tigerResolvedString} matches {tigerResolvedString}</span><span class="delimiter">&quot;</span></span>)
-
-<span class="comment">/*
 * assert that response of filtered request matches at given rbel path node/attribute assuming its
 * JSON or XML
 *
@@ -4390,10 +4381,12 @@ This applies also to objects and arrays as seen in the dummyarray2 entry.</p>
 <span class="comment">/* Prints the rbel-tree of the current response to the System-out */</span>
 <span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR gebe aktuelle Response als Rbel-Tree aus</span><span class="delimiter">&quot;</span></span>)
 <span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR print current response as rbel-tree</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@SuppressWarnings</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">java:S106</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/* Prints the rbel-tree of the current request to the System-out */</span>
 <span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR gebe aktuelle Request als Rbel-Tree aus</span><span class="delimiter">&quot;</span></span>)
 <span class="annotation">@Then</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR print current request as rbel-tree</span><span class="delimiter">&quot;</span></span>)
+<span class="annotation">@SuppressWarnings</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">java:S106</span><span class="delimiter">&quot;</span></span>)
 
 <span class="comment">/* Read TGR file and sends messages to local Tiger proxy */</span>
 <span class="annotation">@Dann</span>(<span class="string"><span class="delimiter">&quot;</span><span class="content">TGR liest folgende .tgr Datei {tigerResolvedString}</span><span class="delimiter">&quot;</span></span>)
@@ -4802,6 +4795,26 @@ The icon before the name would be a spinner icon to indicate that status.</p>
 This way you can instruct manual testers to follow a specified test workflow.<br>
 This feature is used in the EAU Konnektorfarm validation test suite to guide the Primärsystem manufacturers through the interoperability combinations of signing/verifying documents against all Konnektors available.</p>
 </div>
+<div class="paragraph">
+<p>Additionally, a test scenario can be replayed.<br>
+When clicking the replay button next to the scenario name, the scenario will be rerun again.<br>
+If placeholder variables were modified with the configuration editor, the new values will be used when replaying the scenario.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/maincontent_replaybutton.png" alt="maincontent replaybutton">
+</div>
+<div class="title">Figure 25. The replay button</div>
+</div>
+<div class="paragraph">
+<p>Alternatively, a scenario can be replayed by clicking the small replay button in the feature box in the sidebar.</p>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="screenshots/sidebar_replaybutton.png" alt="sidebar replaybutton">
+</div>
+<div class="title">Figure 26. Small replay buttons in the sidebar</div>
+</div>
 <div id="_rbel_logs" class="paragraph">
 <p>The communication requests that are called during the step execution are displayed beneath the step that initated the request.<br>
 When the user clicks on the light blue rectangle with the number (whereas uneven numbers are requests, even number are responses) of the request then the Rbel Log view opens on the right hand side of the Workflow UI as shown on the screenshot below.</p>
@@ -4810,7 +4823,7 @@ When the user clicks on the light blue rectangle with the number (whereas uneven
 <div class="content">
 <img src="screenshots/maincontent_rbelpath.png" alt="maincontent rbelpath">
 </div>
-<div class="title">Figure 25. Rbel Log Details</div>
+<div class="title">Figure 27. Rbel Log Details</div>
 </div>
 <div class="paragraph">
 <p>In the Rbel Log Details view the RbelMessages are displayed that are also saved as HTML files as described in the <a href="#_cucumber_hooks">Cucumber and Hooks</a> section.<br>
@@ -4820,7 +4833,7 @@ Next to the headline there is a link to the <a href="#_web_ui">WebUI (aka Tiger 
 <div class="content">
 <img src="screenshots/maincontent_rbelpath_urllink_highlight.png" alt="maincontent rbelpath urllink highlight">
 </div>
-<div class="title">Figure 26. Link to open the WebUI</div>
+<div class="title">Figure 28. Link to open the WebUI</div>
 </div>
 <div class="paragraph">
 <p>The Rbel Log Details view is described in the <a href="#_web_ui">WebUI</a> section as it is a slimmed down version of the WebUI.<br>
@@ -5039,16 +5052,19 @@ Background blocks will be merged to each scenario before exporting its steps to 
 <h2 id="_tiger_configuration"><a class="anchor" href="#_tiger_configuration"></a>6. Tiger Configuration</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>Configuration is an integral part of testing. To make this task easier for you and to make configuration the various parts of the system as easy as possible Tiger has a central configuration store: TigerGlobalConfiguration. It combines properties from multiple source and feeds into various parts of the system.</p>
+<p>Configuration is an integral part of testing.<br>
+To make this task easier for you and to make configuration the various parts of the system as easy as possible Tiger has a central configuration store: TigerGlobalConfiguration.<br>
+It combines properties from multiple source and feeds into various parts of the system.</p>
 </div>
 <div class="imageblock">
 <div class="content">
 <img src="media/tiger-configuration-global.svg" alt="tiger configuration global">
 </div>
-<div class="title">Figure 27. The TigerGlobalConfiguration with inlets and outlets</div>
+<div class="title">Figure 29. The TigerGlobalConfiguration with inlets and outlets</div>
 </div>
 <div class="paragraph">
-<p>This allows a vastly simplified retrieval and configuration of nearly all aspects of the system. It is therefore recommended reusing this system for your own testsuite as well.</p>
+<p>This allows a vastly simplified retrieval and configuration of nearly all aspects of the system.<br>
+It is therefore recommended reusing this system for your own testsuite as well.</p>
 </div>
 <div class="sect2">
 <h3 id="_inlets"><a class="anchor" href="#_inlets"></a>6.1. Inlets</h3>
@@ -5113,7 +5129,8 @@ Background blocks will be merged to each scenario before exporting its steps to 
 <p>Names are compared without considering the case.</p>
 </li>
 <li>
-<p>Keys that contain '{', '}' or '|' are forbidden. To allow a clean startup on systems that have values like this configured the given characters are replaced by '_'.</p>
+<p>Keys that contain '{', '}' or '|' are forbidden.<br>
+To allow a clean startup on systems that have values like this configured the given characters are replaced by '_'.</p>
 </li>
 </ul>
 </div>
@@ -5138,10 +5155,15 @@ Background blocks will be merged to each scenario before exporting its steps to 
 <div class="sect2">
 <h3 id="_placeholders"><a class="anchor" href="#_placeholders"></a>6.4. Placeholders</h3>
 <div class="paragraph">
-<p>The TigerGlobalConfiguration supports the use of placeholders. Say for example you have a test-environment with two servers, "A" and "B". For the server "A" you have two choices: Either a real URL in the internet or a locally booted server. The use can choose which to activate by setting "active" of the server to use. The server "B" should now use the activated server, without having to set it manually while booting.</p>
+<p>The TigerGlobalConfiguration supports the use of placeholders.<br>
+Say for example you have a test-environment with two servers, "A" and "B".<br>
+For the server "A" you have two choices: Either a real URL in the internet or a locally booted server.<br>
+The use can choose which to activate by setting "active" of the server to use.<br>
+The server "B" should now use the activated server, without having to set it manually while booting.</p>
 </div>
 <div class="paragraph">
-<p>You could achieve this by exporting the URL (<code>servers.myServer.exports</code>) and referencing it in an argument which is passed into server "B" (<code>serverAUrl=${serverA.url}</code>. The first part here before the equal is the name of the environment variable passed into server "B" while booting, the second part behind the equal is the name of the property. compare this to the exports in the two serverA-options):</p>
+<p>You could achieve this by exporting the URL (<code>servers.myServer.exports</code>) and referencing it in an argument which is passed into server "B" (<code>serverAUrl=${serverA.url}</code>.<br>
+The first part here before the equal is the name of the environment variable passed into server "B" while booting, the second part behind the equal is the name of the property. compare this to the exports in the two serverA-options):</p>
 </div>
 <div class="listingblock">
 <div class="title">Listing 22. Configuring using placeholders and exports</div>
@@ -5192,7 +5214,8 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 <div class="sect2">
 <h3 id="_rbelpath_style_retrieval"><a class="anchor" href="#_rbelpath_style_retrieval"></a>6.5. RbelPath-style retrieval</h3>
 <div class="paragraph">
-<p>The placeholders also support RbelPath-style expressions to allow for more flexible, dynamic retrieval of properties. Consider for example the following YAML:</p>
+<p>The placeholders also support RbelPath-style expressions to allow for more flexible, dynamic retrieval of properties.<br>
+Consider for example the following YAML:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -5218,7 +5241,8 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 <p><code>${myMap.anotherLevel.[?(@.value=='foobar')].target}</code> will resolve to "schmoo", retrieving the node <code>myMap.anotherLevel.key.target</code>.</p>
 </li>
 <li>
-<p>The same value can be retrieved via <code>${..[?(@.target=='schmoo')].target}</code>. This expression uses the recursive descent mechanic of RbelPath.</p>
+<p>The same value can be retrieved via <code>${..[?(@.target=='schmoo')].target}</code>.<br>
+This expression uses the recursive descent mechanic of RbelPath.</p>
 </li>
 <li>
 <p><code>${..buried}</code> will resolve to "deep", retrieving the node <code>myMap.hidden.treasure.buried</code>.</p>
@@ -5229,19 +5253,23 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 <div class="sect2">
 <h3 id="_fallback_values"><a class="anchor" href="#_fallback_values"></a>6.6. Fallback values</h3>
 <div class="paragraph">
-<p>Sometimes a default value is desired when a given key is not set. To define such a value, just use the pipe (|) after the key, like so:</p>
+<p>Sometimes a default value is desired when a given key is not set.<br>
+To define such a value, just use the pipe (|) after the key, like so:</p>
 </div>
 <div class="paragraph">
 <p><code>${foo.bar|orThisValue}</code></p>
 </div>
 <div class="paragraph">
-<p>This will first test for the presence of "foo.bar" as a configuration key. If that key is not found, the fallback value "orThisValue" will be used.</p>
+<p>This will first test for the presence of "foo.bar" as a configuration key.<br>
+If that key is not found, the fallback value "orThisValue" will be used.</p>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_localized_configuration"><a class="anchor" href="#_localized_configuration"></a>6.7. Localized configuration</h3>
 <div class="paragraph">
-<p>Sometimes scope-creep can be a concern: Say you want to add a bunch of values right for one specific call but want to avoid that those values can be seen from everywhere else. By default, TigerGlobalConfiguration does not honor scope, which is a deliberate design-choice. To give you greater control over scope-behavior use the <code>.localScope()</code>-method:</p>
+<p>Sometimes scope-creep can be a concern: Say you want to add a bunch of values right for one specific call but want to avoid that those values can be seen from everywhere else.<br>
+By default, TigerGlobalConfiguration does not honor scope, which is a deliberate design-choice.<br>
+To give you greater control over scope-behavior use the <code>.localScope()</code>-method:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -5253,7 +5281,8 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 </div>
 </div>
 <div class="paragraph">
-<p>Bear in mind that this does not work with threading: The values are added to the global store and will remain in the store for the duration of the execution of the given runnable. If you execute multiple tests in parallel you should look into the <code>TigerThreadScopedConfigurationSource</code> (which comes with other drawbacks, threading is not an easy problem to solve).</p>
+<p>Bear in mind that this does not work with threading: The values are added to the global store and will remain in the store for the duration of the execution of the given runnable.<br>
+If you execute multiple tests in parallel you should look into the <code>TigerThreadScopedConfigurationSource</code> (which comes with other drawbacks, threading is not an easy problem to solve).</p>
 </div>
 </div>
 <div class="sect2">
@@ -5264,7 +5293,11 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 <div class="sect3">
 <h4 id="_example_1"><a class="anchor" href="#_example_1"></a>6.8.1. Example 1</h4>
 <div class="paragraph">
-<p>Say you have an environment configured in your testenv.yaml. You want the Tiger Proxy to forward traffic on one route to your backend-server. This will normally be a local server, but on the build-server you want to address another host. You can simply set an environment variable to do the job for you. Below are the relevant snippets:</p>
+<p>Say you have an environment configured in your testenv.yaml.<br>
+You want the Tiger Proxy to forward traffic on one route to your backend-server.<br>
+This will normally be a local server, but on the build-server you want to address another host.<br>
+You can simply set an environment variable to do the job for you.<br>
+Below are the relevant snippets:</p>
 </div>
 <div class="listingblock">
 <div class="title">Listing 23. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
@@ -5287,7 +5320,8 @@ Placeholders which can not be resolved will not lead to errors but rather they w
 <div class="sect3">
 <h4 id="_example_2"><a class="anchor" href="#_example_2"></a>6.8.2. Example 2</h4>
 <div class="paragraph">
-<p>In the above example let&#8217;s say you only want to customize the port. This can be done by using placeholders:</p>
+<p>In the above example let&#8217;s say you only want to customize the port.<br>
+This can be done by using placeholders:</p>
 </div>
 <div class="listingblock">
 <div class="title">Listing 24. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
@@ -5444,49 +5478,54 @@ You will find two predefined namespaces and also the ability to add your own, al
 <div class="sect2">
 <h3 id="_tiger_configuration_editor"><a class="anchor" href="#_tiger_configuration_editor"></a>6.11. Configuration Editor</h3>
 <div class="paragraph">
-<p>The configuration editor allows to view and edit the tiger configuration during a test run. The editor is part of the <a href="#_workflow_ui">Workflow UI</a> and can be opened by clicking the gears icon in the sidebar (<a href="#editor_start_button">Figure 28</a>).</p>
+<p>The configuration editor allows to view and edit the tiger configuration during a test run.<br>
+The editor is part of the <a href="#_workflow_ui">Workflow UI</a> and can be opened by clicking the gears icon in the sidebar (<a href="#editor_start_button">Figure 30</a>).</p>
 </div>
 <div id="editor_start_button" class="imageblock text-center">
 <div class="content">
-<img src="media/configuration_editor_start_button.png" alt="workflow UI with action buttons and gears icon highlighted">
+<img src="screenshots/sidebar_config_editor.png" alt="workflow UI with action buttons and gears icon highlighted">
 </div>
-<div class="title">Figure 28. Open the configuration editor by clicking the gears icon in the sidebar.</div>
+<div class="title">Figure 30. Open the configuration editor by clicking the gears icon in the sidebar.</div>
 </div>
 <div class="paragraph">
-<p>The configuration editor displays a table where you can view the current configuration properties loaded in the Tiger global configuration (<a href="#editor_table">Figure 29</a>). This includes properties from all <a href="#_inlets">inlet sources</a>. If a property is defined multiple times in different sources, only the one with higher importance is displayed.</p>
+<p>The configuration editor displays a table where you can view the current configuration properties loaded in the Tiger global configuration (<a href="#editor_table">Figure 31</a>).<br>
+This includes properties from all <a href="#_inlets">inlet sources</a>.<br>
+If a property is defined multiple times in different sources, only the one with higher importance is displayed.</p>
 </div>
-<div id="editor_table" class="imageblock">
+<div id="editor_table" class="imageblock text-center">
 <div class="content">
-<img src="media/configuration_editor_table.png" alt="view of the configuration editor table showing several properties">
+<img src="screenshots/tg_global_config_editor.png" alt="view of the configuration editor table showing several properties">
 </div>
-<div class="title">Figure 29. The Tiger global configuration editor</div>
+<div class="title">Figure 31. The Tiger global configuration editor</div>
 </div>
 <div class="paragraph">
-<p>The editor allows sorting and filtering each column so that you can easily find a specific property (<a href="#editor_column_filter">Figure 30</a>). Given that the Tiger global configuration includes many environment variables and system properties which are not directly relevant to Tiger, the filtering functionally proves to be especially useful.</p>
+<p>The editor allows sorting and filtering each column so that you can easily find a specific property (<a href="#editor_column_filter">Figure 32</a>).<br>
+Given that the Tiger global configuration includes many environment variables and system properties which are not directly relevant to Tiger, the filtering functionally proves to be especially useful.</p>
 </div>
 <div id="editor_column_filter" class="imageblock">
 <div class="content">
-<img src="media/configuration_editor_example_filter_popup.png" alt="screenshot of Key column displaying a filter popup filtering by the word tiger">
+<img src="screenshots/config_editor_example_filter_popup.png" alt="screenshot of Key column displaying a filter popup filtering by the word tgr">
 </div>
-<div class="title">Figure 30. Example of filtering the column key by the text 'tiger'</div>
+<div class="title">Figure 32. Example of filtering the column key by the text 'tgr'</div>
 </div>
 <div class="paragraph">
-<p>The values of existing configuration properties can be edited by double-clicking the value cells. This opens an input field where you can input a new value (<a href="#cell_editor">Figure 31</a>).</p>
+<p>The values of existing configuration properties can be edited by double-clicking the value cells.<br>
+This opens an input field where you can input a new value (<a href="#cell_editor">Figure 33</a>).</p>
 </div>
 <div id="cell_editor" class="imageblock">
 <div class="content">
-<img src="media/configuration_editor_cell_editor_example.png" alt="cell editor popup showing how to edit a property value">
+<img src="screenshots/config_editor_cell_editor_example.png" alt="cell editor popup showing how to edit a property value">
 </div>
-<div class="title">Figure 31. Double clicking a value cell opens the cell editor.</div>
+<div class="title">Figure 33. Double clicking a value cell opens the cell editor.</div>
 </div>
 <div class="paragraph">
-<p>Additionally, you can remove existing configuration properties by clicking the delete button (<a href="#delete_button">Figure 32</a>)</p>
+<p>Additionally, you can remove existing configuration properties by clicking the delete button (<a href="#delete_button">Figure 34</a>)</p>
 </div>
 <div id="delete_button" class="imageblock">
 <div class="content">
-<img src="media/configuration_editor_delete_button.png" alt="screenshot of editor table highlighting the delete button">
+<img src="screenshots/config_editor_delete_button.png" alt="screenshot of editor table highlighting the delete button">
 </div>
-<div class="title">Figure 32. Clicking the delete button removes the property from the Tiger global configuration.</div>
+<div class="title">Figure 34. Clicking the delete button removes the property from the Tiger global configuration.</div>
 </div>
 <div class="admonitionblock tip">
 <table>
@@ -5495,10 +5534,35 @@ You will find two predefined namespaces and also the ability to add your own, al
 <i class="fa icon-tip" title="Suggestion"></i>
 </td>
 <td class="content">
-Editing or removing configuration properties will not affect already ran tests. If you want to use edited properties in a specific test, then you should pause the test before editing the configuration. In <a href="#_workflow_ui">Workflow UI</a> you can see how to use custom steps to pause the test suite.
+Editing or removing configuration properties will not affect already ran tests.<br>
+If you want to use edited properties in a specific test, then you should pause the test before editing the configuration.<br>
+In <a href="#_workflow_ui">Workflow UI</a> you can see how to use custom steps to pause the test suite.
 </td>
 </tr>
 </table>
+</div>
+<div class="paragraph">
+<p>Some variables in the table have multiline values, causing the text to appear truncated initially.<br>
+These cells are equipped with an expand icon (<a href="#collapse_icon">Figure 35</a>), indicating the availability of additional content.</p>
+</div>
+<div id="collapse_icon" class="imageblock">
+<div class="content">
+<img src="screenshots/config_editor_collapse_icon.png" alt="collapse icon example">
+</div>
+<div class="title">Figure 35. Clicking on the expand icon reveals the full multiline content.</div>
+</div>
+<div class="paragraph">
+<p>Clicking the expand icon uncover the complete multiline content, ensuring it is fully visible within the cell.</p>
+</div>
+<div id="expand_icon" class="imageblock">
+<div class="content">
+<img src="screenshots/config_editor_expand_icon.png" alt="expand icon example">
+</div>
+<div class="title">Figure 36. Click the expand icon to view the full multiline content.</div>
+</div>
+<div class="paragraph">
+<p>To hide the multiline content and return to a truncated view, simply click on the collapse icon.<br>
+This action collapses the multiline content, returning the text to its truncated state.</p>
 </div>
 <div style="page-break-after: always;"></div>
 </div>
@@ -5542,7 +5606,7 @@ The user can see the request type and the error code of the response as well as 
 <div class="content">
 <img src="screenshots/webui.png" alt="webui">
 </div>
-<div class="title">Figure 33. Tiger Proxy UI / WebUI</div>
+<div class="title">Figure 37. Tiger Proxy UI / WebUI</div>
 </div>
 <div class="paragraph">
 <p>On the top right the tiger version and the build date are displayed.<br>
@@ -5555,7 +5619,7 @@ In the middle the full request and response messages are shown with detailed hea
 <div class="content">
 <img src="media/TigerProxyBottomNavBar.png" alt="TigerProxyBottomNavBar">
 </div>
-<div class="title">Figure 34. Tiger Proxy UI bottom menu bar </div>
+<div class="title">Figure 38. Tiger Proxy UI bottom menu bar </div>
 </div>
 <div class="paragraph">
 <p>The displayed buttons can trigger the following actions:</p>
@@ -5610,7 +5674,7 @@ Therefore, the user can filter the messages with a Rbel-Path or a regex using ei
 <div class="content">
 <img src="screenshots/webui_filter_open.png" alt="webui filter open">
 </div>
-<div class="title">Figure 35. Filter Managment</div>
+<div class="title">Figure 39. Filter Managment</div>
 </div>
 </div>
 <div class="sect4">
@@ -5622,7 +5686,7 @@ Therefore, the user can filter the messages with a Rbel-Path or a regex using ei
 <div class="content">
 <img src="screenshots/webui_inspect_highlight.png" alt="webui inspect highlight">
 </div>
-<div class="title">Figure 36. Access RBel-Path/JEXL Debugging</div>
+<div class="title">Figure 40. Access RBel-Path/JEXL Debugging</div>
 </div>
 <div class="paragraph">
 <p>The picture below shows the RBel-Path tab.<br>
@@ -5632,7 +5696,7 @@ The user can execute the RBel-Path on the request or the response and the result
 <div class="content">
 <img src="screenshots/webui_inspect_rbelpath_highlight.png" alt="webui inspect rbelpath highlight">
 </div>
-<div class="title">Figure 37. RBel-Path</div>
+<div class="title">Figure 41. RBel-Path</div>
 </div>
 <div class="paragraph">
 <p>For more information in the Rbel-Path check out <a href="#_rbel_path_details">this</a> section.</p>
@@ -5646,7 +5710,7 @@ Further information on JEXL expressions can be found in <a href="#_jexl_expressi
 <div class="content">
 <img src="screenshots/webui_inspect_jexl_highlight.png" alt="webui inspect jexl highlight">
 </div>
-<div class="title">Figure 38. JEXL Debugging</div>
+<div class="title">Figure 42. JEXL Debugging</div>
 </div>
 <div id="_jexl_filter" class="paragraph">
 <p>When the user wants to filter the messages with a JEXL expression, the user can click on the "Use as filter" button in the modal.</p>
@@ -5661,7 +5725,7 @@ Further information on JEXL expressions can be found in <a href="#_jexl_expressi
 <div class="content">
 <img src="screenshots/webui_routing_open.png" alt="webui routing open">
 </div>
-<div class="title">Figure 39. Route Managment</div>
+<div class="title">Figure 43. Route Managment</div>
 </div>
 </div>
 <div class="sect4">
@@ -5673,7 +5737,7 @@ Further information on JEXL expressions can be found in <a href="#_jexl_expressi
 <div class="content">
 <img src="screenshots/webui_btn_content_highlight.png" alt="webui btn content highlight">
 </div>
-<div class="title">Figure 40. Buttons to show message content</div>
+<div class="title">Figure 44. Buttons to show message content</div>
 </div>
 <div class="paragraph">
 <p>The picture below shows the content of the whole response.</p>
@@ -5682,7 +5746,7 @@ Further information on JEXL expressions can be found in <a href="#_jexl_expressi
 <div class="content">
 <img src="screenshots/webui_btn_content.png" alt="webui btn content">
 </div>
-<div class="title">Figure 41. Example of the content of a response</div>
+<div class="title">Figure 45. Example of the content of a response</div>
 </div>
 </div>
 </div>
@@ -5791,7 +5855,7 @@ Therefor the following operators could be used.</p>
 <div class="content">
 <img src="media/jexlspacesright.png" alt="jexlspacesright" width="50%">
 </div>
-<div class="title">Figure 42. Rbel Path Expression</div>
+<div class="title">Figure 46. Rbel Path Expression</div>
 </div>
 </div>
 <div class="sect3">
@@ -5803,7 +5867,7 @@ Therefor the following operators could be used.</p>
 <div class="content">
 <img src="media/accessarray.png" alt="accessarray" width="50%">
 </div>
-<div class="title">Figure 43. The access of the elements of a list is done with the number, starting with 0. For maps the point notation is used. </div>
+<div class="title">Figure 47. The access of the elements of a list is done with the number, starting with 0. For maps the point notation is used. </div>
 </div>
 </div>
 <div class="sect3">
@@ -5817,7 +5881,7 @@ For more details check the InlineJexlToolbox</p>
 <div class="content">
 <img src="media/accessjexlcontext.png" alt="accessjexlcontext" width="50%">
 </div>
-<div class="title">Figure 44. Use single quotes when using JEXL contexts with a hyphen. </div>
+<div class="title">Figure 48. Use single quotes when using JEXL contexts with a hyphen. </div>
 </div>
 </div>
 <div class="sect3">
@@ -6578,7 +6642,7 @@ a dynamically generated JWT.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2023-12-14 11:16:19 UTC
+Last updated 2024-01-09 09:40:00 UTC
 </div>
 </div>
 </body>
