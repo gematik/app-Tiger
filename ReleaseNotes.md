@@ -1,5 +1,12 @@
 # Changelog Tiger Test platform
 
+# Release 3.0.0
+
+## Features
+
+* TGR-1012: clicking a message in the traffic visualization diagram opens the Rbel Log Details pane and scrolls to the
+  corresponding message.
+
 # Release 2.3.2
 
 ## Breaking changes
