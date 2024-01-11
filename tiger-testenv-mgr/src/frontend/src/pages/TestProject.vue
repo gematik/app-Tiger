@@ -119,7 +119,7 @@
 
         <!-- tabs -->
         <div class="tab-content">
-          <ExecutionPane
+          <execution-pane
               :featureUpdateMap="featureUpdateMap"
               :bannerMessage="bannerData.length ? bannerData[bannerData.length-1] : false"
               :localProxyWebUiUrl="localProxyWebUiUrl"
@@ -134,6 +134,7 @@
               :featureUpdateMap="featureUpdateMap"
               :ui="ui"/>
         </div>
+        <rbel-log-details-pane :ui="ui" :local-proxy-web-ui-url="localProxyWebUiUrl"></rbel-log-details-pane>
       </div>
     </div>
   </div>
@@ -193,6 +194,7 @@ import {VueSidePanel} from "vue3-side-panel";
 import TrafficVisualization from "@/components/sequence_diagram/TrafficVisualization.vue";
 import {useConfigurationLoader} from "@/components/global_configuration/ConfigurationLoader";
 import {ExperimentalFeatures} from "@/types/ExperimentalFeatures";
+import RbelLogDetailsPane from "@/components/testsuite/RbelLogDetailsPane.vue";
 
 
 const {loadSubsetOfProperties} = useConfigurationLoader();
@@ -235,6 +237,7 @@ let featureUpdateMap: Ref<Map<string, FeatureUpdate>> = ref(new Map<string, Feat
 
 /** list of server logs which contain a log message, a timestamp, a server name and the log level.
  */
+
 let serverLogList: Ref<Array<TigerServerLogDto>> = ref(new Array<TigerServerLogDto>());
 
 let logServers: Ref<Array<string>> = ref(new Array<string>());
@@ -246,7 +249,7 @@ let localProxyWebUiUrl: Ref<string> = ref("");
 let version: Ref<string> = ref("");
 let build: Ref<string> = ref("");
 
-let ui = ref(new Ui(process.env.BASE_URL));
+let ui = ref();
 
 let quitTestrunOngoing: Ref<boolean> = ref(false);
 let shutdownTestrunOngoing: Ref<boolean> = ref(false);
@@ -264,7 +267,7 @@ async function loadExperimentalFeaturesFlags() {
 }
 
 onMounted(() => {
-  ui = ref(new Ui(process.env.BASE_URL));
+  ui = ref(new Ui());
   emitter.on('confirmShutdownPressed', () => {
     quitTestrunOngoing.value = true;
     shutdownTestrunOngoing.value = true;

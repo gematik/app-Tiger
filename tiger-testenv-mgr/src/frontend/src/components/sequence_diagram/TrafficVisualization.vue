@@ -42,8 +42,6 @@ function parseFeatureMap(featureUpdateMap: Map<string, FeatureUpdate>): RbelMeta
       for (const [, step] of scenario.steps) {
         for (const rbelMeta of step.rbelMetaData) {
           let rbelMetaSequenceNumber = rbelMeta.sequenceNumber + 1;
-
-
           stepRbelMetaDataList.push({
             ...rbelMeta,
             sequenceNumber: rbelMetaSequenceNumber,
@@ -52,8 +50,6 @@ function parseFeatureMap(featureUpdateMap: Map<string, FeatureUpdate>): RbelMeta
       }
     }
   }
-
-
   return stepRbelMetaDataList;
 }
 

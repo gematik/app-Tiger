@@ -5,28 +5,23 @@
 export default class Ui {
 
   private rbelLogDetailsResizer: HTMLElement | undefined;
+  private mainContentElement: HTMLElement | undefined;
   private executionTable: HTMLElement | undefined;
-  private executionPanel: HTMLElement | undefined;
   private rbelLogDetailsPane: HTMLElement | undefined;
-  private iframe: HTMLIFrameElement | undefined;
   private readonly mouseMoveListener: (ev: MouseEvent) => void;
   private readonly mouseUpListener: (ev: MouseEvent) => void;
-  private static baseUrl: string;
-  private showQuittingTestrun : boolean = false;
 
 
-  constructor(baseUrl: string) {
+  constructor() {
     this.mouseMoveListener = ev => this.mouseMoveHandler(ev);
-    this.mouseUpListener = ev => this.mouseUpHandler();
-    Ui.baseUrl = baseUrl;
+    this.mouseUpListener = () => this.mouseUpHandler();
   }
 
   public init() {
     if (!this.rbelLogDetailsResizer) {
-      this.iframe = document.getElementById("rbellog-details-iframe") as HTMLIFrameElement;
       this.rbelLogDetailsResizer = document.getElementById('rbellog_resize') as HTMLElement;
+      this.mainContentElement = document.getElementById('main-content') as HTMLElement;
       this.executionTable = document.getElementById('execution_table') as HTMLElement;
-      this.executionPanel = this.executionTable.parentElement as HTMLElement;
       this.rbelLogDetailsPane = document.getElementById('rbellog_details_pane') as HTMLElement;
     }
   }
@@ -34,9 +29,9 @@ export default class Ui {
   public toggleRightSideBar(event: MouseEvent) {
     this.init();
     event.preventDefault();
-    if (this.rbelLogDetailsPane!.classList.contains('d-none')) {
-      this.rbelLogDetailsPane!.classList.toggle('d-none', true);
-      this.resizeBasedOn(this.executionPanel!.clientWidth / 2, true);
+    if (this.rbelLogDetailsPane?.classList.contains('d-none')) {
+      this.rbelLogDetailsPane?.classList.toggle('d-none', true);
+      this.resizeBasedOn(this.mainContentElement!.clientWidth / 2, true);
     } else {
       this.minimizeRBelLogDetailsPane();
     }
@@ -65,8 +60,8 @@ export default class Ui {
     this.init();
     event.preventDefault();
 
-    if (this.rbelLogDetailsPane!.getAttribute("class")?.indexOf("d-none") !== -1) {
-      this.resizeBasedOn(this.executionTable!.clientWidth / 2, true);
+    if (this.rbelLogDetailsPane?.getAttribute("class")?.indexOf("d-none") !== -1) {
+      this.resizeBasedOn(this.mainContentElement!.clientWidth / 2, true);
       this.mouseUpHandler();
     }
     // firefox does not navigate to the uuid if the iframe is hidden :(
@@ -91,7 +86,6 @@ export default class Ui {
   }
 
   private activateDragMode() {
-    // this.rbelLogDetailsResizer!.style.cursor = 'col-resize';
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
     this.executionTable!.style.userSelect = 'none';
@@ -103,11 +97,7 @@ export default class Ui {
   public mouseMoveHandler(e: MouseEvent) {
     this.activateDragMode();
     if (this.resizeActive) {
-      const prevWidth = this.executionTable!.clientWidth;
       this.resizeBasedOn(this.resizeMouseX - e.clientX, false);
-      if (this.executionTable!.clientWidth !== prevWidth) {
-        // this.resizeMouseX = e.clientX
-      }
     }
   }
 
@@ -133,7 +123,7 @@ export default class Ui {
   }
 
   private minimizeRBelLogDetailsPane() {
-    this.rbelLogDetailsPane!.classList.toggle('d-none', true);
+    this.rbelLogDetailsPane?.classList.toggle('d-none', true);
     this.rbelLogDetailsResizer!.style.width = '16px';
     this.rbelLogDetailsResizer!.style.right = '2px';
   }
@@ -147,10 +137,10 @@ export default class Ui {
     this.init();
     document.body.style.removeProperty("cursor");
     document.body.style.removeProperty('user-select');
-    this.rbelLogDetailsResizer!.style.removeProperty("cursor");
-    this.rbelLogDetailsPane!.style.removeProperty('user-select');
-    this.rbelLogDetailsPane!.style.removeProperty('pointer-events');
-    this.executionTable!.style.removeProperty('user-select');
-    this.executionTable!.style.removeProperty('pointer-events');
+    this.rbelLogDetailsResizer?.style.removeProperty("cursor");
+    this.rbelLogDetailsPane?.style.removeProperty('user-select');
+    this.rbelLogDetailsPane?.style.removeProperty('pointer-events');
+    this.executionTable?.style.removeProperty('user-select');
+    this.executionTable?.style.removeProperty('pointer-events');
   }
 }
