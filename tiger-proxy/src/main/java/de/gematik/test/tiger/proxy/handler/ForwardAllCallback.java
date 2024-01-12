@@ -4,10 +4,10 @@
 
 package de.gematik.test.tiger.proxy.handler;
 
-import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
+import static de.gematik.test.tiger.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 
+import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import org.mockserver.model.HttpRequest;
 
 /**
  * Callback used for as a forward-all route in the TigerProxy. The messages received here are simply

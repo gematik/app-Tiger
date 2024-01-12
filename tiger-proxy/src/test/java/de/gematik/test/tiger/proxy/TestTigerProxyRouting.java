@@ -6,7 +6,6 @@ package de.gematik.test.tiger.proxy;
 
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockserver.model.HttpRequest.request;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;

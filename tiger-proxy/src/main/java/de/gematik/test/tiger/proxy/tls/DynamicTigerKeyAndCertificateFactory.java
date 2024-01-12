@@ -6,8 +6,8 @@ package de.gematik.test.tiger.proxy.tls;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
-import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
-import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
+import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.socket.tls.bouncycastle.AbstractKeyAndCertificateFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
 import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -35,14 +36,9 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.IPAddress;
-import org.mockserver.configuration.Configuration;
-import org.mockserver.configuration.ConfigurationProperties;
-import org.mockserver.log.model.LogEntry;
-import org.mockserver.logging.MockServerLogger;
-import org.mockserver.socket.tls.bouncycastle.BCKeyAndCertificateFactory;
-import org.slf4j.event.Level;
 
-public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
+@Slf4j
+public class DynamicTigerKeyAndCertificateFactory extends AbstractKeyAndCertificateFactory {
 
   private static final Duration MAXIMUM_VALIDITY = Duration.ofDays(397);
 
@@ -51,7 +47,6 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
   }
 
   private final TigerPkiIdentity caIdentity;
-  private final MockServerLogger mockServerLogger;
   private final List<X509Certificate> certificateChain;
   private final String serverName;
   private final List<String> serverAlternativeNames;
@@ -61,15 +56,10 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
 
   @Builder
   public DynamicTigerKeyAndCertificateFactory(
-      MockServerLogger mockServerLogger,
       TigerProxyConfiguration tigerProxyConfiguration,
       TigerPkiIdentity caIdentity,
       Configuration mockServerConfiguration) {
-    super(
-        ProxyConfigurationConverter.convertToMockServerConfiguration(tigerProxyConfiguration),
-        mockServerLogger);
     this.certificateChain = new ArrayList<>();
-    this.mockServerLogger = mockServerLogger;
     this.caIdentity = caIdentity;
     this.eeIdentity = null;
     this.serverName = tigerProxyConfiguration.getTls().getDomainName();
@@ -81,22 +71,9 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
   }
 
   @Override
-  public boolean certificateAuthorityCertificateNotYetCreated() {
-    return false;
-  }
-
-  @Override
   public X509Certificate certificateAuthorityX509Certificate() {
     buildAndSavePrivateKeyAndX509Certificate();
-    if (caIdentity != null) {
-      return this.caIdentity.getCertificate();
-    }
-    if (eeIdentity.getCertificateChain() != null && !eeIdentity.getCertificateChain().isEmpty()) {
-      return eeIdentity.getCertificateChain().get(0);
-    }
-    throw new TigerProxyConfigurationException(
-        "Discovered illegal configuration in TLS-setup: "
-            + "Dynamic certificate generation, but no CA certificate present!");
+    return this.caIdentity.getCertificate();
   }
 
   @Override
@@ -128,24 +105,11 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
         certificateChain.clear();
         certificateChain.add(x509Certificate);
         certificateChain.add(caIdentity.getCertificate());
-        if (MockServerLogger.isEnabled(Level.TRACE)) {
-          this.mockServerLogger.logEvent(
-              (new LogEntry())
-                  .setLogLevel(Level.TRACE)
-                  .setMessageFormat("created new X509 {} with SAN Domain Names {} and IPs {}")
-                  .setArguments(
-                      this.x509Certificate(),
-                      Arrays.toString(
-                          ConfigurationProperties.sslSubjectAlternativeNameDomains().toArray()),
-                      Arrays.toString(
-                          ConfigurationProperties.sslSubjectAlternativeNameIps().toArray())));
-        }
-      } catch (Exception e) {
-        this.mockServerLogger.logEvent(
-            new LogEntry()
-                .setLogLevel(Level.ERROR)
-                .setMessageFormat("exception while generating private key and X509 certificate")
-                .setThrowable(e));
+      } catch (RuntimeException
+          | GeneralSecurityException
+          | IOException
+          | OperatorCreationException e) {
+        log.warn("exception while generating private key and X509 certificate", e);
       }
     }
   }
@@ -155,6 +119,7 @@ public class DynamicTigerKeyAndCertificateFactory extends BCKeyAndCertificateFac
         mockServerConfiguration.sslSubjectAlternativeNameDomains()) {
       if (!hostsCoveredByGeneratedIdentity.contains(hostThatShouldBePresent)) {
         eeIdentity = null;
+        return;
       }
     }
   }

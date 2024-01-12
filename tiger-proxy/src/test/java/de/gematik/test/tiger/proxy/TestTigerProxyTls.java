@@ -4,11 +4,14 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
@@ -70,6 +73,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
 @ResetTigerConfiguration
+@WireMockTest(httpsEnabled = true)
 class TestTigerProxyTls extends AbstractTigerProxyTest {
 
   @Test
@@ -113,7 +117,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   }
 
   @Test
-  void useTslBetweenClientAndProxy_shouldForward() throws UnirestException {
+  void useTlsBetweenClientAndProxy_shouldForward() throws UnirestException {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
@@ -258,18 +262,22 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   }
 
   @Test
-  void useTslBetweenProxyAndServer_shouldForward() throws UnirestException {
+  void useTslBetweenProxyAndServer_shouldForward(WireMockRuntimeInfo runtimeInfo)
+      throws UnirestException {
+    stubFor(
+        get(urlMatching("/tlsFoobar")).willReturn(ok().withStatus(666).withBody("{'foo':'bar'}")));
+
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
                     TigerRoute.builder()
                         .from("http://backend")
-                        .to("https://localhost:" + fakeBackendServerPort)
+                        .to("https://localhost:" + runtimeInfo.getHttpsPort())
                         .build()))
             .build());
 
-    final HttpResponse<JsonNode> response = proxyRest.get("http://backend/foobar").asJson();
+    final HttpResponse<JsonNode> response = proxyRest.get("http://backend/tlsFoobar").asJson();
 
     assertThat(response.getStatus()).isEqualTo(666);
     assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
@@ -304,10 +312,9 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   }
 
   @Test
-  @Disabled("Waiting for the next mockserver release (>5.15.0). See TGR-898, TGR-815")
   void forwardMutualTlsAndTerminatingTls_shouldUseCorrectTerminatingCa() throws UnirestException {
     final TigerConfigurationPkiIdentity clientIdentity =
-        new TigerConfigurationPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik");
+        new TigerConfigurationPkiIdentity("src/test/resources/rsa.p12;00");
 
     TigerProxy secondProxy =
         new TigerProxy(
@@ -732,7 +739,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
               client.newCall(request).execute();
             })
-        .hasMessageContaining("certificate_unknown");
+      .isInstanceOf(SSLHandshakeException.class);
   }
 
   @Test
@@ -777,7 +784,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
               RestAssured.proxy("localhost", tigerProxy.getProxyPort());
               RestAssured.get("https://backend/foobar").andReturn();
             })
-        .hasMessageContaining("certificate_unknown");
+      .isInstanceOf(SSLHandshakeException.class);
   }
 
   @Test

@@ -141,7 +141,7 @@
         </dependency>
         <dependency>
             <groupId>org.wiremock</groupId>
-            <artifactId>wiremock</artifactId>
+            <artifactId>wiremock-standalone</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -171,6 +171,11 @@
             <artifactId>cucumber-core</artifactId>
             <version>${version.cucumber}</version>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.jcip</groupId>
+            <artifactId>jcip-annotations</artifactId>
+            <version>1.0</version>
         </dependency>
     </dependencies>
 

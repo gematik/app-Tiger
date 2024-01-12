@@ -10,10 +10,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.common.net.MediaType;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.data.facet.RbelHttpHeaderFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
-import de.gematik.rbellogger.data.facet.RbelResponseFacet;
+import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.util.RbelArrayUtils;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -156,19 +154,33 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
   }
 
   private byte[] extractBodyData(
-      RbelElement rbel, int separator, RbelHttpHeaderFacet headerMap, String eol) {
+      final RbelElement rbel,
+      final int separator,
+      final RbelHttpHeaderFacet headerMap,
+      final String eol) {
     byte[] inputData = rbel.getRawContent();
 
     if (headerMap.hasValueMatching("Transfer-Encoding", "chunked")) {
-      separator = rbel.getRawStringContent().indexOf(eol, separator) + eol.length();
-      return Arrays.copyOfRange(
-          inputData,
-          Math.min(inputData.length, separator),
+      int chunkSeperator = rbel.getRawStringContent().indexOf(eol, separator) + eol.length();
+
+      final int indexOfChunkTerminator =
           RbelArrayUtils.indexOf(
-              inputData, (eol + "0" + eol).getBytes(rbel.getElementCharset()), separator));
-    } else {
-      return Arrays.copyOfRange(inputData, Math.min(inputData.length, separator), inputData.length);
+              inputData, (eol + "0" + eol).getBytes(rbel.getElementCharset()), chunkSeperator);
+      if (indexOfChunkTerminator >= 0) {
+        return Arrays.copyOfRange(
+            inputData, Math.min(inputData.length, chunkSeperator), indexOfChunkTerminator);
+      } else {
+        rbel.addFacet(
+            RbelNoteFacet.builder()
+                .style(NoteStyling.WARN)
+                .value(
+                    "Detected incorrect use of chunked encoding: Chunked was given as"
+                        + " transfer-encoding, but the chunk-seperator could not be found in the"
+                        + " content. Displaying the message as-is.")
+                .build());
+      }
     }
+    return Arrays.copyOfRange(inputData, Math.min(inputData.length, separator), inputData.length);
   }
 
   protected SimpleImmutableEntry<String, RbelElement> parseStringToKeyValuePair(

@@ -10,6 +10,8 @@ import de.gematik.rbellogger.data.facet.RbelBinaryFacet;
 import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.test.tiger.mockserver.model.BinaryMessage;
+import de.gematik.test.tiger.mockserver.model.BinaryProxyListener;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.TigerNonPairedMessageFacet;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
@@ -24,8 +26,6 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.Arrays;
-import org.mockserver.model.BinaryMessage;
-import org.mockserver.model.BinaryProxyListener;
 
 @Data
 @AllArgsConstructor

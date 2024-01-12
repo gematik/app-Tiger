@@ -4,9 +4,8 @@
 
 package de.gematik.test.tiger.proxy.tls;
 
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
-import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
+import de.gematik.test.tiger.mockserver.socket.tls.bouncycastle.AbstractKeyAndCertificateFactory;
 import java.security.PrivateKey;
 import java.security.Security;
 import java.security.cert.X509Certificate;
@@ -14,10 +13,8 @@ import java.util.List;
 import lombok.Builder;
 import org.apache.commons.collections.ListUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.mockserver.logging.MockServerLogger;
-import org.mockserver.socket.tls.bouncycastle.BCKeyAndCertificateFactory;
 
-public class StaticTigerKeyAndCertificateFactory extends BCKeyAndCertificateFactory {
+public class StaticTigerKeyAndCertificateFactory extends AbstractKeyAndCertificateFactory {
 
   static {
     Security.addProvider(new BouncyCastleProvider());
@@ -26,19 +23,8 @@ public class StaticTigerKeyAndCertificateFactory extends BCKeyAndCertificateFact
   private final TigerPkiIdentity identity;
 
   @Builder
-  public StaticTigerKeyAndCertificateFactory(
-      MockServerLogger mockServerLogger,
-      TigerProxyConfiguration tigerProxyConfiguration,
-      TigerPkiIdentity eeIdentity) {
-    super(
-        ProxyConfigurationConverter.convertToMockServerConfiguration(tigerProxyConfiguration),
-        mockServerLogger);
+  public StaticTigerKeyAndCertificateFactory(TigerPkiIdentity eeIdentity) {
     this.identity = eeIdentity;
-  }
-
-  @Override
-  public boolean certificateAuthorityCertificateNotYetCreated() {
-    return false;
   }
 
   @Override

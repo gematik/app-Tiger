@@ -14,7 +14,9 @@ import java.util.Arrays;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class PortToProcessMapper {
 
   private PortToProcessMapper() {
@@ -70,20 +72,24 @@ public class PortToProcessMapper {
   }
 
   private static void fillMapWithValues(Pattern pattern, String line, int port) {
-    Matcher matcher = pattern.matcher(line);
+    try {
+      Matcher matcher = pattern.matcher(line);
 
-    if (matcher.matches()) {
-      String localPort = matcher.group(1);
-      String remotePort = matcher.group(2);
-      String processId = matcher.group(3);
+      if (matcher.matches()) {
+        String localPort = matcher.group(1);
+        String remotePort = matcher.group(2);
+        String processId = matcher.group(3);
 
-      if (Integer.parseInt(localPort) == port
-          || Integer.parseInt(remotePort) == port
-              && GlobalServerMap.getProcessIdToBundledServerName()
-                  .containsKey(Long.parseLong(processId))) {
-        mapPortToProcessIds(Integer.parseInt(localPort), Long.parseLong(processId));
-        mapPortToProcessIds(Integer.parseInt(remotePort), Long.parseLong(processId));
+        if (Integer.parseInt(localPort) == port
+            || Integer.parseInt(remotePort) == port
+                && GlobalServerMap.getProcessIdToBundledServerName()
+                    .containsKey(Long.parseLong(processId))) {
+          mapPortToProcessIds(Integer.parseInt(localPort), Long.parseLong(processId));
+          mapPortToProcessIds(Integer.parseInt(remotePort), Long.parseLong(processId));
+        }
       }
+    } catch (RuntimeException e) {
+      log.warn("Error during port-to-process map allocation (line was {})", line);
     }
   }
 }

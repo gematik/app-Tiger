@@ -68,7 +68,7 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
     setUpEnvAndExecuteWithSecureShutdown(
         "12",
         () -> {
-          Process proc = null;
+          Process proc;
           try {
             proc =
                 new ProcessBuilder()

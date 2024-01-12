@@ -4,10 +4,12 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockserver.model.HttpRequest.request;
 
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -23,48 +25,41 @@ import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.ThrowingConsumer;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.configuration.ConfigurationProperties;
-import org.mockserver.mock.Expectation;
-import org.mockserver.model.Delay;
-import org.mockserver.model.HttpResponse;
-import org.mockserver.netty.MockServer;
 
 @Slf4j
 @ResetTigerConfiguration
 @NotThreadSafe
+@WireMockTest
 class TestEnvDownload {
   private static final Path DOWNLOAD_FOLDER_PATH = Path.of("target", "jarDownloadTest");
 
-  private static MockServer mockServer;
-  private static MockServerClient mockServerClient;
-  private static Expectation downloadExpectation;
   private static byte[] winstoneBytes;
   private static byte[] tigerProxyBytes;
 
   @BeforeEach
-  public void cleanDownloadFolder() throws IOException {
+  public void cleanDownloadFolder(WireMockRuntimeInfo runtimeInfo) throws IOException {
     log.info("Cleaning download folder...");
     if (DOWNLOAD_FOLDER_PATH.toFile().exists()) {
       FileUtils.deleteDirectory(DOWNLOAD_FOLDER_PATH.toFile());
     } else {
       FileUtils.forceMkdir(DOWNLOAD_FOLDER_PATH.toFile());
     }
+    runtimeInfo
+        .getWireMock()
+        .register(stubFor(get("/download").willReturn(ok().withBody(winstoneBytes))));
+    runtimeInfo
+        .getWireMock()
+        .register(
+            stubFor(
+                get("/tiger/download")
+                    .willReturn(ok().withBody(tigerProxyBytes).withFixedDelay(2000))));
   }
 
-  @BeforeEach
-  public void startServer() throws IOException {
-    if (mockServer != null) {
-      return;
-    }
-    log.info("Booting MockServer...");
-    // this is necessary to actually find the downloads later on in the mockserver event log
-    ConfigurationProperties.maxLogEntries(10);
-    mockServer = new MockServer();
-    mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
-
+  @BeforeAll
+  public static void loadFiles() throws IOException {
     final File winstoneFile = new File("target/winstone.jar");
     if (!winstoneFile.exists()) {
       throw new RuntimeException(
@@ -81,22 +76,14 @@ class TestEnvDownload {
                 .map(Path::toFile)
                 .findAny()
                 .orElseThrow());
-
-    downloadExpectation =
-        mockServerClient.when(request().withPath("/download"))
-            .respond(req -> HttpResponse.response().withBody(winstoneBytes))[0];
-
-    mockServerClient
-        .when(request().withPath("/tiger/download"))
-        .respond(req -> HttpResponse.response().withBody(tigerProxyBytes), Delay.seconds(2));
   }
 
   @SneakyThrows
   @Test
-  void multipleParallelDownload_shouldNotInterfere() {
+  void multipleParallelDownload_shouldNotInterfere(WireMockRuntimeInfo runtimeInfo) {
     loadConfigurationWithJarsLoadedFromUrls(
-        "http://localhost:" + mockServer.getLocalPort() + "/tiger/download",
-        "http://localhost:" + mockServer.getLocalPort() + "/download");
+        "http://localhost:" + runtimeInfo.getHttpPort() + "/tiger/download",
+        "http://localhost:" + runtimeInfo.getHttpPort() + "/download");
     createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment);
 
     assertThat(
@@ -110,46 +97,41 @@ class TestEnvDownload {
 
   @SneakyThrows
   @Test
-  void reboot_shouldNotRetriggerDownload() {
-    var initialNumberOfDownloads = getNumberOfDownloads();
-
+  void reboot_shouldNotRetriggerDownload(WireMockRuntimeInfo runtimeInfo) {
     loadConfigurationWithJarsLoadedFromUrls(
-        "http://localhost:" + mockServer.getLocalPort() + "/download");
+        "http://localhost:" + runtimeInfo.getHttpPort() + "/download");
 
     createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment);
     createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment);
 
-    assertThat(getNumberOfDownloads()).isEqualTo(initialNumberOfDownloads + 1);
+    verify(exactly(1), getRequestedFor(urlEqualTo("/download")));
   }
 
   @SneakyThrows
   @Test
-  void twoIdenticalJars_onlyOneDownloadShouldBeTriggered() {
-    int initialNumberOfDownloads = getNumberOfDownloads();
-
+  void twoIdenticalJars_onlyOneDownloadShouldBeTriggered(WireMockRuntimeInfo runtimeInfo) {
     loadConfigurationWithJarsLoadedFromUrls(
-        "http://localhost:" + mockServer.getLocalPort() + "/download",
-        "http://localhost:" + mockServer.getLocalPort() + "/download");
+        "http://localhost:" + runtimeInfo.getHttpPort() + "/download",
+        "http://localhost:" + runtimeInfo.getHttpPort() + "/download");
 
     createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment);
 
-    assertThat(getNumberOfDownloads()).isEqualTo(initialNumberOfDownloads + 1);
+    verify(exactly(1), getRequestedFor(urlEqualTo("/download")));
   }
 
   @SneakyThrows
   @Test
-  void failingStartupAfterSuccessfulDownload_shouldRetryOnNextBoot() {
-    final Expectation failingExpectation =
-        mockServerClient.when(request().withPath("/failDownload"))
-            .respond(
-                req ->
-                    HttpResponse.response().withBody("not a jar".getBytes(StandardCharsets.UTF_8)))[
-            0];
-
-    int initialNumberOfDownloads = getNumberOfDownloads(failingExpectation);
+  void failingStartupAfterSuccessfulDownload_shouldRetryOnNextBoot(
+      WireMockRuntimeInfo runtimeInfo) {
+    runtimeInfo
+        .getWireMock()
+        .register(
+            stubFor(
+                get("/failDownload")
+                    .willReturn(ok().withBody("not a jar".getBytes(StandardCharsets.UTF_8)))));
 
     loadConfigurationWithJarsLoadedFromUrls(
-        "http://localhost:" + mockServer.getLocalPort() + "/failDownload");
+        "http://localhost:" + runtimeInfo.getHttpPort() + "/failDownload");
 
     assertThatThrownBy(() -> createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment))
         .isInstanceOf(TigerTestEnvException.class);
@@ -163,15 +145,7 @@ class TestEnvDownload {
     assertThatThrownBy(() -> createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment))
         .isInstanceOf(TigerTestEnvException.class);
 
-    assertThat(getNumberOfDownloads(failingExpectation)).isEqualTo(initialNumberOfDownloads + 2);
-  }
-
-  private int getNumberOfDownloads() {
-    return getNumberOfDownloads(downloadExpectation);
-  }
-
-  private int getNumberOfDownloads(Expectation expectation) {
-    return mockServerClient.retrieveRecordedRequests(expectation.getHttpRequest()).length;
+    verify(2, getRequestedFor(urlEqualTo("/failDownload")));
   }
 
   private void loadConfigurationWithJarsLoadedFromUrls(String... jarDownloadUrl) {

@@ -1,11 +1,13 @@
 package de.gematik.test.tiger.zion;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.gematik.rbellogger.data.RbelElementAssertion;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import com.github.tomakehurst.wiremock.matching.UrlPattern;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -20,8 +22,6 @@ import kong.unirest.*;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.netty.MockServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -33,6 +33,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ResetTigerConfiguration
 @TestPropertySource(
     properties = {"zion.mockResponseFiles.firstFile=src/test/resources/someMockResponse.yaml"})
+@WireMockTest
 class TestTigerProxyMockResponses {
 
   final Path tempDirectory = Path.of("target", "zionResponses");
@@ -99,53 +100,45 @@ class TestTigerProxyMockResponses {
   }
 
   @Test
-  void testSpyFunctionality() throws IOException {
-    try (MockServer mockServer = new MockServer();
-        MockServerClient mockServerClient =
-            new MockServerClient("localhost", mockServer.getLocalPort())) {
-      mockServerClient
-          .when(request().withMethod("GET").withPath(".*"))
-          .respond(response().withStatusCode(666).withBody("{\"foo\":\"bar\"}"));
+  void testSpyFunctionality(WireMockRuntimeInfo wmRuntimeInfo) throws IOException {
+    stubFor(get(".*").willReturn(status(666).withBody("{\"foo\":\"bar\"}")));
 
-      configuration.setSpy(
-          ZionSpyConfiguration.builder()
-              .url("http://localhost:" + mockServer.getLocalPort() + "/deepPath")
-              .protocolToPath("target/zionResponses")
-              .build());
+    configuration.setSpy(
+        ZionSpyConfiguration.builder()
+            .url("http://localhost:" + wmRuntimeInfo.getHttpPort() + "/deepPath")
+            .protocolToPath("target/zionResponses")
+            .build());
 
-      Unirest.get("http://localhost:" + port + "/shallowPath?foo=bar").asJson();
+    Unirest.get("http://localhost:" + port + "/shallowPath?foo=bar").asJson();
 
-      final TigerMockResponse mockResponse =
-          objectMapper.readValue(
-              Files.list(Path.of("target", "zionResponses")).findAny().orElseThrow().toFile(),
-              TigerMockResponse.class);
+    final TigerMockResponse mockResponse =
+        objectMapper.readValue(
+            Files.list(Path.of("target", "zionResponses")).findAny().orElseThrow().toFile(),
+            TigerMockResponse.class);
 
-      assertThat(mockResponse.getRequestCriterions())
-          .contains("message.method == 'GET'")
-          .contains("message.url =$ '/shallowPath?foo=bar'");
-    }
+    assertThat(mockResponse.getRequestCriterions())
+        .contains("message.method == 'GET'")
+        .contains("message.url =$ '/shallowPath?foo=bar'");
   }
 
   @Test
-  void testTemplatedBackendRequest() {
-    try (MockServer mockServer = new MockServer();
-        MockServerClient mockServerClient =
-            new MockServerClient("localhost", mockServer.getLocalPort())) {
-      mockServerClient
-          .when(request())
-          .respond(req -> response().withStatusCode(200).withBody(req.getBodyAsString()));
+  void testTemplatedBackendRequest(WireMockRuntimeInfo wmRuntimeInfo) {
+    stubFor(
+        post(UrlPattern.ANY)
+            .willReturn(
+                status(200).withBody("{{request.body}}").withTransformers("response-template")));
 
-      configuration.setMockResponses(
-          Map.of(
-              "templatedBackendRequest",
-              TigerMockResponse.builder()
-                  .backendRequests(
-                      Map.of(
-                          "theRequest",
-                          ZionBackendRequestDescription.builder()
-                              .url("http://localhost:" + mockServer.getLocalPort() + "/deepPath")
-                              .body(
-                                  """
+    configuration.setMockResponses(
+        Map.of(
+            "templatedBackendRequest",
+            TigerMockResponse.builder()
+                .backendRequests(
+                    Map.of(
+                        "theRequest",
+                        ZionBackendRequestDescription.builder()
+                            .url("http://localhost:" + wmRuntimeInfo.getHttpPort() + "/deepPath")
+                            .body(
+                                """
                                 {
                                   "tgrEncodeAs":"JWT",
                                   "header":{
@@ -162,15 +155,14 @@ class TestTigerProxyMockResponses {
                                   }
                                 }
                                 """)
-                              .assignments(Map.of("signer", "$.body.signature.verifiedUsing"))
-                              .build()))
-                  .response(TigerMockResponseDescription.builder().body("${signer}").build())
-                  .build()));
+                            .assignments(Map.of("signer", "$.body.signature.verifiedUsing"))
+                            .build()))
+                .response(TigerMockResponseDescription.builder().body("${signer}").build())
+                .build()));
 
-      assertThat(
-              Unirest.get("http://localhost:" + port + "/shallowPath?foo=bar").asString().getBody())
-          .startsWith("puk_idp_");
-    }
+    assertThat(
+            Unirest.get("http://localhost:" + port + "/shallowPath?foo=bar").asString().getBody())
+        .startsWith("puk_idp_");
   }
 
   @Test
@@ -267,39 +259,34 @@ class TestTigerProxyMockResponses {
   }
 
   @Test
-  void testSpyFunctionalityWithJwt() throws IOException {
-    try (MockServer mockServer = new MockServer();
-        MockServerClient mockServerClient =
-            new MockServerClient("localhost", mockServer.getLocalPort())) {
-      mockServerClient
-          .when(request().withMethod("GET").withPath(".*"))
-          .respond(
-              response()
-                  .withStatusCode(666)
-                  .withBody(
-                      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"));
+  void testSpyFunctionalityWithJwt(WireMockRuntimeInfo wireMockRuntimeInfo) throws IOException {
+    stubFor(
+        get(UrlPattern.ANY)
+            .willReturn(
+                status(666)
+                    .withBody(
+                        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c")));
 
-      configuration.setSpy(
-          ZionSpyConfiguration.builder()
-              .url("http://localhost:" + mockServer.getLocalPort() + "/deepPath")
-              .protocolToPath("target/zionResponses")
-              .build());
+    configuration.setSpy(
+        ZionSpyConfiguration.builder()
+            .url("http://localhost:" + wireMockRuntimeInfo.getHttpPort() + "/deepPath")
+            .protocolToPath("target/zionResponses")
+            .build());
 
-      Unirest.get("http://localhost:" + port + "/shallowPath?foo=bar").asJson();
+    Unirest.get("http://localhost:" + port + "/shallowPath?foo=bar").asJson();
 
-      final TigerMockResponse mockResponse =
-          objectMapper.readValue(
-              Files.list(tempDirectory).findAny().get().toFile(), TigerMockResponse.class);
+    final TigerMockResponse mockResponse =
+        objectMapper.readValue(
+            Files.list(tempDirectory).findAny().get().toFile(), TigerMockResponse.class);
 
-      assertThat(mockResponse.getResponse().getBody())
-          .containsIgnoringWhitespaces(
-              """
-                          {
-                            "sub": "1234567890",
-                            "name": "John Doe",
-                            "iat": 1516239022
-                          }""");
-    }
+    assertThat(mockResponse.getResponse().getBody())
+        .containsIgnoringWhitespaces(
+            """
+                      {
+                        "sub": "1234567890",
+                        "name": "John Doe",
+                        "iat": 1516239022
+                      }""");
   }
 
   @Test
@@ -348,33 +335,27 @@ class TestTigerProxyMockResponses {
         .header("password", "secret")
         .asJson();
 
-    RbelElementAssertion.assertThat(
-            testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(0))
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(0))
         .extractChildWithPath("$.sender.bundledServerName")
         .hasStringContentEqualTo("mainServer");
 
-    RbelElementAssertion.assertThat(
-            testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(0))
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(0))
         .extractChildWithPath("$.receiver.bundledServerName")
         .hasStringContentEqualTo("backendServer");
 
-    RbelElementAssertion.assertThat(
-            testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(1))
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(1))
         .extractChildWithPath("$.sender.bundledServerName")
         .hasStringContentEqualTo("backendServer");
 
-    RbelElementAssertion.assertThat(
-            testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(1))
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(1))
         .extractChildWithPath("$.receiver.bundledServerName")
         .hasStringContentEqualTo("mainServer");
 
-    RbelElementAssertion.assertThat(
-            testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(2))
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(2))
         .extractChildWithPath("$.receiver.bundledServerName")
         .hasStringContentEqualTo("mainServer");
 
-    RbelElementAssertion.assertThat(
-            testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(3))
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(3))
         .extractChildWithPath("$.sender.bundledServerName")
         .hasStringContentEqualTo("mainServer");
   }

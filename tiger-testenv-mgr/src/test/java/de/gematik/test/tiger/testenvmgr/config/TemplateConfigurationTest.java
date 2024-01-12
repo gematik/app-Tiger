@@ -49,7 +49,7 @@ class TemplateConfigurationTest {
             + "    testExternalJar:\n"
             + "      type: externalJar\n"
             + "      source:\n"
-            + "        - http://localhost:${mockserver.port}/download\n"
+            + "        - http://localhost:${wiremock.port}/download\n"
             + "      healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
             + "      logFile: 'target/serverLogs/Test.log'\n"
             + "      externalJarOptions:\n"

@@ -15,7 +15,6 @@
     <properties>
         <version.maven-replacer-plugin>1.4.1</version.maven-replacer-plugin>
         <version.mockito>4.11.0</version.mockito>
-        <version.mockserver>5.15.0</version.mockserver>
     </properties>
 
 

@@ -4,12 +4,12 @@
 
 package de.gematik.test.tiger.proxy.handler;
 
-import static org.mockserver.model.Header.header;
+import static de.gematik.test.tiger.mockserver.model.Header.header;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import lombok.extern.slf4j.Slf4j;
-import org.mockserver.model.HttpRequest;
 
 /** Callback used for all Forward-Proxy routes in the TigerProxy. */
 @Slf4j

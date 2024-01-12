@@ -4,8 +4,8 @@
 
 package de.gematik.test.tiger.proxy.handler;
 
-import static org.mockserver.model.Header.header;
-import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
+import static de.gematik.test.tiger.mockserver.model.Header.header;
+import static de.gematik.test.tiger.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.decorator.AddBundledServerNamesModifier;
@@ -19,6 +19,8 @@ import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndResponseCallback;
+import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
@@ -35,13 +37,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
-import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
-import org.mockserver.model.Header;
-import org.mockserver.model.HttpOverrideForwardedRequest;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
-import org.mockserver.model.Parameters;
-import org.mockserver.model.X509Certificate;
 
 /**
  * Abstract super type handling the parsing logic for messages. It is the essential hook which

@@ -1,0 +1,7 @@
+HTTP/1.1 200
+Transfer-Encoding: chunked
+Content-Type: application/json
+
+{
+  "thisIs": "just a normal message"
+}

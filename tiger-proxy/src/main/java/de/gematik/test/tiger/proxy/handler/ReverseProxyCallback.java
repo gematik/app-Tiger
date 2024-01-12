@@ -5,12 +5,12 @@
 package de.gematik.test.tiger.proxy.handler;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import java.net.URI;
 import java.net.URISyntaxException;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import org.mockserver.model.HttpRequest;
 
 /** Callback used for all Reverse-Proxy routes in the TigerProxy. */
 @Slf4j
@@ -29,7 +29,7 @@ public class ReverseProxyCallback extends AbstractRouteProxyCallback {
             .withSocketAddress(
                 getTargetUrl().getProtocol().equals("https"), getTargetUrl().getHost(), getPort())
             .withSecure(getTigerRoute().getTo().startsWith("https"))
-            .withPath(patchPath(httpRequest.getPath().getValue()));
+            .withPath(patchPath(httpRequest.getPath()));
 
     if (getTigerProxy().getTigerProxyConfiguration().isRewriteHostHeader()) {
       request.removeHeader("Host").withHeader("Host", getTargetUrl().getHost() + ":" + getPort());

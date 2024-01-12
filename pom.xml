@@ -36,9 +36,11 @@
         <version.cucumber>7.14.0</version.cucumber>
         <version.datatable>7.14.0</version.datatable>
         <version.gson>2.10.1</version.gson>
+        <version.hamcrest>2.2</version.hamcrest>
         <version.htmlunit>3.55.0</version.htmlunit>
         <version.jackson>2.16.0</version.jackson>
         <version.javaparser>3.25.4</version.javaparser>
+        <version.jetty>12.0.5</version.jetty>
         <version.json>20230618</version.json>
         <version.json-unit>2.38.0</version.json-unit>
         <version.junit4>4.13.2</version.junit4>
@@ -57,8 +59,12 @@
         <version.slf4j>2.0.10</version.slf4j>
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
         <version.spring-boot>3.1.0</version.spring-boot>
+        <version.spring>5.3.20</version.spring>
         <version.system-stubs>2.0.2</version.system-stubs>
         <version.unirest>3.14.2</version.unirest>
+        <version.velocity>2.3</version.velocity>
+        <version.netty>4.1.89.Final</version.netty>
+        <version.xmlunit>2.9.0</version.xmlunit>
         <version.wiremock>3.3.1</version.wiremock>
         <spotless-maven-plugin.version>2.40.0</spotless-maven-plugin.version>
         <spotless.google-java-format.version>1.18.1</spotless.google-java-format.version>
@@ -429,7 +435,7 @@
             </dependency>
             <dependency>
                 <groupId>org.wiremock</groupId>
-                <artifactId>wiremock</artifactId>
+                <artifactId>wiremock-standalone</artifactId>
                 <version>${version.wiremock}</version>
             </dependency>
             <dependency>

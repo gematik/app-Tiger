@@ -33,8 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
-import org.mockserver.configuration.Configuration;
-import org.mockserver.model.BinaryProxyListener;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @Slf4j
@@ -99,11 +97,12 @@ public abstract class AbstractNonHttpTest {
           });
       tigerProxy = tigerProxyGenerator.apply(listenerServer.getLocalPort());
 
-      final Configuration configuration =
-          (Configuration)
+      final de.gematik.test.tiger.mockserver.configuration.Configuration configuration =
+          (de.gematik.test.tiger.mockserver.configuration.Configuration)
               ReflectionTestUtils.getField(
                   ReflectionTestUtils.getField(tigerProxy, "mockServer"), "configuration");
-      final BinaryProxyListener oldListener = configuration.binaryProxyListener();
+      final de.gematik.test.tiger.mockserver.model.BinaryProxyListener oldListener =
+          configuration.binaryProxyListener();
       configuration.binaryProxyListener(
           (binaryMessage, completableFuture, socketAddress, socketAddress1) -> {
             log.info(

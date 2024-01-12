@@ -74,9 +74,7 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
   @Test
   void sendNonHttpMessageWithResponse() throws Exception {
     executeRemoteProxyTestWithMessagesAndVerification(
-        socket -> {
-          writeSingleRequestMessage(socket, request);
-        },
+        socket -> writeSingleRequestMessage(socket, request),
         serverSocket -> {
           serverSocket.getOutputStream().write(response);
           serverSocket.getOutputStream().flush();
@@ -93,9 +91,7 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
   @Test
   void forwardMessagesToNonExistingServer_shouldReceiveException() throws Exception {
     executeRemoteProxyTestWithMessagesAndVerification(
-        socket -> {
-          writeSingleRequestMessage(socket, request);
-        },
+        socket -> writeSingleRequestMessage(socket, request),
         serverSocket -> {},
         (requestCalls, responseCalls, serverCalled) -> {
           assertThat(tigerRemoteProxyClient.get().getRbelMessages()).hasSize(1);

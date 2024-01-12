@@ -4,10 +4,11 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
@@ -21,52 +22,64 @@ import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.junit.jupiter.MockServerExtension;
 
 @RequiredArgsConstructor
 @ResetTigerConfiguration
-@ExtendWith(MockServerExtension.class)
-public class TigerProxyExamplesTest {
+@WireMockTest
+class TigerProxyExamplesTest {
 
-  @BeforeAll
-  public static void beforeEachLifecyleMethod(MockServerClient mockServerClient) {
-    mockServerClient
-        .when(request().withPath("/foo"))
-        .respond(
-            httpRequest ->
-                response().withBody("bar" + httpRequest.getFirstQueryStringParameter("echo")));
-
-    mockServerClient
-        .when(request().withPath("/read"))
-        .respond(
-            httpRequest ->
-                response()
-                    .withBody(
-                        FileUtils.readFileToByteArray(
-                            new File(httpRequest.getFirstQueryStringParameter("filename")))));
+  @SneakyThrows
+  @BeforeEach
+  public void beforeEachLifecyleMethod(WireMockRuntimeInfo runtimeInfo) {
+    runtimeInfo.getWireMock().register(stubFor(get("/foo").willReturn(ok().withBody("bar"))));
+    runtimeInfo
+        .getWireMock()
+        .register(
+            stubFor(
+                get(urlMatching("/foo.*"))
+                    .willReturn(
+                        ok().withBody("bar{{request.query.echo}}")
+                            .withTransformers("response-template"))));
+    runtimeInfo
+        .getWireMock()
+        .register(
+            stubFor(
+                get("/read/test.json")
+                    .willReturn(
+                        ok().withBody(
+                                FileUtils.readFileToByteArray(
+                                    new File("src/test/resources/test.json"))))));
+    runtimeInfo
+        .getWireMock()
+        .register(
+            stubFor(
+                get("/read/combined.json")
+                    .willReturn(
+                        ok().withBody(
+                                FileUtils.readFileToByteArray(
+                                    new File("src/test/resources/combined.json"))))));
   }
 
   @Test
-  void directTest(MockServerClient mockServerClient) {
+  void directTest(WireMockRuntimeInfo runtimeInfo) {
     final HttpResponse<String> response =
-        Unirest.get("http://localhost:" + mockServerClient.getPort() + "/foo").asString();
+        Unirest.get("http://localhost:" + runtimeInfo.getHttpPort() + "/foo").asString();
 
     assertThat(response.getBody()).isEqualTo("bar");
   }
 
   @Test
-  void simpleTigerProxyTest(MockServerClient mockServerClient) {
+  void simpleTigerProxyTest(WireMockRuntimeInfo runtimeInfo) {
     try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder().build())) {
       final UnirestInstance unirestInstance = Unirest.spawnInstance();
       unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
       unirestInstance
-          .get("http://localhost:" + mockServerClient.getPort() + "/foo?echo=schmoolildu")
+          .get("http://localhost:" + runtimeInfo.getHttpPort() + "/foo?echo=schmoolildu")
           .asString();
       TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
 
@@ -76,12 +89,12 @@ public class TigerProxyExamplesTest {
   }
 
   @Test
-  void rbelPath_getBody(MockServerClient mockServerClient) {
+  void rbelPath_getBody(WireMockRuntimeInfo runtimeInfo) {
     try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder().build());
         UnirestInstance unirestInstance = Unirest.spawnInstance()) {
       unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
       unirestInstance
-          .get("http://localhost:" + mockServerClient.getPort() + "/foo?echo=schmoolildu")
+          .get("http://localhost:" + runtimeInfo.getHttpPort() + "/foo?echo=schmoolildu")
           .asString();
       TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
 
@@ -97,15 +110,12 @@ public class TigerProxyExamplesTest {
   }
 
   @Test
-  void json_demoWithExtendedRbelPath(MockServerClient mockServerClient) {
+  void json_demoWithExtendedRbelPath(WireMockRuntimeInfo runtimeInfo) {
     try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder().build());
         UnirestInstance unirestInstance = Unirest.spawnInstance()) {
       unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
       unirestInstance
-          .get(
-              "http://localhost:"
-                  + mockServerClient.getPort()
-                  + "/read?filename=src/test/resources/test.json")
+          .get("http://localhost:" + runtimeInfo.getHttpPort() + "/read/test.json")
           .asString();
       TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
 
@@ -121,15 +131,12 @@ public class TigerProxyExamplesTest {
   }
 
   @Test
-  void jsonInXml_longerRbelPathSucceeding(MockServerClient mockServerClient) {
+  void jsonInXml_longerRbelPathSucceeding(WireMockRuntimeInfo runtimeInfo) {
     try (TigerProxy tigerProxy = new TigerProxy(TigerProxyConfiguration.builder().build());
         UnirestInstance unirestInstance = Unirest.spawnInstance()) {
       unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
       unirestInstance
-          .get(
-              "http://localhost:"
-                  + mockServerClient.getPort()
-                  + "/read?filename=src/test/resources/combined.json")
+          .get("http://localhost:" + runtimeInfo.getHttpPort() + "/read/combined.json")
           .asString();
       TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
 
@@ -145,7 +152,7 @@ public class TigerProxyExamplesTest {
   }
 
   @Test
-  void forwardProxyRoute_sendMessage(MockServerClient mockServerClient) {
+  void forwardProxyRoute_sendMessage(WireMockRuntimeInfo runtimeInfo) {
     try (TigerProxy tigerProxy =
             new TigerProxy(
                 TigerProxyConfiguration.builder()
@@ -153,7 +160,7 @@ public class TigerProxyExamplesTest {
                         List.of(
                             TigerRoute.builder()
                                 .from("http://norealserver")
-                                .to("http://localhost:" + mockServerClient.getPort())
+                                .to("http://localhost:" + runtimeInfo.getHttpPort())
                                 .build()))
                     .build());
         UnirestInstance unirestInstance = Unirest.spawnInstance()) {
@@ -174,7 +181,7 @@ public class TigerProxyExamplesTest {
 
   @Test
   @SuppressWarnings("java:S2699")
-  void forwardProxyRoute_waitForMessageSent(MockServerClient mockServerClient) {
+  void forwardProxyRoute_waitForMessageSent(WireMockRuntimeInfo runtimeInfo) {
     try (TigerProxy tigerProxy =
             new TigerProxy(
                 TigerProxyConfiguration.builder()
@@ -182,7 +189,7 @@ public class TigerProxyExamplesTest {
                         List.of(
                             TigerRoute.builder()
                                 .from("http://norealserver")
-                                .to("http://localhost:" + mockServerClient.getPort())
+                                .to("http://localhost:" + runtimeInfo.getHttpPort())
                                 .build()))
                     .build());
         UnirestInstance unirestInstance = Unirest.spawnInstance()) {
@@ -197,7 +204,7 @@ public class TigerProxyExamplesTest {
 
   @Test
   @SuppressWarnings("java:S2699")
-  void reverseProxyRoute_waitForMessageSent(MockServerClient mockServerClient) {
+  void reverseProxyRoute_waitForMessageSent(WireMockRuntimeInfo runtimeInfo) {
     try (TigerProxy tigerProxy =
         new TigerProxy(
             TigerProxyConfiguration.builder()
@@ -205,7 +212,7 @@ public class TigerProxyExamplesTest {
                     List.of(
                         TigerRoute.builder()
                             .from("/")
-                            .to("http://localhost:" + mockServerClient.getPort())
+                            .to("http://localhost:" + runtimeInfo.getHttpPort())
                             .build()))
                 .build())) {
 
@@ -218,7 +225,7 @@ public class TigerProxyExamplesTest {
 
   @Test
   @SuppressWarnings("java:S2699")
-  void reverseProxyDeepRoute_waitForMessageSent(MockServerClient mockServerClient) {
+  void reverseProxyDeepRoute_waitForMessageSent(WireMockRuntimeInfo runtimeInfo) {
     try (TigerProxy tigerProxy =
         new TigerProxy(
             TigerProxyConfiguration.builder()
@@ -226,7 +233,7 @@ public class TigerProxyExamplesTest {
                     List.of(
                         TigerRoute.builder()
                             .from("/wuff")
-                            .to("http://localhost:" + mockServerClient.getPort())
+                            .to("http://localhost:" + runtimeInfo.getHttpPort())
                             .build()))
                 .build())) {
 
@@ -239,7 +246,7 @@ public class TigerProxyExamplesTest {
 
   @Test
   @SuppressWarnings("java:S2699")
-  void reverseProxyWithTls_waitForMessageSent(MockServerClient mockServerClient) {
+  void reverseProxyWithTls_waitForMessageSent(WireMockRuntimeInfo runtimeInfo) {
     try (TigerProxy tigerProxy =
             new TigerProxy(
                 TigerProxyConfiguration.builder()
@@ -247,7 +254,7 @@ public class TigerProxyExamplesTest {
                         List.of(
                             TigerRoute.builder()
                                 .from("/")
-                                .to("http://localhost:" + mockServerClient.getPort())
+                                .to("http://localhost:" + runtimeInfo.getHttpPort())
                                 .build()))
                     .build());
         final UnirestInstance unirestInstance = Unirest.spawnInstance()) {
@@ -262,7 +269,7 @@ public class TigerProxyExamplesTest {
 
   @Test
   @SuppressWarnings("java:S2699")
-  void forwardProxyWithTls_waitForMessageSent(MockServerClient mockServerClient) {
+  void forwardProxyWithTls_waitForMessageSent(WireMockRuntimeInfo runtimeInfo) {
     try (TigerProxy tigerProxy =
             new TigerProxy(
                 TigerProxyConfiguration.builder()
@@ -270,7 +277,7 @@ public class TigerProxyExamplesTest {
                         List.of(
                             TigerRoute.builder()
                                 .from("https://blub")
-                                .to("http://localhost:" + mockServerClient.getPort())
+                                .to("http://localhost:" + runtimeInfo.getHttpPort())
                                 .build()))
                     .tls(TigerTlsConfiguration.builder().domainName("blub").build())
                     .build());
@@ -288,7 +295,7 @@ public class TigerProxyExamplesTest {
 
   @Test
   @Disabled("Doesnt work on some JVMs (Brainpool restrictions)")
-  void forwardProxyWithTlsAndCustomCa_waitForMessageSent(MockServerClient mockServerClient) {
+  void forwardProxyWithTlsAndCustomCa_waitForMessageSent(WireMockRuntimeInfo runtimeInfo) {
     try (TigerProxy tigerProxy =
             new TigerProxy(
                 TigerProxyConfiguration.builder()
@@ -296,7 +303,7 @@ public class TigerProxyExamplesTest {
                         List.of(
                             TigerRoute.builder()
                                 .from("https://blub")
-                                .to("http://localhost:" + mockServerClient.getPort())
+                                .to("http://localhost:" + runtimeInfo.getHttpPort())
                                 .build()))
                     .tls(
                         TigerTlsConfiguration.builder()
@@ -337,7 +344,7 @@ public class TigerProxyExamplesTest {
   }
 
   @Test
-  void modificationForReturnValue(MockServerClient mockServerClient) {
+  void modificationForReturnValue(WireMockRuntimeInfo runtimeInfo) {
     try (TigerProxy tigerProxy =
             new TigerProxy(
                 TigerProxyConfiguration.builder()
@@ -345,7 +352,7 @@ public class TigerProxyExamplesTest {
                         List.of(
                             TigerRoute.builder()
                                 .from("http://blub")
-                                .to("http://localhost:" + mockServerClient.getPort())
+                                .to("http://localhost:" + runtimeInfo.getHttpPort())
                                 .build()))
                     .modifications(
                         List.of(
@@ -372,7 +379,7 @@ public class TigerProxyExamplesTest {
   }
 
   @Test
-  void tslSuiteEnforcement(MockServerClient mockServerClient) {
+  void tslSuiteEnforcement(WireMockRuntimeInfo runtimeInfo) {
     final String configuredSslSuite = "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA";
 
     try (TigerProxy tigerProxy =
@@ -382,7 +389,7 @@ public class TigerProxyExamplesTest {
                         List.of(
                             TigerRoute.builder()
                                 .from("https://blub")
-                                .to("http://localhost:" + mockServerClient.getPort())
+                                .to("http://localhost:" + runtimeInfo.getHttpPort())
                                 .build()))
                     .tls(
                         TigerTlsConfiguration.builder()

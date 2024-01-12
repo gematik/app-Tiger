@@ -7,7 +7,6 @@ package de.gematik.test.tiger.proxy.controller;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.TigerRouteDto;
-import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +39,7 @@ public class TigerConfigurationController {
   }
 
   @DeleteMapping(value = "/route/{id}")
-  public void deleteRoute(@PathVariable @NotBlank String id) {
+  public void deleteRoute(@PathVariable String id) {
     tigerProxy.removeRoute(id);
   }
 }

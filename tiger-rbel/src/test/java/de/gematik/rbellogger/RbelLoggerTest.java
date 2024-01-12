@@ -5,6 +5,7 @@
 package de.gematik.rbellogger;
 
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
@@ -16,7 +17,6 @@ import de.gematik.rbellogger.data.facet.RbelNoteFacet;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -135,7 +135,7 @@ class RbelLoggerTest {
         new RbelHtmlRenderer().doRender(rbelLogger.getMessageList()),
         Charset.defaultCharset());
 
-    RbelElementAssertion.assertThat(rbelLogger.getMessageList().get(9))
+    assertThat(rbelLogger.getMessageList().get(9))
         .extractChildWithPath("$.header.Location.code.value.encryptionInfo.decryptedUsingKeyWithId")
         .hasValueEqualTo("IDP symmetricEncryptionKey");
   }

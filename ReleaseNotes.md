@@ -4,6 +4,7 @@
 
 ## Features
 
+* TGR-898: Tiger-Proxy now no longer depends on mockserver, which has been internalized and stripped down.
 * TGR-1012: clicking a message in the traffic visualization diagram opens the Rbel Log Details pane and scrolls to the
   corresponding message.
 

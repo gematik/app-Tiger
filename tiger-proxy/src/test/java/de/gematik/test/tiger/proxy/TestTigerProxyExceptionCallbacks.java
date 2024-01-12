@@ -19,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.mockserver.model.HttpResponse;
 import org.springframework.test.util.ReflectionTestUtils;
 
 @Slf4j
@@ -135,7 +134,9 @@ class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
 
     @Override
     public RbelElement convertResponse(
-        HttpResponse response, String serverProtocolAndHost, String clientAddress) {
+        de.gematik.test.tiger.mockserver.model.HttpResponse response,
+        String serverProtocolAndHost,
+        String clientAddress) {
       throw new RuntimeException("foobar");
     }
   }

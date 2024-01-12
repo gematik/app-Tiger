@@ -4,6 +4,7 @@
 
 package de.gematik.rbellogger.converter;
 
+import static de.gematik.rbellogger.TestUtils.readAndConvertCurlMessage;
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -11,6 +12,9 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
+import de.gematik.rbellogger.data.facet.RbelNoteFacet;
+import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -72,6 +76,18 @@ class RbelHttpRequestConverterTest {
     assertThat(rbelElement.findRbelPathMembers("$.header.*"))
         .extracting(RbelElement::getRawStringContent)
         .containsExactly("Value1", "Value2");
+  }
+
+  @Test
+  void defunctChunkedMessage_shouldParseCorrectlyAndAddNote() throws IOException {
+    final RbelElement rbelElement =
+        readAndConvertCurlMessage("src/test/resources/sampleMessages/illegalChunkedMessage.curl");
+
+    assertThat(rbelElement)
+        .hasFacet(RbelNoteFacet.class)
+        .extractFacet(RbelNoteFacet.class)
+        .matches(note -> note.getStyle() == NoteStyling.WARN)
+        .matches(note -> note.getValue().contains("chunked"));
   }
 
   @Test

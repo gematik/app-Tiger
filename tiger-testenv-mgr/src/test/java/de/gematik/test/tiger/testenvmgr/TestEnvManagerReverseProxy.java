@@ -27,7 +27,7 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
             healthcheckUrl: http://127.0.0.1:${free.port.0}
             healthcheckReturnCode: 200
             source:
-              - http://localhost:${mockserver.port}/download
+              - http://localhost:${wiremock.port}/download
             externalJarOptions:
               arguments:
                 - --httpPort=${free.port.0}
@@ -84,7 +84,7 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
               + "  testWinstone2:\n"
               + "    type: externalJar\n"
               + "    source:\n"
-              + "      - http://localhost:${mockserver.port}/download\n"
+              + "      - http://localhost:${wiremock.port}/download\n"
               + "    healthcheckUrl: http://127.0.0.1:${free.port.0}/target\n"
               + "    healthcheckReturnCode: 200\n"
               + "    externalJarOptions:\n"
@@ -114,7 +114,7 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
               + "  testWinstone2:\n"
               + "    type: externalJar\n"
               + "    source:\n"
-              + "      - http://localhost:${mockserver.port}/download\n"
+              + "      - http://localhost:${wiremock.port}/download\n"
               + "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
               + "    healthcheckReturnCode: 200\n"
               + "    externalJarOptions:\n"

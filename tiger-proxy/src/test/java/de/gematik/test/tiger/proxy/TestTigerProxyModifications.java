@@ -6,6 +6,7 @@ package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
@@ -219,7 +220,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
   }
 
   @Test
-  void forwardProxyWithModifiedQueryParameters() {
+  void forwardProxyWithModifiedQueryParameters(WireMockRuntimeInfo runtimeInfo) {
     String specialCaseParameter = "blub" + RandomStringUtils.randomPrint(300);
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
@@ -243,17 +244,16 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
 
     proxyRest.get("http://backend/foobar?foo=bar1&foo=bar2&schmoo").asString();
 
-    assertThat(getLastRequest().getQueryStringParameters().getEntries())
-        .extracting("name")
-        .containsOnly("foo", "schmoo");
-    assertThat(getLastRequest().getQueryStringParameters().getValues("foo"))
+    assertThat(getLastRequest(runtimeInfo.getWireMock()).getQueryParams())
+        .containsOnlyKeys("foo", "schmoo");
+    assertThat(getLastRequest(runtimeInfo.getWireMock()).getQueryParams().get("foo").getValues())
         .containsExactly("bar3", "bar2");
-    assertThat(getLastRequest().getQueryStringParameters().getValues("schmoo"))
+    assertThat(getLastRequest(runtimeInfo.getWireMock()).getQueryParams().get("schmoo").getValues())
         .containsExactly(specialCaseParameter);
   }
 
   @Test
-  void reverseProxyWithQueryParameters() {
+  void reverseProxyWithQueryParameters(WireMockRuntimeInfo runtimeInfo) {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
@@ -278,12 +278,11 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
             "http://localhost:" + tigerProxy.getProxyPort() + "/foobar?foo=bar1&foo=bar2&schmoo")
         .asString();
 
-    assertThat(getLastRequest().getQueryStringParameters().getEntries())
-        .extracting("name")
-        .containsOnly("foo", "schmoo");
-    assertThat(getLastRequest().getQueryStringParameters().getValues("foo"))
+    assertThat(getLastRequest(runtimeInfo.getWireMock()).getQueryParams())
+        .containsOnlyKeys("foo", "schmoo");
+    assertThat(getLastRequest(runtimeInfo.getWireMock()).getQueryParams().get("foo").getValues())
         .containsExactly("bar3", "bar2");
-    assertThat(getLastRequest().getQueryStringParameters().getValues("schmoo"))
+    assertThat(getLastRequest(runtimeInfo.getWireMock()).getQueryParams().get("schmoo").getValues())
         .containsExactly("loo");
   }
 

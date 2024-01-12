@@ -9,6 +9,9 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.test.tiger.mockserver.model.Header;
+import de.gematik.test.tiger.mockserver.model.HttpRequest;
+import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyParsingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -22,9 +25,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.Arrays;
-import org.mockserver.model.Header;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -82,8 +82,8 @@ public class MockServerToRbelConverter {
     if (!element.hasFacet(RbelHttpRequestFacet.class)) {
       element.addFacet(
           RbelHttpRequestFacet.builder()
-              .path(RbelElement.wrap(element, request.getPath().getValue()))
-              .method(RbelElement.wrap(element, request.getMethod().getValue()))
+              .path(RbelElement.wrap(element, request.getPath()))
+              .method(RbelElement.wrap(element, request.getMethod()))
               .build());
     }
 
@@ -142,17 +142,17 @@ public class MockServerToRbelConverter {
         .map(
             h ->
                 h.getValues().stream()
-                    .map(value -> h.getName().getValue() + ": " + value)
+                    .map(value -> h.getName() + ": " + value)
                     .collect(Collectors.joining("\r\n")))
         .collect(Collectors.joining("\r\n"));
   }
 
   private String getRequestUrl(HttpRequest request) {
     StringJoiner pathToQueryJoiner = new StringJoiner("?");
-    if (StringUtils.isEmpty(request.getPath().getValue())) {
+    if (StringUtils.isEmpty(request.getPath())) {
       pathToQueryJoiner.add("/");
     } else {
-      pathToQueryJoiner.add(request.getPath().getValue());
+      pathToQueryJoiner.add(request.getPath());
     }
 
     if (request.getQueryStringParameters() != null

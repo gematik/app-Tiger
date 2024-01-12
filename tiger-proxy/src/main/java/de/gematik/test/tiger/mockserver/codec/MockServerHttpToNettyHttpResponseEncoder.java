@@ -1,0 +1,25 @@
+package de.gematik.test.tiger.mockserver.codec;
+
+import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
+import de.gematik.test.tiger.mockserver.mappers.MockServerHttpResponseToFullHttpResponse;
+import de.gematik.test.tiger.mockserver.model.HttpResponse;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.MessageToMessageEncoder;
+import java.util.List;
+
+public class MockServerHttpToNettyHttpResponseEncoder
+    extends MessageToMessageEncoder<HttpResponse> {
+
+  private final MockServerHttpResponseToFullHttpResponse mockServerHttpResponseToFullHttpResponse;
+
+  public MockServerHttpToNettyHttpResponseEncoder(MockServerLogger mockServerLogger) {
+    mockServerHttpResponseToFullHttpResponse =
+        new MockServerHttpResponseToFullHttpResponse(mockServerLogger);
+  }
+
+  @Override
+  protected void encode(ChannelHandlerContext ctx, HttpResponse response, List<Object> out) {
+    out.addAll(
+        mockServerHttpResponseToFullHttpResponse.mapMockServerResponseToNettyResponse(response));
+  }
+}
