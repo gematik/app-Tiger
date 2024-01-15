@@ -1089,6 +1089,29 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     await().atMost(20, TimeUnit.SECONDS).until(asyncMessage::isDone);
   }
 
+  @Test
+  void queryParametersStartWithExclamationMark_shouldTransmitUnaltered() {
+    spawnTigerProxyWith(
+      TigerProxyConfiguration.builder()
+        .proxyRoutes(
+          List.of(
+            TigerRoute.builder()
+              .from("/")
+              .to("http://localhost:" + fakeBackendServerPort)
+              .build()))
+        .build());
+
+    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar?foo=!bar&!foo=bar").asString();
+    awaitMessagesInTiger(2);
+
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+      .extractChildWithPath("$.path.foo.value")
+      .hasStringContentEqualTo("!bar");
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+      .extractChildWithPath("$.path.!foo.value")
+      .hasStringContentEqualTo("bar");
+  }
+
   private void checkMessageAddresses(final String clientRegex, final String serverRegex) {
     final List<String> extractedReceiverHostnames =
         extractHostnames(RbelTcpIpMessageFacet::getReceiver).collect(Collectors.toList());
