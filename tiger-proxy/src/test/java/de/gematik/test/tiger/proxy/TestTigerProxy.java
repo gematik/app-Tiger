@@ -27,6 +27,7 @@ import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -967,6 +968,33 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             "HTTP 777 with body '{\"foo\":\"bar\"}'",
             "HTTP GET /mainserver with body ''",
             "HTTP 777 with body '{\"foo\":\"bar\"}'");
+  }
+
+  @Test
+  void xmlContentTypeWithNonConformingEncodedCharacter_shouldPreserveContent() throws UnirestException {
+    final byte[] rawContent = "hellö\uD83D\uDC4C\uD83C\uDFFB".getBytes(StandardCharsets.UTF_8);
+
+    spawnTigerProxyWith(TigerProxyConfiguration.builder()
+      .proxyRoutes(List.of(TigerRoute.builder()
+        .from("http://backend")
+        .to("http://localhost:" + fakeBackendServerPort)
+        .build()))
+      .build());
+
+    final HttpResponse<byte[]> response = proxyRest.post("http://backend/echo")
+      .body(rawContent)
+      .contentType(MediaType.APPLICATION_XML.toString())
+      .asBytes();
+
+    awaitMessagesInTiger(2);
+
+    assertThat(response.getBody())
+      .isEqualTo(rawContent);
+
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+      .extractChildWithPath("$.body")
+      .getContent()
+      .isEqualTo(rawContent);
   }
 
   @Test

@@ -8,6 +8,10 @@
 * TGR-1012: clicking a message in the traffic visualization diagram opens the Rbel Log Details pane and scrolls to the
   corresponding message.
 
+## Bugfixes
+
+* TGR-938: XML-Messages with UTF-8 content can now be transmitted without alteration.
+
 # Release 2.3.2
 
 ## Breaking changes

@@ -90,6 +90,16 @@ public abstract class AbstractTigerProxyTest {
     runtimeInfo
         .getWireMock()
         .register(stubFor(post("/foobar").willReturn(ok().withBody(binaryMessageContent))));
+
+    runtimeInfo
+        .getWireMock()
+        .register(
+            stubFor(
+                post("/echo")
+                    .willReturn(
+                        status(200)
+                            .withBody("{{request.body}}")
+                            .withTransformers("response-template"))));
   }
 
   @BeforeEach
