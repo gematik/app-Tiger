@@ -6,6 +6,7 @@
   <div class="row">
     <code ref="elementWithValue" class="value col-11 gy-1 hljs" id="test-tg-config-editor-table-row"
           :class="{  'text-truncate': isOverflowed && !expanded, 'text-break': expanded, 'multi-line': expanded}"
+          title="double click to edit"
           v-html="highlighted.value">
     </code>
     <div class="col-1 py-1" v-if="isOverflowed || expanded"><i v-on:click="clickExpandButton" class="fa-solid"
@@ -68,6 +69,15 @@ function clickExpandButton() {
 
 </script>
 <style>
+
+#test-tg-config-editor-table-row {
+  background: inherit;
+  border: 2px solid #e0e0e0;
+}
+
+#test-tg-config-editor-table-row:hover {
+  cursor: pointer;
+}
 
 .multi-line {
   white-space: normal;

@@ -752,4 +752,16 @@ function pauseTestrun(ev: MouseEvent) {
   box-shadow: inset 0px 5px 10px 0px rgba(0, 0, 0, 0.25);
   border: none;
 }
+
+
+.ag-cell-focus, .ag-cell-no-focus {
+  border: none !important;
+}
+
+/* This CSS is to not apply the border for the column having 'no-border' class */
+.no-border.ag-cell:focus {
+  border: none !important;
+  outline: none;
+}
+
 </style>

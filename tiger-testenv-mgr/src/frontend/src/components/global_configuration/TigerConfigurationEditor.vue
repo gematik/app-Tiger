@@ -153,6 +153,8 @@ const columnDefs: ColDef[] = [
         :defaultColDef="defaultColDef"
         :gridOptions="gridOptions"
         suppressClickEdit="false"
+        suppressNavigable="true"
+        cellClass="no-border"
         domLayout="autoHeight"
         @cell-clicked="onCellClicked"
     >
@@ -165,4 +167,5 @@ const columnDefs: ColDef[] = [
   width: 100%;
   height: 100%;
 }
+
 </style>
