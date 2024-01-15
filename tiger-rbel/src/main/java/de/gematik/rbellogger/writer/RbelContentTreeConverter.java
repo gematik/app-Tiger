@@ -175,7 +175,6 @@ public class RbelContentTreeConverter {
   private boolean evaluateTgrIfCondition(RbelElement input) {
     return input
         .getFirst(TGR_IF)
-        // TODO handle invalid jexls! (currently false, should lead to exception!!!)
         .flatMap(this::retrieveTextContent)
         .map(
             text ->

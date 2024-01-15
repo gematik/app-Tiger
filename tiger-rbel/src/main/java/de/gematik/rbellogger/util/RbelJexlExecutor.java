@@ -8,7 +8,6 @@ import com.google.common.base.CharMatcher;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
-import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.*;
@@ -131,10 +130,7 @@ public class RbelJexlExecutor {
       if (mapContext.shouldIgnoreEmptyRbelPaths()) {
         pathResults.add(null);
       } else {
-        throw new TigerJexlException(
-            "Error while pre-processing JEXL-expression: No values found for RbelPath '"
-                + potentialPath
-                + "'!");
+        pathResults.add(null);
       }
     }
     for (String pathResult : pathResults) {
