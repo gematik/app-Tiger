@@ -2,6 +2,14 @@
 
 # Release 3.0.0
 
+* Serenity BDD 4.0.30
+* Cucumber 7.15.0
+* RestAssured 5.4.0
+* Selenium 4.12.1
+* Appium 8.3.0
+* Spring Boot 3.1.0
+* Logback 1.4.9
+
 ## Features
 
 * TGR-898: Tiger-Proxy now no longer depends on mockserver, which has been internalized and stripped down.
@@ -194,10 +202,10 @@ In unix systems the tool 'lsof' is required to be installed in the system.
     <scope>test</scope>
 </dependency>
 <dependency>
-    <groupId>io.cucumber</groupId>
-    <artifactId>cucumber-junit-platform-engine</artifactId>
-    <version>7.11.2</version>
-    <scope>test</scope>
+<groupId>io.cucumber</groupId>
+<artifactId>cucumber-junit-platform-engine</artifactId>
+<version>7.11.2</version>
+<scope>test</scope>
 </dependency>
 ```
 

@@ -4,8 +4,8 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.gematik.test</groupId>
@@ -33,13 +33,13 @@
         <version.commons-jexl3>3.3</version.commons-jexl3>
         <version.commons-collections>3.2.2</version.commons-collections>
         <version.commons-collections4>4.4</version.commons-collections4>
-        <version.cucumber>7.14.0</version.cucumber>
-        <version.datatable>7.14.0</version.datatable>
+        <version.cucumber>7.15.0</version.cucumber>
+        <version.datatable>7.15.0</version.datatable>
         <version.gson>2.10.1</version.gson>
         <version.hamcrest>2.2</version.hamcrest>
         <version.htmlunit>3.55.0</version.htmlunit>
-        <version.jackson>2.16.0</version.jackson>
-        <version.javaparser>3.25.4</version.javaparser>
+        <version.jackson>2.16.1</version.jackson>
+        <version.javaparser>3.25.8</version.javaparser>
         <version.jetty>12.0.5</version.jetty>
         <version.json>20230618</version.json>
         <version.json-unit>2.38.0</version.json-unit>
@@ -50,12 +50,12 @@
         <version.maven>3.9.4</version.maven>
         <version.maven-deploy-plugin>3.1.1</version.maven-deploy-plugin>
         <version.maven.failsafe>3.2.3</version.maven.failsafe>
-        <version.maven.surefire>3.1.0</version.maven.surefire>
+        <version.maven.surefire>3.2.3</version.maven.surefire>
         <version.maven-plugin-tools>3.9.0</version.maven-plugin-tools>
         <version.mockito>5.4.0</version.mockito>
         <version.mockserver>5.15.0</version.mockserver>
-        <version.serenity.core>4.0.12</version.serenity.core>
-        <version.serenity.maven.plugin>4.0.12</version.serenity.maven.plugin>
+        <version.serenity.core>4.0.30</version.serenity.core>
+        <version.serenity.maven.plugin>4.0.30</version.serenity.maven.plugin>
         <version.slf4j>2.0.10</version.slf4j>
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
         <version.spring-boot>3.1.0</version.spring-boot>
@@ -76,7 +76,7 @@
         <version.bootstrap>5.1.3</version.bootstrap>
         <version.jquery>3.6.4</version.jquery>
         <version.jquery-ui>1.13.2</version.jquery-ui>
-        <version.font-awesome>6.4.0</version.font-awesome>
+        <version.font-awesome>6.5.1</version.font-awesome>
         <version.sockjs-client>1.5.1</version.sockjs-client>
         <version.stomp-websocket>2.3.4</version.stomp-websocket>
         <version.highlightjs>11.5.0</version.highlightjs>
