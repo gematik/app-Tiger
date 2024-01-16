@@ -50,7 +50,7 @@ public class ReverseProxyCallback extends AbstractRouteProxyCallback {
     if (patchedUrl.startsWith("/")) {
       if (isAddTrailingSlash()
           && !patchedUrl.endsWith("/")
-          && (requestPath.equals("/") || requestPath.equals(""))) {
+          && (requestPath.equals("/") || requestPath.isEmpty())) {
         return getTargetUrl().getPath() + patchedUrl + "/";
       } else {
         return getTargetUrl().getPath() + patchedUrl;
@@ -76,6 +76,11 @@ public class ReverseProxyCallback extends AbstractRouteProxyCallback {
 
   @Override
   protected String extractProtocolAndHostForRequest(HttpRequest request) {
+    return getTigerRoute().getTo();
+  }
+
+  @Override
+  protected String printTrafficTarget(HttpRequest req) {
     return getTigerRoute().getTo();
   }
 }

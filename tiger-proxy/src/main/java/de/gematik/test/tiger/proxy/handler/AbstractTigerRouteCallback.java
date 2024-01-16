@@ -36,6 +36,7 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -110,8 +111,8 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     if (queryStringParameters == null) {
       return;
     }
-    queryStringParameters.getEntries().stream()
-        .forEach(parameter -> queryStringParameters.remove(parameter.getName()));
+    queryStringParameters.getEntries()
+      .forEach(parameter -> queryStringParameters.remove(parameter.getName()));
   }
 
   public void applyModifications(HttpResponse response) {
@@ -152,6 +153,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
   @Override
   public final HttpRequest handle(HttpRequest req) {
     try {
+      doIncomingRequestLogging(req);
       requestTimingMap.put(req.getLogCorrelationId(), ZonedDateTime.now());
       return handleRequest(req);
     } catch (RuntimeException e) {
@@ -175,6 +177,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
   @Override
   public final HttpResponse handle(HttpRequest req, HttpResponse resp) {
     try {
+      doOutgoingResponseLogging(resp);
       return handleResponse(req, resp);
     } catch (RuntimeException e) {
       log.warn("Uncaught exception during handling of response", e);
@@ -325,5 +328,54 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     } else {
       return clonedRequest.getRequestOverride();
     }
+  }
+
+  public void doOutgoingResponseLogging(HttpResponse resp) {
+    if (log.isInfoEnabled() && tigerProxy.getTigerProxyConfiguration().isActivateTrafficLogging()) {
+      log.info(
+          "Returning HTTP "
+              + resp.getStatusCode()
+              + " Response-Length: "
+              + getMessageSize(resp.getBodyAsRawBytes()));
+    }
+  }
+
+  private static String getMessageSize(byte[] body) {
+    return FileUtils.byteCountToDisplaySize(body.length);
+  }
+
+  public void doIncomingRequestLogging(HttpRequest req) {
+    if (log.isInfoEnabled() && tigerProxy.getTigerProxyConfiguration().isActivateTrafficLogging()) {
+      log.info(
+          "Received "
+              + getProtocol(req)
+              + " "
+              + req.getMethod()
+              + " "
+              + req.getPath()
+              + " "
+              + getUserAgentString(req)
+              + " Request-Length: "
+              + getMessageSize(req.getBodyAsRawBytes())
+              + " => "
+              + printTrafficTarget(req));
+    }
+  }
+
+  protected abstract String printTrafficTarget(HttpRequest req);
+
+  private static String getProtocol(HttpRequest req) {
+    if (Boolean.TRUE.equals(req.isSecure())) {
+      return "HTTPS";
+    } else {
+      return "HTTP";
+    }
+  }
+
+  private static String getUserAgentString(HttpRequest req) {
+    return Optional.ofNullable(req.getFirstHeader("User-Agent"))
+        .filter(StringUtils::isNotEmpty)
+        .map(agent -> "User-Agent: '" + agent + "'")
+        .orElse("");
   }
 }

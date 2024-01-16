@@ -30,7 +30,7 @@ public class ForwardProxyCallback extends AbstractRouteProxyCallback {
           header("Authorization", getTigerRoute().getBasicAuth().toAuthorizationHeaderValue()));
     }
     final String path =
-        req.getPath().toString().equals("/")
+        req.getPath().equals("/")
             ? getTargetUrl().getPath() + "/"
             : getTargetUrl().getPath() + req.getPath();
     return cloneRequest(req)
@@ -42,5 +42,10 @@ public class ForwardProxyCallback extends AbstractRouteProxyCallback {
   @Override
   protected String extractProtocolAndHostForRequest(HttpRequest request) {
     return getSourceUri().getScheme() + "://" + getSourceUri().getHost();
+  }
+
+  @Override
+  protected String printTrafficTarget(HttpRequest req) {
+    return getTigerRoute().getTo();
   }
 }

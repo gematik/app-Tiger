@@ -40,6 +40,13 @@ public class ForwardAllCallback extends AbstractTigerRouteCallback {
   }
 
   @Override
+  protected String printTrafficTarget(HttpRequest req) {
+    return req.socketAddressFromHostHeader().getHostString()
+           + ":"
+           + req.socketAddressFromHostHeader().getPort();
+  }
+
+  @Override
   boolean shouldLogTraffic() {
     return true;
   }

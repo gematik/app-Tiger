@@ -7,6 +7,8 @@
 * TGR-898: Tiger-Proxy now no longer depends on mockserver, which has been internalized and stripped down.
 * TGR-1012: clicking a message in the traffic visualization diagram opens the Rbel Log Details pane and scrolls to the
   corresponding message.
+* TGR-1245: Traffic-Logging added to Tiger-Proxy. Can be turned off via configuration key
+  ```tiger.tigerProxy.activateTrafficLogging: false```
 
 ## Bugfixes
 
@@ -192,10 +194,10 @@ In unix systems the tool 'lsof' is required to be installed in the system.
     <scope>test</scope>
 </dependency>
 <dependency>
-<groupId>io.cucumber</groupId>
-<artifactId>cucumber-junit-platform-engine</artifactId>
-<version>7.11.2</version>
-<scope>test</scope>
+    <groupId>io.cucumber</groupId>
+    <artifactId>cucumber-junit-platform-engine</artifactId>
+    <version>7.11.2</version>
+    <scope>test</scope>
 </dependency>
 ```
 

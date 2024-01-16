@@ -19,7 +19,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfigurati
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import kong.unirest.Unirest;
+import kong.unirest.Config;
 import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
@@ -126,11 +126,11 @@ public abstract class AbstractTigerProxyTest {
     configuration.setName("Primary Tiger Proxy");
     tigerProxy = new TigerProxy(configuration);
 
-    proxyRest = Unirest.spawnInstance();
-    proxyRest
-        .config()
-        .proxy("localhost", tigerProxy.getProxyPort())
-        .sslContext(tigerProxy.buildSslContext());
+    proxyRest =
+        new UnirestInstance(
+            new Config()
+                .proxy("localhost", tigerProxy.getProxyPort())
+                .sslContext(tigerProxy.buildSslContext()));
   }
 
   public void awaitMessagesInTiger(int numberOfMessagesExpected) {
