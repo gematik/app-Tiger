@@ -27,6 +27,8 @@
 ## Bugfixes
 
 * TGR-938: XML-Messages with UTF-8 content can now be transmitted without alteration.
+* TGR-1266: Invalid configurations for servers are not reported in console or workflow UI but abort the test env mgr
+  silently.
 
 # Release 2.3.2
 
@@ -201,18 +203,20 @@ In unix systems the tool 'lsof' is required to be installed in the system.
 
 ```xml
 
-<dependency>
-    <groupId>org.junit.platform</groupId>
-    <artifactId>junit-platform-suite</artifactId>
-    <version>1.9.2</version>
-    <scope>test</scope>
-</dependency>
-<dependency>
-<groupId>io.cucumber</groupId>
-<artifactId>cucumber-junit-platform-engine</artifactId>
-<version>7.11.2</version>
-<scope>test</scope>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-suite</artifactId>
+        <version>1.9.2</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-junit-platform-engine</artifactId>
+        <version>7.11.2</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
 ```
 
 * TGR-990: first mvp of playwright tests for testing the WorkflowUI added
@@ -1273,7 +1277,7 @@ Aufgrund des breaking changes sind **ALLE** tiger-testenv.yml Dateien im Bereich
 
 ```yaml
 tigerProxy:
-  ...
+# ...
 servers:
   # ALTE VERSION
   - name: idp
