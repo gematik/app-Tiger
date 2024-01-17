@@ -218,6 +218,7 @@ public class TigerTestEnvMgr
             "Unable to detect logback library! Log appender feature for local Tiger Proxy not"
                 + " activated");
       }
+      proxyStatusMessage("Local Tiger Proxy started");
 
     } else {
       log.info(Ansi.colorize("Local Tiger Proxy deactivated", RbelAnsiColors.RED_BOLD));

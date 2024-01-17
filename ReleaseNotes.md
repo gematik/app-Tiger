@@ -10,6 +10,12 @@
 * Spring Boot 3.1.0
 * Logback 1.4.9
 
+## Breaking changes
+
+* TGR-1264: Lombok packages no longer are provided to depending test suites. Given best practices and to avoid
+  dependency issues in test suites you are enforced to depend on your own version of lombok IF you need it from this
+  version on.
+
 ## Features
 
 * TGR-898: Tiger-Proxy now no longer depends on mockserver, which has been internalized and stripped down.

@@ -116,7 +116,8 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
     checkPort();
     playwright = Playwright.create();
     log.info("Playwright created");
-    browser = playwright.chromium().launch(new LaunchOptions().setHeadless(true));
+    boolean runHeadless = Boolean.parseBoolean(System.getProperty("tiger.test.headless", "true"));
+    browser = playwright.chromium().launch(new LaunchOptions().setHeadless(runHeadless));
     log.info("Browser launched");
     page = browser.newPage();
     log.info("new page");

@@ -14,7 +14,7 @@
 
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
-    <description>Tiger is a test platform. For more info check our project at github
+    <description>Tiger is a test platform. For more info check our project at GitHub
         https://github.com/gematik/app-Tiger
     </description>
     <properties>
@@ -447,6 +447,7 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${version.lombok}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
