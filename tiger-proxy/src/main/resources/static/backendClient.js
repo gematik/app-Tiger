@@ -4,10 +4,12 @@
 
 class BackendClient {
     eventTarget;
+
     constructor() {
         this.eventTarget = new EventTarget();
     }
-    async resetMessages(){
+
+    async resetMessages() {
         const response = await this.fetchWithHandler("/webui/resetMsgs");
         if (response.ok) {
             const asJson = await response.json();
@@ -17,27 +19,27 @@ class BackendClient {
         }
     }
 
-    async uploadTrafficFile(fileToUpload){
+    async uploadTrafficFile(fileToUpload) {
         return this.fetchWithHandler('/webui/traffic', {
             method: "POST",
             body: fileToUpload
         });
     }
 
-    async getMsgAfter(lastMsgUuid, filterCriterion, pageSize, pageNumber){
+    async getMsgAfter(lastMsgUuid, filterCriterion, pageSize, pageNumber) {
         const baseUrl = "/webui/getMsgAfter?";
         const queryParams = new URLSearchParams({
             lastMsgUuid,
-            filterCriterion});
-        if( pageSize )
-        {
+            filterCriterion
+        });
+        if (pageSize) {
             queryParams.append("pageSize", pageSize);
             queryParams.append("pageNumber", pageNumber);
         }
         return this.fetchWithHandler(baseUrl + queryParams.toString());
     }
 
-    async addRoute(route){
+    async addRoute(route) {
         return this.fetchWithHandler("/route", {
             method: "PUT",
             headers: {
@@ -47,17 +49,17 @@ class BackendClient {
         })
     }
 
-    async getRoutes(){
+    async getRoutes() {
         return this.fetchWithHandler("/route");
     }
 
-    async testJexlQuery(msgUuid, query){
+    async testJexlQuery(msgUuid, query) {
         const baseUrl = "/webui/testJexlQuery?";
         const queryParams = new URLSearchParams({
             msgUuid,
             query
         })
-        return this.fetchWithHandler(baseUrl+queryParams.toString())
+        return this.fetchWithHandler(baseUrl + queryParams.toString())
     }
 
     async testRbelExpression(msgUuid, rbelPath) {
@@ -66,30 +68,28 @@ class BackendClient {
             msgUuid,
             rbelPath
         })
-        return this.fetchWithHandler(baseUrl+queryParams.toString())
+        return this.fetchWithHandler(baseUrl + queryParams.toString())
     }
 
-    async deleteRoute(routeId){
-        return this.fetchWithHandler("/route"+routeId, {
+    async deleteRoute(routeId) {
+        return this.fetchWithHandler(`/route/${routeId}`, {
             method: "DELETE"
         })
     }
 
-    async quitProxy(noSystemExit){
+    async quitProxy(noSystemExit) {
         let baseUrl = "/webui/quit?"
-        if(noSystemExit)
-        {
+        if (noSystemExit) {
             baseUrl += new URLSearchParams({noSystemExit}).toString()
         }
         //Here we don't want to throw events
         return fetch(baseUrl);
     }
 
-    async fetchWithHandler(input, init){
-        try{
+    async fetchWithHandler(input, init) {
+        try {
             return await fetch(input, init)
-        } catch (error)
-        {
+        } catch (error) {
             this.triggerErrorEvent(error)
             throw error; //rethrowing so that calling code can do something with it if necessary.
         }
