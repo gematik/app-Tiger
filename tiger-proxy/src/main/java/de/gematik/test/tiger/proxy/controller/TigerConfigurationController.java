@@ -39,7 +39,7 @@ public class TigerConfigurationController {
   }
 
   @DeleteMapping(value = "/route/{id}")
-  public void deleteRoute(@PathVariable String id) {
+  public void deleteRoute(@PathVariable("id") String id) {
     tigerProxy.removeRoute(id);
   }
 }

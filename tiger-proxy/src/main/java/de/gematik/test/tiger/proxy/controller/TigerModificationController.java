@@ -44,7 +44,7 @@ public class TigerModificationController {
   }
 
   @DeleteMapping(value = "/modification/{name}")
-  public void deleteModification(@PathVariable String name) {
+  public void deleteModification(@PathVariable("name") String name) {
     tigerProxy.removeModification(name);
   }
 }

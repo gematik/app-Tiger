@@ -29,6 +29,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
@@ -56,7 +57,8 @@ public class CatchAllController implements WebMvcConfigurer {
       final File file = Path.of(entry.getValue()).toFile();
       try (final FileInputStream fileInputStream = new FileInputStream(file)) {
         final TigerMockResponse mockResponse =
-            new Yaml(new Constructor(TigerMockResponse.class)).load(fileInputStream);
+            new Yaml(new Constructor(TigerMockResponse.class, new LoaderOptions()))
+                .load(fileInputStream);
         configuration.getMockResponses().put(entry.getKey(), mockResponse);
         log.info(
             "Successfully added mock-response from file {} with criteria {}",
