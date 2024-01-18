@@ -10,6 +10,8 @@ import static de.gematik.test.tiger.mockserver.model.HttpOverrideForwardedReques
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.decorator.AddBundledServerNamesModifier;
 import de.gematik.rbellogger.data.decorator.MessageMetadataModifier;
+import de.gematik.rbellogger.data.decorator.ServerNameFromHostname;
+import de.gematik.rbellogger.data.decorator.ServernameFromProcessAndPortSupplier;
 import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelListFacet;
@@ -33,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.io.FileUtils;
@@ -44,7 +45,6 @@ import org.apache.commons.lang3.StringUtils;
  * allows the TigerProxy to gather the messages going through the MockServer. The actual
  * implementations of this class deal with the routing of the messages.
  */
-@RequiredArgsConstructor
 @Data
 @Slf4j
 public abstract class AbstractTigerRouteCallback implements ExpectationForwardAndResponseCallback {
@@ -53,8 +53,17 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
   private final TigerProxy tigerProxy;
   private final TigerRoute tigerRoute;
   private final Map<String, ZonedDateTime> requestTimingMap = new HashMap<>();
-  private final MessageMetadataModifier rbelHostnameMetadataModifier =
-      AddBundledServerNamesModifier.createModifier();
+  private final MessageMetadataModifier modifierBasedOnProcessAndPort;
+  private final MessageMetadataModifier modifierBasedOnHostname;
+
+  protected AbstractTigerRouteCallback(TigerProxy tigerProxy, TigerRoute tigerRoute) {
+    this.tigerProxy = tigerProxy;
+    this.tigerRoute = tigerRoute;
+    this.modifierBasedOnProcessAndPort =
+        AddBundledServerNamesModifier.createModifier(new ServernameFromProcessAndPortSupplier());
+    this.modifierBasedOnHostname =
+        AddBundledServerNamesModifier.createModifier(new ServerNameFromHostname());
+  }
 
   public void applyModifications(HttpRequest request) {
     if (!tigerProxy.getModifications().isEmpty()) {
@@ -168,7 +177,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
       tigerProxy.propagateException(exception);
     } catch (Exception handlingException) {
       log.warn(
-          "While propagating an exception another error occured (ignoring):", handlingException);
+          "While propagating an exception another error occurred (ignoring):", handlingException);
     }
   }
 
@@ -258,12 +267,18 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
       getTigerProxy().triggerListener(request);
       getTigerProxy().triggerListener(response);
 
-      rbelHostnameMetadataModifier.modifyMetadata(request);
-      rbelHostnameMetadataModifier.modifyMetadata(response);
+      addBundledServerNameToHostnameFacet(request);
+      addBundledServerNameToHostnameFacet(response);
     } catch (RuntimeException e) {
       propagateExceptionMessageSafe(e);
       log.error("Rbel-parsing failed!", e);
     }
+  }
+
+  private void addBundledServerNameToHostnameFacet(RbelElement element) {
+    // order is important!!
+    modifierBasedOnHostname.modifyMetadata(element);
+    modifierBasedOnProcessAndPort.modifyMetadata(element);
   }
 
   private boolean isHealthEndpointRequest(HttpRequest request) {

@@ -29,6 +29,12 @@ servers:
     source:
       - local:../../../../tiger-zion/target/tiger-zion-*-executable.jar
 
+  exampleCom:
+    type: externalUrl
+    source:
+      - http://example.com
+
+
 lib:
   rbelPathDebugging: false
   activateWorkflowUi: true

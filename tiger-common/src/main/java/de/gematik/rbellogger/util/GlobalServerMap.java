@@ -4,12 +4,10 @@
 
 package de.gematik.rbellogger.util;
 
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class GlobalServerMap {
 
@@ -24,10 +22,9 @@ public class GlobalServerMap {
     PORT_TO_PROCESS_ID.putIfAbsent(key, value);
   }
 
-  public static void updateGlobalServerMap(
-      URL healthcheckUrl, AtomicReference<Process> processAtomicReference, String serverId) {
-    mapPortToProcessIds(healthcheckUrl.getPort(), processAtomicReference.get().pid());
-    PROCESS_ID_TO_BUNDLED_SERVER_NAME.put(processAtomicReference.get().pid(), serverId);
+  public static void updateGlobalServerMap(int portNumber, long processId, String serverId) {
+    mapPortToProcessIds(portNumber, processId);
+    PROCESS_ID_TO_BUNDLED_SERVER_NAME.put(processId, serverId);
   }
 
   public static Map<Long, String> getProcessIdToBundledServerName() {

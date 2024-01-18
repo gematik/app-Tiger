@@ -48,6 +48,7 @@ const renderDiagram = async () => {
     }
   } catch (error) {
     console.error('Error rendering Mermaid diagram:', error);
+    console.debug("Error while rendering this diagram:\n", stringToRender.value);
   }
 }
 
