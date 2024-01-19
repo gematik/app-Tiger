@@ -9,6 +9,7 @@ import static de.gematik.test.tiger.mockserver.model.Header.header;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 /** Callback used for all Forward-Proxy routes in the TigerProxy. */
@@ -20,6 +21,7 @@ public class ForwardProxyCallback extends AbstractRouteProxyCallback {
     tigerProxy.addAlternativeName(getSourceUri().getHost());
   }
 
+  @SneakyThrows
   @Override
   @SuppressWarnings("java:S1075")
   public HttpRequest handleRequest(HttpRequest req) {
@@ -29,10 +31,15 @@ public class ForwardProxyCallback extends AbstractRouteProxyCallback {
       req.replaceHeader(
           header("Authorization", getTigerRoute().getBasicAuth().toAuthorizationHeaderValue()));
     }
-    final String path =
-        req.getPath().equals("/")
-            ? getTargetUrl().getPath() + "/"
-            : getTargetUrl().getPath() + req.getPath();
+    String patchedPath = getTargetUrl().getPath();
+    if (patchedPath.endsWith("/")) {
+      patchedPath = patchedPath.substring(0, patchedPath.length() - 1);
+    }
+    String requestPath = req.getPath();
+    if (requestPath.equals("/") && !isAddTrailingSlash()) {
+      requestPath = "";
+    }
+    final String path = patchedPath + requestPath;
     return cloneRequest(req)
         .withPath(path)
         .withSecure(getTigerRoute().getTo().startsWith("https://"))

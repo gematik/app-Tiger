@@ -26,6 +26,7 @@
 
 ## Bugfixes
 
+* TGR-949: Tiger-Proxy only adds trailing slashes to requests if the request explicitly demands it.
 * TGR-938: XML-Messages with UTF-8 content can now be transmitted without alteration.
 * TGR-1266: Invalid configurations for servers are not reported in console or workflow UI but abort the test env mgr
   silently.

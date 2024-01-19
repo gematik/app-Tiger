@@ -44,10 +44,13 @@ public class ReverseProxyCallback extends AbstractRouteProxyCallback {
 
   private String patchPath(String requestPath) {
     String patchedUrl = requestPath.replaceFirst(getTargetUrl().toString(), "");
+    if (patchedUrl.equals("/")) {
+      patchedUrl = "";
+    }
     if (!getTigerRoute().getFrom().equals("/")) {
       patchedUrl = patchedUrl.substring(getTigerRoute().getFrom().length());
     }
-    if (patchedUrl.startsWith("/")) {
+    if (patchedUrl.startsWith("/") || patchedUrl.isEmpty()) {
       if (isAddTrailingSlash()
           && !patchedUrl.endsWith("/")
           && (requestPath.equals("/") || requestPath.isEmpty())) {
