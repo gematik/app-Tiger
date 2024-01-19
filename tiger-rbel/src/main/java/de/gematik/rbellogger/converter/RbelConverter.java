@@ -25,7 +25,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(access = AccessLevel.PUBLIC)
-@Getter
 @Slf4j
 public class RbelConverter {
 
@@ -35,10 +34,13 @@ public class RbelConverter {
 
   private final Deque<RbelElement> messageHistory = new ConcurrentLinkedDeque<>();
   private final Set<String> knownMessageUuids = ConcurrentHashMap.newKeySet();
-  private final List<RbelBundleCriterion> bundleCriterionList = new ArrayList<>();
+  @Getter
   private final RbelKeyManager rbelKeyManager;
+  @Getter
   private final RbelValueShader rbelValueShader = new RbelValueShader();
+  @Getter
   private final List<RbelConverterPlugin> postConversionListeners = new ArrayList<>();
+  @Getter
   private final Map<
           Class<? extends RbelElement>, List<BiFunction<RbelElement, RbelConverter, RbelElement>>>
       preConversionMappers = new HashMap<>();
@@ -64,6 +66,7 @@ public class RbelConverter {
               new RbelCetpConverter()));
   @Builder.Default private int rbelBufferSizeInMb = 1024;
   @Builder.Default private boolean manageBuffer = false;
+  @Getter
   @Builder.Default private long currentBufferSize = 0;
   @Builder.Default private long messageSequenceNumber = 0;
   @Builder.Default private int skipParsingWhenMessageLargerThanKb = -1;
@@ -242,18 +245,18 @@ public class RbelConverter {
   public void manageRbelBufferSize() {
     if (manageBuffer) {
       synchronized (messageHistory) {
-        if (getRbelBufferSizeInMb() <= 0 && !getMessageHistory().isEmpty()) {
+        if (rbelBufferSizeInMb <= 0 && !getMessageHistory().isEmpty()) {
           currentBufferSize = 0;
           messageHistory.clear();
           knownMessageUuids.clear();
         }
-        if (getRbelBufferSizeInMb() > 0) {
+        if (rbelBufferSizeInMb > 0) {
           long exceedingLimit = getExceedingLimit(currentBufferSize);
           if (exceedingLimit > 0) {
             log.trace(
                 "Buffer is currently at {} Mb which exceeds the limit of {} Mb",
                 currentBufferSize / (1024 ^ 2),
-                getRbelBufferSizeInMb());
+                rbelBufferSizeInMb);
           }
           while (exceedingLimit > 0 && !getMessageHistory().isEmpty()) {
             log.trace("Exceeded buffer size, dropping oldest message in history");
@@ -269,7 +272,7 @@ public class RbelConverter {
   }
 
   private long getExceedingLimit(long messageHistorySize) {
-    return messageHistorySize - ((long) getRbelBufferSizeInMb() * 1024 * 1024);
+    return messageHistorySize - ((long) rbelBufferSizeInMb * 1024 * 1024);
   }
 
   public boolean isMessageUuidAlreadyKnown(String msgUuid) {
