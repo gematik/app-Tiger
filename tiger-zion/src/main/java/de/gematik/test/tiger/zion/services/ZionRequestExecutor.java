@@ -105,8 +105,6 @@ public class ZionRequestExecutor {
               .withCurrentElement(requestRbelMessage)
               .withRootElement(requestRbelMessage)
               .withShouldIgnoreEmptyRbelPaths(true);
-      doAssignments(response.getAssignments(), requestRbelMessage, localResponseContext);
-      executeBackendRequestsBeforeDecision(response, localResponseContext);
       final Optional<Pair<TigerMockResponse, TigerJexlContext>> responseCandidate =
           findMatchingResponse(response, requestRbelMessage, localResponseContext);
       // responseCandidate is not necessarily equal to response: nestedResponses!
@@ -176,6 +174,8 @@ public class ZionRequestExecutor {
 
   private Optional<Pair<TigerMockResponse, TigerJexlContext>> findMatchingResponse(
       TigerMockResponse mockResponse, RbelElement requestRbelMessage, TigerJexlContext context) {
+    doAssignments(mockResponse.getAssignments(), requestRbelMessage, context);
+    executeBackendRequestsBeforeDecision(mockResponse, context);
     if (!doesItMatch(mockResponse, context)) {
       if (log.isTraceEnabled() && (mockResponse.getResponse() != null)) {
         log.trace(
@@ -187,27 +187,33 @@ public class ZionRequestExecutor {
       }
       return Optional.empty();
     }
+    Optional<Pair<TigerMockResponse, TigerJexlContext>> foundResponse;
     if (mockResponse.getResponse() != null) {
       log.trace(
           CONSIDERING_RESPONSE,
           mockResponse.getResponse().getStatusCode(),
           mockResponse.getResponse().getBody());
-      return Optional.of(Pair.of(mockResponse, context));
+      foundResponse = Optional.of(Pair.of(mockResponse, context));
     } else {
-      return Optional.ofNullable(mockResponse.getNestedResponses()).map(Map::values).stream()
-          .flatMap(Collection::stream)
-          .sorted(Comparator.comparing(TigerMockResponse::getImportance).reversed())
-          .map(r -> findMatchingResponse(r, requestRbelMessage, context.cloneContext()))
-          .filter(Optional::isPresent)
-          .map(Optional::get)
-          .peek(
-              respPair ->
-                  log.trace(
-                      CONSIDERING_RESPONSE,
-                      respPair.getKey().getResponse().getStatusCode(),
-                      respPair.getKey().getResponse().getBody()))
-          .findFirst();
+      foundResponse =
+          Optional.ofNullable(mockResponse.getNestedResponses()).map(Map::values).stream()
+              .flatMap(Collection::stream)
+              .sorted(Comparator.comparing(TigerMockResponse::getImportance).reversed())
+              .map(r -> findMatchingResponse(r, requestRbelMessage, context.cloneContext()))
+              .filter(Optional::isPresent)
+              .map(Optional::get)
+              .peek(
+                  respPair ->
+                      log.trace(
+                          CONSIDERING_RESPONSE,
+                          respPair.getKey().getResponse().getStatusCode(),
+                          respPair.getKey().getResponse().getBody()))
+              .findFirst();
     }
+    if (foundResponse.isPresent()) {
+      executeBackendRequestsAfterDecision(mockResponse, context);
+    }
+    return foundResponse;
   }
 
   private boolean doesItMatch(TigerMockResponse mockResponse, TigerJexlContext context) {
@@ -224,8 +230,6 @@ public class ZionRequestExecutor {
             .getRequestOptional()
             .map(r -> r.matchPathVariables(currentRequestRbelMessage, context))
             .orElse(EMPTY_MATCH);
-
-    doAssignments(mockResponse.getAssignments(), currentRequestRbelMessage, context);
 
     if (EMPTY_MATCH.equals(pathMatchingResult) && combinedRequestCriterions.isEmpty()) {
       return true;
@@ -244,12 +248,28 @@ public class ZionRequestExecutor {
 
   private void executeBackendRequestsBeforeDecision(
       TigerMockResponse mockResponse, TigerJexlContext jexlContext) {
-    if (mockResponse.getBackendRequests() == null) {
-      return;
-    }
+    List<ZionBackendRequestDescription> beforeDecision =
+        mockResponse.getBackendRequests().values().stream()
+            .filter(r -> !r.isExecuteAfterSelection())
+            .toList();
 
-    for (ZionBackendRequestDescription requestDescription :
-        mockResponse.getBackendRequests().values()) {
+    executeBackendRequests(beforeDecision, jexlContext);
+  }
+
+  private void executeBackendRequestsAfterDecision(
+      TigerMockResponse mockResponse, TigerJexlContext jexlContext) {
+    List<ZionBackendRequestDescription> afterDecision =
+        mockResponse.getBackendRequests().values().stream()
+            .filter(ZionBackendRequestDescription::isExecuteAfterSelection)
+            .toList();
+
+    executeBackendRequests(afterDecision, jexlContext);
+  }
+
+  private void executeBackendRequests(
+      List<ZionBackendRequestDescription> backendRequests, TigerJexlContext jexlContext) {
+
+    for (ZionBackendRequestDescription requestDescription : backendRequests) {
       try {
         var unirestResponse = prepareAndExecuteBackendRequest(requestDescription);
 
@@ -290,8 +310,7 @@ public class ZionRequestExecutor {
         log.trace(
             "About to sent {} with body {} to {}",
             unirestRequest.getHttpMethod().name(),
-            // Why new String and not simply getContent()??
-            new String(body.getContent()),
+            body.getContentAsString(),
             unirestRequest.getUrl());
       }
       unirestResponse = unirestRequest.body(body.getContent()).asBytes();
@@ -440,7 +459,6 @@ public class ZionRequestExecutor {
       TigerMockResponse response, TigerJexlContext context) {
     Optional<String> bodyBlueprint =
         Optional.ofNullable(response.getResponse().getBody())
-            .filter(Objects::nonNull)
             .or(
                 () ->
                     Optional.ofNullable(response.getResponse().getBodyFile())
@@ -452,8 +470,7 @@ public class ZionRequestExecutor {
                               } catch (IOException e) {
                                 return null;
                               }
-                            })
-                        .filter(Objects::nonNull));
+                            }));
     if (bodyBlueprint.isEmpty()) {
       return Optional.empty(); // NOSONAR
     }

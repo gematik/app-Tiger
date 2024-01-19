@@ -24,7 +24,10 @@ public class TigerMockResponse {
   private ZionRequestMatchDefinition request;
   private TigerMockResponseDescription response;
   private Map<String, TigerMockResponse> nestedResponses = new HashMap<>();
+
+  @Builder.Default
   private Map<String, ZionBackendRequestDescription> backendRequests = new HashMap<>();
+
   @TigerSkipEvaluation @Builder.Default private Map<String, String> assignments = new HashMap<>();
   private int importance = 0;
 

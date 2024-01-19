@@ -14,3 +14,10 @@ zion:
       response:
         statusCode: 200
         body: '{"Hello":"World"}'
+    healthCheckResponse:
+      importance: 20 # more important so others don't get evaluated.
+      requestCriterions:
+        - message.method == 'GET'
+        - message.path == '/'
+      response:
+        statusCode: 200
