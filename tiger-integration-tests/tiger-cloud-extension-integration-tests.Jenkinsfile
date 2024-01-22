@@ -45,8 +45,8 @@ pipeline {
 
           stage('Set Tiger version in Tiger Cloud Extension Testsuite') {
               steps {
-                   sh "grep -q tiger.testenv.version ${POM_PATH}"
-                   sh "sed -i -e 's@<tiger.testenv.version>.*</tiger.testenv.version>@<tiger.testenv.version>${TIGER_VERSION}</tiger.testenv.version>@' ${POM_PATH}"
+                   sh "grep -q version.tiger.testenv ${POM_PATH}"
+                   sh "sed -i -e 's@<version.tiger.testenv>.*</version.tiger.testenv>@<version.tiger.testenv>${TIGER_VERSION}</version.tiger.testenv>@' ${POM_PATH}"
               }
           }
 
