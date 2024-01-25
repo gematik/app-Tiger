@@ -60,7 +60,7 @@
         <version.spring-boot>3.2.1</version.spring-boot>
         <version.spring>5.3.20</version.spring>
         <version.system-stubs>2.0.2</version.system-stubs>
-        <version.unirest>3.14.2</version.unirest>
+        <version.unirest>3.14.5</version.unirest>
         <version.velocity>2.3</version.velocity>
         <version.netty>4.1.89.Final</version.netty>
         <version.xmlunit>2.9.0</version.xmlunit>
@@ -474,6 +474,11 @@
                 <artifactId>mockito-junit-jupiter</artifactId>
                 <version>${version.mockito}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.konghq</groupId>
+                <artifactId>unirest-java</artifactId>
+                <version>${version.unirest}</version>
             </dependency>
 
             <!-- Only needed to run tests in a version of IntelliJ IDEA that bundles older versions -->

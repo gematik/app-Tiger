@@ -171,7 +171,6 @@
         <dependency>
             <groupId>com.konghq</groupId>
             <artifactId>unirest-java</artifactId>
-            <version>${version.unirest}</version>
         </dependency>
         <!-- used to wait for remote tiger proxy to becom eonline -->
         <dependency>
