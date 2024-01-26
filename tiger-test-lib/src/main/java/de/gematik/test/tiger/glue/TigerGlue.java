@@ -6,7 +6,6 @@ package de.gematik.test.tiger.glue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -134,10 +133,10 @@ public class TigerGlue {
     TigerDirector.pauseExecution();
   }
 
-  @When("TGR pause test run execution with message {tigerResolvedString}")
-  @Wenn("TGR pausiere Testausführung mit Nachricht {tigerResolvedString}")
+  @When("TGR pause test run execution with message {string}")
+  @Wenn("TGR pausiere Testausführung mit Nachricht {string}")
   public void tgrPauseExecutionWithMessage(String message) {
-    TigerDirector.pauseExecution(message);
+    TigerDirector.pauseExecution(TigerGlobalConfiguration.resolvePlaceholders(message));
   }
 
   @When(
