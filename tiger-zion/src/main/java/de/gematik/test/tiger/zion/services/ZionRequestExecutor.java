@@ -20,14 +20,12 @@ import de.gematik.test.tiger.zion.config.*;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
-import kong.unirest.Headers;
 import kong.unirest.HttpRequestWithBody;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
@@ -58,6 +56,7 @@ public class ZionRequestExecutor {
   @NonNull private final ZionConfiguration configuration;
   @NonNull private final RequestEntity<byte[]> request;
   @NonNull private final RbelWriter rbelWriter;
+  @NonNull private final BackendRequestExecutor backendRequestExecutor;
 
   public ResponseEntity<byte[]> execute() {
     var mainContext =
@@ -145,36 +144,9 @@ public class ZionRequestExecutor {
         serializationResult.map(RbelSerializationResult::getContent).orElse(null));
   }
 
-  private void doAssignments(
-      Map<String, String> assignments, RbelElement currentElement, TigerJexlContext jexlContext) {
-    if (assignments == null || assignments.isEmpty()) {
-      return;
-    }
-    final TigerJexlContext localResponseContext =
-        jexlContext.withCurrentElement(currentElement).withRootElement(currentElement);
-
-    for (Entry<String, String> entry : assignments.entrySet()) {
-      final String newValue =
-          Optional.of(entry.getValue())
-              .filter(s -> s.startsWith("$."))
-              .flatMap(currentElement::findElement)
-              .map(el -> el.seekValue(String.class).orElseGet(el::getRawStringContent))
-              .map(TigerGlobalConfiguration::resolvePlaceholders)
-              .orElseGet(
-                  () ->
-                      TigerGlobalConfiguration.resolvePlaceholdersWithContext(
-                          entry.getValue(), localResponseContext));
-
-      final String key =
-          TigerGlobalConfiguration.resolvePlaceholdersWithContext(
-              entry.getKey(), localResponseContext);
-      jexlContext.put(key, newValue);
-    }
-  }
-
   private Optional<Pair<TigerMockResponse, TigerJexlContext>> findMatchingResponse(
       TigerMockResponse mockResponse, RbelElement requestRbelMessage, TigerJexlContext context) {
-    doAssignments(mockResponse.getAssignments(), requestRbelMessage, context);
+    VariableAssigner.doAssignments(mockResponse.getAssignments(), requestRbelMessage, context);
     executeBackendRequestsBeforeDecision(mockResponse, context);
     if (!doesItMatch(mockResponse, context)) {
       if (log.isTraceEnabled() && (mockResponse.getResponse() != null)) {
@@ -235,7 +207,8 @@ public class ZionRequestExecutor {
       return true;
     }
 
-    doAssignments(pathMatchingResult.capturedVariables(), currentRequestRbelMessage, context);
+    VariableAssigner.doAssignments(
+        pathMatchingResult.capturedVariables(), currentRequestRbelMessage, context);
 
     return combinedRequestCriterions.stream()
             .allMatch(
@@ -253,7 +226,7 @@ public class ZionRequestExecutor {
             .filter(r -> !r.isExecuteAfterSelection())
             .toList();
 
-    executeBackendRequests(beforeDecision, jexlContext);
+    backendRequestExecutor.executeBackendRequests(beforeDecision, jexlContext, requestRbelMessage);
   }
 
   private void executeBackendRequestsAfterDecision(
@@ -263,105 +236,7 @@ public class ZionRequestExecutor {
             .filter(ZionBackendRequestDescription::isExecuteAfterSelection)
             .toList();
 
-    executeBackendRequests(afterDecision, jexlContext);
-  }
-
-  private void executeBackendRequests(
-      List<ZionBackendRequestDescription> backendRequests, TigerJexlContext jexlContext) {
-
-    for (ZionBackendRequestDescription requestDescription : backendRequests) {
-      try {
-        var unirestResponse = prepareAndExecuteBackendRequest(requestDescription);
-
-        final RbelElement rbelResponse =
-            rbelLogger
-                .getRbelConverter()
-                .convertElement(responseToRawMessage(unirestResponse), null);
-        doAssignments(requestDescription.getAssignments(), rbelResponse, jexlContext);
-      } catch (RuntimeException e) {
-        log.error(
-            "Error during backend request '"
-                + requestDescription.getMethod()
-                + " "
-                + requestDescription.getUrl()
-                + "'",
-            e);
-        throw e;
-      }
-    }
-  }
-
-  private HttpResponse<byte[]> prepareAndExecuteBackendRequest(
-      ZionBackendRequestDescription requestDescription) {
-    final String method = getMethod(requestDescription);
-    final HttpRequestWithBody unirestRequest =
-        Unirest.request(
-            method,
-            TigerGlobalConfiguration.resolvePlaceholdersWithContext(
-                requestDescription.getUrl(),
-                new TigerJexlContext().withRootElement(this.requestRbelMessage)));
-    if (requestDescription.getHeaders() != null) {
-      requestDescription.getHeaders().forEach(unirestRequest::header);
-    }
-    final HttpResponse<byte[]> unirestResponse;
-    if (StringUtils.isNotEmpty(requestDescription.getBody())) {
-      final RbelSerializationResult body = getBody(requestDescription);
-      if (log.isTraceEnabled()) {
-        log.trace(
-            "About to sent {} with body {} to {}",
-            unirestRequest.getHttpMethod().name(),
-            body.getContentAsString(),
-            unirestRequest.getUrl());
-      }
-      unirestResponse = unirestRequest.body(body.getContent()).asBytes();
-    } else {
-      if (log.isTraceEnabled()) {
-        log.trace(
-            "About to sent {} without body to {}",
-            unirestRequest.getHttpMethod().name(),
-            unirestRequest.getUrl());
-      }
-      unirestResponse = unirestRequest.asBytes();
-    }
-    return unirestResponse;
-  }
-
-  private RbelSerializationResult getBody(ZionBackendRequestDescription requestDescription) {
-    final String rawContent =
-        TigerGlobalConfiguration.resolvePlaceholders(requestDescription.getBody());
-    final RbelElement input = rbelLogger.getRbelConverter().convertElement(rawContent, null);
-    return rbelWriter.serialize(input, new TigerJexlContext().withRootElement(requestRbelMessage));
-  }
-
-  private static String getMethod(ZionBackendRequestDescription requestDescription) {
-    if (StringUtils.isEmpty(requestDescription.getMethod())) {
-      if (StringUtils.isEmpty(requestDescription.getBody())) {
-        return "GET";
-      } else {
-        return "POST";
-      }
-    }
-    return TigerGlobalConfiguration.resolvePlaceholders(requestDescription.getMethod());
-  }
-
-  private byte[] responseToRawMessage(HttpResponse<byte[]> response) {
-    byte[] httpResponseHeader =
-        ("HTTP/1.1 "
-                + response.getStatus()
-                + " "
-                + (response.getStatusText() != null ? response.getStatusText() : "")
-                + "\r\n"
-                + formatHeaderList(response.getHeaders())
-                + "\r\n\r\n")
-            .getBytes(StandardCharsets.US_ASCII);
-
-    return ArrayUtils.addAll(httpResponseHeader, response.getBody());
-  }
-
-  private String formatHeaderList(Headers headerList) {
-    return headerList.all().stream()
-        .map(h -> h.getName() + ": " + h.getValue())
-        .collect(Collectors.joining("\r\n"));
+    backendRequestExecutor.executeBackendRequests(afterDecision, jexlContext, requestRbelMessage);
   }
 
   @SneakyThrows

@@ -161,7 +161,7 @@ servers:
            importance: 0
            backendRequests:
              tokenCheck:
-               url: "http://localhost:${free.port.60}/doesNotMatterShouldNotBeCalled"
+               url: "THIS IS INVALID TO THROW A 500 IF CALLED"
                body: '?{$.header.password}'
            requestCriterions:
              - message.method == 'GET'

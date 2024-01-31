@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
+import de.gematik.rbellogger.util.GlobalServerMap;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -55,6 +56,7 @@ class TestTigerProxyMockResponses {
   @AfterEach
   public void resetMockResponses() {
     TigerGlobalConfiguration.reset();
+    GlobalServerMap.clear();
     configuration.setMockResponses(mockResponsesBackup);
     configuration.setSpy(null);
   }
@@ -325,7 +327,8 @@ class TestTigerProxyMockResponses {
                  experimental:
                    trafficVisualization: true
                """)
-  void testMultipleZionServer(TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {
+  void testMultipleZionServerAsExternalJars(
+      TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {
     testEnvMgr.getLocalTigerProxyOrFail().clearAllMessages();
 
     unirestInstance
@@ -380,7 +383,7 @@ class TestTigerProxyMockResponses {
                 experimental:
                   trafficVisualization: true
                       """)
-  void testOneZionServer(TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {
+  void testOneZionServerAsExternalJar(TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {
 
     unirestInstance
         .get(
@@ -398,5 +401,141 @@ class TestTigerProxyMockResponses {
                 .orElseThrow()
                 .getRawStringContent())
         .isEqualTo("zionExternal");
+  }
+
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+          tigerProxy:
+          servers:
+            mainServerTypeZion:
+              type: zion
+              healthcheckUrl:
+                http://mainServerTypeZion
+              healthcheckReturnCode: 200
+              zionConfiguration:
+                serverPort: ${free.port.50}
+                mockResponses:
+                  helloZionBackendServer:
+                    requestCriterions:
+                      - message.method == 'GET'
+                      - message.path == '/helloZionBackendServer'
+                    backendRequests:
+                      sayHello:
+                        method: POST
+                        url: "http://backendServerTypeZion/helloBackend"
+                        assignments:
+                          backendResponseBody: "$.body"
+                        executeAfterSelection: true
+                    response:
+                      statusCode: 200
+                      body: ${backendResponseBody}
+                  healthCheckResponse:
+                    importance: 20 # more important so others don't get evaluated.
+                    requestCriterions:
+                      - message.method == 'GET'
+                      - message.path == '/'
+                    response:
+                      statusCode: 200
+            backendServerTypeZion:
+              type: zion
+              healthcheckUrl:
+                http://backendServerTypeZion
+              healthcheckReturnCode: 200
+              zionConfiguration:
+                serverPort: ${free.port.55}
+                mockResponses:
+                  helloFromBackend:
+                    request:
+                      method: POST
+                      path: "/helloBackend"
+                    response:
+                      statusCode: 200
+                      body: '{"Hello": "from backend"}'
+                  healthCheck:
+                    requestCriterions:
+                      - message.method == 'GET'
+                      - message.path == '/'
+                    response:
+                      statusCode: 200
+                      body: '{"status":"UP"}'
+                    importance: 10
+          lib:
+            experimental:
+              trafficVisualization: true
+          """)
+  void testMultipleZionServerAsZionServerType(
+      TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {
+    testEnvMgr.getLocalTigerProxyOrFail().clearAllMessages();
+
+    unirestInstance
+        .get(
+            TigerGlobalConfiguration.resolvePlaceholders(
+                "http://mainServerTypeZion/helloZionBackendServer"))
+        .asJson();
+
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(0))
+        .extractChildWithPath("$.sender.bundledServerName")
+        .hasStringContentEqualTo("mainServerTypeZion");
+
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(0))
+        .extractChildWithPath("$.receiver.bundledServerName")
+        .hasStringContentEqualTo("backendServerTypeZion");
+
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(1))
+        .extractChildWithPath("$.sender.bundledServerName")
+        .hasStringContentEqualTo("backendServerTypeZion");
+
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(1))
+        .extractChildWithPath("$.receiver.bundledServerName")
+        .hasStringContentEqualTo("mainServerTypeZion");
+
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(2))
+        .extractChildWithPath("$.receiver.bundledServerName")
+        .hasStringContentEqualTo("mainServerTypeZion");
+
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(3))
+        .extractChildWithPath("$.sender.bundledServerName")
+        .hasStringContentEqualTo("mainServerTypeZion");
+  }
+
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+          servers:
+            zionHello:
+                type: zion
+                zionConfiguration:
+                  serverPort: ${free.port.60}
+                  mockResponses:
+                      hello:
+                        requestCriterions:
+                          - message.method == 'GET'
+                          - message.url =~ '.*/helloWorld'
+                        response:
+                          statusCode: 222
+                          body: '{"Hello":"World"}'
+          lib:
+            experimental:
+              trafficVisualization: true
+         """)
+  void testOneZionServerAsZionServerType(
+      TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {
+
+    unirestInstance
+        .get(TigerGlobalConfiguration.resolvePlaceholders("http://zionHello/helloWorld"))
+        .asJson();
+
+    assertThat(
+            testEnvMgr
+                .getLocalTigerProxyOrFail()
+                .getRbelMessagesList()
+                .get(0)
+                .findElement("$.receiver.bundledServerName")
+                .orElseThrow()
+                .getRawStringContent())
+        .isEqualTo("zionHello");
   }
 }

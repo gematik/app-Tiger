@@ -9,6 +9,7 @@ import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.writer.RbelWriter;
 import de.gematik.test.tiger.zion.config.TigerMockResponse;
 import de.gematik.test.tiger.zion.config.ZionConfiguration;
+import de.gematik.test.tiger.zion.services.BackendRequestExecutor;
 import de.gematik.test.tiger.zion.services.ZionRequestExecutor;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
@@ -44,6 +45,7 @@ public class CatchAllController implements WebMvcConfigurer {
   private final ZionConfiguration configuration;
   private final ObjectMapper objectMapper;
   private final ServletWebServerApplicationContext webServerAppCtxt;
+  private final BackendRequestExecutor backendRequestExecutor;
 
   @SneakyThrows
   @PostConstruct
@@ -103,6 +105,7 @@ public class CatchAllController implements WebMvcConfigurer {
             .objectMapper(objectMapper)
             .localServerPort(webServerAppCtxt.getWebServer().getPort())
             .configuration(configuration)
+            .backendRequestExecutor(backendRequestExecutor)
             .request(request)
             .build()
             .execute();

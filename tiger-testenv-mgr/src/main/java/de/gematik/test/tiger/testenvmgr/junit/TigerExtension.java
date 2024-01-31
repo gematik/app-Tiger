@@ -18,7 +18,6 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
@@ -56,7 +55,6 @@ public class TigerExtension
     return context
         .getTestMethod()
         .map(m -> m.getAnnotation(TigerTest.class))
-        .filter(Objects::nonNull)
         .orElseThrow(
             () ->
                 new TigerEnvironmentStartupException(

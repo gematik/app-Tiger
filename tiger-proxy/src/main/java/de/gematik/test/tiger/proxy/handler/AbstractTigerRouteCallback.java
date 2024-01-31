@@ -12,6 +12,7 @@ import de.gematik.rbellogger.data.decorator.AddBundledServerNamesModifier;
 import de.gematik.rbellogger.data.decorator.MessageMetadataModifier;
 import de.gematik.rbellogger.data.decorator.ServerNameFromHostname;
 import de.gematik.rbellogger.data.decorator.ServernameFromProcessAndPortSupplier;
+import de.gematik.rbellogger.data.decorator.ServernameFromSpyPortMapping;
 import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelListFacet;
@@ -55,6 +56,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
   private final Map<String, ZonedDateTime> requestTimingMap = new HashMap<>();
   private final MessageMetadataModifier modifierBasedOnProcessAndPort;
   private final MessageMetadataModifier modifierBasedOnHostname;
+  private final MessageMetadataModifier modifierBasedOnlyOnPort;
 
   protected AbstractTigerRouteCallback(TigerProxy tigerProxy, TigerRoute tigerRoute) {
     this.tigerProxy = tigerProxy;
@@ -63,6 +65,8 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
         AddBundledServerNamesModifier.createModifier(new ServernameFromProcessAndPortSupplier());
     this.modifierBasedOnHostname =
         AddBundledServerNamesModifier.createModifier(new ServerNameFromHostname());
+    this.modifierBasedOnlyOnPort =
+        AddBundledServerNamesModifier.createModifier(new ServernameFromSpyPortMapping());
   }
 
   public void applyModifications(HttpRequest request) {
@@ -120,8 +124,9 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     if (queryStringParameters == null) {
       return;
     }
-    queryStringParameters.getEntries()
-      .forEach(parameter -> queryStringParameters.remove(parameter.getName()));
+    queryStringParameters
+        .getEntries()
+        .forEach(parameter -> queryStringParameters.remove(parameter.getName()));
   }
 
   public void applyModifications(HttpResponse response) {
@@ -278,6 +283,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
   private void addBundledServerNameToHostnameFacet(RbelElement element) {
     // order is important!!
     modifierBasedOnHostname.modifyMetadata(element);
+    modifierBasedOnlyOnPort.modifyMetadata(element);
     modifierBasedOnProcessAndPort.modifyMetadata(element);
   }
 

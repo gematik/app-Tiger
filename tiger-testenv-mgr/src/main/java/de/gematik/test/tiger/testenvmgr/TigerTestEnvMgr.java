@@ -497,6 +497,32 @@ public class TigerTestEnvMgr
     log.info(Ansi.colorize("Finished set up test environment OK", RbelAnsiColors.GREEN_BOLD));
   }
 
+  public void setDefaultProxyToLocalTigerProxy() {
+    String httpProxyHost = "http.proxyHost";
+    String httpsProxyHost = "https.proxyHost";
+    if (System.getProperty(httpProxyHost) != null || System.getProperty(httpsProxyHost) != null) {
+      log.info(
+          Ansi.colorize(
+              "SKIPPING TIGER PROXY settings as System Property is set already...",
+              RbelAnsiColors.RED_BOLD));
+    } else {
+      getLocalTigerProxyOptional()
+          .ifPresent(
+              proxy -> {
+                log.info(
+                    Ansi.colorize(
+                        "SETTING TIGER PROXY http://localhost:" + proxy.getProxyPort() + "...",
+                        RbelAnsiColors.BLUE_BOLD));
+                System.setProperty(httpProxyHost, "localhost");
+                System.setProperty("http.proxyPort", String.valueOf(proxy.getProxyPort()));
+                System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1");
+                System.setProperty(httpsProxyHost, "localhost");
+                System.setProperty("https.proxyPort", String.valueOf(proxy.getProxyPort()));
+                System.setProperty("java.net.useSystemProxies", "true");
+              });
+    }
+  }
+
   private void assertNoUnknownServersInDependencies() {
     getServers().values().forEach(AbstractTigerServer::getDependUponList);
   }

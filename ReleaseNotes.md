@@ -24,6 +24,8 @@
 * TGR-1245: Traffic-Logging added to Tiger-Proxy. Can be turned off via configuration key
   ```tiger.tigerProxy.activateTrafficLogging: false```
 * TGR-1257: Traffic Visualization feature is documented in user manual.
+* TGR-1273: Added support for local port identification of zion servers so that they can be correctly displayed in the
+  sequence diagrams.
 
 ## Bugfixes
 
@@ -32,7 +34,7 @@
 * TGR-1266: Invalid configurations for servers are not reported in console or workflow UI but abort the test env mgr
   silently.
 * TGR-1262: Step "TGR pause test run execution with message {string}" and step "TGR pause test run execution
-  with message {tigerResolvedString} and message in case of error {tigerResolvedString}" will now correctly
+  with message {tigerResolvedString} and message in case of error {tigerResolvedString}" will now correctly be
   distinguished
 
 # Release 2.3.2

@@ -12,57 +12,47 @@ import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
 import de.gematik.rbellogger.util.GlobalServerMap;
 import java.util.Optional;
-import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class ServernameFromProcessAndPortSupplierTest {
+class ServernameFromSpyPortMappingTest {
 
   @BeforeEach
   void setup() {
     GlobalServerMap.clear();
   }
 
-  @SneakyThrows
   @Test
-  void testApply_whenProcessIdExists_shouldReturnServerName() {
-    // setup a hostname element with localhost:1234
+  void testApply_whenPortExists_shouldReturnServerName() {
+    // Setup a hostname element with localhost:1234
     RbelElement hostnameFacet =
         RbelHostnameFacet.buildRbelHostnameFacet(null, new RbelHostname("localhost", 1234));
+    ServernameFromSpyPortMapping mapping = new ServernameFromSpyPortMapping();
+    GlobalServerMap.addServerNameForPort(1234, "myTestServer");
 
-    // Configure GlobalServerMap to return a mock process id
-    GlobalServerMap.updateGlobalServerMap(1234, 51234, "someTestServer");
-    ServernameFromProcessAndPortSupplier supplier = new ServernameFromProcessAndPortSupplier();
+    Optional<String> result = mapping.apply(hostnameFacet);
 
-    // apply supplier
-    Optional<String> result = supplier.apply(hostnameFacet);
-
-    assertThat(result).hasValue("someTestServer");
+    assertThat(result).hasValue("myTestServer");
   }
 
-  @SneakyThrows
   @Test
-  void testApply_whenProcessIdDoesNotExist_shouldReturnEmpty() {
-    // setup a hostname element with localhost:1234
+  void testApply_whenPortDoesNotExist_shouldReturnEmpty() {
+    // Setup a hostname element with localhost:1234
     RbelElement hostnameFacet =
         RbelHostnameFacet.buildRbelHostnameFacet(null, new RbelHostname("localhost", 1234));
+    ServernameFromSpyPortMapping mapping = new ServernameFromSpyPortMapping();
 
-    // Do not add anything to the global server map
-    ServernameFromProcessAndPortSupplier supplier = new ServernameFromProcessAndPortSupplier();
-
-    // apply supplier
-    Optional<String> result = supplier.apply(hostnameFacet);
+    Optional<String> result = mapping.apply(hostnameFacet);
 
     assertThat(result).isNotPresent();
   }
 
-  @SneakyThrows
   @Test
-  void testApply_whenPortExtractionFails_shouldThrowException() {
+  void testExtractPort() {
     // setup a rbel element that is not really a RbelHostnameFacet
     RbelElement hostnameFacet = new RbelElement(null, null);
 
-    ServernameFromProcessAndPortSupplier supplier = new ServernameFromProcessAndPortSupplier();
+    ServernameFromSpyPortMapping supplier = new ServernameFromSpyPortMapping();
 
     assertThatThrownBy(() -> supplier.apply(hostnameFacet))
         .isInstanceOf(IllegalStateException.class)

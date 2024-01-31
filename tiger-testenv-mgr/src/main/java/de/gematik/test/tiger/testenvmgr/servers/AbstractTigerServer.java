@@ -63,7 +63,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     }
   }
 
-  static String determineHostname(CfgServer configuration, String serverId) {
+  protected static String determineHostname(CfgServer configuration, String serverId) {
     if (StringUtils.isNotBlank(configuration.getHostname())) {
       return configuration.getHostname();
     } else {
