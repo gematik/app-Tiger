@@ -1,10 +1,6 @@
 == Tiger User interfaces
 
-=== Workflow UI
-
-The Workflow UI is a feature for a better user experience during the test run of feature file(s).
-The Workflow UI is displayed in the browser window and shows the status and logs of the servers as well as the results and request calls of the scenarios and feature files during the test run.
-For more information please refer to the xref:tigerWorkflowUI.adoc#_workflow_ui[Workflow UI] section.
+include::tigerWorkflowUI.adoc[]
 
 include::tigerWebUI.adoc[]
 

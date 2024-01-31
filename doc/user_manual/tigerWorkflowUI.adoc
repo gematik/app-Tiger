@@ -1,17 +1,18 @@
 [#_workflow_ui]
-==== Workflow UI
+=== Workflow UI
 
-The Workflow UI is one of the central features which are currently introduced to Tiger.
-If activated via the `tiger.yaml` xref:_tiger_test_lib_configuration[configuration file], the Workflow UI will be opened in the current browser window during the test run.
+The Workflow UI is a feature for a better user experience during the test run of feature file(s).
+
+If activated via the `tiger.yaml` xref:_tiger_test_lib_configuration[configuration file], the Workflow UI will be opened in the current browser window during the test run and shows the status and logs of the servers as well as the results and request calls of the scenarios and feature files during the test run.
 If no browser is open at the time a new instance will be launched.
 
 image::screenshots/workflowui.png[title="Workflow UI"]
 
-The image above shows the inital startup of the Workflow UI.
+The image above shows the initial startup of the Workflow UI.
 The Workflow UI is divided into three sections: the xref:_status_bar[status bar], the xref:_main_window[main window] with xref:_test_execution[test execution] and xref:_server_logs[server logs] and the xref:_rbel_logs[Rbel log details] (a slimmed down version of the xref:tigerWebUI.adoc#_web_ui[WebUI]).
 
 [#_status_bar]
-===== Status Bar
+==== Status Bar
 
 The section on the left is called status bar as shown in the picture below.
 
@@ -61,11 +62,13 @@ image::screenshots/sidebar_version_build.png[title="tiger version and build"]
 The status bar can be minimized by clicking on the double arrow or by clicking on any of the icons in the status bar (e.g. status box icon, feature box icon, server box icon, tiger head icon).
 
 [#_main_window]
-===== Main window
+==== Main window
 
 The main window of the Workflow UI has two sections: the xref:_test_execution[test execution] and the xref:_server_logs[server logs] which can be selected by the two buttons on top of the Workflow UI as seen in the picture below.
 
 [#_server_logs]
+===== Server logs
+
 By clicking on the server logs button on top of the main window the user can have a look at the log files of each server.
 There the user can use several filter options to search in the log files.
 There are the following server buttons: you can see all logs of all servers, or only the logs of one or more servers by clicking on the corresponding buttons.
@@ -76,6 +79,8 @@ In the picture below only the httpbin server is selected.
 image::screenshots/serverlog_level_highlight.png[title="Server Logs with httpbin server and all log levels selected"]
 
 [#_test_execution]
+===== Test execution
+
 In the test execution tab the user sees the executed features and their scenarios as well as their execution status.
 A test can be either passed or failed.
 In the example below the scenario has passed but the feature itself has failed, which means that at least one of the scenarios of the feature has failed.
@@ -103,7 +108,7 @@ Alternatively, a scenario can be replayed by clicking the small replay button in
 image::screenshots/sidebar_replaybutton.png[title="Small replay buttons in the sidebar"]
 
 [#_rbel_logs]
-The communication requests that are called during the step execution are displayed beneath the step that initated the request.
+The communication requests that are called during the step execution are displayed beneath the step that initiated the request.
 When the user clicks on the light blue rectangle with the number (whereas uneven numbers are requests, even number are responses) of the request then the Rbel Log view opens on the right hand side of the Workflow UI as shown on the screenshot below.
 
 image::screenshots/maincontent_rbelpath.png[title="Rbel Log Details"]
@@ -116,6 +121,47 @@ image::screenshots/maincontent_rbelpath_urllink_highlight.png[title="Link to ope
 The Rbel Log Details view is described in the xref:tigerWebUI.adoc#_web_ui[WebUI] section as it is a slimmed down version of the WebUI.
 In order to increase/decrease the width of the Rbel Log Details view the user can drag the border between the main window and the Rbel Log Details view.
 The Rbel Log Details can be minimized by clicking on the double arrow on the top left of the Rbel Log Details section.
+
+==== Traffic Visualization
+
+An additional feature of the Workflow UI is the traffic visualization.
+This feature allows to visualize the traffic between the servers under test in a sequence diagram.
+The feature needs to be explicitly enabled in the `tiger.yaml` configuration file.
+
+[source,yaml]
+----
+lib:
+  trafficVisualization: true
+----
+
+This will enable a third section in the main window of the Workflow UI where a sequence diagram is displayed.
+
+image::media/maincontent_sequence_diagram.png[title="Traffic Visualization"]
+
+The sequence diagram shows the messages that were exchanged between the servers under test.
+By clicking on a message in the sequence diagram, the corresponding Rbel Log Details will be displayed in the Rbel Log Details section.
+
+The traffic visualization currently supports the following server types: `externalJar`, `externalUrl`, `zion`, `docker` and `compose`.
+
+For messages to show up in the sequence diagram they need to be routed through the Tiger Proxy.
+This is the case for all the messages originating in the local tiger client and their responses.
+If there are additional messages originating on one the servers under test, they need to be routed through the Tiger Proxy as well.
+In Zion servers this is automatically configured.
+For external jars this can be achieved by configuring the servers with the following VM options:
+
+[source,yaml]
+----
+externalJarOptions:
+  options:
+    - -Dhttp.proxyHost=127.0.0.1
+    - -Dhttp.proxyPort=${tiger.tigerProxy.proxyPort}
+----
+
+For the server types docker and compose, we do not yet support the visualization of messages originating on a client port of these servers.
+
+
+
+
 
 
 

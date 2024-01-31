@@ -271,8 +271,6 @@ If all is well, at the end the test report JSON files will be packed into a zip 
 
 image::media/tiger-integration-eau-process.svg[title="Tiger EAU Konnektorfarm process"]
 
-include::tigerWorkflowUI.adoc[]
-
 .Current message steps for Workflow UI
 [source,java]
 ----
