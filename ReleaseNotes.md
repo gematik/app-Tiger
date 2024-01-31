@@ -26,6 +26,7 @@
 * TGR-1257: Traffic Visualization feature is documented in user manual.
 * TGR-1273: Added support for local port identification of zion servers so that they can be correctly displayed in the
   sequence diagrams.
+* TGR-1086: replace OS specific commands with OSHI library for finding ports being used by external jars.
 
 ## Bugfixes
 

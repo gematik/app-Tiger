@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Set;
-import org.apache.commons.collections.IteratorUtils;
+import org.apache.commons.collections4.IteratorUtils;
 import org.junit.jupiter.api.Test;
 
 class ImmutableDequeFacadeTest {
@@ -18,7 +18,7 @@ class ImmutableDequeFacadeTest {
   @Test
   @SuppressWarnings("java:S5778")
   void assertChangingOperationsThrowException() {
-    Deque immutableFacade = new ImmutableDequeFacade(new ArrayDeque());
+    Deque<?> immutableFacade = new ImmutableDequeFacade<>(new ArrayDeque<>());
     assertThatThrownBy(immutableFacade::remove).isInstanceOf(UnsupportedOperationException.class);
     assertThatThrownBy(() -> immutableFacade.add(null))
         .isInstanceOf(UnsupportedOperationException.class);

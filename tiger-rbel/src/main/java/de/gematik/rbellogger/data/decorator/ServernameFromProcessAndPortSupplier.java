@@ -31,12 +31,12 @@ public class ServernameFromProcessAndPortSupplier
 
     if (processId == null) {
       ConcurrentMap<Integer, Long> updatedMapWithPortsAndProcessIds =
-          PortToProcessMapper.runPortMappingCommand(port);
+          PortToProcessMapper.getProcessIdsForPort(port);
       processId = updatedMapWithPortsAndProcessIds.get(port);
     }
 
-    if (GlobalServerMap.getProcessIdToBundledServerName().containsKey(processId)
-        && processId != null) {
+    if (processId != null
+        && GlobalServerMap.getProcessIdToBundledServerName().containsKey(processId)) {
       return Optional.of(GlobalServerMap.getProcessIdToBundledServerName().get(processId));
     }
     return Optional.empty();
