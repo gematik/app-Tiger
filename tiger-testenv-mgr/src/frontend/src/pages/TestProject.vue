@@ -107,7 +107,7 @@
                 execution</a>
               <a id="test-server-log-tab" class="btn execution-pane-buttons" @click="showTab('logs_pane', $event)">Server
                 Logs</a>
-              <a v-if="experimentalFeatures.trafficVisualization" class="btn execution-pane-buttons"
+              <a v-if="features.trafficVisualization" class="btn execution-pane-buttons"
                  @click="showTab('visualization_pane', $event)">Traffic
                 Visualization</a>
             </div>
@@ -130,7 +130,7 @@
           <ServerLog :serverLogs="serverLogList" :logServers="logServers" :selectedServers="selectedServers"
                      :selectedLoglevel="LogLevel.ALL.toString()" :selected-text="''"/>
           <traffic-visualization
-              v-if="experimentalFeatures.trafficVisualization"
+              v-if="features.trafficVisualization"
               :featureUpdateMap="featureUpdateMap"
               :ui="ui"/>
         </div>
@@ -193,12 +193,12 @@ import 'vue3-side-panel/dist/vue3-side-panel.css';
 import {VueSidePanel} from "vue3-side-panel";
 import TrafficVisualization from "@/components/sequence_diagram/TrafficVisualization.vue";
 import {useConfigurationLoader} from "@/components/global_configuration/ConfigurationLoader";
-import {ExperimentalFeatures} from "@/types/ExperimentalFeatures";
+import {Features} from "@/types/Features";
 import RbelLogDetailsPane from "@/components/testsuite/RbelLogDetailsPane.vue";
 
 
 const {loadSubsetOfProperties} = useConfigurationLoader();
-const experimentalFeatures = ref(new ExperimentalFeatures());
+const features = ref(new Features());
 
 
 let baseURL = process.env.BASE_URL;
@@ -262,8 +262,8 @@ provide("emitter", emitter);
 
 const configEditorSidePanelIsOpened: Ref<boolean> = ref(false);
 
-async function loadExperimentalFeaturesFlags() {
-  experimentalFeatures.value = ExperimentalFeatures.fromMap(await loadSubsetOfProperties("tiger.lib.experimental"));
+async function loadFeaturesFlags() {
+  features.value = Features.fromMap(await loadSubsetOfProperties("tiger.lib"));
 }
 
 onMounted(() => {
@@ -276,7 +276,7 @@ onMounted(() => {
   fetchInitialServerStatus();
   fetchTigerVersion();
   fetchTigerBuild();
-  loadExperimentalFeaturesFlags()
+  loadFeaturesFlags()
 });
 
 const DEBUG = true;

@@ -30,8 +30,7 @@ public class AddBundledServerNamesModifier implements MessageMetadataModifier {
   public static MessageMetadataModifier createModifier(
       Function<RbelElement, Optional<String>> bundledServernameSupplier) {
     if (Boolean.TRUE.equals(
-        TigerConfigurationKeys.ExperimentalFeatures.TRAFFIC_VISUALIZATION_ACTIVE
-            .getValueOrDefault())) {
+        TigerConfigurationKeys.TRAFFIC_VISUALIZATION_ACTIVE.getValueOrDefault())) {
       return new AddBundledServerNamesModifier(bundledServernameSupplier);
     } else {
       return new DoesNothingModifier();

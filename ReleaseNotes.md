@@ -27,6 +27,12 @@
 * TGR-1273: Added support for local port identification of zion servers so that they can be correctly displayed in the
   sequence diagrams.
 * TGR-1086: replace OS specific commands with OSHI library for finding ports being used by external jars.
+* TGR-1282: Traffic Visualization feature no longer experimental. Can be turned on via the configuration:
+
+```yaml
+lib:
+  trafficVisualization: true
+```
 
 ## Bugfixes
 
@@ -35,8 +41,8 @@
 * TGR-1266: Invalid configurations for servers are not reported in console or workflow UI but abort the test env mgr
   silently.
 * TGR-1262: Step "TGR pause test run execution with message {string}" and step "TGR pause test run execution
-  with message {tigerResolvedString} and message in case of error {tigerResolvedString}" will now correctly be
-  distinguished
+  with message {tigerResolvedString} and message in case of error {tigerResolvedString}" will now correctly
+ be distinguished
 
 # Release 2.3.2
 

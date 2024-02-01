@@ -4,9 +4,6 @@
 
 package de.gematik.test.tiger.common.config;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
-
 public class TigerConfigurationKeys {
 
   private TigerConfigurationKeys() {}
@@ -31,11 +28,6 @@ public class TigerConfigurationKeys {
   public static final TigerTypedConfigurationKey<Integer> EXTERNAL_SERVER_CONNECTION_TIMEOUT =
       new TigerTypedConfigurationKey<>(
           "tiger.internal.externalServer.connectionTimeout", Integer.class, 1000);
-
-  @NoArgsConstructor(access = AccessLevel.PRIVATE)
-  public static class ExperimentalFeatures {
-    public static final TigerTypedConfigurationKey<Boolean> TRAFFIC_VISUALIZATION_ACTIVE =
-        new TigerTypedConfigurationKey<>(
-            "tiger.lib.experimental.trafficVisualization", Boolean.class, false);
-  }
+  public static final TigerTypedConfigurationKey<Boolean> TRAFFIC_VISUALIZATION_ACTIVE =
+      new TigerTypedConfigurationKey<>("tiger.lib.trafficVisualization", Boolean.class, false);
 }

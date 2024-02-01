@@ -5,7 +5,7 @@
 package de.gematik.rbellogger.data.decorator;
 
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.ExperimentalFeatures.TRAFFIC_VISUALIZATION_ACTIVE;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TRAFFIC_VISUALIZATION_ACTIVE;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;

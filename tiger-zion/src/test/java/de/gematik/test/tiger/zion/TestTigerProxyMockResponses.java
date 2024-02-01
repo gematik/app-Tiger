@@ -324,8 +324,7 @@ class TestTigerProxyMockResponses {
                    source:
                      - local:../../../target/tiger-zion-*-executable.jar
                lib:
-                 experimental:
-                   trafficVisualization: true
+                 trafficVisualization: true
                """)
   void testMultipleZionServerAsExternalJars(
       TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {
@@ -380,8 +379,7 @@ class TestTigerProxyMockResponses {
                   source:
                     - local:../../../target/tiger-zion-*-executable.jar
               lib:
-                experimental:
-                  trafficVisualization: true
+                trafficVisualization: true
                       """)
   void testOneZionServerAsExternalJar(TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {
 
@@ -462,8 +460,7 @@ class TestTigerProxyMockResponses {
                       body: '{"status":"UP"}'
                     importance: 10
           lib:
-            experimental:
-              trafficVisualization: true
+            trafficVisualization: true
           """)
   void testMultipleZionServerAsZionServerType(
       TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {
@@ -518,8 +515,7 @@ class TestTigerProxyMockResponses {
                           statusCode: 222
                           body: '{"Hello":"World"}'
           lib:
-            experimental:
-              trafficVisualization: true
+            trafficVisualization: true
          """)
   void testOneZionServerAsZionServerType(
       TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {

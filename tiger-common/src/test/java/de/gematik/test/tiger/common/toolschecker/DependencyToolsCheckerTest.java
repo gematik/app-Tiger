@@ -18,14 +18,14 @@ class DependencyToolsCheckerTest {
   @BeforeEach
   void setup() {
     TigerGlobalConfiguration.deleteFromAllSources(
-        TigerConfigurationKeys.ExperimentalFeatures.TRAFFIC_VISUALIZATION_ACTIVE.getKey());
+        TigerConfigurationKeys.TRAFFIC_VISUALIZATION_ACTIVE.getKey());
   }
 
   @Test
   void testFeatureInactive() {
     DependencyToolsChecker checker = new DependencyToolsChecker();
 
-    TigerConfigurationKeys.ExperimentalFeatures.TRAFFIC_VISUALIZATION_ACTIVE.putValue(false);
+    TigerConfigurationKeys.TRAFFIC_VISUALIZATION_ACTIVE.putValue(false);
 
     DependencyCheckResult result = checker.areNecessaryDependenciesAvailable();
 
@@ -39,7 +39,7 @@ class DependencyToolsCheckerTest {
         () -> {
           DependencyToolsChecker checker = new DependencyToolsChecker();
 
-          TigerConfigurationKeys.ExperimentalFeatures.TRAFFIC_VISUALIZATION_ACTIVE.putValue(true);
+          TigerConfigurationKeys.TRAFFIC_VISUALIZATION_ACTIVE.putValue(true);
           System.setProperty("os.name", "Windows");
 
           DependencyCheckResult result = checker.areNecessaryDependenciesAvailable();
@@ -56,7 +56,7 @@ class DependencyToolsCheckerTest {
           DependencyToolsChecker checker = Mockito.spy(new DependencyToolsChecker());
           Mockito.doReturn(true).when(checker).hasLsof();
 
-          TigerConfigurationKeys.ExperimentalFeatures.TRAFFIC_VISUALIZATION_ACTIVE.putValue(true);
+          TigerConfigurationKeys.TRAFFIC_VISUALIZATION_ACTIVE.putValue(true);
           System.setProperty("os.name", "Linux");
 
           DependencyCheckResult result = checker.areNecessaryDependenciesAvailable();
@@ -73,7 +73,7 @@ class DependencyToolsCheckerTest {
           DependencyToolsChecker checker = Mockito.spy(new DependencyToolsChecker());
           Mockito.doReturn(false).when(checker).hasLsof();
 
-          TigerConfigurationKeys.ExperimentalFeatures.TRAFFIC_VISUALIZATION_ACTIVE.putValue(true);
+          TigerConfigurationKeys.TRAFFIC_VISUALIZATION_ACTIVE.putValue(true);
           System.setProperty("os.name", "Linux");
 
           DependencyCheckResult result = checker.areNecessaryDependenciesAvailable();

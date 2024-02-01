@@ -38,8 +38,7 @@ servers:
 lib:
   rbelPathDebugging: false
   activateWorkflowUi: true
-  experimental:
-    trafficVisualization: true
+  trafficVisualization: true
 
 
 logging:

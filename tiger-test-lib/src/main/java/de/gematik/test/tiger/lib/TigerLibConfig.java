@@ -26,15 +26,5 @@ public class TigerLibConfig {
   @Builder.Default public boolean createRbelModificationReports = true;
   @Builder.Default public long pauseExecutionTimeoutSeconds = 18000L;
   @Builder.Default public TigerHttpClientConfig httpClientConfig = new TigerHttpClientConfig();
-  @Builder.Default public ExperimentalFeatures experimental = new ExperimentalFeatures();
-
-  @Data
-  @Builder
-  @AllArgsConstructor(onConstructor_ = @JsonIgnore)
-  @NoArgsConstructor
-  @ToString
-  @JsonInclude(Include.NON_NULL)
-  public static class ExperimentalFeatures {
-    @Builder.Default private boolean trafficVisualization = false;
-  }
+  @Builder.Default private boolean trafficVisualization = false;
 }
