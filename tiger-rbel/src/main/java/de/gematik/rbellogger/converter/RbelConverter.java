@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -101,11 +102,12 @@ public class RbelConverter {
         plugin.consumeElement(convertedInput, this);
       } catch (RuntimeException e) {
         final String msg =
-            "Exception during conversion with plugin '"
-                + plugin.getClass().getName()
-                + "' ("
-                + e.getMessage()
-                + ")";
+          "Exception during conversion with plugin '"
+          + plugin.getClass().getName()
+          + "' ("
+          + e.getMessage()
+          + ")\n"
+          + ExceptionUtils.getStackTrace(e);
         log.info(msg, e);
         if (log.isDebugEnabled()) {
           log.debug(

@@ -15,6 +15,7 @@
 * TGR-1264: Lombok packages no longer are provided to depending test suites. Given best practices and to avoid
   dependency issues in test suites you are enforced to depend on your own version of lombok IF you need it from this
   version on.
+* TGR-1276: Ordering of XML-Nodes has changed (now attributes always come first, then child nodes).
 
 ## Features
 
@@ -40,6 +41,7 @@ lib:
 * TGR-938: XML-Messages with UTF-8 content can now be transmitted without alteration.
 * TGR-1266: Invalid configurations for servers are not reported in console or workflow UI but abort the test env mgr
   silently.
+* TGR-1276: The RbelWriter now correctly serializes XML-Namespaces.
 * TGR-1262: Step "TGR pause test run execution with message {string}" and step "TGR pause test run execution
   with message {tigerResolvedString} and message in case of error {tigerResolvedString}" will now correctly
  be distinguished

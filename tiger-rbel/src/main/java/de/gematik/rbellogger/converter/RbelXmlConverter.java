@@ -9,6 +9,7 @@ import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.data.facet.RbelXmlAttributeFacet;
 import de.gematik.rbellogger.data.facet.RbelXmlFacet;
+import de.gematik.rbellogger.data.facet.RbelXmlNamespaceFacet;
 import de.gematik.rbellogger.util.RbelException;
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
@@ -78,7 +79,28 @@ public class RbelXmlConverter implements RbelConverterPlugin {
   private void buildXmlElementForNode(
       Branch branch, RbelElement parentElement, RbelConverter converter) {
     final RbelMultiMap<RbelElement> childElements = new RbelMultiMap<>();
-    parentElement.addFacet(RbelXmlFacet.builder().childElements(childElements).build());
+    final RbelXmlFacet xmlFacet =
+        RbelXmlFacet.builder()
+            .childElements(childElements)
+            .namespaceUri(getNamespaceUri(branch))
+            .namespacePrefix(getNamespacePrefix(branch))
+            .build();
+    parentElement.addFacet(xmlFacet);
+
+    addAttributes(branch, parentElement, converter, childElements);
+
+    addChildElements(branch, parentElement, converter, childElements);
+
+    if (childElements.stream().map(Map.Entry::getKey).noneMatch(key -> key.equals(XML_TEXT_KEY))) {
+      childElements.put(XML_TEXT_KEY, new RbelElement(new byte[] {}, parentElement));
+    }
+  }
+
+  private void addChildElements(
+      Branch branch,
+      RbelElement parentElement,
+      RbelConverter converter,
+      RbelMultiMap<RbelElement> childElements) {
     for (Object child : branch.content()) {
       if (child instanceof Text text) {
         childElements.put(XML_TEXT_KEY, converter.convertElement(text.getText(), parentElement));
@@ -89,9 +111,11 @@ public class RbelXmlConverter implements RbelConverterPlugin {
         buildXmlElementForNode(abstractBranch, element, converter);
         childElements.put(((AbstractBranch) child).getName(), element);
       } else if (child instanceof Namespace namespace) {
-        final String childXmlName = namespace.getPrefix();
-        childElements.put(
-            childXmlName, converter.convertElement(namespace.getText(), parentElement));
+        final String childXmlName = namespace.asXML().split("=")[0];
+        final RbelElement namespaceAttributeElement = converter.convertElement(namespace.getText(), parentElement);
+        namespaceAttributeElement.addFacet(new RbelXmlAttributeFacet());
+        namespaceAttributeElement.addFacet(new RbelXmlNamespaceFacet());
+        childElements.put(childXmlName, namespaceAttributeElement);
       } else if (child instanceof DefaultComment) {
         // do nothing
       } else {
@@ -99,11 +123,13 @@ public class RbelXmlConverter implements RbelConverterPlugin {
             "Could not convert XML element of type " + child.getClass().getSimpleName());
       }
     }
+  }
 
-    if (childElements.stream().map(Map.Entry::getKey).noneMatch(key -> key.equals(XML_TEXT_KEY))) {
-      childElements.put(XML_TEXT_KEY, new RbelElement(new byte[] {}, parentElement));
-    }
-
+  private static void addAttributes(
+      Branch branch,
+      RbelElement parentElement,
+      RbelConverter converter,
+      RbelMultiMap<RbelElement> childElements) {
     if (branch instanceof Element element) {
       for (Attribute attribute : element.attributes()) {
         final RbelElement value = converter.convertElement(attribute.getText(), parentElement);
@@ -111,5 +137,21 @@ public class RbelXmlConverter implements RbelConverterPlugin {
         childElements.put(attribute.getName(), value);
       }
     }
+  }
+
+  private static String getNamespaceUri(Branch branch) {
+    return Optional.of(branch)
+        .filter(Element.class::isInstance)
+        .map(Element.class::cast)
+        .map(Element::getNamespaceURI)
+        .orElse(null);
+  }
+
+  private static String getNamespacePrefix(Branch branch) {
+    return Optional.of(branch)
+        .filter(Element.class::isInstance)
+        .map(Element.class::cast)
+        .map(Element::getNamespacePrefix)
+        .orElse(null);
   }
 }

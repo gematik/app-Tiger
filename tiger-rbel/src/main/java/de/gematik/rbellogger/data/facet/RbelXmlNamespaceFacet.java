@@ -8,9 +8,9 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 
 /**
- * Denotes that the element is an XML attribute.
+ * Denotes that the element is a XML namespace attribute
  */
-public class RbelXmlAttributeFacet implements RbelFacet {
+public class RbelXmlNamespaceFacet implements RbelFacet {
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {

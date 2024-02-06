@@ -59,7 +59,7 @@ class RbelMtomConverterTest {
   @DisplayName("MTOM XML - should be parsed correctly")
   void mtomXml_shouldBeParsedCorrectly() {
     assertThat(rbelLogger.getMessageList().get(34))
-        .extractChildWithPath("$..Envelope.soap")
+        .extractChildWithPath("$..Envelope.['xmlns:soap']")
         .hasStringContentEqualTo("http://www.w3.org/2003/05/soap-envelope");
 
     assertThat(

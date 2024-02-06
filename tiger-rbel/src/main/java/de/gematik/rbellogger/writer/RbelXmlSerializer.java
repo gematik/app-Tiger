@@ -4,19 +4,20 @@
 
 package de.gematik.rbellogger.writer;
 
+import static de.gematik.rbellogger.writer.tree.RbelXmlElementToNodeConverter.IS_XML_ATTRIBUTE;
+import static de.gematik.rbellogger.writer.tree.RbelXmlElementToNodeConverter.IS_XML_NAMESPACE_PREFIX;
+import static de.gematik.rbellogger.writer.tree.RbelXmlElementToNodeConverter.XML_NAMESPACE_PREFIX;
+import static de.gematik.rbellogger.writer.tree.RbelXmlElementToNodeConverter.XML_NAMESPACE_URI;
+
 import de.gematik.rbellogger.writer.RbelWriter.RbelWriterInstance;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
-import de.gematik.rbellogger.writer.tree.RbelXmlElementToNodeConverter;
 import java.io.IOException;
 import java.io.StringWriter;
 import lombok.AllArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.dom4j.Branch;
-import org.dom4j.Document;
-import org.dom4j.DocumentHelper;
-import org.dom4j.Element;
+import org.dom4j.*;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.XMLWriter;
 import org.dom4j.tree.DefaultText;
@@ -69,31 +70,54 @@ public class RbelXmlSerializer implements RbelSerializer {
             .orElseThrow(
                 () -> new RbelSerializationException("Could not find key for " + treeNode));
 
-    if (StringUtils.isEmpty(key)) {
-      return;
-    } else {
-      final boolean isATextNode =
-          "text".equals(key)
-              && !treeNode.hasTypeOptional(RbelContentType.XML).orElse(false)
-              && !treeNode.attributes().containsKey(RbelXmlElementToNodeConverter.IS_XML_ATTRIBUTE);
-      if (isATextNode) {
+    if (!StringUtils.isEmpty(key)) {
+      if (isATextNode(treeNode, key)) {
         if (!(parentBranch instanceof Document)) {
           parentBranch.add(
               new DefaultText(
                   new String(
                       rbelWriter.renderTree(treeNode).getContent(), treeNode.getElementCharset())));
         }
-        return;
-      } else if (treeNode.attributes().containsKey("isXmlAttribute")
+      } else if (treeNode.attributes().containsKey(IS_XML_ATTRIBUTE)
           && parentBranch instanceof Element element) {
         element.addAttribute(key, rbelWriter.renderTree(treeNode).getContentAsString());
-        return;
+      } else if (treeNode.attributes().containsKey(IS_XML_NAMESPACE_PREFIX)
+          && parentBranch instanceof Element element) {
+        element.addNamespace(key, treeNode.getRawStringContent());
+      } else {
+        addXmlNode(treeNode, parentBranch, rbelWriter, key);
       }
     }
+  }
 
-    final Element newElement = parentBranch.addElement(key);
+  private void addXmlNode(RbelContentTreeNode treeNode, Branch parentBranch, RbelWriterInstance rbelWriter, String key) {
+    final Element newElement = parentBranch.addElement(determineQualifiedName(treeNode, key));
+
     for (RbelContentTreeNode childNode : treeNode.getChildNodes()) {
       addNode(childNode, newElement, rbelWriter);
+    }
+  }
+
+  private static boolean isATextNode(RbelContentTreeNode treeNode, String key) {
+    return "text".equals(key)
+           && !treeNode.hasTypeOptional(RbelContentType.XML).orElse(false)
+           && !treeNode.attributes().containsKey(IS_XML_ATTRIBUTE);
+  }
+
+  private QName determineQualifiedName(RbelContentTreeNode treeNode, String key) {
+    if (treeNode.attributes().containsKey(XML_NAMESPACE_URI)) {
+      if (treeNode.attributes().containsKey(XML_NAMESPACE_PREFIX)) {
+        return DocumentHelper.createQName(
+            key,
+            Namespace.get(
+                treeNode.attributes().get(XML_NAMESPACE_PREFIX),
+                treeNode.attributes().get(XML_NAMESPACE_URI)));
+      } else {
+        return DocumentHelper.createQName(
+            key, Namespace.get(treeNode.attributes().get(XML_NAMESPACE_URI)));
+      }
+    } else {
+      return DocumentHelper.createQName(key);
     }
   }
 

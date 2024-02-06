@@ -77,6 +77,8 @@ public class RbelXmlFacet implements RbelFacet {
   }
 
   @Builder.Default private final RbelMultiMap<RbelElement> childElements = new RbelMultiMap<>();
+  @Builder.Default private final String namespaceUri = null;
+  @Builder.Default private final String namespacePrefix = null;
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {

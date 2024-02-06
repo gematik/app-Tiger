@@ -5,13 +5,16 @@
 package de.gematik.rbellogger.converter;
 
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.facet.RbelXmlAttributeFacet;
 import de.gematik.rbellogger.data.facet.RbelXmlFacet;
+import de.gematik.rbellogger.data.facet.RbelXmlNamespaceFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
 import java.io.IOException;
@@ -107,17 +110,17 @@ class XmlConverterTest {
         RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
 
     final RbelElement registryResponseNode =
-        convertedMessage.findRbelPathMembers("$.body.RegistryResponse").get(0);
+        convertedMessage
+            .findRbelPathMembers("$.body.RegistryResponse.RegistryErrorList.RegistryError[0]")
+            .get(0);
     List<String> childNodeTextInOrder =
         registryResponseNode.getChildNodes().stream()
             .map(RbelElement::getRawStringContent)
             .collect(Collectors.toList());
 
-    assertThat(childNodeTextInOrder.get(0))
-        .isEqualTo("urn:oasis:names:tc:ebxml-regrep:xsd:rim:3.0");
-    assertThat(childNodeTextInOrder.get(1)).isEqualTo("urn:oasis:names:tc:ebxml-regrep:xsd:rs:3.0");
-    assertThat(childNodeTextInOrder.get(2))
-        .isEqualTo("urn:oasis:names:tc:ebxml-regrep:xsd:query:3.0");
+    assertThat(childNodeTextInOrder.get(0)).isEqualTo("XDSDuplicateUniqueIdInRegistry");
+    assertThat(childNodeTextInOrder.get(1))
+        .isEqualTo("urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Warning");
 
     final RbelElement registryErrorList =
         convertedMessage.findRbelPathMembers("$.body.RegistryResponse.RegistryErrorList").get(0);
@@ -131,9 +134,8 @@ class XmlConverterTest {
   }
 
   @RepeatedTest(10)
-  // repeated since this is a test very sensitive to wrong element ordering. It should be our canary
-  // in case
-  // we screw up the element ordering while parsing!
+  // repeated since this is a test very sensitive to wrong element ordering. It is our canary in
+  // case we screw up the element ordering while parsing!
   void retrieveTextContent() {
     final RbelElement convertedMessage =
         RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
@@ -197,5 +199,17 @@ class XmlConverterTest {
 
     assertThat(rbelPathResult).hasSize(1);
     assertThat(rbelPathResult.get(0).getRawStringContent()).hasSize(40920);
+  }
+
+  @Test
+  void namespacesShouldBeCorrectlyParsedAndStored() {
+    final RbelElement convertedMessage =
+      RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+
+    assertThat(convertedMessage)
+      .extractChildWithPath("$.body.RegistryResponse.xmlns:ns")
+      .hasStringContentEqualTo("urn:oasis:names:tc:ebxml-regrep:xsd:rim:3.0")
+      .hasFacet(RbelXmlAttributeFacet.class)
+      .hasFacet(RbelXmlNamespaceFacet.class);
   }
 }

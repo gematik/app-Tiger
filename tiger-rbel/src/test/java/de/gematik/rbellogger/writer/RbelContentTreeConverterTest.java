@@ -38,7 +38,6 @@ class RbelContentTreeConverterTest {
 
     RbelWriter writer = new RbelWriter(rbelConverter);
     final String output = new String(writer.serialize(input, new TigerJexlContext()).getContent());
-    System.out.println(output);
     XmlAssert.assertThat(output).and(new String(xmlInput)).ignoreWhitespace().areIdentical();
   }
 
@@ -489,5 +488,17 @@ class RbelContentTreeConverterTest {
             .getContentAsString();
 
     XMLAssert.assertXpathEvaluatesTo("Susanne Engelchen", targetXPath, serializedXml);
+  }
+
+  @SneakyThrows
+  @Test
+  void xmlWithNamespaces_shouldBeUnchangedAfterSerialization() {
+    final byte[] xmlInput = Files.readAllBytes(Path.of("src/test/resources/xmlWithNamespaces.xml"));
+    final RbelElement input = rbelConverter.convertElement(xmlInput, null);
+
+    RbelWriter writer = new RbelWriter(rbelConverter);
+    final String output = new String(writer.serialize(input, new TigerJexlContext()).getContent());
+    System.out.println(output);
+    XmlAssert.assertThat(output).and(new String(xmlInput)).ignoreWhitespace().areIdentical();
   }
 }

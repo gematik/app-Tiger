@@ -1,0 +1,173 @@
+<?xml version="1.0"?>
+<S:Envelope xmlns:S="http://www.w3.org/2003/05/soap-envelope">
+	<S:Header>
+		<Action xmlns="http://www.w3.org/2005/08/addressing">urn:ihe:iti:2007:RegistryStoredQueryResponse</Action>
+		<MessageID xmlns="http://www.w3.org/2005/08/addressing">uuid:44aa5032-7ee0-4ba6-a6f9-84cfd2d9dc79</MessageID>
+		<RelatesTo xmlns="http://www.w3.org/2005/08/addressing">urn:uuid:9e67b9f0-4bb7-48a3-800c-d772a710b3bb</RelatesTo>
+		<To xmlns="http://www.w3.org/2005/08/addressing">http://www.w3.org/2005/08/addressing/anonymous</To>
+	</S:Header>
+	<S:Body>
+		<ns6:AdhocQueryResponse 
+		xmlns:ns2="urn:oasis:names:tc:ebxml-regrep:xsd:rim:3.0" 
+		xmlns:ns3="urn:oasis:names:tc:ebxml-regrep:xsd:rs:3.0" 
+		xmlns:ns4="urn:oasis:names:tc:ebxml-regrep:xsd:lcm:3.0" 
+		xmlns:ns5="urn:ihe:iti:xds-b:2007" 
+		xmlns:ns6="urn:oasis:names:tc:ebxml-regrep:xsd:query:3.0" 
+		xmlns:ns7="http://www.w3.org/2006/05/addressing/wsdl" 
+		xmlns:ns8="urn:hl7-org:v3" 
+		xmlns:ns9="http://ws.gematik.de/conn/ConnectorCommon/v5.0" 
+		xmlns:ns10="http://ws.gematik.de/tel/error/v2.0" 
+		xmlns:ns11="urn:oasis:names:tc:dss:1.0:core:schema" 
+		xmlns:ns12="http://www.w3.org/2000/09/xmldsig#" 
+		xmlns:ns13="http://ws.gematik.de/conn/ConnectorContext/v2.0" 
+		xmlns:ns14="http://ws.gematik.de/fa/phr/v1.1" 
+		xmlns:ns15="http://ws.gematik.de/conn/phrs/PHRService/v2.0" 
+		xmlns:ns16="urn:oasis:names:tc:SAML:1.0:assertion" 
+		xmlns:ns17="urn:ihe:iti:rmd:2017" 
+		totalResultCount="1" 
+		status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success">
+			<ns2:RegistryObjectList>
+				<ns2:ExtrinsicObject mimeType="application/xml" objectType="urn:uuid:7edca82f-054d-47f2-a032-9b2a5b5186c1" status="urn:oasis:names:tc:ebxml-regrep:StatusType:Approved" id="urn:uuid:516948e8-31db-4457-9cd4-29d3ef83019f">
+					<ns2:Slot name="creationTime">
+						<ns2:ValueList>
+							<ns2:Value>20220915120353</ns2:Value>
+						</ns2:ValueList>
+					</ns2:Slot>
+					<ns2:Slot name="languageCode">
+						<ns2:ValueList>
+							<ns2:Value>de-DE</ns2:Value>
+						</ns2:ValueList>
+					</ns2:Slot>
+					<ns2:Slot name="repositoryUniqueId">
+						<ns2:ValueList>
+							<ns2:Value>1.2.276.0.76.3.1.315.3.2.1.1</ns2:Value>
+						</ns2:ValueList>
+					</ns2:Slot>
+					<ns2:Slot name="serviceStartTime">
+						<ns2:ValueList>
+							<ns2:Value>20210301092855</ns2:Value>
+						</ns2:ValueList>
+					</ns2:Slot>
+					<ns2:Slot name="serviceStopTime">
+						<ns2:ValueList>
+							<ns2:Value>20210301093855</ns2:Value>
+						</ns2:ValueList>
+					</ns2:Slot>
+					<ns2:Slot name="size">
+						<ns2:ValueList>
+							<ns2:Value>533087</ns2:Value>
+						</ns2:ValueList>
+					</ns2:Slot>
+					<ns2:Slot name="URI">
+						<ns2:ValueList>
+							<ns2:Value>Medikationsplan.xml</ns2:Value>
+						</ns2:ValueList>
+					</ns2:Slot>
+					<ns2:Name>
+						<ns2:LocalizedString value="MediPlan"/>
+					</ns2:Name>
+					<ns2:Description>
+						<ns2:LocalizedString value="Neue Cooles MediPlan"/>
+					</ns2:Description>
+					<ns2:Classification classificationScheme="urn:uuid:93606bcf-9494-43ec-9b4e-a7748d1a838d" classifiedObject="urn:uuid:516948e8-31db-4457-9cd4-29d3ef83019f" objectType="urn:oasis:names:tc:ebxml-regrep:ObjectType:RegistryObject:Classification" id="urn:uuid:674cefc2-0c05-4971-9e7c-136350008327">
+						<ns2:Slot name="authorPerson">
+							<ns2:ValueList>
+								<ns2:Value>165746304^Blankenburg^Sigrid^^^Dr.^^^&amp;1.2.276.0.76.4.16&amp;ISO</ns2:Value>
+							</ns2:ValueList>
+						</ns2:Slot>
+						<ns2:Slot name="authorInstitution">
+							<ns2:ValueList>
+								<ns2:Value>Praxis Prof. Dr. Sigrid Blankenburg TEST-ONLY^^^^^&amp;1.2.276.0.76.4.188&amp;ISO^^^^1-SMC-B-Testkarte-883110000092397</ns2:Value>
+							</ns2:ValueList>
+						</ns2:Slot>
+						<ns2:Slot name="authorRole">
+							<ns2:ValueList>
+								<ns2:Value>11^^^&amp;1.3.6.1.4.1.19376.3.276.1.5.13&amp;ISO</ns2:Value>
+							</ns2:ValueList>
+						</ns2:Slot>
+					</ns2:Classification>
+					<ns2:Classification classificationScheme="urn:uuid:41a5887f-8865-4c09-adf7-e362475b143a" classifiedObject="urn:uuid:516948e8-31db-4457-9cd4-29d3ef83019f" nodeRepresentation="PLA" objectType="urn:oasis:names:tc:ebxml-regrep:ObjectType:RegistryObject:Classification" id="urn:uuid:c2f0d01f-d683-4389-8cd5-aeccfffcfcfd">
+						<ns2:Slot name="codingScheme">
+							<ns2:ValueList>
+								<ns2:Value>1.3.6.1.4.1.19376.3.276.1.5.8</ns2:Value>
+							</ns2:ValueList>
+						</ns2:Slot>
+						<ns2:Name>
+							<ns2:LocalizedString value="Planungsdokument"/>
+						</ns2:Name>
+					</ns2:Classification>
+					<ns2:Classification classificationScheme="urn:uuid:f4f85eac-e6cb-4883-b524-f2705394840f" classifiedObject="urn:uuid:516948e8-31db-4457-9cd4-29d3ef83019f" nodeRepresentation="N" objectType="urn:oasis:names:tc:ebxml-regrep:ObjectType:RegistryObject:Classification" id="urn:uuid:9db3a0f0-a036-4e30-bf29-4242a5fbffdc">
+						<ns2:Slot name="codingScheme">
+							<ns2:ValueList>
+								<ns2:Value>2.16.840.1.113883.5.25</ns2:Value>
+							</ns2:ValueList>
+						</ns2:Slot>
+						<ns2:Name>
+							<ns2:LocalizedString value="normal"/>
+						</ns2:Name>
+					</ns2:Classification>
+					<ns2:Classification classificationScheme="urn:uuid:2c6b8cb7-8b2a-4051-b291-b1ae6a575ef4" classifiedObject="urn:uuid:516948e8-31db-4457-9cd4-29d3ef83019f" nodeRepresentation="H1" objectType="urn:oasis:names:tc:ebxml-regrep:ObjectType:RegistryObject:Classification" id="urn:uuid:fc8e093e-7dd8-4adf-8618-eb4a02f40838">
+						<ns2:Slot name="codingScheme">
+							<ns2:ValueList>
+								<ns2:Value>1.3.6.1.4.1.19376.3.276.1.5.15</ns2:Value>
+							</ns2:ValueList>
+						</ns2:Slot>
+						<ns2:Name>
+							<ns2:LocalizedString value="vom Patienten mitgebracht"/>
+						</ns2:Name>
+					</ns2:Classification>
+					<ns2:Classification classificationScheme="urn:uuid:a09d5840-386c-46f2-b5ad-9c3699a4309d" classifiedObject="urn:uuid:516948e8-31db-4457-9cd4-29d3ef83019f" nodeRepresentation="urn:gematik:ig:Medikationsplan:r3.1" objectType="urn:oasis:names:tc:ebxml-regrep:ObjectType:RegistryObject:Classification" id="urn:uuid:26e4ab74-c74b-4cca-904f-5ff1ceb03e85">
+						<ns2:Slot name="codingScheme">
+							<ns2:ValueList>
+								<ns2:Value>1.3.6.1.4.1.19376.3.276.1.5.6</ns2:Value>
+							</ns2:ValueList>
+						</ns2:Slot>
+						<ns2:Name>
+							<ns2:LocalizedString value="Medikationsplan (gematik)"/>
+						</ns2:Name>
+					</ns2:Classification>
+					<ns2:Classification classificationScheme="urn:uuid:f33fb8ac-18af-42cc-ae0e-ed0b0bdb91e1" classifiedObject="urn:uuid:516948e8-31db-4457-9cd4-29d3ef83019f" nodeRepresentation="PRA" objectType="urn:oasis:names:tc:ebxml-regrep:ObjectType:RegistryObject:Classification" id="urn:uuid:4208fed0-2d2a-415b-a2c2-922bba565a98">
+						<ns2:Slot name="codingScheme">
+							<ns2:ValueList>
+								<ns2:Value>1.3.6.1.4.1.19376.3.276.1.5.2</ns2:Value>
+							</ns2:ValueList>
+						</ns2:Slot>
+						<ns2:Name>
+							<ns2:LocalizedString value="Arztpraxis"/>
+						</ns2:Name>
+					</ns2:Classification>
+					<ns2:Classification classificationScheme="urn:uuid:cccf5598-8b07-4b77-a05e-ae952c785ead" classifiedObject="urn:uuid:516948e8-31db-4457-9cd4-29d3ef83019f" nodeRepresentation="ALLG" objectType="urn:oasis:names:tc:ebxml-regrep:ObjectType:RegistryObject:Classification" id="urn:uuid:5f8dc1ff-e8d6-4590-8e08-8c63be876afc">
+						<ns2:Slot name="codingScheme">
+							<ns2:ValueList>
+								<ns2:Value>1.3.6.1.4.1.19376.3.276.1.5.4</ns2:Value>
+							</ns2:ValueList>
+						</ns2:Slot>
+						<ns2:Name>
+							<ns2:LocalizedString value="Allgemeinmedizin"/>
+						</ns2:Name>
+					</ns2:Classification>
+					<ns2:Classification classificationScheme="urn:uuid:f0306f51-975f-434e-a61c-c59651d33983" classifiedObject="urn:uuid:516948e8-31db-4457-9cd4-29d3ef83019f" nodeRepresentation="MEDI" objectType="urn:oasis:names:tc:ebxml-regrep:ObjectType:RegistryObject:Classification" id="urn:uuid:2095e3c5-dd6c-45c2-8a58-3c2d0038baed">
+						<ns2:Slot name="codingScheme">
+							<ns2:ValueList>
+								<ns2:Value>1.3.6.1.4.1.19376.3.276.1.5.9</ns2:Value>
+							</ns2:ValueList>
+						</ns2:Slot>
+						<ns2:Name>
+							<ns2:LocalizedString value="Medikamentöse Therapien"/>
+						</ns2:Name>
+					</ns2:Classification>
+					<ns2:ExternalIdentifier registryObject="urn:uuid:516948e8-31db-4457-9cd4-29d3ef83019f" identificationScheme="urn:uuid:2e82c1f6-a085-4c72-9da3-8640a32e42ab" value="2.25.67728233446746468638" objectType="urn:oasis:names:tc:ebxml-regrep:ObjectType:RegistryObject:ExternalIdentifier" id="urn:uuid:5d554cd2-51b7-4c00-a36a-05ca79289b10">
+						<ns2:Name>
+							<ns2:LocalizedString value="XDSDocumentEntry.uniqueId"/>
+						</ns2:Name>
+					</ns2:ExternalIdentifier>
+					<ns2:ExternalIdentifier registryObject="urn:uuid:516948e8-31db-4457-9cd4-29d3ef83019f" identificationScheme="urn:uuid:58a6f841-87b3-4a3e-92fd-a8ffeff98427" value="X110426931^^^&amp;1.2.276.0.76.4.8&amp;ISO" objectType="urn:oasis:names:tc:ebxml-regrep:ObjectType:RegistryObject:ExternalIdentifier" id="urn:uuid:ef2e9ecf-46f3-4c03-bbfc-6123ae4817e5">
+						<ns2:Name>
+							<ns2:LocalizedString value="XDSDocumentEntry.patientId"/>
+						</ns2:Name>
+					</ns2:ExternalIdentifier>
+				</ns2:ExtrinsicObject>
+			</ns2:RegistryObjectList>
+		</ns6:AdhocQueryResponse>
+	</S:Body>
+</S:Envelope>
