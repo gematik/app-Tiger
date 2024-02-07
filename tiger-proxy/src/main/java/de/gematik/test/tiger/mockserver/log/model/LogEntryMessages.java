@@ -1,5 +1,12 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.log.model;
 
+/*
+ * @author jamesdbloom
+ */
 public class LogEntryMessages {
 
   public static final String RECEIVED_REQUEST_MESSAGE_FORMAT = "received request:{}";

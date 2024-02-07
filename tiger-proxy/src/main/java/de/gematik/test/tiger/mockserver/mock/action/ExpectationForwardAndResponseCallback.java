@@ -1,8 +1,15 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.mock.action;
 
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
 
+/*
+ * @author jamesdbloom
+ */
 public interface ExpectationForwardAndResponseCallback extends ExpectationForwardCallback {
 
   /**

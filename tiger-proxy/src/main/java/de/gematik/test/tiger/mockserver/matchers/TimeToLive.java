@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.matchers;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -5,6 +9,9 @@ import de.gematik.test.tiger.mockserver.model.ObjectWithReflectiveEqualsHashCode
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+/*
+ * @author jamesdbloom
+ */
 public class TimeToLive extends ObjectWithReflectiveEqualsHashCodeToString {
 
   private static final String[] EXCLUDED_FIELDS = {"endDate"};

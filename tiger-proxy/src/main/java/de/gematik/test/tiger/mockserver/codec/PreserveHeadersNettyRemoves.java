@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.codec;
 
 import com.google.common.collect.ImmutableList;
@@ -13,6 +17,9 @@ import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import java.util.List;
 
+/*
+ * @author jamesdbloom
+ */
 public class PreserveHeadersNettyRemoves extends MessageToMessageDecoder<HttpObject> {
 
   private static final AttributeKey<List<Header>> PRESERVED_HEADERS =

@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.matchers;
 
 import de.gematik.test.tiger.mockserver.mock.Expectation;
@@ -6,6 +10,9 @@ import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.RequestDefinition;
 import java.util.List;
 
+/*
+ * @author jamesdbloom
+ */
 public interface HttpRequestMatcher extends Matcher<RequestDefinition> {
 
   List<HttpRequest> getHttpRequests();

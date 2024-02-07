@@ -1,5 +1,12 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
+/*
+ * @author jamesdbloom
+ */
 public class SocketAddress extends ObjectWithJsonToString {
   private String host;
   private Integer port = 80;

@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.configuration;
 
 import de.gematik.test.tiger.mockserver.model.BinaryProxyListener;
@@ -17,6 +21,9 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 @Data
 @Accessors(fluent = true)
 public class Configuration {

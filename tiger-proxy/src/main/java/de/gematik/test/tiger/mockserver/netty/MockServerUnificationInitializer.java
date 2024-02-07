@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.netty;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
@@ -10,6 +14,9 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
 
+/*
+ * @author jamesdbloom
+ */
 @ChannelHandler.Sharable
 public class MockServerUnificationInitializer extends ChannelHandlerAdapter {
   private final Configuration configuration;

@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import static de.gematik.test.tiger.mockserver.model.Header.header;
@@ -13,6 +17,9 @@ import java.util.Collections;
 import java.util.List;
 import lombok.Data;
 
+/*
+ * @author jamesdbloom
+ */
 @Data
 public class HttpResponse extends Action<HttpResponse>
     implements HttpMessage<HttpResponse, BodyWithContentType> {

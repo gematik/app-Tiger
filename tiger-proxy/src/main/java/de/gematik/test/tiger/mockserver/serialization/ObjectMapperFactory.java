@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.serialization;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -8,6 +12,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.test.tiger.mockserver.exception.ExceptionHandling;
 import java.util.*;
 
+/*
+ * @author jamesdbloom
+ */
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class ObjectMapperFactory {
 

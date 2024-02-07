@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.matchers;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -5,6 +9,9 @@ import de.gematik.test.tiger.mockserver.model.ObjectWithReflectiveEqualsHashCode
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/*
+ * @author jamesdbloom
+ */
 @Slf4j
 @RequiredArgsConstructor
 public class BooleanMatcher extends ObjectWithReflectiveEqualsHashCodeToString

@@ -1,7 +1,14 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import java.time.LocalDateTime;
 
+/*
+ * @author jamesdbloom
+ */
 public class BinaryMessage implements Message {
 
   private byte[] bytes;

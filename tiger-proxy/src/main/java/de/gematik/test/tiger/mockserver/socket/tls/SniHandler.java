@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.socket.tls;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -24,6 +28,9 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 public class SniHandler extends AbstractSniHandler<SslContext> {
 
   private static final AttributeKey<SSLEngine> UPSTREAM_SSL_ENGINE =

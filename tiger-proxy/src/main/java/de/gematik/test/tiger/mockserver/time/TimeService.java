@@ -1,9 +1,16 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.time;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 
+/*
+ * @author jamesdbloom
+ */
 public class TimeService {
 
   public static final Instant FIXED_INSTANT_FOR_TESTS = Instant.now();

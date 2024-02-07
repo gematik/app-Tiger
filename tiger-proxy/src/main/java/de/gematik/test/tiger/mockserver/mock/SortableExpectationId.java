@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.mock;
 
 import de.gematik.test.tiger.mockserver.collections.Keyed;
@@ -5,6 +9,9 @@ import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Objects;
 
+/*
+ * @author jamesdbloom
+ */
 public class SortableExpectationId implements Keyed<String> {
 
   public static final SortableExpectationId NULL = new SortableExpectationId("", 0, 0);

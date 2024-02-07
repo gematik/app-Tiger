@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.netty.proxy;
 
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.closeOnFlush;
@@ -32,6 +36,9 @@ import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 @ChannelHandler.Sharable
 @Slf4j
 public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {

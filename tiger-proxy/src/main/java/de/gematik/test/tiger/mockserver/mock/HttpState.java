@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.mock;
 
 import static de.gematik.test.tiger.mockserver.log.model.LogEntry.LogMessageType.CLEARED;
@@ -20,6 +24,9 @@ import java.util.Collections;
 import java.util.List;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 public class HttpState {
 
   private static final ThreadLocal<Integer> LOCAL_PORT = new ThreadLocal<>(); // NOSONAR

@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.mappers;
 
 import static org.slf4j.event.Level.INFO;
@@ -13,6 +17,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
+/*
+ * @author jamesdbloom
+ */
 public class JDKCertificateToMockServerX509Certificate {
 
   private final MockServerLogger mockServerLogger;

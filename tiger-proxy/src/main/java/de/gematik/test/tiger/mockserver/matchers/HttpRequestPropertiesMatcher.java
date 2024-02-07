@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.matchers;
 
 import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
@@ -17,6 +21,9 @@ import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+/*
+ * @author jamesdbloom
+ */
 @SuppressWarnings("rawtypes")
 @Slf4j
 public class HttpRequestPropertiesMatcher extends AbstractHttpRequestMatcher {

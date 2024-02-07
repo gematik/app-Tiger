@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.codec;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -7,6 +11,9 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.nio.charset.Charset;
 
+/*
+ * @author jamesdbloom
+ */
 @SuppressWarnings("rawtypes")
 public class BodyDecoderEncoder {
 

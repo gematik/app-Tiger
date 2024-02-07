@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
@@ -5,6 +9,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+/*
+ * @author jamesdbloom
+ */
 @EqualsAndHashCode
 @Getter
 public class HttpOverrideForwardedRequest extends Action<HttpOverrideForwardedRequest> {

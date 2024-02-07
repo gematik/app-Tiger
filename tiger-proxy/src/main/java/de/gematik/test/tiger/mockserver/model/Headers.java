@@ -1,9 +1,16 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import com.google.common.collect.Multimap;
 import java.util.Collection;
 import java.util.List;
 
+/*
+ * @author jamesdbloom
+ */
 public class Headers extends KeysToMultiValues<Header, Headers> {
 
   public Headers(List<Header> headers) {

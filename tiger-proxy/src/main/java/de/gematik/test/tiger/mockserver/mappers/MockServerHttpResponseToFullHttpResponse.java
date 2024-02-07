@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.mappers;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
@@ -15,6 +19,9 @@ import java.util.Collections;
 import java.util.List;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 public class MockServerHttpResponseToFullHttpResponse {
 
   private final MockServerLogger mockServerLogger;

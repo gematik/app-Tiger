@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.logging;
 
 import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
@@ -16,6 +20,9 @@ import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/*
+ * @author jamesdbloom
+ */
 @Sharable
 public class LoggingHandler extends ChannelDuplexHandler {
 

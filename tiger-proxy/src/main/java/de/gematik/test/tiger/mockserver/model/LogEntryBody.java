@@ -1,7 +1,14 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import java.util.Objects;
 
+/*
+ * @author jamesdbloom
+ */
 public class LogEntryBody extends BodyWithContentType<Object> {
   private int hashCode;
   private final Object value;

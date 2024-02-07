@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.exception;
 
 import de.gematik.test.tiger.mockserver.httpclient.SocketConnectionException;
@@ -22,6 +26,9 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import lombok.extern.slf4j.Slf4j;
 
+/*
+ * @author jamesdbloom
+ */
 @Slf4j
 public class ExceptionHandling {
 

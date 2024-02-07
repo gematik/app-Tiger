@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -6,6 +10,9 @@ import java.security.cert.CertificateEncodingException;
 import java.util.Arrays;
 import java.util.Objects;
 
+/*
+ * @author jamesdbloom
+ */
 public class X509Certificate extends ObjectWithJsonToString {
 
   @JsonIgnore private Certificate certificate;

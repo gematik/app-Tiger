@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.codec;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -14,6 +18,9 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 public class ExpandedParameterDecoder {
 
   private final Configuration configuration;

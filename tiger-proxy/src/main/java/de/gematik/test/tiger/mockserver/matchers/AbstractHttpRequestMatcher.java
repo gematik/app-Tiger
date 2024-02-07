@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.matchers;
 
 import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
@@ -9,6 +13,9 @@ import de.gematik.test.tiger.mockserver.mock.listeners.MockServerMatcherNotifier
 import de.gematik.test.tiger.mockserver.model.RequestDefinition;
 import java.util.Objects;
 
+/*
+ * @author jamesdbloom
+ */
 public abstract class AbstractHttpRequestMatcher extends NotMatcher<RequestDefinition>
     implements HttpRequestMatcher {
 

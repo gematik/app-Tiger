@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import com.google.common.collect.LinkedHashMultimap;
@@ -5,6 +9,9 @@ import com.google.common.collect.Multimap;
 import java.util.*;
 import org.apache.commons.lang3.ArrayUtils;
 
+/*
+ * @author jamesdbloom
+ */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public abstract class KeysToMultiValues<T extends KeyToMultiValue, K extends KeysToMultiValues>
     extends ObjectWithJsonToString {

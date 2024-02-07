@@ -1,5 +1,12 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.cache;
 
+/*
+ * @author jamesdbloom
+ */
 public class Entry<T> {
 
   private final long ttlInMillis;

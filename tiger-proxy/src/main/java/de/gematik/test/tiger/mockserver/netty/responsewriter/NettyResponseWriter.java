@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.netty.responsewriter;
 
 import static org.slf4j.event.Level.TRACE;
@@ -14,6 +18,9 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 
+/*
+ * @author jamesdbloom
+ */
 public class NettyResponseWriter extends ResponseWriter {
 
   private final ChannelHandlerContext ctx;

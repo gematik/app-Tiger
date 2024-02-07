@@ -1,9 +1,16 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.matchers;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import org.apache.commons.lang3.StringUtils;
 
+/*
+ * @author jamesdbloom
+ */
 public class ExactStringMatcher extends BodyMatcher<String> {
   private static final String[] excludedFields = {"mockServerLogger"};
   private final MockServerLogger mockServerLogger;

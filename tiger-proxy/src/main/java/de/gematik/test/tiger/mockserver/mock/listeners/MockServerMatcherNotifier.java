@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.mock.listeners;
 
 import de.gematik.test.tiger.mockserver.mock.RequestMatchers;
@@ -8,6 +12,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+/*
+ * @author jamesdbloom
+ */
 public class MockServerMatcherNotifier extends ObjectWithReflectiveEqualsHashCodeToString {
 
   private boolean listenerAdded = false;

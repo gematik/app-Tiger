@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.scheduler;
 
 import static de.gematik.test.tiger.mockserver.log.model.LogEntry.LogMessageType.WARN;
@@ -19,6 +23,9 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 public class Scheduler {
 
   private final Configuration configuration;

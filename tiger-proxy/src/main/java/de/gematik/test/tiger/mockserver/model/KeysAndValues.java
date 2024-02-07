@@ -1,9 +1,16 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.util.*;
 
+/*
+ * @author jamesdbloom
+ */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public abstract class KeysAndValues<T extends KeyAndValue, K extends KeysAndValues>
     extends ObjectWithJsonToString {

@@ -1,8 +1,15 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.netty.unification;
 
 import de.gematik.test.tiger.mockserver.model.ObjectWithJsonToString;
 import java.net.InetSocketAddress;
 
+/*
+ * @author jamesdbloom
+ */
 public class PortBinding extends ObjectWithJsonToString {
 
   private final InetSocketAddress inetSocketAddress;

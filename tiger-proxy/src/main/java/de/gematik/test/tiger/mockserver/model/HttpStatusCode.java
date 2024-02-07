@@ -1,5 +1,12 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
+/*
+ * @author jamesdbloom
+ */
 public enum HttpStatusCode {
   // Informational
   NOT_SET_000(0, "Not Set"),

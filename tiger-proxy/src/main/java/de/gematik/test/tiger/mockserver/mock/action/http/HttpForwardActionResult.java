@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.mock.action.http;
 
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
@@ -7,6 +11,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
+/*
+ * @author jamesdbloom
+ */
 public class HttpForwardActionResult {
   private final HttpRequest httpRequest;
   private final InetSocketAddress remoteAddress;

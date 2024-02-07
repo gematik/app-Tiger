@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import static org.apache.commons.lang3.StringUtils.*;
@@ -17,6 +21,9 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+/*
+ * @author jamesdbloom
+ */
 @SuppressWarnings("unused")
 public class MediaType extends ObjectWithJsonToString {
 

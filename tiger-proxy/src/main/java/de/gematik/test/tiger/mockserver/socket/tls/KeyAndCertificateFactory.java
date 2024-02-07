@@ -1,9 +1,16 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.socket.tls;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.List;
 
+/*
+ * @author jamesdbloom
+ */
 public interface KeyAndCertificateFactory {
 
   void buildAndSavePrivateKeyAndX509Certificate();

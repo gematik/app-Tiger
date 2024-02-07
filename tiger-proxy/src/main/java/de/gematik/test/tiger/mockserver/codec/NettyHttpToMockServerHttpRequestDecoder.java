@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.codec;
 
 import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.getALPNProtocol;
@@ -13,6 +17,9 @@ import java.net.SocketAddress;
 import java.security.cert.Certificate;
 import java.util.List;
 
+/*
+ * @author jamesdbloom
+ */
 public class NettyHttpToMockServerHttpRequestDecoder
     extends MessageToMessageDecoder<FullHttpRequest> {
 

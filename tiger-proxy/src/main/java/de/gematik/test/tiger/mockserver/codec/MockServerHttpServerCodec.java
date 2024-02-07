@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.codec;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
@@ -7,6 +11,9 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.cert.Certificate;
 
+/*
+ * @author jamesdbloom
+ */
 public class MockServerHttpServerCodec
     extends CombinedChannelDuplexHandler<
         NettyHttpToMockServerHttpRequestDecoder, MockServerHttpToNettyHttpResponseEncoder> {

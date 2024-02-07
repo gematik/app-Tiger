@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.matchers;
 
 import static de.gematik.test.tiger.mockserver.formatting.StringFormatter.formatLogMessage;
@@ -12,6 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/*
+ * @author jamesdbloom
+ */
 public class MatchDifference {
 
   public enum Field {

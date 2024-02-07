@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.responsewriter;
 
 import static de.gematik.test.tiger.mockserver.log.model.LogEntry.LogMessageType.INFO;
@@ -18,6 +22,9 @@ import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 public abstract class ResponseWriter {
 
   protected final Configuration configuration;

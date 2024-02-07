@@ -1,8 +1,15 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.mock.action;
 
 import de.gematik.test.tiger.mockserver.model.HttpMessage;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 
+/*
+ * @author jamesdbloom
+ */
 @SuppressWarnings("rawtypes")
 public interface ExpectationCallback<T extends HttpMessage> {
 

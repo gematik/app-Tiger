@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.mock;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -12,6 +16,9 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+/*
+ * @author jamesdbloom
+ */
 @SuppressWarnings("rawtypes")
 @EqualsAndHashCode(exclude = {"id", "created", "sortableExpectationId"})
 @Accessors(chain = true)

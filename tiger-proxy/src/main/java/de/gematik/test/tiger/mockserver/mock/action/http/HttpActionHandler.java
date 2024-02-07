@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.mock.action.http;
 
 import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
@@ -46,6 +50,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 @SuppressWarnings({"rawtypes", "FieldMayBeFinal"})
 @Slf4j
 public class HttpActionHandler {

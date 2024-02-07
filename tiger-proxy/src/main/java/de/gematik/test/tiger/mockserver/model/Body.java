@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -6,6 +10,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.nio.charset.Charset;
 import java.util.Objects;
 
+/*
+ * @author jamesdbloom
+ */
 public abstract class Body<T> extends Not {
   private int hashCode;
   private final Type type;

@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.httpclient;
 
 import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.RESPONSE_FUTURE;
@@ -13,6 +17,9 @@ import java.util.Arrays;
 import java.util.List;
 import javax.net.ssl.SSLException;
 
+/*
+ * @author jamesdbloom
+ */
 @ChannelHandler.Sharable
 public class HttpClientHandler extends SimpleChannelInboundHandler<Message> {
 

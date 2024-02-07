@@ -1,7 +1,14 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import java.util.concurrent.TimeUnit;
 
+/*
+ * @author jamesdbloom
+ */
 public class Delay extends ObjectWithReflectiveEqualsHashCodeToString {
 
   public static final Delay NONE = Delay.seconds(0);

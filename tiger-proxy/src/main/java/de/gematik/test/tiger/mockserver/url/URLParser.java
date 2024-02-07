@@ -1,7 +1,14 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.url;
 
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 
+/*
+ * @author jamesdbloom
+ */
 public class URLParser {
 
   private static final String schemeRegex = "https?://.*";

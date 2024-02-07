@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.netty.proxy.relay;
 
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.connectionClosedException;
@@ -30,6 +34,9 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 @Sharable
 public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler<T> {
 

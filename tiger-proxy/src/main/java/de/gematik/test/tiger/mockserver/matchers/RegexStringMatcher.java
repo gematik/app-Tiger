@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.matchers;
 
 import static org.slf4j.event.Level.DEBUG;
@@ -8,6 +12,9 @@ import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import java.util.regex.PatternSyntaxException;
 import org.apache.commons.lang3.StringUtils;
 
+/*
+ * @author jamesdbloom
+ */
 public class RegexStringMatcher extends BodyMatcher<String> {
 
   private static final String[] EXCLUDED_FIELDS = {"mockServerLogger"};

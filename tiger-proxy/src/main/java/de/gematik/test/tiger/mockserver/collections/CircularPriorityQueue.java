@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.collections;
 
 import java.util.*;
@@ -9,6 +13,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/*
+ * @author jamesdbloom
+ */
 public class CircularPriorityQueue<K, V, SLK extends Keyed<K>> {
   private int maxSize;
   private final Function<V, SLK> skipListKeyFunction;

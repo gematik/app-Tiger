@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.formatting;
 
 import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
@@ -8,6 +12,9 @@ import io.netty.buffer.ByteBufUtil;
 import java.util.HashMap;
 import java.util.Map;
 
+/*
+ * @author jamesdbloom
+ */
 public class StringFormatter {
 
   private static final Map<Integer, String> INDENTS = new HashMap<>();

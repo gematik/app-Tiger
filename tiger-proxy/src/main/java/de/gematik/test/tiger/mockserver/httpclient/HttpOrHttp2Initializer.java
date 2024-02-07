@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.httpclient;
 
 import io.netty.channel.ChannelHandlerContext;
@@ -6,6 +10,9 @@ import io.netty.handler.ssl.ApplicationProtocolNames;
 import io.netty.handler.ssl.ApplicationProtocolNegotiationHandler;
 import java.util.function.Consumer;
 
+/*
+ * @author jamesdbloom
+ */
 public class HttpOrHttp2Initializer extends ApplicationProtocolNegotiationHandler {
 
   private final Consumer<ChannelPipeline> http2Initializer;

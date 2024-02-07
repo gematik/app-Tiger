@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.cache;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -8,6 +12,9 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+/*
+ * @author jamesdbloom
+ */
 public class LRUCache<K, V> {
 
   private static boolean allCachesEnabled = true;

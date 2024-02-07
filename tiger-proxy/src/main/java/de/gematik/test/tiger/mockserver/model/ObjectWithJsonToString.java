@@ -1,7 +1,14 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import de.gematik.test.tiger.mockserver.serialization.ObjectMapperFactory;
 
+/*
+ * @author jamesdbloom
+ */
 public abstract class ObjectWithJsonToString extends ObjectWithReflectiveEqualsHashCodeToString {
 
   private static final String ESCAPED_QUOTE = "\"";

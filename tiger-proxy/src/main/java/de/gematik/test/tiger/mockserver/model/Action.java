@@ -1,9 +1,16 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+/*
+ * @author jamesdbloom
+ */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public abstract class Action<T extends Action> extends ObjectWithJsonToString {
   private int hashCode;

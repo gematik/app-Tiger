@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -6,6 +10,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 public abstract class RequestDefinition extends Not {
 
   private String logCorrelationId;

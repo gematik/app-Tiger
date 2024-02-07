@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.mock.action.http;
 
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
@@ -14,6 +18,9 @@ import java.util.function.Function;
 import javax.annotation.Nullable;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 @SuppressWarnings("FieldMayBeFinal")
 public abstract class HttpForwardAction {
 

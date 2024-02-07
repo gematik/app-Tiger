@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import static de.gematik.test.tiger.mockserver.model.MediaType.DEFAULT_TEXT_HTTP_CHARACTER_SET;
@@ -12,6 +16,9 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Objects;
 
+/*
+ * @author jamesdbloom
+ */
 public class JsonBody extends BodyWithContentType<String> {
   private int hashCode;
   public static final MatchType DEFAULT_MATCH_TYPE = MatchType.ONLY_MATCHING_FIELDS;

@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.matchers;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -7,6 +11,9 @@ import de.gematik.test.tiger.mockserver.model.KeyMatchStyle;
 import de.gematik.test.tiger.mockserver.model.KeyToMultiValue;
 import de.gematik.test.tiger.mockserver.model.KeysToMultiValues;
 
+/*
+ * @author jamesdbloom
+ */
 @SuppressWarnings("rawtypes")
 public class MultiValueMapMatcher
     extends NotMatcher<KeysToMultiValues<? extends KeyToMultiValue, ? extends KeysToMultiValues>> {

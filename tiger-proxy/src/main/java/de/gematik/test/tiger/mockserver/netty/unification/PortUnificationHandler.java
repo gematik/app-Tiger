@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.netty.unification;
 
 import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
@@ -44,6 +48,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 public class PortUnificationHandler extends ReplayingDecoder<Void> {
 
   private static final AttributeKey<Boolean> TLS_ENABLED_UPSTREAM =

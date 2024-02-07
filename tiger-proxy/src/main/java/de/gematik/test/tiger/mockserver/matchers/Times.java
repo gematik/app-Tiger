@@ -1,8 +1,15 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.matchers;
 
 import de.gematik.test.tiger.mockserver.model.ObjectWithReflectiveEqualsHashCodeToString;
 import java.util.Objects;
 
+/*
+ * @author jamesdbloom
+ */
 public class Times extends ObjectWithReflectiveEqualsHashCodeToString {
 
   private static final Times TIMES_UNLIMITED =

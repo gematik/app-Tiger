@@ -1,7 +1,14 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.keys;
 
 import lombok.Getter;
 
+/*
+ * @author jamesdbloom
+ */
 @Getter
 public enum AsymmetricKeyPairAlgorithm {
   EC256_SHA256("EC", "ES256", "SHA256WITHECDSA", "secp256r1"),

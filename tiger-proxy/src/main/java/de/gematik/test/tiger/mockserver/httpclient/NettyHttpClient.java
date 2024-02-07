@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.httpclient;
 
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
@@ -40,6 +44,9 @@ import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 public class NettyHttpClient {
 
   static final AttributeKey<Boolean> SECURE = AttributeKey.valueOf("SECURE");

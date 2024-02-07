@@ -1,9 +1,16 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.collections;
 
 import de.gematik.test.tiger.mockserver.matchers.RegexStringMatcher;
 import java.util.*;
 import org.apache.commons.lang3.tuple.Pair;
 
+/*
+ * @author jamesdbloom
+ */
 public class ImmutableEntry extends Pair<String, String> implements Map.Entry<String, String> {
   private final RegexStringMatcher regexStringMatcher;
   private final String key;

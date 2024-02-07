@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.netty.unification;
 
 import com.google.common.net.HttpHeaders;
@@ -8,6 +12,9 @@ import io.netty.handler.codec.http.DefaultHttpMessage;
 import io.netty.util.ReferenceCountUtil;
 import java.util.List;
 
+/*
+ * @author jamesdbloom
+ */
 @ChannelHandler.Sharable
 public class HttpContentLengthRemover extends MessageToMessageEncoder<DefaultHttpMessage> {
   @Override

@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.codec;
 
 import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
@@ -7,6 +11,9 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
 import java.util.List;
 
+/*
+ * @author jamesdbloom
+ */
 public class MockServerHttpToNettyHttpResponseEncoder
     extends MessageToMessageEncoder<HttpResponse> {
 

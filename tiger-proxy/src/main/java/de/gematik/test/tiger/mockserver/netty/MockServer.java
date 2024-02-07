@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.netty;
 
 import static de.gematik.test.tiger.mockserver.configuration.Configuration.configuration;
@@ -37,6 +41,9 @@ import javax.annotation.Nullable;
 import lombok.Getter;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 @Getter
 public class MockServer extends LifeCycle {
 

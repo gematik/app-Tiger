@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.matchers;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -8,6 +12,9 @@ import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.model.RequestDefinition;
 
+/*
+ * @author jamesdbloom
+ */
 public class MatcherBuilder {
 
   private final Configuration configuration;

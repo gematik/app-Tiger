@@ -1,7 +1,14 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import java.util.Collection;
 
+/*
+ * @author jamesdbloom
+ */
 public class Header extends KeyToMultiValue {
 
   public Header(String name, String... value) {

@@ -1,7 +1,14 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import java.util.Objects;
 
+/*
+ * @author jamesdbloom
+ */
 public class ExpectationId extends ObjectWithJsonToString {
 
   private int hashCode;

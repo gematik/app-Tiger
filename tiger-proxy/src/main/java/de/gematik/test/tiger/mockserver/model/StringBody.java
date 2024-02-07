@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import static de.gematik.test.tiger.mockserver.model.MediaType.DEFAULT_TEXT_HTTP_CHARACTER_SET;
@@ -8,6 +12,9 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Objects;
 
+/*
+ * @author jamesdbloom
+ */
 public class StringBody extends BodyWithContentType<String> {
   private int hashCode;
   public static final MediaType DEFAULT_CONTENT_TYPE = MediaType.create("text", "plain");

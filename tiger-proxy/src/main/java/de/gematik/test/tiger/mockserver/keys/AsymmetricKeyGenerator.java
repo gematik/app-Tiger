@@ -1,9 +1,16 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.keys;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.spec.ECGenParameterSpec;
 
+/*
+ * @author jamesdbloom
+ */
 public class AsymmetricKeyGenerator {
 
   public static KeyPair createKeyPair(AsymmetricKeyPairAlgorithm algorithm) {

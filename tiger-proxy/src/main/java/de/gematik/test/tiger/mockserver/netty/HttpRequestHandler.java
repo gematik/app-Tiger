@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.netty;
 
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.closeOnFlush;
@@ -34,6 +38,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 @ChannelHandler.Sharable
 @Slf4j
 public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest> {

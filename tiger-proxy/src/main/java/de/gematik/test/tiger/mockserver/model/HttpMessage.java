@@ -1,9 +1,16 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.nio.charset.Charset;
 import java.util.List;
 
+/*
+ * @author jamesdbloom
+ */
 @SuppressWarnings("rawtypes")
 public interface HttpMessage<T extends HttpMessage, B extends Body> extends Message {
 

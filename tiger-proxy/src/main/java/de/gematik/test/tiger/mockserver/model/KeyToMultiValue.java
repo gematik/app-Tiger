@@ -1,8 +1,15 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import java.util.*;
 import lombok.Data;
 
+/*
+ * @author jamesdbloom
+ */
 @Data
 public class KeyToMultiValue extends ObjectWithJsonToString {
   private final String name;

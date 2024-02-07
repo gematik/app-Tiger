@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.logging;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -10,6 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 @Slf4j
 public class MockServerLogger {
 

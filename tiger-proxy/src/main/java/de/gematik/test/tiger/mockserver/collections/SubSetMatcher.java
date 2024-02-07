@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.collections;
 
 import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
@@ -7,6 +11,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/*
+ * @author jamesdbloom
+ */
 public class SubSetMatcher {
 
   static boolean containsSubset(

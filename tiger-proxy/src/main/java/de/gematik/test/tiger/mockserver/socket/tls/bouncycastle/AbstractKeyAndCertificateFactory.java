@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.socket.tls.bouncycastle;
 
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
@@ -5,6 +9,9 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import lombok.extern.slf4j.Slf4j;
 
+/*
+ * @author jamesdbloom
+ */
 @Slf4j
 public abstract class AbstractKeyAndCertificateFactory implements KeyAndCertificateFactory {
 

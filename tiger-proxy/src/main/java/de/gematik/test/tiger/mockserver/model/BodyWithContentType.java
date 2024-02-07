@@ -1,9 +1,16 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.nio.charset.Charset;
 import java.util.Objects;
 
+/*
+ * @author jamesdbloom
+ */
 public abstract class BodyWithContentType<T> extends Body<T> {
   private int hashCode;
   protected final MediaType contentType;

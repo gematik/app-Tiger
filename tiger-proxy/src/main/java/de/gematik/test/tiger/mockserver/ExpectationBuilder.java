@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver;
 
 import de.gematik.test.tiger.mockserver.mock.Expectation;
@@ -8,6 +12,9 @@ import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import de.gematik.test.tiger.mockserver.netty.MockServer;
 import lombok.AllArgsConstructor;
 
+/*
+ * @author jamesdbloom
+ */
 @AllArgsConstructor
 public class ExpectationBuilder {
 

@@ -1,8 +1,15 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.collections;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/*
+ * @author jamesdbloom
+ */
 public class CircularHashMap<K, V> extends LinkedHashMap<K, V> {
   private final int maxSize;
 

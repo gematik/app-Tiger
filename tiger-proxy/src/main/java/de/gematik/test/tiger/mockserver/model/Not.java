@@ -1,8 +1,15 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Objects;
 
+/*
+ * @author jamesdbloom
+ */
 public class Not extends ObjectWithJsonToString {
   private int hashCode;
   Boolean not;

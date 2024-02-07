@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.collections;
 
 import static de.gematik.test.tiger.mockserver.collections.ImmutableEntry.entry;
@@ -10,6 +14,9 @@ import de.gematik.test.tiger.mockserver.matchers.RegexStringMatcher;
 import de.gematik.test.tiger.mockserver.model.*;
 import java.util.*;
 
+/*
+ * @author jamesdbloom
+ */
 public class NottableStringMultiMap extends ObjectWithReflectiveEqualsHashCodeToString {
 
   private final Map<String, List<String>> backingMap = new LinkedHashMap<>();

@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.filters;
 
 import de.gematik.test.tiger.mockserver.model.Header;
@@ -8,6 +12,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+/*
+ * @author jamesdbloom
+ */
 public class HopByHopHeaderFilter {
 
   private static final List<String> requestHeadersToRemove =

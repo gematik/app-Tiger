@@ -1,7 +1,14 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.matchers;
 
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 
+/*
+ * @author jamesdbloom
+ */
 public class MatchDifferenceCount {
 
   private final HttpRequest httpRequest;

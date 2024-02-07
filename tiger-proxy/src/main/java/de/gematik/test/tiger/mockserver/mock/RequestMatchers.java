@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.mock;
 
 import static de.gematik.test.tiger.mockserver.log.model.LogEntry.LogMessageType.*;
@@ -27,6 +31,9 @@ import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 @SuppressWarnings("FieldMayBeFinal")
 @Slf4j
 public class RequestMatchers extends MockServerMatcherNotifier {

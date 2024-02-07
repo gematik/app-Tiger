@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -5,6 +9,9 @@ import java.util.Arrays;
 import java.util.Base64;
 import lombok.EqualsAndHashCode;
 
+/*
+ * @author jamesdbloom
+ */
 @EqualsAndHashCode
 public class BinaryBody extends BodyWithContentType<byte[]> {
   private final byte[] bytes;

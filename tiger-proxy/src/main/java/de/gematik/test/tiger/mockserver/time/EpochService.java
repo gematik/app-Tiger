@@ -1,5 +1,12 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.time;
 
+/*
+ * @author jamesdbloom
+ */
 public class EpochService {
 
   public static final long FIXED_TIME_FOR_TESTS = System.currentTimeMillis();

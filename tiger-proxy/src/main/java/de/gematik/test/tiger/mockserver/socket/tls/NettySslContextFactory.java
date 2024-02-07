@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.socket.tls;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
@@ -19,6 +23,10 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.slf4j.event.Level;
+
+/*
+ * @author jamesdbloom
+ */
 
 /**
  * @author jamesdbloom

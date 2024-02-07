@@ -1,7 +1,14 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.codec;
 
 import io.netty.channel.CombinedChannelDuplexHandler;
 
+/*
+ * @author jamesdbloom
+ */
 public class MockServerBinaryClientCodec
     extends CombinedChannelDuplexHandler<
         NettyBinaryToMockServerBinaryResponseDecoder, MockServerBinaryToNettyBinaryRequestEncoder> {

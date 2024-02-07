@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.cors;
 
 import static de.gematik.test.tiger.mockserver.configuration.Configuration.configuration;
@@ -9,6 +13,9 @@ import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
 
+/*
+ * @author jamesdbloom
+ */
 public class CORSHeaders {
 
   private static final String NULL_ORIGIN = "null";

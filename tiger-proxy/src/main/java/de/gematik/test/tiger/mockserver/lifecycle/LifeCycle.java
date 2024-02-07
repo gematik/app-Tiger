@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.lifecycle;
 
 import static de.gematik.test.tiger.mockserver.configuration.Configuration.configuration;
@@ -32,6 +36,9 @@ import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+/*
+ * @author jamesdbloom
+ */
 @Getter
 @Slf4j
 public abstract class LifeCycle implements Stoppable {

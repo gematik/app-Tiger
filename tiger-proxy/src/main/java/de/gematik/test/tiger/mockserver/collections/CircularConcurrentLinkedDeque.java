@@ -1,9 +1,16 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.collections;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Consumer;
 
+/*
+ * @author jamesdbloom
+ */
 public class CircularConcurrentLinkedDeque<E> extends ConcurrentLinkedDeque<E> {
   private int maxSize;
   private final Consumer<E> onEvictCallback;

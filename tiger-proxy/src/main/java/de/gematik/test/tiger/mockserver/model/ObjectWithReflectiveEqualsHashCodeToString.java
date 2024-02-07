@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -5,6 +9,9 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
+/*
+ * @author jamesdbloom
+ */
 public abstract class ObjectWithReflectiveEqualsHashCodeToString {
 
   private static final String[] IGNORE_KEY_FIELD = {};

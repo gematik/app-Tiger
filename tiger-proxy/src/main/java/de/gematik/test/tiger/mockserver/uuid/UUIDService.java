@@ -1,7 +1,14 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.uuid;
 
 import java.util.UUID;
 
+/*
+ * @author jamesdbloom
+ */
 public class UUIDService {
 
   public static final String FIXED_UUID_FOR_TESTS = UUIDService.getUUID();

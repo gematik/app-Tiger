@@ -1,8 +1,15 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import java.util.List;
 import java.util.Map;
 
+/*
+ * @author jamesdbloom
+ */
 public class Cookies extends KeysAndValues<Cookie, Cookies> {
 
   public Cookies(List<Cookie> cookies) {

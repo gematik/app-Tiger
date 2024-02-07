@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.model;
 
 import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
@@ -18,6 +22,9 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
 
+/*
+ * @author jamesdbloom
+ */
 @Getter
 @Setter
 @EqualsAndHashCode

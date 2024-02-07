@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.mockserver.log.model;
 
 import static de.gematik.test.tiger.mockserver.formatting.StringFormatter.formatLogMessage;
@@ -21,6 +25,9 @@ import java.util.List;
 import lombok.Data;
 import org.slf4j.event.Level;
 
+/*
+ * @author jamesdbloom
+ */
 @Data
 public class LogEntry {
 
