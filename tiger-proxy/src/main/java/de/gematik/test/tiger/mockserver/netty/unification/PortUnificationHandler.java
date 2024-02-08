@@ -53,11 +53,11 @@ import org.slf4j.event.Level;
  */
 public class PortUnificationHandler extends ReplayingDecoder<Void> {
 
-  private static final AttributeKey<Boolean> TLS_ENABLED_UPSTREAM =
+  public static final AttributeKey<Boolean> TLS_ENABLED_UPSTREAM =
       AttributeKey.valueOf("TLS_ENABLED_UPSTREAM");
-  private static final AttributeKey<Boolean> TLS_ENABLED_DOWNSTREAM =
+  public static final AttributeKey<Boolean> TLS_ENABLED_DOWNSTREAM =
       AttributeKey.valueOf("TLS_ENABLED_DOWNSTREAM");
-  private static final AttributeKey<NettySslContextFactory> NETTY_SSL_CONTEXT_FACTORY =
+  public static final AttributeKey<NettySslContextFactory> NETTY_SSL_CONTEXT_FACTORY =
       AttributeKey.valueOf("NETTY_SSL_CONTEXT_FACTORY");
   private static final Map<PortBinding, Set<String>> localAddressesCache =
       new ConcurrentHashMap<>();

@@ -21,7 +21,6 @@ import java.util.function.Consumer;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.slf4j.event.Level;
 
 /*
@@ -53,7 +52,7 @@ public class NettySslContextFactory {
     }
   }
 
-  private KeyAndCertificateFactory createKeyAndCertificateFactory() {
+  public KeyAndCertificateFactory createKeyAndCertificateFactory() {
     if (configuration.customKeyAndCertificateFactorySupplier() != null) {
       return configuration
           .customKeyAndCertificateFactorySupplier()
@@ -197,7 +196,6 @@ public class NettySslContextFactory {
                       ? ClientAuth.REQUIRE
                       : ClientAuth.OPTIONAL);
       configureALPN(sslContextBuilder);
-      sslContextBuilder.sslContextProvider(new BouncyCastleJsseProvider());
       sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
       serverSslContext =
           configuration.sslServerContextBuilderCustomizer().apply(sslContextBuilder).build();

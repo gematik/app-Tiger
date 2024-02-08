@@ -223,6 +223,19 @@ tigerProxy:
       serverIdentity: "certificateAndKeyAndChain.p12;Password"
 ----
 
+==== OCSP stapling
+
+If you want the Tiger Proxy to use OCSP stapling you can directly specify the OCSP-Signer to use in the configuration.
+
+[source,yaml]
+----
+tigerProxy:
+    tls:
+      ocspSignerIdentity: "myOcspSigner.p12;Password"
+----
+
+The server will then use this OCSP-Signer to create a fake OCSP-Response during the TLS-handshake.
+
 === Modifications
 
 Modifications are a powerful tool to alter messages before forwarding them.

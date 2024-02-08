@@ -14,10 +14,7 @@ import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.model.Protocol;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderException;
-import io.netty.handler.ssl.AbstractSniHandler;
-import io.netty.handler.ssl.ApplicationProtocolNames;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.ssl.*;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
@@ -26,11 +23,13 @@ import java.security.cert.Certificate;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.event.Level;
 
 /*
  * @author jamesdbloom
  */
+@Slf4j
 public class SniHandler extends AbstractSniHandler<SslContext> {
 
   private static final AttributeKey<SSLEngine> UPSTREAM_SSL_ENGINE =
@@ -80,6 +79,22 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
     SslHandler sslHandler = null;
     try {
       sslHandler = sslContext.getNow().newHandler(ctx.alloc());
+      if (sslHandler.engine() instanceof OpenSslEngine openSslEngine
+          && configuration.ocspResponseSupplier() != null) {
+        try {
+          final KeyAndCertificateFactory keyAndCertificateFactory =
+              ((NettySslContextFactory)
+                      ctx.channel().attr(AttributeKey.valueOf("NETTY_SSL_CONTEXT_FACTORY")).get())
+                  .createKeyAndCertificateFactory();
+          openSslEngine.setOcspResponse(
+              configuration
+                  .ocspResponseSupplier()
+                  .apply(keyAndCertificateFactory.x509Certificate()));
+        } catch (Exception e) {
+          log.warn("Failed to set OCSP response", e);
+        }
+      }
+
       ctx.channel().attr(UPSTREAM_SSL_ENGINE).set(sslHandler.engine());
       ctx.channel().attr(UPSTREAM_SSL_HANDLER).set(sslHandler);
       ctx.pipeline().replace(this, "SslHandler#0", sslHandler);

@@ -102,6 +102,7 @@ public class Configuration {
     UnaryOperator.identity();
   private UnaryOperator<SslContextBuilder> sslClientContextBuilderCustomizer =
     UnaryOperator.identity();
+  private Function<java.security.cert.X509Certificate, byte[]> ocspResponseSupplier = null;
 
 
   // inbound - dynamic private key & x509
