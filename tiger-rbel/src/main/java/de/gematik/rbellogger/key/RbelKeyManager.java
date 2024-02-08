@@ -45,12 +45,12 @@ public class RbelKeyManager {
 
   private final List<RbelKey> keyList = new ArrayList<>();
 
-  public RbelKeyManager addAll(Map<String, RbelKey> keys) {
+  public synchronized RbelKeyManager addAll(Map<String, RbelKey> keys) {
     keyList.addAll(keys.values());
     return this;
   }
 
-  public void addKey(RbelKey rbelKey) {
+  public synchronized void addKey(RbelKey rbelKey) {
     if (rbelKey.getKey() == null) {
       return;
     }
@@ -62,7 +62,7 @@ public class RbelKeyManager {
     keyList.add(rbelKey);
   }
 
-  public RbelKey addKey(String keyId, Key key, int precedence) {
+  public synchronized RbelKey addKey(String keyId, Key key, int precedence) {
     if (keyIsPresentInList(key)) {
       log.trace("Skipping adding key: Key is already known!");
     }
@@ -77,18 +77,18 @@ public class RbelKeyManager {
     return rbelKey;
   }
 
-  private boolean keyIsPresentInList(Key key) {
+  private synchronized boolean keyIsPresentInList(Key key) {
     return keyList.stream()
         .map(RbelKey::getKey)
         .map(Key::getEncoded)
         .anyMatch(oldKey -> Arrays.equals(oldKey, key.getEncoded()));
   }
 
-  public Stream<RbelKey> getAllKeys() {
-    return keyList.stream().sorted(Comparator.comparing(RbelKey::getPrecedence));
+  public synchronized Stream<RbelKey> getAllKeys() {
+    return new ArrayList<>(keyList).stream().sorted(Comparator.comparing(RbelKey::getPrecedence));
   }
 
-  public Optional<RbelKey> findCorrespondingPrivateKey(String rbelKey) {
+  public synchronized Optional<RbelKey> findCorrespondingPrivateKey(String rbelKey) {
     return getAllKeys()
         .filter(candidate -> candidate.getMatchingPublicKey().isPresent())
         .filter(
@@ -97,7 +97,7 @@ public class RbelKeyManager {
         .findFirst();
   }
 
-  public Optional<RbelKey> findKeyByName(String keyName) {
+  public synchronized Optional<RbelKey> findKeyByName(String keyName) {
     return getAllKeys()
         .filter(candidate -> candidate.getKeyName() != null)
         .filter(candidate -> candidate.getKeyName().equals(keyName))

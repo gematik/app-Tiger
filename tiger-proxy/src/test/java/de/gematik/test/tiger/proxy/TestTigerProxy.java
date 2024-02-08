@@ -13,8 +13,6 @@ import static org.awaitility.Awaitility.await;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
-import de.gematik.rbellogger.converter.RbelConverterPlugin;
-import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
@@ -23,12 +21,10 @@ import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
-import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -36,7 +32,6 @@ import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,11 +44,9 @@ import javax.net.ssl.X509TrustManager;
 import kong.unirest.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.data.TemporalUnitWithinOffset;
 import org.jetbrains.annotations.NotNull;
-import org.jose4j.jws.JsonWebSignature;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -661,16 +654,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   @Test
   // gemSpec_Krypt, A_21888
   void tigerProxyShouldHaveFixedVauKeyLoaded() {
-    BrainpoolCurves.init();
-    final Key key =
-        KeyMgr.readKeyFromPem(
-            FileUtils.readFileToString(new File("src/test/resources/fixVauKey.pem")));
-
-    final JsonWebSignature jws = new JsonWebSignature();
-    jws.setKey(key);
-    jws.setPayload("foobar");
-    jws.setAlgorithmHeaderValue("BP256R1");
-    final String jwsSerialized = jws.getCompactSerialization();
+    final String jwsSerialized =
+        "eyJhbGciOiJCUDI1NlIxIn0.Zm9vYmFy.lNinGioEewNWK1IJyBzteAbDRixKemqPYkbYbVj_HOJrxwnyUitcrnB3mrXsFYenetnYTCLCviaMwVW7xA33cw";
 
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
@@ -751,6 +736,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     final UnirestInstance unirestInstance = Unirest.spawnInstance();
     unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
     unirestInstance.get("http://backend/foobar").asString();
+
+    log.info("Now second instance");
 
     final UnirestInstance secondInstance = Unirest.spawnInstance();
     secondInstance.config().proxy("localhost", tigerProxy.getProxyPort());
@@ -964,37 +951,42 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     assertThat(
             tigerProxy.getRbelMessages().stream().map(RbelElement::printHttpDescription).toList())
         .containsExactly(
+            "HTTP GET /mainserver with body ''",
             "HTTP GET /deep/foobar/mainserver with body ''",
             "HTTP 777 with body '{\"foo\":\"bar\"}'",
-            "HTTP GET /mainserver with body ''",
             "HTTP 777 with body '{\"foo\":\"bar\"}'");
   }
 
   @Test
-  void xmlContentTypeWithNonConformingEncodedCharacter_shouldPreserveContent() throws UnirestException {
+  void xmlContentTypeWithNonConformingEncodedCharacter_shouldPreserveContent()
+      throws UnirestException {
     final byte[] rawContent = "hellö\uD83D\uDC4C\uD83C\uDFFB".getBytes(StandardCharsets.UTF_8);
 
-    spawnTigerProxyWith(TigerProxyConfiguration.builder()
-      .proxyRoutes(List.of(TigerRoute.builder()
-        .from("http://backend")
-        .to("http://localhost:" + fakeBackendServerPort)
-        .build()))
-      .build());
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("http://backend")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .build());
 
-    final HttpResponse<byte[]> response = proxyRest.post("http://backend/echo")
-      .body(rawContent)
-      .contentType(MediaType.APPLICATION_XML.toString())
-      .asBytes();
+    final HttpResponse<byte[]> response =
+        proxyRest
+            .post("http://backend/echo")
+            .body(rawContent)
+            .contentType(MediaType.APPLICATION_XML.toString())
+            .asBytes();
 
     awaitMessagesInTiger(2);
 
-    assertThat(response.getBody())
-      .isEqualTo(rawContent);
+    assertThat(response.getBody()).isEqualTo(rawContent);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0))
-      .extractChildWithPath("$.body")
-      .getContent()
-      .isEqualTo(rawContent);
+        .extractChildWithPath("$.body")
+        .getContent()
+        .isEqualTo(rawContent);
   }
 
   @Test
@@ -1042,102 +1034,27 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   }
 
   @Test
-  void reverseProxy_parsingShouldNotBlockCommunication() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
-    AtomicBoolean messageWasReceivedInTheClient = new AtomicBoolean(false);
-    AtomicBoolean allowMessageParsingToComplete = new AtomicBoolean(false);
-
-    final RbelConverterPlugin blockConversionUntilCommunicationIsComplete =
-        (el, conv) -> {
-          log.info("Entering wait");
-          await().atMost(2, TimeUnit.SECONDS).until(messageWasReceivedInTheClient::get);
-          allowMessageParsingToComplete.set(true);
-          log.info("Exiting wait");
-        };
-    tigerProxy
-        .getRbelLogger()
-        .getRbelConverter()
-        .addPostConversionListener(blockConversionUntilCommunicationIsComplete);
-
-    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
-
-    log.info("Message was received in the client...");
-    messageWasReceivedInTheClient.set(true);
-
-    await().atMost(2, TimeUnit.SECONDS).until(allowMessageParsingToComplete::get);
-  }
-
-  @Test
-  @SuppressWarnings("java:S2925")
-  void reverseProxy_parsingShouldBlockCommunicationIfConfigured() throws InterruptedException {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .parsingShouldBlockCommunication(true)
-            .build());
-    AtomicBoolean clientHasWaitedAndNotReceivedMessageYet = new AtomicBoolean(false);
-    AtomicBoolean messageParsingHasStarted = new AtomicBoolean(false);
-
-    final RbelConverterPlugin blockConversionUntilCommunicationIsComplete =
-        (el, conv) -> {
-          log.info("Entering wait with " + el.getRawStringContent());
-          messageParsingHasStarted.set(true);
-          await().atMost(20, TimeUnit.SECONDS).until(clientHasWaitedAndNotReceivedMessageYet::get);
-          log.info("Exiting wait");
-        };
-    tigerProxy
-        .getRbelLogger()
-        .getRbelConverter()
-        .addPostConversionListener(blockConversionUntilCommunicationIsComplete);
-
-    final CompletableFuture<HttpResponse<String>> asyncMessage =
-        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asStringAsync();
-    await().atMost(20, TimeUnit.SECONDS).until(messageParsingHasStarted::get);
-
-    // guarantee that a parse would succeed by now
-    Thread.sleep(100);
-
-    assertThat(asyncMessage.isDone()).isFalse();
-
-    log.info("Switching clientHasWaitedAndNotReceivedMessageYet...");
-    clientHasWaitedAndNotReceivedMessageYet.set(true);
-    await().atMost(20, TimeUnit.SECONDS).until(asyncMessage::isDone);
-  }
-
-  @Test
   void queryParametersStartWithExclamationMark_shouldTransmitUnaltered() {
     spawnTigerProxyWith(
-      TigerProxyConfiguration.builder()
-        .proxyRoutes(
-          List.of(
-            TigerRoute.builder()
-              .from("/")
-              .to("http://localhost:" + fakeBackendServerPort)
-              .build()))
-        .build());
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .build());
 
-    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar?foo=!bar&!foo=bar").asString();
+    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar?foo=!bar&!foo=bar")
+        .asString();
     awaitMessagesInTiger(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0))
-      .extractChildWithPath("$.path.foo.value")
-      .hasStringContentEqualTo("!bar");
+        .extractChildWithPath("$.path.foo.value")
+        .hasStringContentEqualTo("!bar");
     assertThat(tigerProxy.getRbelMessagesList().get(0))
-      .extractChildWithPath("$.path.!foo.value")
-      .hasStringContentEqualTo("bar");
+        .extractChildWithPath("$.path.!foo.value")
+        .hasStringContentEqualTo("bar");
   }
 
   private void checkMessageAddresses(final String clientRegex, final String serverRegex) {

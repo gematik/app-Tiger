@@ -5,6 +5,7 @@
 package de.gematik.rbellogger.data;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -22,7 +23,7 @@ public class RbelMultiMap<T> implements Map<String, T> {
             m1.putAll(m2);
             return m1;
           });
-  private final List<Entry<String, T>> values = new ArrayList<>();
+  private final Queue<Entry<String, T>> values = new ConcurrentLinkedQueue<>();
 
   @Override
   public int size() {
@@ -53,6 +54,13 @@ public class RbelMultiMap<T> implements Map<String, T> {
         .orElse(null);
   }
 
+  public List<T> getAll(Object key) {
+    return values.stream()
+        .filter(entry -> entry.getKey().equals(key))
+        .map(Entry::getValue)
+        .toList();
+  }
+
   @Override
   public T put(String key, T value) {
     values.add(Pair.of(key, value));
@@ -62,28 +70,6 @@ public class RbelMultiMap<T> implements Map<String, T> {
   public T put(Entry<String, T> value) {
     values.add(value);
     return null;
-  }
-
-  /**
-   * Updates a value of a key that exists once; if multiple entries of the keys exist, then it
-   * throws an {@link UnsupportedOperationException}; if the key does not exist yet, it adds a new
-   * entry
-   *
-   * @param key key of entry to be replaced
-   * @param value new value of entry
-   */
-  public void addOrReplaceUniqueEntry(String key, T value) {
-    var filteredEntries =
-        new ArrayList<>(values.stream().filter(e -> e.getKey().equals(key)).toList());
-    if (filteredEntries.size() > 1) {
-      throw new UnsupportedOperationException(
-          "It was attempted to replace a unique key '%s', but multiple entries with that key existed."
-              .formatted(key));
-    } else if (filteredEntries.size() == 1) {
-      values.replaceAll(e -> e.getKey().equals(key) ? Pair.of(key, value) : e);
-    } else {
-      values.add(Pair.of(key, value));
-    }
   }
 
   @Override
@@ -156,6 +142,6 @@ public class RbelMultiMap<T> implements Map<String, T> {
   }
 
   public Iterator<Entry<String, T>> iterator() {
-    return values.listIterator();
+    return values.iterator();
   }
 }

@@ -90,3 +90,8 @@ The picture below shows the content of the whole response.
 
 image::screenshots/webui_btn_content.png[title="Example of the content of a response"]
 
+===== Switching between request/response
+
+Since the order in the list is based upon the reception of the corresponding message it can be hard to find the corresponding request or response to a given message. To make this easier the user can switch between the request and the response by clicking on the corresponding button in the top right corner of the request or the response that is highlighted in the following screenshot.
+
+image::screenshots/webui_message_partner.png[title="Buttons to switch between request and response"]

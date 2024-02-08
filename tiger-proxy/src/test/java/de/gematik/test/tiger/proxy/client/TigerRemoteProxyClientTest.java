@@ -71,6 +71,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 @DirtiesContext
 @ResetTigerConfiguration
 class TigerRemoteProxyClientTest {
+
   /*
    *  Our Testsetup:
    *
@@ -499,7 +500,8 @@ class TigerRemoteProxyClientTest {
 
   @Test
   void longBuffer_shouldDownloadTrafficPaged() {
-    for (int i = 0; i < 100; i++) {
+    final int numberOfInteractions = 1000;
+    for (int i = 0; i < numberOfInteractions; i++) {
       addRequestResponsePair(tigerProxy.getRbelLogger().getRbelConverter());
     }
     try (TigerRemoteProxyClient newlyConnectedRemoteClient =
@@ -511,18 +513,18 @@ class TigerRemoteProxyClientTest {
       log.info("after generation we now have {} messages", tigerProxy.getRbelMessagesList().size());
 
       await()
-          .atMost(20, TimeUnit.SECONDS)
-          .pollDelay(200, TimeUnit.MILLISECONDS)
+          .atMost(10, TimeUnit.SECONDS)
+          .pollDelay(20, TimeUnit.MILLISECONDS)
           .until(
               () ->
                   newlyConnectedRemoteClient.getRbelMessagesList().size()
-                      == tigerProxy.getRbelMessagesList().size());
+                      == numberOfInteractions * 2);
     }
 
     Mockito.verify(tigerWebUiController, Mockito.times(1))
         .downloadTraffic(
             Mockito.isNull(), Mockito.any(), Mockito.eq(Optional.of(50)), Mockito.any());
-    Mockito.verify(tigerWebUiController, Mockito.times(3))
+    Mockito.verify(tigerWebUiController, Mockito.times(39))
         .downloadTraffic(
             Mockito.matches(".*"), Mockito.any(), Mockito.eq(Optional.of(50)), Mockito.any());
   }

@@ -6,11 +6,12 @@ package de.gematik.rbellogger.converter;
 
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
 import java.io.IOException;
@@ -18,7 +19,6 @@ import java.nio.charset.Charset;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import org.apache.commons.io.FileUtils;
-import org.assertj.core.api.ThrowableAssert;
 import org.junit.jupiter.api.Test;
 
 class RbelConverterTest {
@@ -61,12 +61,11 @@ class RbelConverterTest {
 
   @Test
   void parseMessage_shouldFailBecauseContentIsNull() {
-    ThrowableAssert.ThrowingCallable throwingCallable =
-        () ->
-            RbelLogger.build()
-                .getRbelConverter()
-                .parseMessage((byte[]) null, null, null, Optional.of(ZonedDateTime.now()));
-    assertThatExceptionOfType(NullPointerException.class).isThrownBy(throwingCallable);
+    final RbelConverter rbelConverter = RbelLogger.build().getRbelConverter();
+    final Optional<ZonedDateTime> now = Optional.of(ZonedDateTime.now());
+
+    assertThatThrownBy(() -> rbelConverter.parseMessage((byte[]) null, null, null, now))
+        .isInstanceOf(RbelConversionException.class);
   }
 
   @Test

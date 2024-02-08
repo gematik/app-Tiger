@@ -20,6 +20,7 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import io.restassured.RestAssured;
+import io.restassured.response.Response;
 import java.time.OffsetDateTime;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
@@ -45,7 +46,7 @@ import org.springframework.http.MediaType;
 @ResetTigerConfiguration
 @NotThreadSafe
 @WireMockTest
-public class TigerWebUiControllerTest {
+class TigerWebUiControllerTest {
 
   @Autowired private TigerProxy tigerProxy;
   @LocalServerPort private int adminPort;
@@ -82,7 +83,9 @@ public class TigerWebUiControllerTest {
             .post("http://localhost:" + fakeBackendServerPort + "/foobar")
             .asString()
             .getBody());
-    await().until(() -> tigerProxy.getRbelMessages().size() == 4);
+
+    TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
+        tigerProxy, 4, 10);
   }
 
   @AfterEach
@@ -205,8 +208,9 @@ public class TigerWebUiControllerTest {
   @Test
   @ResourceLock(value = "TigerWebUiController")
   void checkCorrectMenuStringsAreSupplied() {
-    RestAssured.given()
-        .get(getWebUiUrl() + "/getMsgAfter")
+    final Response response = RestAssured.given().get(getWebUiUrl() + "/getMsgAfter");
+    log.info("Response: {}", response.asString());
+    response
         .then()
         .statusCode(200)
         .body("metaMsgList.size()", equalTo(TOTAL_OF_EXCHANGED_MESSAGES))
@@ -288,7 +292,6 @@ public class TigerWebUiControllerTest {
     await().until(() -> tigerProxy.getRbelMessages().size() == 2);
 
     final JsonNode body = Unirest.get(getWebUiUrl() + "/getMsgAfter").asJson().getBody();
-    System.out.println(body.toString());
     assertThat(body.getObject().getJSONArray("htmlMsgList").getJSONObject(0).getString("html"))
         .contains("foobar")
         .doesNotContain(longString);
@@ -297,8 +300,9 @@ public class TigerWebUiControllerTest {
   @Test
   @ResourceLock(value = "TigerWebUiController")
   void downloadTraffic_withoutFilterCriterion() {
-    RestAssured.given()
-        .get(getWebUiUrl() + "/trafficLog12334.tgr")
+    final Response response = RestAssured.given().get(getWebUiUrl() + "/trafficLog12334.tgr");
+    log.info("Response: {}", response.asString());
+    response
         .then()
         .statusCode(200)
         .header("available-messages", String.valueOf(TOTAL_OF_EXCHANGED_MESSAGES))

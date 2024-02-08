@@ -67,7 +67,6 @@ import org.springframework.stereotype.Component;
 public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
   private static final String CA_CERT_ALIAS = "caCert";
-  private static final String SSL_KEY_MANAGER_FACTORY_ALGORITHM = "ssl.KeyManagerFactory.algorithm";
   private static final String JDK_TLS_NAMED_GROUPS = "jdk.tls.namedGroups";
   private final List<DynamicTigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();
   private final List<Consumer<Throwable>> exceptionListeners = new ArrayList<>();
@@ -121,7 +120,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
           if (tlsConfiguration.getOcspSignerIdentity() != null) {
             builder.enableOcsp(true);
             mockServerConfiguration.ocspResponseSupplier(
-              certificate ->
+                certificate ->
                     buildOcspResponse(certificate, tlsConfiguration.getOcspSignerIdentity()));
           }
 

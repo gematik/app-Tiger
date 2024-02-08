@@ -14,6 +14,7 @@ import de.gematik.rbellogger.util.RbelPathExecutor;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,7 +35,7 @@ public class RbelElement extends RbelPathAble {
   private final String uuid;
   private final byte[] rawContent;
   private final RbelElement parentNode;
-  private final List<RbelFacet> facets = new ArrayList<>();
+  private final Queue<RbelFacet> facets = new ConcurrentLinkedQueue<>();
   @Setter private Optional<Charset> charset;
 
   private final long size;
@@ -75,7 +76,7 @@ public class RbelElement extends RbelPathAble {
   }
 
   public <T> Optional<T> getFacet(@NonNull Class<T> clazz) {
-    return Collections.unmodifiableList(facets).stream()
+    return getFacetStream()
         .filter(facet -> clazz.isAssignableFrom(facet.getClass()))
         .map(clazz::cast)
         .findFirst();
@@ -86,15 +87,13 @@ public class RbelElement extends RbelPathAble {
   }
 
   public RbelElement addFacet(RbelFacet facet) {
-    synchronized (facets) {
-      facets.add(facet);
-    }
+    facets.add(facet);
     return this;
   }
 
   @Override
   public List<RbelElement> getChildNodes() {
-    return Collections.unmodifiableList(facets).stream()
+    return getFacetStream()
         .map(RbelFacet::getChildElements)
         .map(RbelMultiMap::getValues)
         .flatMap(Collection::stream)
@@ -103,9 +102,13 @@ public class RbelElement extends RbelPathAble {
         .toList();
   }
 
+  private Stream<RbelFacet> getFacetStream() {
+    return new ArrayList<>(facets).stream();
+  }
+
   @Override
   public RbelMultiMap<RbelElement> getChildNodesWithKey() {
-    return Collections.unmodifiableList(facets).stream()
+    return getFacetStream()
         .map(RbelFacet::getChildElements)
         .map(RbelMultiMap::getValues)
         .flatMap(Collection::stream)
@@ -255,10 +258,15 @@ public class RbelElement extends RbelPathAble {
   }
 
   public void addOrReplaceFacet(RbelFacet facet) {
-    synchronized (facets) {
-      getFacet(facet.getClass()).ifPresent(facets::remove);
-      facets.add(facet);
-    }
+    getFacet(facet.getClass()).ifPresent(facets::remove);
+    facets.add(facet);
+  }
+
+  public void removeFacetsOfType(Class<? extends RbelFacet> facetClass) {
+    final List<RbelFacet> facetsToBeRemoved =
+        facets.stream().filter(facetClass::isInstance).toList();
+    facetsToBeRemoved.forEach(facets::remove);
+    facetsToBeRemoved.forEach(facet -> facet.facetRemovedCallback(this));
   }
 
   public Optional<RbelElement> findElement(String rbelPath) {
@@ -295,7 +303,7 @@ public class RbelElement extends RbelPathAble {
   }
 
   public List<RbelNoteFacet> getNotes() {
-    return Collections.unmodifiableList(facets).stream()
+    return getFacetStream()
         .flatMap(
             facet -> {
               if (facet instanceof RbelNestedFacet asRbelNestedFacet) {
@@ -326,16 +334,6 @@ public class RbelElement extends RbelPathAble {
       position = position.getParentNode();
     }
     return Optional.empty();
-  }
-
-  public RbelElement findRootElement() {
-    RbelElement result = this;
-    RbelElement newResult = result.getParentNode();
-    while (newResult != null) {
-      result = newResult;
-      newResult = result.getParentNode();
-    }
-    return result;
   }
 
   @Override
@@ -370,6 +368,16 @@ public class RbelElement extends RbelPathAble {
                         + StringUtils.abbreviate(msg.getBody().getRawStringContent(), 30)
                         + "'")
             .orElse("");
+  }
+
+  public RbelElement findRootElement() {
+    RbelElement result = this;
+    RbelElement newResult = result.getParentNode();
+    while (newResult != null) {
+      result = newResult;
+      newResult = result.getParentNode();
+    }
+    return result;
   }
 
   private static class RbelPathNotUniqueException extends RuntimeException {

@@ -112,7 +112,7 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
 
   private boolean shouldWaitForResponse(Optional<RbelElement> convertedRequest) {
     return convertedRequest.map(RbelElement::getFacets).stream()
-        .flatMap(List::stream)
+        .flatMap(Queue::stream)
         .anyMatch(RbelFacet::shouldExpectReplyMessage);
   }
 

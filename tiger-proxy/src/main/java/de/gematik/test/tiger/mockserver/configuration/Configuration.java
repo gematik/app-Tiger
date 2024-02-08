@@ -99,11 +99,10 @@ public class Configuration {
   private Function<SslContextBuilder, SslContext> clientSslContextBuilderFunction = null;
   private Consumer<NettySslContextFactory> nettySslContextFactoryCustomizer = factory -> {};
   private UnaryOperator<SslContextBuilder> sslServerContextBuilderCustomizer =
-    UnaryOperator.identity();
+      UnaryOperator.identity();
   private UnaryOperator<SslContextBuilder> sslClientContextBuilderCustomizer =
-    UnaryOperator.identity();
+      UnaryOperator.identity();
   private Function<java.security.cert.X509Certificate, byte[]> ocspResponseSupplier = null;
-
 
   // inbound - dynamic private key & x509
   private boolean preventCertificateDynamicUpdate = false;

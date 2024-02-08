@@ -6,22 +6,25 @@ package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.key.RbelKeyManager;
-import de.gematik.test.tiger.common.util.ImmutableDequeFacade;
+import de.gematik.rbellogger.util.RbelMessagesDequeFacade;
 import java.nio.charset.StandardCharsets;
 import java.security.Security;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.Map.Entry;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.function.BiFunction;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -35,16 +38,11 @@ public class RbelConverter {
 
   private final Deque<RbelElement> messageHistory = new ConcurrentLinkedDeque<>();
   private final Set<String> knownMessageUuids = ConcurrentHashMap.newKeySet();
-  @Getter
-  private final RbelKeyManager rbelKeyManager;
-  @Getter
-  private final RbelValueShader rbelValueShader = new RbelValueShader();
-  @Getter
-  private final List<RbelConverterPlugin> postConversionListeners = new ArrayList<>();
-  @Getter
-  private final Map<
-          Class<? extends RbelElement>, List<BiFunction<RbelElement, RbelConverter, RbelElement>>>
-      preConversionMappers = new HashMap<>();
+  private final RbelMultiMap<CompletableFuture<RbelElement>> messagesWaitingForCompletion =
+      new RbelMultiMap<>();
+  @Getter private final RbelKeyManager rbelKeyManager;
+  @Getter private final RbelValueShader rbelValueShader = new RbelValueShader();
+  @Getter private final List<RbelConverterPlugin> postConversionListeners = new ArrayList<>();
   private final List<RbelConverterPlugin> converterPlugins =
       new ArrayList<>(
           List.of(
@@ -58,7 +56,7 @@ public class RbelConverter {
               new RbelBearerTokenConverter(),
               new RbelXmlConverter(),
               new RbelJsonConverter(),
-              new RbelVauKeyDeriver(),
+              new RbelVauEpaKeyDeriver(),
               new RbelMtomConverter(),
               new RbelX509Converter(),
               new RbelX500Converter(),
@@ -67,8 +65,7 @@ public class RbelConverter {
               new RbelCetpConverter()));
   @Builder.Default private int rbelBufferSizeInMb = 1024;
   @Builder.Default private boolean manageBuffer = false;
-  @Getter
-  @Builder.Default private long currentBufferSize = 0;
+  @Getter @Builder.Default private long currentBufferSize = 0;
   @Builder.Default private long messageSequenceNumber = 0;
   @Builder.Default private int skipParsingWhenMessageLargerThanKb = -1;
 
@@ -88,9 +85,8 @@ public class RbelConverter {
             .build());
   }
 
-  public RbelElement convertElement(final RbelElement rawInput) {
-    log.trace("Converting {}...", rawInput);
-    final RbelElement convertedInput = filterInputThroughPreConversionMappers(rawInput);
+  public RbelElement convertElement(final RbelElement convertedInput) {
+    log.trace("Converting {}...", convertedInput);
     boolean elementIsOversized =
         skipParsingWhenMessageLargerThanKb > -1
             && (convertedInput.getRawContent().length > skipParsingWhenMessageLargerThanKb * 1024);
@@ -112,14 +108,14 @@ public class RbelConverter {
         if (log.isDebugEnabled()) {
           log.debug(
               "Content in failed conversion-attempt was (B64-encoded) {}",
-              Base64.getEncoder().encodeToString(rawInput.getRawContent()));
-          if (rawInput.getParentNode() != null) {
+              Base64.getEncoder().encodeToString(convertedInput.getRawContent()));
+          if (convertedInput.getParentNode() != null) {
             log.debug(
                 "Parent-Content in failed conversion-attempt was (B64-encoded) {}",
-                Base64.getEncoder().encodeToString(rawInput.getParentNode().getRawContent()));
+                Base64.getEncoder().encodeToString(convertedInput.getParentNode().getRawContent()));
           }
         }
-        rawInput.addFacet(new RbelNoteFacet(msg, RbelNoteFacet.NoteStyling.ERROR));
+        convertedInput.addFacet(new RbelNoteFacet(msg, RbelNoteFacet.NoteStyling.ERROR));
       }
     }
     return convertedInput;
@@ -135,22 +131,6 @@ public class RbelConverter {
     return Optional.empty();
   }
 
-  public RbelElement filterInputThroughPreConversionMappers(final RbelElement input) {
-    RbelElement value = input;
-    for (BiFunction<RbelElement, RbelConverter, RbelElement> mapper :
-        preConversionMappers.entrySet().stream()
-            .filter(entry -> input.getClass().isAssignableFrom(entry.getKey()))
-            .map(Entry::getValue)
-            .flatMap(List::stream)
-            .toList()) {
-      RbelElement newValue = mapper.apply(value, this);
-      if (newValue != value) {
-        value = filterInputThroughPreConversionMappers(newValue);
-      }
-    }
-    return value;
-  }
-
   public void registerListener(final RbelConverterPlugin listener) {
     postConversionListeners.add(listener);
   }
@@ -159,12 +139,6 @@ public class RbelConverter {
     for (RbelConverterPlugin postConversionListener : postConversionListeners) {
       postConversionListener.consumeElement(element, this);
     }
-  }
-
-  public void registerMapper(
-      Class<? extends RbelElement> clazz,
-      BiFunction<RbelElement, RbelConverter, RbelElement> mapper) {
-    preConversionMappers.computeIfAbsent(clazz, key -> new ArrayList<>()).add(mapper);
   }
 
   public void addConverter(RbelConverterPlugin converter) {
@@ -176,24 +150,53 @@ public class RbelConverter {
       RbelHostname sender,
       RbelHostname receiver,
       Optional<ZonedDateTime> transmissionTime) {
-    final RbelElement rbelMessage = convertElement(content, null);
-    return doMessagePostConversion(rbelMessage, sender, receiver, transmissionTime);
+    final RbelElement messageElement = RbelElement.builder().rawContent(content).build();
+    return parseMessage(messageElement, sender, receiver, transmissionTime);
   }
 
   public RbelElement parseMessage(
-      @NonNull final RbelElement rbelElement,
-      RbelHostname sender,
-      RbelHostname receiver,
-      Optional<ZonedDateTime> transmissionTime) {
-    final RbelElement rbelMessage = convertElement(rbelElement);
-    return doMessagePostConversion(rbelMessage, sender, receiver, transmissionTime);
+      @NonNull final RbelElement messageElement,
+      final RbelHostname sender,
+      final RbelHostname receiver,
+      final Optional<ZonedDateTime> transmissionTime) {
+    try {
+      return parseMessageAsync(messageElement, sender, receiver, transmissionTime).get();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RbelConversionException(e);
+    } catch (ExecutionException e) {
+      throw new RbelConversionException(e);
+    }
+  }
+
+  public CompletableFuture<RbelElement> parseMessageAsync(
+      @NonNull final RbelElement messageElement,
+      final RbelHostname sender,
+      final RbelHostname receiver,
+      final Optional<ZonedDateTime> transmissionTime) {
+    addMessageToHistory(messageElement);
+    messageElement.addFacet(
+        RbelTcpIpMessageFacet.builder()
+            .receiver(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, receiver))
+            .sender(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, sender))
+            .sequenceNumber(messageSequenceNumber++)
+            .build());
+
+    messageElement.addFacet(new RbelParsingNotCompleteFacet(this));
+    return CompletableFuture.supplyAsync(
+        () -> {
+          try {
+            convertElement(messageElement);
+            doMessagePostConversion(messageElement, transmissionTime);
+            return messageElement;
+          } finally {
+            messageElement.removeFacetsOfType(RbelParsingNotCompleteFacet.class);
+          }
+        });
   }
 
   public RbelElement doMessagePostConversion(
-      @NonNull final RbelElement rbelElement,
-      RbelHostname sender,
-      RbelHostname receiver,
-      Optional<ZonedDateTime> transmissionTime) {
+      @NonNull final RbelElement rbelElement, Optional<ZonedDateTime> transmissionTime) {
     if (rbelElement
         .getFacet(RbelHttpResponseFacet.class)
         .map(resp -> resp.getRequest() == null)
@@ -215,24 +218,20 @@ public class RbelConverter {
                       .addOrReplaceFacet(reqFacet.toBuilder().response(rbelElement).build()));
     }
 
-    rbelElement.addFacet(
-        RbelTcpIpMessageFacet.builder()
-            .receiver(RbelHostnameFacet.buildRbelHostnameFacet(rbelElement, receiver))
-            .sender(RbelHostnameFacet.buildRbelHostnameFacet(rbelElement, sender))
-            .sequenceNumber(messageSequenceNumber++)
-            .build());
-
     transmissionTime.ifPresent(
         tt -> rbelElement.addFacet(RbelMessageTimingFacet.builder().transmissionTime(tt).build()));
 
     rbelElement.triggerPostConversionListener(this);
+    return rbelElement;
+  }
+
+  private void addMessageToHistory(RbelElement rbelElement) {
     synchronized (messageHistory) {
       currentBufferSize += rbelElement.getSize();
       knownMessageUuids.add(rbelElement.getUuid());
       messageHistory.add(rbelElement);
     }
     manageRbelBufferSize();
-    return rbelElement;
   }
 
   public RbelConverter addPostConversionListener(RbelConverterPlugin postConversionListener) {
@@ -247,7 +246,7 @@ public class RbelConverter {
   public void manageRbelBufferSize() {
     if (manageBuffer) {
       synchronized (messageHistory) {
-        if (rbelBufferSizeInMb <= 0 && !getMessageHistory().isEmpty()) {
+        if (rbelBufferSizeInMb <= 0 && !messageHistory.isEmpty()) {
           currentBufferSize = 0;
           messageHistory.clear();
           knownMessageUuids.clear();
@@ -260,9 +259,9 @@ public class RbelConverter {
                 currentBufferSize / (1024 ^ 2),
                 rbelBufferSizeInMb);
           }
-          while (exceedingLimit > 0 && !getMessageHistory().isEmpty()) {
+          while (exceedingLimit > 0 && !messageHistory.isEmpty()) {
             log.trace("Exceeded buffer size, dropping oldest message in history");
-            final RbelElement messageToDrop = getMessageHistory().getFirst();
+            final RbelElement messageToDrop = messageHistory.getFirst();
             exceedingLimit -= messageToDrop.getSize();
             currentBufferSize -= messageToDrop.getSize();
             knownMessageUuids.remove(messageToDrop.getUuid());
@@ -288,12 +287,27 @@ public class RbelConverter {
         false);
   }
 
+  /**
+   * Returns a list of all fully parsed messages. This list does not include messages that are not
+   * parsed yet. To guarantee consistent sequence numbers the list stops before the first unparsed
+   * message.
+   */
   public List<RbelElement> getMessageList() {
-    return new ArrayList<>(getMessageHistory());
+    synchronized (messageHistory) {
+      return messageHistory.stream()
+          .takeWhile(msg -> !msg.hasFacet(RbelParsingNotCompleteFacet.class))
+          .toList();
+    }
   }
 
-  public ImmutableDequeFacade<RbelElement> getMessageHistory() {
-    return new ImmutableDequeFacade<>(messageHistory);
+  /**
+   * Gives a view of the current messages. This view includes messages that are not yet fully
+   * parsed.
+   */
+  public RbelMessagesDequeFacade getMessageHistoryAsync() {
+    synchronized (messageHistory) {
+      return new RbelMessagesDequeFacade(messageHistory, this);
+    }
   }
 
   public void clearAllMessages() {
@@ -315,5 +329,61 @@ public class RbelConverter {
         }
       }
     }
+  }
+
+  public void waitForGivenElementToBeParsed(RbelElement result) {
+    waitForGivenMessagesToBeParsed(List.of(result));
+  }
+
+  public void waitForAllElementsBeforeGivenToBeParsed(RbelElement element) {
+    // Collect unfinished messages
+    List<RbelElement> unfinishedMessages = new ArrayList<>();
+    synchronized (messageHistory) {
+      for (RbelElement msg : messageHistory) {
+        if (msg == element || msg.getUuid().equals(element.getUuid())) {
+          break;
+        }
+        if (msg.hasFacet(RbelParsingNotCompleteFacet.class)) {
+          unfinishedMessages.add(msg);
+        }
+      }
+    }
+    waitForGivenMessagesToBeParsed(unfinishedMessages);
+  }
+
+  private void waitForGivenMessagesToBeParsed(List<RbelElement> unfinishedMessages) {
+    // register callbacks
+    final List<Pair<CompletableFuture<RbelElement>, RbelElement>> callbacks;
+    synchronized (messagesWaitingForCompletion) {
+      callbacks =
+          unfinishedMessages.stream()
+              .filter(msg -> msg.hasFacet(RbelParsingNotCompleteFacet.class))
+              .map(
+                  msg -> {
+                    final CompletableFuture<RbelElement> future = new CompletableFuture<>();
+                    messagesWaitingForCompletion.put(msg.getUuid(), future);
+                    return Pair.of(future, msg);
+                  })
+              .toList();
+    }
+    // wait for completion
+    for (Pair<CompletableFuture<RbelElement>, RbelElement> future : callbacks) {
+      try {
+        future.getKey().get();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new RbelConversionException(e);
+      } catch (ExecutionException e) {
+        throw new RbelConversionException(e);
+      }
+    }
+  }
+
+  public void signalMessageParsingIsComplete(RbelElement element) {
+    final List<CompletableFuture<RbelElement>> completableFutures;
+    synchronized (messagesWaitingForCompletion) {
+      completableFutures = messagesWaitingForCompletion.removeAll(element.getUuid());
+    }
+    completableFutures.forEach(future -> future.complete(element));
   }
 }

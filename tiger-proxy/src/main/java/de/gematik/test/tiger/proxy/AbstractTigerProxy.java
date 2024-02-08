@@ -79,7 +79,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   private RbelFileWriter rbelFileWriter;
   @Getter private Optional<String> name;
   @Getter protected final org.slf4j.Logger log;
-  @Getter private final ExecutorService trafficParserExecutor = Executors.newSingleThreadExecutor();
+  @Getter private final ExecutorService trafficParserExecutor = Executors.newCachedThreadPool();
   private AtomicBoolean fileParsedCompletely = new AtomicBoolean(false);
   private AtomicReference<RuntimeException> fileParsingException = new AtomicReference<>();
   private boolean isShuttingDown = false;

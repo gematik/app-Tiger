@@ -18,6 +18,6 @@ class StaticRbelLogTests extends AbstractTests {
     page.locator("#test-webui-slider").click();
     await().untilAsserted(() -> assertThat(page.locator("#test-rbel-logo").isVisible()).isTrue());
     screenshot(page, "maincontent_rbelpath.png");
-    screenshot(page, "maincontent_rbelpath_urllink_highlight.png", "test-rbel-webui-url", true);
+    screenshotElementById(page, "maincontent_rbelpath_urllink_highlight.png", "test-rbel-webui-url");
   }
 }

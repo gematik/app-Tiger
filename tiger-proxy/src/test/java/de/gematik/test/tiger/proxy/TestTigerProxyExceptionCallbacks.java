@@ -12,7 +12,11 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
+import de.gematik.test.tiger.mockserver.model.HttpResponse;
+import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
@@ -133,10 +137,8 @@ class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
     }
 
     @Override
-    public RbelElement convertResponse(
-        de.gematik.test.tiger.mockserver.model.HttpResponse response,
-        String serverProtocolAndHost,
-        String clientAddress) {
+    public CompletableFuture<RbelElement> convertResponse(
+        HttpResponse response, String senderUrl, String clientAddress, Optional<ZonedDateTime> timestamp) {
       throw new RuntimeException("foobar");
     }
   }

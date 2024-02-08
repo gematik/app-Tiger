@@ -92,71 +92,71 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
       configuration.addSubjectAlternativeName(request.getFirstHeader(HOST.toString()));
 
       if (!httpState.handle(request, responseWriter, false)) {
-      if (request.getMethod().equals("CONNECT")) {
+        if (request.getMethod().equals("CONNECT")) {
 
-        String username = configuration.proxyAuthenticationUsername();
-        String password = configuration.proxyAuthenticationPassword();
-        if (isNotBlank(username)
-            && isNotBlank(password)
-            && !request.containsHeader(
-                PROXY_AUTHORIZATION.toString(),
-                "Basic "
-                    + Base64.getEncoder()
-                        .encodeToString(
-                            (username + ':' + password).getBytes(StandardCharsets.UTF_8)))) {
-          HttpResponse response =
-              response()
-                  .withStatusCode(PROXY_AUTHENTICATION_REQUIRED.code())
-                  .withHeader(
-                      PROXY_AUTHENTICATE.toString(),
-                      "Basic realm=\""
-                          + StringEscapeUtils.escapeJava(configuration.proxyAuthenticationRealm())
-                          + "\", charset=\"UTF-8\"");
-          ctx.writeAndFlush(response);
-          mockServerLogger.logEvent(
-              new LogEntry()
-                  .setType(AUTHENTICATION_FAILED)
-                  .setLogLevel(Level.INFO)
-                  .setCorrelationId(request.getLogCorrelationId())
-                  .setHttpRequest(request)
-                  .setHttpResponse(response)
-                  .setExpectation(request, response)
-                  .setMessageFormat(
-                      "proxy authentication failed so returning response:{}\n"
-                          + "for forwarded request:{}")
-                  .setArguments(response, request));
-        } else {
-          ctx.channel().attr(PROXYING).set(Boolean.TRUE);
-          // assume SSL for CONNECT request
-          enableSslUpstreamAndDownstream(ctx.channel());
-          // add Subject Alternative Name for SSL certificate
-          if (isNotBlank(request.getPath())) {
-            server
-                .getScheduler()
-                .submit(() -> configuration.addSubjectAlternativeName(request.getPath()));
+          String username = configuration.proxyAuthenticationUsername();
+          String password = configuration.proxyAuthenticationPassword();
+          if (isNotBlank(username)
+              && isNotBlank(password)
+              && !request.containsHeader(
+                  PROXY_AUTHORIZATION.toString(),
+                  "Basic "
+                      + Base64.getEncoder()
+                          .encodeToString(
+                              (username + ':' + password).getBytes(StandardCharsets.UTF_8)))) {
+            HttpResponse response =
+                response()
+                    .withStatusCode(PROXY_AUTHENTICATION_REQUIRED.code())
+                    .withHeader(
+                        PROXY_AUTHENTICATE.toString(),
+                        "Basic realm=\""
+                            + StringEscapeUtils.escapeJava(configuration.proxyAuthenticationRealm())
+                            + "\", charset=\"UTF-8\"");
+            ctx.writeAndFlush(response);
+            mockServerLogger.logEvent(
+                new LogEntry()
+                    .setType(AUTHENTICATION_FAILED)
+                    .setLogLevel(Level.INFO)
+                    .setCorrelationId(request.getLogCorrelationId())
+                    .setHttpRequest(request)
+                    .setHttpResponse(response)
+                    .setExpectation(request, response)
+                    .setMessageFormat(
+                        "proxy authentication failed so returning response:{}\n"
+                            + "for forwarded request:{}")
+                    .setArguments(response, request));
+          } else {
+            ctx.channel().attr(PROXYING).set(Boolean.TRUE);
+            // assume SSL for CONNECT request
+            enableSslUpstreamAndDownstream(ctx.channel());
+            // add Subject Alternative Name for SSL certificate
+            if (isNotBlank(request.getPath())) {
+              server
+                  .getScheduler()
+                  .submit(() -> configuration.addSubjectAlternativeName(request.getPath()));
+            }
+            String[] hostParts = request.getPath().split(":");
+            final int port = determinePort(ctx, hostParts);
+            ctx.pipeline()
+                .addLast(
+                    new HttpConnectHandler(
+                        configuration, server, mockServerLogger, hostParts[0], port));
+            ctx.pipeline().remove(this);
+            ctx.fireChannelRead(request);
           }
-          String[] hostParts = request.getPath().split(":");
-          final int port = determinePort(ctx, hostParts);
-          ctx.pipeline()
-              .addLast(
-                  new HttpConnectHandler(
-                      configuration, server, mockServerLogger, hostParts[0], port));
-          ctx.pipeline().remove(this);
-          ctx.fireChannelRead(request);
-        }
-      } else {
-        try {
-          httpActionHandler.processAction(
+        } else {
+          try {
+            httpActionHandler.processAction(
                 request,
                 responseWriter,
                 ctx,
                 getLocalAddresses(ctx),
                 isProxyingRequest(ctx),
                 false);
-        } catch (RuntimeException e) {
-          log.error("exception processing request '{}'", request, e);
+          } catch (RuntimeException e) {
+            log.error("exception processing request '{}'", request, e);
+          }
         }
-      }
       }
     } catch (IllegalArgumentException iae) {
       mockServerLogger.logEvent(

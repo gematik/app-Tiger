@@ -15,10 +15,12 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
+import de.gematik.rbellogger.data.facet.RbelParsingNotCompleteFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import kong.unirest.Config;
 import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +49,9 @@ public abstract class AbstractTigerProxyTest {
                     .withStatusMessage("EVIL")
                     .withHeader("foo", "bar1", "bar2")
                     .withHeader("Some-Header-Field", "complicated-value §$%&/((=)(/(/&$()=§$§")
-                    .withBody("{\"foo\":\"bar\"}"));
+                    .withHeader("fooValue", "{{request.query.foo}}")
+                    .withBody("{\"foo\":\"bar\"}")
+                    .withTransformers("response-template"));
     runtimeInfo.getWireMock().register(stubFor(foobar));
 
     final MappingBuilder deepFoobar =
@@ -135,9 +139,13 @@ public abstract class AbstractTigerProxyTest {
 
   public void awaitMessagesInTiger(int numberOfMessagesExpected) {
     await()
+        .atMost(5, TimeUnit.SECONDS)
         .until(
             () ->
-                tigerProxy.getRbelLogger().getMessageHistory().size() >= numberOfMessagesExpected);
+                tigerProxy.getRbelLogger().getMessageHistory().stream()
+                        .filter(el -> !el.hasFacet(RbelParsingNotCompleteFacet.class))
+                        .count()
+                    >= numberOfMessagesExpected);
   }
 
   public LoggedRequest getLastRequest(WireMock wireMock) {

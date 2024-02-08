@@ -146,28 +146,23 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
     return Paths.get("..", doc, user_manual, screenshots, file);
   }
 
-  void screenshot(Page page, String fileName, String attribute, boolean isElement) {
-    if (isElement) {
-      page.evaluate(
-          "document.getElementById(\"" + attribute + "\").style.backgroundColor='yellow'");
-    } else {
-      page.evaluate(
-          "document.getElementsByClassName(\""
-              + attribute
-              + "\")[0].style.backgroundColor='yellow'");
-    }
-    page.screenshot(new Page.ScreenshotOptions().setFullPage(false).setPath(getPath(fileName)));
-    if (isElement) {
-      page.evaluate(
-          "document.getElementById(\""
-              + attribute
-              + "\").style.removeProperty(\"background-color\")");
-    } else {
-      page.evaluate(
-          "document.getElementsByClassName(\""
-              + attribute
-              + "\")[0].style.removeProperty(\"background-color\")");
-    }
+  void screenshotElementById(Page page, String fileName, String elementId) {
+    page.evaluate("document.getElementById(\"" + elementId + "\").style.backgroundColor='yellow'");
+    screenshot(page, fileName);
+    page.evaluate(
+        "document.getElementById(\""
+            + elementId
+            + "\").style.removeProperty(\"background-color\")");
+  }
+
+  void screenshotByClassname(Page page, String fileName, String classname) {
+    page.evaluate(
+        "document.getElementsByClassName(\"" + classname + "\")[0].style.backgroundColor='yellow'");
+    screenshot(page, fileName);
+    page.evaluate(
+        "document.getElementsByClassName(\""
+            + classname
+            + "\")[0].style.removeProperty(\"background-color\")");
   }
 
   void screenshot(Page page, String fileName) {

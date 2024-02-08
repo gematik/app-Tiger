@@ -3,6 +3,7 @@ package de.gematik.test.tiger.lib.rbel;
 import de.gematik.rbellogger.builder.RbelBuilder;
 import de.gematik.rbellogger.builder.RbelBuilderManager;
 import de.gematik.rbellogger.builder.RbelObjectJexl;
+import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelSerializationAssertion;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -295,7 +296,7 @@ class RbelBuilderTests {
             "$.entry2.0.entry2a.entry2aIII.5",
             "$.entry3.entry3b.(/)§=$§)=)§");
 
-    List<Object> successNewValueParameters =
+    List<String> successNewValueParameters =
         List.of(
             "some text",
             "4",
@@ -316,15 +317,19 @@ class RbelBuilderTests {
       for (Object successNewValue : successNewValueParameters) {
         String expectedValue =
             switch (successPath) {
-              case "$.entry1.entry1a.entry1aI" -> insertIntoComplexStringAtPathentry1aI(
-                  convertNonPrimitiveToJson(successNewValue.toString()));
-              case "$.entry2.0.entry2a.entry2aIII.5" -> insertIntoComplexStringAtPathentry2aIII5(
-                  convertNonPrimitiveToJson(successNewValue.toString()));
-              case "$.entry3.entry3b.(/)§=$§)=)§" -> insertIntoComplexStringAtPathentry3bSpecialChars(
-                  convertNonPrimitiveToJson(successNewValue.toString()));
-              default -> throw new NotImplementedException(
-                  "SuccessPath %s is not yet implemented for Parameterized tests."
-                      .formatted(successPath));
+              case "$.entry1.entry1a.entry1aI" ->
+                  insertIntoComplexStringAtPathentry1aI(
+                      convertNonPrimitiveToJson(successNewValue.toString()));
+              case "$.entry2.0.entry2a.entry2aIII.5" ->
+                  insertIntoComplexStringAtPathentry2aIII5(
+                      convertNonPrimitiveToJson(successNewValue.toString()));
+              case "$.entry3.entry3b.(/)§=$§)=)§" ->
+                  insertIntoComplexStringAtPathentry3bSpecialChars(
+                      convertNonPrimitiveToJson(successNewValue.toString()));
+              default ->
+                  throw new NotImplementedException(
+                      "SuccessPath %s is not yet implemented for Parameterized tests."
+                          .formatted(successPath));
             };
         successParameters.add(Arguments.of(successPath, successNewValue, true, expectedValue));
       }
@@ -344,19 +349,30 @@ class RbelBuilderTests {
   @ParameterizedTest
   @MethodSource("provideJsonRbelObjectExamples")
   void setValueTests(
-      String insertPath, Object newValue, boolean expectSuccess, String expectedResult) {
+      String insertPath, String newStringValue, boolean expectSuccess, String expectedResult) {
 
     RbelBuilder parameterizedRbelBuilder = RbelBuilder.fromString(complexJsonObject);
 
-    if (newValue instanceof String newStringValue) {
-      if (expectSuccess) {
-        parameterizedRbelBuilder.setValueAt(insertPath, newStringValue);
-        JSONAssert.assertEquals(
-            expectedResult, parameterizedRbelBuilder.getTreeRootNode().getRawStringContent(), true);
-      } else {
-        Assertions.assertThrows(
-            Exception.class, () -> parameterizedRbelBuilder.setValueAt(insertPath, newStringValue));
-      }
+    if (expectSuccess) {
+      System.out.println(
+        RbelConverter.builder()
+          .build()
+          .convertElement(
+            parameterizedRbelBuilder.getTreeRootNode().getRawStringContent(), null)
+          .printTreeStructureWithoutColors());
+      parameterizedRbelBuilder.setValueAt(insertPath, newStringValue);
+      log.info("Inserting value {} into path: {}", newStringValue, insertPath);
+      System.out.println(
+          RbelConverter.builder()
+              .build()
+              .convertElement(
+                  parameterizedRbelBuilder.getTreeRootNode().getRawStringContent(), null)
+              .printTreeStructureWithoutColors());
+      JSONAssert.assertEquals(
+          expectedResult, parameterizedRbelBuilder.getTreeRootNode().getRawStringContent(), true);
+    } else {
+      Assertions.assertThrows(
+          Exception.class, () -> parameterizedRbelBuilder.setValueAt(insertPath, newStringValue));
     }
   }
 

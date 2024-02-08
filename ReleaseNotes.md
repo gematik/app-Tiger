@@ -12,6 +12,18 @@
 
 ## Breaking changes
 
+* TGR-1270: The order of messages in the TigerProxy is now chronologically. So pairs (request/response) no longer
+  appear next to each other. In the RbelFlow a new icon has been added linking to a potential partner-message.
+* TGR-1270: Messages are now parsed asynchronously. The order of the messages in the TigerProxy is the order of the
+  messages as they were received. This asynchronous parsing means that messages are added to the TigerProxy before they
+  are completely parsed. To minimize confusion the following changes were made:
+    * 'getRbelMessagesList()' now only contains the messages up until the first non-parsed message. This means that the
+      list might not be complete anymore. The RBelValidatorGlue-steps are prepared (They use a timeout to look for the
+      requested message) and should not be affected.
+    * 'getRbelMessages()' contains all messages, including the non-parsed ones. To minimize confusion the '
+      .getLast()', '.getFirst()', '.peekLast()' and '.peekFirst()' methods now wait until the parsing of the requested
+      message is finished. The Iterator ('for(RbelElement msg : tigerProxy.getRbelMessages())') will also wait for the
+      requested message to be parsed.
 * TGR-1264: Lombok packages no longer are provided to depending test suites. Given best practices and to avoid
   dependency issues in test suites you are enforced to depend on your own version of lombok IF you need it from this
   version on.

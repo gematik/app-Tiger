@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.matching.UrlPattern;
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.util.GlobalServerMap;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -338,20 +339,20 @@ class TestTigerProxyMockResponses {
         .asJson();
 
     assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(0))
-        .extractChildWithPath("$.sender.bundledServerName")
-        .hasStringContentEqualTo("mainServer");
-
-    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(0))
         .extractChildWithPath("$.receiver.bundledServerName")
-        .hasStringContentEqualTo("backendServer");
+        .hasStringContentEqualTo("mainServer");
 
     assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(1))
         .extractChildWithPath("$.sender.bundledServerName")
-        .hasStringContentEqualTo("backendServer");
+        .hasStringContentEqualTo("mainServer");
 
     assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(1))
         .extractChildWithPath("$.receiver.bundledServerName")
-        .hasStringContentEqualTo("mainServer");
+        .hasStringContentEqualTo("backendServer");
+
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(2))
+        .extractChildWithPath("$.sender.bundledServerName")
+        .hasStringContentEqualTo("backendServer");
 
     assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(2))
         .extractChildWithPath("$.receiver.bundledServerName")
@@ -382,7 +383,6 @@ class TestTigerProxyMockResponses {
                 trafficVisualization: true
                       """)
   void testOneZionServerAsExternalJar(TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {
-
     unirestInstance
         .get(
             TigerGlobalConfiguration.resolvePlaceholders(
@@ -472,22 +472,27 @@ class TestTigerProxyMockResponses {
                 "http://mainServerTypeZion/helloZionBackendServer"))
         .asJson();
 
-    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(0))
-        .extractChildWithPath("$.sender.bundledServerName")
-        .hasStringContentEqualTo("mainServerTypeZion");
+    testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().stream()
+        .map(RbelElement::printHttpDescription)
+        .forEach(System.out::println);
 
     assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(0))
-        .extractChildWithPath("$.receiver.bundledServerName")
-        .hasStringContentEqualTo("backendServerTypeZion");
-
-    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(1))
         .extractChildWithPath("$.sender.bundledServerName")
-        .hasStringContentEqualTo("backendServerTypeZion");
-
-    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(1))
+        .hasStringContentEqualTo("local client");
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(0))
         .extractChildWithPath("$.receiver.bundledServerName")
         .hasStringContentEqualTo("mainServerTypeZion");
 
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(1))
+        .extractChildWithPath("$.sender.bundledServerName")
+        .hasStringContentEqualTo("mainServerTypeZion");
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(1))
+        .extractChildWithPath("$.receiver.bundledServerName")
+        .hasStringContentEqualTo("backendServerTypeZion");
+
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(2))
+        .extractChildWithPath("$.sender.bundledServerName")
+        .hasStringContentEqualTo("backendServerTypeZion");
     assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(2))
         .extractChildWithPath("$.receiver.bundledServerName")
         .hasStringContentEqualTo("mainServerTypeZion");
@@ -495,6 +500,9 @@ class TestTigerProxyMockResponses {
     assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(3))
         .extractChildWithPath("$.sender.bundledServerName")
         .hasStringContentEqualTo("mainServerTypeZion");
+    assertThat(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().get(3))
+        .extractChildWithPath("$.receiver.bundledServerName")
+        .hasStringContentEqualTo("local client");
   }
 
   @Test

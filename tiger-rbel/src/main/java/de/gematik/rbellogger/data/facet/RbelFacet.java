@@ -33,4 +33,7 @@ public interface RbelFacet {
   default boolean shouldExpectReplyMessage() {
     return false;
   }
+
+  /** This callback is triggered when this facet is removed from the element. Default is NOOP. */
+  default void facetRemovedCallback(RbelElement element) {}
 }

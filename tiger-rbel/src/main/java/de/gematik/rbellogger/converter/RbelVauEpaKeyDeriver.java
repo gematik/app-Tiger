@@ -29,7 +29,7 @@ import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.util.encoders.Hex;
 
 @Slf4j
-public class RbelVauKeyDeriver implements RbelConverterPlugin {
+public class RbelVauEpaKeyDeriver implements RbelConverterPlugin {
 
   private static final String KEY_ID = "KeyID";
   private static final String AES_256_GCM_KEY = "AES-256-GCM-Key";
@@ -124,7 +124,7 @@ public class RbelVauKeyDeriver implements RbelConverterPlugin {
           Base64.getEncoder().encodeToString(privateKey.getEncoded()),
           Base64.getEncoder().encodeToString(otherSidePublicKey.getEncoded()));
     }
-    byte[] sharedSecret = new byte[0];
+    byte[] sharedSecret;
     try {
       sharedSecret = ecka(privateKey, otherSidePublicKey);
     } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeyException e) {

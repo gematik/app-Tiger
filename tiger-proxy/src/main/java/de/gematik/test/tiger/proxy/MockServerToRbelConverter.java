@@ -20,6 +20,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,8 +33,8 @@ public class MockServerToRbelConverter {
 
   private final RbelConverter rbelConverter;
 
-  public RbelElement convertResponse(
-      HttpResponse response, String serverProtocolAndHost, String clientAddress) {
+  public CompletableFuture<RbelElement> convertResponse(
+      HttpResponse response, String senderUrl, String receiverUrl, Optional<ZonedDateTime> timestamp) {
     if (log.isTraceEnabled()) {
       log.trace(
           "Converting response {}, headers {}, body {}",
@@ -42,13 +43,17 @@ public class MockServerToRbelConverter {
           response.getBodyAsString());
     }
 
-    final RbelElement element =
-        rbelConverter.parseMessage(
+    return rbelConverter
+        .parseMessageAsync(
             responseToRbelMessage(response),
-            convertUri(serverProtocolAndHost),
-            RbelHostname.fromString(clientAddress).orElse(null),
-            Optional.of(ZonedDateTime.now()));
+            convertUri(senderUrl),
+            RbelHostname.fromString(receiverUrl).orElse(null),
+            timestamp)
+        .thenApply(element -> addHttpResponseFacetIfNotPresent(response, element));
+  }
 
+  private static RbelElement addHttpResponseFacetIfNotPresent(
+      HttpResponse response, RbelElement element) {
     if (!element.hasFacet(RbelHttpResponseFacet.class)) {
       element.addFacet(
           RbelHttpResponseFacet.builder()
@@ -62,7 +67,7 @@ public class MockServerToRbelConverter {
     return element;
   }
 
-  public RbelElement convertRequest(
+  public CompletableFuture<RbelElement> convertRequest(
       HttpRequest request, String protocolAndHost, Optional<ZonedDateTime> timestamp) {
     if (log.isTraceEnabled()) {
       log.trace(
@@ -72,13 +77,16 @@ public class MockServerToRbelConverter {
           request.getBodyAsString());
     }
 
-    final RbelElement element =
-        rbelConverter.parseMessage(
+    return rbelConverter
+        .parseMessageAsync(
             requestToRbelMessage(request),
             RbelHostname.fromString(request.getRemoteAddress()).orElse(null),
             convertUri(protocolAndHost),
-            timestamp);
+            timestamp)
+        .thenApply(e -> addHttpRequestFacetIfNotPresent(request, e));
+  }
 
+  private RbelElement addHttpRequestFacetIfNotPresent(HttpRequest request, RbelElement element) {
     if (!element.hasFacet(RbelHttpRequestFacet.class)) {
       element.addFacet(
           RbelHttpRequestFacet.builder()

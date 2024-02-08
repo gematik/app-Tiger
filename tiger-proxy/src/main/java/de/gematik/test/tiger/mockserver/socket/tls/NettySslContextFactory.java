@@ -174,7 +174,8 @@ public class NettySslContextFactory {
           new LogEntry()
               .setLogLevel(Level.DEBUG)
               .setMessageFormat(
-                  "using certificate authority serial:{}issuer:{}subject:{}and certificate serial:{}issuer:{}subject:{}")
+                  "using certificate authority serial:{}issuer:{}subject:{}and certificate"
+                      + " serial:{}issuer:{}subject:{}")
               .setArguments(
                   keyAndCertificateFactory.certificateAuthorityX509Certificate().getSerialNumber(),
                   keyAndCertificateFactory

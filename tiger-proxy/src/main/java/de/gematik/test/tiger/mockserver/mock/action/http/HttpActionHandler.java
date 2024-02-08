@@ -380,15 +380,19 @@ public class HttpActionHandler {
   public void handleExceptionDuringForwardingRequest(
       Action action, HttpRequest request, ResponseWriter responseWriter, Throwable exception) {
     if (connectionException(exception)) {
-        log.error(
-            "failed to connect to remote socket while forwarding request {} for action {}",
-            request,
-            action,
-            exception);
+      log.error(
+          "failed to connect to remote socket while forwarding request {} for action {}",
+          request,
+          action,
+          exception);
       returnNotFound(
           responseWriter, request, "failed to connect to remote socket while forwarding request");
     } else if (sslHandshakeException(exception)) {
-      log.error("TLS handshake exception while forwarding request {} for action {}", request, action, exception);
+      log.error(
+          "TLS handshake exception while forwarding request {} for action {}",
+          request,
+          action,
+          exception);
       returnNotFound(responseWriter, request, "TLS handshake exception while forwarding request");
     } else {
       log.error("Exception while forwading request", exception);

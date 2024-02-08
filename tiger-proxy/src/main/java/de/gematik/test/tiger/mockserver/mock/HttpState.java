@@ -44,7 +44,7 @@ public class HttpState {
     }
   }
 
-  public static void clearPort(){
+  public static void clearPort() {
     LOCAL_PORT.remove();
   }
 

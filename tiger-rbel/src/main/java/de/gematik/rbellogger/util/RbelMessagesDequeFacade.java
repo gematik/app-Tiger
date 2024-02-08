@@ -2,8 +2,10 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.common.util;
+package de.gematik.rbellogger.util;
 
+import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.data.RbelElement;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
@@ -12,76 +14,85 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 @SuppressWarnings({"java:S6355", "java:S1133", "java:S1123"})
-public class ImmutableDequeFacade<T> implements Deque<T> {
+public class RbelMessagesDequeFacade implements Deque<RbelElement> {
 
-  private final Deque<T> remoteDeque;
+  private final Deque<RbelElement> remoteDeque;
+  private final RbelConverter rbelConverter;
 
   @Override
   @Deprecated
-  public void addFirst(T o) {
+  public void addFirst(RbelElement o) {
     throw new UnsupportedOperationException();
   }
 
   @Override
   @Deprecated
-  public void addLast(T o) {
+  public void addLast(RbelElement o) {
     throw new UnsupportedOperationException();
   }
 
   @Override
   @Deprecated
-  public boolean offerFirst(T o) {
+  public boolean offerFirst(RbelElement o) {
     throw new UnsupportedOperationException();
   }
 
   @Override
   @Deprecated
-  public boolean offerLast(T o) {
+  public boolean offerLast(RbelElement o) {
     throw new UnsupportedOperationException();
   }
 
   @Override
   @Deprecated
-  public T removeFirst() {
+  public RbelElement removeFirst() {
     throw new UnsupportedOperationException();
   }
 
   @Override
   @Deprecated
-  public T removeLast() {
+  public RbelElement removeLast() {
     throw new UnsupportedOperationException();
   }
 
   @Override
   @Deprecated
-  public T pollFirst() {
+  public RbelElement pollFirst() {
     throw new UnsupportedOperationException();
   }
 
   @Override
   @Deprecated
-  public T pollLast() {
+  public RbelElement pollLast() {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public T getFirst() {
-    return remoteDeque.getFirst();
+  public RbelElement getFirst() {
+    final RbelElement result = remoteDeque.getFirst();
+    rbelConverter.waitForAllElementsBeforeGivenToBeParsed(result);
+    return result;
   }
 
   @Override
-  public T getLast() {
-    return remoteDeque.getLast();
+  public RbelElement getLast() {
+    final RbelElement result = remoteDeque.getLast();
+    rbelConverter.waitForGivenElementToBeParsed(result);
+    return result;
   }
 
   @Override
-  public T peekFirst() {
-    return remoteDeque.peekFirst();
+  public RbelElement peekFirst() {
+    final RbelElement result = remoteDeque.peekFirst();
+    rbelConverter.waitForAllElementsBeforeGivenToBeParsed(result);
+    return result;
   }
 
   @Override
-  public T peekLast() {
-    return remoteDeque.peekLast();
+  public RbelElement peekLast() {
+    final RbelElement result = remoteDeque.peekLast();
+    rbelConverter.waitForAllElementsBeforeGivenToBeParsed(result);
+    return result;
   }
 
   @Override
@@ -110,41 +121,45 @@ public class ImmutableDequeFacade<T> implements Deque<T> {
 
   @Override
   @Deprecated
-  public boolean add(T o) {
+  public boolean add(RbelElement o) {
     throw new UnsupportedOperationException();
   }
 
   @Override
   @Deprecated
-  public boolean offer(T o) {
+  public boolean offer(RbelElement o) {
     throw new UnsupportedOperationException();
   }
 
   @Override
   @Deprecated
-  public T remove() {
+  public RbelElement remove() {
     throw new UnsupportedOperationException();
   }
 
   @Override
   @Deprecated
-  public T poll() {
+  public RbelElement poll() {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public T element() {
-    return remoteDeque.element();
+  public RbelElement element() {
+    final RbelElement result = remoteDeque.element();
+    rbelConverter.waitForAllElementsBeforeGivenToBeParsed(result);
+    return result;
   }
 
   @Override
-  public T peek() {
-    return remoteDeque.peek();
+  public RbelElement peek() {
+    final RbelElement result = remoteDeque.peek();
+    rbelConverter.waitForAllElementsBeforeGivenToBeParsed(result);
+    return result;
   }
 
   @Override
   @Deprecated
-  public boolean addAll(Collection<? extends T> c) {
+  public boolean addAll(Collection<? extends RbelElement> c) {
     throw new UnsupportedOperationException();
   }
 
@@ -156,13 +171,13 @@ public class ImmutableDequeFacade<T> implements Deque<T> {
 
   @Override
   @Deprecated
-  public void push(Object o) {
+  public void push(RbelElement o) {
     throw new UnsupportedOperationException();
   }
 
   @Override
   @Deprecated
-  public T pop() {
+  public RbelElement pop() {
     throw new UnsupportedOperationException();
   }
 
@@ -193,8 +208,8 @@ public class ImmutableDequeFacade<T> implements Deque<T> {
   }
 
   @Override
-  public Iterator<T> iterator() {
-    return new ImmutableIteratorFacade<>(remoteDeque.iterator());
+  public ImmutableIteratorFacade iterator() {
+    return new ImmutableIteratorFacade(remoteDeque.iterator());
   }
 
   @Override
@@ -208,14 +223,14 @@ public class ImmutableDequeFacade<T> implements Deque<T> {
   }
 
   @Override
-  public Iterator<T> descendingIterator() {
-    return new ImmutableIteratorFacade<>(remoteDeque.descendingIterator());
+  public ImmutableIteratorFacade descendingIterator() {
+    return new ImmutableIteratorFacade(remoteDeque.descendingIterator());
   }
 
   @AllArgsConstructor
-  private static class ImmutableIteratorFacade<T> implements Iterator<T> {
+  private class ImmutableIteratorFacade implements Iterator<RbelElement> {
 
-    private final Iterator<T> remoteIterator;
+    private final Iterator<RbelElement> remoteIterator;
 
     @Override
     public boolean hasNext() {
@@ -223,8 +238,10 @@ public class ImmutableDequeFacade<T> implements Deque<T> {
     }
 
     @Override
-    public T next() {
-      return remoteIterator.next();
+    public RbelElement next() {
+      final RbelElement result = remoteIterator.next();
+      rbelConverter.waitForGivenElementToBeParsed(result);
+      return result;
     }
 
     @Override
@@ -235,7 +252,11 @@ public class ImmutableDequeFacade<T> implements Deque<T> {
 
     @Override
     public void forEachRemaining(Consumer action) {
-      remoteIterator.forEachRemaining(action);
+      remoteIterator.forEachRemaining(
+          element -> {
+            rbelConverter.waitForGivenElementToBeParsed(element);
+            action.accept(element);
+          });
     }
   }
 }

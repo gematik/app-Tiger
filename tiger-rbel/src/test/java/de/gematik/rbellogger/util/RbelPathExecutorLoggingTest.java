@@ -97,8 +97,6 @@ class RbelPathExecutorLoggingTest {
         listFollowingLoggingEventsForClass(RbelPathExecutor.class);
     jwtMessage.findRbelPathMembers("$.body.body.acr_values_supported.content");
 
-    listAppender.list.forEach(System.out::println);
-
     assertThat(
             listAppender.list.stream()
                 .map(ILoggingEvent::getMessage)

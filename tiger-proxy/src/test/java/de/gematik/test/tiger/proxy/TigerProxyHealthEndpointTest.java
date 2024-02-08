@@ -97,8 +97,7 @@ class TigerProxyHealthEndpointTest {
   @AfterEach
   public void reset() {
     tigerProxy.clearAllRoutes();
-    tigerProxy.getRbelLogger().clearAllMessages();
-    tigerProxy.getRbelMessagesList().clear();
+    tigerProxy.clearAllMessages();
   }
 
   private String getHealthEndpointUrl() {
