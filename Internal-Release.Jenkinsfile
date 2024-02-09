@@ -81,10 +81,7 @@ pipeline {
                         mavenBuild(POM_PATH)
                     }
                 }
-                stage('generate resources') {
-                    steps {
-                        sh "cd doc/user_manual && ./extractCommentsFromRbelValidatorGlue.sh"
-                    }
+
                 }
                 stage('prepare external release') {
                     steps {
@@ -109,7 +106,7 @@ pipeline {
                         // to test local:
                         // docker run --name tiger-gemdoc --rm -v $(pwd):/tmpdata eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
                         // or for windows users:
-                        // docker run --name tiger-gemdoc --rm -v %cd%:/tmpdata eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
+                        // docker run --name tiger-gemdoc --rm -v /$PWD://tmpdata eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest //tmpdata/doc/user_manual/tiger_user_manual.adoc
                         stash includes: 'tiger_user_manual.pdf,tiger_user_manual.html,media/**/*,screenshots/*.png', name: 'manual'
 
                         sh label: 'checkoutGhPages', script: """

@@ -462,51 +462,6 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>extract comments from validator glue code for user manual</id>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <skip>${isWindows}</skip>
-                            <tasks>
-                                <exec dir="../doc/user_manual" executable="/bin/bash">
-                                    <arg value="extractCommentsFromRbelValidatorGlue.sh"/>
-                                </exec>
-                            </tasks>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>extract comments from http glue code for user manual</id>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <skip>${isWindows}</skip>
-                            <tasks>
-                                <exec dir="../doc/user_manual" executable="/bin/bash">
-                                    <arg value="extractCommentsFromHttpGlueCode.sh"/>
-                                </exec>
-                            </tasks>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>extract comments from rbel builder glue code for user manual</id>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <skip>${isWindows}</skip>
-                            <tasks>
-                                <exec dir="../doc/user_manual" executable="/bin/bash">
-                                    <arg value="extractCommentsFromRbelBuilderGlueCode.sh"/>
-                                </exec>
-                            </tasks>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
                         <id>extract comments from InlineJexlToolbox for user manual</id>
                         <phase>generate-resources</phase>
                         <configuration>
@@ -521,35 +476,27 @@
                             <goal>run</goal>
                         </goals>
                     </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
                     <execution>
-                        <id>extract comments from http client glue code for user manual</id>
-                        <phase>generate-resources</phase>
+                        <id>codegeneration</id>
+                        <phase>generate-test-resources</phase>
+                        <goals><goal>java</goal></goals>
                         <configuration>
-                            <skip>${isWindows}</skip>
-                            <tasks>
-                                <exec dir="../doc/user_manual" executable="/bin/bash">
-                                    <arg value="extractCommentsFromHttpGlueCode.sh"/>
-                                </exec>
-                            </tasks>
+                            <mainClass>de.gematik.test.tiger.glue.AnnotationParser</mainClass>
+                            <arguments>
+                                <argument>HttpGlueCode.java</argument>
+                                <argument>RbelBuilderGlueCode.java</argument>
+                                <argument>RBelValidatorGlue.java</argument>
+                                <argument>TigerGlue.java</argument>
+                                <argument>TigerProxyGlue.java</argument>
+                            </arguments>
                         </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>extract comments from tiger glue code for user manual</id>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <skip>${isWindows}</skip>
-                            <tasks>
-                                <exec dir="../doc/user_manual" executable="/bin/bash">
-                                    <arg value="extractCommentsFromTigerGlue.sh"/>
-                                </exec>
-                            </tasks>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>
