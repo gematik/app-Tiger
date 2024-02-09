@@ -53,6 +53,7 @@ lib:
 
 * TGR-949: Tiger-Proxy only adds trailing slashes to requests if the request explicitly demands it.
 * TGR-938: XML-Messages with UTF-8 content can now be transmitted without alteration.
+* TGR-1254: RbelPath-Expressions with a selector and a qualification immediately after (e.g. $..foo[?(content=='bar')]) are now correctly parsed.
 * TGR-1266: Invalid configurations for servers are not reported in console or workflow UI but abort the test env mgr
   silently.
 * TGR-1276: The RbelWriter now correctly serializes XML-Namespaces.

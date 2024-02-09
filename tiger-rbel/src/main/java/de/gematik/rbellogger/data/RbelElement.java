@@ -15,7 +15,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
@@ -144,23 +143,6 @@ public class RbelElement extends RbelPathAble {
           .flatMap(List::stream)
           .toList();
     }
-  }
-
-  public String findNodePath() {
-    LinkedList<Optional<String>> keyList = new LinkedList<>();
-    final AtomicReference<RbelElement> ptr = new AtomicReference<>(this);
-    while (ptr.get().getParentNode() != null) {
-      keyList.addFirst(
-          ptr.get().getParentNode().getChildNodesWithKey().stream()
-              .filter(entry -> entry.getValue() == ptr.get())
-              .map(Map.Entry::getKey)
-              .findFirst());
-      ptr.set(ptr.get().getParentNode());
-    }
-    return keyList.stream()
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .collect(Collectors.joining("."));
   }
 
   @Override

@@ -16,15 +16,12 @@ import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.exceptions.RbelPathException;
-import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import java.io.File;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import lombok.SneakyThrows;
-import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -33,7 +30,9 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 class RbelPathExecutorTest {
 
-  private static final RbelConverter RBEL_CONVERTER = RbelLogger.build().getRbelConverter();
+  private static final RbelConverter RBEL_CONVERTER =
+      RbelLogger.build(RbelConfiguration.builder().activateAsn1Parsing(false).build())
+          .getRbelConverter();
   private static RbelElement jwtMessage;
   private static RbelElement xmlMessage;
   private static RbelElement jsonElement;
@@ -172,11 +171,8 @@ class RbelPathExecutorTest {
   }
 
   @Test
-  void findAllMembers() throws IOException {
-    assertThat(jwtMessage.findRbelPathMembers("$..*")).hasSizeGreaterThan(214);
-
-    FileUtils.writeStringToFile(
-        new File("target/jsonNested.html"), RbelHtmlRenderer.render(List.of(jwtMessage)));
+  void findAllMembers() {
+    assertThat(jwtMessage.findRbelPathMembers("$..*")).hasSize(72);
   }
 
   @Test
@@ -357,11 +353,16 @@ class RbelPathExecutorTest {
     "$..[?(@.id == '5001')], $.topping.0",
     "$..batter.[?(content =~ \".*1001.*\")], $.batters.batter.0",
     "$..recipient.[?(@.. == 'FooBar')], $.recipient.1",
-    "$..recipient.[?(not (@.. == 'FooBar'))], $.recipient.*"
+    "$..recipient.[?(not (@.. == 'FooBar'))], $.recipient.*",
+    "$..topping[?(content =~ \".*1001.*\")], $.topping",
+    "$..topping[?(content =~ \".*1001.*\")], $.topping",
+    "$..topping.*[6], $.topping.6",
+    "$..type[?(content =~ \".*Regular.*\")], $.batters.batter.0.type",
   })
   void recursiveDescentMixedWithJexl(String rbelPath1, String rbelPath2) {
+    final List<RbelElement> reference = jsonElement.findRbelPathMembers(rbelPath2);
     assertThat(jsonElement.findRbelPathMembers(rbelPath1))
-        .containsExactlyInAnyOrderElementsOf(jsonElement.findRbelPathMembers(rbelPath2));
+        .containsExactlyInAnyOrderElementsOf(reference);
   }
 
   @ParameterizedTest
