@@ -2,12 +2,12 @@
 
 # Release 3.0.0
 
-* Serenity BDD 4.0.30
+* Serenity BDD 4.1.0
 * Cucumber 7.15.0
 * RestAssured 5.4.0
-* Selenium 4.12.1
-* Appium 8.3.0
-* Spring Boot 3.1.0
+* Selenium 4.16.1
+* Appium 9.0.0
+* Spring Boot 3.2.2
 * Logback 1.4.9
 
 ## Breaking changes
@@ -41,7 +41,8 @@
   sequence diagrams.
 * TGR-1086: replace OS specific commands with OSHI library for finding ports being used by external jars.
 * TGR-1292: Tiger-Proxy now supports OCSP-stapling. To enable it, set the configuration key
-  ```tiger.tigerProxy.tls.ocspSigner: myOcspSigner.p12;password``` to the path of the OCSP-signer certificate to be used when generating the OCSP responses.
+  ```tiger.tigerProxy.tls.ocspSigner: myOcspSigner.p12;password``` to the path of the OCSP-signer certificate to be used
+  when generating the OCSP responses.
 * TGR-1282: Traffic Visualization feature no longer experimental. Can be turned on via the configuration:
 
 ```yaml
@@ -59,7 +60,7 @@ lib:
 * TGR-1276: The RbelWriter now correctly serializes XML-Namespaces.
 * TGR-1262: Step "TGR pause test run execution with message {string}" and step "TGR pause test run execution
   with message {tigerResolvedString} and message in case of error {tigerResolvedString}" will now correctly
- be distinguished
+  be distinguished
 
 # Release 2.3.2
 
