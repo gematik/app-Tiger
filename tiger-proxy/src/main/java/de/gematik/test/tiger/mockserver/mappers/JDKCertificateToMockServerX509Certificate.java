@@ -4,10 +4,7 @@
 
 package de.gematik.test.tiger.mockserver.mappers;
 
-import static org.slf4j.event.Level.INFO;
 
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.X509Certificate;
 import java.io.ByteArrayInputStream;
@@ -16,17 +13,13 @@ import java.security.cert.CertificateFactory;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
 
 /*
  * @author jamesdbloom
  */
+@Slf4j
 public class JDKCertificateToMockServerX509Certificate {
-
-  private final MockServerLogger mockServerLogger;
-
-  public JDKCertificateToMockServerX509Certificate(MockServerLogger mockServerLogger) {
-    this.mockServerLogger = mockServerLogger;
-  }
 
   public HttpRequest setClientCertificates(
       HttpRequest httpRequest, Certificate[] clientCertificates) {
@@ -51,21 +44,13 @@ public class JDKCertificateToMockServerX509Certificate {
                               .withSignatureAlgorithmName(x509Certificate.getSigAlgName())
                               .withCertificate(certificate));
                     } catch (Exception e) {
-                      if (MockServerLogger.isEnabled(INFO) && mockServerLogger != null) {
-                        mockServerLogger.logEvent(
-                            new LogEntry()
-                                .setLogLevel(INFO)
-                                .setHttpRequest(httpRequest)
-                                .setMessageFormat(
-                                    "exception decoding client certificate " + e.getMessage())
-                                .setThrowable(e));
-                      }
+                      log.info("exception decoding client certificate", e);
                     }
                     return Stream.empty();
                   })
               .toList();
       if (!x509Certificates.isEmpty()) {
-        httpRequest.withClientCertificateChain(x509Certificates);
+        httpRequest.setClientCertificateChain(x509Certificates);
       }
     }
     return httpRequest;

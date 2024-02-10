@@ -6,19 +6,18 @@ package de.gematik.test.tiger.mockserver.matchers;
 
 import static de.gematik.test.tiger.mockserver.formatting.StringFormatter.formatLogMessage;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.slf4j.event.Level.TRACE;
 
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.model.RequestDefinition;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.extern.slf4j.Slf4j;
 
 /*
  * @author jamesdbloom
  */
+@Slf4j
 public class MatchDifference {
 
   public enum Field {
@@ -56,31 +55,6 @@ public class MatchDifference {
     this.httpRequest = httpRequest;
   }
 
-  @SuppressWarnings("UnusedReturnValue")
-  public MatchDifference addDifference(
-      MockServerLogger mockServerLogger,
-      Throwable throwable,
-      String messageFormat,
-      Object... arguments) {
-    if (mockServerLogger != null && MockServerLogger.isEnabled(TRACE)) {
-      mockServerLogger.logEvent(
-          new LogEntry()
-              .setLogLevel(TRACE)
-              .setHttpRequest(httpRequest)
-              .setCorrelationId(httpRequest.getLogCorrelationId())
-              .setMessageFormat(messageFormat)
-              .setArguments(arguments)
-              .setThrowable(throwable));
-    }
-    return addDifference(messageFormat, arguments);
-  }
-
-  @SuppressWarnings("UnusedReturnValue")
-  public MatchDifference addDifference(
-      MockServerLogger mockServerLogger, String messageFormat, Object... arguments) {
-    return addDifference(mockServerLogger, null, messageFormat, arguments);
-  }
-
   public MatchDifference addDifference(Field fieldName, String messageFormat, Object... arguments) {
     if (detailedMatchFailures) {
       if (isNotBlank(messageFormat) && arguments != null && fieldName != null) {
@@ -113,17 +87,5 @@ public class MatchDifference {
 
   public List<String> getDifferences(Field fieldName) {
     return this.differences.get(fieldName);
-  }
-
-  public Map<Field, List<String>> getAllDifferences() {
-    return this.differences;
-  }
-
-  public void addDifferences(Map<Field, List<String>> differences) {
-    for (Field field : differences.keySet()) {
-      this.differences
-          .computeIfAbsent(field, key -> new ArrayList<>())
-          .addAll(differences.get(field));
-    }
   }
 }

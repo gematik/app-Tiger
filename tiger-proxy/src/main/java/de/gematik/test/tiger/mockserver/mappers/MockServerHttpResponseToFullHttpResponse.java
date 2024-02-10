@@ -9,28 +9,21 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import de.gematik.test.tiger.mockserver.codec.BodyDecoderEncoder;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.HttpConversionUtil;
 import java.util.Collections;
 import java.util.List;
-import org.slf4j.event.Level;
+import lombok.extern.slf4j.Slf4j;
 
 /*
  * @author jamesdbloom
  */
+@Slf4j
 public class MockServerHttpResponseToFullHttpResponse {
 
-  private final MockServerLogger mockServerLogger;
-  private final BodyDecoderEncoder bodyDecoderEncoder;
-
-  public MockServerHttpResponseToFullHttpResponse(MockServerLogger mockServerLogger) {
-    this.mockServerLogger = mockServerLogger;
-    this.bodyDecoderEncoder = new BodyDecoderEncoder();
-  }
+  private final BodyDecoderEncoder bodyDecoderEncoder = new BodyDecoderEncoder();
 
   public List<DefaultHttpObject> mapMockServerResponseToNettyResponse(HttpResponse httpResponse) {
     try {
@@ -40,12 +33,7 @@ public class MockServerHttpResponseToFullHttpResponse {
       setHeaders(httpResponse, defaultFullHttpResponse, body);
       return Collections.singletonList(defaultFullHttpResponse);
     } catch (Exception e) {
-      mockServerLogger.logEvent(
-          new LogEntry()
-              .setLogLevel(Level.ERROR)
-              .setMessageFormat("exception encoding response{}")
-              .setArguments(httpResponse)
-              .setThrowable(e));
+      log.error("exception encoding response{}", httpResponse, e);
       return Collections.singletonList(
           new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, getStatus(httpResponse)));
     }

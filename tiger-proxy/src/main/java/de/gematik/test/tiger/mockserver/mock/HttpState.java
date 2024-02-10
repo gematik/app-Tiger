@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.mockserver.mock;
 
-import static de.gematik.test.tiger.mockserver.log.model.LogEntry.LogMessageType.CLEARED;
 import static de.gematik.test.tiger.mockserver.log.model.LogEntryMessages.RECEIVED_REQUEST_MESSAGE_FORMAT;
 import static de.gematik.test.tiger.mockserver.model.HttpRequest.request;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
@@ -12,21 +11,19 @@ import static org.apache.commons.lang3.StringUtils.*;
 
 import com.google.common.annotations.VisibleForTesting;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.mock.listeners.MockServerMatcherNotifier.Cause;
 import de.gematik.test.tiger.mockserver.model.*;
-import de.gematik.test.tiger.mockserver.responsewriter.ResponseWriter;
 import de.gematik.test.tiger.mockserver.scheduler.Scheduler;
 import de.gematik.test.tiger.mockserver.uuid.UUIDService;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.slf4j.event.Level;
+import lombok.extern.slf4j.Slf4j;
 
 /*
  * @author jamesdbloom
  */
+@Slf4j
 public class HttpState {
 
   private static final ThreadLocal<Integer> LOCAL_PORT = new ThreadLocal<>(); // NOSONAR
@@ -35,12 +32,11 @@ public class HttpState {
   // mockserver
   private final RequestMatchers requestMatchers;
   private final Configuration configuration;
-  private final MockServerLogger mockServerLogger;
 
   public static void setPort(final HttpRequest request) {
     if (request != null && request.getSocketAddress() != null) {
       setPort(request.getSocketAddress().getPort());
-      request.withSocketAddress(null);
+      request.setSocketAddress(null);
     }
   }
 
@@ -68,28 +64,15 @@ public class HttpState {
     return LOCAL_PORT.get();
   }
 
-  public HttpState(
-      Configuration configuration, MockServerLogger mockServerLogger, Scheduler scheduler) {
+  public HttpState(Configuration configuration, Scheduler scheduler) {
     this.configuration = configuration;
-    this.mockServerLogger = mockServerLogger.setHttpStateHandler(this);
     this.scheduler = scheduler;
-    this.requestMatchers = new RequestMatchers(configuration, mockServerLogger, scheduler);
-  }
-
-  public MockServerLogger getMockServerLogger() {
-    return mockServerLogger;
+    this.requestMatchers = new RequestMatchers(configuration, scheduler);
   }
 
   public void reset() {
     requestMatchers.reset();
-    if (MockServerLogger.isEnabled(Level.INFO)) {
-      mockServerLogger.logEvent(
-          new LogEntry()
-              .setType(CLEARED)
-              .setLogLevel(Level.INFO)
-              .setHttpRequest(request())
-              .setMessageFormat("resetting all expectations and request logs"));
-    }
+    log.info("resetting all expectations and request logs");
   }
 
   public List<Expectation> add(Expectation... expectations) {
@@ -124,19 +107,12 @@ public class HttpState {
     }
   }
 
-  public boolean handle(HttpRequest request, ResponseWriter responseWriter, boolean warDeployment) {
+  public boolean handle(HttpRequest request) {
 
     request.withLogCorrelationId(UUIDService.getUUID());
     setPort(request);
 
-    if (MockServerLogger.isEnabled(Level.TRACE)) {
-      mockServerLogger.logEvent(
-          new LogEntry()
-              .setLogLevel(Level.TRACE)
-              .setHttpRequest(request)
-              .setMessageFormat(RECEIVED_REQUEST_MESSAGE_FORMAT)
-              .setArguments(request));
-    }
+    log.trace(RECEIVED_REQUEST_MESSAGE_FORMAT, request);
 
     return false;
   }

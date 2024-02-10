@@ -100,10 +100,10 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     }
     final RbelUriFacet uriFacet =
         extractSafe(modifiedRequest, "$.path").getFacetOrFail(RbelUriFacet.class);
-    request.withPath(uriFacet.getBasicPathString());
+    request.setPath(uriFacet.getBasicPathString());
     clearExistingQueryParameters(request);
     addAllQueryParametersFromRbelMessage(request, uriFacet);
-    request.withMethod(extractSafe(modifiedRequest, "$.method").getRawStringContent());
+    request.setMethod(extractSafe(modifiedRequest, "$.method").getRawStringContent());
   }
 
   private RbelElement extractSafe(RbelElement targetElement, String rbelPath) {

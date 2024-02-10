@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.mockserver.collections;
 
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.matchers.MatchDifference;
 import de.gematik.test.tiger.mockserver.matchers.RegexStringMatcher;
 import java.util.HashSet;
@@ -17,7 +16,6 @@ import java.util.Set;
 public class SubSetMatcher {
 
   static boolean containsSubset(
-      MockServerLogger mockServerLogger,
       MatchDifference context,
       RegexStringMatcher regexStringMatcher,
       List<ImmutableEntry> subset,
@@ -26,7 +24,7 @@ public class SubSetMatcher {
     Set<Integer> matchingIndexes = new HashSet<>();
     for (ImmutableEntry subsetItem : subset) {
       Set<Integer> subsetItemMatchingIndexes =
-          matchesIndexes(mockServerLogger, context, regexStringMatcher, subsetItem, superset);
+          matchesIndexes(context, regexStringMatcher, subsetItem, superset);
       boolean optionalAndNotPresent =
           subsetItem.isOptional() && !containsKey(regexStringMatcher, subsetItem, superset);
       if ((!optionalAndNotPresent && subsetItemMatchingIndexes.isEmpty())) {
@@ -46,7 +44,6 @@ public class SubSetMatcher {
   }
 
   private static Set<Integer> matchesIndexes(
-      MockServerLogger mockServerLogger,
       MatchDifference context,
       RegexStringMatcher regexStringMatcher,
       ImmutableEntry matcherItem,
@@ -55,11 +52,9 @@ public class SubSetMatcher {
     for (int i = 0; i < matchedList.size(); i++) {
       ImmutableEntry matchedItem = matchedList.get(i);
       boolean keyMatches =
-          regexStringMatcher.matches(
-              mockServerLogger, context, matcherItem.getKey(), matchedItem.getKey());
+          regexStringMatcher.matches(context, matcherItem.getKey(), matchedItem.getKey());
       boolean valueMatches =
-          regexStringMatcher.matches(
-              mockServerLogger, context, matcherItem.getValue(), matchedItem.getValue());
+          regexStringMatcher.matches(context, matcherItem.getValue(), matchedItem.getValue());
       if (keyMatches && valueMatches) {
         matchingIndexes.add(i);
       }

@@ -5,7 +5,6 @@
 package de.gematik.test.tiger.mockserver.netty;
 
 import static de.gematik.test.tiger.mockserver.configuration.Configuration.configuration;
-import static de.gematik.test.tiger.mockserver.log.model.LogEntry.LogMessageType.SERVER_CONFIGURATION;
 import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.REMOTE_SOCKET;
 import static de.gematik.test.tiger.mockserver.netty.HttpRequestHandler.PROXYING;
 import static de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration.proxyConfiguration;
@@ -17,8 +16,6 @@ import de.gematik.test.tiger.mockserver.ExpectationBuilder;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.lifecycle.ExpectationsListener;
 import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.matchers.TimeToLive;
 import de.gematik.test.tiger.mockserver.matchers.Times;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
@@ -28,7 +25,6 @@ import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.RequestDefinition;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
-import de.gematik.test.tiger.mockserver.uuid.UUIDService;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelOption;
@@ -39,12 +35,13 @@ import java.util.Arrays;
 import java.util.List;
 import javax.annotation.Nullable;
 import lombok.Getter;
-import org.slf4j.event.Level;
+import lombok.extern.slf4j.Slf4j;
 
 /*
  * @author jamesdbloom
  */
 @Getter
+@Slf4j
 public class MockServer extends LifeCycle {
 
   private InetSocketAddress remoteSocket;
@@ -170,14 +167,7 @@ public class MockServer extends LifeCycle {
     }
 
     remoteSocket = new InetSocketAddress(remoteHost, remotePort);
-    if (proxyConfigurations != null && MockServerLogger.isEnabled(Level.INFO)) {
-      mockServerLogger.logEvent(
-          new LogEntry()
-              .setType(SERVER_CONFIGURATION)
-              .setLogLevel(Level.INFO)
-              .setMessageFormat("using proxy configuration for forwarded requests:{}")
-              .setArguments(proxyConfigurations));
-    }
+    log.info("using proxy configuration for forwarded requests:{}", proxyConfigurations);
     createServerBootstrap(configuration, proxyConfigurations, localPorts);
 
     // wait to start
@@ -198,9 +188,9 @@ public class MockServer extends LifeCycle {
     }
 
     final NettySslContextFactory nettyServerSslContextFactory =
-        new NettySslContextFactory(configuration, mockServerLogger, true);
+        new NettySslContextFactory(configuration, true);
     final NettySslContextFactory nettyClientSslContextFactory =
-        new NettySslContextFactory(configuration, mockServerLogger, false);
+        new NettySslContextFactory(configuration, false);
 
     actionHandler =
         new HttpActionHandler(
@@ -232,12 +222,7 @@ public class MockServer extends LifeCycle {
     try {
       bindServerPorts(portBindings);
     } catch (RuntimeException throwable) {
-      mockServerLogger.logEvent(
-          new LogEntry()
-              .setType(SERVER_CONFIGURATION)
-              .setLogLevel(Level.ERROR)
-              .setMessageFormat("exception binding to port(s) " + portBindings)
-              .setThrowable(throwable));
+      log.error("exception binding to port(s) {}", portBindings, throwable);
       stop();
       throw throwable;
     }
@@ -265,7 +250,7 @@ public class MockServer extends LifeCycle {
   }
 
   public void removeExpectation(ExpectationId expectationId) {
-    httpState.getRequestMatchers().clear(expectationId, UUIDService.getUUID());
+    httpState.getRequestMatchers().clear(expectationId);
   }
 
   public List<Expectation> retrieveActiveExpectations(HttpRequest request) {

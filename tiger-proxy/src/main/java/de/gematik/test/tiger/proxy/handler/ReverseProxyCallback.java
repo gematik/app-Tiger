@@ -26,10 +26,10 @@ public class ReverseProxyCallback extends AbstractRouteProxyCallback {
     applyModifications(httpRequest);
     final HttpRequest request =
         cloneRequest(httpRequest)
-            .withSocketAddress(
+            .setSocketAddress(
                 getTargetUrl().getProtocol().equals("https"), getTargetUrl().getHost(), getPort())
-            .withSecure(getTigerRoute().getTo().startsWith("https"))
-            .withPath(patchPath(httpRequest.getPath()));
+            .setSecure(getTigerRoute().getTo().startsWith("https"))
+            .setPath(patchPath(httpRequest.getPath()));
 
     if (getTigerProxy().getTigerProxyConfiguration().isRewriteHostHeader()) {
       request.removeHeader("Host").withHeader("Host", getTargetUrl().getHost() + ":" + getPort());

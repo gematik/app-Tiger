@@ -11,8 +11,6 @@ import static de.gematik.test.tiger.mockserver.netty.unification.PortUnification
 import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.nettySslContextFactory;
 import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.getALPNProtocol;
 
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
@@ -22,23 +20,21 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.ssl.SslHandler;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ClosedSelectorException;
-import org.slf4j.event.Level;
+import lombok.extern.slf4j.Slf4j;
 
 /*
  * @author jamesdbloom
  */
+@Slf4j
 public class UpstreamProxyRelayHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
-  private final MockServerLogger mockServerLogger;
   private final Channel upstreamChannel;
   private final Channel downstreamChannel;
 
-  public UpstreamProxyRelayHandler(
-      MockServerLogger mockServerLogger, Channel upstreamChannel, Channel downstreamChannel) {
+  public UpstreamProxyRelayHandler(Channel upstreamChannel, Channel downstreamChannel) {
     super(false);
     this.upstreamChannel = upstreamChannel;
     this.downstreamChannel = downstreamChannel;
-    this.mockServerLogger = mockServerLogger;
   }
 
   @Override
@@ -55,8 +51,7 @@ public class UpstreamProxyRelayHandler extends SimpleChannelInboundHandler<FullH
           .pipeline()
           .addFirst(
               nettySslContextFactory(ctx.channel())
-                  .createClientSslContext(
-                      true, HTTP_2.equals(getALPNProtocol(mockServerLogger, ctx)))
+                  .createClientSslContext(true, HTTP_2.equals(getALPNProtocol(ctx)))
                   .newHandler(ctx.alloc()));
     }
     downstreamChannel
@@ -68,16 +63,11 @@ public class UpstreamProxyRelayHandler extends SimpleChannelInboundHandler<FullH
                     ctx.channel().read();
                   } else {
                     if (isNotSocketClosedException(future.cause())) {
-                      mockServerLogger.logEvent(
-                          new LogEntry()
-                              .setLogLevel(Level.ERROR)
-                              .setMessageFormat(
-                                  "exception while returning response for request \""
-                                      + request.method()
-                                      + " "
-                                      + request.uri()
-                                      + "\"")
-                              .setThrowable(future.cause()));
+                      log.error(
+                          "exception while returning response for request \"{} {}\"",
+                          request.method(),
+                          request.uri(),
+                          future.cause());
                     }
                     future.channel().close();
                   }
@@ -96,12 +86,7 @@ public class UpstreamProxyRelayHandler extends SimpleChannelInboundHandler<FullH
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     if (connectionClosedException(cause)) {
-      mockServerLogger.logEvent(
-          new LogEntry()
-              .setLogLevel(Level.ERROR)
-              .setMessageFormat(
-                  "exception caught by upstream relay handler -> closing pipeline " + ctx.channel())
-              .setThrowable(cause));
+      log.error("exception caught by upstream relay handler -> closing pipeline {}", ctx.channel(), cause);
     }
     closeOnFlush(ctx.channel());
   }

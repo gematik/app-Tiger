@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.mockserver.codec;
 
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import io.netty.channel.CombinedChannelDuplexHandler;
 import java.util.Map;
@@ -17,10 +16,9 @@ public class MockServerHttpClientCodec
         NettyHttpToMockServerHttpResponseDecoder, MockServerHttpToNettyHttpRequestEncoder> {
 
   public MockServerHttpClientCodec(
-      MockServerLogger mockServerLogger,
       Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations) {
     init(
-        new NettyHttpToMockServerHttpResponseDecoder(mockServerLogger),
-        new MockServerHttpToNettyHttpRequestEncoder(mockServerLogger, proxyConfigurations));
+        new NettyHttpToMockServerHttpResponseDecoder(),
+        new MockServerHttpToNettyHttpRequestEncoder(proxyConfigurations));
   }
 }

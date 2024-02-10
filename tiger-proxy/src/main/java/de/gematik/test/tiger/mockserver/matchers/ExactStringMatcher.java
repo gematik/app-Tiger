@@ -5,7 +5,6 @@
 package de.gematik.test.tiger.mockserver.matchers;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import org.apache.commons.lang3.StringUtils;
 
 /*
@@ -13,11 +12,9 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class ExactStringMatcher extends BodyMatcher<String> {
   private static final String[] excludedFields = {"mockServerLogger"};
-  private final MockServerLogger mockServerLogger;
   private final String matcher;
 
-  ExactStringMatcher(MockServerLogger mockServerLogger, String matcher) {
-    this.mockServerLogger = mockServerLogger;
+  ExactStringMatcher(String matcher) {
     this.matcher = matcher;
   }
 
@@ -51,8 +48,7 @@ public class ExactStringMatcher extends BodyMatcher<String> {
     }
 
     if (!result && context != null) {
-      context.addDifference(
-          mockServerLogger, "exact string match failed expected:{}found:{}", this.matcher, matched);
+      context.addDifference("exact string match failed expected:{}found:{}", this.matcher, matched);
     }
 
     if (matched == null) {

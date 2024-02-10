@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.mockserver.codec;
 
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.mappers.MockServerHttpRequestToFullHttpRequest;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
@@ -21,10 +20,9 @@ public class MockServerHttpToNettyHttpRequestEncoder extends MessageToMessageEnc
   private final MockServerHttpRequestToFullHttpRequest mockServerHttpRequestToFullHttpRequest;
 
   MockServerHttpToNettyHttpRequestEncoder(
-      MockServerLogger mockServerLogger,
       Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations) {
     mockServerHttpRequestToFullHttpRequest =
-        new MockServerHttpRequestToFullHttpRequest(mockServerLogger, proxyConfigurations);
+        new MockServerHttpRequestToFullHttpRequest(proxyConfigurations);
   }
 
   @Override

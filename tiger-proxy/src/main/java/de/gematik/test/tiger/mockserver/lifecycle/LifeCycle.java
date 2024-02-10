@@ -5,7 +5,6 @@
 package de.gematik.test.tiger.mockserver.lifecycle;
 
 import static de.gematik.test.tiger.mockserver.configuration.Configuration.configuration;
-import static de.gematik.test.tiger.mockserver.log.model.LogEntry.LogMessageType.SERVER_CONFIGURATION;
 import static de.gematik.test.tiger.mockserver.mock.HttpState.clearPort;
 import static de.gematik.test.tiger.mockserver.mock.HttpState.setPort;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -14,8 +13,6 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.slf4j.event.Level.*;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.listeners.MockServerMatcherNotifier;
 import de.gematik.test.tiger.mockserver.scheduler.Scheduler;
@@ -31,7 +28,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +39,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public abstract class LifeCycle implements Stoppable {
 
-  protected final MockServerLogger mockServerLogger;
   protected final EventLoopGroup bossGroup;
   protected final EventLoopGroup workerGroup;
   protected final HttpState httpState;
@@ -57,7 +52,6 @@ public abstract class LifeCycle implements Stoppable {
   protected LifeCycle(Configuration configuration) {
     clearPort();
     this.configuration = configuration != null ? configuration : configuration();
-    this.mockServerLogger = new MockServerLogger();
     this.bossGroup =
         new NioEventLoopGroup(
             5,
@@ -68,8 +62,8 @@ public abstract class LifeCycle implements Stoppable {
             this.configuration.nioEventLoopThreadCount(),
             new Scheduler.SchedulerThreadFactory(
                 this.getClass().getSimpleName() + "-workerEventLoop"));
-    this.scheduler = new Scheduler(this.configuration, this.mockServerLogger);
-    this.httpState = new HttpState(this.configuration, this.mockServerLogger, this.scheduler);
+    this.scheduler = new Scheduler(this.configuration);
+    this.httpState = new HttpState(this.configuration, this.scheduler);
   }
 
   public CompletableFuture<String> stopAsync() {
@@ -79,13 +73,7 @@ public abstract class LifeCycle implements Stoppable {
               + (getLocalPorts().size() == 1
                   ? ": " + getLocalPorts().get(0)
                   : "s: " + getLocalPorts());
-      if (MockServerLogger.isEnabled(INFO)) {
-        mockServerLogger.logEvent(
-            new LogEntry()
-                .setType(SERVER_CONFIGURATION)
-                .setLogLevel(INFO)
-                .setMessageFormat(message));
-      }
+      log.info(message);
       new Scheduler.SchedulerThreadFactory("Stop")
           .newThread(
               () -> {
@@ -103,7 +91,7 @@ public abstract class LifeCycle implements Stoppable {
                               }
                             })
                         .map(ChannelOutboundInvoker::disconnect)
-                        .collect(Collectors.toList());
+                        .toList();
                 try {
                   for (ChannelFuture channelFuture : collect) {
                     channelFuture.get();
@@ -280,10 +268,7 @@ public abstract class LifeCycle implements Stoppable {
     final String message =
         "started on port" + (ports.size() == 1 ? ": " + ports.get(0) : "s: " + ports);
     setPort(ports);
-    if (MockServerLogger.isEnabled(INFO)) {
-      mockServerLogger.logEvent(
-          new LogEntry().setType(SERVER_CONFIGURATION).setLogLevel(INFO).setMessageFormat(message));
-    }
+    log.info(message);
   }
 
   public LifeCycle registerListener(ExpectationsListener expectationsListener) {

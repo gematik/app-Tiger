@@ -6,7 +6,6 @@ package de.gematik.test.tiger.mockserver.matchers;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.gematik.test.tiger.mockserver.collections.NottableStringMultiMap;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.model.KeyMatchStyle;
 import de.gematik.test.tiger.mockserver.model.KeyToMultiValue;
 import de.gematik.test.tiger.mockserver.model.KeysToMultiValues;
@@ -18,7 +17,6 @@ import de.gematik.test.tiger.mockserver.model.KeysToMultiValues;
 public class MultiValueMapMatcher
     extends NotMatcher<KeysToMultiValues<? extends KeyToMultiValue, ? extends KeysToMultiValues>> {
   private static final String[] EXCLUDED_FIELDS = {"mockServerLogger"};
-  private final MockServerLogger mockServerLogger;
   private final NottableStringMultiMap matcher;
   private final KeysToMultiValues keysToMultiValues;
   private final boolean controlPlaneMatcher;
@@ -26,16 +24,13 @@ public class MultiValueMapMatcher
   private Boolean allKeysOptional;
 
   MultiValueMapMatcher(
-      MockServerLogger mockServerLogger,
       KeysToMultiValues<? extends KeyToMultiValue, ? extends KeysToMultiValues> keysToMultiValues,
       boolean controlPlaneMatcher) {
-    this.mockServerLogger = mockServerLogger;
     this.keysToMultiValues = keysToMultiValues;
     this.controlPlaneMatcher = controlPlaneMatcher;
     if (keysToMultiValues != null) {
       this.matcher =
           new NottableStringMultiMap(
-              this.mockServerLogger,
               this.controlPlaneMatcher,
               keysToMultiValues.getKeyMatchStyle(),
               keysToMultiValues.getEntries());
@@ -62,16 +57,14 @@ public class MultiValueMapMatcher
     } else {
       result =
           new NottableStringMultiMap(
-                  mockServerLogger,
                   controlPlaneMatcher,
                   matched.getKeyMatchStyle(),
                   matched.getEntries())
-              .containsAll(mockServerLogger, context, matcher);
+              .containsAll(context, matcher);
     }
 
     if (!result && context != null) {
       context.addDifference(
-          mockServerLogger,
           "multimap match failed expected:{}found:{}failed because:{}",
           keysToMultiValues,
           matched != null ? matched : "none",

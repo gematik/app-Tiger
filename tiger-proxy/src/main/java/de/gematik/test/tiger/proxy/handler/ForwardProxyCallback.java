@@ -41,9 +41,9 @@ public class ForwardProxyCallback extends AbstractRouteProxyCallback {
     }
     final String path = patchedPath + requestPath;
     return cloneRequest(req)
-        .withPath(path)
-        .withSecure(getTigerRoute().getTo().startsWith("https://"))
-        .withQueryStringParameters(req.getQueryStringParameters());
+        .setPath(path)
+        .setSecure(getTigerRoute().getTo().startsWith("https://"))
+        .setQueryStringParameters(req.getQueryStringParameters());
   }
 
   @Override

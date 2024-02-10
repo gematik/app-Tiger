@@ -12,7 +12,6 @@ import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.common.base.Joiner;
 import de.gematik.test.tiger.mockserver.codec.PathParametersDecoder;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.serialization.ObjectMapperFactory;
 import java.util.Collections;
@@ -65,9 +64,8 @@ public class HttpRequestPropertiesMatcher extends AbstractHttpRequestMatcher {
   private BooleanMatcher sslMatcher = null;
   private ExactStringMatcher protocolMatcher = null;
 
-  public HttpRequestPropertiesMatcher(
-      Configuration configuration, MockServerLogger mockServerLogger) {
-    super(configuration, mockServerLogger);
+  public HttpRequestPropertiesMatcher(Configuration configuration) {
+    super(configuration);
   }
 
   public HttpRequest getHttpRequest() {
@@ -92,7 +90,7 @@ public class HttpRequestPropertiesMatcher extends AbstractHttpRequestMatcher {
         withPath(httpRequest);
         withPathParameters(httpRequest.getPathParameters());
         withHeaders(httpRequest.getHeaders());
-        withKeepAlive(httpRequest.isKeepAlive());
+        withKeepAlive(httpRequest.getKeepAlive());
         withSsl(httpRequest.isSecure());
         withProtocol(httpRequest.getProtocol());
       }
@@ -102,30 +100,24 @@ public class HttpRequestPropertiesMatcher extends AbstractHttpRequestMatcher {
     }
   }
 
-  public HttpRequestPropertiesMatcher withControlPlaneMatcher(boolean controlPlaneMatcher) {
-    this.controlPlaneMatcher = controlPlaneMatcher;
-    return this;
-  }
-
   private void withMethod(String method) {
-    this.methodMatcher = new RegexStringMatcher(mockServerLogger, method, controlPlaneMatcher);
+    this.methodMatcher = new RegexStringMatcher(method, controlPlaneMatcher);
   }
 
   private void withPath(HttpRequest httpRequest) {
     this.pathMatcher =
         new RegexStringMatcher(
-            mockServerLogger,
             pathParametersParser.normalisePathWithParametersForMatching(httpRequest),
             controlPlaneMatcher);
   }
 
   private void withPathParameters(Parameters parameters) {
     this.pathParameterMatcher =
-        new MultiValueMapMatcher(mockServerLogger, parameters, controlPlaneMatcher);
+        new MultiValueMapMatcher(parameters, controlPlaneMatcher);
   }
 
   private void withHeaders(Headers headers) {
-    this.headerMatcher = new MultiValueMapMatcher(mockServerLogger, headers, controlPlaneMatcher);
+    this.headerMatcher = new MultiValueMapMatcher(headers, controlPlaneMatcher);
   }
 
   private void withKeepAlive(Boolean keepAlive) {
@@ -138,7 +130,7 @@ public class HttpRequestPropertiesMatcher extends AbstractHttpRequestMatcher {
 
   private void withProtocol(Protocol protocol) {
     this.protocolMatcher =
-        new ExactStringMatcher(mockServerLogger, protocol != null ? protocol.name() : null);
+        new ExactStringMatcher(protocol != null ? protocol.name() : null);
   }
 
   public boolean matches(final MatchDifference context, final RequestDefinition requestDefinition) {
@@ -211,7 +203,7 @@ public class HttpRequestPropertiesMatcher extends AbstractHttpRequestMatcher {
             if (!httpRequest.getPath().isBlank()) {
               if (context != null) {
                 context.currentField(PATH);
-                context.addDifference(mockServerLogger, iae.getMessage());
+                context.addDifference(iae.getMessage());
               }
               pathMatches = false;
             }
@@ -244,8 +236,7 @@ public class HttpRequestPropertiesMatcher extends AbstractHttpRequestMatcher {
                 controlPlaneParameters = new Parameters();
               }
               pathParameterMatcher =
-                  new MultiValueMapMatcher(
-                      mockServerLogger, controlPlaneParameters, controlPlaneMatcher);
+                  new MultiValueMapMatcher(controlPlaneParameters, controlPlaneMatcher);
             }
             pathParametersMatches =
                 matches(PATH_PARAMETERS, context, pathParameterMatcher, pathParameters);
@@ -261,7 +252,7 @@ public class HttpRequestPropertiesMatcher extends AbstractHttpRequestMatcher {
           }
 
           boolean keepAliveMatches =
-              matches(KEEP_ALIVE, context, keepAliveMatcher, request.isKeepAlive());
+              matches(KEEP_ALIVE, context, keepAliveMatcher, request.getKeepAlive());
           if (failFast(
               keepAliveMatcher,
               context,

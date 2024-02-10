@@ -9,8 +9,6 @@ import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 import com.google.common.collect.ImmutableMap;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.filters.HopByHopHeaderFilter;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.mockserver.model.Protocol;
@@ -41,12 +39,13 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.event.Level;
 
 /*
  * @author jamesdbloom
  */
+@Slf4j
 public class NettyHttpClient {
 
   static final AttributeKey<Boolean> SECURE = AttributeKey.valueOf("SECURE");
@@ -58,7 +57,6 @@ public class NettyHttpClient {
       AttributeKey.valueOf("ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE");
   private static final HopByHopHeaderFilter hopByHopHeaderFilter = new HopByHopHeaderFilter();
   private final Configuration configuration;
-  private final MockServerLogger mockServerLogger;
   private final EventLoopGroup eventLoopGroup;
   private final Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations;
   private final boolean forwardProxyClient;
@@ -66,28 +64,24 @@ public class NettyHttpClient {
 
   public NettyHttpClient(
       Configuration configuration,
-      MockServerLogger mockServerLogger,
       EventLoopGroup eventLoopGroup,
       List<ProxyConfiguration> proxyConfigurations,
       boolean forwardProxyClient) {
     this(
         configuration,
-        mockServerLogger,
         eventLoopGroup,
         proxyConfigurations,
         forwardProxyClient,
-        new NettySslContextFactory(configuration, mockServerLogger, false));
+        new NettySslContextFactory(configuration, false));
   }
 
   public NettyHttpClient(
       Configuration configuration,
-      MockServerLogger mockServerLogger,
       EventLoopGroup eventLoopGroup,
       List<ProxyConfiguration> proxyConfigurations,
       boolean forwardProxyClient,
       NettySslContextFactory nettySslContextFactory) {
     this.configuration = configuration;
-    this.mockServerLogger = mockServerLogger;
     this.eventLoopGroup = eventLoopGroup;
     this.proxyConfigurations =
         proxyConfigurations != null
@@ -130,13 +124,9 @@ public class NettyHttpClient {
       }
       if (Protocol.HTTP_2.equals(httpRequest.getProtocol())
           && !Boolean.TRUE.equals(httpRequest.isSecure())) {
-        mockServerLogger.logEvent(
-            new LogEntry()
-                .setLogLevel(Level.WARN)
-                .setMessageFormat(
-                    "HTTP2 requires ALPN but request is not secure (i.e. TLS) so protocol changed"
-                        + " to HTTP1"));
-        httpRequest.withProtocol(Protocol.HTTP_1_1);
+        log.warn("HTTP2 requires ALPN but request is not secure (i.e. TLS) so protocol changed"
+                        + " to HTTP1");
+        httpRequest.setProtocol(Protocol.HTTP_1_1);
       }
 
       final CompletableFuture<HttpResponse> httpResponseFuture = new CompletableFuture<>();
@@ -147,7 +137,6 @@ public class NettyHttpClient {
       final HttpClientInitializer clientInitializer =
           new HttpClientInitializer(
               proxyConfigurations,
-              mockServerLogger,
               forwardProxyClient,
               nettySslContextFactory,
               httpProtocol);
@@ -249,24 +238,17 @@ public class NettyHttpClient {
               !configuration.forwardBinaryRequestsWithoutWaitingForResponse())
           .handler(
               new HttpClientInitializer(
-                  proxyConfigurations,
-                  mockServerLogger,
-                  forwardProxyClient,
-                  nettySslContextFactory,
-                  null))
+                  proxyConfigurations, forwardProxyClient, nettySslContextFactory, null))
           .connect(remoteAddress)
           .addListener(
               (ChannelFutureListener)
                   future -> {
                     if (future.isSuccess()) {
-                      if (MockServerLogger.isEnabled(Level.DEBUG)) {
-                        mockServerLogger.logEvent(
-                            new LogEntry()
-                                .setLogLevel(Level.DEBUG)
-                                .setMessageFormat("sending bytes hex{}to{}")
-                                .setArguments(
-                                    ByteBufUtil.hexDump(binaryRequest.getBytes()),
-                                    future.channel().attr(REMOTE_SOCKET).get()));
+                      if (log.isDebugEnabled()) {
+                        log.debug(
+                            "sending bytes hex{}to{}",
+                            ByteBufUtil.hexDump(binaryRequest.getBytes()),
+                            future.channel().attr(REMOTE_SOCKET).get());
                       }
                       // send the binary request
                       future

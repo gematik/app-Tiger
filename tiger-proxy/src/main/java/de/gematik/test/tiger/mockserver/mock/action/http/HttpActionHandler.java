@@ -16,15 +16,12 @@ import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATIO
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.slf4j.event.Level.TRACE;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.cors.CORSHeaders;
 import de.gematik.test.tiger.mockserver.filters.HopByHopHeaderFilter;
 import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
 import de.gematik.test.tiger.mockserver.httpclient.SocketCommunicationException;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.mock.HttpAction;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
@@ -48,7 +45,6 @@ import java.util.function.BiConsumer;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.StringEscapeUtils;
-import org.slf4j.event.Level;
 
 /*
  * @author jamesdbloom
@@ -63,7 +59,6 @@ public class HttpActionHandler {
   private final Configuration configuration;
   private final HttpState httpStateHandler;
   private final Scheduler scheduler;
-  private MockServerLogger mockServerLogger;
   private HttpForwardActionHandler httpForwardActionHandler;
 
   // forwarding
@@ -79,15 +74,9 @@ public class HttpActionHandler {
     this.configuration = configuration;
     this.httpStateHandler = httpStateHandler;
     this.scheduler = httpStateHandler.getScheduler();
-    this.mockServerLogger = httpStateHandler.getMockServerLogger();
     this.httpClient =
         new NettyHttpClient(
-            configuration,
-            mockServerLogger,
-            eventLoopGroup,
-            proxyConfigurations,
-            true,
-            nettySslContextFactory);
+            configuration, eventLoopGroup, proxyConfigurations, true, nettySslContextFactory);
   }
 
   public void processAction(
@@ -103,14 +92,7 @@ public class HttpActionHandler {
             .containsEntry(
                 httpStateHandler.getUniqueLoopPreventionHeaderName(),
                 httpStateHandler.getUniqueLoopPreventionHeaderValue())) {
-      mockServerLogger.logEvent(
-          new LogEntry()
-              .setType(RECEIVED_REQUEST)
-              .setLogLevel(Level.DEBUG)
-              .setCorrelationId(request.getLogCorrelationId())
-              .setHttpRequest(request)
-              .setMessageFormat(RECEIVED_REQUEST_MESSAGE_FORMAT)
-              .setArguments(request));
+      log.debug(RECEIVED_REQUEST_MESSAGE_FORMAT, request);
     }
     final Expectation expectation = httpStateHandler.firstMatchingExpectation(request);
     final boolean potentiallyHttpProxy =
@@ -127,15 +109,7 @@ public class HttpActionHandler {
         && (configuration.enableCORSForAPI() || configuration.enableCORSForAllResponses())) {
 
       responseWriter.writeResponse(request, OK);
-      if (MockServerLogger.isEnabled(Level.DEBUG)) {
-        mockServerLogger.logEvent(
-            new LogEntry()
-                .setType(DEBUG)
-                .setLogLevel(Level.DEBUG)
-                .setCorrelationId(request.getLogCorrelationId())
-                .setMessageFormat("returning CORS response for OPTIONS request"));
-      }
-
+      log.debug("returning CORS response for OPTIONS request");
     } else if (proxyingRequest || potentiallyHttpProxy) {
 
       if (request.getHeaders() != null
@@ -145,16 +119,10 @@ public class HttpActionHandler {
                   httpStateHandler.getUniqueLoopPreventionHeaderName(),
                   httpStateHandler.getUniqueLoopPreventionHeaderValue())) {
 
-        if (MockServerLogger.isEnabled(TRACE) && mockServerLogger != null) {
-          mockServerLogger.logEvent(
-              new LogEntry()
-                  .setLogLevel(TRACE)
-                  .setCorrelationId(request.getLogCorrelationId())
-                  .setMessageFormat(
-                      "received \"x-forwarded-by\" header caused by exploratory HTTP proxy or proxy"
-                          + " loop - falling back to no proxy:{}")
-                  .setArguments(request));
-        }
+        log.trace(
+            "received \"x-forwarded-by\" header caused by exploratory HTTP proxy or proxy"
+                + " loop - falling back to no proxy:{}",
+            request);
         returnNotFound(responseWriter, request, null);
       } else {
         String username = configuration.proxyAuthenticationUsername();
@@ -182,18 +150,10 @@ public class HttpActionHandler {
                           + StringEscapeUtils.escapeJava(configuration.proxyAuthenticationRealm())
                           + "\", charset=\"UTF-8\"");
           responseWriter.writeResponse(request, response, false);
-          mockServerLogger.logEvent(
-              new LogEntry()
-                  .setType(AUTHENTICATION_FAILED)
-                  .setLogLevel(Level.DEBUG)
-                  .setCorrelationId(request.getLogCorrelationId())
-                  .setHttpRequest(request)
-                  .setHttpResponse(response)
-                  .setExpectation(request, response)
-                  .setMessageFormat(
-                      "proxy authentication failed so returning response:{}for forwarded"
-                          + " request:{}")
-                  .setArguments(response, request));
+          log.debug(
+              "proxy authentication failed so returning response:{}for forwarded" + " request:{}",
+              response,
+              request);
 
         } else {
 
@@ -230,17 +190,7 @@ public class HttpActionHandler {
                       httpStateHandler.getUniqueLoopPreventionHeaderName(),
                       httpStateHandler.getUniqueLoopPreventionHeaderValue())) {
                     response.removeHeader(httpStateHandler.getUniqueLoopPreventionHeaderName());
-                    if (MockServerLogger.isEnabled(Level.DEBUG)) {
-                      mockServerLogger.logEvent(
-                          new LogEntry()
-                              .setType(NO_MATCH_RESPONSE)
-                              .setLogLevel(Level.DEBUG)
-                              .setCorrelationId(request.getLogCorrelationId())
-                              .setHttpRequest(request)
-                              .setHttpResponse(notFoundResponse())
-                              .setMessageFormat(NO_MATCH_RESPONSE_NO_EXPECTATION_MESSAGE_FORMAT)
-                              .setArguments(request, response));
-                    }
+                    log.debug(NO_MATCH_RESPONSE_NO_EXPECTATION_MESSAGE_FORMAT, request, response);
                   } else {
                     log.debug(
                         "returning response:{}\nfor forwarded request"
@@ -328,28 +278,18 @@ public class HttpActionHandler {
                     .getHttpResponse()
                     .get(configuration.maxFutureTimeoutInMillis(), MILLISECONDS);
             responseWriter.writeResponse(request, response, false);
-            mockServerLogger.logEvent(
-                new LogEntry()
-                    .setType(FORWARDED_REQUEST)
-                    .setLogLevel(Level.DEBUG)
-                    .setCorrelationId(request.getLogCorrelationId())
-                    .setHttpRequest(request)
-                    .setHttpResponse(response)
-                    .setExpectation(request, response)
-                    .setExpectationId(action.getExpectationId())
-                    .setMessageFormat(
-                        "returning response:{}for forwarded request"
-                            + NEW_LINE
-                            + NEW_LINE
-                            + " in json:{}"
-                            + NEW_LINE
-                            + NEW_LINE
-                            + "\nfor action:{}from expectation:{}")
-                    .setArguments(
-                        response,
-                        responseFuture.getHttpRequest(),
-                        action,
-                        action.getExpectationId()));
+            log.debug(
+                "returning response:{}for forwarded request"
+                    + NEW_LINE
+                    + NEW_LINE
+                    + " in json:{}"
+                    + NEW_LINE
+                    + NEW_LINE
+                    + "\nfor action:{}from expectation:{}",
+                response,
+                responseFuture.getHttpRequest(),
+                action,
+                action.getExpectationId());
           } catch (RuntimeException
               | InterruptedException
               | ExecutionException
@@ -411,46 +351,18 @@ public class HttpActionHandler {
       response.withHeader(
           httpStateHandler.getUniqueLoopPreventionHeaderName(),
           httpStateHandler.getUniqueLoopPreventionHeaderValue());
-      if (MockServerLogger.isEnabled(TRACE) && mockServerLogger != null) {
-        mockServerLogger.logEvent(
-            new LogEntry()
-                .setLogLevel(TRACE)
-                .setCorrelationId(request.getLogCorrelationId())
-                .setHttpRequest(request)
-                .setMessageFormat(NO_MATCH_RESPONSE_NO_EXPECTATION_MESSAGE_FORMAT)
-                .setArguments(request, notFoundResponse()));
-      }
+      log.trace(NO_MATCH_RESPONSE_NO_EXPECTATION_MESSAGE_FORMAT, request, notFoundResponse());
     } else if (isNotBlank(error)) {
-      if (MockServerLogger.isEnabled(Level.DEBUG)) {
-        mockServerLogger.logEvent(
-            new LogEntry()
-                .setType(NO_MATCH_RESPONSE)
-                .setLogLevel(Level.DEBUG)
-                .setCorrelationId(request.getLogCorrelationId())
-                .setHttpRequest(request)
-                .setHttpResponse(notFoundResponse())
-                .setMessageFormat(NO_MATCH_RESPONSE_ERROR_MESSAGE_FORMAT)
-                .setArguments(error, request, notFoundResponse()));
-      }
+      log.debug(NO_MATCH_RESPONSE_ERROR_MESSAGE_FORMAT, error, request, notFoundResponse());
     } else {
-      if (MockServerLogger.isEnabled(Level.DEBUG)) {
-        mockServerLogger.logEvent(
-            new LogEntry()
-                .setType(NO_MATCH_RESPONSE)
-                .setLogLevel(Level.DEBUG)
-                .setCorrelationId(request.getLogCorrelationId())
-                .setHttpRequest(request)
-                .setHttpResponse(notFoundResponse())
-                .setMessageFormat(NO_MATCH_RESPONSE_NO_EXPECTATION_MESSAGE_FORMAT)
-                .setArguments(request, notFoundResponse()));
-      }
+      log.debug(NO_MATCH_RESPONSE_NO_EXPECTATION_MESSAGE_FORMAT, request, notFoundResponse());
     }
     responseWriter.writeResponse(request, response, false);
   }
 
   public HttpForwardActionHandler getHttpForwardActionHandler() {
     if (httpForwardActionHandler == null) {
-      httpForwardActionHandler = new HttpForwardActionHandler(mockServerLogger, httpClient);
+      httpForwardActionHandler = new HttpForwardActionHandler(httpClient);
     }
     return httpForwardActionHandler;
   }

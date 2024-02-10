@@ -6,22 +6,16 @@ package de.gematik.test.tiger.mockserver.netty.unification;
 
 import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.*;
-import static de.gematik.test.tiger.mockserver.logging.MockServerLogger.isEnabled;
 import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.REMOTE_SOCKET;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 import static de.gematik.test.tiger.mockserver.netty.HttpRequestHandler.LOCAL_HOST_HEADERS;
 import static de.gematik.test.tiger.mockserver.netty.HttpRequestHandler.PROXYING;
 import static de.gematik.test.tiger.mockserver.netty.proxy.relay.RelayConnectHandler.*;
 import static java.util.Collections.unmodifiableSet;
-import static org.slf4j.event.Level.TRACE;
-import static org.slf4j.event.Level.WARN;
 
 import de.gematik.test.tiger.mockserver.codec.MockServerHttpServerCodec;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.LoggingHandler;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.mappers.MockServerHttpResponseToFullHttpResponse;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
@@ -45,12 +39,13 @@ import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.event.Level;
 
 /*
  * @author jamesdbloom
  */
+@Slf4j
 public class PortUnificationHandler extends ReplayingDecoder<Void> {
 
   public static final AttributeKey<Boolean> TLS_ENABLED_UPSTREAM =
@@ -61,10 +56,6 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
       AttributeKey.valueOf("NETTY_SSL_CONTEXT_FACTORY");
   private static final Map<PortBinding, Set<String>> localAddressesCache =
       new ConcurrentHashMap<>();
-
-  protected final MockServerLogger mockServerLogger;
-  private final LoggingHandler loggingHandler =
-      new LoggingHandler(PortUnificationHandler.class.getName() + "-first");
   private final HttpContentLengthRemover httpContentLengthRemover = new HttpContentLengthRemover();
   private final Configuration configuration;
   private final LifeCycle server;
@@ -81,12 +72,10 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
       NettySslContextFactory nettySslContextFactory) {
     this.configuration = configuration;
     this.server = server;
-    this.mockServerLogger = httpState.getMockServerLogger();
     this.httpState = httpState;
     this.actionHandler = actionHandler;
     this.nettySslContextFactory = nettySslContextFactory;
-    this.mockServerHttpResponseToFullHttpResponse =
-        new MockServerHttpResponseToFullHttpResponse(mockServerLogger);
+    this.mockServerHttpResponseToFullHttpResponse = new MockServerHttpResponseToFullHttpResponse();
   }
 
   public static NettySslContextFactory nettySslContextFactory(Channel channel) {
@@ -143,19 +132,12 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
       logStage(ctx, "adding binary decoder");
       switchToBinary(ctx, msg);
     }
-
-    if (isEnabled(TRACE)) {
-      loggingHandler.addLoggingHandler(ctx);
-    }
   }
 
   private void logStage(ChannelHandlerContext ctx, String message) {
-    if (isEnabled(TRACE)) {
-      mockServerLogger.logEvent(
-          new LogEntry()
-              .setLogLevel(Level.TRACE)
-              .setMessageFormat(message + " for channel:{}pipeline:{}")
-              .setArguments(ctx.channel().toString(), ctx.pipeline().names()));
+    if (log.isTraceEnabled()) {
+      log.trace(
+          message + " for channel:{}pipeline:{}", ctx.channel().toString(), ctx.pipeline().names());
     }
   }
 
@@ -203,13 +185,10 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
               .withStatusCode(426)
               .withHeader("Upgrade", "TLS/1.2, HTTP/1.1")
               .withHeader("Connection", "Upgrade");
-      if (MockServerLogger.isEnabled(Level.INFO)) {
-        mockServerLogger.logEvent(
-            new LogEntry()
-                .setLogLevel(Level.INFO)
-                .setMessageFormat("no tls for connection:{}returning response:{}")
-                .setArguments(ctx.channel().localAddress(), httpResponse));
-      }
+      log.info(
+          "no tls for connection:{}returning response:{}",
+          ctx.channel().localAddress(),
+          httpResponse);
       ctx.channel()
           .writeAndFlush(
               mockServerHttpResponseToFullHttpResponse
@@ -224,9 +203,8 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
           pipeline,
           new MockServerHttpServerCodec(
               configuration,
-              mockServerLogger,
               isSslEnabledUpstream(ctx.channel()),
-              SniHandler.retrieveClientCertificates(mockServerLogger, ctx),
+              SniHandler.retrieveClientCertificates(ctx),
               ctx.channel().localAddress()));
       addLastIfNotPresent(
           pipeline, new HttpRequestHandler(configuration, server, httpState, actionHandler));
@@ -271,11 +249,7 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   private void switchToBinary(ChannelHandlerContext ctx, ByteBuf msg) {
     addLastIfNotPresent(
         ctx.pipeline(),
-        new BinaryHandler(
-            configuration,
-            httpState.getMockServerLogger(),
-            httpState.getScheduler(),
-            actionHandler.getHttpClient()));
+        new BinaryHandler(configuration, httpState.getScheduler(), actionHandler.getHttpClient()));
     // fire message back through pipeline
     ctx.fireChannelRead(msg.readBytes(actualReadableBytes()));
   }
@@ -330,36 +304,18 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable throwable) {
     if (connectionClosedException(throwable)) {
-      mockServerLogger.logEvent(
-          new LogEntry()
-              .setLogLevel(Level.ERROR)
-              .setMessageFormat(
-                  "exception caught by port unification handler -> closing pipeline "
-                      + ctx.channel())
-              .setThrowable(throwable));
+     log.error("exception caught by port unification handler -> closing pipeline {}", ctx.channel(), throwable);
     } else if (sslHandshakeException(throwable)) {
       if (throwable.getMessage().contains("certificate_unknown")) {
-        if (MockServerLogger.isEnabled(WARN)) {
-          mockServerLogger.logEvent(
-              new LogEntry()
-                  .setLogLevel(Level.WARN)
-                  .setMessageFormat(
-                      "TLS handshake failure:"
+        log.warn("TLS handshake failure:"
                           + NEW_LINE
                           + NEW_LINE
                           + " Client does not trust MockServer Certificate Authority for:{}See"
                           + " http://mock-server.com/mock_server/HTTPS_TLS.html to enable the"
                           + " client to trust MocksServer Certificate Authority."
-                          + NEW_LINE)
-                  .setArguments(ctx.channel()));
-        }
+                          + NEW_LINE, ctx.channel());
       } else if (!throwable.getMessage().contains("close_notify during handshake")) {
-        mockServerLogger.logEvent(
-            new LogEntry()
-                .setLogLevel(Level.ERROR)
-                .setMessageFormat(
-                    "TLS handshake failure while a client attempted to connect to " + ctx.channel())
-                .setThrowable(throwable));
+        log.error("TLS handshake failure while a client attempted to connect to {}", ctx.channel(), throwable);
       }
     }
     closeOnFlush(ctx.channel());

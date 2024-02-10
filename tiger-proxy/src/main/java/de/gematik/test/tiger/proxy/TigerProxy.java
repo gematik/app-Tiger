@@ -199,7 +199,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     if (getTigerProxyConfiguration().isActivateForwardAllLogging()) {
       mockServer
           .when(
-              request().withPath(".*"),
+              request().setPath(".*"),
               Times.unlimited(),
               TimeToLive.unlimited(),
               Integer.MIN_VALUE)
@@ -487,7 +487,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
   private Expectation[] buildReverseProxyRoute(final TigerRoute tigerRoute) {
     return mockServer
-        .when(request().withPath(tigerRoute.getFrom() + ".*"))
+        .when(request().setPath(tigerRoute.getFrom() + ".*"))
         .forward(new ReverseProxyCallback(this, tigerRoute));
   }
 
@@ -497,7 +497,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         .when(
             request()
                 .withHeader("Host", url.getAuthority())
-                .withSecure(url.getProtocol().equals("https")))
+                .setSecure(url.getProtocol().equals("https")))
         .forward(new ForwardProxyCallback(this, tigerRoute));
   }
 

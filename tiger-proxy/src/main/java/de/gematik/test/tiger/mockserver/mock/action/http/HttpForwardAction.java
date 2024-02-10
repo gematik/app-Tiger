@@ -8,28 +8,25 @@ import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundRespon
 
 import de.gematik.test.tiger.mockserver.filters.HopByHopHeaderFilter;
 import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import javax.annotation.Nullable;
-import org.slf4j.event.Level;
+import lombok.extern.slf4j.Slf4j;
 
 /*
  * @author jamesdbloom
  */
 @SuppressWarnings("FieldMayBeFinal")
+@Slf4j
 public abstract class HttpForwardAction {
 
-  protected final MockServerLogger mockServerLogger;
   private final NettyHttpClient httpClient;
   private HopByHopHeaderFilter hopByHopHeaderFilter = new HopByHopHeaderFilter();
 
-  HttpForwardAction(MockServerLogger mockServerLogger, NettyHttpClient httpClient) {
-    this.mockServerLogger = mockServerLogger;
+  HttpForwardAction(NettyHttpClient httpClient) {
     this.httpClient = httpClient;
   }
 
@@ -42,16 +39,11 @@ public abstract class HttpForwardAction {
       return new HttpForwardActionResult(
           request,
           httpClient.sendRequest(
-              hopByHopHeaderFilter.onRequest(request).withProtocol(null), remoteAddress),
+              hopByHopHeaderFilter.onRequest(request).setProtocol(null), remoteAddress),
           overrideHttpResponse,
           remoteAddress);
     } catch (Exception e) {
-      mockServerLogger.logEvent(
-          new LogEntry()
-              .setLogLevel(Level.ERROR)
-              .setHttpRequest(request)
-              .setMessageFormat("exception forwarding request " + request)
-              .setThrowable(e));
+      log.error("exception forwarding request {}", request, e);
     }
     return notFoundFuture(request);
   }

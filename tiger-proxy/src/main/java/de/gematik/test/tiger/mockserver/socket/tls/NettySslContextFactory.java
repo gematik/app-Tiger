@@ -5,8 +5,6 @@
 package de.gematik.test.tiger.mockserver.socket.tls;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import io.netty.handler.codec.http2.Http2SecurityUtil;
 import io.netty.handler.ssl.*;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -21,28 +19,22 @@ import java.util.function.Consumer;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-import org.slf4j.event.Level;
+import lombok.extern.slf4j.Slf4j;
 
 /*
  * @author jamesdbloom
  */
-
-/**
- * @author jamesdbloom
- */
+@Slf4j
 public class NettySslContextFactory {
 
   private final Configuration configuration;
-  private final MockServerLogger mockServerLogger;
   private final KeyAndCertificateFactory keyAndCertificateFactory;
   private final Map<String, SslContext> clientSslContexts = new ConcurrentHashMap<>();
   private SslContext serverSslContext = null;
   private final boolean forServer;
 
-  public NettySslContextFactory(
-      Configuration configuration, MockServerLogger mockServerLogger, boolean forServer) {
+  public NettySslContextFactory(Configuration configuration, boolean forServer) {
     this.configuration = configuration;
-    this.mockServerLogger = mockServerLogger;
     this.forServer = forServer;
     keyAndCertificateFactory = createKeyAndCertificateFactory();
     System.setProperty("https.protocols", configuration.tlsProtocols());
@@ -170,13 +162,8 @@ public class NettySslContextFactory {
     }
     try {
       keyAndCertificateFactory.buildAndSavePrivateKeyAndX509Certificate();
-      mockServerLogger.logEvent(
-          new LogEntry()
-              .setLogLevel(Level.DEBUG)
-              .setMessageFormat(
-                  "using certificate authority serial:{}issuer:{}subject:{}and certificate"
-                      + " serial:{}issuer:{}subject:{}")
-              .setArguments(
+      log.debug("using certificate authority serial:{}issuer:{}subject:{}and certificate"
+                      + " serial:{}issuer:{}subject:{}",
                   keyAndCertificateFactory.certificateAuthorityX509Certificate().getSerialNumber(),
                   keyAndCertificateFactory
                       .certificateAuthorityX509Certificate()
@@ -186,7 +173,7 @@ public class NettySslContextFactory {
                       .getSubjectX500Principal(),
                   keyAndCertificateFactory.x509Certificate().getSerialNumber(),
                   keyAndCertificateFactory.x509Certificate().getIssuerX500Principal(),
-                  keyAndCertificateFactory.x509Certificate().getSubjectX500Principal()));
+                  keyAndCertificateFactory.x509Certificate().getSubjectX500Principal());
       final SslContextBuilder sslContextBuilder =
           SslContextBuilder.forServer(
                   keyAndCertificateFactory.privateKey(),

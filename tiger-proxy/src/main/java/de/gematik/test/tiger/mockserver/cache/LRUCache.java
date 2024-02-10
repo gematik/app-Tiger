@@ -4,8 +4,6 @@
 
 package de.gematik.test.tiger.mockserver.cache;
 
-import com.google.common.annotations.VisibleForTesting;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import java.util.Collections;
 import java.util.Set;
 import java.util.WeakHashMap;
@@ -26,27 +24,12 @@ public class LRUCache<K, V> {
   private final ConcurrentHashMap<K, Entry<V>> map;
   private final ConcurrentLinkedQueue<K> queue;
 
-  public LRUCache(final MockServerLogger mockServerLogger, final int maxSize, long ttlInMillis) {
+  public LRUCache(final int maxSize, long ttlInMillis) {
     this.maxSize = maxSize;
     this.map = new ConcurrentHashMap<>(maxSize);
     this.queue = new ConcurrentLinkedQueue<>();
     this.ttlInMillis = ttlInMillis;
     LRUCache.allCaches.add(this);
-  }
-
-  public static void allCachesEnabled(boolean enabled) {
-    allCachesEnabled = enabled;
-  }
-
-  @VisibleForTesting
-  public static void clearAllCaches() {
-    // using synchronized foreach instead of a for-loop
-    allCaches.forEach(
-        cache -> {
-          if (cache != null) {
-            cache.clear();
-          }
-        });
   }
 
   public void put(K key, final V value) {
@@ -101,14 +84,5 @@ public class LRUCache<K, V> {
         queue.remove(key);
       }
     }
-  }
-
-  private void clear() {
-    map.clear();
-    queue.clear();
-  }
-
-  public static void setMaxSizeOverride(int maxSizeOverride) {
-    LRUCache.maxSizeOverride = maxSizeOverride;
   }
 }

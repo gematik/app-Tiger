@@ -7,7 +7,6 @@ package de.gematik.test.tiger.mockserver.matchers;
 import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.mock.listeners.MockServerMatcherNotifier;
 import de.gematik.test.tiger.mockserver.model.RequestDefinition;
@@ -30,7 +29,6 @@ public abstract class AbstractHttpRequestMatcher extends NotMatcher<RequestDefin
   protected static final String COLON_NEW_LINES = ": " + NEW_LINE + NEW_LINE;
 
   protected final Configuration configuration;
-  protected final MockServerLogger mockServerLogger;
   private int hashCode;
   private boolean isBlank = false;
   private boolean responseInProgress = false;
@@ -41,10 +39,8 @@ public abstract class AbstractHttpRequestMatcher extends NotMatcher<RequestDefin
   protected String didNotMatchExpectationBecause = REQUEST_DID_NOT_MATCH + EXPECTATION + BECAUSE;
   protected String didNotMatchExpectationWithoutBecause = REQUEST_DID_NOT_MATCH + EXPECTATION;
 
-  protected AbstractHttpRequestMatcher(
-      Configuration configuration, MockServerLogger mockServerLogger) {
+  protected AbstractHttpRequestMatcher(Configuration configuration) {
     this.configuration = configuration;
-    this.mockServerLogger = mockServerLogger;
   }
 
   public void setDescription(String description) {

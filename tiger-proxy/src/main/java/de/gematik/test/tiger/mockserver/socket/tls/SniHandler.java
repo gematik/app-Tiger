@@ -5,12 +5,8 @@
 package de.gematik.test.tiger.mockserver.socket.tls;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.slf4j.event.Level.TRACE;
-import static org.slf4j.event.Level.WARN;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.model.Protocol;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderException;
@@ -24,7 +20,6 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.event.Level;
 
 /*
  * @author jamesdbloom
@@ -110,8 +105,7 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
     }
   }
 
-  public static Certificate[] retrieveClientCertificates(
-      MockServerLogger mockServerLogger, ChannelHandlerContext ctx) {
+  public static Certificate[] retrieveClientCertificates(ChannelHandlerContext ctx) {
     Certificate[] clientCertificates = null;
     if (ctx.channel().attr(UPSTREAM_CLIENT_CERTIFICATES).get() != null) {
       clientCertificates = ctx.channel().attr(UPSTREAM_CLIENT_CERTIFICATES).get();
@@ -125,13 +119,7 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
             ctx.channel().attr(UPSTREAM_CLIENT_CERTIFICATES).set(peerCertificates);
             return peerCertificates;
           } catch (SSLPeerUnverifiedException ignore) {
-            if (MockServerLogger.isEnabled(TRACE) && mockServerLogger != null) {
-              mockServerLogger.logEvent(
-                  new LogEntry()
-                      .setLogLevel(Level.TRACE)
-                      .setMessageFormat(
-                          "no client certificate chain as client did not complete mTLS"));
-            }
+            log.trace("no client certificate chain as client did not complete mTLS");
           }
         }
       }
@@ -139,8 +127,7 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
     return clientCertificates;
   }
 
-  public static Protocol getALPNProtocol(
-      MockServerLogger mockServerLogger, ChannelHandlerContext ctx) {
+  public static Protocol getALPNProtocol(ChannelHandlerContext ctx) {
     Protocol protocol = null;
     try {
       if (ctx != null && ctx.channel() != null) {
@@ -157,24 +144,12 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
               protocol = Protocol.HTTP_1_1;
             }
             ctx.channel().attr(NEGOTIATED_APPLICATION_PROTOCOL).set(protocol);
-            if (MockServerLogger.isEnabled(TRACE) && mockServerLogger != null) {
-              mockServerLogger.logEvent(
-                  new LogEntry()
-                      .setLogLevel(Level.TRACE)
-                      .setMessageFormat("found ALPN protocol:{}")
-                      .setArguments(negotiatedApplicationProtocol));
-            }
+            log.trace("found ALPN protocol:{}", negotiatedApplicationProtocol);
           }
         }
       }
     } catch (RuntimeException throwable) {
-      if (MockServerLogger.isEnabled(WARN) && mockServerLogger != null) {
-        mockServerLogger.logEvent(
-            new LogEntry()
-                .setLogLevel(Level.WARN)
-                .setMessageFormat("exception reading ALPN protocol")
-                .setThrowable(throwable));
-      }
+      log.warn("exception reading ALPN protocol", throwable);
     }
     return protocol;
   }

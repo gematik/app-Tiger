@@ -7,8 +7,6 @@ package de.gematik.test.tiger.mockserver.mappers;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
 
 import de.gematik.test.tiger.mockserver.codec.BodyDecoderEncoder;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.model.Cookies;
 import io.netty.handler.codec.http.FullHttpResponse;
@@ -17,7 +15,6 @@ import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.event.Level;
 
 /*
  * @author jamesdbloom
@@ -25,26 +22,14 @@ import org.slf4j.event.Level;
 @Slf4j
 public class FullHttpResponseToMockServerHttpResponse {
 
-  private final MockServerLogger mockServerLogger;
-  private final BodyDecoderEncoder bodyDecoderEncoder;
-
-  public FullHttpResponseToMockServerHttpResponse(MockServerLogger mockServerLogger) {
-    this.mockServerLogger = mockServerLogger;
-    this.bodyDecoderEncoder = new BodyDecoderEncoder();
-  }
+  private final BodyDecoderEncoder bodyDecoderEncoder = new BodyDecoderEncoder();
 
   public HttpResponse mapFullHttpResponseToMockServerResponse(FullHttpResponse fullHttpResponse) {
     HttpResponse httpResponse = new HttpResponse();
     try {
       if (fullHttpResponse != null) {
         if (fullHttpResponse.decoderResult().isFailure()) {
-          mockServerLogger.logEvent(
-              new LogEntry()
-                  .setLogLevel(Level.ERROR)
-                  .setMessageFormat(
-                      "exception decoding response "
-                          + fullHttpResponse.decoderResult().cause().getMessage())
-                  .setThrowable(fullHttpResponse.decoderResult().cause()));
+          log.error("exception decoding response ", fullHttpResponse.decoderResult().cause());
         }
         setStatusCode(httpResponse, fullHttpResponse);
         setHeaders(httpResponse, fullHttpResponse);

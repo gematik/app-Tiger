@@ -7,12 +7,9 @@ package de.gematik.test.tiger.mockserver.httpclient;
 import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.REMOTE_SOCKET;
 import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.SECURE;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.slf4j.event.Level.TRACE;
 
 import de.gematik.test.tiger.mockserver.codec.MockServerBinaryClientCodec;
 import de.gematik.test.tiger.mockserver.codec.MockServerHttpClientCodec;
-import de.gematik.test.tiger.mockserver.logging.LoggingHandler;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.model.Protocol;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
@@ -31,14 +28,15 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
+import lombok.extern.slf4j.Slf4j;
 
 /*
  * @author jamesdbloom
  */
 @ChannelHandler.Sharable
+@Slf4j
 public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
 
-  private final MockServerLogger mockServerLogger;
   private final boolean forwardProxyClient;
   private final Protocol httpProtocol;
   private final HttpClientConnectionErrorHandler httpClientConnectionHandler;
@@ -49,12 +47,10 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
 
   HttpClientInitializer(
       Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations,
-      MockServerLogger mockServerLogger,
       boolean forwardProxyClient,
       NettySslContextFactory nettySslContextFactory,
       Protocol httpProtocol) {
     this.proxyConfigurations = proxyConfigurations;
-    this.mockServerLogger = mockServerLogger;
     this.forwardProxyClient = forwardProxyClient;
     this.httpProtocol = httpProtocol;
     this.protocolFuture = new CompletableFuture<>();
@@ -115,11 +111,6 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
               .newHandler(channel.alloc(), remoteAddress.getHostName(), remoteAddress.getPort()));
     }
 
-    // add logging
-    if (MockServerLogger.isEnabled(TRACE)) {
-      pipeline.addLast(new LoggingHandler(HttpClientHandler.class.getName()));
-    }
-
     if (httpProtocol == null) {
       configureBinaryPipeline(pipeline);
     } else if (secure) {
@@ -136,7 +127,7 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
     pipeline.addLast(new HttpClientCodec());
     pipeline.addLast(new HttpContentDecompressor());
     pipeline.addLast(new HttpObjectAggregator(Integer.MAX_VALUE));
-    pipeline.addLast(new MockServerHttpClientCodec(mockServerLogger, proxyConfigurations));
+    pipeline.addLast(new MockServerHttpClientCodec(proxyConfigurations));
     pipeline.addLast(httpClientHandler);
     protocolFuture.complete(Protocol.HTTP_1_1);
   }
@@ -155,13 +146,13 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
                         .build()))
             .connection(connection)
             .flushPreface(true);
-    if (MockServerLogger.isEnabled(TRACE)) {
+    if (log.isTraceEnabled()) {
       http2ConnectionHandlerBuilder.frameLogger(
           new Http2FrameLogger(LogLevel.TRACE, HttpClientHandler.class.getName()));
     }
     pipeline.addLast(http2ConnectionHandlerBuilder.build());
     pipeline.addLast(new Http2SettingsHandler(protocolFuture));
-    pipeline.addLast(new MockServerHttpClientCodec(mockServerLogger, proxyConfigurations));
+    pipeline.addLast(new MockServerHttpClientCodec(proxyConfigurations));
     pipeline.addLast(httpClientHandler);
   }
 

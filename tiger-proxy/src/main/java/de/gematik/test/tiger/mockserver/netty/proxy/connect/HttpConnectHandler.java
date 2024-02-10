@@ -9,7 +9,6 @@ import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 import de.gematik.test.tiger.mockserver.codec.MockServerHttpServerCodec;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.netty.proxy.relay.RelayConnectHandler;
 import io.netty.channel.ChannelHandler;
@@ -29,10 +28,9 @@ public final class HttpConnectHandler extends RelayConnectHandler<HttpRequest> {
   public HttpConnectHandler(
       Configuration configuration,
       LifeCycle server,
-      MockServerLogger mockServerLogger,
       String host,
       int port) {
-    super(configuration, server, mockServerLogger, host, port);
+    super(configuration, server, host, port);
   }
 
   protected void removeCodecSupport(ChannelHandlerContext ctx) {

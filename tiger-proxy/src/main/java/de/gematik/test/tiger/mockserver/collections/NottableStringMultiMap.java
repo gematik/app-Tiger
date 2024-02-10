@@ -8,7 +8,6 @@ import static de.gematik.test.tiger.mockserver.collections.ImmutableEntry.entry;
 import static de.gematik.test.tiger.mockserver.collections.SubSetMatcher.containsSubset;
 
 import com.google.common.annotations.VisibleForTesting;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.matchers.MatchDifference;
 import de.gematik.test.tiger.mockserver.matchers.RegexStringMatcher;
 import de.gematik.test.tiger.mockserver.model.*;
@@ -24,12 +23,11 @@ public class NottableStringMultiMap extends ObjectWithReflectiveEqualsHashCodeTo
   private final KeyMatchStyle keyMatchStyle;
 
   public NottableStringMultiMap(
-      MockServerLogger mockServerLogger,
       boolean controlPlaneMatcher,
       KeyMatchStyle keyMatchStyle,
       List<? extends KeyToMultiValue> entries) {
     this.keyMatchStyle = keyMatchStyle;
-    regexStringMatcher = new RegexStringMatcher(mockServerLogger, controlPlaneMatcher);
+    regexStringMatcher = new RegexStringMatcher(controlPlaneMatcher);
     for (KeyToMultiValue keyToMultiValue : entries) {
       backingMap.put(keyToMultiValue.getName(), keyToMultiValue.getValues());
     }
@@ -37,12 +35,11 @@ public class NottableStringMultiMap extends ObjectWithReflectiveEqualsHashCodeTo
 
   @VisibleForTesting
   public NottableStringMultiMap(
-      MockServerLogger mockServerLogger,
       boolean controlPlaneMatcher,
       KeyMatchStyle keyMatchStyle,
       String[]... keyAndValues) {
     this.keyMatchStyle = keyMatchStyle;
-    regexStringMatcher = new RegexStringMatcher(mockServerLogger, controlPlaneMatcher);
+    regexStringMatcher = new RegexStringMatcher(controlPlaneMatcher);
     for (String[] keyAndValue : keyAndValues) {
       if (keyAndValue.length > 0) {
         backingMap.put(
@@ -58,17 +55,14 @@ public class NottableStringMultiMap extends ObjectWithReflectiveEqualsHashCodeTo
     return keyMatchStyle;
   }
 
-  public boolean containsAll(
-      MockServerLogger mockServerLogger, MatchDifference context, NottableStringMultiMap subset) {
+  public boolean containsAll(MatchDifference context, NottableStringMultiMap subset) {
     switch (subset.keyMatchStyle) {
       case SUB_SET:
         {
           boolean isSubset =
-              containsSubset(
-                  mockServerLogger, context, regexStringMatcher, subset.entryList(), entryList());
+              containsSubset(context, regexStringMatcher, subset.entryList(), entryList());
           if (!isSubset && context != null) {
             context.addDifference(
-                mockServerLogger,
                 "multimap subset match failed subset:{}was not a subset of:{}",
                 subset.entryList(),
                 entryList());
@@ -82,7 +76,6 @@ public class NottableStringMultiMap extends ObjectWithReflectiveEqualsHashCodeTo
             if (matchedValuesForKey.isEmpty()) {
               if (context != null) {
                 context.addDifference(
-                    mockServerLogger,
                     "multimap subset match failed subset:{}did not have expected key:{}",
                     subset,
                     matcherKey);
@@ -94,14 +87,12 @@ public class NottableStringMultiMap extends ObjectWithReflectiveEqualsHashCodeTo
             for (String matchedValue : matchedValuesForKey) {
               boolean matchesValue = false;
               for (String matcherValue : matcherValuesForKey) {
-                if (regexStringMatcher.matches(
-                    mockServerLogger, context, matcherValue, matchedValue)) {
+                if (regexStringMatcher.matches(context, matcherValue, matchedValue)) {
                   matchesValue = true;
                   break;
                 } else {
                   if (context != null) {
                     context.addDifference(
-                        mockServerLogger,
                         "multimap matching key match failed for key:{}",
                         matcherKey);
                   }

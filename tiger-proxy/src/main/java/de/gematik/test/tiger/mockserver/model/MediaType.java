@@ -5,14 +5,9 @@
 package de.gematik.test.tiger.mockserver.model;
 
 import static org.apache.commons.lang3.StringUtils.*;
-import static org.slf4j.event.Level.DEBUG;
-import static org.slf4j.event.Level.WARN;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
-import de.gematik.test.tiger.mockserver.serialization.ObjectMapperFactory;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
@@ -20,11 +15,13 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 /*
  * @author jamesdbloom
  */
 @SuppressWarnings("unused")
+@Slf4j
 public class MediaType extends ObjectWithJsonToString {
 
   /**
@@ -47,8 +44,6 @@ public class MediaType extends ObjectWithJsonToString {
    */
   public static final Charset DEFAULT_JSON_HTTP_CHARACTER_SET = StandardCharsets.UTF_8;
 
-  private static final MockServerLogger MOCK_SERVER_LOGGER =
-      new MockServerLogger(ObjectMapperFactory.class);
   private static final char TYPE_SEPARATOR = '/';
   private static final char PARAMETER_START = ';';
   private final String type;
@@ -143,16 +138,9 @@ public class MediaType extends ObjectWithJsonToString {
                             LinkedHashMap::new));
           }
         } catch (RuntimeException throwable) {
-          MOCK_SERVER_LOGGER.logEvent(
-              new LogEntry()
-                  .setLogLevel(WARN)
-                  .setMessageFormat(
-                      "invalid parameters format \"" + parameters + "\", expected{}see:{}")
-                  .setArguments(
-                      "Content-Type := type \"/\" subtype *[\";\" parameter]\n"
+          log.warn("invalid parameters format \"" + parameters + "\", expected{}see:{}", "Content-Type := type \"/\" subtype *[\";\" parameter]\n"
                           + "parameter := attribute \"=\" value",
-                      "https://www.w3.org/Protocols/rfc1341/4_Content-Type.html")
-                  .setThrowable(throwable));
+                      "https://www.w3.org/Protocols/rfc1341/4_Content-Type.html", throwable);
         }
       }
       return new MediaType(type, subType, parameterMap);
@@ -191,28 +179,16 @@ public class MediaType extends ObjectWithJsonToString {
       this.parameters.put(CHARSET_PARAMETER, charset);
       try {
         parsedCharset = Charset.forName(charset);
-      } catch (Throwable throwable) {
-        if (MockServerLogger.isEnabled(DEBUG)) {
-          MOCK_SERVER_LOGGER.logEvent(
-              new LogEntry()
-                  .setLogLevel(DEBUG)
-                  .setMessageFormat("ignoring unsupported charset with value \"" + charset + "\"")
-                  .setThrowable(throwable));
-        }
+      } catch (RuntimeException throwable) {
+        log.debug("ignoring unsupported charset with value \"{}\"", charset, throwable);
       }
     } else {
       try {
         if (parameters.containsKey(CHARSET_PARAMETER)) {
           parsedCharset = Charset.forName(parameters.get(CHARSET_PARAMETER));
         }
-      } catch (Throwable throwable) {
-        if (MockServerLogger.isEnabled(DEBUG)) {
-          MOCK_SERVER_LOGGER.logEvent(
-              new LogEntry()
-                  .setLogLevel(DEBUG)
-                  .setMessageFormat("ignoring unsupported charset with value \"" + charset + "\"")
-                  .setThrowable(throwable));
-        }
+      } catch (RuntimeException throwable) {
+        log.debug("ignoring unsupported charset with value \"{}\"", charset, throwable);
       }
     }
     this.charset = parsedCharset;

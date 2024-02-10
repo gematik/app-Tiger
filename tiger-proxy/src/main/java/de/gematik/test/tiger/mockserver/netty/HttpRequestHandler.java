@@ -6,7 +6,6 @@ package de.gematik.test.tiger.mockserver.netty;
 
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.closeOnFlush;
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.connectionClosedException;
-import static de.gematik.test.tiger.mockserver.log.model.LogEntry.LogMessageType.AUTHENTICATION_FAILED;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.enableSslUpstreamAndDownstream;
 import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.isSslEnabledUpstream;
@@ -16,8 +15,6 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
@@ -36,7 +33,6 @@ import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.StringEscapeUtils;
-import org.slf4j.event.Level;
 
 /*
  * @author jamesdbloom
@@ -48,7 +44,6 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
   public static final AttributeKey<Boolean> PROXYING = AttributeKey.valueOf("PROXYING");
   public static final AttributeKey<Set<String>> LOCAL_HOST_HEADERS =
       AttributeKey.valueOf("LOCAL_HOST_HEADERS");
-  private MockServerLogger mockServerLogger;
   private HttpState httpState;
   private final Configuration configuration;
   private LifeCycle server;
@@ -63,7 +58,6 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
     this.configuration = configuration;
     this.server = server;
     this.httpState = httpState;
-    this.mockServerLogger = httpState.getMockServerLogger();
     this.httpActionHandler = httpActionHandler;
   }
 
@@ -86,12 +80,11 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
   @Override
   protected void channelRead0(final ChannelHandlerContext ctx, final HttpRequest request) {
 
-    ResponseWriter responseWriter =
-        new NettyResponseWriter(configuration, mockServerLogger, ctx, httpState.getScheduler());
+    ResponseWriter responseWriter = new NettyResponseWriter(configuration, ctx);
     try {
       configuration.addSubjectAlternativeName(request.getFirstHeader(HOST.toString()));
 
-      if (!httpState.handle(request, responseWriter, false)) {
+      if (!httpState.handle(request)) {
         if (request.getMethod().equals("CONNECT")) {
 
           String username = configuration.proxyAuthenticationUsername();
@@ -113,18 +106,11 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
                             + StringEscapeUtils.escapeJava(configuration.proxyAuthenticationRealm())
                             + "\", charset=\"UTF-8\"");
             ctx.writeAndFlush(response);
-            mockServerLogger.logEvent(
-                new LogEntry()
-                    .setType(AUTHENTICATION_FAILED)
-                    .setLogLevel(Level.INFO)
-                    .setCorrelationId(request.getLogCorrelationId())
-                    .setHttpRequest(request)
-                    .setHttpResponse(response)
-                    .setExpectation(request, response)
-                    .setMessageFormat(
-                        "proxy authentication failed so returning response:{}\n"
-                            + "for forwarded request:{}")
-                    .setArguments(response, request));
+            log.info(
+                "proxy authentication failed so returning response:{}\n"
+                    + "for forwarded request:{}",
+                response,
+                request);
           } else {
             ctx.channel().attr(PROXYING).set(Boolean.TRUE);
             // assume SSL for CONNECT request
@@ -138,9 +124,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
             String[] hostParts = request.getPath().split(":");
             final int port = determinePort(ctx, hostParts);
             ctx.pipeline()
-                .addLast(
-                    new HttpConnectHandler(
-                        configuration, server, mockServerLogger, hostParts[0], port));
+                .addLast(new HttpConnectHandler(configuration, server, hostParts[0], port));
             ctx.pipeline().remove(this);
             ctx.fireChannelRead(request);
           }
@@ -159,22 +143,12 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
         }
       }
     } catch (IllegalArgumentException iae) {
-      mockServerLogger.logEvent(
-          new LogEntry()
-              .setLogLevel(Level.ERROR)
-              .setHttpRequest(request)
-              .setMessageFormat("exception processing request:{}error:{}")
-              .setArguments(request, iae.getMessage()));
+      log.error("exception processing request:{}error:{}", request, iae.getMessage());
       // send request without API CORS headers
       responseWriter.writeResponse(
           request, BAD_REQUEST, iae.getMessage(), MediaType.create("text", "plain").toString());
     } catch (Exception ex) {
-      mockServerLogger.logEvent(
-          new LogEntry()
-              .setLogLevel(Level.ERROR)
-              .setHttpRequest(request)
-              .setMessageFormat("exception processing " + request)
-              .setThrowable(ex));
+      log.error("exception processing ", request, ex);
       responseWriter.writeResponse(
           request, response().withStatusCode(BAD_REQUEST.code()).withBody(ex.getMessage()), true);
     }
@@ -199,15 +173,11 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     if (connectionClosedException(cause)) {
-      mockServerLogger.logEvent(
-          new LogEntry()
-              .setLogLevel(Level.ERROR)
-              .setMessageFormat(
-                  "exception caught by "
-                      + server.getClass()
-                      + " handler -> closing pipeline "
-                      + ctx.channel())
-              .setThrowable(cause));
+      log.error(
+          "exception caught by {} handler -> closing pipeline {}",
+          server.getClass(),
+          ctx.channel(),
+          cause);
     }
     closeOnFlush(ctx.channel());
   }

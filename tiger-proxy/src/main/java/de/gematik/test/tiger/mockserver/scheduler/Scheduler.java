@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.mockserver.scheduler;
 
-import static de.gematik.test.tiger.mockserver.log.model.LogEntry.LogMessageType.WARN;
 import static de.gematik.test.tiger.mockserver.mock.HttpState.getPort;
 import static de.gematik.test.tiger.mockserver.mock.HttpState.setPort;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -12,8 +11,6 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import com.google.common.annotations.VisibleForTesting;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.httpclient.SocketCommunicationException;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpForwardActionResult;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.mockserver.model.Delay;
@@ -21,11 +18,12 @@ import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import java.util.concurrent.*;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
-import org.slf4j.event.Level;
+import lombok.extern.slf4j.Slf4j;
 
 /*
  * @author jamesdbloom
  */
+@Slf4j
 public class Scheduler {
 
   private final Configuration configuration;
@@ -58,17 +56,13 @@ public class Scheduler {
     }
   }
 
-  private final MockServerLogger mockServerLogger;
-
-  public Scheduler(Configuration configuration, MockServerLogger mockServerLogger) {
-    this(configuration, mockServerLogger, false);
+  public Scheduler(Configuration configuration) {
+    this(configuration, false);
   }
 
   @VisibleForTesting
-  public Scheduler(
-      Configuration configuration, MockServerLogger mockServerLogger, boolean synchronous) {
+  public Scheduler(Configuration configuration, boolean synchronous) {
     this.configuration = configuration;
-    this.mockServerLogger = mockServerLogger;
     this.synchronous = synchronous;
     if (!this.synchronous) {
       this.scheduler =
@@ -97,14 +91,7 @@ public class Scheduler {
     try {
       command.run();
     } catch (RuntimeException throwable) {
-      if (MockServerLogger.isEnabled(Level.INFO)) {
-        mockServerLogger.logEvent(
-            new LogEntry()
-                .setType(WARN)
-                .setLogLevel(Level.INFO)
-                .setMessageFormat(throwable.getMessage())
-                .setThrowable(throwable));
-      }
+      log.info("Error", throwable);
     }
   }
 
@@ -190,14 +177,8 @@ public class Scheduler {
             .whenCompleteAsync(
                 (httpResponse, throwable) -> {
                   if (throwable != null
-                      && MockServerLogger.isEnabled(Level.INFO)
                       && logException.test(throwable)) {
-                    mockServerLogger.logEvent(
-                        new LogEntry()
-                            .setType(WARN)
-                            .setLogLevel(Level.INFO)
-                            .setMessageFormat(throwable.getMessage())
-                            .setThrowable(throwable));
+                    log.info(throwable.getMessage(), throwable);
                   }
                   run(command, port);
                 },
@@ -264,14 +245,7 @@ public class Scheduler {
         try {
           consumer.accept(httpResponse, exception);
         } catch (RuntimeException throwable) {
-          if (MockServerLogger.isEnabled(Level.INFO)) {
-            mockServerLogger.logEvent(
-                new LogEntry()
-                    .setType(WARN)
-                    .setLogLevel(Level.INFO)
-                    .setMessageFormat(throwable.getMessage())
-                    .setThrowable(throwable));
-          }
+          log.info(throwable.getMessage(), throwable);
         }
       } else {
         future.getHttpResponse().whenCompleteAsync(consumer, scheduler);

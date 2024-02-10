@@ -11,8 +11,6 @@ import static io.netty.handler.codec.http.HttpUtil.isKeepAlive;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.gematik.test.tiger.mockserver.codec.BodyDecoderEncoder;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.Protocol;
@@ -23,21 +21,19 @@ import io.netty.handler.codec.http2.HttpConversionUtil;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.slf4j.event.Level;
+import lombok.extern.slf4j.Slf4j;
 
 /*
  * @author jamesdbloom
  */
+@Slf4j
 public class MockServerHttpRequestToFullHttpRequest {
 
-  private final MockServerLogger mockServerLogger;
   private final Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations;
   private final BodyDecoderEncoder bodyDecoderEncoder;
 
   public MockServerHttpRequestToFullHttpRequest(
-      MockServerLogger mockServerLogger,
       Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations) {
-    this.mockServerLogger = mockServerLogger;
     this.proxyConfigurations = proxyConfigurations;
     this.bodyDecoderEncoder = new BodyDecoderEncoder();
   }
@@ -62,12 +58,7 @@ public class MockServerHttpRequestToFullHttpRequest {
 
       return request;
     } catch (RuntimeException throwable) {
-      mockServerLogger.logEvent(
-          new LogEntry()
-              .setLogLevel(Level.ERROR)
-              .setMessageFormat("exception encoding request {}")
-              .setArguments(httpRequest)
-              .setThrowable(throwable));
+      log.error("exception encoding request {}", httpRequest, throwable);
       return new DefaultFullHttpRequest(
           HttpVersion.HTTP_1_1, httpMethod, getURI(httpRequest, proxyConfigurations));
     }

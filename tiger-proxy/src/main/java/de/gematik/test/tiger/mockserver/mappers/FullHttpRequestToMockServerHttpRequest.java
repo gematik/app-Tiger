@@ -11,7 +11,6 @@ import static io.netty.handler.codec.http.HttpUtil.isKeepAlive;
 import de.gematik.test.tiger.mockserver.codec.BodyDecoderEncoder;
 import de.gematik.test.tiger.mockserver.codec.ExpandedParameterDecoder;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.model.Cookies;
 import de.gematik.test.tiger.mockserver.model.Protocol;
@@ -35,7 +34,6 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class FullHttpRequestToMockServerHttpRequest {
 
-  private final MockServerLogger mockServerLogger;
   private final BodyDecoderEncoder bodyDecoderEncoder;
   private final ExpandedParameterDecoder formParameterParser;
   private final boolean isSecure;
@@ -45,18 +43,16 @@ public class FullHttpRequestToMockServerHttpRequest {
 
   public FullHttpRequestToMockServerHttpRequest(
       Configuration configuration,
-      MockServerLogger mockServerLogger,
       boolean isSecure,
       Certificate[] clientCertificates,
       Integer port) {
-    this.mockServerLogger = mockServerLogger;
     this.bodyDecoderEncoder = new BodyDecoderEncoder();
-    this.formParameterParser = new ExpandedParameterDecoder(configuration, mockServerLogger);
+    this.formParameterParser = new ExpandedParameterDecoder(configuration);
     this.isSecure = isSecure;
     this.clientCertificates = clientCertificates;
     this.port = port;
     this.jdkCertificateToMockServerX509Certificate =
-        new JDKCertificateToMockServerX509Certificate(mockServerLogger);
+        new JDKCertificateToMockServerX509Certificate();
   }
 
   public HttpRequest mapFullHttpRequestToMockServerRequest(
@@ -75,9 +71,9 @@ public class FullHttpRequestToMockServerHttpRequest {
               fullHttpRequest.decoderResult().cause());
         }
         setMethod(httpRequest, fullHttpRequest);
-        httpRequest.withKeepAlive(isKeepAlive(fullHttpRequest));
-        httpRequest.withSecure(isSecure);
-        httpRequest.withProtocol(protocol == null ? Protocol.HTTP_1_1 : protocol);
+        httpRequest.setKeepAlive(isKeepAlive(fullHttpRequest));
+        httpRequest.setSecure(isSecure);
+        httpRequest.setProtocol(protocol == null ? Protocol.HTTP_1_1 : protocol);
 
         setPath(httpRequest, fullHttpRequest);
         setQueryString(httpRequest, fullHttpRequest);
@@ -101,26 +97,26 @@ public class FullHttpRequestToMockServerHttpRequest {
       Integer port,
       SocketAddress localAddress,
       SocketAddress remoteAddress) {
-    httpRequest.withSocketAddress(isSecure, fullHttpRequest.headers().get("host"), port);
+    httpRequest.setSocketAddress(isSecure, fullHttpRequest.headers().get("host"), port);
     if (remoteAddress instanceof InetSocketAddress) {
-      httpRequest.withRemoteAddress(StringUtils.removeStart(remoteAddress.toString(), "/"));
+      httpRequest.setRemoteAddress(StringUtils.removeStart(remoteAddress.toString(), "/"));
     }
     if (localAddress instanceof InetSocketAddress) {
-      httpRequest.withLocalAddress(StringUtils.removeStart(localAddress.toString(), "/"));
+      httpRequest.setLocalAddress(StringUtils.removeStart(localAddress.toString(), "/"));
     }
   }
 
   private void setMethod(HttpRequest httpRequest, FullHttpRequest fullHttpResponse) {
-    httpRequest.withMethod(fullHttpResponse.method().name());
+    httpRequest.setMethod(fullHttpResponse.method().name());
   }
 
   private void setPath(HttpRequest httpRequest, FullHttpRequest fullHttpRequest) {
-    httpRequest.withPath(URLParser.returnPath(fullHttpRequest.uri()));
+    httpRequest.setPath(URLParser.returnPath(fullHttpRequest.uri()));
   }
 
   private void setQueryString(HttpRequest httpRequest, FullHttpRequest fullHttpRequest) {
     if (fullHttpRequest.uri().contains("?")) {
-      httpRequest.withQueryStringParameters(
+      httpRequest.setQueryStringParameters(
           formParameterParser.retrieveQueryParameters(fullHttpRequest.uri(), true));
     }
   }
@@ -145,7 +141,7 @@ public class FullHttpRequestToMockServerHttpRequest {
           fullHttpResponse
               .headers()
               .getInt(HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text());
-      httpRequest.withStreamId(streamId);
+      httpRequest.setStreamId(streamId);
     }
   }
 

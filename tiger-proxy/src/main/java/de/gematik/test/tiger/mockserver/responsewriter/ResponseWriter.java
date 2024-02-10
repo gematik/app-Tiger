@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.mockserver.responsewriter;
 
-import static de.gematik.test.tiger.mockserver.log.model.LogEntry.LogMessageType.INFO;
 import static de.gematik.test.tiger.mockserver.model.Header.header;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
@@ -15,25 +14,22 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.cors.CORSHeaders;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import org.slf4j.event.Level;
+import lombok.extern.slf4j.Slf4j;
 
 /*
  * @author jamesdbloom
  */
+@Slf4j
 public abstract class ResponseWriter {
 
   protected final Configuration configuration;
-  protected final MockServerLogger mockServerLogger;
   private final CORSHeaders corsHeaders;
 
-  protected ResponseWriter(Configuration configuration, MockServerLogger mockServerLogger) {
+  protected ResponseWriter(Configuration configuration) {
     this.configuration = configuration;
-    this.mockServerLogger = mockServerLogger;
     corsHeaders = new CORSHeaders(configuration);
   }
 
@@ -72,19 +68,10 @@ public abstract class ResponseWriter {
       try {
         int contentLength = Integer.parseInt(contentLengthHeader);
         if (response.getBodyAsRawBytes().length > contentLength) {
-          mockServerLogger.logEvent(
-              new LogEntry()
-                  .setType(INFO)
-                  .setLogLevel(Level.INFO)
-                  .setCorrelationId(request.getLogCorrelationId())
-                  .setHttpRequest(request)
-                  .setHttpResponse(response)
-                  .setMessageFormat(
-                      "returning response with content-length header "
-                          + contentLength
-                          + " which is smaller then response body length "
-                          + response.getBodyAsRawBytes().length
-                          + ", body will likely be truncated by client receiving request"));
+          log.info(
+              "returning response with content-length header {} which is smaller then response body length {}, body will likely be truncated by client receiving request",
+              contentLength,
+              response.getBodyAsRawBytes().length);
         }
       } catch (NumberFormatException ignore) {
         // ignore exception while parsing invalid content-length header
@@ -105,7 +92,7 @@ public abstract class ResponseWriter {
       final HttpRequest request, final HttpResponse response) {
     HttpResponse responseWithConnectionHeader = response.clone();
 
-    if (Boolean.TRUE.equals(request.isKeepAlive())) {
+    if (Boolean.TRUE.equals(request.getKeepAlive())) {
       responseWithConnectionHeader.replaceHeader(
           header(CONNECTION.toString(), KEEP_ALIVE.toString()));
     } else {

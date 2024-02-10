@@ -4,33 +4,28 @@
 
 package de.gematik.test.tiger.mockserver.matchers;
 
-import static org.slf4j.event.Level.DEBUG;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.gematik.test.tiger.mockserver.log.model.LogEntry;
-import de.gematik.test.tiger.mockserver.logging.MockServerLogger;
 import java.util.regex.PatternSyntaxException;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 /*
  * @author jamesdbloom
  */
+@Slf4j
 public class RegexStringMatcher extends BodyMatcher<String> {
 
   private static final String[] EXCLUDED_FIELDS = {"mockServerLogger"};
-  private final MockServerLogger mockServerLogger;
   private final String matcher;
   private final boolean controlPlaneMatcher;
 
-  public RegexStringMatcher(MockServerLogger mockServerLogger, boolean controlPlaneMatcher) {
-    this.mockServerLogger = mockServerLogger;
+  public RegexStringMatcher(boolean controlPlaneMatcher) {
     this.controlPlaneMatcher = controlPlaneMatcher;
     this.matcher = null;
   }
 
-  RegexStringMatcher(
-      MockServerLogger mockServerLogger, String matcher, boolean controlPlaneMatcher) {
-    this.mockServerLogger = mockServerLogger;
+  RegexStringMatcher(String matcher, boolean controlPlaneMatcher) {
     this.controlPlaneMatcher = controlPlaneMatcher;
     this.matcher = matcher;
   }
@@ -40,16 +35,15 @@ public class RegexStringMatcher extends BodyMatcher<String> {
   }
 
   public boolean matches(final MatchDifference context, String matched) {
-    boolean result = matcher == null || matches(mockServerLogger, context, matcher, matched);
+    boolean result = matcher == null || matches(context, matcher, matched);
     return not != result;
   }
 
   public boolean matches(String matcher, String matched) {
-    return matches(mockServerLogger, null, matcher, matched);
+    return matches(null, matcher, matched);
   }
 
   public boolean matches(
-      MockServerLogger mockServerLogger,
       MatchDifference context,
       String matcherValue,
       String matchedValue) {
@@ -71,55 +65,24 @@ public class RegexStringMatcher extends BodyMatcher<String> {
             return true;
           }
         } catch (PatternSyntaxException pse) {
-          if (MockServerLogger.isEnabled(DEBUG) && mockServerLogger != null) {
-            mockServerLogger.logEvent(
-                new LogEntry()
-                    .setLogLevel(DEBUG)
-                    .setMessageFormat(
-                        "error while matching regex ["
-                            + matcher
-                            + "] for string ["
-                            + matchedValue
-                            + "] "
-                            + pse.getMessage())
-                    .setThrowable(pse));
-          }
+          log.debug("error while matching regex [{}] for string [{}]", matcher, matchedValue, pse);
         }
         // match as regex - matched -> matcher (control plane only)
         try {
           if (controlPlaneMatcher && matcherValue.matches(matchedValue)) {
             return true;
-          } else if (MockServerLogger.isEnabled(DEBUG)
-              && matcherValue.matches(matchedValue)
-              && mockServerLogger != null) {
-            mockServerLogger.logEvent(
-                new LogEntry()
-                    .setLogLevel(DEBUG)
-                    .setMessageFormat("matcher{}would match{}if matcher was used for control plane")
-                    .setArguments(matcher, matchedValue));
+          } else if (matcherValue.matches(matchedValue)) {
+            log.debug("matcher{}would match{}if matcher was used for control plane",matcher, matchedValue);
           }
         } catch (PatternSyntaxException pse) {
           if (controlPlaneMatcher) {
-            if (MockServerLogger.isEnabled(DEBUG) && mockServerLogger != null) {
-              mockServerLogger.logEvent(
-                  new LogEntry()
-                      .setLogLevel(DEBUG)
-                      .setMessageFormat(
-                          "error while matching regex ["
-                              + matchedValue
-                              + "] for string ["
-                              + matcher
-                              + "] "
-                              + pse.getMessage())
-                      .setThrowable(pse));
-            }
+            log.debug("error while matching regex [{}] for string [{}]", matchedValue, matcher, pse);
           }
         }
       }
     }
     if (context != null) {
       context.addDifference(
-          mockServerLogger,
           "string or regex match failed expected:{}found:{}",
           matcher,
           matchedValue);
