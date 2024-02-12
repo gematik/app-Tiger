@@ -4,8 +4,6 @@
 
 package de.gematik.test.tiger.mockserver.mock;
 
-import static de.gematik.test.tiger.mockserver.log.model.LogEntryMessages.RECEIVED_REQUEST_MESSAGE_FORMAT;
-import static de.gematik.test.tiger.mockserver.model.HttpRequest.request;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static org.apache.commons.lang3.StringUtils.*;
 
@@ -112,7 +110,7 @@ public class HttpState {
     request.withLogCorrelationId(UUIDService.getUUID());
     setPort(request);
 
-    log.trace(RECEIVED_REQUEST_MESSAGE_FORMAT, request);
+    log.trace("received request:{}", request);
 
     return false;
   }

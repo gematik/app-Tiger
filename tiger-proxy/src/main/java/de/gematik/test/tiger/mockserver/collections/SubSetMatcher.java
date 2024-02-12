@@ -25,9 +25,7 @@ public class SubSetMatcher {
     for (ImmutableEntry subsetItem : subset) {
       Set<Integer> subsetItemMatchingIndexes =
           matchesIndexes(context, regexStringMatcher, subsetItem, superset);
-      boolean optionalAndNotPresent =
-          subsetItem.isOptional() && !containsKey(regexStringMatcher, subsetItem, superset);
-      if ((!optionalAndNotPresent && subsetItemMatchingIndexes.isEmpty())) {
+      if ((subsetItemMatchingIndexes.isEmpty())) {
         result = false;
         break;
       }
@@ -35,7 +33,7 @@ public class SubSetMatcher {
     }
 
     if (result) {
-      long subsetNonOptionalSize = subset.stream().filter(ImmutableEntry::isNotOptional).count();
+      long subsetNonOptionalSize = subset.size();
       // this prevents multiple items in the subset from being matched by a single item in the
       // superset
       result = matchingIndexes.size() >= subsetNonOptionalSize;

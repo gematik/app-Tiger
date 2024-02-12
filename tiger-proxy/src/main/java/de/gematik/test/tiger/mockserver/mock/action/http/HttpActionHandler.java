@@ -6,8 +6,6 @@ package de.gematik.test.tiger.mockserver.mock.action.http;
 
 import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.*;
-import static de.gematik.test.tiger.mockserver.log.model.LogEntry.LogMessageType.*;
-import static de.gematik.test.tiger.mockserver.log.model.LogEntryMessages.*;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
@@ -92,7 +90,7 @@ public class HttpActionHandler {
             .containsEntry(
                 httpStateHandler.getUniqueLoopPreventionHeaderName(),
                 httpStateHandler.getUniqueLoopPreventionHeaderValue())) {
-      log.debug(RECEIVED_REQUEST_MESSAGE_FORMAT, request);
+      log.debug("received request:{}", request);
     }
     final Expectation expectation = httpStateHandler.firstMatchingExpectation(request);
     final boolean potentiallyHttpProxy =
@@ -190,7 +188,7 @@ public class HttpActionHandler {
                       httpStateHandler.getUniqueLoopPreventionHeaderName(),
                       httpStateHandler.getUniqueLoopPreventionHeaderValue())) {
                     response.removeHeader(httpStateHandler.getUniqueLoopPreventionHeaderName());
-                    log.debug(NO_MATCH_RESPONSE_NO_EXPECTATION_MESSAGE_FORMAT, request, response);
+                    log.debug("no expectation for:{}returning response:{}", request, response);
                   } else {
                     log.debug(
                         "returning response:{}\nfor forwarded request"
@@ -351,11 +349,11 @@ public class HttpActionHandler {
       response.withHeader(
           httpStateHandler.getUniqueLoopPreventionHeaderName(),
           httpStateHandler.getUniqueLoopPreventionHeaderValue());
-      log.trace(NO_MATCH_RESPONSE_NO_EXPECTATION_MESSAGE_FORMAT, request, notFoundResponse());
+      log.trace("no expectation for:{}returning response:{}", request, notFoundResponse());
     } else if (isNotBlank(error)) {
-      log.debug(NO_MATCH_RESPONSE_ERROR_MESSAGE_FORMAT, error, request, notFoundResponse());
+      log.debug("error:{}handling request:{}returning response:{}", error, request, notFoundResponse());
     } else {
-      log.debug(NO_MATCH_RESPONSE_NO_EXPECTATION_MESSAGE_FORMAT, request, notFoundResponse());
+      log.debug("no expectation for:{}returning response:{}", request, notFoundResponse());
     }
     responseWriter.writeResponse(request, response, false);
   }

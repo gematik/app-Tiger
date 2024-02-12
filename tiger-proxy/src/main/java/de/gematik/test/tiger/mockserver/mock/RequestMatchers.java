@@ -4,8 +4,6 @@
 
 package de.gematik.test.tiger.mockserver.mock;
 
-import static de.gematik.test.tiger.mockserver.log.model.LogEntry.LogMessageType.*;
-import static de.gematik.test.tiger.mockserver.log.model.LogEntryMessages.*;
 import static de.gematik.test.tiger.mockserver.mock.SortableExpectationId.EXPECTATION_SORTABLE_PRIORITY_COMPARATOR;
 import static de.gematik.test.tiger.mockserver.mock.SortableExpectationId.NULL;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -77,7 +75,7 @@ public class RequestMatchers extends MockServerMatcherNotifier {
                     if (httpRequestMatcher.update(expectation)) {
                       httpRequestMatchers.addPriorityKey(httpRequestMatcher);
                       log.info(
-                          UPDATED_EXPECTATION_MESSAGE_FORMAT,
+                          "updated expectation:{} with id:{}",
                           expectation.clone(),
                           expectation.getId());
                     } else {
@@ -97,7 +95,7 @@ public class RequestMatchers extends MockServerMatcherNotifier {
     httpRequestMatchers.add(httpRequestMatcher);
     httpRequestMatcher.withSource(cause);
     log.trace(
-        CREATED_EXPECTATION_MESSAGE_FORMAT, expectation.getHttpRequest(), expectation.getId());
+        "creating expectation: {} with id:{}", expectation.getHttpRequest(), expectation.getId());
     return httpRequestMatcher;
   }
 
@@ -171,8 +169,8 @@ public class RequestMatchers extends MockServerMatcherNotifier {
 
   public void clear(ExpectationId expectationId) {
     if (expectationId != null) {
-      httpRequestMatchers.getByKey(expectationId.getId()).ifPresent(this::removeHttpRequestMatcher);
-      log.info("cleared expectations that have id:{}", expectationId.getId());
+      httpRequestMatchers.getByKey(expectationId.id()).ifPresent(this::removeHttpRequestMatcher);
+      log.info("cleared expectations that have id:{}", expectationId.id());
     } else {
       reset();
     }
@@ -188,7 +186,7 @@ public class RequestMatchers extends MockServerMatcherNotifier {
     if (httpRequestMatchers.remove(httpRequestMatcher)) {
       if (httpRequestMatcher.getExpectation() != null && log.isInfoEnabled()) {
         Expectation expectation = httpRequestMatcher.getExpectation().clone();
-        log.info(REMOVED_EXPECTATION_MESSAGE_FORMAT, expectation, expectation.getId());
+        log.info("removed expectation:{} with id:{}", expectation, expectation.getId());
       }
       if (notifyAndUpdateMetrics) {
         notifyListeners(this, cause);

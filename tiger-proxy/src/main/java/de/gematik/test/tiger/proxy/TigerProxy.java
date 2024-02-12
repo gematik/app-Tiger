@@ -534,7 +534,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     if (!mockServer.isRunning()) {
       return;
     }
-    mockServer.removeExpectation(new ExpectationId().withId(routeId));
+    mockServer.removeExpectation(new ExpectationId().id(routeId));
     final TigerRoute route = tigerRouteMap.remove(routeId);
 
     log.info(

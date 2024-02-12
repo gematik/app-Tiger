@@ -325,8 +325,7 @@ public class HttpRequestPropertiesMatcher extends AbstractHttpRequestMatcher {
             .append(Joiner.on(NEW_LINE).join(context.getDifferences(fieldName)));
       }
     }
-    if (!fieldMatches) {
-      if (!controlPlaneMatcher) {
+    if (!fieldMatches && !controlPlaneMatcher) {
         if (matchDifferenceCount.getHttpRequest().isNot()) {
           becauseBuilder.append(REQUEST_NOT_OPERATOR_IS_ENABLED);
         }
@@ -336,7 +335,7 @@ public class HttpRequestPropertiesMatcher extends AbstractHttpRequestMatcher {
         if (not) {
           becauseBuilder.append(EXPECTATION_REQUEST_MATCHER_NOT_OPERATOR_IS_ENABLED);
         }
-      }
+
     }
     // update match difference and potentially fail fast
     if (!fieldMatches) {

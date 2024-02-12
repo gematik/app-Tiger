@@ -15,7 +15,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.util.*;
-import java.util.stream.Collectors;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -41,7 +40,7 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
   private Boolean secure = null;
   private Protocol protocol = null;
   private Integer streamId = null;
-  private List<X509Certificate> clientCertificateChain;
+  private List<MockserverX509CertificateWrapper> clientCertificateChain;
   private SocketAddress socketAddress;
   private String localAddress;
   private String remoteAddress;
@@ -257,13 +256,6 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
     return this;
   }
 
-  private Cookies getOrCreateCookies() {
-    if (this.cookies == null) {
-      this.cookies = new Cookies();
-    }
-    return this.cookies;
-  }
-
   public HttpRequest withCookies(Cookies cookies) {
     if (cookies == null || cookies.isEmpty()) {
       this.cookies = null;
@@ -341,8 +333,8 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
         .setClientCertificateChain(
             clientCertificateChain != null && !clientCertificateChain.isEmpty()
                 ? clientCertificateChain.stream()
-                    .map(X509Certificate::clone)
-                    .collect(Collectors.toList())
+                    .map(c -> MockserverX509CertificateWrapper.with((java.security.cert.X509Certificate) c.certificate()))
+                    .toList()
                 : null)
         .setSocketAddress(socketAddress)
         .setLocalAddress(localAddress)

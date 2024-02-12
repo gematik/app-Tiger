@@ -7,11 +7,9 @@ package de.gematik.test.tiger.mockserver.model;
 import static de.gematik.test.tiger.mockserver.model.Header.header;
 import static de.gematik.test.tiger.mockserver.model.HttpStatusCode.NOT_FOUND_404;
 import static de.gematik.test.tiger.mockserver.model.HttpStatusCode.OK_200;
-import static io.netty.handler.codec.http.HttpHeaderNames.SET_COOKIE;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Multimap;
-import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
@@ -67,10 +65,6 @@ public class HttpResponse extends Action<HttpResponse>
     return this;
   }
 
-  public Integer getStatusCode() {
-    return statusCode;
-  }
-
   /**
    * The reason phrase to return, if no reason code is returned this will be defaulted to the
    * standard reason phrase for the statusCode, i.e. for a statusCode of 200 the standard reason
@@ -82,10 +76,6 @@ public class HttpResponse extends Action<HttpResponse>
     this.reasonPhrase = reasonPhrase;
     this.hashCode = 0;
     return this;
-  }
-
-  public String getReasonPhrase() {
-    return reasonPhrase;
   }
 
   /**
@@ -173,10 +163,6 @@ public class HttpResponse extends Action<HttpResponse>
     return this;
   }
 
-  public BodyWithContentType getBody() {
-    return body;
-  }
-
   @JsonIgnore
   public byte[] getBodyAsRawBytes() {
     return this.body != null ? this.body.getRawBytes() : new byte[0];
@@ -189,10 +175,6 @@ public class HttpResponse extends Action<HttpResponse>
     } else {
       return null;
     }
-  }
-
-  public Headers getHeaders() {
-    return this.headers;
   }
 
   private Headers getOrCreateHeaders() {
@@ -209,28 +191,6 @@ public class HttpResponse extends Action<HttpResponse>
     } else {
       this.headers = headers;
     }
-    this.hashCode = 0;
-    return this;
-  }
-
-  /**
-   * The headers to return as a list of Header objects
-   *
-   * @param headers a list of Header objects
-   */
-  public HttpResponse withHeaders(List<Header> headers) {
-    getOrCreateHeaders().withEntries(headers);
-    this.hashCode = 0;
-    return this;
-  }
-
-  /**
-   * The headers to return as a varargs of Header objects
-   *
-   * @param headers varargs of Header objects
-   */
-  public HttpResponse withHeaders(Header... headers) {
-    getOrCreateHeaders().withEntries(headers);
     this.hashCode = 0;
     return this;
   }
@@ -299,20 +259,6 @@ public class HttpResponse extends Action<HttpResponse>
     }
   }
 
-  /**
-   * Returns true if a header with the specified name has been added
-   *
-   * @param name the header name
-   * @return true if a header has been added with that name otherwise false
-   */
-  public boolean containsHeader(String name) {
-    if (this.headers != null) {
-      return this.headers.containsEntry(name);
-    } else {
-      return false;
-    }
-  }
-
   public HttpResponse removeHeader(String name) {
     if (this.headers != null) {
       headers.remove(name);
@@ -336,10 +282,6 @@ public class HttpResponse extends Action<HttpResponse>
     }
   }
 
-  public Cookies getCookies() {
-    return this.cookies;
-  }
-
   private Cookies getOrCreateCookies() {
     if (this.cookies == null) {
       this.cookies = new Cookies();
@@ -358,51 +300,6 @@ public class HttpResponse extends Action<HttpResponse>
     return this;
   }
 
-  /**
-   * The cookies to return as Set-Cookie headers as a list of Cookie objects
-   *
-   * @param cookies a list of Cookie objects
-   */
-  public HttpResponse withCookies(List<Cookie> cookies) {
-    getOrCreateCookies().withEntries(cookies);
-    this.hashCode = 0;
-    return this;
-  }
-
-  /**
-   * The cookies to return as Set-Cookie headers as a varargs of Cookie objects
-   *
-   * @param cookies a varargs of Cookie objects
-   */
-  public HttpResponse withCookies(Cookie... cookies) {
-    getOrCreateCookies().withEntries(cookies);
-    this.hashCode = 0;
-    return this;
-  }
-
-  /**
-   * Add cookie to return as Set-Cookie header
-   *
-   * @param cookie a Cookie object
-   */
-  public HttpResponse withCookie(Cookie cookie) {
-    getOrCreateCookies().withEntry(cookie);
-    this.hashCode = 0;
-    return this;
-  }
-
-  /**
-   * Add cookie to return as Set-Cookie header
-   *
-   * @param name the cookies name
-   * @param value the cookies value
-   */
-  public HttpResponse withCookie(String name, String value) {
-    getOrCreateCookies().withEntry(new Cookie(name, value));
-    this.hashCode = 0;
-    return this;
-  }
-
   public List<Cookie> getCookieList() {
     if (this.cookies != null) {
       return this.cookies.getEntries();
@@ -411,27 +308,10 @@ public class HttpResponse extends Action<HttpResponse>
     }
   }
 
-  public boolean cookieHeaderDoesNotAlreadyExists(String name, String value) {
-    List<String> setCookieHeaders = getHeader(SET_COOKIE.toString());
-    for (String setCookieHeader : setCookieHeaders) {
-      String existingCookieName = ClientCookieDecoder.LAX.decode(setCookieHeader).name();
-      String existingCookieValue = ClientCookieDecoder.LAX.decode(setCookieHeader).value();
-      if (existingCookieName.equalsIgnoreCase(name)
-          && existingCookieValue.equalsIgnoreCase(value)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   public HttpResponse withStreamId(Integer streamId) {
     this.streamId = streamId;
     this.hashCode = 0;
     return this;
-  }
-
-  public Integer getStreamId() {
-    return streamId;
   }
 
   @Override
@@ -440,16 +320,6 @@ public class HttpResponse extends Action<HttpResponse>
     return Type.RESPONSE;
   }
 
-  public HttpResponse shallowClone() {
-    return response()
-        .withStatusCode(statusCode)
-        .withReasonPhrase(reasonPhrase)
-        .withBody(body)
-        .withHeaders(headers)
-        .withCookies(cookies)
-        .withDelay(getDelay())
-        .withStreamId(streamId);
-  }
 
   @SuppressWarnings("MethodDoesntCallSuperMethod")
   public HttpResponse clone() {

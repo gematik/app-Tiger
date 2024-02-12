@@ -323,7 +323,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
       log.error(
           "Could not find request for response with id {}! Skipping response parsing!",
           req.getLogCorrelationId());
-      tigerProxy.getRbelMessages().stream()
+      tigerProxy.getRbelMessages()
           .forEach(msg -> log.info("Message: {} : {}", msg.getUuid(), msg));
       throw new TigerProxyParsingException(
           "Not able to find parsed request for uuid " + req.getLogCorrelationId() + "!");
@@ -358,7 +358,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
         RbelListFacet.builder()
             .childNodes(
                 httpRequest.getClientCertificateChain().stream()
-                    .map(X509Certificate::getCertificate)
+                    .map(MockserverX509CertificateWrapper::certificate)
                     .map(cert -> mapToRbelElement(cert, message))
                     .toList())
             .build());

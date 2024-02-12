@@ -27,9 +27,7 @@ public class KeyToMultiValue extends ObjectWithJsonToString {
       this.values = Collections.singletonList(values[0]);
     } else {
       this.values = new LinkedList<>();
-      for (String value : values) {
-        this.values.add(value);
-      }
+      this.values.addAll(Arrays.asList(values));
     }
   }
 
@@ -41,41 +39,5 @@ public class KeyToMultiValue extends ObjectWithJsonToString {
       this.values = new LinkedList<>(values);
     }
     this.hashCode = Objects.hash(this.name, this.values);
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public List<String> getValues() {
-    return values;
-  }
-
-  public void replaceValues(List<String> values) {
-    if (this.values != values) {
-      this.values.clear();
-      this.values.addAll(values);
-    }
-  }
-
-  private void addValue(final String value) {
-    if (values != null && !values.contains(value)) {
-      values.add(value);
-    }
-    this.hashCode = Objects.hash(name, values);
-  }
-
-  private void addValues(final List<String> values) {
-    if (this.values != null) {
-      for (String value : values) {
-        if (!this.values.contains(value)) {
-          this.values.add(value);
-        }
-      }
-    }
-  }
-
-  public void addValues(final String... values) {
-    addValues(Arrays.asList(values));
   }
 }

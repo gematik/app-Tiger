@@ -6,7 +6,7 @@ package de.gematik.test.tiger.mockserver.mappers;
 
 
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
-import de.gematik.test.tiger.mockserver.model.X509Certificate;
+import de.gematik.test.tiger.mockserver.model.MockserverX509CertificateWrapper;
 import java.io.ByteArrayInputStream;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -24,7 +24,7 @@ public class JDKCertificateToMockServerX509Certificate {
   public HttpRequest setClientCertificates(
       HttpRequest httpRequest, Certificate[] clientCertificates) {
     if (clientCertificates != null) {
-      List<X509Certificate> x509Certificates =
+      List<MockserverX509CertificateWrapper> x509Certificates =
           Arrays.stream(clientCertificates)
               .flatMap(
                   certificate -> {
@@ -34,15 +34,7 @@ public class JDKCertificateToMockServerX509Certificate {
                               CertificateFactory.getInstance("X.509")
                                   .generateCertificate(
                                       new ByteArrayInputStream(certificate.getEncoded()));
-                      return Stream.of(
-                          new X509Certificate()
-                              .withSerialNumber(x509Certificate.getSerialNumber().toString())
-                              .withIssuerDistinguishedName(
-                                  x509Certificate.getIssuerX500Principal().getName())
-                              .withSubjectDistinguishedName(
-                                  x509Certificate.getSubjectX500Principal().getName())
-                              .withSignatureAlgorithmName(x509Certificate.getSigAlgName())
-                              .withCertificate(certificate));
+                      return Stream.of(MockserverX509CertificateWrapper.with(x509Certificate));
                     } catch (Exception e) {
                       log.info("exception decoding client certificate", e);
                     }
