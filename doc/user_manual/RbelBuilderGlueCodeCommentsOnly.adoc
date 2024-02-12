@@ -1,0 +1,46 @@
+##### TGR erstellt ein neues Rbel-Objekt {tigerResolvedString} mit Inhalt {tigerResolvedString}
+##### TGR creates a new Rbel object {tigerResolvedString} with content {tigerResolvedString}
+Creates a new Rbel object with a given key and string content; the string can be a jexl
+expression
+
+*param* name key of Rbel object
+*param* content content of Rbel object, or jexl expression resolving to one
+
+##### TGR erstellt ein neues leeres Rbel-Objekt {tigerResolvedString} mit Typ {rbelContentType}
+##### TGR creates a new empty Rbel object {tigerResolvedString} of type {rbelContentType}
+Creates a new empty Rbel object
+
+*param* name key of Rbel object
+
+##### TGR setzt Rbel-Objekt {tigerResolvedString} an Stelle {tigerResolvedString} auf Wert {tigerResolvedString}
+##### TGR sets Rbel object {tigerResolvedString} at {tigerResolvedString} to new value {tigerResolvedString}
+Sets a value of an object at a specified path; newValue is of type String
+
+*param* objectName name of object in rbelBuilders
+*param* rbelPath path which is to be set
+*param* newValue new value to be set
+
+##### TGR ergänzt Rbel-Objekt {tigerResolvedString} an Stelle {tigerResolvedString} um {tigerResolvedString}
+##### TGR extends Rbel object {tigerResolvedString} at path {tigerResolvedString} by a new entry {tigerResolvedString}
+Adds a new entry to an array or a list of a Rbel object at a specific path
+
+*param* objectName name of Rbel object
+*param* rbelPath path of array/list
+*param* newEntry new entry
+
+##### TGR prüft, dass Rbel-Objekt {tigerResolvedString} an Stelle {tigerResolvedString} gleich {tigerResolvedString} ist
+##### TGR asserts Rbel object {tigerResolvedString} at {tigerResolvedString} equals {tigerResolvedString}
+Asserts whether a string value at a given path of the rootTreeNode of a RbelBuilder is a
+certain value
+
+*param* objectName name of RbelBuilder in rbelBuilders Map
+*param* rbelPath Path to specific node
+*param* expectedValue value to be asserted
+
+##### TGR prüft, dass {tigerResolvedString} gleich {tigerResolvedString} mit Typ {rbelContentType} ist
+##### TGR asserts {tigerResolvedString} equals {tigerResolvedString} of type {rbelContentType}
+Asserts, if 2 Rbel object serializations are equal
+
+*param* jexlExpressionActual actual value
+*param* jexlExpressionExpected expected value
+*param* contentType type of Rbel object content for comparison
