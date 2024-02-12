@@ -92,6 +92,35 @@ servers:
   @TigerTest(
       tigerYaml =
           """
+    servers:
+      zionServer:
+        type: zion
+        zionConfiguration:
+          serverPort: "${free.port.10}"
+          mockResponses:
+            loop:
+              requestCriterions:
+                - message.url =~ '.*/loop.*'
+              response:
+                statusCode: 200
+                body: '<?xml version="1.0"?>
+                <rootNode>
+                    <repeatedTag tgrFor="i : 1..!{$.path.number.value}">Nummer ${i}</repeatedTag>
+                </rootNode>'
+        """)
+  @Test
+  void testLoopWithPlacedholderValue(UnirestInstance unirest) {
+    final HttpResponse<String> response =
+        unirest
+            .get(TigerGlobalConfiguration.resolvePlaceholders("http://zionServer/loop?number=4"))
+            .asString();
+
+    assertThat(response.getBody()).contains("<repeatedTag>Nummer 4</repeatedTag>");
+  }
+
+  @TigerTest(
+      tigerYaml =
+          """
         servers:
           mainServer:
             type: zion

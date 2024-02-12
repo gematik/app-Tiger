@@ -60,6 +60,7 @@ lib:
   are now correctly parsed.
 * TGR-1266: Invalid configurations for servers are not reported in console or workflow UI but abort the test env mgr
   silently.
+* TGR-1304: Loop-Statements in Zion definitions are now correctly resolved.
 * TGR-1276: The RbelWriter now correctly serializes XML-Namespaces.
 * TGR-1262: Step "TGR pause test run execution with message {string}" and step "TGR pause test run execution
   with message {tigerResolvedString} and message in case of error {tigerResolvedString}" will now correctly

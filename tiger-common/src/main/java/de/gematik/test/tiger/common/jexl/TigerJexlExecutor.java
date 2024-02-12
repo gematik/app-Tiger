@@ -60,7 +60,7 @@ public class TigerJexlExecutor {
               + "' and got more then one result. Expected one ore zero results.");
     }
     if (resultList.size() == 1) {
-      return Optional.of(resultList.get(0));
+      return Optional.ofNullable(resultList.get(0));
     } else {
       return Optional.empty();
     }
@@ -176,6 +176,10 @@ public class TigerJexlExecutor {
   }
 
   public JexlScript buildScript(String jexlScript) {
-    return getJexlEngine().createScript(jexlScript);
+    try {
+      return getJexlEngine().createScript(jexlScript);
+    } catch (RuntimeException e) {
+      throw new TigerJexlException("Error while parsing script '" + jexlScript + "'", e);
+    }
   }
 }

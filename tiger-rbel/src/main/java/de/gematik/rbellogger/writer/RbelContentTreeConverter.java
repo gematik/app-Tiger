@@ -125,7 +125,9 @@ public class RbelContentTreeConverter {
     final Map<String, Object> jexlMapContext =
         TigerJexlExecutor.buildJexlMapContext(context.getRootElement(), Optional.ofNullable(key));
     context.putAll(jexlMapContext);
-    rbelJexlExecutor.buildScript("t = " + loopStatement.split(":")[1]).execute(context);
+    final String resolvedLoopStatement =
+        TigerGlobalConfiguration.resolvePlaceholdersWithContext(loopStatement, context);
+    rbelJexlExecutor.buildScript("t = " + resolvedLoopStatement.split(":")[1]).execute(context);
     final List<RbelContentTreeNode> resultList = new ArrayList<>();
     for (Object iterate : ((Collection) context.get("t"))) {
       BasicTigerConfigurationSource localSource =
