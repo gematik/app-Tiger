@@ -81,8 +81,6 @@ pipeline {
                         mavenBuild(POM_PATH)
                     }
                 }
-
-                }
                 stage('prepare external release') {
                     steps {
                         dockerLoginGematikRegistry()
