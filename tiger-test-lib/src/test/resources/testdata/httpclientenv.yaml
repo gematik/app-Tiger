@@ -15,7 +15,7 @@ servers:
     healthcheckUrl: http://localhost:${free.port.0}/status/200
   remoteTigerProxy:
     type: tigerProxy
-    tigerProxyCfg:
+    tigerProxyConfiguration:
       adminPort: ${free.port.2}
       activateRbelParsing: false
       rbelBufferSizeInMb: 0

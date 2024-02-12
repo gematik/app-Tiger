@@ -122,7 +122,7 @@
             },
             "description":""
           },
-          "tigerProxyCfg":{
+          "tigerProxyConfiguration":{
             "type":"object",
             "properties":{
               "adminPort":{

@@ -12,7 +12,7 @@ servers:
 
   reverseproxy2:
     type: tigerProxy
-    tigerProxyCfg:
+    tigerProxyConfiguration:
       adminPort: ${free.port.1}
       proxyPort: ${free.port.2}
       proxyRoutes:

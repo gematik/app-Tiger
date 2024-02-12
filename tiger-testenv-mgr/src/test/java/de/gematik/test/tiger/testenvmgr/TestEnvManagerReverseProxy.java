@@ -34,7 +34,7 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
                 - --webroot=.
           reverseproxy1:
             type: tigerProxy
-            tigerProxyCfg:
+            tigerProxyConfiguration:
               adminPort: ${free.port.2}
               proxiedServer: testWinstone2
               proxyPort: ${free.port.3}
@@ -94,7 +94,7 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
               + "        - --webroot=..\n"
               + "  reverseproxy1:\n"
               + "    type: tigerProxy\n"
-              + "    tigerProxyCfg:\n"
+              + "    tigerProxyConfiguration:\n"
               + "      adminPort: ${free.port.2}\n"
               + "      proxiedServer: testWinstone2\n"
               + "      proxyPort: ${free.port.3}\n")
@@ -124,7 +124,7 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
               + "  proxykon2:\n"
               + "    type: tigerProxy\n"
               + "    active: true\n"
-              + "    tigerProxyCfg:\n"
+              + "    tigerProxyConfiguration:\n"
               + "      adminPort: ${free.port.1}\n"
               + "      proxyPort: ${free.port.2}\n"
               + "      tls:\n"

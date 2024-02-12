@@ -77,7 +77,7 @@ class TestEnvManagerConfigurationCheck {
           "servers:\n"
               + "  testTigerProxy:\n"
               + "    type: tigerProxy\n"
-              + "    tigerProxyCfg:\n"
+              + "    tigerProxyConfiguration:\n"
               + "      adminPort: 9999",
       skipEnvironmentSetup = true)
   void testCheckCfgPropertiesMissingParamMandatoryServerPortProp_NOK(TigerTestEnvMgr envMgr) {
@@ -143,14 +143,14 @@ class TestEnvManagerConfigurationCheck {
               + "    exports: \n"
               + "      - FOO_BAR=${custom.value}\n"
               + "      - OTHER_PORT=${FREE_PORT_203}\n"
-              + "    tigerProxyCfg:\n"
+              + "    tigerProxyConfiguration:\n"
               + "      adminPort: ${FREE_PORT_201}\n"
               + "      proxyPort: ${FREE_PORT_202}\n"
               + "  tigerServer2:\n"
               + "    hostname: ${foo.bar}\n"
               + "    type: tigerProxy\n"
               + "    dependsUpon: tigerServer1\n"
-              + "    tigerProxyCfg:\n"
+              + "    tigerProxyConfiguration:\n"
               + "      adminPort: ${free.port.203}\n"
               + "      proxiedServerProtocol: ${FOO_BAR}\n"
               + "      proxyPort: ${free.port.204}\n"
@@ -165,14 +165,14 @@ class TestEnvManagerConfigurationCheck {
   void testPlaceholderAndExports(TigerTestEnvMgr envMgr) {
     final AbstractTigerServer tigerServer2 = envMgr.getServers().get("tigerServer2");
     String port203 = TigerGlobalConfiguration.readString("free.port.203");
-    assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getAdminPort())
+    assertThat(tigerServer2.getConfiguration().getTigerProxyConfiguration().getAdminPort())
         .asString()
         .isEqualTo(port203);
-    assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxyPort())
+    assertThat(tigerServer2.getConfiguration().getTigerProxyConfiguration().getProxyPort())
         .asString()
         .isEqualTo(TigerGlobalConfiguration.readString("free.port.204"));
     assertThat(TigerGlobalConfiguration.readString("other.port")).isEqualTo(port203);
-    assertThat(tigerServer2.getConfiguration().getTigerProxyCfg().getProxiedServerProtocol())
+    assertThat(tigerServer2.getConfiguration().getTigerProxyConfiguration().getProxiedServerProtocol())
         .isEqualTo("ftp");
   }
 
@@ -457,13 +457,13 @@ class TestEnvManagerConfigurationCheck {
           "servers:\n"
               + "  testTigerProxy:\n"
               + "    type: tigerProxy\n"
-              + "    tigerProxyCfg:\n"
+              + "    tigerProxyConfiguration:\n"
               + "      adminPort: 9999",
       skipEnvironmentSetup = true)
   void defaultForLocalTigerProxyShouldBeBlockingMode(TigerTestEnvMgr envMgr) {
     envMgr.startLocalTigerProxyIfActivated();
     CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
-    assertThat(srv.getTigerProxyCfg().isParsingShouldBlockCommunication()).isFalse();
+    assertThat(srv.getTigerProxyConfiguration().isParsingShouldBlockCommunication()).isFalse();
     assertThat(
             envMgr
                 .getLocalTigerProxyOrFail()
@@ -494,13 +494,13 @@ class TestEnvManagerConfigurationCheck {
               + "    type: tigerProxy\n"
               + "    exports: \n"
               + "      - OTHER_PORT=${FREE_PORT_3}\n"
-              + "    tigerProxyCfg:\n"
+              + "    tigerProxyConfiguration:\n"
               + "      adminPort: ${FREE_PORT_1}\n"
               + "      proxyPort: ${FREE_PORT_2}\n"
               + "  tigerServer2:\n"
               + "    type: tigerProxy\n"
               + "    dependsUpon: tigerServer1\n"
-              + "    tigerProxyCfg:\n"
+              + "    tigerProxyConfiguration:\n"
               + "      adminPort: ${OTHER_PORT}\n"
               + "      proxyPort: ${free.port.4}\n"
               + "localProxyActive: false\n")
@@ -510,7 +510,7 @@ class TestEnvManagerConfigurationCheck {
                 .getServers()
                 .get("tigerServer2")
                 .getConfiguration()
-                .getTigerProxyCfg()
+                .getTigerProxyConfiguration()
                 .getAdminPort())
         .isEqualTo(TigerGlobalConfiguration.readIntegerOptional("free.port.3").get());
   }

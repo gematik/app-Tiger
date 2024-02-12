@@ -3,7 +3,7 @@ tigerProxy:
 servers:
   testPkiKeysWithMissingCertificate:
     type: tigerProxy
-    tigerProxyCfg:
+    tigerProxyConfiguration:
       adminPort: ${free.port.2}
       proxyPort: ${free.port.3}
     pkiKeys:

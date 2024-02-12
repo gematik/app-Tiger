@@ -28,6 +28,8 @@
   dependency issues in test suites you are enforced to depend on your own version of lombok IF you need it from this
   version on.
 * TGR-1276: Ordering of XML-Nodes has changed (now attributes always come first, then child nodes).
+* TGR-650: the configuration key `tigerProxyCfg` is renamed in `tigerProxyConfiguration`. You need to update your
+  configuration yamls if you use this key.
 
 ## Features
 
@@ -54,7 +56,8 @@ lib:
 
 * TGR-949: Tiger-Proxy only adds trailing slashes to requests if the request explicitly demands it.
 * TGR-938: XML-Messages with UTF-8 content can now be transmitted without alteration.
-* TGR-1254: RbelPath-Expressions with a selector and a qualification immediately after (e.g. $..foo[?(content=='bar')]) are now correctly parsed.
+* TGR-1254: RbelPath-Expressions with a selector and a qualification immediately after (e.g. $..foo[?(content=='bar')])
+  are now correctly parsed.
 * TGR-1266: Invalid configurations for servers are not reported in console or workflow UI but abort the test env mgr
   silently.
 * TGR-1276: The RbelWriter now correctly serializes XML-Namespaces.

@@ -35,7 +35,7 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
               + "servers:\n"
               + "  upstreamProxy:\n"
               + "    type: tigerProxy\n"
-              + "    tigerProxyCfg:\n"
+              + "    tigerProxyConfiguration:\n"
               + "      adminPort: ${free.port.1}\n"
               + "      proxyPort: ${free.port.2}\n")
   void filterForEpaKvnr(TigerTestEnvMgr envMgr) {

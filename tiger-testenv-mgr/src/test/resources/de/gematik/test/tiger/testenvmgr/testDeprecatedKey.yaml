@@ -28,7 +28,7 @@ servers:
 
   remoteTigerProxy:
     type: tigerProxy
-    tigerProxyCfg:
+    tigerProxyConfiguration:
       serverPort: ${free.port.2}
       proxyCfg:
         activateRbelParsing: false

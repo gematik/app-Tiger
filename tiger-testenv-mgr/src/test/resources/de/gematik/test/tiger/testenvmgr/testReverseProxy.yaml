@@ -12,7 +12,7 @@ servers:
 
   reverseproxy1:
     type: tigerProxy
-    tigerProxyCfg:
+    tigerProxyConfiguration:
       adminPort: ${free.port.2}
       proxiedServer: testWinstone2
       proxyPort: ${free.port.3}
