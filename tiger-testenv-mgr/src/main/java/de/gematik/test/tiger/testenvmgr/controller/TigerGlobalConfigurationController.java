@@ -49,7 +49,8 @@ public class TigerGlobalConfigurationController {
   }
 
   @GetMapping("/{keyPrefix}")
-  public Map<String, String> loadSubsetOfConfiguration(@PathVariable String keyPrefix) {
+  public Map<String, String> loadSubsetOfConfiguration(
+      @PathVariable("keyPrefix") String keyPrefix) {
     return TigerGlobalConfiguration.readMap(keyPrefix);
   }
 

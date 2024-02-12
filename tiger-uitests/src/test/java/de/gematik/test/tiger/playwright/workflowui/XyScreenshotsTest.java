@@ -79,14 +79,14 @@ class XyScreenshotsTest extends AbstractTests {
   @Test
   void screenshotMainContent() {
     page.querySelector("#test-execution-pane-tab").click();
-    screenshot(page, "maincontent_date_highlight.png", "test-execution-pane-date", true);
+    screenshotElementById(page, "maincontent_date_highlight.png", "test-execution-pane-date");
     page.evaluate(
         "document.getElementById(\"test-execution-pane-tab\").parentElement.style.backgroundColor='yellow'");
     screenshot(page, "maincontent_tabs_highlight.png");
     page.evaluate(
         "document.getElementById(\"test-execution-pane-tab\").parentElement.style.removeProperty(\"background-color\")");
 
-    screenshot(page, "featuretitle_highlight.png", "test-execution-pane-feature-title", false);
+    screenshotByClassname(page, "featuretitle_highlight.png", "test-execution-pane-feature-title");
 
     page.evaluate(
         "document.getElementsByClassName(\"test-feature-status-word\")[0].style.backgroundColor='yellow'");
@@ -137,11 +137,11 @@ class XyScreenshotsTest extends AbstractTests {
   void screenshotServerLog() {
     page.querySelector("#test-server-log-tab").click();
     screenshot(page, "maincontent_serverlog.png");
-    screenshot(
-        page, "maincontent_serverlog_buttons_highlight.png", "test-server-log-pane-buttons", true);
+    screenshotElementById(
+        page, "maincontent_serverlog_buttons_highlight.png", "test-server-log-pane-buttons");
 
     page.querySelector("#test-server-log-pane-select").click();
-    screenshot(page, "serverlog_level_highlight.png", "test-server-log-pane-select", true);
+    screenshotElementById(page, "serverlog_level_highlight.png", "test-server-log-pane-select");
   }
 
   @SuppressWarnings("squid:S2699")
@@ -155,7 +155,8 @@ class XyScreenshotsTest extends AbstractTests {
         .untilAsserted(() -> assertNotNull(externalPage.locator(".test-message-number").first()));
     externalPage.locator(".test-message-number").first().click();
     screenshot(externalPage, "webui.png");
-    screenshot(externalPage, "webui_inspect_highlight.png", "test-btn-inspect", false);
+    screenshotByClassname(externalPage, "webui_inspect_highlight.png", "test-btn-inspect");
+    screenshotByClassname(externalPage, "webui_message_partner.png", "partner-message-button");
 
     externalPage.locator("#dropdown-hide-button").click();
     externalPage

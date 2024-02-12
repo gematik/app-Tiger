@@ -60,7 +60,7 @@ class ForwardProxyInfoTest {
         servers:
           someProxyServer:
             type: tigerProxy
-            tigerProxyCfg:
+            tigerProxyConfiguration:
               adminPort: ${free.port.14}
               proxyPort: ${free.port.24}
           virtualExternalServer:
@@ -168,7 +168,7 @@ class ForwardProxyInfoTest {
         servers:
           someProxyServer:
             type: tigerProxy
-            tigerProxyCfg:
+            tigerProxyConfiguration:
               adminPort: ${free.port.11}
               proxyPort: ${free.port.21}
           virtualExternalServer:
@@ -256,7 +256,7 @@ class ForwardProxyInfoTest {
         servers:
           someProxyServer:
             type: tigerProxy
-            tigerProxyCfg:
+            tigerProxyConfiguration:
               adminPort: ${free.port.12}
               proxyPort: ${free.port.22}
           virtualExternalServer:
@@ -286,7 +286,7 @@ class ForwardProxyInfoTest {
         servers:
           someProxyServer:
             type: tigerProxy
-            tigerProxyCfg:
+            tigerProxyConfiguration:
               adminPort: ${free.port.16}
               proxyPort: ${free.port.26}
           virtualExternalServer:

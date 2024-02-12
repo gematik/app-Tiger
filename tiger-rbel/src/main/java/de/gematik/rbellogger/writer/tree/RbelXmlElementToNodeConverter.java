@@ -22,6 +22,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelXmlAttributeFacet;
 import de.gematik.rbellogger.data.facet.RbelXmlFacet;
+import de.gematik.rbellogger.data.facet.RbelXmlNamespaceFacet;
 import de.gematik.rbellogger.writer.RbelContentTreeConverter;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
@@ -35,6 +36,9 @@ import org.apache.commons.lang3.tuple.Pair;
 public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNodeConverter {
 
   public static final String IS_XML_ATTRIBUTE = "isXmlAttribute";
+  public static final String IS_XML_NAMESPACE_PREFIX = "isXmlNamespacePrefix";
+  public static final String XML_NAMESPACE_PREFIX = "namespacePrefix";
+  public static final String XML_NAMESPACE_URI = "namespaceUri";
 
   @Override
   public boolean shouldConvert(RbelElement target) {
@@ -68,6 +72,11 @@ public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNo
     final List<RbelContentTreeNode> nodes = new ArrayList<>();
     for (RbelContentTreeNode node :
         converter.convertNode(entry.getValue(), entry.getKey(), context)) {
+      // skip namespace attributes
+      if (entry.getValue().hasFacet(RbelXmlNamespaceFacet.class)) {
+        continue;
+      }
+
       // add attributes
       if (entry.getValue().hasFacet(RbelXmlAttributeFacet.class)) {
         node.attributes().put(IS_XML_ATTRIBUTE, "true");
@@ -80,6 +89,14 @@ public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNo
           addChildNode(node, childNode, childNodes);
         }
         node.setupChildNodes(childNodes);
+        entry.getValue().getFacet(RbelXmlFacet.class).ifPresent(rbelXmlFacet -> {
+          if (rbelXmlFacet.getNamespacePrefix() != null) {
+            node.attributes().put(XML_NAMESPACE_PREFIX, rbelXmlFacet.getNamespacePrefix());
+          }
+          if (rbelXmlFacet.getNamespaceUri() != null) {
+            node.attributes().put(XML_NAMESPACE_URI, rbelXmlFacet.getNamespaceUri());
+          }
+        });
       }
       nodes.add(node);
     }

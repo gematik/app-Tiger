@@ -151,7 +151,7 @@ public class RbelHttpHeaderFacet implements RbelFacet, Map<String, RbelElement> 
   }
 
   public List<Entry<String, RbelElement>> entries() {
-    return values.getValues();
+    return values.getValues().stream().toList();
   }
 
   @Override

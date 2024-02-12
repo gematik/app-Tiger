@@ -75,7 +75,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     }
   }
 
-  static String determineHostname(CfgServer configuration, String serverId) {
+  protected static String determineHostname(CfgServer configuration, String serverId) {
     if (StringUtils.isNotBlank(configuration.getHostname())) {
       return configuration.getHostname();
     } else {
@@ -120,7 +120,17 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
 
     reloadConfiguration();
 
-    assertThatConfigurationIsCorrect();
+    try {
+      assertThatConfigurationIsCorrect();
+    } catch (RuntimeException rte) {
+      publishNewStatusUpdate(
+          TigerServerStatusUpdate.builder()
+              .status(TigerServerStatus.STOPPED)
+              .statusMessage("Configuration " + getServerId() + " invalid")
+              .build());
+      log.error("Invalid configuration for server " + serverId + "! Got " + rte.getMessage(), rte);
+      throw rte;
+    }
 
     configuration.getEnvironment().stream()
         .map(testEnvMgr::replaceSysPropsInString)

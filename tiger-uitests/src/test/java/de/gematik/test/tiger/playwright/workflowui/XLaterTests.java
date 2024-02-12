@@ -138,8 +138,7 @@ class XLaterTests extends AbstractTests {
     page.locator("#test-webui-slider").click();
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
-    await()
-        .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
+    await().untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
     externalPage.locator("#routeModalBtn").click();
     assertAll(
         () -> assertThat(externalPage.locator("#routeModalDialog").isVisible()).isTrue(),
@@ -160,8 +159,7 @@ class XLaterTests extends AbstractTests {
     page.locator("#test-webui-slider").click();
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
-    await()
-        .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
+    await().untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
     assertAll(
         () -> assertThat(externalPage.locator("#test-tiger-logo").isVisible()).isTrue(),
         () -> assertThat(externalPage.locator("#routeModalBtn").isVisible()).isTrue(),

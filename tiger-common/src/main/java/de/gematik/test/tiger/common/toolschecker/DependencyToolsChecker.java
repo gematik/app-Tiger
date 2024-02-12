@@ -26,8 +26,7 @@ public class DependencyToolsChecker {
 
   public DependencyCheckResult areNecessaryDependenciesAvailable() {
     if (Boolean.FALSE.equals(
-        TigerConfigurationKeys.ExperimentalFeatures.TRAFFIC_VISUALIZATION_ACTIVE
-            .getValueOrDefault())) {
+        TigerConfigurationKeys.TRAFFIC_VISUALIZATION_ACTIVE.getValueOrDefault())) {
       return new DependencyCheckResult(true, "");
     }
     if (isItWindows()) {

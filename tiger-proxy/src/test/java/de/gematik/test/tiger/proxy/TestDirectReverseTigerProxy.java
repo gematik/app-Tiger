@@ -119,7 +119,6 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
                     .getRawStringContent())
             .isEqualTo("" + clientSocket.getLocalPort());
 
-        System.out.println(tigerProxy.getRbelMessagesList().get(0).printTreeStructure());
         // check timing
         final ZonedDateTime requestTime =
             tigerProxy

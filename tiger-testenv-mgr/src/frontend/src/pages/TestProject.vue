@@ -119,7 +119,7 @@
                 execution</a>
               <a id="test-server-log-tab" class="btn execution-pane-buttons" @click="showTab('logs_pane', $event)">Server
                 Logs</a>
-              <a v-if="experimentalFeatures.trafficVisualization" class="btn execution-pane-buttons"
+              <a v-if="features.trafficVisualization" class="btn execution-pane-buttons"
                  @click="showTab('visualization_pane', $event)">Traffic
                 Visualization</a>
             </div>
@@ -131,7 +131,7 @@
 
         <!-- tabs -->
         <div class="tab-content">
-          <ExecutionPane
+          <execution-pane
               :featureUpdateMap="featureUpdateMap"
               :bannerMessage="bannerData.length ? bannerData[bannerData.length-1] : false"
               :localProxyWebUiUrl="localProxyWebUiUrl"
@@ -142,10 +142,11 @@
           <ServerLog :serverLogs="serverLogList" :logServers="logServers" :selectedServers="selectedServers"
                      :selectedLoglevel="LogLevel.ALL.toString()" :selected-text="''"/>
           <traffic-visualization
-              v-if="experimentalFeatures.trafficVisualization"
+              v-if="features.trafficVisualization"
               :featureUpdateMap="featureUpdateMap"
               :ui="ui"/>
         </div>
+        <rbel-log-details-pane :ui="ui" :local-proxy-web-ui-url="localProxyWebUiUrl"></rbel-log-details-pane>
       </div>
     </div>
   </div>
@@ -204,11 +205,12 @@ import 'vue3-side-panel/dist/vue3-side-panel.css';
 import {VueSidePanel} from "vue3-side-panel";
 import TrafficVisualization from "@/components/sequence_diagram/TrafficVisualization.vue";
 import {useConfigurationLoader} from "@/components/global_configuration/ConfigurationLoader";
-import {ExperimentalFeatures} from "@/types/ExperimentalFeatures";
+import {Features} from "@/types/Features";
+import RbelLogDetailsPane from "@/components/testsuite/RbelLogDetailsPane.vue";
 
 
 const {loadSubsetOfProperties} = useConfigurationLoader();
-const experimentalFeatures = ref(new ExperimentalFeatures());
+const features = ref(new Features());
 
 
 let baseURL = process.env.BASE_URL;
@@ -247,6 +249,7 @@ let featureUpdateMap: Ref<Map<string, FeatureUpdate>> = ref(new Map<string, Feat
 
 /** list of server logs which contain a log message, a timestamp, a server name and the log level.
  */
+
 let serverLogList: Ref<Array<TigerServerLogDto>> = ref(new Array<TigerServerLogDto>());
 
 let logServers: Ref<Array<string>> = ref(new Array<string>());
@@ -258,7 +261,7 @@ let localProxyWebUiUrl: Ref<string> = ref("");
 let version: Ref<string> = ref("");
 let build: Ref<string> = ref("");
 
-let ui = ref(new Ui(process.env.BASE_URL));
+let ui = ref();
 
 let quitTestrunOngoing: Ref<boolean> = ref(false);
 let shutdownTestrunOngoing: Ref<boolean> = ref(false);
@@ -271,12 +274,12 @@ provide("emitter", emitter);
 
 const configEditorSidePanelIsOpened: Ref<boolean> = ref(false);
 
-async function loadExperimentalFeaturesFlags() {
-  experimentalFeatures.value = ExperimentalFeatures.fromMap(await loadSubsetOfProperties("tiger.lib.experimental"));
+async function loadFeaturesFlags() {
+  features.value = Features.fromMap(await loadSubsetOfProperties("tiger.lib"));
 }
 
 onMounted(() => {
-  ui = ref(new Ui(process.env.BASE_URL));
+  ui = ref(new Ui());
   emitter.on('confirmShutdownPressed', () => {
     quitTestrunOngoing.value = true;
     shutdownTestrunOngoing.value = true;
@@ -285,7 +288,7 @@ onMounted(() => {
   fetchInitialServerStatus();
   fetchTigerVersion();
   fetchTigerBuild();
-  loadExperimentalFeaturesFlags()
+  loadFeaturesFlags()
 });
 
 const DEBUG = true;
@@ -761,4 +764,16 @@ function pauseTestrun(ev: MouseEvent) {
   box-shadow: inset 0px 5px 10px 0px rgba(0, 0, 0, 0.25);
   border: none;
 }
+
+
+.ag-cell-focus, .ag-cell-no-focus {
+  border: none !important;
+}
+
+/* This CSS is to not apply the border for the column having 'no-border' class */
+.no-border.ag-cell:focus {
+  border: none !important;
+  outline: none;
+}
+
 </style>

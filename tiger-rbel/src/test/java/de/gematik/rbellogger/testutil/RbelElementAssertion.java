@@ -11,8 +11,16 @@ import org.assertj.core.api.StringAssert;
 
 public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, RbelElement> {
 
+  private RbelElement initial;
+
   public RbelElementAssertion(RbelElement actual) {
     super(actual, RbelElementAssertion.class);
+    initial = actual;
+  }
+
+  private RbelElementAssertion(RbelElement actual, RbelElement initial) {
+    super(actual, RbelElementAssertion.class);
+    this.initial = initial;
   }
 
   public static RbelElementAssertion assertThat(RbelElement actual) {
@@ -31,7 +39,34 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
           "Expected rbelPath %s to find one member, but did return %s in tree %s",
           rbelPath, kids.size(), actual.printTreeStructureWithoutColors());
     }
-    return new RbelElementAssertion(kids.get(0));
+    return new RbelElementAssertion(kids.get(0), this.actual);
+  }
+
+  public RbelElementAssertion doesNotHaveChildWithPath(String rbelPath) {
+    final List<RbelElement> kids = actual.findRbelPathMembers(rbelPath);
+    if (!kids.isEmpty()) {
+      failWithMessage("Expected rbelPath $s not not find anything, but found %s", rbelPath, kids);
+    }
+    return this.myself;
+  }
+
+  /**
+   * Returns an assertion targeting the initial element of the assertion chain. Can be used to
+   * perform chained assertions on multiple children of the same rbel element.
+   *
+   * <pre>{@code
+   * RbelElementAssertion.assertThat(myElement)
+   *   .extractChildWithPath("$.body.something")
+   *   .hasStringContentEqualTo("foo")
+   *   .andTheInitialElement()
+   *   .extractChildWithPath("$.body.somethingelse")
+   *   .hasStringContentEqualTo("bar");
+   * }</pre>
+   *
+   * @return the assertion targeting the initial element of the current assertion chain
+   */
+  public RbelElementAssertion andTheInitialElement() {
+    return new RbelElementAssertion(this.initial);
   }
 
   public RbelElementAssertion hasStringContentEqualTo(String expectedToString) {

@@ -61,6 +61,7 @@ public class TigerProxyConfiguration {
   @Builder.Default private boolean parsingShouldBlockCommunication = false;
   @Builder.Default private boolean rewriteHostHeader = false;
   @Builder.Default private boolean rewriteLocationHeader = true;
+  @Builder.Default private boolean activateTrafficLogging = true;
 
   @Builder.Default
   private TrafficEndpointConfiguration trafficEndpointConfiguration =
@@ -92,7 +93,7 @@ public class TigerProxyConfiguration {
   @JsonIgnore
   public Integer[] getPortAsArray() {
     if (proxyPort == null) {
-      return null;
+      return null; // NOSONAR
     } else {
       return new Integer[] {proxyPort};
     }

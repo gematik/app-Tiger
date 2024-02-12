@@ -1,5 +1,71 @@
 # Changelog Tiger Test platform
 
+# Release 3.0.0
+
+* Serenity BDD 4.1.0
+* Cucumber 7.15.0
+* RestAssured 5.4.0
+* Selenium 4.16.1
+* Appium 9.0.0
+* Spring Boot 3.2.2
+* Logback 1.4.9
+
+## Breaking changes
+
+* TGR-1270: The order of messages in the TigerProxy is now chronologically. So pairs (request/response) no longer
+  appear next to each other. In the RbelFlow a new icon has been added linking to a potential partner-message.
+* TGR-1270: Messages are now parsed asynchronously. The order of the messages in the TigerProxy is the order of the
+  messages as they were received. This asynchronous parsing means that messages are added to the TigerProxy before they
+  are completely parsed. To minimize confusion the following changes were made:
+    * 'getRbelMessagesList()' now only contains the messages up until the first non-parsed message. This means that the
+      list might not be complete anymore. The RBelValidatorGlue-steps are prepared (They use a timeout to look for the
+      requested message) and should not be affected.
+    * 'getRbelMessages()' contains all messages, including the non-parsed ones. To minimize confusion the '
+      .getLast()', '.getFirst()', '.peekLast()' and '.peekFirst()' methods now wait until the parsing of the requested
+      message is finished. The Iterator ('for(RbelElement msg : tigerProxy.getRbelMessages())') will also wait for the
+      requested message to be parsed.
+* TGR-1264: Lombok packages no longer are provided to depending test suites. Given best practices and to avoid
+  dependency issues in test suites you are enforced to depend on your own version of lombok IF you need it from this
+  version on.
+* TGR-1276: Ordering of XML-Nodes has changed (now attributes always come first, then child nodes).
+* TGR-650: the configuration key `tigerProxyCfg` is renamed in `tigerProxyConfiguration`. You need to update your
+  configuration yamls if you use this key.
+
+## Features
+
+* TGR-898: Tiger-Proxy now no longer depends on mockserver, which has been internalized and stripped down.
+* TGR-1012: clicking a message in the traffic visualization diagram opens the Rbel Log Details pane and scrolls to the
+  corresponding message.
+* TGR-1245: Traffic-Logging added to Tiger-Proxy. Can be turned off via configuration key
+  ```tiger.tigerProxy.activateTrafficLogging: false```
+* TGR-1257: Traffic Visualization feature is documented in user manual.
+* TGR-1273: Added support for local port identification of zion servers so that they can be correctly displayed in the
+  sequence diagrams.
+* TGR-1086: replace OS specific commands with OSHI library for finding ports being used by external jars.
+* TGR-1292: Tiger-Proxy now supports OCSP-stapling. To enable it, set the configuration key
+  ```tiger.tigerProxy.tls.ocspSigner: myOcspSigner.p12;password``` to the path of the OCSP-signer certificate to be used
+  when generating the OCSP responses.
+* TGR-1282: Traffic Visualization feature no longer experimental. Can be turned on via the configuration:
+
+```yaml
+lib:
+  trafficVisualization: true
+```
+
+## Bugfixes
+
+* TGR-949: Tiger-Proxy only adds trailing slashes to requests if the request explicitly demands it.
+* TGR-938: XML-Messages with UTF-8 content can now be transmitted without alteration.
+* TGR-1254: RbelPath-Expressions with a selector and a qualification immediately after (e.g. $..foo[?(content=='bar')])
+  are now correctly parsed.
+* TGR-1266: Invalid configurations for servers are not reported in console or workflow UI but abort the test env mgr
+  silently.
+* TGR-1304: Loop-Statements in Zion definitions are now correctly resolved.
+* TGR-1276: The RbelWriter now correctly serializes XML-Namespaces.
+* TGR-1262: Step "TGR pause test run execution with message {string}" and step "TGR pause test run execution
+  with message {tigerResolvedString} and message in case of error {tigerResolvedString}" will now correctly
+  be distinguished
+
 # Release 2.3.2
 
 ## Breaking changes
@@ -173,18 +239,20 @@ In unix systems the tool 'lsof' is required to be installed in the system.
 
 ```xml
 
-<dependency>
-    <groupId>org.junit.platform</groupId>
-    <artifactId>junit-platform-suite</artifactId>
-    <version>1.9.2</version>
-    <scope>test</scope>
-</dependency>
-<dependency>
-<groupId>io.cucumber</groupId>
-<artifactId>cucumber-junit-platform-engine</artifactId>
-<version>7.11.2</version>
-<scope>test</scope>
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-suite</artifactId>
+        <version>1.9.2</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-junit-platform-engine</artifactId>
+        <version>7.11.2</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
 ```
 
 * TGR-990: first mvp of playwright tests for testing the WorkflowUI added
@@ -1245,7 +1313,7 @@ Aufgrund des breaking changes sind **ALLE** tiger-testenv.yml Dateien im Bereich
 
 ```yaml
 tigerProxy:
-  ...
+# ...
 servers:
   # ALTE VERSION
   - name: idp

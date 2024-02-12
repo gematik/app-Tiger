@@ -15,57 +15,45 @@
  */
 package de.gematik.test.tiger.proxy.data;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
-import static org.mockserver.model.HttpRequest.request;
 
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.AbstractTigerProxyTest;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.model.SocketAddress;
-import org.mockserver.netty.MockServer;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
 @ResetTigerConfiguration
 public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
 
-  public static MockServerClient forwardProxy;
+  @RegisterExtension
+  static WireMockExtension forwardProxy =
+      WireMockExtension.newInstance()
+          .options(wireMockConfig().dynamicPort())
+          .configureStaticDsl(true)
+          .build();
 
   @BeforeAll
-  public static void setupForwardProxy() {
-    final MockServer forwardProxyServer =
-        new MockServer(TigerGlobalConfiguration.readIntegerOptional("free.ports.198").orElse(0));
-
-    forwardProxy = new MockServerClient("localhost", forwardProxyServer.getLocalPort());
+  public static void setupForwardProxy(WireMockRuntimeInfo runtimeInfo) {
     log.info("Started Forward-Proxy-Server on port {}", forwardProxy.getPort());
 
-    forwardProxy
-        .when(request())
-        .forward(
-            req ->
-                forwardOverriddenRequest(
-                        req.withSocketAddress(
-                            "localhost",
-                            fakeBackendServerClient.getPort(),
-                            SocketAddress.Scheme.HTTP))
-                    .getRequestOverride());
-  }
-
-  @AfterAll
-  public static void tearDownMockServer() throws ExecutionException, InterruptedException {
-    forwardProxy.stopAsync().get();
+    forwardProxy.stubFor(
+        get(urlMatching(".*"))
+            .willReturn(aResponse().proxiedFrom("http://localhost:" + runtimeInfo.getHttpPort())));
   }
 
   @Test

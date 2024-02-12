@@ -72,7 +72,7 @@ public class TigerJexlExecutor {
               + "' and got more then one result. Expected one ore zero results.");
     }
     if (resultList.size() == 1) {
-      return Optional.of(resultList.get(0));
+      return Optional.ofNullable(resultList.get(0));
     } else {
       return Optional.empty();
     }
@@ -126,11 +126,12 @@ public class TigerJexlExecutor {
   }
 
   private boolean matchesAsJexlExpressionInternal(Object element, String jexlExpression) {
-    return matchesAsJexlExpression(
+    return matchesAsJexlExpressionInternal(
         jexlExpression, new TigerJexlContext().withCurrentElement(element));
   }
 
   private boolean matchesAsJexlExpressionInternal(String jexlExpression, TigerJexlContext context) {
+    context.shouldIgnoreEmptyRbelPaths();
     final boolean result =
         createNewExecutor().evaluateJexlExpressionInternal(jexlExpression, context).stream()
             .filter(Boolean.class::isInstance)
@@ -158,7 +159,7 @@ public class TigerJexlExecutor {
               expression -> {
                 Object result = expression.evaluate(contextMap);
                 if (activateJexlDebugging) {
-                  log.debug("Evaluated \"{}\" to '{}'", jexlExpression, result);
+                  log.debug("Evaluated JEXL '{}' to '{}'", jexlExpression, result);
                 }
                 return result;
               })
@@ -170,7 +171,7 @@ public class TigerJexlExecutor {
       if (e instanceof JexlException && !(e.getCause() instanceof NoSuchElementException)) {
         throw new TigerJexlException("Error while parsing expression '" + jexlExpression + "'", e);
       }
-      log.warn("Error during Jexl-Evaluation.", e);
+      log.debug("Error during Jexl-Evaluation", e);
       return List.of();
     }
   }
@@ -187,6 +188,10 @@ public class TigerJexlExecutor {
   }
 
   public JexlScript buildScript(String jexlScript) {
-    return getJexlEngine().createScript(jexlScript);
+    try {
+      return getJexlEngine().createScript(jexlScript);
+    } catch (RuntimeException e) {
+      throw new TigerJexlException("Error while parsing script '" + jexlScript + "'", e);
+    }
   }
 }

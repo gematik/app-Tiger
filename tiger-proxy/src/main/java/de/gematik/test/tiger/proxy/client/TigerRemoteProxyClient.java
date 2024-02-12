@@ -54,6 +54,7 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
+// TODO make async compatible
 @Slf4j
 public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCloseable {
 

@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
@@ -87,6 +88,7 @@ class EpaVauParsingTest {
     }
   }
 
+  @SneakyThrows
   @Test
   void verifyRiseTraffic() {
     try (var tigerProxy =
@@ -98,7 +100,6 @@ class EpaVauParsingTest {
                         .build())
                 .activateEpaVauAnalysis(true)
                 .build())) {
-
       TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
           tigerProxy, 16, 30);
 

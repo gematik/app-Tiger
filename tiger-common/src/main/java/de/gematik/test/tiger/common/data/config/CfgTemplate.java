@@ -38,7 +38,7 @@ public class CfgTemplate {
 
   private CfgExternalJarOptions externalJarOptions;
   private CfgDockerOptions dockerOptions = new CfgDockerOptions();
-  private TigerProxyConfiguration tigerProxyCfg;
+  private TigerProxyConfiguration tigerProxyConfiguration;
   private CfgHelmChartOptions helmChartOptions = new CfgHelmChartOptions();
 
   private final List<CfgKey> pkiKeys = new ArrayList<>();

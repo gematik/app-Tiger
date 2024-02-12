@@ -168,7 +168,9 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
                         + processReference.get().pid()
                         + "'");
                 updateGlobalServerMap(
-                    buildHealthcheckUrl(), this.processReference, this.getServerId());
+                    buildHealthcheckUrl().getPort(),
+                    processReference.get().pid(),
+                    this.getServerId());
               } catch (Exception t) {
                 log.error("Failed to start process", t);
                 startupException.set(t);

@@ -182,6 +182,7 @@ class RbelJexlExecutorTest {
         "$.body.header =~ '.*discSig.*'",
         "$.body.body.scopes_supported.[?(@.content == 'e-rezept')] =~ '.*'",
         "$.body.body.scopes_supported.[?(@.content == 'e-rezept')] =~ '.*'",
+        "$.header.['nbf'] =~ '.*'",
         "$.header.['Cache-Control'] =~ 'max-age=300'",
         "$..['urn:telematik:claims:email'] == 'emailValue'",
         "$..kid.* =~ 'discSig'"
@@ -212,6 +213,8 @@ class RbelJexlExecutorTest {
          $.header.['Cache-Control'].blub =~ 'max-age=300',$.header.['Cache-Control'].blub
          $.body.['urn:telematik:claims:email'].test =~ 'max-age=300',$.body.['urn:telematik:claims:email'].test
          $.body.['urn:telematik:claims:email'].* =~ 'max-age=300',$.body.['urn:telematik:claims:email'].*
+         $.header.['Content-Type'] =~ 'max-age=300',$.header.['Content-Type']
+         $.header.Content-Type =~ 'max-age=300',$.header.Content-Type
         """)
   void testRbelPathExtractor(String jexlExpression, String firstRbelPath) {
     assertThat(RbelJexlExecutor.extractPotentialRbelPaths(jexlExpression))

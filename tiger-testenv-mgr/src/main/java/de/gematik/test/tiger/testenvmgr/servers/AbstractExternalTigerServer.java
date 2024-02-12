@@ -22,6 +22,7 @@ import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import de.gematik.test.tiger.proxy.handler.TigerExceptionUtils;
@@ -43,7 +44,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.URIBuilder;
 import org.awaitility.core.ConditionTimeoutException;
 import org.bouncycastle.tls.TlsException;
-import org.mockserver.proxyconfiguration.ProxyConfiguration;
 
 public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
 

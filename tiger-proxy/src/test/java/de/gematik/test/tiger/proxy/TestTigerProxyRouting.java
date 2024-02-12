@@ -18,7 +18,6 @@ package de.gematik.test.tiger.proxy;
 
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockserver.model.HttpRequest.request;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
@@ -90,19 +89,20 @@ class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
 
   public static Stream<Arguments> nestedAndShallowPathTestCases() {
     return Stream.of(
+        // fromPath, requestPath, actualPath, expectedReturnCode
         Arguments.of("/deep", "/foobar", "/deep/foobar", 777),
         Arguments.of("/deep", "/foobar/", "/deep/foobar/", 777),
         Arguments.of("/deep/", "/foobar", "/deep/foobar", 777),
         Arguments.of("/deep/", "/foobar/", "/deep/foobar/", 777),
-        // "/foobar,'','/foobar'", //TODO TGR-949: mockserver-bug. should work
-        Arguments.of("/foobar", "/", "/foobar/", 666),
+        Arguments.of("/foobar", "", "/foobar", 666), // 5
+        Arguments.of("/foobar", "/", "/foobar", 666),
         Arguments.of("/foobar/", "", "/foobar/", 666),
         Arguments.of("/foobar/", "/", "/foobar/", 666),
-        Arguments.of("", "/foobar", "/foobar", 666),
+        Arguments.of("", "/foobar", "/foobar", 666), // 9
         Arguments.of("", "/foobar/", "/foobar/", 666),
         Arguments.of("/", "/foobar", "/foobar", 666),
         Arguments.of("/", "/foobar/", "/foobar/", 666),
-        // "'','',''", //TODO TGR-949: mockserver-bug. should work
+        Arguments.of("", "", "/", 888), // 13
         Arguments.of("", "/", "/", 888),
         Arguments.of("/", "", "/", 888),
         Arguments.of("/", "/", "/", 888));

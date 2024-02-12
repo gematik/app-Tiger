@@ -31,7 +31,6 @@ import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.proxy.data.TigerDownloadedMessageFacet;
 import de.gematik.test.tiger.testenvmgr.config.tigerproxy_standalone.CfgStandaloneProxy;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
-import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Deque;
@@ -63,6 +62,9 @@ class TracingResilienceTest {
   private static final int MASTER_ROUNDS = 1000;
   private static final int MESSAGES_PER_ROUND = 2;
   private ConfigurableApplicationContext aggregatingProxyContext;
+  private TigerProxy receivingProxy;
+
+  private int aggregatingAdminPort;
 
   /** Receiving <-- Aggregating <-- Sending (local) */
   @Test
@@ -74,30 +76,20 @@ class TracingResilienceTest {
           proxyPort: ${free.port.22}
           rbelBufferSizeInMb: 50
           name: Sending proxy
-
-        servers:
-          receivingTigerProxy:
-            type: tigerProxy
-            tigerProxyCfg:
-              trafficEndpoints:
-                - http://localhost:${aggregating.proxy.port}
-              adminPort: ${free.port.10}
-              proxyPort: ${free.port.20}
-              name: Receiving Proxy
-              downloadInitialTrafficFromEndpoints: true
-              connectionTimeoutInSeconds: 100
         """,
       skipEnvironmentSetup = true)
   @Disabled("deactivated due to buildserver problems") // TODO TGR-794
   void generateTrafficAndBounceViaRemoteProxy(TigerTestEnvMgr testEnvMgr) throws IOException {
-    int aggregatingAdminPort;
     try (ServerSocket socket = new ServerSocket(0)) {
       aggregatingAdminPort = socket.getLocalPort();
     }
-    TigerGlobalConfiguration.putValue("aggregating.proxy.port", aggregatingAdminPort);
 
-    bootTigerProxy(aggregatingAdminPort);
+    // Sending Proxy
     testEnvMgr.setUpEnvironment();
+    // Aggregating Proxy
+    bootTigerProxy(aggregatingAdminPort);
+    // Receiving Proxy
+    startReceivingProxy();
 
     final UnirestInstance instance = Unirest.spawnInstance();
     instance.config().proxy("127.0.0.1", readIntegerOptional("free.port.22").orElseThrow());
@@ -116,7 +108,7 @@ class TracingResilienceTest {
         instance
             .get(
                 TigerGlobalConfiguration.resolvePlaceholders(
-                    "http://localhost:${free.port.10}/" + randomMarker))
+                    "http://localhost:${free.port.12}/" + randomMarker))
             .asEmpty();
       }
       giveAggregatingProxyTimeToCatchUpIfRunning(testEnvMgr, i + 1);
@@ -124,7 +116,7 @@ class TracingResilienceTest {
           "Sent {} msgs, sending-proxy has {} msgs, receiving-proxy has {} msgs",
           (i + 1) * MESSAGES_PER_ROUND * 2,
           testEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().size(),
-          getReceivingTigerProxyMessages(testEnvMgr).size());
+          getReceivingTigerProxyMessages().size());
     }
 
     if (aggregatingProxyContext == null) {
@@ -141,10 +133,26 @@ class TracingResilienceTest {
                   MASTER_ROUNDS * MESSAGES_PER_ROUND * 2,
                   testEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().size(),
                   aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessages().size(),
-                  getReceivingTigerProxyMessages(testEnvMgr).size());
+                  getReceivingTigerProxyMessages().size());
               return MASTER_ROUNDS * MESSAGES_PER_ROUND * 2
-                  == getReceivingTigerProxyMessages(testEnvMgr).size();
+                  == getReceivingTigerProxyMessages().size();
             });
+  }
+
+  private void startReceivingProxy() {
+    log.info("Starting Receiving Proxy (Ports {} & {})...", readIntegerOptional("free.port.10").orElseThrow(), readIntegerOptional("free.port.20").orElseThrow());
+    receivingProxy =
+        new TigerProxy(
+            TigerProxyConfiguration.builder()
+                .adminPort(readIntegerOptional("free.port.10").orElseThrow())
+                .proxyPort(readIntegerOptional("free.port.20").orElseThrow())
+                .trafficEndpoints(List.of("http://localhost:" + aggregatingAdminPort))
+                .downloadInitialTrafficFromEndpoints(true)
+                .connectionTimeoutInSeconds(100)
+                .skipTrafficEndpointsSubscription(false)
+                .name("Receiving proxy")
+                .build());
+    log.info("Started Receiving Proxy");
   }
 
   private void giveAggregatingProxyTimeToCatchUpIfRunning(TigerTestEnvMgr testEnvMgr, int round) {
@@ -154,24 +162,21 @@ class TracingResilienceTest {
             .until(
                 () ->
                     testEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().size()
-                        == getReceivingTigerProxyMessages(testEnvMgr).size());
+                        == getReceivingTigerProxyMessages().size());
       } catch (ConditionTimeoutException e) {
         log.error(
             "We sent {} message, intercepted {}, aggregating {}, receiving {}",
             round * MESSAGES_PER_ROUND * 2,
             testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().size(),
             aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessages().size(),
-            getReceivingTigerProxyMessages(testEnvMgr).size());
+            getReceivingTigerProxyMessages().size());
         final List<RbelElement> sendingMsgs =
             getLastRequestPaths(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList());
         final List<RbelElement> aggregatingMsgs =
             getLastRequestPaths(
                 aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessagesList());
         final List<RbelElement> receivingMsgs =
-            getLastRequestPaths(
-                ((TigerProxyServer) testEnvMgr.getServers().get("receivingTigerProxy"))
-                    .getTigerProxy()
-                    .getRbelMessagesList());
+            getLastRequestPaths(receivingProxy.getRbelMessagesList());
         for (int i = 0; i < sendingMsgs.size(); i++) {
           if (makeReadable(sendingMsgs.get(i)).contains("/")) {
             log.error(
@@ -208,7 +213,9 @@ class TracingResilienceTest {
 
   @NotNull
   private List<RbelElement> getLastRequestPaths(List<RbelElement> rbelMessages) {
-    return rbelMessages.stream().skip(rbelMessages.size() - 200).collect(Collectors.toList());
+    return rbelMessages.stream()
+        .skip(Math.max(0, rbelMessages.size() - 200))
+        .collect(Collectors.toList());
   }
 
   private void randomlyRebootAggregatingProxy(int aggregatingAdminPort) {
@@ -227,14 +234,8 @@ class TracingResilienceTest {
     }
   }
 
-  private Deque<RbelElement> getReceivingTigerProxyMessages(TigerTestEnvMgr testEnvMgr) {
-    return testEnvMgr
-        .findServer("receivingTigerProxy")
-        .map(TigerProxyServer.class::cast)
-        .map(TigerProxyServer::getTigerProxy)
-        .get()
-        .getRbelLogger()
-        .getMessageHistory();
+  private Deque<RbelElement> getReceivingTigerProxyMessages() {
+    return receivingProxy.getRbelLogger().getMessageHistory();
   }
 
   private void bootTigerProxy(int aggregatingAdminPort) {

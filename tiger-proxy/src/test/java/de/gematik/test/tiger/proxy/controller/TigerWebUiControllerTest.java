@@ -16,14 +16,15 @@
 
 package de.gematik.test.tiger.proxy.controller;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.StringContains.containsString;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -31,6 +32,7 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import io.restassured.RestAssured;
+import io.restassured.response.Response;
 import java.time.OffsetDateTime;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
@@ -41,13 +43,9 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.parallel.ResourceLock;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.junit.jupiter.MockServerExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -59,39 +57,47 @@ import org.springframework.http.MediaType;
     properties = "tigerProxy.skipDisplayWhenMessageLargerThanKb = 1")
 @ResetTigerConfiguration
 @NotThreadSafe
-@ExtendWith(MockServerExtension.class)
-public class TigerWebUiControllerTest {
+@WireMockTest
+class TigerWebUiControllerTest {
 
   @Autowired private TigerProxy tigerProxy;
   @LocalServerPort private int adminPort;
   private static int fakeBackendServerPort;
   private static final int TOTAL_OF_EXCHANGED_MESSAGES = 4;
 
-  @BeforeAll
-  public static void setupBackendServer(MockServerClient fakeBackendServerClient) {
-    fakeBackendServerPort = fakeBackendServerClient.getPort();
-    log.info("Started Backend-Server on ports {}", fakeBackendServerPort);
+  @BeforeEach
+  public void setupBackendServer(WireMockRuntimeInfo runtimeInfo) {
+    fakeBackendServerPort = runtimeInfo.getHttpPort();
+    log.info("Started Backend-Server on port {}", fakeBackendServerPort);
 
-    fakeBackendServerClient
-        .when(request().withMethod("GET").withPath("/foobar.*"))
-        .respond(response().withStatusCode(666).withBody("{\"foo\":\"bar\"}"));
+    runtimeInfo
+        .getWireMock()
+        .register(
+            stubFor(
+                get("/foobar")
+                    .willReturn(aResponse().withStatus(666).withBody("{\"foo\":\"bar\"}"))));
 
-    fakeBackendServerClient
-        .when(request().withMethod("POST").withPath("/foobar.*"))
-        .respond(response().withStatusCode(200).withBody(""));
+    runtimeInfo.getWireMock().register(stubFor(post("/foobar").willReturn(ok().withBody(""))));
 
     RestAssured.proxy = null;
-  }
 
-  @BeforeEach
-  public void configureTigerProxy() {
     tigerProxy.clearAllMessages();
 
     val proxyRest = Unirest.spawnInstance();
     proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());
-    proxyRest.get("http://localhost:" + fakeBackendServerPort + "/foobar").asJson();
-    proxyRest.post("http://localhost:" + fakeBackendServerPort + "/foobar").asJson();
-    await().until(() -> tigerProxy.getRbelMessages().size() == 4);
+    System.out.println(
+        proxyRest
+            .get("http://localhost:" + fakeBackendServerPort + "/foobar")
+            .asString()
+            .getStatus());
+    System.out.println(
+        proxyRest
+            .post("http://localhost:" + fakeBackendServerPort + "/foobar")
+            .asString()
+            .getBody());
+
+    TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
+        tigerProxy, 4, 10);
   }
 
   @AfterEach
@@ -214,8 +220,9 @@ public class TigerWebUiControllerTest {
   @Test
   @ResourceLock(value = "TigerWebUiController")
   void checkCorrectMenuStringsAreSupplied() {
-    RestAssured.given()
-        .get(getWebUiUrl() + "/getMsgAfter")
+    final Response response = RestAssured.given().get(getWebUiUrl() + "/getMsgAfter");
+    log.info("Response: {}", response.asString());
+    response
         .then()
         .statusCode(200)
         .body("metaMsgList.size()", equalTo(TOTAL_OF_EXCHANGED_MESSAGES))
@@ -297,7 +304,6 @@ public class TigerWebUiControllerTest {
     await().until(() -> tigerProxy.getRbelMessages().size() == 2);
 
     final JsonNode body = Unirest.get(getWebUiUrl() + "/getMsgAfter").asJson().getBody();
-    System.out.println(body.toString());
     assertThat(body.getObject().getJSONArray("htmlMsgList").getJSONObject(0).getString("html"))
         .contains("foobar")
         .doesNotContain(longString);
@@ -306,8 +312,9 @@ public class TigerWebUiControllerTest {
   @Test
   @ResourceLock(value = "TigerWebUiController")
   void downloadTraffic_withoutFilterCriterion() {
-    RestAssured.given()
-        .get(getWebUiUrl() + "/trafficLog12334.tgr")
+    final Response response = RestAssured.given().get(getWebUiUrl() + "/trafficLog12334.tgr");
+    log.info("Response: {}", response.asString());
+    response
         .then()
         .statusCode(200)
         .header("available-messages", String.valueOf(TOTAL_OF_EXCHANGED_MESSAGES))

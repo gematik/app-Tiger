@@ -22,10 +22,6 @@ import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -90,16 +86,8 @@ public class RbelFileWriter {
     return jsonObject + FILE_DIVIDER;
   }
 
-  public List<RbelElement> convertFromRbelFile(Path rbelFile) {
-    try {
-      return readRbelFileStream(Files.lines(rbelFile, StandardCharsets.UTF_8));
-    } catch (IOException e) {
-      throw new RbelFileReadingException(
-          "Error while reading from file " + rbelFile.toAbsolutePath(), e);
-    }
-  }
-
   public List<RbelElement> convertFromRbelFile(String rbelFileContent) {
+    // not parallel stream: we want to keep the order of the messages!
     return readRbelFileStream(Arrays.stream(rbelFileContent.split(FILE_DIVIDER)));
   }
 
@@ -113,11 +101,8 @@ public class RbelFileWriter {
         log.info("Parsed {} messages, continuing...", numberOfParsedMessages);
       }
       JSONObject jsonObject = new JSONObject(rawMessageString);
-      Optional<RbelElement> rbelElement = parseFileObject(jsonObject);
-      if (rbelElement.isPresent()) {
-        RbelElement element = rbelElement.get();
-        list.add(element);
-      }
+      var rbelElement = parseFileObject(jsonObject);
+      rbelElement.ifPresent(list::add);
     }
     return list;
   }
@@ -128,14 +113,15 @@ public class RbelFileWriter {
       if (rbelConverter.isMessageUuidAlreadyKnown(msgUuid)) {
         return Optional.empty();
       }
+      final RbelElement rawMessageObject =
+          RbelElement.builder()
+              .rawContent(Base64.getDecoder().decode(messageObject.getString(RAW_MESSAGE_CONTENT)))
+              .uuid(msgUuid)
+              .parentNode(null)
+              .build();
       final RbelElement parsedMessage =
           rbelConverter.parseMessage(
-              RbelElement.builder()
-                  .rawContent(
-                      Base64.getDecoder().decode(messageObject.getString(RAW_MESSAGE_CONTENT)))
-                  .uuid(msgUuid)
-                  .parentNode(null)
-                  .build(),
+              rawMessageObject,
               RbelHostname.fromString(messageObject.getString(SENDER_HOSTNAME)).orElse(null),
               RbelHostname.fromString(messageObject.getString(RECEIVER_HOSTNAME)).orElse(null),
               messageObject.has(MESSAGE_TIME)
@@ -143,9 +129,8 @@ public class RbelFileWriter {
                   : Optional.empty());
       postConversionListener.forEach(
           listener ->
-              listener.performMessagePostConversionProcessing(
-                  parsedMessage, rbelConverter, messageObject));
-      return Optional.of(parsedMessage);
+              listener.performMessagePostConversionProcessing(parsedMessage, rbelConverter, messageObject));
+      return Optional.ofNullable(parsedMessage);
     } catch (Exception e) {
       throw new RbelFileReadingException(
           "Error while converting from object '" + messageObject.toString() + "'", e);

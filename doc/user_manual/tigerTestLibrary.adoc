@@ -131,14 +131,9 @@ Jexl Expressions are implemented, as for reading a file or for serializing:
 ==== List of all possible Steps
 
 .Using the Rbel builder steps
-// use the extractCommentsFromRbelBuilderGlueCode.sh in GitBash (Windows) or bash (Linux, Mac)
+// use the AnnotationParser.java to extract comments
 // to extract anew the steps doc from RbelBuilderGlueCode.java
-[source,java]
-----
-// extracted from module /tiger-test-lib
-// /src/test/java/de/gematik/test/tiger/glue/RBelValidatorGlue.java
-include::./RbelBuilderGlueCodeCommentsOnly.java[]
-----
+include::./RbelBuilderGlueCodeCommentsOnly.adoc[]
 
 ==== Usage examples
 
@@ -237,25 +232,21 @@ When comparing values (e.g. in the `TGR current response body matches:`) general
 
 ==== Complete set of steps in validation glue code
 
-// use the extractCommentsFromRbelValidatorGlue.sh in GitBash (Windows) or bash (Linux, Mac)
+// use AnnotationParser.java to extract comments
 // to extract anew the steps doc from RbelValidatorGlue.java
-[source,java]
-----
 // extracted from module /tiger-test-lib
 // /src/test/java/de/gematik/test/tiger/glue/RBelValidatorGlue.java
-include::./RbelValidatorGlueCommentsOnly.java[]
-----
+include::./RBelValidatorGlueCommentsOnly.adoc[]
 
 ==== Complete set of steps in HTTP client glue code
 
-// use the extractCommentsFromRbelValidatorGlue.sh in GitBash (Windows) or bash (Linux, Mac)
+// use AnnotationParser.java to extract comments
 // to extract anew the steps doc from RbelValidatorGlue.java
-[source,java]
-----
+
+
 // extracted from module /tiger-test-lib
 // /src/test/java/de/gematik/test/tiger/glue/HttpGlueCode.java
-include::./HttpGlueCodeCommentsOnly.java[]
-----
+include::./HttpGlueCodeCommentsOnly.adoc[]
 
 ==== Exemplaric scenario Konnektorfarm EAU validation
 
@@ -271,15 +262,11 @@ If all is well, at the end the test report JSON files will be packed into a zip 
 
 image::media/tiger-integration-eau-process.svg[title="Tiger EAU Konnektorfarm process"]
 
-include::tigerWorkflowUI.adoc[]
-
 .Current message steps for Workflow UI
-[source,java]
-----
+
 // copied from module /tiger-test-lib
 // /src/test/java/de/gematik/test/tiger/glue/TigerGlue.java
-include::./TigerGlueCommentsOnly.java[]
-----
+include::./TigerGlueCommentsOnly.adoc[]
 
 The pause steps allow to pause the validation test suite.
 Please note, these steps are only modified for the Workflow UI and don't work on a regular console (no failure, there is just no pause).

@@ -16,89 +16,106 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import com.github.tomakehurst.wiremock.client.MappingBuilder;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
+import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
+import de.gematik.rbellogger.data.facet.RbelParsingNotCompleteFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
-import kong.unirest.Unirest;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import kong.unirest.Config;
 import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
 import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.netty.MockServer;
 
 @Slf4j
+@WireMockTest(httpsEnabled = true)
 public abstract class AbstractTigerProxyTest {
 
-  public static MockServer fakeBackendServer;
   public static int fakeBackendServerPort = 0;
   public static byte[] binaryMessageContent = new byte[100];
-  public static MockServerClient fakeBackendServerClient;
   public TigerProxy tigerProxy;
   public UnirestInstance proxyRest;
 
-  @BeforeAll
-  public static void setupBackendServer() {
-    fakeBackendServer =
-        new MockServer(TigerGlobalConfiguration.readIntegerOptional("free.ports.199").orElse(0));
+  @BeforeEach
+  public void setupBackendServer(WireMockRuntimeInfo runtimeInfo) {
+    fakeBackendServerPort = runtimeInfo.getHttpPort();
+    final MappingBuilder foobar =
+        get(urlMatching("/foobar.*"))
+            .willReturn(
+                ok().withStatus(666)
+                    .withStatusMessage("EVIL")
+                    .withHeader("foo", "bar1", "bar2")
+                    .withHeader("Some-Header-Field", "complicated-value §$%&/((=)(/(/&$()=§$§")
+                    .withHeader("fooValue", "{{request.query.foo}}")
+                    .withBody("{\"foo\":\"bar\"}")
+                    .withTransformers("response-template"));
+    runtimeInfo.getWireMock().register(stubFor(foobar));
 
-    log.info("Started Backend-Server on port {} (http & https)", fakeBackendServer.getLocalPort());
-    fakeBackendServerPort = fakeBackendServer.getLocalPort();
+    final MappingBuilder deepFoobar =
+        get(urlMatching("/deep/foobar.*"))
+            .willReturn(
+                ok().withStatus(777)
+                    .withStatusMessage("DEEPEREVIL")
+                    .withHeader("foo", "bar1", "bar2")
+                    .withBody("{\"foo\":\"bar\"}"));
+    runtimeInfo.getWireMock().register(stubFor(deepFoobar));
 
-    fakeBackendServerClient = new MockServerClient("localhost", fakeBackendServer.getLocalPort());
-    fakeBackendServerClient
-        .when(request().withPath("/foobar.*").withMethod("GET"))
-        .respond(
-            response()
-                .withStatusCode(666)
-                .withReasonPhrase("EVIL")
-                .withHeader("foo", "bar1", "bar2")
-                .withHeader("Some-Header-Field", "complicated-value §$%&/((=)(/(/&$()=§$§")
-                .withBody("{\"foo\":\"bar\"}"));
-    fakeBackendServerClient
-        .when(request().withPath("/deep/foobar.*").withMethod("GET"))
-        .respond(
-            response()
-                .withStatusCode(777)
-                .withReasonPhrase("DEEPEREVIL")
-                .withHeader("foo", "bar1", "bar2")
-                .withBody("{\"foo\":\"bar\"}"));
-    fakeBackendServerClient
-        .when(request().withPath("/").withMethod("GET"))
-        .respond(response().withStatusCode(888).withBody("{\"home\":\"page\"}"));
-    fakeBackendServerClient
-        .when(request().withPath("/forward.*").withMethod("GET"))
-        .respond(response().withStatusCode(301).withHeader("Location", "/foobar"));
-    fakeBackendServerClient
-        .when(request().withPath("/deep/forward.*").withMethod("GET"))
-        .respond(response().withStatusCode(301).withHeader("Location", "/deep/foobar"));
-    fakeBackendServerClient
-        .when(request().withPath("/redirect/withAdditionalHeaders").withMethod("GET"))
-        .respond(
-            response()
-                .withStatusCode(302)
-                .withHeader("Location", "/redirect/foobar")
-                .withHeader("additional-header", "test_value"));
+    runtimeInfo
+        .getWireMock()
+        .register(
+            stubFor(get("/").willReturn(ok().withStatus(888).withBody("{\"home\":\"page\"}"))));
+
+    runtimeInfo
+        .getWireMock()
+        .register(stubFor(get(urlMatching("/forward.*")).willReturn(permanentRedirect("/foobar"))));
+    runtimeInfo
+        .getWireMock()
+        .register(
+            stubFor(
+                get(urlMatching("/deep/forward.*")).willReturn(permanentRedirect("/deep/foobar"))));
+    runtimeInfo
+        .getWireMock()
+        .register(
+            stubFor(
+                get("/redirect/withAdditionalHeaders")
+                    .willReturn(
+                        temporaryRedirect("/redirect/foobar")
+                            .withHeader("additional-header", "test_value"))));
 
     binaryMessageContent =
         Arrays.concatenate(
             "This is a meaningless string which will be binary content. And some more test chars: "
                 .getBytes(StandardCharsets.UTF_8),
             RandomUtils.nextBytes(100));
-    fakeBackendServerClient
-        .when(request().withPath("/foobar.*").withMethod("POST"))
-        .respond(response().withBody(binaryMessageContent));
+
+    runtimeInfo
+        .getWireMock()
+        .register(stubFor(post("/foobar").willReturn(ok().withBody(binaryMessageContent))));
+
+    runtimeInfo
+        .getWireMock()
+        .register(
+            stubFor(
+                post("/echo")
+                    .willReturn(
+                        status(200)
+                            .withBody("{{request.body}}")
+                            .withTransformers("response-template"))));
   }
 
   @BeforeEach
@@ -125,26 +142,29 @@ public abstract class AbstractTigerProxyTest {
     configuration.setName("Primary Tiger Proxy");
     tigerProxy = new TigerProxy(configuration);
 
-    proxyRest = Unirest.spawnInstance();
-    proxyRest
-        .config()
-        .proxy("localhost", tigerProxy.getProxyPort())
-        .sslContext(tigerProxy.buildSslContext());
+    proxyRest =
+        new UnirestInstance(
+            new Config()
+                .proxy("localhost", tigerProxy.getProxyPort())
+                .sslContext(tigerProxy.buildSslContext()));
   }
 
   public void awaitMessagesInTiger(int numberOfMessagesExpected) {
     await()
+        .atMost(5, TimeUnit.SECONDS)
         .until(
             () ->
-                tigerProxy.getRbelLogger().getMessageHistory().size() >= numberOfMessagesExpected);
+                tigerProxy.getRbelLogger().getMessageHistory().stream()
+                        .filter(el -> !el.hasFacet(RbelParsingNotCompleteFacet.class))
+                        .count()
+                    >= numberOfMessagesExpected);
   }
 
-  public HttpRequest getLastRequest() {
-    final HttpRequest[] loggedRequests =
-        fakeBackendServerClient.retrieveRecordedRequests(request());
-    if (loggedRequests.length == 0) {
-      fail("No requests were logged!");
+  public LoggedRequest getLastRequest(WireMock wireMock) {
+    final List<ServeEvent> serveEvents = wireMock.getServeEvents();
+    if (serveEvents.isEmpty()) {
+      fail("Tried to get info on last request. None were found however!");
     }
-    return loggedRequests[loggedRequests.length - 1];
+    return serveEvents.get(serveEvents.size() - 1).getRequest();
   }
 }

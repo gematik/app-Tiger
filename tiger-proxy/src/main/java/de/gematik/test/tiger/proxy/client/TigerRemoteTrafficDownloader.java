@@ -35,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
+// TODO make async compatible
 @AllArgsConstructor
 @Slf4j
 public class TigerRemoteTrafficDownloader {
@@ -42,9 +43,7 @@ public class TigerRemoteTrafficDownloader {
   private final TigerRemoteProxyClient tigerRemoteProxyClient;
 
   public void execute() {
-    tigerRemoteProxyClient
-        .getTrafficParserExecutor()
-        .submit(tigerRemoteProxyClient::switchToQueueMode);
+    tigerRemoteProxyClient.switchToQueueMode();
 
     downloadAllTrafficFromRemote();
 
@@ -53,26 +52,25 @@ public class TigerRemoteTrafficDownloader {
         tigerRemoteProxyClient.proxyName(),
         getRemoteProxyUrl());
 
-    tigerRemoteProxyClient
-        .getTrafficParserExecutor()
-        .submit(
-            () ->
-                log.info(
-                    "{}Successfully downloaded & parsed missed traffic from '{}'. Now {} message"
-                        + " cached",
-                    tigerRemoteProxyClient.proxyName(),
-                    getRemoteProxyUrl(),
-                    getRbelLogger().getMessageHistory().size()));
+    log.info(
+        "{}Successfully downloaded & parsed missed traffic from '{}'. Now {} message(s)"
+            + " in local history",
+        tigerRemoteProxyClient.proxyName(),
+        getRemoteProxyUrl(),
+        getRbelLogger().getMessageHistory().size());
 
-    tigerRemoteProxyClient
-        .getTrafficParserExecutor()
-        .submit(tigerRemoteProxyClient::switchToExecutorMode);
+    tigerRemoteProxyClient.switchToExecutorMode();
   }
 
   private void parseTrafficChunk(String rawTraffic) {
     final List<RbelElement> convertedMessages =
         tigerRemoteProxyClient.getRbelFileWriter().convertFromRbelFile(rawTraffic);
-    final long count = rawTraffic.lines().count();
+    final long expectedNumberOfMessages = rawTraffic.lines().count();
+
+    doMessageBatchPostProcessing(convertedMessages, expectedNumberOfMessages);
+  }
+
+  private void doMessageBatchPostProcessing(List<RbelElement> convertedMessages, long count) {
     convertedMessages.forEach(msg -> msg.addFacet(new TigerDownloadedMessageFacet()));
     for (int i = 0; i < convertedMessages.size(); i += 2) {
       val pairFacet =
@@ -160,9 +158,7 @@ public class TigerRemoteTrafficDownloader {
               + "': "
               + response.getBody());
     }
-    tigerRemoteProxyClient
-        .getTrafficParserExecutor()
-        .submit(() -> parseTrafficChunk(response.getBody()));
+    parseTrafficChunk(response.getBody());
     return PaginationInfo.of(response);
   }
 

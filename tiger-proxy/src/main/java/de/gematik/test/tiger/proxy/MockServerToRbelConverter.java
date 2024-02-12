@@ -21,6 +21,9 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.test.tiger.mockserver.model.Header;
+import de.gematik.test.tiger.mockserver.model.HttpRequest;
+import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyParsingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -29,14 +32,12 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.Arrays;
-import org.mockserver.model.Header;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -44,8 +45,8 @@ public class MockServerToRbelConverter {
 
   private final RbelConverter rbelConverter;
 
-  public RbelElement convertResponse(
-      HttpResponse response, String serverProtocolAndHost, String clientAddress) {
+  public CompletableFuture<RbelElement> convertResponse(
+      HttpResponse response, String senderUrl, String receiverUrl, Optional<ZonedDateTime> timestamp) {
     if (log.isTraceEnabled()) {
       log.trace(
           "Converting response {}, headers {}, body {}",
@@ -54,13 +55,17 @@ public class MockServerToRbelConverter {
           response.getBodyAsString());
     }
 
-    final RbelElement element =
-        rbelConverter.parseMessage(
+    return rbelConverter
+        .parseMessageAsync(
             responseToRbelMessage(response),
-            convertUri(serverProtocolAndHost),
-            RbelHostname.fromString(clientAddress).orElse(null),
-            Optional.of(ZonedDateTime.now()));
+            convertUri(senderUrl),
+            RbelHostname.fromString(receiverUrl).orElse(null),
+            timestamp)
+        .thenApply(element -> addHttpResponseFacetIfNotPresent(response, element));
+  }
 
+  private static RbelElement addHttpResponseFacetIfNotPresent(
+      HttpResponse response, RbelElement element) {
     if (!element.hasFacet(RbelHttpResponseFacet.class)) {
       element.addFacet(
           RbelHttpResponseFacet.builder()
@@ -74,7 +79,7 @@ public class MockServerToRbelConverter {
     return element;
   }
 
-  public RbelElement convertRequest(
+  public CompletableFuture<RbelElement> convertRequest(
       HttpRequest request, String protocolAndHost, Optional<ZonedDateTime> timestamp) {
     if (log.isTraceEnabled()) {
       log.trace(
@@ -84,18 +89,21 @@ public class MockServerToRbelConverter {
           request.getBodyAsString());
     }
 
-    final RbelElement element =
-        rbelConverter.parseMessage(
+    return rbelConverter
+        .parseMessageAsync(
             requestToRbelMessage(request),
             RbelHostname.fromString(request.getRemoteAddress()).orElse(null),
             convertUri(protocolAndHost),
-            timestamp);
+            timestamp)
+        .thenApply(e -> addHttpRequestFacetIfNotPresent(request, e));
+  }
 
+  private RbelElement addHttpRequestFacetIfNotPresent(HttpRequest request, RbelElement element) {
     if (!element.hasFacet(RbelHttpRequestFacet.class)) {
       element.addFacet(
           RbelHttpRequestFacet.builder()
-              .path(RbelElement.wrap(element, request.getPath().getValue()))
-              .method(RbelElement.wrap(element, request.getMethod().getValue()))
+              .path(RbelElement.wrap(element, request.getPath()))
+              .method(RbelElement.wrap(element, request.getMethod()))
               .build());
     }
 
@@ -154,17 +162,17 @@ public class MockServerToRbelConverter {
         .map(
             h ->
                 h.getValues().stream()
-                    .map(value -> h.getName().getValue() + ": " + value)
+                    .map(value -> h.getName() + ": " + value)
                     .collect(Collectors.joining("\r\n")))
         .collect(Collectors.joining("\r\n"));
   }
 
   private String getRequestUrl(HttpRequest request) {
     StringJoiner pathToQueryJoiner = new StringJoiner("?");
-    if (StringUtils.isEmpty(request.getPath().getValue())) {
+    if (StringUtils.isEmpty(request.getPath())) {
       pathToQueryJoiner.add("/");
     } else {
-      pathToQueryJoiner.add(request.getPath().getValue());
+      pathToQueryJoiner.add(request.getPath());
     }
 
     if (request.getQueryStringParameters() != null

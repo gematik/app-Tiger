@@ -41,4 +41,5 @@ public class TigerTlsConfiguration {
   private List<String> clientSslSuites;
   private List<String> serverTlsProtocols;
   private List<String> clientSupportedGroups;
+  private TigerConfigurationPkiIdentity ocspSignerIdentity;
 }

@@ -34,7 +34,6 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.mockserver.proxyconfiguration.ProxyConfiguration;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
@@ -72,8 +71,9 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                       .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
                       .build());
               ForwardProxyInfo fwInfo = tigerProxy.getTigerProxyConfiguration().getForwardToProxy();
-              ProxyConfiguration proxyConfiguration =
-                  ProxyConfigurationConverter.createMockServerProxyConfiguration(fwInfo).get();
+              de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration
+                  proxyConfiguration =
+                      ProxyConfigurationConverter.createMockServerProxyConfiguration(fwInfo).get();
               assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo("localhost");
               assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(80);
 
@@ -96,10 +96,11 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                   TigerProxyConfiguration.builder()
                       .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
                       .build());
-              ProxyConfiguration proxyConfiguration =
-                  ProxyConfigurationConverter.createMockServerProxyConfiguration(
-                          tigerProxy.getTigerProxyConfiguration().getForwardToProxy())
-                      .get();
+              de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration
+                  proxyConfiguration =
+                      ProxyConfigurationConverter.createMockServerProxyConfiguration(
+                              tigerProxy.getTigerProxyConfiguration().getForwardToProxy())
+                          .get();
               assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo("localhost");
               assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(80);
               assertThat(proxyConfiguration.getUsername()).isEqualTo("username");
@@ -147,7 +148,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
             .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
             .build());
 
-    ProxyConfiguration proxyConfiguration =
+    de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration proxyConfiguration =
         ProxyConfigurationConverter.createMockServerProxyConfiguration(
                 tigerProxy.getTigerProxyConfiguration().getForwardToProxy())
             .get();
@@ -177,7 +178,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
             .build());
-    ProxyConfiguration proxyConfiguration =
+    de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration proxyConfiguration =
         ProxyConfigurationConverter.createMockServerProxyConfiguration(
                 tigerProxy.getTigerProxyConfiguration().getForwardToProxy())
             .get();
@@ -260,10 +261,11 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                   TigerProxyConfiguration.builder()
                       .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
                       .build());
-              ProxyConfiguration proxyConfiguration =
-                  ProxyConfigurationConverter.createMockServerProxyConfiguration(
-                          tigerProxy.getTigerProxyConfiguration().getForwardToProxy())
-                      .get();
+              de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration
+                  proxyConfiguration =
+                      ProxyConfigurationConverter.createMockServerProxyConfiguration(
+                              tigerProxy.getTigerProxyConfiguration().getForwardToProxy())
+                          .get();
               assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo("localhost");
               assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(443);
 
@@ -286,10 +288,11 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                   TigerProxyConfiguration.builder()
                       .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
                       .build());
-              ProxyConfiguration proxyConfiguration =
-                  ProxyConfigurationConverter.createMockServerProxyConfiguration(
-                          tigerProxy.getTigerProxyConfiguration().getForwardToProxy())
-                      .get();
+              de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration
+                  proxyConfiguration =
+                      ProxyConfigurationConverter.createMockServerProxyConfiguration(
+                              tigerProxy.getTigerProxyConfiguration().getForwardToProxy())
+                          .get();
               assertThat(proxyConfiguration.getProxyAddress().getHostName()).isEqualTo("localhost");
               assertThat(proxyConfiguration.getProxyAddress().getPort()).isEqualTo(443);
               assertThat(proxyConfiguration.getUsername()).isEqualTo("username");
@@ -337,7 +340,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
             .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
             .build());
 
-    ProxyConfiguration proxyConfiguration =
+    de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration proxyConfiguration =
         ProxyConfigurationConverter.createMockServerProxyConfiguration(
                 tigerProxy.getTigerProxyConfiguration().getForwardToProxy())
             .get();
@@ -367,7 +370,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
             .build());
-    ProxyConfiguration proxyConfiguration =
+    de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration proxyConfiguration =
         ProxyConfigurationConverter.createMockServerProxyConfiguration(
                 tigerProxy.getTigerProxyConfiguration().getForwardToProxy())
             .get();
@@ -452,7 +455,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                     .password("password")
                     .build())
             .build());
-    ProxyConfiguration proxyConfiguration =
+    de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration proxyConfiguration =
         ProxyConfigurationConverter.createMockServerProxyConfiguration(
                 tigerProxy.getTigerProxyConfiguration().getForwardToProxy())
             .get();
@@ -479,7 +482,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                     .password("password")
                     .build())
             .build());
-    ProxyConfiguration proxyConfiguration =
+    de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration proxyConfiguration =
         ProxyConfigurationConverter.createMockServerProxyConfiguration(
                 tigerProxy.getTigerProxyConfiguration().getForwardToProxy())
             .get();
@@ -505,7 +508,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                     .password("password")
                     .build())
             .build());
-    ProxyConfiguration proxyConfiguration =
+    de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration proxyConfiguration =
         ProxyConfigurationConverter.createMockServerProxyConfiguration(
                 tigerProxy.getTigerProxyConfiguration().getForwardToProxy())
             .get();
@@ -531,7 +534,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
                     .password("password")
                     .build())
             .build());
-    ProxyConfiguration proxyConfiguration =
+    de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration proxyConfiguration =
         ProxyConfigurationConverter.createMockServerProxyConfiguration(
                 tigerProxy.getTigerProxyConfiguration().getForwardToProxy())
             .get();
@@ -553,7 +556,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
             .forwardToProxy(
                 ForwardProxyInfo.builder().type(TigerProxyType.HTTP).hostname("localhost").build())
             .build());
-    ProxyConfiguration proxyConfiguration =
+    de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration proxyConfiguration =
         ProxyConfigurationConverter.createMockServerProxyConfiguration(
                 tigerProxy.getTigerProxyConfiguration().getForwardToProxy())
             .get();
@@ -572,7 +575,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
             .forwardToProxy(
                 ForwardProxyInfo.builder().type(TigerProxyType.HTTPS).hostname("localhost").build())
             .build());
-    ProxyConfiguration proxyConfiguration =
+    de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration proxyConfiguration =
         ProxyConfigurationConverter.createMockServerProxyConfiguration(
                 tigerProxy.getTigerProxyConfiguration().getForwardToProxy())
             .get();

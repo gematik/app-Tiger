@@ -9,6 +9,7 @@ import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.writer.RbelWriter;
 import de.gematik.test.tiger.zion.config.TigerMockResponse;
 import de.gematik.test.tiger.zion.config.ZionConfiguration;
+import de.gematik.test.tiger.zion.services.BackendRequestExecutor;
 import de.gematik.test.tiger.zion.services.ZionRequestExecutor;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,6 +30,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
@@ -43,6 +45,7 @@ public class CatchAllController implements WebMvcConfigurer {
   private final ZionConfiguration configuration;
   private final ObjectMapper objectMapper;
   private final ServletWebServerApplicationContext webServerAppCtxt;
+  private final BackendRequestExecutor backendRequestExecutor;
 
   @SneakyThrows
   @PostConstruct
@@ -56,7 +59,8 @@ public class CatchAllController implements WebMvcConfigurer {
       final File file = Path.of(entry.getValue()).toFile();
       try (final FileInputStream fileInputStream = new FileInputStream(file)) {
         final TigerMockResponse mockResponse =
-            new Yaml(new Constructor(TigerMockResponse.class)).load(fileInputStream);
+            new Yaml(new Constructor(TigerMockResponse.class, new LoaderOptions()))
+                .load(fileInputStream);
         configuration.getMockResponses().put(entry.getKey(), mockResponse);
         log.info(
             "Successfully added mock-response from file {} with criteria {}",
@@ -101,6 +105,7 @@ public class CatchAllController implements WebMvcConfigurer {
             .objectMapper(objectMapper)
             .localServerPort(webServerAppCtxt.getWebServer().getPort())
             .configuration(configuration)
+            .backendRequestExecutor(backendRequestExecutor)
             .request(request)
             .build()
             .execute();

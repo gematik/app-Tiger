@@ -96,7 +96,7 @@ public class RbelHtmlRenderer {
     final String id = "dialog" + RandomStringUtils.randomAlphanumeric(20); // NOSONAR
     return span()
         .with(
-            a().withClass("btn modal-button modal-button-details float-end mx-3 test-modal-content")
+            a().withClass("btn modal-button modal-button-details float-end mx-2 test-modal-content")
                 .attr("data-bs-target", "#" + id)
                 .attr("data-bs-toggle", MODAL)
                 .with(span().withClass("icon is-small").with(i().withClass("fas fa-align-left"))),

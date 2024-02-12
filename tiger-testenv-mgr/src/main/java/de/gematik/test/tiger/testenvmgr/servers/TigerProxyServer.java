@@ -54,14 +54,14 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
   public void assertThatConfigurationIsCorrect() {
     super.assertThatConfigurationIsCorrect();
 
-    if (getConfiguration().getTigerProxyCfg() == null) {
-      getConfiguration().setTigerProxyCfg(new TigerProxyConfiguration());
+    if (getConfiguration().getTigerProxyConfiguration() == null) {
+      getConfiguration().setTigerProxyConfiguration(new TigerProxyConfiguration());
     }
-    if (getConfiguration().getTigerProxyCfg().getAdminPort() <= 0) {
-      getConfiguration().getTigerProxyCfg().setAdminPort(findFreePort());
+    if (getConfiguration().getTigerProxyConfiguration().getAdminPort() <= 0) {
+      getConfiguration().getTigerProxyConfiguration().setAdminPort(findFreePort());
     }
-    if (getConfiguration().getTigerProxyCfg().getProxyPort() == null
-        || getConfiguration().getTigerProxyCfg().getProxyPort() <= 0) {
+    if (getConfiguration().getTigerProxyConfiguration().getProxyPort() == null
+        || getConfiguration().getTigerProxyConfiguration().getProxyPort() <= 0) {
       throw new TigerTestEnvException(
           "Missing proxy-port configuration for server '" + getServerId() + "'");
     }
@@ -75,7 +75,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
             .statusMessage("Pre-start Tiger Proxy " + getServerId())
             .build());
 
-    TigerProxyConfiguration tigerProxyConfiguration = getConfiguration().getTigerProxyCfg();
+    TigerProxyConfiguration tigerProxyConfiguration = getConfiguration().getTigerProxyConfiguration();
     tigerProxyConfiguration.setStandalone(false);
     CfgStandaloneProxy standaloneCfg = new CfgStandaloneProxy();
     standaloneCfg.setTigerProxy(tigerProxyConfiguration);
@@ -180,7 +180,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
 
   @Override
   public Optional<String> getHealthcheckUrl() {
-    return Optional.of("http://127.0.0.1:" + getConfiguration().getTigerProxyCfg().getAdminPort());
+    return Optional.of("http://127.0.0.1:" + getConfiguration().getTigerProxyConfiguration().getAdminPort());
   }
 
   @Override

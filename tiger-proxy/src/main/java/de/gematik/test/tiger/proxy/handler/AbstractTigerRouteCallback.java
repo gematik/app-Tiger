@@ -16,12 +16,15 @@
 
 package de.gematik.test.tiger.proxy.handler;
 
-import static org.mockserver.model.Header.header;
-import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
+import static de.gematik.test.tiger.mockserver.model.Header.header;
+import static de.gematik.test.tiger.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.decorator.AddBundledServerNamesModifier;
 import de.gematik.rbellogger.data.decorator.MessageMetadataModifier;
+import de.gematik.rbellogger.data.decorator.ServerNameFromHostname;
+import de.gematik.rbellogger.data.decorator.ServernameFromProcessAndPortSupplier;
+import de.gematik.rbellogger.data.decorator.ServernameFromSpyPortMapping;
 import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelListFacet;
@@ -31,36 +34,33 @@ import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndResponseCallback;
+import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyModificationException;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyParsingException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.time.ZonedDateTime;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.mockserver.mock.action.ExpectationForwardAndResponseCallback;
-import org.mockserver.model.Header;
-import org.mockserver.model.HttpOverrideForwardedRequest;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
-import org.mockserver.model.Parameters;
-import org.mockserver.model.X509Certificate;
 
 /**
  * Abstract super type handling the parsing logic for messages. It is the essential hook which
  * allows the TigerProxy to gather the messages going through the MockServer. The actual
  * implementations of this class deal with the routing of the messages.
  */
-@RequiredArgsConstructor
 @Data
 @Slf4j
 public abstract class AbstractTigerRouteCallback implements ExpectationForwardAndResponseCallback {
@@ -68,9 +68,23 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
   public static final String LOCATION_HEADER_KEY = "Location";
   private final TigerProxy tigerProxy;
   private final TigerRoute tigerRoute;
-  private final Map<String, ZonedDateTime> requestTimingMap = new HashMap<>();
-  private final MessageMetadataModifier rbelHostnameMetadataModifier =
-      AddBundledServerNamesModifier.createModifier();
+  private final MessageMetadataModifier modifierBasedOnProcessAndPort;
+  private final MessageMetadataModifier modifierBasedOnHostname;
+  private final MessageMetadataModifier modifierBasedOnlyOnPort;
+  // Maps the Log-IDs to the (to be parsed) Rbel-messages
+  private Map<String, CompletableFuture<RbelElement>> requestLogIdToParsingFuture =
+      new ConcurrentHashMap<>();
+
+  protected AbstractTigerRouteCallback(TigerProxy tigerProxy, TigerRoute tigerRoute) {
+    this.tigerProxy = tigerProxy;
+    this.tigerRoute = tigerRoute;
+    this.modifierBasedOnProcessAndPort =
+        AddBundledServerNamesModifier.createModifier(new ServernameFromProcessAndPortSupplier());
+    this.modifierBasedOnHostname =
+        AddBundledServerNamesModifier.createModifier(new ServerNameFromHostname());
+    this.modifierBasedOnlyOnPort =
+        AddBundledServerNamesModifier.createModifier(new ServernameFromSpyPortMapping());
+  }
 
   public void applyModifications(HttpRequest request) {
     if (!tigerProxy.getModifications().isEmpty()) {
@@ -98,10 +112,10 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     }
     final RbelUriFacet uriFacet =
         extractSafe(modifiedRequest, "$.path").getFacetOrFail(RbelUriFacet.class);
-    request.withPath(uriFacet.getBasicPathString());
+    request.setPath(uriFacet.getBasicPathString());
     clearExistingQueryParameters(request);
     addAllQueryParametersFromRbelMessage(request, uriFacet);
-    request.withMethod(extractSafe(modifiedRequest, "$.method").getRawStringContent());
+    request.setMethod(extractSafe(modifiedRequest, "$.method").getRawStringContent());
   }
 
   private RbelElement extractSafe(RbelElement targetElement, String rbelPath) {
@@ -127,7 +141,8 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     if (queryStringParameters == null) {
       return;
     }
-    queryStringParameters.getEntries().stream()
+    queryStringParameters
+        .getEntries()
         .forEach(parameter -> queryStringParameters.remove(parameter.getName()));
   }
 
@@ -169,8 +184,12 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
   @Override
   public final HttpRequest handle(HttpRequest req) {
     try {
-      requestTimingMap.put(req.getLogCorrelationId(), ZonedDateTime.now());
-      return handleRequest(req);
+      doIncomingRequestLogging(req);
+      final HttpRequest modifiedRequest = handleRequest(req);
+      if (shouldLogTraffic()) {
+        parseMessage(req);
+      }
+      return modifiedRequest;
     } catch (RuntimeException e) {
       log.warn("Uncaught exception during handling of request", e);
       propagateExceptionMessageSafe(e);
@@ -183,7 +202,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
       tigerProxy.propagateException(exception);
     } catch (Exception handlingException) {
       log.warn(
-          "While propagating an exception another error occured (ignoring):", handlingException);
+          "While propagating an exception another error occurred (ignoring):", handlingException);
     }
   }
 
@@ -192,6 +211,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
   @Override
   public final HttpResponse handle(HttpRequest req, HttpResponse resp) {
     try {
+      doOutgoingResponseLogging(resp);
       return handleResponse(req, resp);
     } catch (RuntimeException e) {
       log.warn("Uncaught exception during handling of response", e);
@@ -206,7 +226,6 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     if (shouldLogTraffic()) {
       parseMessages(req, resp);
     }
-    requestTimingMap.remove(req.getLogCorrelationId());
     return resp.withBody(resp.getBodyAsRawBytes());
   }
 
@@ -228,56 +247,108 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     return originalLocation;
   }
 
+  public void parseMessage(HttpRequest mockServerRequest) {
+    executeHttpRequestParsing(mockServerRequest);
+  }
+
   private void parseMessages(HttpRequest req, HttpResponse resp) {
-    final Optional<ZonedDateTime> requestTime =
-        Optional.ofNullable(requestTimingMap.remove(req.getLogCorrelationId()));
-    if (getTigerProxy().getTigerProxyConfiguration().isParsingShouldBlockCommunication()) {
-      executeHttpTrafficPairParsing(req, resp, requestTime);
-    } else {
-      getTigerProxy()
-          .getTrafficParserExecutor()
-          .submit(() -> executeHttpTrafficPairParsing(req, resp, requestTime));
+    final CompletableFuture<Void> messageParsingCompleteFuture =
+        executeHttpTrafficPairParsing(req, resp);
+    if (tigerProxy.getTigerProxyConfiguration().isParsingShouldBlockCommunication()) {
+      try {
+        messageParsingCompleteFuture.get();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new TigerProxyParsingException("Interruption while parsing traffic", e);
+      } catch (ExecutionException e) {
+        throw new TigerProxyParsingException("Error while parsing traffic", e);
+      }
     }
   }
 
-  private void executeHttpTrafficPairParsing(
-      HttpRequest req, HttpResponse resp, Optional<ZonedDateTime> requestTime) {
-    try {
-      if (isHealthEndpointRequest(req)) {
-        return;
-      }
-
-      final RbelElement request =
-          getTigerProxy()
-              .getMockServerToRbelConverter()
-              .convertRequest(req, extractProtocolAndHostForRequest(req), requestTime);
-      final RbelElement response =
-          getTigerProxy()
-              .getMockServerToRbelConverter()
-              .convertResponse(resp, extractProtocolAndHostForRequest(req), req.getRemoteAddress());
-      addTimingFacet(response, ZonedDateTime.now());
-      val pairFacet = TracingMessagePairFacet.builder().response(response).request(request).build();
-      request.addFacet(pairFacet);
-      response.addFacet(pairFacet);
-      response.addOrReplaceFacet(
-          response
-              .getFacet(RbelHttpResponseFacet.class)
-              .map(RbelHttpResponseFacet::toBuilder)
-              .orElse(RbelHttpResponseFacet.builder())
-              .request(request)
-              .build());
-
-      parseCertificateChainIfPresent(req, request).ifPresent(request::addFacet);
-
-      getTigerProxy().triggerListener(request);
-      getTigerProxy().triggerListener(response);
-
-      rbelHostnameMetadataModifier.modifyMetadata(request);
-      rbelHostnameMetadataModifier.modifyMetadata(response);
-    } catch (RuntimeException e) {
-      propagateExceptionMessageSafe(e);
-      log.error("Rbel-parsing failed!", e);
+  public CompletableFuture<Object> executeHttpRequestParsing(HttpRequest mockServerRequest) {
+    if (isHealthEndpointRequest(mockServerRequest)) {
+      return CompletableFuture.completedFuture(null);
     }
+
+    final CompletableFuture<RbelElement> toBeConvertedRequest =
+        getTigerProxy()
+            .getMockServerToRbelConverter()
+            .convertRequest(
+                mockServerRequest,
+                extractProtocolAndHostForRequest(mockServerRequest),
+                Optional.of(ZonedDateTime.now()));
+
+    requestLogIdToParsingFuture.put(mockServerRequest.getLogCorrelationId(), toBeConvertedRequest);
+    log.trace("Added request to pairingMap with id {}", mockServerRequest.getLogCorrelationId());
+
+    return toBeConvertedRequest.thenApply(
+        request -> {
+          parseCertificateChainIfPresent(mockServerRequest, request).ifPresent(request::addFacet);
+
+          getTigerProxy().triggerListener(request);
+
+          addBundledServerNameToHostnameFacet(request);
+
+          return request;
+        });
+  }
+
+  private CompletableFuture<Void> executeHttpTrafficPairParsing(
+      HttpRequest req, HttpResponse resp) {
+    if (isHealthEndpointRequest(req)) {
+      return CompletableFuture.completedFuture(null);
+    }
+
+    return getTigerProxy()
+        .getMockServerToRbelConverter()
+        .convertResponse(resp, extractProtocolAndHostForRequest(req), req.getRemoteAddress(), Optional.of(ZonedDateTime.now()))
+        .thenAccept(
+            response ->
+                retrieveParsedRequest(req)
+                    .thenAccept(
+                        request -> postProcessingAfterBothMessageParsed(response, request)));
+  }
+
+  private void postProcessingAfterBothMessageParsed(RbelElement response, RbelElement request) {
+    val pairFacet = TracingMessagePairFacet.builder().response(response).request(request).build();
+    request.addFacet(pairFacet);
+    response.addFacet(pairFacet);
+    response.addOrReplaceFacet(
+        response
+            .getFacet(RbelHttpResponseFacet.class)
+            .map(RbelHttpResponseFacet::toBuilder)
+            .orElse(RbelHttpResponseFacet.builder())
+            .request(request)
+            .build());
+
+    getTigerProxy().triggerListener(response);
+
+    addBundledServerNameToHostnameFacet(response);
+  }
+
+  private CompletableFuture<RbelElement> retrieveParsedRequest(HttpRequest req) {
+    CompletableFuture<RbelElement> requestParsingFuture =
+        requestLogIdToParsingFuture.remove(req.getLogCorrelationId());
+
+    if (requestParsingFuture == null) {
+      log.error(
+          "Could not find request for response with id {}! Skipping response parsing!",
+          req.getLogCorrelationId());
+      tigerProxy.getRbelMessages()
+          .forEach(msg -> log.info("Message: {} : {}", msg.getUuid(), msg));
+      throw new TigerProxyParsingException(
+          "Not able to find parsed request for uuid " + req.getLogCorrelationId() + "!");
+    }
+
+    return requestParsingFuture;
+  }
+
+  private void addBundledServerNameToHostnameFacet(RbelElement element) {
+    // order is important!!
+    modifierBasedOnHostname.modifyMetadata(element);
+    modifierBasedOnlyOnPort.modifyMetadata(element);
+    modifierBasedOnProcessAndPort.modifyMetadata(element);
   }
 
   private boolean isHealthEndpointRequest(HttpRequest request) {
@@ -299,7 +370,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
         RbelListFacet.builder()
             .childNodes(
                 httpRequest.getClientCertificateChain().stream()
-                    .map(X509Certificate::getCertificate)
+                    .map(MockserverX509CertificateWrapper::certificate)
                     .map(cert -> mapToRbelElement(cert, message))
                     .toList())
             .build());
@@ -342,5 +413,54 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     } else {
       return clonedRequest.getRequestOverride();
     }
+  }
+
+  public void doOutgoingResponseLogging(HttpResponse resp) {
+    if (log.isInfoEnabled() && tigerProxy.getTigerProxyConfiguration().isActivateTrafficLogging()) {
+      log.info(
+          "Returning HTTP "
+              + resp.getStatusCode()
+              + " Response-Length: "
+              + getMessageSize(resp.getBodyAsRawBytes()));
+    }
+  }
+
+  private static String getMessageSize(byte[] body) {
+    return FileUtils.byteCountToDisplaySize(body.length);
+  }
+
+  public void doIncomingRequestLogging(HttpRequest req) {
+    if (log.isInfoEnabled() && tigerProxy.getTigerProxyConfiguration().isActivateTrafficLogging()) {
+      log.info(
+          "Received "
+              + getProtocol(req)
+              + " "
+              + req.getMethod()
+              + " "
+              + req.getPath()
+              + " "
+              + getUserAgentString(req)
+              + " Request-Length: "
+              + getMessageSize(req.getBodyAsRawBytes())
+              + " => "
+              + printTrafficTarget(req));
+    }
+  }
+
+  protected abstract String printTrafficTarget(HttpRequest req);
+
+  private static String getProtocol(HttpRequest req) {
+    if (Boolean.TRUE.equals(req.isSecure())) {
+      return "HTTPS";
+    } else {
+      return "HTTP";
+    }
+  }
+
+  private static String getUserAgentString(HttpRequest req) {
+    return Optional.ofNullable(req.getFirstHeader("User-Agent"))
+        .filter(StringUtils::isNotEmpty)
+        .map(agent -> "User-Agent: '" + agent + "'")
+        .orElse("");
   }
 }

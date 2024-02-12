@@ -1,4 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2024 gematik GmbH
+  ~ 
+  ~ Licensed under the Apache License, Version 2.0 (the License);
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~ 
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~ 
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an 'AS IS' BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -10,7 +26,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>2.3.3</version>
+        <version>3.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -22,12 +38,51 @@
         <tiger.build.timestamp>${maven.build.timestamp}</tiger.build.timestamp>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
     </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-client</artifactId>
+                <version>11.0.15</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-util</artifactId>
+                <version>11.0.15</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-alpn-client</artifactId>
+                <version>11.0.15</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-io</artifactId>
+                <version>11.0.15</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-http</artifactId>
+                <version>11.0.15</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>11.0.15</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-testenv-mgr</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
         </dependency>
         <!-- serenity & cucumber -->
         <dependency>
@@ -163,7 +218,7 @@
         </dependency>
         <dependency>
             <groupId>org.wiremock</groupId>
-            <artifactId>wiremock</artifactId>
+            <artifactId>wiremock-standalone</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -419,51 +474,6 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>extract comments from validator glue code for user manual</id>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <skip>${isWindows}</skip>
-                            <tasks>
-                                <exec dir="../doc/user_manual" executable="/bin/bash">
-                                    <arg value="extractCommentsFromRbelValidatorGlue.sh"/>
-                                </exec>
-                            </tasks>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>extract comments from http glue code for user manual</id>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <skip>${isWindows}</skip>
-                            <tasks>
-                                <exec dir="../doc/user_manual" executable="/bin/bash">
-                                    <arg value="extractCommentsFromHttpGlueCode.sh"/>
-                                </exec>
-                            </tasks>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>extract comments from rbel builder glue code for user manual</id>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <skip>${isWindows}</skip>
-                            <tasks>
-                                <exec dir="../doc/user_manual" executable="/bin/bash">
-                                    <arg value="extractCommentsFromRbelBuilderGlueCode.sh"/>
-                                </exec>
-                            </tasks>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
                         <id>extract comments from InlineJexlToolbox for user manual</id>
                         <phase>generate-resources</phase>
                         <configuration>
@@ -478,35 +488,27 @@
                             <goal>run</goal>
                         </goals>
                     </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
                     <execution>
-                        <id>extract comments from http client glue code for user manual</id>
-                        <phase>generate-resources</phase>
+                        <id>codegeneration</id>
+                        <phase>generate-test-resources</phase>
+                        <goals><goal>java</goal></goals>
                         <configuration>
-                            <skip>${isWindows}</skip>
-                            <tasks>
-                                <exec dir="../doc/user_manual" executable="/bin/bash">
-                                    <arg value="extractCommentsFromHttpGlueCode.sh"/>
-                                </exec>
-                            </tasks>
+                            <mainClass>de.gematik.test.tiger.glue.AnnotationParser</mainClass>
+                            <arguments>
+                                <argument>HttpGlueCode.java</argument>
+                                <argument>RbelBuilderGlueCode.java</argument>
+                                <argument>RBelValidatorGlue.java</argument>
+                                <argument>TigerGlue.java</argument>
+                                <argument>TigerProxyGlue.java</argument>
+                            </arguments>
                         </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>extract comments from tiger glue code for user manual</id>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <skip>${isWindows}</skip>
-                            <tasks>
-                                <exec dir="../doc/user_manual" executable="/bin/bash">
-                                    <arg value="extractCommentsFromTigerGlue.sh"/>
-                                </exec>
-                            </tasks>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
                     </execution>
                 </executions>
             </plugin>

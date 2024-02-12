@@ -2,7 +2,7 @@ servers:
   testWinstone2:
     type: externalJar
     source:
-      - http://localhost:${mockserver.port}/download
+      - http://localhost:${wiremock.port}/download
     healthcheckUrl: http://127.0.0.1:${free.port.0}
     healthcheckReturnCode: 200
     externalJarOptions:
@@ -12,7 +12,7 @@ servers:
 
   reverseproxy1:
     type: tigerProxy
-    tigerProxyCfg:
+    tigerProxyConfiguration:
       adminPort: ${free.port.2}
       proxiedServer: testWinstone2
       proxyPort: ${free.port.3}

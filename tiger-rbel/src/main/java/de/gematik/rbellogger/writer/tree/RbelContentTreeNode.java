@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class RbelContentTreeNode extends RbelPathAble {
 
@@ -86,10 +87,33 @@ public class RbelContentTreeNode extends RbelPathAble {
    * @param newChildNode new childNode
    */
   public void addOrReplaceChild(String key, RbelContentTreeNode newChildNode) {
-    childNodes.addOrReplaceUniqueEntry(key, newChildNode);
+    addOrReplaceUniqueEntry(key, newChildNode);
     newChildNode.setParentNode(this);
     newChildNode.setKey(key);
     updateAncestorContent();
+  }
+
+  /**
+   * Updates a value of a key that exists once; if multiple entries of the keys exist, then it
+   * throws an {@link UnsupportedOperationException}; if the key does not exist yet, it adds a new
+   * entry
+   *
+   * @param key key of entry to be replaced
+   * @param value new value of entry
+   */
+  private void addOrReplaceUniqueEntry(String key, RbelContentTreeNode newChildNode) {
+    List<RbelContentTreeNode> matchingEntries = childNodes.getAll(key);
+    if (matchingEntries.size() > 1) {
+      throw new UnsupportedOperationException(
+          "It was attempted to replace a unique key '%s', but multiple entries with that key existed."
+              .formatted(key));
+    } else if (matchingEntries.size() == 1) {
+      childNodes = childNodes.stream()
+        .map(e -> e.getKey().equals(key) ? Pair.of(key, newChildNode) : e)
+        .collect(RbelMultiMap.COLLECTOR);
+    } else {
+      childNodes.put(key, newChildNode);
+    }
   }
 
   public void addChild(RbelContentTreeNode newChildNode) {

@@ -75,7 +75,7 @@ public class RbelContextDecorator {
             .map(RbelElement.class::cast)
             .map(RbelElement::getFacets)
             .stream()
-            .flatMap(List::stream)
+            .flatMap(Queue::stream)
             .map(Object::getClass)
             .map(Class::getSimpleName)
             .collect(Collectors.toSet()));

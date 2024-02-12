@@ -27,7 +27,7 @@ public class ZionServerType extends AbstractExternalTigerServer {
   @Getter private ConfigurableApplicationContext applicationContext;
 
   public ZionServerType(TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
-    super(serverId, serverId, configuration, tigerTestEnvMgr);
+    super(determineHostname(configuration, serverId), serverId, configuration, tigerTestEnvMgr);
   }
 
   @Override
@@ -44,6 +44,7 @@ public class ZionServerType extends AbstractExternalTigerServer {
             .statusMessage("Pre-start Zion-Server " + getServerId())
             .build());
     final ZionServerConfiguration zionConfiguration = getZionConfiguration();
+
     final HashMap<String, Object> propertyMap =
         new HashMap<>(
             TigerSerializationUtil.toMap(zionConfiguration.getZionConfiguration(), "zion"));
@@ -91,12 +92,28 @@ public class ZionServerType extends AbstractExternalTigerServer {
   private ZionServerConfiguration getZionConfiguration() {
     final CfgServer configuration = getConfiguration();
     if (configuration instanceof ZionServerConfiguration zionServerConfiguration) {
+      injectServerName(zionServerConfiguration, getHostname());
+      injectLocalTigerProxyAddress(zionServerConfiguration);
       return zionServerConfiguration;
     } else {
       throw new TigerEnvironmentStartupException(
           "Unexpected configuration type. Expected ZionServerConfiguration but found "
               + configuration.getClass().getName());
     }
+  }
+
+  private void injectServerName(ZionServerConfiguration zionConfiguration, String hostname) {
+    zionConfiguration.getZionConfiguration().setServerName(hostname);
+  }
+
+  private void injectLocalTigerProxyAddress(ZionServerConfiguration zionServerConfiguration) {
+    getTigerTestEnvMgr()
+        .getLocalTigerProxyOptional()
+        .ifPresent(
+            localTigerProxy -> {
+              String proxyAddress = "localhost:" + localTigerProxy.getProxyPort();
+              zionServerConfiguration.getZionConfiguration().setLocalTigerProxy(proxyAddress);
+            });
   }
 
   @Override

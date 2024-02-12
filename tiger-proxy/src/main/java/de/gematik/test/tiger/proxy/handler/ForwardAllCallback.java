@@ -16,16 +16,18 @@
 
 package de.gematik.test.tiger.proxy.handler;
 
-import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
+import static de.gematik.test.tiger.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 
+import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import org.mockserver.model.HttpRequest;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Callback used for as a forward-all route in the TigerProxy. The messages received here are simply
  * forwarded to the intended host. No rewriting of host or path is being done. It essentially serves
  * as a fallback when no specialised route is found matching the request.
  */
+@Slf4j
 public class ForwardAllCallback extends AbstractTigerRouteCallback {
 
   public ForwardAllCallback(TigerProxy tigerProxy) {
@@ -35,7 +37,7 @@ public class ForwardAllCallback extends AbstractTigerRouteCallback {
   @Override
   protected HttpRequest handleRequest(HttpRequest req) {
     return forwardOverriddenRequest(
-            req.withSocketAddress(
+            req.setSocketAddress(
                 req.isSecure(),
                 req.socketAddressFromHostHeader().getHostName(),
                 req.socketAddressFromHostHeader().getPort()))
@@ -44,11 +46,22 @@ public class ForwardAllCallback extends AbstractTigerRouteCallback {
 
   @Override
   protected String extractProtocolAndHostForRequest(HttpRequest request) {
-    return request.getSocketAddress().getScheme()
-        + "://"
-        + request.getSocketAddress().getHost()
+    if (request.getSocketAddress() == null) {
+      return null;
+    } else {
+      return request.getSocketAddress().getScheme()
+          + "://"
+          + request.getSocketAddress().getHost()
+          + ":"
+          + request.getSocketAddress().getPort();
+    }
+  }
+
+  @Override
+  protected String printTrafficTarget(HttpRequest req) {
+    return req.socketAddressFromHostHeader().getHostString()
         + ":"
-        + request.getSocketAddress().getPort();
+        + req.socketAddressFromHostHeader().getPort();
   }
 
   @Override

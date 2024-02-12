@@ -16,14 +16,18 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration.TigerProxyConfigurationBuilder;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
@@ -32,27 +36,20 @@ import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import io.restassured.RestAssured;
 import io.restassured.config.SSLConfig;
 import io.restassured.response.Response;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Proxy.Type;
 import java.net.Socket;
 import java.security.*;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateExpiredException;
-import java.security.cert.CertificateNotYetValidException;
-import java.security.cert.X509Certificate;
+import java.security.cert.*;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.net.ssl.*;
@@ -71,6 +68,8 @@ import org.apache.http.ssl.SSLContexts;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+import org.bouncycastle.tls.*;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -82,6 +81,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
 @ResetTigerConfiguration
+@WireMockTest(httpsEnabled = true)
 class TestTigerProxyTls extends AbstractTigerProxyTest {
 
   @Test
@@ -125,7 +125,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   }
 
   @Test
-  void useTslBetweenClientAndProxy_shouldForward() throws UnirestException {
+  void useTlsBetweenClientAndProxy_shouldForward() throws UnirestException {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
@@ -270,18 +270,22 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   }
 
   @Test
-  void useTslBetweenProxyAndServer_shouldForward() throws UnirestException {
+  void useTslBetweenProxyAndServer_shouldForward(WireMockRuntimeInfo runtimeInfo)
+      throws UnirestException {
+    stubFor(
+        get(urlMatching("/tlsFoobar")).willReturn(ok().withStatus(666).withBody("{'foo':'bar'}")));
+
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
                     TigerRoute.builder()
                         .from("http://backend")
-                        .to("https://localhost:" + fakeBackendServerPort)
+                        .to("https://localhost:" + runtimeInfo.getHttpsPort())
                         .build()))
             .build());
 
-    final HttpResponse<JsonNode> response = proxyRest.get("http://backend/foobar").asJson();
+    final HttpResponse<JsonNode> response = proxyRest.get("http://backend/tlsFoobar").asJson();
 
     assertThat(response.getStatus()).isEqualTo(666);
     assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
@@ -316,10 +320,9 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   }
 
   @Test
-  @Disabled("Waiting for the next mockserver release (>5.15.0). See TGR-898, TGR-815")
   void forwardMutualTlsAndTerminatingTls_shouldUseCorrectTerminatingCa() throws UnirestException {
     final TigerConfigurationPkiIdentity clientIdentity =
-        new TigerConfigurationPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik");
+        new TigerConfigurationPkiIdentity("src/test/resources/rsa.p12;00");
 
     TigerProxy secondProxy =
         new TigerProxy(
@@ -744,7 +747,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
               client.newCall(request).execute();
             })
-        .hasMessageContaining("certificate_unknown");
+        .isInstanceOf(SSLHandshakeException.class);
   }
 
   @Test
@@ -789,7 +792,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
               RestAssured.proxy("localhost", tigerProxy.getProxyPort());
               RestAssured.get("https://backend/foobar").andReturn();
             })
-        .hasMessageContaining("certificate_unknown");
+        .isInstanceOf(SSLHandshakeException.class);
   }
 
   @Test
@@ -876,5 +879,73 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
     assertThat(response.getStatus()).isEqualTo(666);
     assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
+  }
+
+  @Test
+  void tigerProxyAsServerWithActivatedOcspStapling_shouldSendValidOcspResponseInHandshake() {
+    spawnTigerProxyAndConnectWithBouncyCastleAndCheckServerCertificate(
+        serverCertificate ->
+            assertThat(
+                    serverCertificate
+                        .getCertificateStatus()
+                        .getOCSPResponse()
+                        .getResponseStatus()
+                        .getIntValue())
+                .isZero(),
+        TigerProxyConfiguration.builder()
+            .tls(
+                TigerTlsConfiguration.builder()
+                    .ocspSignerIdentity(
+                        new TigerConfigurationPkiIdentity("src/test/resources/ocspSigner.p12;00"))
+                    .build()));
+  }
+
+  @Test
+  void tigerProxyAsServerWithoutActivatedOcspStapling_shouldNotSendValidOcspResponseInHandshake() {
+    spawnTigerProxyAndConnectWithBouncyCastleAndCheckServerCertificate(
+        serverCertificate -> assertThat(serverCertificate.getCertificateStatus()).isNull(),
+        TigerProxyConfiguration.builder().tls(TigerTlsConfiguration.builder().build()));
+  }
+
+  private void spawnTigerProxyAndConnectWithBouncyCastleAndCheckServerCertificate(
+      Consumer<TlsServerCertificate> serverCertificateConsumer,
+      TigerProxyConfigurationBuilder proxyConfigurationBuilder) {
+    AtomicInteger checkCounter = new AtomicInteger(0);
+
+    spawnTigerProxyWith(
+        proxyConfigurationBuilder
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .build());
+
+    try (Socket socket = new Socket("127.0.0.1", tigerProxy.getProxyPort())) {
+      TlsClientProtocol tlsClientProtocol =
+          new TlsClientProtocol(socket.getInputStream(), socket.getOutputStream());
+      tlsClientProtocol.connect(
+          new DefaultTlsClient(new BcTlsCrypto()) {
+            @Override
+            public TlsAuthentication getAuthentication() {
+              return new ServerOnlyTlsAuthentication() {
+                @Override
+                public void notifyServerCertificate(TlsServerCertificate serverCertificate) {
+                  serverCertificateConsumer.accept(serverCertificate);
+                  checkCounter.incrementAndGet();
+                }
+              };
+            }
+          });
+      tlsClientProtocol.getOutputStream().write("GET /foobar HTTP/1.1\r\n\r\n".getBytes());
+
+      assertThat(checkCounter)
+          .withFailMessage(
+              () -> "No notification of server certificate. Maybe the connection didnt take place?")
+          .hasValueGreaterThanOrEqualTo(1);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

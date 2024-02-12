@@ -17,18 +17,17 @@
 package de.gematik.rbellogger;
 
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
-import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelNoteFacet;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -59,41 +58,6 @@ class RbelLoggerTest {
     assertThat(convertedMessage.getHeader().getFirst("Version").get().getNotes())
         .extracting(RbelNoteFacet::getValue)
         .containsExactly("Extra note");
-  }
-
-  @Test
-  void preConversionMapperToShadeUrls() throws IOException {
-    final String curlMessage =
-        readCurlFromFileWithCorrectedLineBreaks(
-            "src/test/resources/sampleMessages/jwtMessage.curl");
-
-    final RbelLogger rbelLogger =
-        RbelLogger.build(
-            new RbelConfiguration()
-                .addPreConversionMapper(
-                    RbelElement.class,
-                    (element, context) -> {
-                      if (element.getRawStringContent().startsWith("localhost:8080")) {
-                        element.getParentNode();
-                        return element.toBuilder()
-                            .rawContent(
-                                element
-                                    .getRawStringContent()
-                                    .replace("localhost:8080", "meinedomain.de")
-                                    .getBytes())
-                            .build();
-                      } else {
-                        return element;
-                      }
-                    }));
-    final RbelHttpMessageFacet convertedMessage =
-        rbelLogger
-            .getRbelConverter()
-            .parseMessage(curlMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()))
-            .getFacetOrFail(RbelHttpMessageFacet.class);
-
-    assertThat(convertedMessage.getHeader().getFirst("Host").get().getRawStringContent())
-        .isEqualTo("meinedomain.de");
   }
 
   @Test
@@ -147,7 +111,7 @@ class RbelLoggerTest {
         new RbelHtmlRenderer().doRender(rbelLogger.getMessageList()),
         Charset.defaultCharset());
 
-    RbelElementAssertion.assertThat(rbelLogger.getMessageList().get(9))
+    assertThat(rbelLogger.getMessageList().get(9))
         .extractChildWithPath("$.header.Location.code.value.encryptionInfo.decryptedUsingKeyWithId")
         .hasValueEqualTo("IDP symmetricEncryptionKey");
   }

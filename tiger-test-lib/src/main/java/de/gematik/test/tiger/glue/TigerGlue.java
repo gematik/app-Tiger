@@ -146,18 +146,14 @@ public class TigerGlue {
     TigerDirector.pauseExecution();
   }
 
-  @When("TGR pause test run execution with message {tigerResolvedString}")
-  @Wenn("TGR pausiere Testausführung mit Nachricht {tigerResolvedString}")
+  @When("TGR pause test run execution with message {string}")
+  @Wenn("TGR pausiere Testausführung mit Nachricht {string}")
   public void tgrPauseExecutionWithMessage(String message) {
-    TigerDirector.pauseExecution(message);
+    TigerDirector.pauseExecution(TigerGlobalConfiguration.resolvePlaceholders(message));
   }
 
-  @When(
-      "TGR pause test run execution with message {tigerResolvedString} and message in case of error"
-          + " {tigerResolvedString}")
-  @Wenn(
-      "TGR pausiere Testausführung mit Nachricht {tigerResolvedString} und Meldung im Fehlerfall"
-          + " {tigerResolvedString}")
+  @When("TGR pause test run execution with message {tigerResolvedString} and message in case of error {tigerResolvedString}")
+  @Wenn("TGR pausiere Testausführung mit Nachricht {tigerResolvedString} und Meldung im Fehlerfall {tigerResolvedString}")
   public void tgrPauseExecutionWithMessageAndErrorMessage(String message, String errorMessage) {
     TigerDirector.pauseExecutionAndFailIfDesired(message, errorMessage);
   }

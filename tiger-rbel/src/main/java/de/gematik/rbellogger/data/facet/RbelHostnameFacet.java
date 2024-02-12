@@ -33,7 +33,7 @@ public class RbelHostnameFacet implements RbelFacet {
 
   private final RbelElement port;
   private final RbelElement domain;
-  private Optional<RbelElement> bundledServerName;
+  @Builder.Default private Optional<RbelElement> bundledServerName = Optional.empty();
 
   public static RbelElement buildRbelHostnameFacet(
       RbelElement parentNode, RbelHostname rbelHostname) {

@@ -41,6 +41,7 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
     if (log.isTraceEnabled()) {
       log.trace("Trying to decipher '{}'...", element.getRawStringContent());
     }
+    context.waitForAllElementsBeforeGivenToBeParsed(element.findRootElement());
     tryToExtractRawVauContent(element)
         .flatMap(content -> decipherVauMessage(content, context, element))
         .ifPresent(
@@ -152,7 +153,7 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
       decryptedPayload.addFacet(new RbelBinaryFacet());
       return Optional.of(
           RbelVauEpaFacet.builder()
-              .message(converter.filterInputThroughPreConversionMappers(decryptedPayload))
+              .message(decryptedPayload)
               .encryptedMessage(RbelElement.wrap(parentNode, splitVauMessage.getValue()))
               .keyIdUsed(RbelElement.wrap(parentNode, rbelKey.getKeyName().split("_")[0]))
               .keyUsed(Optional.of(rbelKey))
@@ -201,8 +202,7 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
     final String pHeaderHexString =
         String.join(" ", Hex.toHexString(pHeaderInformation).split("(?<=\\G.{2})"));
     return RbelVauEpaFacet.builder()
-        .message(
-            converter.filterInputThroughPreConversionMappers(new RbelElement(body, parentNode)))
+        .message(new RbelElement(body, parentNode))
         .additionalHeaders(headerElement)
         .encryptedMessage(RbelElement.wrap(payloadPair.getValue(), parentNode, null))
         .keyIdUsed(RbelElement.wrap(parentNode, Hex.toHexString(payloadPair.getKey())))

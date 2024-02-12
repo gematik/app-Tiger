@@ -306,7 +306,7 @@ class TestTigerDirector {
     new Thread(TigerDirector::waitForAcknowledgedQuit).start();
     envStatusController.getConfirmShutdown();
     await()
-        .atMost(3000, TimeUnit.MILLISECONDS)
+        .atMost(5000, TimeUnit.MILLISECONDS)
         .until(
             () ->
                 TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedOnWorkflowUi()

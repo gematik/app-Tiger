@@ -109,8 +109,6 @@ class RbelPathExecutorLoggingTest {
         listFollowingLoggingEventsForClass(RbelPathExecutor.class);
     jwtMessage.findRbelPathMembers("$.body.body.acr_values_supported.content");
 
-    listAppender.list.forEach(System.out::println);
-
     assertThat(
             listAppender.list.stream()
                 .map(ILoggingEvent::getMessage)
@@ -126,7 +124,7 @@ class RbelPathExecutorLoggingTest {
   }
 
   @Test
-  void unsuccessfulRequestWithAmbiguousFinalPosition_expectTreeOfAllCandidates() {
+  void unsuccessfulRequestWithAmbiguousFinalPosition_expectListOfAllCandidates() {
     final ListAppender<ILoggingEvent> listAppender =
         listFollowingLoggingEventsForClass(RbelPathExecutor.class);
     jwtMessage.findRbelPathMembers("$.body.body.*.foobar");
@@ -139,7 +137,7 @@ class RbelPathExecutorLoggingTest {
     assertThat(
             listAppender.list.stream()
                 .map(ILoggingEvent::getFormattedMessage)
-                .map(str -> str.split("\\n\\n").length)
+                .map(str -> str.split(", ").length)
                 .max(Comparator.naturalOrder()))
         .get()
         .isEqualTo(34);

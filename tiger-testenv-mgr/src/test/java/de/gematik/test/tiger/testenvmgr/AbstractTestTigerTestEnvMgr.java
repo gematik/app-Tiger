@@ -16,10 +16,12 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockserver.model.HttpRequest.request;
 
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.io.File;
 import java.io.IOException;
@@ -34,31 +36,22 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.mock.Expectation;
-import org.mockserver.model.HttpResponse;
-import org.mockserver.netty.MockServer;
 
 @Slf4j
 @Getter
+@WireMockTest
 public abstract class AbstractTestTigerTestEnvMgr {
 
-  private static MockServer mockServer;
-  private static MockServerClient mockServerClient;
-  private static Expectation downloadExpectation;
   private static byte[] winstoneBytes;
 
   @AfterAll
   public static void resetProperties() {
-    System.clearProperty("mockserver.port");
+    System.clearProperty("wiremock.port");
   }
 
   @BeforeAll
-  public static void startServer() throws IOException {
-    log.info("Booting MockServer...");
-    mockServer = new MockServer();
-    mockServerClient = new MockServerClient("localhost", mockServer.getLocalPort());
-
+  public static void startServer(WireMockRuntimeInfo runtimeInfo) throws IOException {
+    log.info("Started Wiremock on port {} (http)", runtimeInfo.getHttpPort());
     final File winstoneFile = new File("target/winstone.jar");
     if (!winstoneFile.exists()) {
       throw new RuntimeException(
@@ -67,17 +60,16 @@ public abstract class AbstractTestTigerTestEnvMgr {
     }
     winstoneBytes = FileUtils.readFileToByteArray(winstoneFile);
 
-    downloadExpectation =
-        mockServerClient.when(request().withPath("/download"))
-            .respond(req -> HttpResponse.response().withBody(winstoneBytes))[0];
-
-    System.setProperty("mockserver.port", Integer.toString(mockServer.getLocalPort()));
+    System.setProperty("wiremock.port", Integer.toString(runtimeInfo.getHttpPort()));
   }
 
   @AfterEach
   @BeforeEach
-  public void resetConfiguration() {
+  public void resetConfiguration(WireMockRuntimeInfo runtimeInfo) {
     TigerGlobalConfiguration.reset();
+    runtimeInfo
+        .getWireMock()
+        .register(stubFor(get("/download").willReturn(ok().withBody(winstoneBytes))));
   }
 
   // -----------------------------------------------------------------------------------------------------------------

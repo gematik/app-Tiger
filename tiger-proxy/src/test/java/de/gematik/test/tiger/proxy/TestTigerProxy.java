@@ -16,16 +16,15 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
-import static org.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
-import static org.mockserver.model.HttpRequest.request;
-import static org.mockserver.model.HttpResponse.response;
 
-import de.gematik.rbellogger.converter.RbelConverterPlugin;
-import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
+import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
@@ -34,12 +33,10 @@ import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
-import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -47,7 +44,6 @@ import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -60,19 +56,15 @@ import javax.net.ssl.X509TrustManager;
 import kong.unirest.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.data.TemporalUnitWithinOffset;
 import org.jetbrains.annotations.NotNull;
-import org.jose4j.jws.JsonWebSignature;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.mockserver.client.MockServerClient;
-import org.mockserver.model.MediaType;
-import org.mockserver.model.SocketAddress;
-import org.mockserver.netty.MockServer;
+import org.junit.jupiter.api.extension.RegisterExtension;
+import org.springframework.http.MediaType;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
@@ -82,28 +74,24 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   // AKR: we need the 'localhost|view-localhost' because of mockserver for all
   // checkClientAddresses-tests.
   private static final String LOCALHOST_REGEX = "localhost|view-localhost|127\\.0\\.0\\.1";
-  public MockServerClient forwardProxy;
+
+  @RegisterExtension
+  static WireMockExtension forwardProxy =
+      WireMockExtension.newInstance()
+          .options(wireMockConfig().dynamicPort())
+          .configureStaticDsl(true)
+          .build();
 
   @BeforeEach
-  public void setupForwardProxy() {
+  public void setupForwardProxy(WireMockRuntimeInfo runtimeInfo) {
     if (forwardProxy != null) {
       return;
     }
-
-    final MockServer forwardProxyServer =
-        new MockServer(TigerGlobalConfiguration.readIntegerOptional("free.ports.197").orElse(0));
-
-    forwardProxy = new MockServerClient("localhost", forwardProxyServer.getLocalPort());
     log.info("Started Forward-Proxy-Server on port {}", forwardProxy.getPort());
 
-    forwardProxy
-        .when(request())
-        .forward(
-            req ->
-                forwardOverriddenRequest(
-                        req.withSocketAddress(
-                            "localhost", fakeBackendServerPort, SocketAddress.Scheme.HTTP))
-                    .getRequestOverride());
+    forwardProxy.stubFor(
+        get(urlMatching(".*"))
+            .willReturn(aResponse().proxiedFrom("http://localhost:" + runtimeInfo.getHttpPort())));
   }
 
   @Test
@@ -441,7 +429,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   }
 
   @Test
-  void binaryMessage_shouldGiveBinaryResult() {
+  void binaryMessage_shouldGiveBinaryResult(WireMockRuntimeInfo runtimeInfo) {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
@@ -452,12 +440,15 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                         .build()))
             .build());
 
-    fakeBackendServerClient
-        .when(request().withMethod("GET").withPath("/binary"))
-        .respond(
-            response()
-                .withHeader("content-type", MediaType.APPLICATION_OCTET_STREAM.toString())
-                .withBody("Hallo".getBytes()));
+    runtimeInfo
+        .getWireMock()
+        .register(
+            stubFor(
+                get("/binary")
+                    .willReturn(
+                        ok().withHeader(
+                                "content-type", MediaType.APPLICATION_OCTET_STREAM.toString())
+                            .withBody("Hallo".getBytes()))));
 
     proxyRest.get("http://backend/binary").asBytes();
     awaitMessagesInTiger(2);
@@ -601,18 +592,15 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   }
 
   @Test
-  void basicAuthenticationRequiredAndConfigured_ShouldWork() {
-    fakeBackendServerClient
-        .when(
-            request()
-                .withMethod("GET")
-                .withPath("/authenticatedPath")
-                .withHeader(
-                    "Authorization",
-                    "Basic "
-                        + Base64.getEncoder()
-                            .encodeToString("user:password".getBytes(StandardCharsets.UTF_8))))
-        .respond(response().withStatusCode(777).withBody("{\"foo\":\"bar\"}"));
+  void basicAuthenticationRequiredAndConfigured_ShouldWork(WireMockRuntimeInfo runtimeInfo) {
+
+    runtimeInfo
+        .getWireMock()
+        .register(
+            stubFor(
+                get("/authenticatedPath")
+                    .withBasicAuth("user", "password")
+                    .willReturn(aResponse().withStatus(777).withBody("{\"foo\":\"bar\"}"))));
 
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
@@ -678,16 +666,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   @Test
   // gemSpec_Krypt, A_21888
   void tigerProxyShouldHaveFixedVauKeyLoaded() {
-    BrainpoolCurves.init();
-    final Key key =
-        KeyMgr.readKeyFromPem(
-            FileUtils.readFileToString(new File("src/test/resources/fixVauKey.pem")));
-
-    final JsonWebSignature jws = new JsonWebSignature();
-    jws.setKey(key);
-    jws.setPayload("foobar");
-    jws.setAlgorithmHeaderValue("BP256R1");
-    final String jwsSerialized = jws.getCompactSerialization();
+    final String jwsSerialized =
+        "eyJhbGciOiJCUDI1NlIxIn0.Zm9vYmFy.lNinGioEewNWK1IJyBzteAbDRixKemqPYkbYbVj_HOJrxwnyUitcrnB3mrXsFYenetnYTCLCviaMwVW7xA33cw";
 
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
@@ -708,7 +688,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   }
 
   @Test
-  void forwardProxyWithQueryParameters() {
+  void forwardProxyWithQueryParameters(WireMockRuntimeInfo runtimeInfo) {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
@@ -721,16 +701,16 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
     proxyRest.get("http://backend/foobar?foo=bar1&foo=bar2&schmoo").asString();
 
-    assertThat(getLastRequest().getQueryStringParameters().getEntries())
-        .extracting("name")
-        .containsOnly("foo", "schmoo");
-    assertThat(getLastRequest().getQueryStringParameters().getValues("foo"))
+    assertThat(getLastRequest(runtimeInfo.getWireMock()).getQueryParams())
+        .containsOnlyKeys("foo", "schmoo");
+    assertThat(getLastRequest(runtimeInfo.getWireMock()).getQueryParams().get("foo").getValues())
         .containsExactly("bar1", "bar2");
-    assertThat(getLastRequest().getQueryStringParameters().getValues("schmoo")).containsExactly("");
+    assertThat(getLastRequest(runtimeInfo.getWireMock()).getQueryParams().get("schmoo").getValues())
+        .containsExactly("");
   }
 
   @Test
-  void reverseProxyWithQueryParameters() {
+  void reverseProxyWithQueryParameters(WireMockRuntimeInfo runtimeInfo) {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
@@ -745,12 +725,12 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             "http://localhost:" + tigerProxy.getProxyPort() + "/foobar?foo=bar1&foo=bar2&schmoo")
         .asString();
 
-    assertThat(getLastRequest().getQueryStringParameters().getEntries())
-        .extracting("name")
-        .containsOnly("foo", "schmoo");
-    assertThat(getLastRequest().getQueryStringParameters().getValues("foo"))
+    assertThat(getLastRequest(runtimeInfo.getWireMock()).getQueryParams())
+        .containsOnlyKeys("foo", "schmoo");
+    assertThat(getLastRequest(runtimeInfo.getWireMock()).getQueryParams().get("foo").getValues())
         .containsExactly("bar1", "bar2");
-    assertThat(getLastRequest().getQueryStringParameters().getValues("schmoo")).containsExactly("");
+    assertThat(getLastRequest(runtimeInfo.getWireMock()).getQueryParams().get("schmoo").getValues())
+        .containsExactly("");
   }
 
   @Test
@@ -768,6 +748,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     final UnirestInstance unirestInstance = Unirest.spawnInstance();
     unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
     unirestInstance.get("http://backend/foobar").asString();
+
+    log.info("Now second instance");
 
     final UnirestInstance secondInstance = Unirest.spawnInstance();
     secondInstance.config().proxy("localhost", tigerProxy.getProxyPort());
@@ -934,7 +916,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
    * be correct, the order in the Rbel-Log should be different.
    */
   @Test
-  void querySecondBackendServer_timingInformationShouldBeCorrect() {
+  void querySecondBackendServer_timingInformationShouldBeCorrect(WireMockRuntimeInfo runtimeInfo) {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
@@ -949,12 +931,17 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                         .build()))
             .build());
 
-    fakeBackendServerClient
-        .when(request().withPath("/mainserver"))
-        .forward(
-            forwardOverriddenRequest(
-                    request("/foobar").withSocketAddress("localhost", tigerProxy.getProxyPort()))
-                .withResponseOverride(response().withStatusCode(777)));
+    runtimeInfo
+        .getWireMock()
+        .register(
+            stubFor(
+                get("/mainserver")
+                    .willReturn(
+                        aResponse()
+                            .proxiedFrom(
+                                "http://localhost:"
+                                    + tigerProxy.getProxyPort()
+                                    + "/deep/foobar"))));
 
     proxyRest.get("http://server/mainserver").asString();
     awaitMessagesInTiger(4);
@@ -969,17 +956,49 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .toList())
         .containsExactly(
             "HTTP GET /mainserver with body ''",
-            "HTTP GET /foobar with body ''",
-            "HTTP 666 with body '{\"foo\":\"bar\"}'",
+            "HTTP GET /deep/foobar/mainserver with body ''",
+            "HTTP 777 with body '{\"foo\":\"bar\"}'",
             "HTTP 777 with body '{\"foo\":\"bar\"}'");
 
     assertThat(
             tigerProxy.getRbelMessages().stream().map(RbelElement::printHttpDescription).toList())
         .containsExactly(
-            "HTTP GET /foobar with body ''",
-            "HTTP 666 with body '{\"foo\":\"bar\"}'",
             "HTTP GET /mainserver with body ''",
+            "HTTP GET /deep/foobar/mainserver with body ''",
+            "HTTP 777 with body '{\"foo\":\"bar\"}'",
             "HTTP 777 with body '{\"foo\":\"bar\"}'");
+  }
+
+  @Test
+  void xmlContentTypeWithNonConformingEncodedCharacter_shouldPreserveContent()
+      throws UnirestException {
+    final byte[] rawContent = "hellö\uD83D\uDC4C\uD83C\uDFFB".getBytes(StandardCharsets.UTF_8);
+
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("http://backend")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .build());
+
+    final HttpResponse<byte[]> response =
+        proxyRest
+            .post("http://backend/echo")
+            .body(rawContent)
+            .contentType(MediaType.APPLICATION_XML.toString())
+            .asBytes();
+
+    awaitMessagesInTiger(2);
+
+    assertThat(response.getBody()).isEqualTo(rawContent);
+
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .extractChildWithPath("$.body")
+        .getContent()
+        .isEqualTo(rawContent);
   }
 
   @Test
@@ -1027,7 +1046,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   }
 
   @Test
-  void reverseProxy_parsingShouldNotBlockCommunication() {
+  void queryParametersStartWithExclamationMark_shouldTransmitUnaltered() {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
@@ -1037,69 +1056,17 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
             .build());
-    AtomicBoolean messageWasReceivedInTheClient = new AtomicBoolean(false);
-    AtomicBoolean allowMessageParsingToComplete = new AtomicBoolean(false);
 
-    final RbelConverterPlugin blockConversionUntilCommunicationIsComplete =
-        (el, conv) -> {
-          log.info("Entering wait");
-          await().atMost(2, TimeUnit.SECONDS).until(messageWasReceivedInTheClient::get);
-          allowMessageParsingToComplete.set(true);
-          log.info("Exiting wait");
-        };
-    tigerProxy
-        .getRbelLogger()
-        .getRbelConverter()
-        .addPostConversionListener(blockConversionUntilCommunicationIsComplete);
+    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar?foo=!bar&!foo=bar")
+        .asString();
+    awaitMessagesInTiger(2);
 
-    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
-
-    log.info("Message was received in the client...");
-    messageWasReceivedInTheClient.set(true);
-
-    await().atMost(2, TimeUnit.SECONDS).until(allowMessageParsingToComplete::get);
-  }
-
-  @Test
-  @SuppressWarnings("java:S2925")
-  void reverseProxy_parsingShouldBlockCommunicationIfConfigured() throws InterruptedException {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .parsingShouldBlockCommunication(true)
-            .build());
-    AtomicBoolean clientHasWaitedAndNotReceivedMessageYet = new AtomicBoolean(false);
-    AtomicBoolean messageParsingHasStarted = new AtomicBoolean(false);
-
-    final RbelConverterPlugin blockConversionUntilCommunicationIsComplete =
-        (el, conv) -> {
-          log.info("Entering wait with " + el.getRawStringContent());
-          messageParsingHasStarted.set(true);
-          await().atMost(20, TimeUnit.SECONDS).until(clientHasWaitedAndNotReceivedMessageYet::get);
-          log.info("Exiting wait");
-        };
-    tigerProxy
-        .getRbelLogger()
-        .getRbelConverter()
-        .addPostConversionListener(blockConversionUntilCommunicationIsComplete);
-
-    final CompletableFuture<HttpResponse<String>> asyncMessage =
-        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asStringAsync();
-    await().atMost(20, TimeUnit.SECONDS).until(messageParsingHasStarted::get);
-
-    // guarantee that a parse would succeed by now
-    Thread.sleep(100);
-
-    assertThat(asyncMessage.isDone()).isFalse();
-
-    log.info("Switching clientHasWaitedAndNotReceivedMessageYet...");
-    clientHasWaitedAndNotReceivedMessageYet.set(true);
-    await().atMost(20, TimeUnit.SECONDS).until(asyncMessage::isDone);
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .extractChildWithPath("$.path.foo.value")
+        .hasStringContentEqualTo("!bar");
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .extractChildWithPath("$.path.!foo.value")
+        .hasStringContentEqualTo("bar");
   }
 
   private void checkMessageAddresses(final String clientRegex, final String serverRegex) {

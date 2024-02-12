@@ -26,7 +26,7 @@ public final class DeprecatedKeysForbiddenUsageChecker {
   private static final List<DeprecatedKeyDescriptor> deprecatedKeysMap =
       List.of(
           DeprecatedKeyDescriptor.builder()
-              .compareKey("tiger.servers.*.tigerproxycfg.serverport")
+              .compareKey("tiger.servers.*.tigerproxyconfiguration.serverport")
               .deprecatedKey("serverPort")
               .newKey("adminPort")
               .build(),
@@ -36,12 +36,12 @@ public final class DeprecatedKeysForbiddenUsageChecker {
               .newKey("proxyPort")
               .build(),
           DeprecatedKeyDescriptor.builder()
-              .compareKey("tiger.servers.*.tigerproxycfg.proxycfg.port")
+              .compareKey("tiger.servers.*.tigerproxyconfiguration.proxycfg.port")
               .deprecatedKey("port")
               .newKey("proxyPort")
               .build(),
           DeprecatedKeyDescriptor.builder()
-              .compareKey("tiger.servers.*.tigerproxycfg.proxycfg.*")
+              .compareKey("tiger.servers.*.tigerproxyconfiguration.proxycfg.*")
               .deprecatedKey("proxyCfg")
               .newKey("")
               .build(),
@@ -56,14 +56,19 @@ public final class DeprecatedKeysForbiddenUsageChecker {
               .newKey("tiger.servers.*.healthcheckUrl")
               .build(),
           DeprecatedKeyDescriptor.builder()
-              .compareKey("tiger.tigerproxy.activateVauAnalysis")
+              .compareKey("tiger.tigerproxyconfiguration.activateVauAnalysis")
               .deprecatedKey("activateVauAnalysis")
               .newKey("activateEpaVauAnalysis")
               .build(),
           DeprecatedKeyDescriptor.builder()
-              .compareKey("tiger.servers.*.tigerproxycfg.proxycfg.activateVauAnalysis")
+              .compareKey("tiger.servers.*.tigerproxyconfiguration.proxycfg.activateVauAnalysis")
               .deprecatedKey("activateVauAnalysis")
               .newKey("activateEpaVauAnalysis")
+              .build(),
+          DeprecatedKeyDescriptor.builder()
+              .compareKey("tiger.servers.*.tigerproxyconfiguration")
+              .deprecatedKey("tigerProxyCfg")
+              .newKey("tigerProxyConfiguration")
               .build());
 
   private DeprecatedKeysForbiddenUsageChecker() {}

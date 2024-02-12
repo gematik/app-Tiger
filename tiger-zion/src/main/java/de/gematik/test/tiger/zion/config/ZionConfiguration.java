@@ -15,4 +15,8 @@ public class ZionConfiguration {
   private Map<String, String> mockResponseFiles = new HashMap<>();
   private ZionSpyConfiguration spy;
   private int serverPort;
+
+  private String serverName = "zionServer";
+
+  private String localTigerProxy;
 }

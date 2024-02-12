@@ -223,6 +223,19 @@ tigerProxy:
       serverIdentity: "certificateAndKeyAndChain.p12;Password"
 ----
 
+==== OCSP stapling
+
+If you want the Tiger Proxy to use OCSP stapling you can directly specify the OCSP-Signer to use in the configuration.
+
+[source,yaml]
+----
+tigerProxy:
+    tls:
+      ocspSignerIdentity: "myOcspSigner.p12;Password"
+----
+
+The server will then use this OCSP-Signer to create a fake OCSP-Response during the TLS-handshake.
+
 === Modifications
 
 Modifications are a powerful tool to alter messages before forwarding them.
@@ -559,6 +572,7 @@ tigerProxy:
     activateAsn1Parsing: false
     activateEpaVauAnalysis: false
     parsingShouldBlockCommunication: false
+    activateTrafficLogging: true
 ----
 
 ===== activateRbelParsing
@@ -606,6 +620,18 @@ This is a form of reverseProxy, only also applicable for non-http-traffic.
 HTTP traffic will still be forwarded through use of a global reverse proxy.
 Other traffic will be directly forwarded, rerouted directly on the TCP layer.
 Messages transmitted can still be parsed via RBel.
+
+==== activateTrafficLogging
+
+This flag controls whether the Tiger Proxy will log all traffic. If activated every request and response is noted in the log. This can lead to a verbose and bloated log. If you are not interested in the traffic log, but only in the Rbel-Analysis, you can deactivate this flag. Default is true.
+
+==== rewriteHostHeader
+
+This flag activates the rewriting of the host-header. If activated the host-header will be rewritten to the target host (only applicable for reverse proxy routes). Default is false.
+
+==== rewriteLocationHeader
+
+This flag activates the rewriting of the location-header for 3xx responses. If activated the location-header will be modified so the client will still use the proxy to reach the new location. Default is true.
 
 === Understanding filtering
 

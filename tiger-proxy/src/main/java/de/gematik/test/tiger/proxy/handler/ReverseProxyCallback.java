@@ -17,12 +17,12 @@
 package de.gematik.test.tiger.proxy.handler;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import java.net.URI;
 import java.net.URISyntaxException;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
-import org.mockserver.model.HttpRequest;
 
 /** Callback used for all Reverse-Proxy routes in the TigerProxy. */
 @Slf4j
@@ -38,10 +38,10 @@ public class ReverseProxyCallback extends AbstractRouteProxyCallback {
     applyModifications(httpRequest);
     final HttpRequest request =
         cloneRequest(httpRequest)
-            .withSocketAddress(
+            .setSocketAddress(
                 getTargetUrl().getProtocol().equals("https"), getTargetUrl().getHost(), getPort())
-            .withSecure(getTigerRoute().getTo().startsWith("https"))
-            .withPath(patchPath(httpRequest.getPath().getValue()));
+            .setSecure(getTigerRoute().getTo().startsWith("https"))
+            .setPath(patchPath(httpRequest.getPath()));
 
     if (getTigerProxy().getTigerProxyConfiguration().isRewriteHostHeader()) {
       request.removeHeader("Host").withHeader("Host", getTargetUrl().getHost() + ":" + getPort());
@@ -56,13 +56,16 @@ public class ReverseProxyCallback extends AbstractRouteProxyCallback {
 
   private String patchPath(String requestPath) {
     String patchedUrl = requestPath.replaceFirst(getTargetUrl().toString(), "");
+    if (patchedUrl.equals("/")) {
+      patchedUrl = "";
+    }
     if (!getTigerRoute().getFrom().equals("/")) {
       patchedUrl = patchedUrl.substring(getTigerRoute().getFrom().length());
     }
-    if (patchedUrl.startsWith("/")) {
+    if (patchedUrl.startsWith("/") || patchedUrl.isEmpty()) {
       if (isAddTrailingSlash()
           && !patchedUrl.endsWith("/")
-          && (requestPath.equals("/") || requestPath.equals(""))) {
+          && (requestPath.equals("/") || requestPath.isEmpty())) {
         return getTargetUrl().getPath() + patchedUrl + "/";
       } else {
         return getTargetUrl().getPath() + patchedUrl;
@@ -88,6 +91,11 @@ public class ReverseProxyCallback extends AbstractRouteProxyCallback {
 
   @Override
   protected String extractProtocolAndHostForRequest(HttpRequest request) {
+    return getTigerRoute().getTo();
+  }
+
+  @Override
+  protected String printTrafficTarget(HttpRequest req) {
     return getTigerRoute().getTo();
   }
 }

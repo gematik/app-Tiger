@@ -125,8 +125,8 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         element.getFacet(RbelHttpResponseFacet.class);
     final Optional<RbelCetpFacet> cetpFacet = element.getFacet(RbelCetpFacet.class);
     final Optional<Boolean> isRequest = determineIsRequest(element);
-    //////////////////////////////// TITLE (+path, response-code...)
-    // //////////////////////////////////
+    final Optional<RbelElement> partnerMessage = findHttpPartner(element);
+    ///////////////////// TITLE (+path, response-code...) //////////////////////////
     List<DomContent> messageTitleElements = new ArrayList<>();
     messageTitleElements.add(a().attr("name", element.getUuid()));
     messageTitleElements.add(
@@ -134,6 +134,27 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                 "fa-solid fa-toggle-on toggle-icon float-end me-3 is-size-3 msg-toggle",
                 httpRequestFacet.map(f -> "has-text-link").orElse("has-text-success")));
     messageTitleElements.add(showContentButtonAndDialog(element, renderingToolkit));
+    partnerMessage.ifPresent(
+        msg ->
+            messageTitleElements.add(
+                span()
+                    .with(
+                        a().withClass(
+                                "btn modal-button modal-button-details float-end partner-message-button")
+                            .attr(
+                                "onclick",
+                                "scrollToMessage('"
+                                    + msg.getUuid()
+                                    + "',"
+                                    + msg.getFacet(RbelTcpIpMessageFacet.class)
+                                        .map(RbelTcpIpMessageFacet::getSequenceNumber)
+                                        .map(Object::toString)
+                                        .orElse("null")
+                                    + ")")
+                            .with(
+                                span()
+                                    .withClass("icon is-small")
+                                    .with(i().withClass("fas fa-right-left"))))));
     messageTitleElements.add(
         h1(
                 renderingToolkit.constructMessageId(element),
@@ -147,7 +168,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                                             + f.getMethod().getRawStringContent()
                                             + " "
                                             + f.getPathAsString())
-                                        .withClass("font-monospace title is-size-6 ms-3")
+                                        .withClass("font-monospace title is-size-6")
                                         .withTitle(f.getPathAsString())
                                         .with(addNotes(f.getPath())))
                                 .withClass("has-text-link text-ellipsis"))
@@ -193,6 +214,17 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         "msg-card",
         "mx-3 " + isRequest.map(r -> Boolean.TRUE.equals(r) ? "mt-5" : "mt-2").orElse("mt-3"),
         "msg-content");
+  }
+
+  private Optional<RbelElement> findHttpPartner(RbelElement element) {
+    return element
+        .getFacet(RbelHttpRequestFacet.class)
+        .map(RbelHttpRequestFacet::getResponse)
+        .or(
+            () ->
+                element
+                    .getFacet(RbelHttpResponseFacet.class)
+                    .map(RbelHttpResponseFacet::getRequest));
   }
 
   private List<DomContent> performRenderingForBody(
@@ -277,9 +309,9 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         .map(
             isRequest -> {
               if (Boolean.TRUE.equals(isRequest)) {
-                return i().withClass("fas fa-share me-3").withTitle("Request");
+                return i().withClass("fas fa-share me-1").withTitle("Request");
               } else {
-                return i().withClass("fas fa-reply me-3").withTitle("Response");
+                return i().withClass("fas fa-reply me-1").withTitle("Response");
               }
             })
         .map(DomContent.class::cast)

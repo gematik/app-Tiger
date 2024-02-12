@@ -28,36 +28,32 @@ class ConfigEditorScreenshotsTest extends AbstractTests {
   void testScreenshotsConfigEditor() {
     assertThat(page.locator("#test-sidebar-tg-config-editor-icon").isVisible()).isTrue();
     page.locator("#test-sidebar-tg-config-editor-icon").hover();
-    screenshot(page, "sidebar_config_editor.png", "test-sidebar-tg-config-editor-icon", true);
+    screenshotElementById(page, "sidebar_config_editor.png", "test-sidebar-tg-config-editor-icon");
 
     page.querySelector("#test-sidebar-tg-config-editor-icon").click();
     openMenuAndFilter();
-    screenshot(
+    screenshotByClassname(
         page,
         "config_editor_example_filter_popup.png",
         "ag-labeled ag-label-align-left ag-text-field ag-input-field ag-filter-from"
-            + " ag-filter-filter",
-        false);
+            + " ag-filter-filter");
     await().untilAsserted(() -> page.locator(".vsp__header").isVisible());
     page.locator(".vsp__header").click();
-    screenshot(page, "tg_global_config_editor.png", "vsp__header", false);
+    screenshotByClassname(page, "tg_global_config_editor.png", "vsp__header");
 
     await().untilAsserted(() -> page.locator("#test-tg-config-editor-btn-delete").nth(1).hover());
-    screenshot(page, "config_editor_delete_button.png", "test-tg-config-editor-btn-delete", true);
+    screenshotElementById(page, "config_editor_delete_button.png", "test-tg-config-editor-btn-delete");
 
     String xpathToValue = "//code[@id='test-tg-config-editor-table-row' and text()='myEnv']";
     page.locator(xpathToValue).dblclick();
     page.waitForSelector("#test-tg-config-editor-text-area");
-    screenshot(
-        page, "config_editor_cell_editor_example.png", "test-tg-config-editor-text-area", true);
+    screenshotElementById(
+        page, "config_editor_cell_editor_example.png", "test-tg-config-editor-text-area");
     page.locator("#test-tg-config-editor-btn-cancel").click();
     page.locator(".vsp__header").click();
 
-    screenshot(
-        page,
-        "config_editor_collapse_icon.png",
-        "fa-solid fa-up-right-and-down-left-from-center",
-        false);
+    screenshotByClassname(
+        page, "config_editor_collapse_icon.png", "fa-solid fa-up-right-and-down-left-from-center");
     String xpathToExpand =
         "//div[@col-id='key' and text()='"
             + ENV_MULTILINE_CHECK_KEY
@@ -70,11 +66,8 @@ class ConfigEditorScreenshotsTest extends AbstractTests {
             () ->
                 page.locator("#test-tg-config-editor-table-row.text-break.multi-line").isVisible());
 
-    screenshot(
-        page,
-        "config_editor_expand_icon.png",
-        "value col-11 gy-1 hljs text-break multi-line",
-        false);
+    screenshotByClassname(
+        page, "config_editor_expand_icon.png", "value col-11 gy-1 hljs text-break multi-line");
 
     page.locator("#test-tg-config-editor-btn-clear-filters").click();
     page.locator("#test-tg-config-editor-btn-close").click();

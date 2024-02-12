@@ -24,12 +24,9 @@ import de.gematik.rbellogger.data.facet.RbelCetpFacet;
 import de.gematik.rbellogger.data.facet.RbelXmlFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import lombok.SneakyThrows;
-import org.apache.commons.io.FileUtils;
 import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -83,12 +80,9 @@ class CetpConverterTest {
 
   @Test
   @SuppressWarnings("java:S2699")
-  void checkRendering() throws IOException {
+  void checkRendering() {
     rbelConverter.parseMessage(cetpMessageAsBytes, null, null, Optional.empty());
-    FileUtils.writeStringToFile(
-        new File("target/cetpMessage.html"),
-        RbelHtmlRenderer.render(rbelConverter.getMessageHistory()),
-        StandardCharsets.UTF_8);
+    RbelHtmlRenderer.render(rbelConverter.getMessageList());
   }
 
   @SneakyThrows

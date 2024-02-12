@@ -170,7 +170,7 @@ public class TigerWebUiController implements ApplicationContextAware {
   }
 
   @GetMapping(value = "", produces = MediaType.TEXT_HTML_VALUE)
-  public String getUI(@RequestParam(defaultValue = "false") boolean embedded) {
+  public String getUI(@RequestParam(name = "embedded", defaultValue = "false") boolean embedded) {
     String html = renderer.getEmptyPage(applicationConfiguration.isLocalResources());
     // hide sidebar
     String targetDiv;
@@ -587,8 +587,8 @@ public class TigerWebUiController implements ApplicationContextAware {
   public GetMessagesAfterDto getMessagesAfter(
       @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid,
       @RequestParam(name = "filterCriterion", required = false) final String filterCriterion,
-      @RequestParam(defaultValue = "1000000") final int pageSize,
-      @RequestParam(defaultValue = "0") final int pageNumber) {
+      @RequestParam(name = "pageSize", defaultValue = "1000000") final int pageSize,
+      @RequestParam(name = "pageNumber", defaultValue = "0") final int pageNumber) {
     log.debug(
         "requesting messages since " + lastMsgUuid + " (filtered by . " + filterCriterion + ")");
 

@@ -92,6 +92,35 @@ servers:
   @TigerTest(
       tigerYaml =
           """
+    servers:
+      zionServer:
+        type: zion
+        zionConfiguration:
+          serverPort: "${free.port.10}"
+          mockResponses:
+            loop:
+              requestCriterions:
+                - message.url =~ '.*/loop.*'
+              response:
+                statusCode: 200
+                body: '<?xml version="1.0"?>
+                <rootNode>
+                    <repeatedTag tgrFor="i : 1..!{$.path.number.value}">Nummer ${i}</repeatedTag>
+                </rootNode>'
+        """)
+  @Test
+  void testLoopWithPlacedholderValue(UnirestInstance unirest) {
+    final HttpResponse<String> response =
+        unirest
+            .get(TigerGlobalConfiguration.resolvePlaceholders("http://zionServer/loop?number=4"))
+            .asString();
+
+    assertThat(response.getBody()).contains("<repeatedTag>Nummer 4</repeatedTag>");
+  }
+
+  @TigerTest(
+      tigerYaml =
+          """
         servers:
           mainServer:
             type: zion
@@ -146,6 +175,205 @@ servers:
             .asJson();
 
     assertThat(response.getStatus()).isEqualTo(200);
+  }
+
+  @TigerTest(
+      tigerYaml =
+          """
+ servers:
+   mainServer:
+     type: zion
+     zionConfiguration:
+       serverPort: "${free.port.50}"
+       mockResponses:
+         lessImportantEndpoint:
+           importance: 0
+           backendRequests:
+             tokenCheck:
+               url: "THIS IS INVALID TO THROW A 500 IF CALLED"
+               body: '?{$.header.password}'
+           requestCriterions:
+             - message.method == 'GET'
+             - message.path == '/lessImportantEndpoint'
+           nestedResponses:
+             helloWorld:
+               response:
+                 statusCode: 200
+                 body: '{"Hello":"World"}'
+         moreImportantEndpoint:
+           importance: 20
+           requestCriterions:
+             - message.method == 'GET'
+             - message.path == '/moreImportantEndpoint'
+           response:
+             statusCode: 777
+             body: '{"Hello":"World"}'
+           """)
+  @Test
+  void shouldNotCallBackendWhenHigherImportancePathMatches(UnirestInstance unirest) {
+    // if we try to match the passwordCheckResponse we get a 500 because the backend request is not
+    // configured
+    final HttpResponse<String> errorResponse =
+        unirest
+            .get(
+                TigerGlobalConfiguration.resolvePlaceholders(
+                    "http://mainServer/lessImportantEndpoint"))
+            .asString();
+
+    assertThat(errorResponse.getStatus()).isEqualTo(500);
+
+    // By matching another path with higher importance, the backend does not get called and no error
+    // comes up.
+    final HttpResponse<JsonNode> response =
+        unirest
+            .get(
+                TigerGlobalConfiguration.resolvePlaceholders(
+                    "http://mainServer/moreImportantEndpoint"))
+            .asJson();
+
+    assertThat(response.getStatus()).isEqualTo(777);
+  }
+
+  @TigerTest(
+      tigerYaml =
+          """
+servers:
+  mainServer:
+    type: zion
+    zionConfiguration:
+      serverPort: "${free.port.50}"
+      mockResponses:
+        doBackendRequestBeforeSelection:
+          assignments:
+            blub: "nothing changed"
+          request:
+            path: "/helloMain"
+            additionalCriterions:
+              - "'${blub}' == 'changed before selection'"
+          response:
+            statusCode: 777
+            body: ${blub}
+          backendRequests:
+            helloBackend:
+              url: "http://localhost:${free.port.60}/helloBackend"
+              assignments:
+                blub: "changed before selection"
+              executeAfterSelection: false
+  backendServer:
+    type: zion
+    zionConfiguration:
+      serverPort: "${free.port.60}"
+      mockResponses:
+        helloBackend:
+          response:
+            statusCode: 200
+            body: '{"Hello":"World"}'
+              """)
+  @Test
+  void testBackendRequestEvaluateBeforeWithVariableInCriterion_shouldMatchResponse(
+      UnirestInstance unirest) {
+    final HttpResponse<String> response =
+        unirest
+            .get(TigerGlobalConfiguration.resolvePlaceholders("http://mainServer/helloMain"))
+            .asString();
+
+    assertThat(response.getStatus()).isEqualTo(777);
+    assertThat(response.getBody()).isEqualTo("changed before selection");
+  }
+
+  @TigerTest(
+      tigerYaml =
+          """
+servers:
+  mainServer:
+    type: zion
+    zionConfiguration:
+      serverPort: "${free.port.50}"
+      mockResponses:
+        doBackendRequestBeforeSelection:
+          assignments:
+            blub: "nothing changed"
+          request:
+            path: "/helloMain"
+            additionalCriterions:
+              - "'${blub}' == 'changed after selection'"
+          response:
+            statusCode: 777
+            body: ${blub}
+          backendRequests:
+            helloBackend:
+              url: "http://localhost:${free.port.60}/helloBackend"
+              assignments:
+                blub: "changed after selection"
+              executeAfterSelection: true
+  backendServer:
+    type: zion
+    zionConfiguration:
+      serverPort: "${free.port.60}"
+      mockResponses:
+        helloBackend:
+          response:
+            statusCode: 200
+            body: '{"Hello":"World"}'
+              """)
+  @Test
+  void testBackendRequestEvaluateAfterWithVariableInCriterion_shouldNotMatchResponse(
+      UnirestInstance unirest) {
+    final HttpResponse<String> response =
+        unirest
+            .get(TigerGlobalConfiguration.resolvePlaceholders("http://mainServer/helloMain"))
+            .asString();
+
+    // when nothing matches a 500 code is returned
+    assertThat(response.getStatus()).isEqualTo(500);
+  }
+
+  @TigerTest(
+      tigerYaml =
+          """
+                            servers:
+                              mainServer:
+                                type: zion
+                                zionConfiguration:
+                                  serverPort: "${free.port.50}"
+                                  mockResponses:
+                                    doBackendRequestBeforeSelection:
+                                      assignments:
+                                        blub: "nothing changed"
+                                      request:
+                                        path: "/helloMain"
+                                        additionalCriterions:
+                                          - "'${blub}' == 'nothing changed'"
+                                      response:
+                                        statusCode: 777
+                                        body: ${blub}
+                                      backendRequests:
+                                        helloBackend:
+                                          url: "http://localhost:${free.port.60}/helloBackend"
+                                          assignments:
+                                            blub: "changed after selection"
+                                          executeAfterSelection: true
+                              backendServer:
+                                type: zion
+                                zionConfiguration:
+                                  serverPort: "${free.port.60}"
+                                  mockResponses:
+                                    helloBackend:
+                                      response:
+                                        statusCode: 200
+                                        body: '{"Hello":"World"}'
+                                          """)
+  @Test
+  void
+      testBackendRequestEvaluateAfter_shouldMatchUnchangedValueInCriterion_and_useAfterValueInRenderedBody(
+          UnirestInstance unirest) {
+    final HttpResponse<String> response =
+        unirest
+            .get(TigerGlobalConfiguration.resolvePlaceholders("http://mainServer/helloMain"))
+            .asString();
+
+    assertThat(response.getStatus()).isEqualTo(777);
+    assertThat(response.getBody()).isEqualTo("changed after selection");
   }
 
   @TigerTest(

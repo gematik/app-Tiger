@@ -69,7 +69,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
               aggregatingProxy:
                 type: tigerProxy
                 dependsUpon: reverseProxy
-                tigerProxyCfg:
+                tigerProxyConfiguration:
                   adminPort: ${free.port.2}
                   proxyPort: ${free.port.3}
                   activateRbelParsing: false
@@ -78,7 +78,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                     - http://localhost:${free.port.4}
               reverseProxy:
                 type: tigerProxy
-                tigerProxyCfg:
+                tigerProxyConfiguration:
                   adminPort: ${free.port.4}
                   proxiedServer: httpbin
                   proxyPort: ${free.port.5}
@@ -132,7 +132,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
               aggregatingProxy:
                 type: tigerProxy
                 dependsUpon: reverseProxy1, reverseProxy2
-                tigerProxyCfg:
+                tigerProxyConfiguration:
                   adminPort: ${free.port.12}
                   proxyPort: ${free.port.13}
                   activateRbelParsing: false
@@ -142,13 +142,13 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                     - http://localhost:${free.port.16}
               reverseProxy1:
                 type: tigerProxy
-                tigerProxyCfg:
+                tigerProxyConfiguration:
                   adminPort: ${free.port.14}
                   proxiedServer: httpbin
                   proxyPort: ${free.port.15}
               reverseProxy2:
                 type: tigerProxy
-                tigerProxyCfg:
+                tigerProxyConfiguration:
                   adminPort: ${free.port.16}
                   proxiedServer: httpbin
                   proxyPort: ${free.port.17}
@@ -189,7 +189,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
               aggregatingProxy:
                 type: tigerProxy
                 dependsUpon: reverseProxy
-                tigerProxyCfg:
+                tigerProxyConfiguration:
                   adminPort: ${free.port.22}
                   proxyPort: ${free.port.23}
                   activateRbelParsing: false
@@ -198,7 +198,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                     - http://localhost:${free.port.24}
               reverseProxy:
                 type: tigerProxy
-                tigerProxyCfg:
+                tigerProxyConfiguration:
                   adminPort: ${free.port.24}
                   proxyPort: ${free.port.25}
                   directReverseProxy:
@@ -244,7 +244,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
               aggregatingProxy:
                 type: tigerProxy
                 dependsUpon: reverseProxy
-                tigerProxyCfg:
+                tigerProxyConfiguration:
                   adminPort: ${free.port.32}
                   proxyPort: ${free.port.33}
                   activateRbelParsing: false
@@ -253,7 +253,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                     - http://localhost:${free.port.34}
               reverseProxy:
                 type: tigerProxy
-                tigerProxyCfg:
+                tigerProxyConfiguration:
                   adminPort: ${free.port.34}
                   proxyPort: ${free.port.35}
                   directReverseProxy:

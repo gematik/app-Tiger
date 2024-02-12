@@ -19,7 +19,6 @@ package de.gematik.test.tiger.proxy.controller;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.ModificationDto;
-import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -57,7 +56,7 @@ public class TigerModificationController {
   }
 
   @DeleteMapping(value = "/modification/{name}")
-  public void deleteModification(@PathVariable @NotBlank String name) {
+  public void deleteModification(@PathVariable("name") String name) {
     tigerProxy.removeModification(name);
   }
 }

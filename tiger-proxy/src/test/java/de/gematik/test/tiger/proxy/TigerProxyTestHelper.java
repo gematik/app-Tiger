@@ -18,6 +18,7 @@ package de.gematik.test.tiger.proxy;
 
 import static org.awaitility.Awaitility.await;
 
+import de.gematik.rbellogger.data.facet.RbelParsingNotCompleteFacet;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +35,12 @@ public class TigerProxyTestHelper {
       await()
           .atMost(DEFAULT_TIMEOUT_SEC, TimeUnit.SECONDS)
           .pollDelay(200, TimeUnit.MILLISECONDS)
-          .until(() -> tigerProxy.getRbelMessagesList().size() == expectedMessagesCount);
+          .until(
+              () ->
+                  tigerProxy.getRbelMessages().stream()
+                          .filter(msg -> !msg.hasFacet(RbelParsingNotCompleteFacet.class))
+                          .count()
+                      == expectedMessagesCount);
     } catch (ConditionTimeoutException cte) {
       log.error(
           "Expected {} message(s) in rbel message list but found {}",

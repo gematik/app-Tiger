@@ -19,10 +19,8 @@ package de.gematik.rbellogger;
 import de.gematik.rbellogger.captures.RbelCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelAsn1Converter;
-import de.gematik.rbellogger.converter.RbelBundleCriterion;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.RbelValueShader;
-import de.gematik.rbellogger.converter.listener.RbelBundledMessagesPlugin;
 import de.gematik.rbellogger.converter.listener.RbelJwkReader;
 import de.gematik.rbellogger.converter.listener.RbelX5cKeyReader;
 import de.gematik.rbellogger.data.RbelElement;
@@ -68,15 +66,6 @@ public class RbelLogger {
     rbelConverter.registerListener(new RbelX5cKeyReader());
     rbelConverter.registerListener(new RbelJwkReader());
     rbelConverter.getPostConversionListeners().addAll(configuration.getPostConversionListener());
-    if (configuration.getPreConversionMappers() != null) {
-      configuration.getPreConversionMappers().entrySet().stream()
-          .forEach(
-              entry ->
-                  entry.getValue().stream()
-                      .forEach(listener -> rbelConverter.registerMapper(entry.getKey(), listener)));
-      rbelConverter.getPreConversionMappers().putAll(configuration.getPreConversionMappers());
-    }
-
     rbelConverter.registerListener(rbelConverter.getRbelValueShader().getPostConversionListener());
 
     for (Consumer<RbelConverter> initializer : configuration.getInitializers()) {
@@ -87,8 +76,6 @@ public class RbelLogger {
     if (configuration.isActivateAsn1Parsing()) {
       rbelConverter.addConverter(new RbelAsn1Converter());
     }
-
-    rbelConverter.addPostConversionListener(new RbelBundledMessagesPlugin());
 
     if (configuration.getCapturer() != null) {
       configuration.getCapturer().setRbelConverter(rbelConverter);
@@ -103,16 +90,21 @@ public class RbelLogger {
         .build();
   }
 
-  public void addBundleCriterion(RbelBundleCriterion rbelBundleCriterion) {
-    rbelConverter.getBundleCriterionList().add(rbelBundleCriterion);
-  }
-
+  /**
+   * Returns a list of all fully parsed messages. This list does not include messages that are not
+   * parsed yet. To guarantee consistent sequence numbers the list stops before the first unparsed
+   * message.
+   */
   public List<RbelElement> getMessageList() {
     return getRbelConverter().getMessageList();
   }
 
+  /**
+   * Gives a view of the current messages. This view includes messages that are not yet fully
+   * parsed.
+   */
   public Deque<RbelElement> getMessageHistory() {
-    return rbelConverter.getMessageHistory();
+    return rbelConverter.getMessageHistoryAsync();
   }
 
   public void clearAllMessages() {

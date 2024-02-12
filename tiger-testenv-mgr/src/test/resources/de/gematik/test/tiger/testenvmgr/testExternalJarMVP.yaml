@@ -6,7 +6,7 @@ servers:
   testExternalJarMVP:
     type: externalJar
     source:
-      - http://localhost:${mockserver.port}/download
+      - http://localhost:${wiremock.port}/download
     startupTimeoutSec: 30
     healthcheckUrl: http://127.0.0.1:${free.port.0}
     healthcheckReturnCode: 200
