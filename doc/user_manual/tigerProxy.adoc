@@ -430,6 +430,17 @@ This expression will explore both subtrees to try to find the following nodes
 Please note that only elements that are present are returned.
 So if only always one of the two elements is present, only a single element will be returned.
 
+==== Case-insensitive matching
+
+Sometimes it can be helpful to match keys in a case-insensitive manner. To achieve this you can use the `~`-operator:
+`$.body.[~'fOO'].key`
+
+This will match `$.body.foo.key` and `$.body.FOO.key` (and any other case-insensitive match).
+
+To find multiple case-insensitive matches, concatenate them using the pipe symbols, like so:
+`$.body.[~'fOO'|~'bAR'].key`. With this expression, the following nodes will be found: `$.body.foo.key`, `$.body.FOO.key`, `$.body.bar.key` and `$.body.BAR.key` (and any other potential matches).
+
+
 [#_jexl_expressions]
 ==== JEXL expressions
 

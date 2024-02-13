@@ -1,5 +1,19 @@
 # Changelog Tiger Test platform
 
+# Release 3.0.1
+
+* Serenity BDD 4.1.0
+* Cucumber 7.15.0
+* RestAssured 5.4.0
+* Selenium 4.16.1
+* Appium 9.0.0
+* Spring Boot 3.2.2
+* Logback 1.4.9
+
+## Features
+
+* TGR-1241: Added Case-Insensitive matching in RbelPath-Expressions: `$.body.[~'bar']`
+
 # Release 3.0.0
 
 * Serenity BDD 4.1.0
