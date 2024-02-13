@@ -14,6 +14,11 @@
 
 * TGR-1241: Added Case-Insensitive matching in RbelPath-Expressions: `$.body.[~'bar']`
 
+## Bugfixes
+
+* TGR-1301: fixed an issue where clicking on a message in the traffic visualization diagram did not always open the Rbel
+  Log Details pane and scrolled to the corresponding message.
+
 # Release 3.0.0
 
 * Serenity BDD 4.1.0
