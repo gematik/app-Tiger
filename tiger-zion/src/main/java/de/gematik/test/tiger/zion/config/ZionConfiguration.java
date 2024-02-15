@@ -1,5 +1,6 @@
 package de.gematik.test.tiger.zion.config;
 
+import jakarta.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
@@ -19,4 +20,12 @@ public class ZionConfiguration {
   private String serverName = "zionServer";
 
   private String localTigerProxy;
+
+  @PostConstruct
+  public void init() {
+    if (mockResponses != null) {
+      mockResponses.forEach((k, v) -> v.setName(k));
+      mockResponses.values().forEach(TigerMockResponse::init);
+    }
+  }
 }

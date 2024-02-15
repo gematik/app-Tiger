@@ -3,6 +3,7 @@ package de.gematik.test.tiger.zion;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -14,9 +15,11 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.zion.config.*;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
@@ -529,7 +532,7 @@ class TestTigerProxyMockResponses {
       TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {
 
     unirestInstance
-        .get(TigerGlobalConfiguration.resolvePlaceholders("http://zionHello/helloWorld"))
+        .get("http://zionHello/helloWorld")
         .asJson();
 
     assertThat(
@@ -541,5 +544,26 @@ class TestTigerProxyMockResponses {
                 .orElseThrow()
                 .getRawStringContent())
         .isEqualTo("zionHello");
+  }
+
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+          servers:
+            zionHello:
+                type: zion
+                zionConfiguration:
+                  serverPort: ${free.port.60}
+                  mockResponses:
+                      hello:
+                        response:
+                          bodyFile: 'this/is/not/a/real/file.yaml'
+         """, skipEnvironmentSetup = true)
+  void bodyFileWithNonExistentFile_shouldThrowException(TigerTestEnvMgr testEnvMgr) {
+    assertThatThrownBy(testEnvMgr::setUpEnvironment)
+      .isInstanceOf(TigerEnvironmentStartupException.class)
+      .hasRootCauseInstanceOf(NoSuchFileException.class)
+      .hasRootCauseMessage("this/is/not/a/real/file.yaml");
   }
 }

@@ -16,8 +16,8 @@
 
 ## Bugfixes
 
-* TGR-1301: fixed an issue where clicking on a message in the traffic visualization diagram did not always open the Rbel
-  Log Details pane and scrolled to the corresponding message.
+* TGR-1306: Zion: When `bodyFile` references a non-existent file, the server now will not start and give a meaningful exception.
+* TGR-1301: fixed an issue where clicking on a message in the traffic visualization diagram did not always open the Rbel-Log details pane and scrolled to the corresponding message.
 
 # Release 3.0.0
 
