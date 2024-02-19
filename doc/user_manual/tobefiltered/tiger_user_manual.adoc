@@ -67,6 +67,10 @@ include::tigerZion.adoc[]
 
 <<<
 
+include::tigerExtensions.adoc[]
+
+<<<
+
 == Links to test relevant topics
 
 * 3-Amigos
