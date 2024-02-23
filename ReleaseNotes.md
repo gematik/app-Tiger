@@ -13,6 +13,7 @@
 ## Features
 
 * TGR-1241: Added Case-Insensitive matching in RbelPath-Expressions: `$.body.[~'bar']`
+* TGR-1309: CBOR added to Rbel
 * TGR-1298: Updated frontend libraries.
 
 ## Bugfixes

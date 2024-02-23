@@ -58,7 +58,7 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
   protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
     BinaryMessage binaryRequest = bytes(ByteBufUtil.getBytes(byteBuf));
     String logCorrelationId = UUIDService.getUUID();
-    log.info("received binary request:{}", ByteBufUtil.hexDump(binaryRequest.getBytes()));
+    log.info("received binary request: {}", ByteBufUtil.hexDump(binaryRequest.getBytes()));
     final InetSocketAddress remoteAddress = getRemoteAddress(ctx);
     if (remoteAddress
         != null) { // binary protocol is only supported for proxies request and not mocking
@@ -172,7 +172,7 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
               Thread.currentThread().interrupt();
             }
             log.warn(
-                "exception {} sending hex{}to{}closing connection",
+                "exception {} sending hex {} to {} closing connection",
                 e.getMessage(),
                 ByteBufUtil.hexDump(binaryRequest.getBytes()),
                 remoteAddress,

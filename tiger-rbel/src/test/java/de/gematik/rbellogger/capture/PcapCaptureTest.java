@@ -178,7 +178,7 @@ class PcapCaptureTest {
         .addJexlNoteCriterion("key == 'pairing_endpoint'", "Hier gibts die pairings");
     rbelLogger
         .getValueShader()
-        .addJexlNoteCriterion("key == 'user_consent'", "Note an einem Object");
+        .addJexlNoteCriterion("key == 'user_consent'", "Note an einem Objekt");
 
     fileReaderCapturer.initialize();
 
@@ -201,7 +201,7 @@ class PcapCaptureTest {
     assertThat(render)
         .contains("Hier gibts die pairings")
         .contains("some note about x5c")
-        .contains("Note an einem Object");
+        .contains("Note an einem Objekt");
   }
 
   private void addRandomTimestamps(RbelLogger rbelLogger) {

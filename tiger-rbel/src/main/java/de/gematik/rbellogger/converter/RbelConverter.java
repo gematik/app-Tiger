@@ -62,7 +62,8 @@ public class RbelConverter {
               new RbelX500Converter(),
               new RbelSicctEnvelopeConverter(),
               new RbelSicctCommandConverter(),
-              new RbelCetpConverter()));
+              new RbelCetpConverter(),
+              new RbelCborConverter()));
   @Builder.Default private int rbelBufferSizeInMb = 1024;
   @Builder.Default private boolean manageBuffer = false;
   @Getter @Builder.Default private long currentBufferSize = 0;

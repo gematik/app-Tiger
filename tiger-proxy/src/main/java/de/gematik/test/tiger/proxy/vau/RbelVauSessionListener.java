@@ -53,9 +53,8 @@ public class RbelVauSessionListener implements RbelConverterPlugin {
       if (!rbelJsonFacet
           .get()
           .getJsonElement()
-          .getAsJsonObject()
           .get("MessageType")
-          .getAsString()
+          .textValue()
           .equals("VAUClientHello")) {
         return;
       }

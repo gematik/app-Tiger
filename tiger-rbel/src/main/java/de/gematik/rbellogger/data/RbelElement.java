@@ -320,7 +320,7 @@ public class RbelElement extends RbelPathAble {
 
   @Override
   public List<RbelPathAble> descendToContentNodeIfAdvised() {
-    if (hasFacet(RbelJsonFacet.class) && hasFacet(RbelNestedFacet.class)) {
+    if ((hasFacet(RbelJsonFacet.class) || hasFacet(RbelCborFacet.class)) && hasFacet(RbelNestedFacet.class)) {
       return List.of(
           getFacet(RbelNestedFacet.class).map(RbelNestedFacet::getNestedElement).orElseThrow(),
           this);
@@ -331,7 +331,8 @@ public class RbelElement extends RbelPathAble {
 
   @Override
   public boolean shouldElementBeKeptInFinalResult() {
-    return !(hasFacet(RbelJsonFacet.class) && hasFacet(RbelNestedFacet.class));
+    return !((hasFacet(RbelJsonFacet.class) || hasFacet(RbelCborFacet.class))
+        && hasFacet(RbelNestedFacet.class));
   }
 
   public String printHttpDescription() {

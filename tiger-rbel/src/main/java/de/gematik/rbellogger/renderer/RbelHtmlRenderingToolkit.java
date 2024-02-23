@@ -25,12 +25,12 @@ import static j2html.TagCreator.span;
 import static j2html.TagCreator.tag;
 import static j2html.TagCreator.title;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelBinaryFacet;
 import de.gematik.rbellogger.data.facet.RbelListFacet;
@@ -55,14 +55,8 @@ import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.AllArgsConstructor;
@@ -86,8 +80,6 @@ import org.jsoup.Jsoup;
 @Slf4j
 public class RbelHtmlRenderingToolkit {
 
-  public static final Gson GSON =
-      new GsonBuilder().setPrettyPrinting().serializeNulls().disableHtmlEscaping().create();
   public static final String CLS_HEADER = "is-primary";
   public static final String CLS_BODY = "is-info";
   public static final String CLS_PKIOK = "is-success";
@@ -96,6 +88,8 @@ public class RbelHtmlRenderingToolkit {
       "display: inline-flex;padding-bottom: 0.2rem;padding-top: 0.2rem;white-space: revert;";
   public static final String JSON_NOTE = "json-note";
 
+  @Getter
+  private final ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
   @Getter private final Map<UUID, JsonNoteEntry> noteTags = new HashMap<>();
   private final RbelHtmlRenderer rbelHtmlRenderer;
   private static final TigerTypedConfigurationKey<String> logoFilePath =
@@ -490,24 +484,24 @@ public class RbelHtmlRenderingToolkit {
     return div(new RbelMessageRenderer().performRendering(element, Optional.empty(), this));
   }
 
-  public JsonElement shadeJson(
-      final JsonElement input, final Optional<String> key, final RbelElement originalElement) {
-    if (input.isJsonPrimitive()) {
+  public JsonNode shadeJson(
+      final JsonNode input, final Optional<String> key, final RbelElement originalElement) {
+    if (input.isValueNode()) {
       return shadeJsonPrimitive(input, key, originalElement);
-    } else if (input.isJsonObject()) {
+    } else if (input.isObject()) {
       return shadeJsonObject(input, originalElement);
-    } else if (input.isJsonArray()) {
+    } else if (input.isArray()) {
       return shadeJsonArray(input, key, originalElement);
-    } else if (input.isJsonNull()) {
+    } else if (input.isNull()) {
       return input;
     } else {
       throw new RbelRenderingException("Unshadeable JSON-Type " + input.getClass().getSimpleName());
     }
   }
 
-  private JsonArray shadeJsonArray(
-      JsonElement input, Optional<String> key, RbelElement originalElement) {
-    final JsonArray output = new JsonArray();
+  private JsonNode shadeJsonArray(
+      JsonNode input, Optional<String> key, RbelElement originalElement) {
+    final ArrayNode output = objectMapper.createArrayNode();
     if (originalElement.hasFacet(RbelNoteFacet.class)) {
       final UUID uuid = UUID.randomUUID();
       noteTags.put(
@@ -528,21 +522,21 @@ public class RbelHtmlRenderingToolkit {
               .build());
       output.add(uuid.toString());
     }
-    for (int i = 0; i < input.getAsJsonArray().size(); i++) {
+    for (int i = 0; i < input.size(); i++) {
       final int finalI = i;
       final List<? extends RbelElement> rbelListElements =
           originalElement.getFacetOrFail(RbelListFacet.class).getChildNodes();
       output.add(
           shadeJson(
-              input.getAsJsonArray().get(i),
+              input.get(i),
               key.map(v -> v + "." + finalI),
               rbelListElements.get(i)));
     }
     return output;
   }
 
-  private JsonObject shadeJsonObject(JsonElement input, RbelElement originalElement) {
-    final JsonObject output = new JsonObject();
+  private JsonNode shadeJsonObject(JsonNode input, RbelElement originalElement) {
+    final ObjectNode output = objectMapper.createObjectNode();
     if (originalElement.hasFacet(RbelNoteFacet.class)) {
       final UUID uuid = UUID.randomUUID();
 
@@ -550,7 +544,7 @@ public class RbelHtmlRenderingToolkit {
           uuid,
           JsonNoteEntry.builder()
               .stringToMatch(
-                  "\"note\": \"" + uuid + "\"" + (input.getAsJsonObject().isEmpty() ? "" : ","))
+                  "\"note\" : \"" + uuid + "\"" + (input.isEmpty() ? "" : ","))
               .tagForKeyReplacement(span())
               .tagForValueReplacement(
                   span()
@@ -563,10 +557,11 @@ public class RbelHtmlRenderingToolkit {
                               .toList())
                       .withClass(JSON_NOTE))
               .build());
-      output.addProperty("note", uuid.toString());
+      output.put("note", uuid.toString());
     }
-    for (final Entry<String, JsonElement> element : input.getAsJsonObject().entrySet()) {
-      output.add(
+    for (Iterator<Entry<String, JsonNode>> it = input.fields(); it.hasNext(); ) {
+      Entry<String, JsonNode> element = it.next();
+      output.set(
           element.getKey(),
           shadeJson(
               element.getValue(),
@@ -581,15 +576,14 @@ public class RbelHtmlRenderingToolkit {
     return output;
   }
 
-  private JsonElement shadeJsonPrimitive(
-      JsonElement input, Optional<String> key, RbelElement originalElement) {
-    final JsonElement jsonElement =
+  private JsonNode shadeJsonPrimitive(
+      JsonNode input, Optional<String> key, RbelElement originalElement) {
+    final JsonNode jsonElement =
         rbelHtmlRenderer
             .getRbelValueShader()
             .shadeValue(input, key)
             .map(
-                shadedValue ->
-                    (JsonElement) new JsonPrimitive(StringEscapeUtils.escapeHtml4(shadedValue)))
+                shadedValue -> (JsonNode) new TextNode(StringEscapeUtils.escapeHtml4(shadedValue)))
             .orElse(input);
 
     if (!originalElement.getNotes().isEmpty()) {
@@ -610,7 +604,7 @@ public class RbelHtmlRenderingToolkit {
                               .toList())
                       .withClass(JSON_NOTE))
               .build());
-      return new JsonPrimitive(uuid.toString());
+      return new TextNode(uuid.toString());
     } else {
       return jsonElement;
     }
