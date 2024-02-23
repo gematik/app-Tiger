@@ -900,22 +900,22 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   }
 
   @Test
-  @Disabled
   void tigerProxyAsServerWithActivatedOcspStapling_shouldSendValidOcspResponseInHandshake() {
     spawnTigerProxyAndConnectWithBouncyCastleAndCheckServerCertificate(
-        serverCertificate ->
-            assertThat(
-                    serverCertificate
-                        .getCertificateStatus()
-                        .getOCSPResponse()
-                        .getResponseStatus()
-                        .getIntValue())
-                .isZero(),
+        serverCertificate -> assertThat(
+                serverCertificate
+                    .getCertificateStatus()
+                    .getOCSPResponse()
+                    .getResponseStatus()
+                    .getIntValue())
+            .isZero(),
         TigerProxyConfiguration.builder()
             .tls(
                 TigerTlsConfiguration.builder()
                     .ocspSignerIdentity(
                         new TigerConfigurationPkiIdentity("src/test/resources/ocspSigner.p12;00"))
+                    .serverIdentity(
+                        new TigerConfigurationPkiIdentity("src/test/resources/nist_ee.p12;00"))
                     .build()));
   }
 

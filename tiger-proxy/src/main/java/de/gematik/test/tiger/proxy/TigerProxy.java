@@ -117,13 +117,15 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
           if (tlsConfiguration.getServerTlsProtocols() != null) {
             builder.protocols(tlsConfiguration.getServerTlsProtocols());
           }
-          builder.sslProvider(SslProvider.JDK);
-          builder.sslContextProvider(new BouncyCastleJsseProvider());
           if (tlsConfiguration.getOcspSignerIdentity() != null) {
             builder.enableOcsp(true);
             mockServerConfiguration.ocspResponseSupplier(
                 certificate ->
                     buildOcspResponse(certificate, tlsConfiguration.getOcspSignerIdentity()));
+            builder.sslProvider(SslProvider.OPENSSL);
+          } else {
+            builder.sslProvider(SslProvider.JDK);
+            builder.sslContextProvider(new BouncyCastleJsseProvider());
           }
 
           return builder;
