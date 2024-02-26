@@ -8,7 +8,7 @@ import {LocalDateTime} from "@js-joda/core";
 describe("testing TigerServerLogDto class", () => {
 
   test("empty TigerServerLogDto should contain undefined values", () => {
-    let tigerServerLogDto = new TigerServerLogDto();
+    const tigerServerLogDto = new TigerServerLogDto();
     expect(tigerServerLogDto.logMessage).toBe(null);
     expect(tigerServerLogDto.serverName).toBe(null);
     expect(tigerServerLogDto.logLevel).toBe(null);
@@ -16,7 +16,7 @@ describe("testing TigerServerLogDto class", () => {
   });
 
   test("empty JSON applies correctly", () => {
-    let tigerServerLogDto = TigerServerLogDto.fromJson(JSON.parse("{ }"));
+    const tigerServerLogDto = TigerServerLogDto.fromJson(JSON.parse("{ }"));
     expect(tigerServerLogDto.logMessage).toBe(null);
     expect(tigerServerLogDto.serverName).toBe(null);
     expect(tigerServerLogDto.logLevel).toBe(null);
@@ -24,7 +24,7 @@ describe("testing TigerServerLogDto class", () => {
   });
 
   test("JSON applies correctly", () => {
-    let tigerServerLogDto = TigerServerLogDto.fromJson(JSON.parse('{ "serverName":"winstone","logLevel":"INFO","localDateTime":"2022-06-14T08:17:47.1737913","logMessage":"Loading PKI resources for instance winstone..." }'));
+    const tigerServerLogDto = TigerServerLogDto.fromJson(JSON.parse('{ "serverName":"winstone","logLevel":"INFO","localDateTime":"2022-06-14T08:17:47.1737913","logMessage":"Loading PKI resources for instance winstone..." }'));
     expect(tigerServerLogDto.logMessage).toBe("Loading PKI resources for instance winstone...");
     expect(tigerServerLogDto.serverName).toBe("winstone");
     expect(tigerServerLogDto.logLevel).toBe("INFO");

@@ -14,7 +14,7 @@
         <!-- side bar title -->
         <h3 :class="`sidebar-title ${quitTestrunOngoing ? 'sidebar-state-quit' : (pauseTestrunOngoing ? 'sidebar-state-paused' : '')}`">
           <img v-on:click="toggleLeftSideBar"
-               class="navbar-brand" id="test-tiger-logo" src="img/tiger-mono-64.png" width="36" alt="Tiger logo"/>
+               class="navbar-brand" id="test-tiger-logo" src="/img/tiger-mono-64.png" width="36" alt="Tiger logo"/>
           <span id="test-sidebar-title">Workflow UI</span>
           <button type="button" v-on:click="toggleLeftSideBar"
                   class="btn btn-sm mt-3 float-end resizer-left-icon">
@@ -201,7 +201,7 @@ const {loadSubsetOfProperties} = useConfigurationLoader();
 const features = ref(new Features());
 
 
-let baseURL = process.env.BASE_URL;
+const baseURL = import.meta.env.BASE_URL;
 let socket: WebSocket;
 let stompClient: Client;
 
@@ -209,7 +209,7 @@ const started = ref(new Date());
 
 let fetchedInitialStatus = false;
 
-let bannerData: Ref<BannerMessage[]> = ref([]);
+const bannerData: Ref<BannerMessage[]> = ref([]);
 
 /** array to collect any subscription messages coming in while the initial fetch has not completed. */
 let preFetchMessageList: Array<TestEnvStatusDto> = new Array<TestEnvStatusDto>();
@@ -228,34 +228,34 @@ let firstOutOfOrderTimestamp: number = -1;
 let currentMessageIndex: number = -1;
 
 /** list of status of all servers wehave received any message so far. */
-let currentServerStatus: Ref<Map<string, TigerServerStatusDto>> = ref(new Map<string, TigerServerStatusDto>());
+const currentServerStatus: Ref<Map<string, TigerServerStatusDto>> = ref(new Map<string, TigerServerStatusDto>());
 
 /** complex map of features which contain a map of scenarios, which contain a map of steps,
  * representing the current state of the test run.
  */
-let featureUpdateMap: Ref<Map<string, FeatureUpdate>> = ref(new Map<string, FeatureUpdate>());
+const featureUpdateMap: Ref<Map<string, FeatureUpdate>> = ref(new Map<string, FeatureUpdate>());
 
 /** list of server logs which contain a log message, a timestamp, a server name and the log level.
  */
 
-let serverLogList: Ref<Array<TigerServerLogDto>> = ref(new Array<TigerServerLogDto>());
+const serverLogList: Ref<Array<TigerServerLogDto>> = ref(new Array<TigerServerLogDto>());
 
-let logServers: Ref<Array<string>> = ref(new Array<string>());
+const logServers: Ref<Array<string>> = ref(new Array<string>());
 
-let selectedServers: Ref<Array<string>> = ref(new Array<string>("__all__"));
+const selectedServers: Ref<Array<string>> = ref(new Array<string>("__all__"));
 
-let localProxyWebUiUrl: Ref<string> = ref("");
+const localProxyWebUiUrl: Ref<string> = ref("");
 
-let version: Ref<string> = ref("");
-let build: Ref<string> = ref("");
+const version: Ref<string> = ref("");
+const build: Ref<string> = ref("");
 
 let ui = ref();
 
-let quitTestrunOngoing: Ref<boolean> = ref(false);
-let shutdownTestrunOngoing: Ref<boolean> = ref(false);
-let pauseTestrunOngoing: Ref<boolean> = ref(false);
+const quitTestrunOngoing: Ref<boolean> = ref(false);
+const shutdownTestrunOngoing: Ref<boolean> = ref(false);
+const pauseTestrunOngoing: Ref<boolean> = ref(false);
 
-let sideBarCollapsed: Ref<boolean> = ref(true);
+const sideBarCollapsed: Ref<boolean> = ref(true);
 
 const emitter: Emitter<any> = mitt();
 provide("emitter", emitter);
@@ -475,7 +475,7 @@ function fetchInitialServerStatus() {
         TestEnvStatusDto.sortArray(preFetchMessageList);
 
         // if notification list is missing a message (index not increased by one) abort and fetch anew assuming we might get a more current state
-        let indexConsistent = TestEnvStatusDto.checkMessagesInArrayAreWellOrdered(preFetchMessageList);
+        const indexConsistent = TestEnvStatusDto.checkMessagesInArrayAreWellOrdered(preFetchMessageList);
         if (!indexConsistent) {
           debug("prefetched message list is not consistent \nwait 500ms and refetch!");
           // TODO add them to the outOfOrderMessage list and return

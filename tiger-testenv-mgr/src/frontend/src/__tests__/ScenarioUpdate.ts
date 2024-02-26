@@ -10,7 +10,7 @@ describe("testing ScenarioUpdate class", () => {
   const scenarioExample:string = '{"steps":{"3":{"description":"Then User requests classes with parameter xyz=4","status":"PASSED","stepIndex":3,"rbelMetaData":[]}},"description":"Test find last request with parameters","exampleKeys":["key1", "key2", "key3"],"exampleList":{"key1": "value1", "key2":"value2", "key3":"value3"},"variantIndex":4, "status": "PASSED"}';
 
   test("empty ScenarioUpdate should contain undefined values", () => {
-    let scenario = new ScenarioUpdate();
+    const scenario = new ScenarioUpdate();
     expect(scenario.description).toBe("");
     expect(scenario.status).toBe(TestResult.UNUSED);
     expect(scenario.steps.size).toEqual(0);
@@ -20,7 +20,7 @@ describe("testing ScenarioUpdate class", () => {
   });
 
   test("empty JSON applies correctly", () => {
-    let scenario = ScenarioUpdate.fromJson(JSON.parse("{ }"));
+    const scenario = ScenarioUpdate.fromJson(JSON.parse("{ }"));
     expect(scenario.description).toBeUndefined;
     expect(scenario.status).toBe(TestResult.UNUSED);
     expect(scenario.steps).toBeUndefined;
@@ -30,31 +30,31 @@ describe("testing ScenarioUpdate class", () => {
   });
 
   test("empty JSON description applies correctly", () => {
-    let scenario = ScenarioUpdate.fromJson(JSON.parse('{ "status": "PASSED" }'));
+    const scenario = ScenarioUpdate.fromJson(JSON.parse('{ "status": "PASSED" }'));
     expect(scenario.description).toBeUndefined;
     expect(scenario.status).toBe(TestResult.PASSED);
   });
 
   test("empty JSON status applies correctly", () => {
-    let scenario = ScenarioUpdate.fromJson(JSON.parse('{ "description": "desc" }'));
+    const scenario = ScenarioUpdate.fromJson(JSON.parse('{ "description": "desc" }'));
     expect(scenario.description).toBe("desc");
     expect(scenario.status).toBe(TestResult.UNUSED);
   });
 
   test("empty JSON variantIndex applies correctly", () => {
-    let scenario = ScenarioUpdate.fromJson(JSON.parse('{ "variantIndex":3 }'));
+    const scenario = ScenarioUpdate.fromJson(JSON.parse('{ "variantIndex":3 }'));
     expect(scenario.variantIndex).toBe(3);
     expect(scenario.status).toBe(TestResult.UNUSED);
   });
 
   test("empty JSON exampleKeys applies correctly", () => {
-    let scenario = ScenarioUpdate.fromJson(JSON.parse('{ "exampleKeys":[]}'));
+    const scenario = ScenarioUpdate.fromJson(JSON.parse('{ "exampleKeys":[]}'));
     expect(scenario.exampleKeys.length).toBe(0);
     expect(scenario.status).toBe(TestResult.UNUSED);
   });
 
   test("empty JSON full exampleKeys applies correctly", () => {
-    let scenario = ScenarioUpdate.fromJson(JSON.parse('{ "exampleKeys":["key1", "key2", "key3"]}'));
+    const scenario = ScenarioUpdate.fromJson(JSON.parse('{ "exampleKeys":["key1", "key2", "key3"]}'));
     expect(scenario.exampleKeys.length).toBe(3);
     expect(scenario.exampleKeys[0]).toBe("key1");
     expect(scenario.exampleKeys[1]).toBe("key2");
@@ -63,7 +63,7 @@ describe("testing ScenarioUpdate class", () => {
   });
 
   test("empty JSON full exampleList applies correctly", () => {
-    let scenario = ScenarioUpdate.fromJson(JSON.parse('{ "exampleList":{"key1": "value1", "key2":"value2", "key3":"value3"}}'));
+    const scenario = ScenarioUpdate.fromJson(JSON.parse('{ "exampleList":{"key1": "value1", "key2":"value2", "key3":"value3"}}'));
     expect(scenario.exampleList.size).toBe(3);
     expect(scenario.exampleList.get("key1")).toBe("value1");
     expect(scenario.exampleList.get("key2")).toBe("value2");
@@ -72,13 +72,13 @@ describe("testing ScenarioUpdate class", () => {
   });
 
   test("empty JSON variantIndex applies correctly", () => {
-    let scenario = ScenarioUpdate.fromJson(JSON.parse('{ "variantIndex":3 }'));
+    const scenario = ScenarioUpdate.fromJson(JSON.parse('{ "variantIndex":3 }'));
     expect(scenario.variantIndex).toBe(3);
     expect(scenario.status).toBe(TestResult.UNUSED);
   });
 
   test("JSON applies correctly", () => {
-    let scenario = ScenarioUpdate.fromJson(JSON.parse( scenarioExample));
+    const scenario = ScenarioUpdate.fromJson(JSON.parse(scenarioExample));
             expect(scenario.description).toBe("Test find last request with parameters");
     expect(scenario.exampleList.get("key1")).toBe("value1");
     expect(scenario.exampleList.get("key2")).toBe("value2");
@@ -106,10 +106,10 @@ describe("testing ScenarioUpdate class", () => {
         ${featureJsonDefault}  | ${'{ "description": "desc2", "status": "PENDING" }'} | ${'desc2'}            | ${TestResult.UNUSED}
         ${featureJsonDefault}  | ${'{ }'}                                             | ${'desc1'}            | ${TestResult.UNUSED}
       `.test('for $featureJson1 and $featureJson2 with result $testResult', ({featureJson1, featureJson2, description, testResult}) => {
-        let scenario1 = ScenarioUpdate.fromJson(
+      const scenario1 = ScenarioUpdate.fromJson(
             JSON.parse(featureJson1)
         );
-        let scenario2 = ScenarioUpdate.fromJson(
+      const scenario2 = ScenarioUpdate.fromJson(
             JSON.parse(featureJson2)
         );
         scenario1.merge(scenario2);

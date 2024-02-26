@@ -29,19 +29,19 @@ describe("testing TestResult class", () => {
         ${featureExampleWithUnsuedSteps}  | ${featureExampleWithUnsuedSteps}    | ${'passed'}       
         ${featureExampleWithUnsuedSteps}  | ${featureExampleWithSkippedSteps}   | ${'failed'}  
       `.test('for $featureJson1 and $featureJson2 with result $testResult', ({featureJson1, featureJson2, testResult}) => {
-      let feature1 = FeatureUpdate.fromJson(JSON.parse(featureJson1));
-      let feature2 = FeatureUpdate.fromJson(JSON.parse(featureJson2));
-      let map: Map<string, FeatureUpdate> = new Map<string, FeatureUpdate>();
+      const feature1 = FeatureUpdate.fromJson(JSON.parse(featureJson1));
+      const feature2 = FeatureUpdate.fromJson(JSON.parse(featureJson2));
+      const map: Map<string, FeatureUpdate> = new Map<string, FeatureUpdate>();
       map.set("1", feature1);
       map.set("2", feature2);
-      let result = currentOverallTestRunStatus(map);
+      const result = currentOverallTestRunStatus(map);
       expect(result).toBe(testResult);
     });
   });
 
   test("currentOverallTestRunStatus should be pending when map is empty", () => {
-    let map: Map<string, FeatureUpdate> = new Map<string, FeatureUpdate>();
-    let result = currentOverallTestRunStatus(map);
+    const map: Map<string, FeatureUpdate> = new Map<string, FeatureUpdate>();
+    const result = currentOverallTestRunStatus(map);
     expect(result).toBe("pending");
   });
 });
