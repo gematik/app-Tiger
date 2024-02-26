@@ -25,6 +25,7 @@ import static j2html.TagCreator.span;
 import static j2html.TagCreator.tag;
 import static j2html.TagCreator.title;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -89,7 +90,11 @@ public class RbelHtmlRenderingToolkit {
   public static final String JSON_NOTE = "json-note";
 
   @Getter
-  private final ObjectMapper objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
+  private final ObjectMapper objectMapper =
+      new ObjectMapper()
+          .enable(SerializationFeature.INDENT_OUTPUT)
+          .configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+
   @Getter private final Map<UUID, JsonNoteEntry> noteTags = new HashMap<>();
   private final RbelHtmlRenderer rbelHtmlRenderer;
   private static final TigerTypedConfigurationKey<String> logoFilePath =
@@ -526,11 +531,7 @@ public class RbelHtmlRenderingToolkit {
       final int finalI = i;
       final List<? extends RbelElement> rbelListElements =
           originalElement.getFacetOrFail(RbelListFacet.class).getChildNodes();
-      output.add(
-          shadeJson(
-              input.get(i),
-              key.map(v -> v + "." + finalI),
-              rbelListElements.get(i)));
+      output.add(shadeJson(input.get(i), key.map(v -> v + "." + finalI), rbelListElements.get(i)));
     }
     return output;
   }
@@ -543,8 +544,7 @@ public class RbelHtmlRenderingToolkit {
       noteTags.put(
           uuid,
           JsonNoteEntry.builder()
-              .stringToMatch(
-                  "\"note\" : \"" + uuid + "\"" + (input.isEmpty() ? "" : ","))
+              .stringToMatch("\"note\" : \"" + uuid + "\"" + (input.isEmpty() ? "" : ","))
               .tagForKeyReplacement(span())
               .tagForValueReplacement(
                   span()
@@ -582,8 +582,7 @@ public class RbelHtmlRenderingToolkit {
         rbelHtmlRenderer
             .getRbelValueShader()
             .shadeValue(input, key)
-            .map(
-                shadedValue -> (JsonNode) new TextNode(StringEscapeUtils.escapeHtml4(shadedValue)))
+            .map(shadedValue -> (JsonNode) new TextNode(StringEscapeUtils.escapeHtml4(shadedValue)))
             .orElse(input);
 
     if (!originalElement.getNotes().isEmpty()) {
