@@ -138,7 +138,7 @@ class ConfigurationEditorTest extends AbstractTests {
                     row.stream()
                         .filter(
                             r ->
-                                r.locator("#test-tg-config-editor-table-row")
+                                r.locator(".test-tg-config-editor-table-row")
                                     .textContent()
                                     .equals(value))
                         .count())
@@ -172,7 +172,7 @@ class ConfigurationEditorTest extends AbstractTests {
         row.stream()
             .filter(
                 r ->
-                    r.locator("#test-tg-config-editor-table-row.text-truncate")
+                    r.locator(".test-tg-config-editor-table-row.text-truncate")
                         .textContent()
                         .contains(expectedText))
             .count());
@@ -202,17 +202,17 @@ class ConfigurationEditorTest extends AbstractTests {
                     row.stream()
                         .allMatch(
                             r ->
-                                r.locator("#test-tg-config-editor-table-row.text-break.multi-line")
+                                r.locator(".test-tg-config-editor-table-row.text-break.multi-line")
                                     .isVisible())));
     assertFalse(
         row.stream()
             .allMatch(
-                r -> r.locator("#test-tg-config-editor-table-row.text-truncate").isVisible()));
+                r -> r.locator(".test-tg-config-editor-table-row.text-truncate").isVisible()));
     assertTrue(
         row.stream()
             .allMatch(
                 r ->
-                    r.locator("#test-tg-config-editor-table-row.text-break.multi-line")
+                    r.locator(".test-tg-config-editor-table-row.text-break.multi-line")
                         .textContent()
                         .contains(expectedText)));
   }
@@ -234,19 +234,19 @@ class ConfigurationEditorTest extends AbstractTests {
                     row.stream()
                         .allMatch(
                             r ->
-                                r.locator("#test-tg-config-editor-table-row.text-truncate")
+                                r.locator(".test-tg-config-editor-table-row.text-truncate")
                                     .isVisible())));
     assertFalse(
         row.stream()
             .allMatch(
                 r ->
-                    r.locator("#test-tg-config-editor-table-row.text-break.multi-line")
+                    r.locator(".test-tg-config-editor-table-row.text-break.multi-line")
                         .isVisible()));
     assertTrue(
         row.stream()
             .allMatch(
                 r ->
-                    r.locator("#test-tg-config-editor-table-row.text-truncate")
+                    r.locator(".test-tg-config-editor-table-row.text-truncate")
                         .textContent()
                         .contains(expectedText)));
   }
@@ -286,7 +286,7 @@ class ConfigurationEditorTest extends AbstractTests {
     assertTrue(
         row.stream()
             .anyMatch(
-                r -> r.locator("#test-tg-config-editor-table-row").textContent().equals(value)));
+                r -> r.locator(".test-tg-config-editor-table-row").textContent().equals(value)));
 
     editRowValueByDoubleClick(value, newValue);
 
@@ -297,7 +297,7 @@ class ConfigurationEditorTest extends AbstractTests {
         updatedRow.stream()
             .anyMatch(
                 r ->
-                    r.locator("#test-tg-config-editor-table-row")
+                    r.locator(".test-tg-config-editor-table-row")
                         .textContent()
                         .equals(value + newValue)));
   }
@@ -319,13 +319,12 @@ class ConfigurationEditorTest extends AbstractTests {
 
   private void editRowValueByDoubleClick(String oldValue, String newValue) {
     String xpathToValue =
-        "//code[@id='test-tg-config-editor-table-row' and text()='" + oldValue + "']";
+        "//code[contains(@class, 'test-tg-config-editor-table-row') and text()='" + oldValue + "']";
     page.locator(xpathToValue).dblclick();
     page.waitForSelector("#test-tg-config-editor-text-area");
-    page.locator("#test-tg-config-editor-text-area").type(newValue);
+    page.locator("#test-tg-config-editor-text-area").fill(oldValue + newValue);
     await().untilAsserted(() -> page.locator("#test-tg-config-editor-btn-save").isVisible());
     page.locator("#test-tg-config-editor-btn-save").click();
-    page.waitForSelector("#test-tg-config-editor-table-row");
   }
 
   private void closeTgConfigEditor() {
@@ -366,7 +365,7 @@ class ConfigurationEditorTest extends AbstractTests {
     assertTrue(
         row.stream()
             .anyMatch(
-                r -> r.locator("#test-tg-config-editor-table-row").textContent().equals(value)));
+                r -> r.locator(".test-tg-config-editor-table-row").textContent().equals(value)));
 
     page.locator(
             "//div[@col-id='key' and text()='"
@@ -381,7 +380,7 @@ class ConfigurationEditorTest extends AbstractTests {
                   row.stream()
                       .filter(
                           r ->
-                              r.locator("#test-tg-config-editor-table-row")
+                              r.locator(".test-tg-config-editor-table-row")
                                   .textContent()
                                   .equals(value))
                       .toList();
@@ -392,15 +391,14 @@ class ConfigurationEditorTest extends AbstractTests {
 
   @Test
   void testOpenAndClearFilter() {
-    page.locator(".ag-header-icon.ag-header-cell-menu-button .ag-icon.ag-icon-menu")
-        .nth(1)
-        .dblclick();
-    var inputField = page.locator("input[placeholder='Filter...']");
-    inputField.type("tgr");
+    page.locator(".ag-header-icon.ag-header-cell-menu-button .ag-icon.ag-icon-menu").nth(1).click();
+
+    var inputField = page.locator("input[placeholder='Filter...']").first();
+    inputField.fill("tgr");
     await().untilAsserted(() -> page.locator("#test-tg-config-editor-table").isVisible());
 
     page.locator("#test-tg-config-editor-btn-clear-filters").click();
     await().untilAsserted(() -> page.locator(".vsp__header").isVisible());
-    page.locator(".vsp__header").click();
+    page.locator(".vsp__header h1").click();
   }
 }

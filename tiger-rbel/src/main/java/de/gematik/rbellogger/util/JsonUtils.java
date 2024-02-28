@@ -16,30 +16,34 @@
 
 package de.gematik.rbellogger.util;
 
-import com.google.gson.JsonParser;
-import java.util.List;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
+import lombok.SneakyThrows;
 import org.apache.commons.lang3.tuple.Pair;
 
 public class JsonUtils {
 
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
   private JsonUtils() {}
 
-  public static List<Entry<String, String>> convertJsonObjectStringToMap(String jsonObjectString) {
-    return JsonParser.parseString(jsonObjectString).getAsJsonObject().entrySet().stream()
-        .map(
-            entry -> {
-              if (entry.getValue().isJsonPrimitive()
-                  && entry.getValue().getAsJsonPrimitive().isString()) {
-                return Pair.of(entry.getKey(), entry.getValue().getAsString());
-              } else {
-                return Pair.of(entry.getKey(), entry.getValue().toString());
-              }
-            })
-        .collect(Collectors.toList()); // NOSONAR
-    // using toList() leads to issues with the required Map.Entry return type which is abstract and
-    // can't
-    // be instantiated.
+  @SneakyThrows
+  public static synchronized List<Entry<String, String>> convertJsonObjectStringToMap(
+      String jsonObjectString) {
+    List<Entry<String, String>> result = new ArrayList<>();
+
+    for (Iterator<Entry<String, JsonNode>> it = OBJECT_MAPPER.readTree(jsonObjectString).fields();
+        it.hasNext(); ) {
+      var entry = it.next();
+      if (entry.getValue().isValueNode() && entry.getValue().isTextual()) {
+        result.add(Pair.of(entry.getKey(), entry.getValue().textValue()));
+      } else {
+        result.add(Pair.of(entry.getKey(), entry.getValue().toString()));
+      }
+    }
+
+    return result;
   }
 }

@@ -21,7 +21,7 @@ export function useConfigurationLoader() {
 
   async function loadConfigurationProperties(): Promise<Array<TigerConfigurationPropertyDto>> {
     try {
-      const response = await fetch(process.env.BASE_URL + CONFIGURATION_EDITOR_URL);
+      const response = await fetch(import.meta.env.BASE_URL + CONFIGURATION_EDITOR_URL);
       return await response.json();
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -31,7 +31,7 @@ export function useConfigurationLoader() {
 
   async function loadSubsetOfProperties(keyPrefix: string) {
     try {
-      const response = await fetch(process.env.BASE_URL + CONFIGURATION_EDITOR_URL + `/${keyPrefix}`);
+      const response = await fetch(import.meta.env.BASE_URL + CONFIGURATION_EDITOR_URL + `/${keyPrefix}`);
       return await response.json();
     } catch (error) {
       console.error('Error fetching data:', error);

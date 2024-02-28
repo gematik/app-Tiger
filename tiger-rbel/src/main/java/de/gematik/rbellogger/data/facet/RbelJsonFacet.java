@@ -21,8 +21,7 @@ import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.vertParent
 import static j2html.TagCreator.div;
 import static j2html.TagCreator.pre;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
@@ -36,6 +35,7 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.Builder;
 import lombok.Data;
+import lombok.SneakyThrows;
 
 @Data
 @Builder(toBuilder = true)
@@ -53,15 +53,16 @@ public class RbelJsonFacet implements RbelFacet {
                     .isPresent();
           }
 
+          @SneakyThrows
           @Override
           public ContainerTag performRendering(
               RbelElement element,
               Optional<String> key,
               RbelHtmlRenderingToolkit renderingToolkit) {
             String formatedJson =
-                RbelHtmlRenderingToolkit.GSON.toJson(
+                renderingToolkit.getObjectMapper().writeValueAsString(
                     renderingToolkit.shadeJson(
-                        JsonParser.parseString(element.getRawStringContent()),
+                        renderingToolkit.getObjectMapper().readTree(element.getRawStringContent()),
                         Optional.empty(),
                         element));
             for (final Entry<UUID, JsonNoteEntry> entry :
@@ -95,7 +96,7 @@ public class RbelJsonFacet implements RbelFacet {
         });
   }
 
-  private final JsonElement jsonElement;
+  private final JsonNode jsonElement;
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {

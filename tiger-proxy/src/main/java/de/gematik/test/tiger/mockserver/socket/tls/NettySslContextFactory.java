@@ -148,7 +148,7 @@ public class NettySslContextFactory {
         TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
     trustManagerFactory.init((KeyStore) null);
     return Arrays.stream(trustManagerFactory.getTrustManagers())
-        .filter(trustManager -> trustManager instanceof X509TrustManager)
+        .filter(X509TrustManager.class::isInstance)
         .flatMap(
             trustManager -> Arrays.stream(((X509TrustManager) trustManager).getAcceptedIssuers()))
         .collect(() -> additionalX509Certificates, List::add, List::addAll)
@@ -202,6 +202,7 @@ public class NettySslContextFactory {
       configuration.rebuildServerTlsContext(false);
       return serverSslContext;
     } catch (Exception e) {
+      log.error("Exception creating SSL context for server", e);
       throw new RuntimeException("exception creating SSL context for server", e);
     }
   }

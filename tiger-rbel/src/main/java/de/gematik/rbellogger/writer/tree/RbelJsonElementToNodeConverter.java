@@ -18,7 +18,7 @@ package de.gematik.rbellogger.writer.tree;
 
 import static de.gematik.rbellogger.writer.RbelContentTreeConverter.ENCODE_AS;
 
-import com.google.gson.JsonPrimitive;
+import com.fasterxml.jackson.databind.JsonNode;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelJsonFacet;
@@ -88,7 +88,7 @@ public class RbelJsonElementToNodeConverter implements RbelElementToContentTreeN
     final List<RbelContentTreeNode> result = converter.convertNode(value, key, context);
     if (value
         .getFacet(RbelJsonFacet.class)
-        .map(facet -> facet.getJsonElement().isJsonArray())
+        .map(facet -> facet.getJsonElement().isArray())
         .orElse(false)) {
       result.forEach(node -> node.attributes().put(JSON_ARRAY, "true"));
     }
@@ -100,8 +100,7 @@ public class RbelJsonElementToNodeConverter implements RbelElementToContentTreeN
     if (!valueElement
         .getFacet(RbelJsonFacet.class)
         .map(RbelJsonFacet::getJsonElement)
-        .map(JsonPrimitive.class::cast)
-        .map(JsonPrimitive::isString)
+        .map(JsonNode::isTextual)
         .orElse(false)) {
       nodes.forEach(node -> node.attributes().put(JSON_NON_STRING_PRIMITIVE, "true"));
     }

@@ -69,8 +69,8 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
       ChannelHandlerContext ctx, String hostname, Future<SslContext> sslContextFuture) {
     if (!sslContextFuture.isSuccess()) {
       final Throwable cause = sslContextFuture.cause();
-      if (cause instanceof Error) {
-        throw (Error) cause;
+      if (cause instanceof Error error) {
+        throw error;
       }
       throw new DecoderException("Failed to get the SslContext for " + hostname, cause);
     } else {

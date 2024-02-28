@@ -206,7 +206,8 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
                           "Could not reload configuration for server with id %s", getServerId()));
       tigerTestEnvMgr.getConfiguration().getServers().put(getServerId(), configuration);
     } catch (TigerConfigurationException e) {
-      log.warn("Could not reload configuration for server {}", getServerId(), e);
+      throw new TigerEnvironmentStartupException(
+          "Could not reload configuration for server " + getServerId(), e);
     }
   }
 

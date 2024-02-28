@@ -25,6 +25,7 @@ import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -72,7 +73,7 @@ public class RbelPathExecutor<T extends RbelPathAble> {
   }
 
   private static List<? extends RbelPathAble> executeNamedSelection(
-      String functionExpression, RbelPathAble content) {
+      String functionExpression, RbelPathAble content, BiPredicate<String, String> keyPredicate) {
     return Stream.of(functionExpression.split("\\|"))
         .map(
             s -> {
@@ -83,7 +84,12 @@ public class RbelPathExecutor<T extends RbelPathAble> {
               return s.substring(1, s.length() - 1);
             })
         .map(s1 -> URLDecoder.decode(s1, StandardCharsets.UTF_8))
-        .map(content::getAll)
+        .map(
+            key ->
+                content.getChildNodesWithKey().stream()
+                    .filter(entry -> keyPredicate.test(key, entry.getKey()))
+                    .map(Map.Entry::getValue)
+                    .toList())
         .flatMap(List::stream)
         .toList();
   }
@@ -227,7 +233,7 @@ public class RbelPathExecutor<T extends RbelPathAble> {
   private List<? extends RbelPathAble> executeFunctionalExpression(
       final String functionExpression, final RbelPathAble content, boolean selectorPartIsEmpty) {
     if (functionExpression.startsWith("'") && functionExpression.endsWith("'")) {
-      return executeNamedSelection(functionExpression, content);
+      return executeNamedSelection(functionExpression, content, String::equals);
     } else if (functionExpression.equals("*")) {
       return content.getChildNodes();
     } else if (functionExpression.startsWith("?")) {
@@ -239,6 +245,14 @@ public class RbelPathExecutor<T extends RbelPathAble> {
       } else {
         throw new RbelPathException(
             "Invalid JEXL-Expression encountered (Does not start with '?(' and end with ')'): "
+                + functionExpression);
+      }
+    } else if (functionExpression.startsWith("~")) {
+      if (functionExpression.startsWith("~'") && functionExpression.endsWith("'")) {
+        return executeNamedSelection(functionExpression.substring(1), content, String::equalsIgnoreCase);
+      } else {
+        throw new RbelPathException(
+            "Invalid JEXL-Expression encountered (Does not start with \"~'\"' and end with \")\"): "
                 + functionExpression);
       }
     } else {

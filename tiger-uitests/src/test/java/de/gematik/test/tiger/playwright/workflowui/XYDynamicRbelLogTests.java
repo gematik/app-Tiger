@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.microsoft.playwright.Download;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
@@ -194,11 +195,9 @@ class XYDynamicRbelLogTests extends AbstractTests {
     await()
         .untilAsserted(
             () ->
-                assertThat(
-                        page.frameLocator("#rbellog-details-iframe")
-                            .locator("#filteredMessage")
-                            .textContent())
-                    .isEqualTo("0 of 52 did match the filter criteria."));
+                PlaywrightAssertions.assertThat(
+                        page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
+                    .hasText("0 of %s did match the filter criteria.".formatted(TOTAL_MESSAGES)));
 
     String content =
         page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent();
@@ -215,7 +214,9 @@ class XYDynamicRbelLogTests extends AbstractTests {
     assertAll(
         () -> assertThat(requestToContent).contains("no request"),
         () -> assertThat(requestFromContent).contains("no request"),
-        () -> assertThat(content).isEqualTo("0 of 52 did match the filter criteria."),
+        () ->
+            assertThat(content)
+                .isEqualTo("0 of %d did match the filter criteria.".formatted(TOTAL_MESSAGES)),
         () -> assertThat(count).isZero());
   }
 
@@ -231,15 +232,14 @@ class XYDynamicRbelLogTests extends AbstractTests {
     await()
         .untilAsserted(
             () ->
-                assertThat(
-                        page.frameLocator("#rbellog-details-iframe")
-                            .locator("#filteredMessage")
-                            .textContent())
-                    .isEqualTo("4 of 52 did match the filter criteria."));
+                PlaywrightAssertions.assertThat(
+                        page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
+                    .hasText("4 of %d did match the filter criteria.".formatted(TOTAL_MESSAGES)));
     String content =
         page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent();
     page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
-    assertThat(content).isEqualTo("4 of 52 did match the filter criteria.");
+    assertThat(content)
+        .isEqualTo("4 of %d did match the filter criteria.".formatted(TOTAL_MESSAGES));
   }
 
   @Test

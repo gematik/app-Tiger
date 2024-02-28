@@ -42,9 +42,10 @@ class ConfigEditorScreenshotsTest extends AbstractTests {
     screenshotByClassname(page, "tg_global_config_editor.png", "vsp__header");
 
     await().untilAsserted(() -> page.locator("#test-tg-config-editor-btn-delete").nth(1).hover());
-    screenshotElementById(page, "config_editor_delete_button.png", "test-tg-config-editor-btn-delete");
-
-    String xpathToValue = "//code[@id='test-tg-config-editor-table-row' and text()='myEnv']";
+    screenshotElementById(
+        page, "config_editor_delete_button.png", "test-tg-config-editor-btn-delete");
+    String xpathToValue =
+        "//code[contains(@class, 'test-tg-config-editor-table-row') and text()='myEnv']";
     page.locator(xpathToValue).dblclick();
     page.waitForSelector("#test-tg-config-editor-text-area");
     screenshotElementById(
@@ -64,7 +65,7 @@ class ConfigEditorScreenshotsTest extends AbstractTests {
     await()
         .untilAsserted(
             () ->
-                page.locator("#test-tg-config-editor-table-row.text-break.multi-line").isVisible());
+                page.locator(".test-tg-config-editor-table-row.text-break.multi-line").isVisible());
 
     screenshotByClassname(
         page, "config_editor_expand_icon.png", "value col-11 gy-1 hljs text-break multi-line");
@@ -74,11 +75,9 @@ class ConfigEditorScreenshotsTest extends AbstractTests {
   }
 
   private void openMenuAndFilter() {
-    page.locator(".ag-header-icon.ag-header-cell-menu-button .ag-icon.ag-icon-menu")
-        .nth(1)
-        .dblclick();
-    var inputField = page.locator("input[placeholder='Filter...']");
-    inputField.type("tgr");
+    page.locator(".ag-header-icon.ag-header-cell-menu-button .ag-icon.ag-icon-menu").nth(1).click();
+    var inputField = page.locator("input[placeholder='Filter...']").first();
+    inputField.fill("tgr");
     await().untilAsserted(() -> page.locator("#test-tg-config-editor-table").isVisible());
   }
 }

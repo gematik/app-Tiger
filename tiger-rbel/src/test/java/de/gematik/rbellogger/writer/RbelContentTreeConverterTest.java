@@ -198,7 +198,7 @@ class RbelContentTreeConverterTest {
   @SneakyThrows
   @Test
   void writeJson() {
-    final RbelElement input = rbelConverter.convertElement("{'foo':'bar'}".getBytes(), null);
+    final RbelElement input = rbelConverter.convertElement("{\"foo\":\"bar\"}".getBytes(), null);
 
     final String result =
         new String(

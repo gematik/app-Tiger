@@ -71,6 +71,7 @@ import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.tomcat.util.buf.UriUtil;
+import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -128,12 +129,15 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
           if (tlsConfiguration.getServerTlsProtocols() != null) {
             builder.protocols(tlsConfiguration.getServerTlsProtocols());
           }
-          builder.sslProvider(SslProvider.OPENSSL);
           if (tlsConfiguration.getOcspSignerIdentity() != null) {
             builder.enableOcsp(true);
             mockServerConfiguration.ocspResponseSupplier(
                 certificate ->
                     buildOcspResponse(certificate, tlsConfiguration.getOcspSignerIdentity()));
+            builder.sslProvider(SslProvider.OPENSSL);
+          } else {
+            builder.sslProvider(SslProvider.JDK);
+            builder.sslContextProvider(new BouncyCastleJsseProvider());
           }
 
           return builder;
@@ -167,11 +171,10 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         .build();
   }
 
-  private static SSLContext tryGetSslContext(SSLContext sslContext) {
+  private static void configureUnirestStaticInstance(SSLContext sslContext) {
     try (CloseableHttpClient httpClient = getHttpClient(sslContext);
         UnirestInstance unirestInstance = Unirest.primaryInstance()) {
       unirestInstance.config().httpClient(config -> ApacheClient.builder(httpClient).apply(config));
-      return sslContext;
     } catch (IOException e) {
       throw new TigerProxyTrustManagerBuildingException(
           "Error while building HTTP Client for Tiger Proxy", e);
@@ -621,11 +624,10 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
       final KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
       ks.load(null);
       final TigerPkiIdentity serverIdentity =
-          determineServerRootCa()
-              .or(
-                  () ->
-                      Optional.ofNullable(getTigerProxyConfiguration().getTls())
-                          .map(TigerTlsConfiguration::getServerIdentity))
+        Optional.ofNullable(getTigerProxyConfiguration().getTls())
+          .map(TigerTlsConfiguration::getServerIdentity)
+          .map(TigerPkiIdentity.class::cast)
+            .or(this::determineServerRootCa)
               .orElseThrow(
                   () ->
                       new TigerProxyTrustManagerBuildingException(
@@ -656,7 +658,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
       SSLContext sslContext = SSLContext.getInstance("TLS");
       TrustManager[] trustManagers = tmf.getTrustManagers();
       sslContext.init(null, trustManagers, null);
-      return tryGetSslContext(sslContext);
+      configureUnirestStaticInstance(sslContext);
+      return sslContext;
     } catch (RuntimeException
         | NoSuchAlgorithmException
         | KeyStoreException

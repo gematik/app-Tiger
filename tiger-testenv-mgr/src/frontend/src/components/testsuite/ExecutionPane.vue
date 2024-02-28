@@ -75,14 +75,14 @@
                   </td>
                   <td :class="`step_text step_index_${index}`">
                     <div v-html="step[1].description"></div>
-                    <div v-for="(rbelmsg, index) in step[1].rbelMetaData" :key="index">
+                    <div v-for="rbelmsg in step[1].rbelMetaData" :key="rbelmsg.uuid">
                       <div v-if="rbelmsg.method" class="rbelmessage">
                         <a v-on:click="ui.showRbelLogDetails(rbelmsg.uuid, '' + rbelmsg.sequenceNumber, $event)"
                            href="#" class="badge rbelDetailsBadge test-rbel-link">
                           {{ rbelmsg.sequenceNumber + 1 }}
                         </a>
                         <b>{{ rbelmsg.method }} {{
-                            step[1].rbelMetaData[index + 1].responseCode
+                            getPairResponseCode(rbelmsg, step[1].rbelMetaData)
                           }}</b>
                         <span>&nbsp;&nbsp;&nbsp;&rarr;&nbsp;&nbsp;&nbsp;
                         {{ rbelmsg.recipient }}{{ rbelmsg.path }}</span>
@@ -110,6 +110,7 @@ import BannerMessageWindow from "@/components/testsuite/BannerMessageWindow.vue"
 import {getTestResultIcon} from "@/types/testsuite/TestResult";
 import Ui from "@/types/ui/Ui";
 import LargeReplayButton from "@/components/replay/LargeReplayButton.vue";
+import MessageMetaDataDto from "@/types/rbel/MessageMetaDataDto";
 
 defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;
@@ -120,6 +121,15 @@ defineProps<{
   quitTestrunOngoing: boolean;
   shutdownTestrunOngoing: boolean;
 }>();
+
+function findPair(currentMessage: MessageMetaDataDto, messages: MessageMetaDataDto[]) {
+  return messages.find(m => m.uuid === currentMessage.pairedUuid);
+}
+
+function getPairResponseCode(currentMessage: MessageMetaDataDto, messages: MessageMetaDataDto[]) {
+  const pair = findPair(currentMessage, messages);
+  return pair ? pair.responseCode : 'response not found';
+}
 
 const maxOutlineTableColumns = 4;
 

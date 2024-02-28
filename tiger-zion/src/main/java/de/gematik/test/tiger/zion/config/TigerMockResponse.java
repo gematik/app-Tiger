@@ -23,6 +23,7 @@ public class TigerMockResponse {
   @TigerSkipEvaluation @Builder.Default private List<String> requestCriterions = new ArrayList<>();
   private ZionRequestMatchDefinition request;
   private TigerMockResponseDescription response;
+  @Builder.Default
   private Map<String, TigerMockResponse> nestedResponses = new HashMap<>();
 
   @Builder.Default
@@ -30,9 +31,17 @@ public class TigerMockResponse {
 
   @TigerSkipEvaluation @Builder.Default private Map<String, String> assignments = new HashMap<>();
   private int importance = 0;
+  private String name;
 
   @JsonIgnore
   public Optional<ZionRequestMatchDefinition> getRequestOptional() {
     return Optional.ofNullable(request);
+  }
+
+  public void init() {
+    if (nestedResponses != null) {
+      nestedResponses.forEach((k, v) -> v.setName(k));
+      nestedResponses.values().forEach(TigerMockResponse::init);
+    }
   }
 }

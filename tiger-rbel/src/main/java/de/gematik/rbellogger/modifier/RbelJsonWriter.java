@@ -16,11 +16,12 @@
 
 package de.gematik.rbellogger.modifier;
 
-import com.google.gson.JsonElement;
+import com.fasterxml.jackson.databind.JsonNode;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelJsonFacet;
 import de.gematik.rbellogger.exceptions.RbelJexlException;
-import java.util.Map;
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.StringJoiner;
 
 public class RbelJsonWriter implements RbelElementWriter {
@@ -33,20 +34,21 @@ public class RbelJsonWriter implements RbelElementWriter {
   @Override
   public byte[] write(
       RbelElement oldTargetElement, RbelElement oldTargetModifiedChild, byte[] newContent) {
-    final JsonElement jsonElement =
+    final JsonNode jsonElement =
         oldTargetElement.getFacetOrFail(RbelJsonFacet.class).getJsonElement();
-    if (jsonElement.isJsonPrimitive()) {
-      if (jsonElement.getAsJsonPrimitive().isString()) {
+    if (jsonElement.isValueNode()) {
+      if (jsonElement.isTextual()) {
         return (quote(new String(newContent, oldTargetElement.getElementCharset())))
             .getBytes(oldTargetElement.getElementCharset());
       } else {
         return newContent;
       }
-    } else if (jsonElement.isJsonObject()) {
+    } else if (jsonElement.isObject()) {
       return writeJsonObject(oldTargetElement, oldTargetModifiedChild, newContent, jsonElement);
-    } else if (jsonElement.isJsonArray()) {
+    } else if (jsonElement.isArray()) {
       StringJoiner joiner = new StringJoiner(",");
-      for (JsonElement entry : jsonElement.getAsJsonArray()) {
+      for (Iterator<JsonNode> it = jsonElement.elements(); it.hasNext(); ) {
+        JsonNode entry = it.next();
         if (entry == oldTargetModifiedChild.getFacetOrFail(RbelJsonFacet.class).getJsonElement()) {
           joiner.add(new String(newContent, oldTargetElement.getElementCharset()));
         } else {
@@ -65,9 +67,10 @@ public class RbelJsonWriter implements RbelElementWriter {
       RbelElement oldTargetElement,
       RbelElement oldTargetModifiedChild,
       byte[] newContent,
-      JsonElement jsonElement) {
+      JsonNode jsonElement) {
     StringJoiner joiner = new StringJoiner(",");
-    for (Map.Entry<String, JsonElement> entry : jsonElement.getAsJsonObject().entrySet()) {
+    for (Iterator<Entry<String, JsonNode>> it = jsonElement.fields(); it.hasNext(); ) {
+      Entry<String, JsonNode> entry = it.next();
       if (entry.getValue()
           == oldTargetModifiedChild.getFacetOrFail(RbelJsonFacet.class).getJsonElement()) {
         joiner.add(

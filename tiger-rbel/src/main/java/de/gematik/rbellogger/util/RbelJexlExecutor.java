@@ -162,7 +162,7 @@ public class RbelJexlExecutor {
     int pos = 0;
     IntPredicate openingJexlBracketIsNext = p -> jexlExpression.startsWith("[?(", p);
     IntPredicate closingJexlBracketIsNext = p -> jexlExpression.startsWith(")]", p);
-    IntPredicate openingVerbatimBracketIsNext = p -> jexlExpression.startsWith("['", p);
+    IntPredicate openingVerbatimBracketIsNext = p -> jexlExpression.startsWith("['", p) || jexlExpression.startsWith("[~'", p);
     IntPredicate closingVerbatimBracketIsNext = p -> jexlExpression.startsWith("']", p);
     IntPredicate nextCharIsNotStillRbelPath =
         p -> !jexlExpression.substring(p).matches(RBEL_PATH_CHARS); // NOSONAR

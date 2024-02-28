@@ -108,14 +108,14 @@ function setServer(selectedServers: Array<string>, serverId: string, event: Mous
   event.preventDefault();
   const buttons = document.getElementsByClassName('server-buttons');
   if (serverId === ALL) {
-    for (let button of buttons) {
+    for (const button of buttons) {
       button.classList.toggle("active", false);
     }
     if (selectedServers.length > 0) {
       selectedServers.splice(0, selectedServers.length);
     }
   }
-  for (let button of buttons) {
+  for (const button of buttons) {
     if (button.textContent.trim() === "Show all logs") {
       button.classList.toggle("active", false);
       const index = selectedServers.findIndex((server) => server === ALL);
@@ -140,7 +140,7 @@ function setServer(selectedServers: Array<string>, serverId: string, event: Mous
 }
 
 function getLogLevel(): Array<string> {
-  let logLevelValues = new Array<string>();
+  const logLevelValues = new Array<string>();
   const length = Object.keys(LogLevel).length / 2;
   for (let i = length - 1; i > -1; i--) {
     logLevelValues.push(LogLevel[i]);
@@ -152,7 +152,7 @@ function filteredLogs(serverLogs: Array<TigerServerLogDto>, selectedServers: Arr
   if (selectedServers && selectedServers.length > 0 && selectedServers.indexOf(ALL) === -1) {
     return serverLogs.filter((log) => {
       return selectedServers.some((selectedServer) => {
-        let filteredLog = filterLogLevel(log, selectedText, selectedLoglevel)
+        const filteredLog = filterLogLevel(log, selectedText, selectedLoglevel)
         if (selectedServer === (log.serverName as string)) {
           return filteredLog;
         }

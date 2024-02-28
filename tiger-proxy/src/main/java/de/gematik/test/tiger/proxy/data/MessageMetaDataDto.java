@@ -45,6 +45,7 @@ public class MessageMetaDataDto {
   private String menuInfoString;
   private ZonedDateTime timestamp;
   private boolean isRequest;
+  private String pairedUuid;
 
   public static MessageMetaDataDto createFrom(RbelElement el) {
     MessageMetaDataDto.MessageMetaDataDtoBuilder builder = MessageMetaDataDto.builder();
@@ -79,7 +80,12 @@ public class MessageMetaDataDto {
                     .flatMap(RbelHostnameFacet::getBundledServerName)
                     .filter(element -> element.getRawStringContent() != null)
                     .flatMap(element -> Optional.of(element.getRawStringContent()))
-                    .orElse(""));
+                    .orElse(""))
+            .pairedUuid(
+                el.getFacet(TracingMessagePairFacet.class)
+                    .flatMap(f -> f.getOtherMessage(el))
+                    .map(RbelElement::getUuid)
+                    .orElse(null));
 
     if (el.hasFacet(RbelHttpRequestFacet.class)) {
       RbelHttpRequestFacet req = el.getFacetOrFail(RbelHttpRequestFacet.class);

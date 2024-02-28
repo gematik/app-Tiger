@@ -55,7 +55,7 @@ const renderDiagram = async () => {
       const messages = mermaidElement.value.querySelectorAll("text.messageText");
       messages.forEach(m => {
         m.classList.add("clickableMessageText")
-        m.addEventListener("click", () => clickOnMessage(m))
+        m.addEventListener("mousedown", () => clickOnMessage(m))
       })
     }
   } catch (error) {
@@ -86,6 +86,7 @@ watch(() => stringToRender.value, () => {
   user-select: none;
   text-decoration: none;
   transform-origin: center;
+  pointer-events: all;
 }
 
 .clickableMessageText:hover {

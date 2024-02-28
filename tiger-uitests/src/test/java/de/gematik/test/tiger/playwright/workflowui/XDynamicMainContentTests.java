@@ -67,7 +67,7 @@ class XDynamicMainContentTests extends AbstractTests {
     page.querySelector("#test-server-log-tab").click();
     page.querySelector("#test-server-log-pane-server-all").click();
     page.locator("#test-server-log-pane-select").selectOption("2");
-    page.locator("#test-server-log-pane-input-text").type("started");
+    page.locator("#test-server-log-pane-input-text").fill("started");
     assertThat(page.locator(".test-server-log-pane-log-1").all()).hasSize(5);
     page.locator("#test-server-log-pane-input-text").fill("");
     await()
@@ -82,7 +82,7 @@ class XDynamicMainContentTests extends AbstractTests {
     page.querySelector("#test-server-log-tab").click();
     page.querySelector("#test-server-log-pane-server-all").click();
     page.locator("#test-server-log-pane-select").selectOption("5");
-    page.locator("#test-server-log-pane-input-text").type("ready");
+    page.locator("#test-server-log-pane-input-text").fill("ready");
     assertThat(page.locator(".test-server-log-pane-log-1").isVisible()).isFalse();
     page.locator("#test-server-log-pane-input-text").fill("");
     await()
@@ -98,7 +98,7 @@ class XDynamicMainContentTests extends AbstractTests {
     page.querySelector("#test-server-log-pane-server-all").click();
     page.locator("#test-server-log-pane-input-text").fill("");
     page.locator("#test-server-log-pane-select").selectOption("5");
-    page.locator("#test-server-log-pane-input-text").type("READY");
+    page.locator("#test-server-log-pane-input-text").fill("READY");
     assertThat(page.locator(".test-server-log-pane-log-1").all()).hasSize(2);
     page.locator("#test-server-log-pane-input-text").fill("");
     await()

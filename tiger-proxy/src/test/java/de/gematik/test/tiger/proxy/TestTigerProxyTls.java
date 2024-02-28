@@ -19,6 +19,7 @@ package de.gematik.test.tiger.proxy;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
@@ -198,6 +199,31 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     unirestInstance.get("https://authn.aktor.epa.telematik-test/foobar").asString();
 
     await().atMost(2, TimeUnit.SECONDS).until(() -> callCounter.get() > 0);
+  }
+
+  @SneakyThrows
+  @Test
+  void eccBrainPoolServerCertificate_shouldWork() throws UnirestException {
+    prepareBouncyCastleSupportJdkSetup();
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("https://authn.aktor.epa.telematik-test")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .tls(
+                TigerTlsConfiguration.builder()
+                    .serverIdentity(
+                        new TigerConfigurationPkiIdentity(
+                            "src/test/resources/eccStoreWithChain.jks;gematik"))
+                    .serverSslSuites(List.of("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"))
+                    .build())
+            .build());
+
+    assertThatNoException()
+        .isThrownBy(proxyRest.get("https://authn.aktor.epa.telematik-test/foobar")::asString);
   }
 
   @Test
@@ -579,12 +605,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
       TigerConfigurationPkiIdentity clientIdentity) {
     var threadPool = Executors.newCachedThreadPool();
 
-    System.setProperty("jdk.tls.namedGroups", "brainpoolP384r1");
-    Security.setProperty("ssl.KeyManagerFactory.algorithm", "PKIX");
-    Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
-    Security.insertProviderAt(new BouncyCastleProvider(), 1);
-    Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
-    Security.insertProviderAt(new BouncyCastleJsseProvider(), 2);
+    prepareBouncyCastleSupportJdkSetup();
     SSLContext sslContext = getSSLContext(clientIdentity);
     SSLServerSocketFactory ssf = sslContext.getServerSocketFactory();
     SSLServerSocket serverSocket = (SSLServerSocket) ssf.createServerSocket(0);
@@ -611,6 +632,15 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         });
 
     return serverSocket.getLocalPort();
+  }
+
+  private static void prepareBouncyCastleSupportJdkSetup() {
+    System.setProperty("jdk.tls.namedGroups", "brainpoolP384r1");
+    Security.setProperty("ssl.KeyManagerFactory.algorithm", "PKIX");
+    Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
+    Security.insertProviderAt(new BouncyCastleProvider(), 1);
+    Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
+    Security.insertProviderAt(new BouncyCastleJsseProvider(), 2);
   }
 
   protected SSLContext getSSLContext(TigerConfigurationPkiIdentity clientIdentity)
@@ -868,7 +898,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
     var request = proxyRest.get("https://backend/foobar");
     // should use new certificate
-    assertThatThrownBy(() -> request.asJson()).isInstanceOf(RuntimeException.class);
+    assertThatThrownBy(request::asJson).isInstanceOf(RuntimeException.class);
     var newRestClient = Unirest.spawnInstance();
     newRestClient
         .config()
@@ -884,19 +914,20 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   @Test
   void tigerProxyAsServerWithActivatedOcspStapling_shouldSendValidOcspResponseInHandshake() {
     spawnTigerProxyAndConnectWithBouncyCastleAndCheckServerCertificate(
-        serverCertificate ->
-            assertThat(
-                    serverCertificate
-                        .getCertificateStatus()
-                        .getOCSPResponse()
-                        .getResponseStatus()
-                        .getIntValue())
-                .isZero(),
+        serverCertificate -> assertThat(
+                serverCertificate
+                    .getCertificateStatus()
+                    .getOCSPResponse()
+                    .getResponseStatus()
+                    .getIntValue())
+            .isZero(),
         TigerProxyConfiguration.builder()
             .tls(
                 TigerTlsConfiguration.builder()
                     .ocspSignerIdentity(
                         new TigerConfigurationPkiIdentity("src/test/resources/ocspSigner.p12;00"))
+                    .serverIdentity(
+                        new TigerConfigurationPkiIdentity("src/test/resources/nist_ee.p12;00"))
                     .build()));
   }
 

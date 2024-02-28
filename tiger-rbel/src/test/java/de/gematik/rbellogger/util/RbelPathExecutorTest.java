@@ -383,4 +383,15 @@ class RbelPathExecutorTest {
     assertThat(xmlMessage.findRbelPathMembers(rbelPath).get(0).getRawStringContent())
         .isEqualToIgnoringWhitespace(expectedResult);
   }
+
+  @ParameterizedTest
+  @CsvSource({
+    "$..[~'wRONGgnAmeSpaCe'], $..wrongNamespace",
+    "$..[~'blub'|'wRONGgnAmeSpaCe'], $..wrongNamespace",
+    "$..[~'wRONGgnAmeSpaCe'|'blub'], $..wrongNamespace"
+  })
+  void fuzzyMatching_shouldWork(String rbelPath, String expectedResult) {
+    assertThat(xmlMessage.findRbelPathMembers(rbelPath))
+        .isEqualTo(xmlMessage.findRbelPathMembers(expectedResult));
+  }
 }

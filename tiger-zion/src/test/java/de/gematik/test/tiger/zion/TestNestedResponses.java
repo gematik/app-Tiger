@@ -87,4 +87,23 @@ class TestNestedResponses {
                 .getStatus())
         .isEqualTo(200);
   }
+
+  @Test
+  void singleNestedResponse_shouldAlwaysBeSelected() {
+    configuration.setMockResponses(
+        Map.of(
+            "myResponse",
+            TigerMockResponse.builder()
+                .nestedResponses(
+                    Map.of(
+                        "nestedResponse",
+                        TigerMockResponse.builder()
+                            .response(
+                                TigerMockResponseDescription.builder().statusCode(666).build())
+                            .build()))
+                .build()));
+
+    assertThat(Unirest.get("http://localhost:" + port + "/foobar").asEmpty().getStatus())
+        .isEqualTo(666);
+  }
 }

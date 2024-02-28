@@ -29,10 +29,8 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.zion.config.*;
-import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -161,11 +159,10 @@ public class ZionRequestExecutor {
     VariableAssigner.doAssignments(mockResponse.getAssignments(), requestRbelMessage, context);
     executeBackendRequestsBeforeDecision(mockResponse, context);
     if (!doesItMatch(mockResponse, context)) {
-      if (log.isTraceEnabled() && (mockResponse.getResponse() != null)) {
+      if (log.isTraceEnabled()) {
         log.trace(
-            "Discarding response {} {} with criterions {} for message {}",
-            mockResponse.getResponse().getStatusCode(),
-            mockResponse.getResponse().getBody(),
+            "Discarding response {} with criterions {} for message {}",
+            mockResponse.getName(),
             mockResponse.getRequestCriterions(),
             requestRbelMessage.printTreeStructureWithoutColors());
       }
@@ -222,13 +219,22 @@ public class ZionRequestExecutor {
     VariableAssigner.doAssignments(
         pathMatchingResult.capturedVariables(), currentRequestRbelMessage, context);
 
-    return combinedRequestCriterions.stream()
-            .allMatch(
-                criterion ->
-                    TigerJexlExecutor.matchesAsJexlExpression(
-                        TigerGlobalConfiguration.resolvePlaceholdersWithContext(criterion, context),
-                        context))
-        && pathMatchingResult.doesItMatch();
+    for (String requestCriterion : combinedRequestCriterions) {
+      final boolean criterionMatches =
+          TigerJexlExecutor.matchesAsJexlExpression(
+              TigerGlobalConfiguration.resolvePlaceholdersWithContext(requestCriterion, context),
+              context);
+      if (!criterionMatches) {
+        log.trace("Criterion does not match for response {}: {}", mockResponse.getName(), requestCriterion);
+        return false;
+      }
+    }
+    if (pathMatchingResult.doesItMatch()) {
+      return true;
+    } else {
+      log.trace("Path does not match for response {}", mockResponse.getName());
+      return false;
+    }
   }
 
   private void executeBackendRequestsBeforeDecision(
@@ -344,26 +350,10 @@ public class ZionRequestExecutor {
 
   private Optional<RbelSerializationResult> renderResponseBody(
       TigerMockResponse response, TigerJexlContext context) {
-    Optional<String> bodyBlueprint =
-        Optional.ofNullable(response.getResponse().getBody())
-            .or(
-                () ->
-                    Optional.ofNullable(response.getResponse().getBodyFile())
-                        .map(Path::of)
-                        .map(
-                            p -> {
-                              try {
-                                return Files.readString(p);
-                              } catch (IOException e) {
-                                return null;
-                              }
-                            }));
-    if (bodyBlueprint.isEmpty()) {
-      return Optional.empty(); // NOSONAR
-    }
-
-    return Optional.ofNullable(
-        rbelWriter.serialize(
-            rbelLogger.getRbelConverter().convertElement(bodyBlueprint.get(), null), context));
+    return Optional.ofNullable(response.getResponse().getBody())
+        .map(
+            s ->
+                rbelWriter.serialize(
+                    rbelLogger.getRbelConverter().convertElement(s, null), context));
   }
 }

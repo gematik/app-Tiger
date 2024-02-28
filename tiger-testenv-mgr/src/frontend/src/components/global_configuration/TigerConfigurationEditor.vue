@@ -17,19 +17,17 @@
 <script setup lang="ts">
 
 import {inject, onMounted, onUnmounted, Ref, ref} from "vue";
-import {AgGridVue} from "ag-grid-vue3";
 import "ag-grid-community/styles/ag-grid.css"
 import "ag-grid-community/styles/ag-theme-alpine.css"
 import TigerConfigurationPropertyDto from "@/types/TigerConfigurationPropertyDto";
 import ConfigurationValueCell from "@/components/global_configuration/ConfigurationValueCell.vue";
 import ConfigurationSourceCell from "@/components/global_configuration/ConfigurationSourceCell.vue"
 import EditActionButtons from "@/components/global_configuration/EditActionButtons.vue";
-import {GridOptions} from "ag-grid-community/dist/lib/entities/gridOptions";
-import {CellClickedEvent, ColDef, GridApi} from "ag-grid-community";
-import {ColumnApi} from "ag-grid-community/dist/lib/columns/columnApi";
 import ConfigurationValueCellEditor from "@/components/global_configuration/ConfigurationValueCellEditor.vue";
 import {Emitter} from "mitt";
 import {useConfigurationLoader} from "@/components/global_configuration/ConfigurationLoader";
+import {CellClickedEvent, ColDef, GridApi} from "ag-grid-community";
+import {AgGridVue} from "ag-grid-vue3";
 
 const {loadConfigurationProperties} = useConfigurationLoader();
 
@@ -39,15 +37,13 @@ const CONFIGURATION_EDITOR_URL = 'global_configuration';
 const emitter: Emitter<any> = inject('emitter') as Emitter<any>;
 const configurationProperties = ref(new Array<TigerConfigurationPropertyDto>());
 
-const gridOptions: Ref<GridOptions> = ref({});
+const editorGrid: Ref<typeof AgGridVue | null> = ref(null);
 const gridApi: Ref<GridApi | null | undefined> = ref(undefined);
-const gridColumnApi: Ref<ColumnApi | null | undefined> = ref(undefined);
 
 onMounted(async () => {
   configurationProperties.value = await loadConfigurationProperties();
-  if (gridOptions.value) {
-    gridApi.value = gridOptions.value.api;
-    gridColumnApi.value = gridOptions.value.columnApi;
+  if (editorGrid.value) {
+    gridApi.value = editorGrid.value.api
   }
   emitter.on("cellValueSaved", onCellValueSaved);
 })
@@ -58,7 +54,7 @@ onUnmounted(() => {
 
 async function onCellValueSaved(data: TigerConfigurationPropertyDto) {
   try {
-    const response = await fetch(process.env.BASE_URL + CONFIGURATION_EDITOR_URL,
+    const response = await fetch(import.meta.env.BASE_URL + CONFIGURATION_EDITOR_URL,
         {
           method: "PUT",
           headers: {
@@ -77,7 +73,7 @@ async function onCellValueSaved(data: TigerConfigurationPropertyDto) {
 
 function onCellClicked(params: CellClickedEvent) {
   if (isClickInActionsColumn(params)) {
-    let action = (params.event?.target as HTMLElement).dataset.action
+    const action = (params.event?.target as HTMLElement).dataset.action
     if (action === 'delete') {
       deleteRow(params);
     }
@@ -94,7 +90,7 @@ function onClearFilters() {
 
 async function deleteRow(params: CellClickedEvent) {
   try {
-    const response = await fetch(process.env.BASE_URL + "global_configuration",
+    const response = await fetch(import.meta.env.BASE_URL + "global_configuration",
         {
           method: "DELETE",
           headers: {
@@ -155,15 +151,16 @@ const columnDefs: ColDef[] = [
 <template>
   <div class="container flex items-center">
     <div class="text-start py-1">
-      <button type="button" id="test-tg-config-editor-btn-clear-filters" @click="onClearFilters">Clear filters</button>
+      <button type="button" id="test-tg-config-editor-btn-clear-filters" @click.prevent="onClearFilters">Clear filters
+      </button>
     </div>
     <ag-grid-vue
         class="ag-theme-alpine editor-table"
         id="test-tg-config-editor-table"
+        ref="editorGrid"
         :rowData="configurationProperties"
         :columnDefs="columnDefs"
         :defaultColDef="defaultColDef"
-        :gridOptions="gridOptions"
         suppressClickEdit="false"
         suppressNavigable="true"
         cellClass="no-border"

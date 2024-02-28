@@ -53,7 +53,7 @@ function parseFeatureMap(featureUpdateMap: Map<string, FeatureUpdate>): RbelMeta
     for (const [, scenario] of feature.scenarios) {
       for (const [, step] of scenario.steps) {
         for (const rbelMeta of step.rbelMetaData) {
-          let rbelMetaSequenceNumber = rbelMeta.sequenceNumber + 1;
+          const rbelMetaSequenceNumber = rbelMeta.sequenceNumber + 1;
           stepRbelMetaDataList.push({
             ...rbelMeta,
             sequenceNumber: rbelMetaSequenceNumber,
@@ -65,7 +65,7 @@ function parseFeatureMap(featureUpdateMap: Map<string, FeatureUpdate>): RbelMeta
   return stepRbelMetaDataList;
 }
 
-let parsedData = ref<RbelMetaData[]>([]);
+const parsedData = ref<RbelMetaData[]>([]);
 
 watchEffect(() => {
   parsedData.value = parseFeatureMap(prop.featureUpdateMap);

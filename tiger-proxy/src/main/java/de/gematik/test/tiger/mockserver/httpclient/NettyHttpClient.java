@@ -258,7 +258,7 @@ public class NettyHttpClient {
                     if (future.isSuccess()) {
                       if (log.isDebugEnabled()) {
                         log.debug(
-                            "sending bytes hex{}to{}",
+                            "sending bytes hex {} to {}",
                             ByteBufUtil.hexDump(binaryRequest.getBytes()),
                             future.channel().attr(REMOTE_SOCKET).get());
                       }

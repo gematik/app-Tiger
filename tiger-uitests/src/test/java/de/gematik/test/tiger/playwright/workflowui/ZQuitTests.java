@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.assertions.PlaywrightAssertions;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
@@ -60,10 +62,9 @@ class ZQuitTests extends AbstractTests {
     page.locator("#test-webui-slider").click();
     assertThat(page.locator("#rbellog_details_pane").isVisible()).isFalse();
     page.locator(".test-rbel-link").first().click();
-    String number1 =
-        (String) page.evaluate("document.getElementsByClassName('test-rbel-link')[0].textContent");
-    String number2 =
-        (String) page.evaluate("document.getElementsByClassName('test-rbel-link')[25].textContent");
+    List<String> allNumbers = page.locator(".test-rbel-link").allTextContents();
+    String number1 = allNumbers.get(0);
+    String number2 = allNumbers.get(allNumbers.size() - 1);
 
     await()
         .untilAsserted(
@@ -100,7 +101,6 @@ class ZQuitTests extends AbstractTests {
                     page.frameLocator("#rbellog-details-iframe").locator("#pageNumberDisplay")));
     String pageNo2 =
         page.frameLocator("#rbellog-details-iframe").locator("#pageNumberDisplay").textContent();
-    int value = Integer.parseInt(number2) + 1;
     assertAll(
         () -> assertThat(pageNo).isNotEqualTo(pageNo2),
         () ->
@@ -116,7 +116,7 @@ class ZQuitTests extends AbstractTests {
                         .locator(".test-message-number")
                         .last()
                         .textContent())
-                .isEqualTo(String.valueOf(value)));
+                .isEqualTo(String.valueOf(number2)));
     page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
     page.frameLocator("#rbellog-details-iframe")
         .locator("#pageSelector .dropdown-item")
@@ -207,11 +207,9 @@ class ZQuitTests extends AbstractTests {
                         .isVisible())
                 .isTrue(),
         () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#filteredMessage")
-                        .textContent())
-                .isEqualTo("Filter didn't match any of the 52 messages."));
+            PlaywrightAssertions.assertThat(
+                    page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
+                .hasText("Filter didn't match any of the %d messages.".formatted(TOTAL_MESSAGES)));
     page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
     assertThat(
             page.frameLocator("#rbellog-details-iframe").locator("#filterModalDialog").isVisible())
@@ -230,11 +228,9 @@ class ZQuitTests extends AbstractTests {
     await()
         .untilAsserted(
             () ->
-                assertThat(
-                        page.frameLocator("#rbellog-details-iframe")
-                            .locator("#filteredMessage")
-                            .textContent())
-                    .isEqualTo("4 of 52 did match the filter criteria."));
+                PlaywrightAssertions.assertThat(
+                        page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
+                    .hasText("4 of %d did match the filter criteria.".formatted(TOTAL_MESSAGES)));
     String filteredMessage =
         page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent();
     int count =
@@ -245,18 +241,18 @@ class ZQuitTests extends AbstractTests {
     await()
         .untilAsserted(
             () ->
-                assertThat(
-                        page.frameLocator("#rbellog-details-iframe")
-                            .locator("#filteredMessage")
-                            .textContent())
-                    .isEqualTo("Filter didn't match any of the 52 messages."));
+                PlaywrightAssertions.assertThat(
+                        page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
+                    .hasText(
+                        "Filter didn't match any of the %d messages.".formatted(TOTAL_MESSAGES)));
     page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionInput").fill("");
     page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
-    assertThat(filteredMessage).isEqualTo("4 of 52 did match the filter criteria.");
+    assertThat(filteredMessage)
+        .isEqualTo("4 of %d did match the filter criteria.".formatted(TOTAL_MESSAGES));
     assertThat(count).isEqualTo(3);
-    assertThat(
-            page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent())
-        .isEqualTo("Filter didn't match any of the 52 messages.");
+    PlaywrightAssertions.assertThat(
+            page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
+        .hasText("Filter didn't match any of the %d messages.".formatted(TOTAL_MESSAGES));
   }
 
   @Test
@@ -286,8 +282,10 @@ class ZQuitTests extends AbstractTests {
         () -> assertThat(requestFromContent).contains("no request"),
         () ->
             assertTrue(
-                filteredMessage.equals("0 of 52 did match the filter criteria.")
-                    || filteredMessage.equals("Filter didn't match any of the 52 messages.")));
+                filteredMessage.equals(
+                        "0 of %d did match the filter criteria.".formatted(TOTAL_MESSAGES))
+                    || filteredMessage.equals(
+                        "Filter didn't match any of the %d messages.".formatted(TOTAL_MESSAGES))));
   }
 
   @Test
@@ -416,18 +414,17 @@ class ZQuitTests extends AbstractTests {
     await()
         .untilAsserted(
             () ->
-                assertThat(
+                PlaywrightAssertions.assertThat(
                         page.frameLocator("#rbellog-details-iframe")
                             .locator(".test-message-number")
-                            .last()
-                            .textContent())
-                    .isEqualTo("52"));
+                            .last())
+                    .hasText(String.valueOf(TOTAL_MESSAGES)));
     assertThat(
             page.frameLocator("#rbellog-details-iframe")
                 .locator(".test-message-number")
                 .last()
                 .textContent())
-        .isEqualTo("52");
+        .isEqualTo(String.valueOf(TOTAL_MESSAGES));
     page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-size").click();
     page.frameLocator("#rbellog-details-iframe")
         .locator("#sizeSelector .dropdown-item")

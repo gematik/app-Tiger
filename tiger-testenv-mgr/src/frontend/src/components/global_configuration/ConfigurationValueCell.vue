@@ -16,7 +16,7 @@
 
 <template>
   <div class="row">
-    <code ref="elementWithValue" class="value col-11 gy-1 hljs" id="test-tg-config-editor-table-row"
+    <code ref="elementWithValue" class="value col-11 gy-1 hljs test-tg-config-editor-table-row"
           :class="{  'text-truncate': isOverflowed && !expanded, 'text-break': expanded, 'multi-line': expanded}"
           title="double click to edit"
           v-html="highlighted.value">
@@ -82,12 +82,12 @@ function clickExpandButton() {
 </script>
 <style>
 
-#test-tg-config-editor-table-row {
+.test-tg-config-editor-table-row {
   background: inherit;
   border: 2px solid #e0e0e0;
 }
 
-#test-tg-config-editor-table-row:hover {
+.test-tg-config-editor-table-row:hover {
   cursor: pointer;
 }
 

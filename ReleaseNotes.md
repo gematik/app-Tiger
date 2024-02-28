@@ -1,5 +1,31 @@
 # Changelog Tiger Test platform
 
+# Release 3.0.1
+
+* Serenity BDD 4.1.0
+* Cucumber 7.15.0
+* RestAssured 5.4.0
+* Selenium 4.16.1
+* Appium 9.0.0
+* Spring Boot 3.2.2
+* Logback 1.4.9
+
+## Features
+
+* TGR-1241: Added Case-Insensitive matching in RbelPath-Expressions: `$.body.[~'bar']`
+* TGR-1309: CBOR added to Rbel
+* TGR-1298: Updated frontend libraries.
+* TGR-1310: migrated frontend build tool from vue-cli to vite.
+
+## Bugfixes
+
+* TGR-1306: Zion: When `bodyFile` references a non-existent file, the server now will not start and give a meaningful
+  exception.
+* TGR-1308: Server-sided certificates with Brainpool-curves are now supported again.
+* TGR-1301: fixed an issue where clicking on a message in the traffic visualization diagram did not always open the
+  Rbel-Log details pane and scrolled to the corresponding message.
+* TGR-1312: fixed an issue where the execution pane would not render correctly.
+
 # Release 3.0.0
 
 * Serenity BDD 4.1.0

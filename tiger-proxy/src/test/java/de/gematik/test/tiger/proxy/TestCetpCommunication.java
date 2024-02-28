@@ -18,6 +18,7 @@ package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.test.tiger.ByteArrayToStringRepresentation;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -61,8 +62,10 @@ class TestCetpCommunication extends AbstractNonHttpTest {
         },
         (requestCalls, responseCalls, serverCalled) -> {
           assertThat(getTigerProxy().getRbelMessages().getFirst().getRawContent())
+              .withRepresentation(new ByteArrayToStringRepresentation())
               .isEqualTo(message);
           assertThat(getTigerProxy().getRbelMessages().getLast().getRawContent())
+              .withRepresentation(new ByteArrayToStringRepresentation())
               .isEqualTo(message);
         });
   }
@@ -89,8 +92,10 @@ class TestCetpCommunication extends AbstractNonHttpTest {
         },
         (requestCalls, responseCalls, serverCalled) -> {
           assertThat(getTigerProxy().getRbelMessages().getFirst().getRawContent())
+              .withRepresentation(new ByteArrayToStringRepresentation())
               .isEqualTo(message);
           assertThat(getTigerProxy().getRbelMessages().getLast().getRawContent())
+              .withRepresentation(new ByteArrayToStringRepresentation())
               .isEqualTo(message);
         });
   }

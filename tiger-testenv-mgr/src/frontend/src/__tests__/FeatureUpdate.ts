@@ -24,33 +24,33 @@ describe("testing FeatureUpdate class", () => {
   const featureExampleWithFailedStep: string = '{"description":"Test Tiger BDD","servers":{},"index":98,"bannerType":"MESSAGE", "scenarios":{"b99":{"steps":{"3":{"description":"Then User requests classes with parameter xyz=4","status":"FAILED","stepIndex":3,"rbelMetaData":[]}},"description":"Test find last request with parameters","exampleKeys":["key1", "key2", "key3"],"exampleList":{"key1": "value1", "key2":"value2", "key3":"value3"},"variantIndex":4}}}';
 
   test("empty FeatureUpdate should contain undefined values", () => {
-    let feature = new FeatureUpdate();
+    const feature = new FeatureUpdate();
     expect(feature.description).toBe("");
     expect(feature.status).toBe(TestResult.UNUSED);
     expect(feature.scenarios.size).toEqual(0);
   });
 
   test("empty JSON applies correctly", () => {
-    let feature = FeatureUpdate.fromJson(JSON.parse("{ }"));
+    const feature = FeatureUpdate.fromJson(JSON.parse("{ }"));
     expect(feature.description).toBeUndefined;
     expect(feature.status).toBe(TestResult.UNUSED);
     expect(feature.scenarios).toBeUndefined;
   });
 
   test("empty JSON description applies correctly", () => {
-    let feature = FeatureUpdate.fromJson(JSON.parse('{ "status": "PASSED" }'));
+    const feature = FeatureUpdate.fromJson(JSON.parse('{ "status": "PASSED" }'));
     expect(feature.description).toBeUndefined;
     expect(feature.status).toBe(TestResult.PASSED);
   });
 
   test("empty JSON status applies correctly", () => {
-    let feature = FeatureUpdate.fromJson(JSON.parse('{ "description": "desc" }'));
+    const feature = FeatureUpdate.fromJson(JSON.parse('{ "description": "desc" }'));
     expect(feature.description).toBe("desc");
     expect(feature.status).toBe(TestResult.UNUSED);
   });
 
   test("JSON applies correctly", () => {
-    let feature = FeatureUpdate.fromJson(
+    const feature = FeatureUpdate.fromJson(
         JSON.parse(featureExample));
     expect(feature.description).toBe("Test Tiger BDD");
     expect(feature.status).toBe(TestResult.PASSED);
@@ -67,10 +67,10 @@ describe("testing FeatureUpdate class", () => {
         ${'{ "description": "desc1", "status": "FAILED" }'}  | ${'{ "description": "desc2", "status": "PENDING" }'} | ${'desc2'}           | ${0} | ${TestResult.UNUSED}
         ${'{ "description": "desc1", "status": "FAILED" }'}  | ${'{ }'}                                             | ${'desc1'}           | ${0} | ${TestResult.UNUSED}
       `.test('for $featureJson1 and $featureJson2 with result $testResult', ({featureJson1, featureJson2, description, size, testResult}) => {
-      let feature1 = FeatureUpdate.fromJson(
+      const feature1 = FeatureUpdate.fromJson(
           JSON.parse(featureJson1)
       );
-      let feature2 = FeatureUpdate.fromJson(
+      const feature2 = FeatureUpdate.fromJson(
           JSON.parse(featureJson2)
       );
       feature1.merge(feature2);
@@ -88,12 +88,12 @@ describe("testing FeatureUpdate class", () => {
         ${TestResult.PASSED}  | ${'{"description":"Bla","exampleKeys":[],"exampleList":{},"variantIndex":4,"steps":{"3":{"description":"Then User requests bla","status":"PASSED","stepIndex":3,"rbelMetaData":[]}, "4":{"description":"Then User requests blub","status":"PASSED","stepIndex":4,"rbelMetaData":[]}}}'}
         ${TestResult.PASSED}  | ${'{"description":"Then User requests classes with parameter xyz=4","status":"PASSED"}'}
        `.test('for $json with result $testResult', ({json, testResult}) => {
-      let scenarioUpdate = ScenarioUpdate.fromJson(
+      const scenarioUpdate = ScenarioUpdate.fromJson(
           JSON.parse(json)
       );
-      let map: Map<string, ScenarioUpdate> = new Map<string, ScenarioUpdate>();
+      const map: Map<string, ScenarioUpdate> = new Map<string, ScenarioUpdate>();
       map.set("1", scenarioUpdate);
-      let result = FeatureUpdate.mapToTestResult(map);
+      const result = FeatureUpdate.mapToTestResult(map);
       expect(result).toBe(testResult);
     });
   });
@@ -104,12 +104,12 @@ describe("testing FeatureUpdate class", () => {
         ${TestResult.FAILED}  | ${featureExampleWithFailedStep}
         ${TestResult.PASSED}  | ${featureExample}
       `.test('for $json with result $testResult', ({json, testResult}) => {
-      let featureUpdate = FeatureUpdate.fromJson(
+      const featureUpdate = FeatureUpdate.fromJson(
           JSON.parse(json)
       );
-      let map: Map<string, FeatureUpdate> = new Map<string, FeatureUpdate>();
+      const map: Map<string, FeatureUpdate> = new Map<string, FeatureUpdate>();
       map.set("1", featureUpdate);
-      let result = FeatureUpdate.mapToTestResult(map);
+      const result = FeatureUpdate.mapToTestResult(map);
       expect(result).toBe(testResult);
     });
   });

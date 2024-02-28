@@ -25,9 +25,9 @@ import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cert.ocsp.*;
-import org.bouncycastle.cert.ocsp.jcajce.JcaRespID;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
@@ -42,17 +42,11 @@ public class OcspUtils {
     X509Certificate certificate, TigerConfigurationPkiIdentity ocspSignerIdentity) {
     log.info("Building OCSP response...");
 
-    RespID respID = new JcaRespID(certificate.getSubjectX500Principal());
-
-    BasicOCSPRespBuilder basicRespBuilder = new BasicOCSPRespBuilder(respID);
-
     CertificateID certID =
       new CertificateID(
         new BcDigestCalculatorProvider().get(CertificateID.HASH_SHA1),
         new JcaX509CertificateHolder(certificate),
         certificate.getSerialNumber());
-
-    basicRespBuilder.addResponse(certID, CertificateStatus.GOOD);
 
     final String signerDigestAlgorithm = ocspSignerIdentity.getCertificate().getSigAlgName();
     ContentSigner contentSigner =
@@ -69,7 +63,9 @@ public class OcspUtils {
           .build()
           .get(RespID.HASH_SHA1));
     basicRespGen.addResponse(certID, CertificateStatus.GOOD);
-    BasicOCSPResp basicOcspResp = basicRespGen.build(contentSigner, null, new Date());
+    BasicOCSPResp basicOcspResp = basicRespGen.build(contentSigner, new X509CertificateHolder[]{
+      new X509CertificateHolder(ocspSignerIdentity.getCertificate().getEncoded())
+    }, new Date());
 
     var ocspResponseGenerator = new OCSPRespBuilder();
     var ocspResponse = ocspResponseGenerator.build(OCSPRespBuilder.SUCCESSFUL, basicOcspResp);

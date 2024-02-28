@@ -15,26 +15,23 @@
  */
 
 module.exports = {
-  coverageDirectory: 'coverage',
-  globals: {
-    'ts-jest': {
-      tsConfig: 'tsconfig.json',
+    coverageDirectory: 'coverage',
+    moduleFileExtensions: [
+        'js',
+        'ts',
+        'tsx',
+    ],
+    rootDir: './',
+    modulePaths: ['<rootDir>'],
+    testEnvironment: 'node',
+    testMatch: [
+        '**/src/**/__tests__/*.+(ts|tsx)',
+    ],
+    testPathIgnorePatterns: ['/node_modules/'],
+    transform: {
+        '^.+\\.(ts|tsx)$': ['ts-jest', {
+            tsconfig: 'tsconfig.json',
+        }],
     },
-  },
-  moduleFileExtensions: [
-    'js',
-    'ts',
-    'tsx',
-  ],
-  rootDir: './',
-  modulePaths: ['<rootDir>'],
-  testEnvironment: 'node',
-  testMatch: [
-    '**/src/**/__tests__/*.+(ts|tsx)',
-  ],
-  testPathIgnorePatterns: ['/node_modules/'],
-  transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
-  },
-  preset: 'ts-jest',
+    preset: 'ts-jest',
 }
