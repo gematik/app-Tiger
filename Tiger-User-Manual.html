@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 3.0.0-SNAPSHOT - 2024-02-12</span>
+<span id="revdate">Version 3.0.1-SNAPSHOT - 2024-02-28</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -324,7 +324,17 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_rbelwriter_content_structures">8.8. RbelWriter content structures</a></li>
 </ul>
 </li>
-<li><a href="#_links_to_test_relevant_topics">9. Links to test relevant topics</a></li>
+<li><a href="#_tiger_extensions_2">9. Tiger Extensions</a>
+<ul class="sectlevel2">
+<li><a href="#_tiger_konnektor_management_extension">9.1. Tiger Konnektor Management Extension</a></li>
+<li><a href="#_tiger_on_fhir_extension">9.2. Tiger On FHIR Extension</a></li>
+<li><a href="#_tiger_cats_extension">9.3. Tiger CATS Extension</a></li>
+<li><a href="#_tiger_cloud_extension">9.4. Tiger Cloud Extension</a></li>
+<li><a href="#_tiger_pssim_extension">9.5. Tiger PSSIM Extension</a></li>
+<li><a href="#_tiger_robot_extension">9.6. Tiger Robot Extension</a></li>
+</ul>
+</li>
+<li><a href="#_links_to_test_relevant_topics">10. Links to test relevant topics</a></li>
 </ul>
 </div>
 </div>
@@ -681,14 +691,14 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
         <span class="tag">&lt;maven.compiler.target&gt;</span>17<span class="tag">&lt;/maven.compiler.target&gt;</span>
 
         <span class="tag">&lt;version.junit5&gt;</span>5.9.3<span class="tag">&lt;/version.junit5&gt;</span>
-        <span class="tag">&lt;version.maven.failsafe&gt;</span>3.1.2<span class="tag">&lt;/version.maven.failsafe&gt;</span>
+        <span class="tag">&lt;version.maven.failsafe&gt;</span>3.2.5<span class="tag">&lt;/version.maven.failsafe&gt;</span>
         <span class="comment">&lt;!-- please adapt Tiger version property to the most current one obtained from --&gt;</span>
         <span class="comment">&lt;!-- maven central:
           https://mvnrepository.com/artifact/de.gematik.test/tiger-test-lib
           or from gematik internal Nexus
           https://nexus.prod.ccs.gematik.solutions/#browse/search=keyword%3Dtiger-test-lib
         --&gt;</span>
-        <span class="tag">&lt;version.tiger&gt;</span>2.1.4-SNAPSHOT<span class="tag">&lt;/version.tiger&gt;</span>
+        <span class="tag">&lt;version.tiger&gt;</span>3.0.0<span class="tag">&lt;/version.tiger&gt;</span>
     <span class="tag">&lt;/properties&gt;</span>
 
     <span class="comment">&lt;!-- tag::dependencies[] --&gt;</span>
@@ -703,13 +713,13 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
         <span class="tag">&lt;dependency&gt;</span>
             <span class="tag">&lt;groupId&gt;</span>org.junit.platform<span class="tag">&lt;/groupId&gt;</span>
             <span class="tag">&lt;artifactId&gt;</span>junit-platform-suite<span class="tag">&lt;/artifactId&gt;</span>
-            <span class="tag">&lt;version&gt;</span>1.9.2<span class="tag">&lt;/version&gt;</span>
+            <span class="tag">&lt;version&gt;</span>1.10.2<span class="tag">&lt;/version&gt;</span>
             <span class="tag">&lt;scope&gt;</span>test<span class="tag">&lt;/scope&gt;</span>
         <span class="tag">&lt;/dependency&gt;</span>
         <span class="tag">&lt;dependency&gt;</span>
             <span class="tag">&lt;groupId&gt;</span>io.cucumber<span class="tag">&lt;/groupId&gt;</span>
             <span class="tag">&lt;artifactId&gt;</span>cucumber-junit-platform-engine<span class="tag">&lt;/artifactId&gt;</span>
-            <span class="tag">&lt;version&gt;</span>7.11.2<span class="tag">&lt;/version&gt;</span>
+            <span class="tag">&lt;version&gt;</span>7.15.0<span class="tag">&lt;/version&gt;</span>
             <span class="tag">&lt;scope&gt;</span>test<span class="tag">&lt;/scope&gt;</span>
         <span class="tag">&lt;/dependency&gt;</span>
         <span class="comment">&lt;!-- Optional if you have JUnit5 dependencies
@@ -3103,7 +3113,21 @@ So if only always one of the two elements is present, only a single element will
 </div>
 </div>
 <div class="sect3">
-<h4 id="_jexl_expressions"><a class="anchor" href="#_jexl_expressions"></a>4.7.2. JEXL expressions</h4>
+<h4 id="_case_insensitive_matching"><a class="anchor" href="#_case_insensitive_matching"></a>4.7.2. Case-insensitive matching</h4>
+<div class="paragraph">
+<p>Sometimes it can be helpful to match keys in a case-insensitive manner. To achieve this you can use the <code>~</code>-operator:<br>
+<code>$.body.[~'fOO'].key</code></p>
+</div>
+<div class="paragraph">
+<p>This will match <code>$.body.foo.key</code> and <code>$.body.FOO.key</code> (and any other case-insensitive match).</p>
+</div>
+<div class="paragraph">
+<p>To find multiple case-insensitive matches, concatenate them using the pipe symbols, like so:<br>
+<code>$.body.[<sub>'fOO'|</sub>'bAR'].key</code>. With this expression, the following nodes will be found: <code>$.body.foo.key</code>, <code>$.body.FOO.key</code>, <code>$.body.bar.key</code> and <code>$.body.BAR.key</code> (and any other potential matches).</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_jexl_expressions"><a class="anchor" href="#_jexl_expressions"></a>4.7.3. JEXL expressions</h4>
 <div class="paragraph">
 <p>RBeL-Path can be integrated with JEXL-expression, giving a much more powerful and flexible tool to extract certain element.<br>
 This can be done using the syntax from the following example:</p>
@@ -3200,7 +3224,7 @@ Lets explain this using an example.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_nested_rbelpath_expressions"><a class="anchor" href="#_nested_rbelpath_expressions"></a>4.7.3. Nested RbelPath expressions</h4>
+<h4 id="_nested_rbelpath_expressions"><a class="anchor" href="#_nested_rbelpath_expressions"></a>4.7.4. Nested RbelPath expressions</h4>
 <div class="paragraph">
 <p>Consider the following rbel tree:</p>
 </div>
@@ -3267,7 +3291,7 @@ Currently it is not recommended to use these. (e.g. <code>$.body.[?(not (@.. == 
 </div>
 </div>
 <div class="sect3">
-<h4 id="_debugging_rbel_expressions"><a class="anchor" href="#_debugging_rbel_expressions"></a>4.7.4. Debugging Rbel-Expressions</h4>
+<h4 id="_debugging_rbel_expressions"><a class="anchor" href="#_debugging_rbel_expressions"></a>4.7.5. Debugging Rbel-Expressions</h4>
 <div class="paragraph">
 <p>To help users create RbelPath-Expressions there is a Debug-Functionality which produces log message designed to help.<br>
 These can be activated by <code>RbelOptions.activateRbelPathDebugging();</code>.<br>
@@ -6913,7 +6937,63 @@ a dynamically generated JWT.</p>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_links_to_test_relevant_topics"><a class="anchor" href="#_links_to_test_relevant_topics"></a>9. Links to test relevant topics</h2>
+<h2 id="_tiger_extensions_2"><a class="anchor" href="#_tiger_extensions_2"></a>9. Tiger Extensions</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Tiger has certain extensions that fulfil certain tasks.<br>
+The different extensions are shortly described in the following sections.</p>
+</div>
+<div class="sect2">
+<h3 id="_tiger_konnektor_management_extension"><a class="anchor" href="#_tiger_konnektor_management_extension"></a>9.1. Tiger Konnektor Management Extension</h3>
+<div class="paragraph">
+<p>The Tiger-Konnektor-Management-Extension provides an interface to the KMS system of different connector providers.<br>
+It also provides cucumber feature steps to access the different connectors.<br>
+This is an internal gematik extension and can be found on GitLab <a href="https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/tiger-konnektor-management-extensions" class="bare">https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/tiger-konnektor-management-extensions</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tiger_on_fhir_extension"><a class="anchor" href="#_tiger_on_fhir_extension"></a>9.2. Tiger On FHIR Extension</h3>
+<div class="paragraph">
+<p>The Tiger-On-Fhir-extension provides a set of simple BDD steps which can be used to check for valid FHIR content therein.<br>
+FHIR stands for Fast Healthcare Interoperability Resources.<br>
+The tiger-on-fhir can be found on GitHub <a href="https://github.com/gematik/tiger-on-fhir-extension" class="bare">https://github.com/gematik/tiger-on-fhir-extension</a> and it uses the Gematik Referenzvalidator located on GitHub <a href="https://github.com/gematik/app-referencevalidator" class="bare">https://github.com/gematik/app-referencevalidator</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tiger_cats_extension"><a class="anchor" href="#_tiger_cats_extension"></a>9.3. Tiger CATS Extension</h3>
+<div class="paragraph">
+<p>CATS stands for Card Terminal Simulator.<br>
+Tiger-Cats-Extensions offers the option to use the REST interface of CATS as Java functionality or as BDD steps.<br>
+This is an internal gematik extension and can be found on GitLab <a href="https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/tiger-cats-extensions" class="bare">https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/tiger-cats-extensions</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tiger_cloud_extension"><a class="anchor" href="#_tiger_cloud_extension"></a>9.4. Tiger Cloud Extension</h3>
+<div class="paragraph">
+<p>The Tiger-Cloud-Extension allows to embed docker image based containers, docker compose scripts and even helm charts to local or remote kubernetes clusters.<br>
+The GitHub repo is <a href="https://github.com/gematik/tiger-cloud-extension" class="bare">https://github.com/gematik/tiger-cloud-extension</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tiger_pssim_extension"><a class="anchor" href="#_tiger_pssim_extension"></a>9.5. Tiger PSSIM Extension</h3>
+<div class="paragraph">
+<p>The Tiger-PSSIM-Extension is an extension for simulating a Primärsystem (PS) in your tests.<br>
+It provides a wide range of BDD Steps and covers the majority of PS functionalities.<br>
+This is an internal gematik extension and can be found on GitLab <a href="https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/tiger-pssim-extension" class="bare">https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/tiger-pssim-extension</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_tiger_robot_extension"><a class="anchor" href="#_tiger_robot_extension"></a>9.6. Tiger Robot Extension</h3>
+<div class="paragraph">
+<p>The Tiger-Robot-Extension is an extension designed to control the Cardterminal Robot created by the Gematik.<br>
+This is an internal gematik extension and can be found on GitLab <a href="https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/tiger-robot-extension" class="bare">https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/tiger-robot-extension</a>.</p>
+</div>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_links_to_test_relevant_topics"><a class="anchor" href="#_links_to_test_relevant_topics"></a>10. Links to test relevant topics</h2>
 <div class="sectionbody">
 <div class="ulist">
 <ul>
@@ -6998,7 +7078,7 @@ a dynamically generated JWT.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-02-12 13:17:05 UTC
+Last updated 2024-02-28 12:56:04 UTC
 </div>
 </div>
 </body>
