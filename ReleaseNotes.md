@@ -24,6 +24,7 @@
 * TGR-1308: Server-sided certificates with Brainpool-curves are now supported again.
 * TGR-1301: fixed an issue where clicking on a message in the traffic visualization diagram did not always open the
   Rbel-Log details pane and scrolled to the corresponding message.
+* TGR-1312: fixed an issue where the execution pane would not render correctly.
 
 # Release 3.0.0
 

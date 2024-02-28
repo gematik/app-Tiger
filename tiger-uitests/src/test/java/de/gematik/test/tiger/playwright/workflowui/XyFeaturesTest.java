@@ -16,6 +16,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 /** Tests all feature files and scenarios by name. */
 @TestMethodOrder(MethodOrderer.MethodName.class)
 class XyFeaturesTest extends AbstractTests {
+
   @BeforeEach
   void printInfoStarted(TestInfo testInfo) {
     System.out.println("started = " + testInfo.getDisplayName());
@@ -34,12 +35,12 @@ class XyFeaturesTest extends AbstractTests {
         () ->
             assertThat(
                     page.locator("#test-sidebar-featurelistbox .test-sidebar-feature-name").count())
-                .isEqualTo(2),
+                .isEqualTo(NUMBER_OF_FEATURES),
         () ->
             assertThat(
                     page.locator("#test-sidebar-featurelistbox .test-sidebar-scenario-name")
                         .count())
-                .isEqualTo(25),
+                .isEqualTo(NUMBER_OF_SCENARIOS),
         () ->
             assertThat(
                     page.locator("#test-sidebar-featurelistbox .test-sidebar-scenario-index")
@@ -96,7 +97,8 @@ class XyFeaturesTest extends AbstractTests {
         JEXL Rbel Namespace Test                | 21 | 3 |
         JEXL Rbel Namespace Test                | 22 | 4 |
         JEXL Rbel Namespace Test                | 23 | 5 |
-        Test zeige HTML                         | 24 | 0 |
+        Request a non existing url              | 24 | 0 |
+        Test zeige HTML                         | 25 | 0 |
         """)
   void testScenarioNames(String scenarioName, int counter, int index) {
     page.querySelector("#test-tiger-logo").click();

@@ -13,8 +13,10 @@ export default class MessageMetaDataDto {
   bundledServerNameReceiver: string = '';
   sequenceNumber: number = -1;
   timestamp: Date | string = '';
+  pairedUuid: string = '';
 
   public toString() {
     return `{ uuid: "${this.uuid}" }\n`;
   }
 }
+

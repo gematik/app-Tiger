@@ -62,6 +62,9 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
   private static final String doc = "doc";
   private static final String user_manual = "user_manual";
   private static final String screenshots = "screenshots";
+  protected static final int NUMBER_OF_FEATURES = 2;
+  protected static final int NUMBER_OF_SCENARIOS = 26;
+  protected static final int TOTAL_MESSAGES = 53;
 
   private static void checkPort() {
     if (port != null && !port.isEmpty()) {

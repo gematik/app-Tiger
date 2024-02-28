@@ -50,8 +50,9 @@
               <div class="container">
                 <h1 style="color:var(--gem-primary-400)">Tiger Global Configuration Editor<span class="float-end"
                                                                                                 role="button"
-                                                                                                @click="configEditorSidePanelIsOpened = false"><i
-                    class="fa fa-window-close" id="test-tg-config-editor-btn-close"></i></span></h1>
+                                                                                                @click="configEditorSidePanelIsOpened = false"
+                                                                                                id="test-tg-config-editor-btn-close"><i
+                    class="fa fa-window-close"></i></span></h1>
               </div>
             </template>
             <template #default>

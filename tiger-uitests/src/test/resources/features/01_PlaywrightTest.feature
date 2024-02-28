@@ -72,8 +72,8 @@ Feature: Playwright Test feature
     Given TGR set local variable "configured_state_value" to "some_value"
     Given TGR set local variable "configured_param_name" to "my_cool_param"
     When TGR send POST request to "http://httpbin/not_a_file" with:
-      | ${configured_param_name}   | state                     | redirect_uri        |
-      | client_id                  | ${configured_state_value} | https://my.redirect |
+      | ${configured_param_name} | state                     | redirect_uri        |
+      | client_id                | ${configured_state_value} | https://my.redirect |
     Then TGR find last request to path ".*"
     And TGR print current request as rbel-tree
     And TGR assert "!{rbel:currentRequestAsString('$.body.state')}" matches "some_value"
@@ -83,8 +83,8 @@ Feature: Playwright Test feature
   Scenario: Request with custom and default header
     Given TGR set default header "Content-Type" to "application/json"
     When TGR send POST request to "http://httpbin/not_a_file" with:
-      | ${configured_param_name}   |
-      | client_id                  |
+      | ${configured_param_name} |
+      | client_id                |
     Then TGR find last request to path ".*"
     And TGR print current request as rbel-tree
     And TGR assert "!{rbel:currentRequestAsString('$.header.Content-Type')}" matches "application/json"
@@ -92,10 +92,10 @@ Feature: Playwright Test feature
   Scenario Outline:  Test <color> with <inhalt>
     And TGR show <color> text "<inhalt>"
     Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
-      | color | inhalt |
-      | red | Dagmar |
-      | blue | Nils |
-      | green | Tim  |
+      | color  | inhalt |
+      | red    | Dagmar |
+      | blue   | Nils   |
+      | green  | Tim    |
       | yellow | Sophie |
 
   Scenario Outline: Test <color> with <text> again
@@ -141,9 +141,12 @@ Feature: Playwright Test feature
     And TGR print current request as rbel-tree
     Then TGR current response with attribute "$.body.html.head.title.text" matches "!{rbel:currentResponseAsString('$.body.html.head.title.text')}"
     Examples:
-      | txt1  | txt2 | txt3| txt4| txt5|
-      | text1 | 21   |31   |41   |51   |
-      | text2 |22    |32   |42   |52   |
-      | text3 |23    |33   |43   |53   |
-      | text4 |24    |34   |44   |54   |
-      | text5 |25    |35   |45   |55   |
+      | txt1  | txt2 | txt3 | txt4 | txt5 |
+      | text1 | 21   | 31   | 41   | 51   |
+      | text2 | 22   | 32   | 42   | 52   |
+      | text3 | 23   | 33   | 43   | 53   |
+      | text4 | 24   | 34   | 44   | 54   |
+      | text5 | 25   | 35   | 45   | 55   |
+
+  Scenario: Request a non existing url
+    When TGR send empty GET request to "http://www.this_is_not_a_real_url_blablabla.com"
