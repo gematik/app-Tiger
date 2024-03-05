@@ -1,5 +1,10 @@
 # Changelog Tiger Test platform
 
+# Release 3.0.2
+
+* TGR-1315:
+  step ```TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline body:``` added
+
 # Release 3.0.1
 
 * Serenity BDD 4.1.0

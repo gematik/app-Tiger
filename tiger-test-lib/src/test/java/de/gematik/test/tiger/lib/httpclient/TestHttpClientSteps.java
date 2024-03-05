@@ -113,6 +113,31 @@ public class TestHttpClientSteps {
   }
 
   @Test
+  void sendComplexPostMultiLine() { // NOSONAR
+    httpGlueCode.sendRequestWithMultiLineBody(
+        Method.POST,
+        createAddress("http://httpbin/post"),
+        "application/json",
+        """
+                        {
+                          "object": { "field": "value" },
+                          "array" : [ "1", 2, { "field2": "value2" } ],
+                          "member" : "test"
+                        }
+                        """);
+    rbelValidatorGlueCode.findLastRequestToPath(".*");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "POST");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.Content-Type')}"),
+        "application/json");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.body.object.field')}"), "value");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentResponseAsString('$.responseCode')}"), "200");
+  }
+
+  @Test
   void sendComplexPut() { // NOSONAR
     httpGlueCode.sendRequestWithMultiLineBody(
         Method.PUT,
