@@ -481,12 +481,14 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>3.1.0</version>
+                <version>3.2.0</version>
                 <executions>
                     <execution>
                         <id>codegeneration</id>
                         <phase>generate-test-resources</phase>
-                        <goals><goal>java</goal></goals>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
                         <configuration>
                             <mainClass>de.gematik.test.tiger.glue.AnnotationParser</mainClass>
                             <arguments>

@@ -4,8 +4,8 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
@@ -56,11 +56,6 @@
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>${version.commons-lang3}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
             <version>${version.commons-text}</version>
         </dependency>
@@ -72,7 +67,7 @@
         <dependency>
             <artifactId>jose4j</artifactId>
             <groupId>org.bitbucket.b_c</groupId>
-            <version>0.9.2</version>
+            <version>0.9.5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
