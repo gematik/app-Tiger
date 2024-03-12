@@ -4,6 +4,7 @@
 
 package de.gematik.rbellogger.converter;
 
+import static com.google.common.primitives.Bytes.indexOf;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import de.gematik.rbellogger.data.RbelElement;
@@ -42,7 +43,11 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
             || firstLine.endsWith("HTTP/2.0")))) {
       return;
     }
-    String messageHeader = content.split(eol + eol)[0];
+    int endOfHeadIndex = indexOf(targetElement.getRawContent(), (eol + eol).getBytes());
+    if (endOfHeadIndex < 0) {
+      endOfHeadIndex = content.length();
+    }
+    String messageHeader = content.substring(0, endOfHeadIndex);
     final int space = messageHeader.indexOf(" ");
     final int space2 = messageHeader.indexOf(" ", space + 1);
     final String method = messageHeader.substring(0, space);
@@ -58,7 +63,7 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
     final byte[] bodyData =
         extractBodyData(
             targetElement.getRawContent(),
-            messageHeader.length() + eol.length() * 2,
+            endOfHeadIndex + 2 * eol.length(),
             headerElement.getFacetOrFail(RbelHttpHeaderFacet.class),
             eol);
     final RbelElement bodyElement =

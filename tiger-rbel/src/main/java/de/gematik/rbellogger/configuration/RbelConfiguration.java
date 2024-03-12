@@ -19,11 +19,13 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Accessors(chain = true)
 public class RbelConfiguration {
 
   @Builder.Default private List<RbelConverterPlugin> postConversionListener = new ArrayList<>();
@@ -33,6 +35,7 @@ public class RbelConfiguration {
   @Builder.Default private Map<String, RbelKey> keys = new HashMap<>();
   private RbelCapturer capturer;
   @Builder.Default private boolean activateAsn1Parsing = true;
+  @Builder.Default private boolean activateVauEpa3Parsing = false;
   @Builder.Default private int rbelBufferSizeInMb = 1024;
   @Builder.Default private int skipParsingWhenMessageLargerThanKb = 16_000;
   @Builder.Default private boolean manageBuffer = false;

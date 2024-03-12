@@ -8,17 +8,31 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import lombok.Builder;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 
-@Builder
-@RequiredArgsConstructor
 @Data
 public class RbelNestedFacet implements RbelFacet {
 
   private final RbelElement nestedElement;
+  private final String nestedElementName;
+
+  public RbelNestedFacet(RbelElement nestedElement) {
+    this.nestedElement = nestedElement;
+    this.nestedElementName = "content";
+  }
+
+  @Builder
+  public RbelNestedFacet(RbelElement nestedElement, String nestedElementName) {
+    this.nestedElement = nestedElement;
+    if (StringUtils.isNotEmpty(nestedElementName)) {
+      this.nestedElementName = nestedElementName;
+    } else {
+      this.nestedElementName = "content";
+    }
+  }
 
   @Override
   public RbelMultiMap getChildElements() {
-    return new RbelMultiMap<RbelElement>().with("content", nestedElement);
+    return new RbelMultiMap<RbelElement>().with(nestedElementName, nestedElement);
   }
 }

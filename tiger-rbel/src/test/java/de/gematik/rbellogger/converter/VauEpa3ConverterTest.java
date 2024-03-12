@@ -1,0 +1,63 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
+package de.gematik.rbellogger.converter;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
+import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.rbellogger.testutil.RbelElementAssertion;
+import java.io.File;
+import java.nio.file.Files;
+import lombok.SneakyThrows;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+public class VauEpa3ConverterTest {
+  private static RbelLogger rbelLogger;
+
+  @BeforeAll
+  @SneakyThrows
+  public static void setUp() {
+    rbelLogger =
+        RbelLogger.build(
+            new RbelConfiguration()
+                .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+                .setActivateVauEpa3Parsing(true)
+                .addCapturer(
+                    RbelFileReaderCapturer.builder()
+                        .rbelFile("src/test/resources/vau3Traffic.tgr")
+                        .build()));
+    try (final var capturer = rbelLogger.getRbelCapturer()) {
+      capturer.initialize();
+    }
+  }
+
+  @SneakyThrows
+  @Test
+  void shouldRenderCleanHtml() {
+    final String html = RbelHtmlRenderer.render(rbelLogger.getMessageHistory());
+    Files.write(new File("target/vau3.html").toPath(), html.getBytes());
+    assertThat(html).isNotBlank();
+  }
+
+  @SneakyThrows
+  @Test
+  void testDecryption() {
+    RbelElementAssertion.assertThat(rbelLogger.getMessageList().get(1))
+        .hasChildWithPath("$.body.AEAD_ct.decrypted_content");
+    RbelElementAssertion.assertThat(rbelLogger.getMessageList().get(2))
+        .hasChildWithPath("$.body.AEAD_ct.decrypted_content");
+    RbelElementAssertion.assertThat(rbelLogger.getMessageList().get(4))
+        .extractChildWithPath("$.body.decrypted")
+        .hasStringContentEqualTo("Hello World!");
+    RbelElementAssertion.assertThat(rbelLogger.getMessageList().get(5))
+        .extractChildWithPath("$.body.decrypted")
+        .hasStringContentEqualTo("Right back at ya!");
+  }
+}

@@ -2,6 +2,9 @@
 
 # Release 3.0.2
 
+## Features
+
+* TGR-1313: Added support for the new VAU 'Epa für alle' format (VauEpa3).
 * TGR-1315:
   step ```TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline body:``` added
 

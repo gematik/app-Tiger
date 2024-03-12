@@ -289,7 +289,11 @@ public class RbelElement extends RbelPathAble {
         .flatMap(
             facet -> {
               if (facet instanceof RbelNestedFacet asRbelNestedFacet) {
-                return asRbelNestedFacet.getNestedElement().getFacets().stream();
+                if (asRbelNestedFacet.getNestedElement().hasFacet(RbelRootFacet.class)) {
+                  return Stream.empty();
+                } else {
+                  return asRbelNestedFacet.getNestedElement().getFacets().stream();
+                }
               } else {
                 return Stream.of(facet);
               }

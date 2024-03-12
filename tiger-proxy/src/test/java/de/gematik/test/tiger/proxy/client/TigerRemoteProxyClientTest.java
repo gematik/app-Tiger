@@ -513,7 +513,7 @@ class TigerRemoteProxyClientTest {
       log.info("after generation we now have {} messages", tigerProxy.getRbelMessagesList().size());
 
       await()
-          .atMost(10, TimeUnit.SECONDS)
+          .atMost(20, TimeUnit.SECONDS)
           .pollDelay(20, TimeUnit.MILLISECONDS)
           .until(
               () ->

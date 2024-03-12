@@ -4,6 +4,7 @@
 
 package de.gematik.rbellogger.converter;
 
+import static com.google.common.primitives.Bytes.indexOf;
 import static de.gematik.rbellogger.converter.RbelHttpRequestConverter.findEolInHttpMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -40,17 +41,17 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
     String eol = findEolInHttpMessage(content);
 
-    int separator = content.indexOf(eol + eol);
-    if (separator == -1) {
+    int endOfHeadIndex = indexOf(targetElement.getRawContent(), (eol + eol).getBytes());
+    if (endOfHeadIndex == -1) {
       return;
     }
-    separator += 2 * eol.length();
+    endOfHeadIndex += 2 * eol.length();
 
     final RbelElement headerElement = extractHeaderFromMessage(targetElement, converter, eol);
 
     final byte[] bodyData =
         extractBodyData(
-            targetElement, separator, headerElement.getFacetOrFail(RbelHttpHeaderFacet.class), eol);
+            targetElement, endOfHeadIndex, headerElement.getFacetOrFail(RbelHttpHeaderFacet.class), eol);
     final RbelElement bodyElement =
         new RbelElement(
             bodyData,

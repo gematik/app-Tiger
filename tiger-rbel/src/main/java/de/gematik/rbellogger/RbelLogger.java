@@ -9,6 +9,7 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelAsn1Converter;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.RbelValueShader;
+import de.gematik.rbellogger.converter.RbelVauEpa3Converter;
 import de.gematik.rbellogger.converter.listener.RbelJwkReader;
 import de.gematik.rbellogger.converter.listener.RbelX5cKeyReader;
 import de.gematik.rbellogger.data.RbelElement;
@@ -63,6 +64,9 @@ public class RbelLogger {
     rbelConverter.getRbelKeyManager().addAll(configuration.getKeys());
     if (configuration.isActivateAsn1Parsing()) {
       rbelConverter.addConverter(new RbelAsn1Converter());
+    }
+    if (configuration.isActivateAsn1Parsing()) {
+      rbelConverter.addConverter(new RbelVauEpa3Converter());
     }
 
     if (configuration.getCapturer() != null) {

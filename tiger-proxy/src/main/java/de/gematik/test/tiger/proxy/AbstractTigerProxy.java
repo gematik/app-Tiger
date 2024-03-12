@@ -202,6 +202,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
     if (configuration.isActivateErpVauAnalysis()) {
       rbelConfiguration.addAdditionalConverter(new RbelErpVauDecrpytionConverter());
     }
+    rbelConfiguration.setActivateVauEpa3Parsing(configuration.isActivateEpa3VauAnalysis());
     initializeFileSaver(configuration);
     rbelConfiguration.setActivateAsn1Parsing(configuration.isActivateAsn1Parsing());
     rbelConfiguration.setRbelBufferSizeInMb(configuration.getRbelBufferSizeInMb());

@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(access = AccessLevel.PUBLIC)
@@ -34,6 +35,7 @@ public class RbelConverter {
 
   static {
     Security.addProvider(new BouncyCastleProvider());
+    Security.addProvider(new BouncyCastlePQCProvider());
   }
 
   private final Deque<RbelElement> messageHistory = new ConcurrentLinkedDeque<>();
