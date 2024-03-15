@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 /*
  * @author jamesdbloom
  */
-public abstract class RequestDefinition extends Not {
+public abstract class RequestDefinition {
 
   private String logCorrelationId;
 
@@ -22,12 +22,6 @@ public abstract class RequestDefinition extends Not {
   public RequestDefinition withLogCorrelationId(String logCorrelationId) {
     this.logCorrelationId = logCorrelationId;
     return this;
-  }
-
-  public abstract RequestDefinition shallowClone();
-
-  public RequestDefinition cloneWithLogCorrelationId() {
-    return shallowClone().withLogCorrelationId(getLogCorrelationId());
   }
 
   @Override

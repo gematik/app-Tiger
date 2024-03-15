@@ -8,12 +8,9 @@ import static de.gematik.test.tiger.mockserver.model.Header.header;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import static io.netty.handler.codec.http.HttpHeaderValues.CLOSE;
-import static io.netty.handler.codec.http.HttpHeaderValues.KEEP_ALIVE;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.cors.CORSHeaders;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -26,15 +23,9 @@ import lombok.extern.slf4j.Slf4j;
 public abstract class ResponseWriter {
 
   protected final Configuration configuration;
-  private final CORSHeaders corsHeaders;
 
   protected ResponseWriter(Configuration configuration) {
     this.configuration = configuration;
-    corsHeaders = new CORSHeaders(configuration);
-  }
-
-  public void writeResponse(final HttpRequest request, final HttpResponseStatus responseStatus) {
-    writeResponse(request, responseStatus, "", "application/json");
   }
 
   public void writeResponse(
@@ -58,11 +49,6 @@ public abstract class ResponseWriter {
     if (response == null) {
       response = notFoundResponse();
     }
-    if (configuration.enableCORSForAllResponses()) {
-      corsHeaders.addCORSHeaders(request, response);
-    } else if (apiResponse && configuration.enableCORSForAPI()) {
-      corsHeaders.addCORSHeaders(request, response);
-    }
     String contentLengthHeader = response.getFirstHeader(CONTENT_LENGTH.toString());
     if (isNotBlank(contentLengthHeader)) {
       try {
@@ -83,22 +69,8 @@ public abstract class ResponseWriter {
       response.withStreamId(request.getStreamId());
     }
 
-    sendResponse(request, addConnectionHeader(request, response));
+    sendResponse(request, response);
   }
 
   public abstract void sendResponse(HttpRequest request, HttpResponse response);
-
-  protected HttpResponse addConnectionHeader(
-      final HttpRequest request, final HttpResponse response) {
-    HttpResponse responseWithConnectionHeader = response.clone();
-
-    if (Boolean.TRUE.equals(request.getKeepAlive())) {
-      responseWithConnectionHeader.replaceHeader(
-          header(CONNECTION.toString(), KEEP_ALIVE.toString()));
-    } else {
-      responseWithConnectionHeader.replaceHeader(header(CONNECTION.toString(), CLOSE.toString()));
-    }
-
-    return responseWithConnectionHeader;
-  }
 }

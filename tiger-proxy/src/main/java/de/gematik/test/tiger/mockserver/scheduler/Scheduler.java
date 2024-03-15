@@ -13,7 +13,6 @@ import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.httpclient.SocketCommunicationException;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpForwardActionResult;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
-import de.gematik.test.tiger.mockserver.model.Delay;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import java.util.concurrent.*;
 import java.util.function.BiConsumer;
@@ -95,39 +94,9 @@ public class Scheduler {
     }
   }
 
-  public void schedule(Runnable command, boolean synchronous, Delay... delays) {
-    Delay delay = addDelays(delays);
+  public void schedule(Runnable command, boolean synchronous) {
     Integer port = getPort();
-    if (this.synchronous || synchronous) {
-      if (delay != null) {
-        delay.applyDelay();
-      }
-      run(command, port);
-    } else {
-      if (delay != null) {
-        scheduler.schedule(() -> run(command, port), delay.getValue(), delay.getTimeUnit());
-      } else {
-        run(command, port);
-      }
-    }
-  }
-
-  private Delay addDelays(Delay... delays) {
-    if (delays == null || delays.length == 0) {
-      return null;
-    } else if (delays.length == 1) {
-      return delays[0];
-    } else if (delays.length == 2 && delays[0] == delays[1]) {
-      return delays[0];
-    } else {
-      long timeInMilliseconds = 0;
-      for (Delay delay : delays) {
-        if (delay != null) {
-          timeInMilliseconds += delay.getTimeUnit().toMillis(delay.getValue());
-        }
-      }
-      return new Delay(MILLISECONDS, timeInMilliseconds);
-    }
+    run(command, port);
   }
 
   public void submit(Runnable command) {
@@ -176,8 +145,7 @@ public class Scheduler {
             .getHttpResponse()
             .whenCompleteAsync(
                 (httpResponse, throwable) -> {
-                  if (throwable != null
-                      && logException.test(throwable)) {
+                  if (throwable != null && logException.test(throwable)) {
                     log.info(throwable.getMessage(), throwable);
                   }
                   run(command, port);

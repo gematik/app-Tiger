@@ -12,7 +12,7 @@ import java.util.List;
  * @author jamesdbloom
  */
 @SuppressWarnings("rawtypes")
-public interface HttpMessage<T extends HttpMessage, B extends Body> extends Message {
+public interface HttpMessage<T extends HttpMessage> extends Message {
 
   T withBody(String body);
 
@@ -20,9 +20,9 @@ public interface HttpMessage<T extends HttpMessage, B extends Body> extends Mess
 
   T withBody(byte[] body);
 
-  T withBody(B body);
+  T withBody(Body body);
 
-  B getBody();
+  Body getBody();
 
   @JsonIgnore
   byte[] getBodyAsRawBytes();

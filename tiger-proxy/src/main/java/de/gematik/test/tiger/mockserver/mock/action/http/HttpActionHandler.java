@@ -9,14 +9,12 @@ import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.*;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.cors.CORSHeaders;
 import de.gematik.test.tiger.mockserver.filters.HopByHopHeaderFilter;
 import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
 import de.gematik.test.tiger.mockserver.httpclient.SocketCommunicationException;
@@ -103,11 +101,6 @@ public class HttpActionHandler {
       final HttpAction action = expectation.getHttpAction();
       scheduler.schedule(
           () -> action.handle(request, this, responseWriter, synchronous), synchronous);
-    } else if (CORSHeaders.isPreflightRequest(configuration, request)
-        && (configuration.enableCORSForAPI() || configuration.enableCORSForAllResponses())) {
-
-      responseWriter.writeResponse(request, OK);
-      log.debug("returning CORS response for OPTIONS request");
     } else if (proxyingRequest || potentiallyHttpProxy) {
 
       if (request.getHeaders() != null

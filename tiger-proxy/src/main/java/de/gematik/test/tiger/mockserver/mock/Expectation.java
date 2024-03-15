@@ -21,7 +21,7 @@ import org.apache.commons.lang3.StringUtils;
  * @author jamesdbloom
  */
 @SuppressWarnings("rawtypes")
-@EqualsAndHashCode(exclude = {"created", "sortableExpectationId"})
+@EqualsAndHashCode(exclude = {"created", "sortableExpectationId"}, callSuper = false)
 @Accessors(chain = true)
 @Getter
 @Slf4j
