@@ -5,6 +5,15 @@
 ## Features
 
 * TGR-1313: Added support for the new VAU 'Epa für alle' format (VauEpa3).
+* TGR-1325: Tiger-Proxy: Added new 'criterion' option for routes. This allows to match requests based on their content:
+```
+tigerProxy:
+    proxyRoutes:
+      - from: /
+        to: http://orf.at/blub/
+        criterions:
+          - $.header.foo == 'bar'
+```
 * TGR-1315:
   step ```TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline body:``` added
 

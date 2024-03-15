@@ -14,7 +14,6 @@ import static org.slf4j.event.Level.*;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
-import de.gematik.test.tiger.mockserver.mock.listeners.MockServerMatcherNotifier;
 import de.gematik.test.tiger.mockserver.scheduler.Scheduler;
 import de.gematik.test.tiger.mockserver.stop.Stoppable;
 import io.netty.bootstrap.ServerBootstrap;
@@ -103,7 +102,6 @@ public abstract class LifeCycle implements Stoppable {
                   log.debug("Ignoring exception", e);
                 }
 
-                httpState.stop();
                 scheduler.shutdown();
 
                 // Shut down all event loops to terminate all threads.
@@ -269,17 +267,5 @@ public abstract class LifeCycle implements Stoppable {
         "started on port" + (ports.size() == 1 ? ": " + ports.get(0) : "s: " + ports);
     setPort(ports);
     log.info(message);
-  }
-
-  public LifeCycle registerListener(ExpectationsListener expectationsListener) {
-    httpState
-        .getRequestMatchers()
-        .registerListener(
-            (requestMatchers, cause) -> {
-              if (cause == MockServerMatcherNotifier.Cause.API) {
-                expectationsListener.updated(requestMatchers.retrieveActiveExpectations(null));
-              }
-            });
-    return this;
   }
 }

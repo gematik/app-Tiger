@@ -12,6 +12,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.gematik.rbellogger.data.RbelElement;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.util.*;
@@ -44,6 +45,7 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
   private SocketAddress socketAddress;
   private String localAddress;
   private String remoteAddress;
+  private RbelElement parsedRbelMessage = null;
 
   public static HttpRequest request() {
     return new HttpRequest();

@@ -14,10 +14,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.matchers.TimeToLive;
-import de.gematik.test.tiger.mockserver.matchers.Times;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
-import de.gematik.test.tiger.mockserver.model.ExpectationId;
 import de.gematik.test.tiger.mockserver.netty.MockServer;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.ForwardProxyTLSX509CertificatesTrustManager;
@@ -201,11 +198,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
     if (getTigerProxyConfiguration().isActivateForwardAllLogging()) {
       mockServer
-          .when(
-              request().setPath(".*"),
-              Times.unlimited(),
-              TimeToLive.unlimited(),
-              Integer.MIN_VALUE)
+          .when(request().setPath(".*"), Integer.MIN_VALUE)
           .forward(new ForwardAllCallback(this));
     }
     addRoutesToTigerProxy();
@@ -461,13 +454,27 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     tigerRouteMap.values().stream()
         .filter(
             existingRoute ->
-                uriTwoIsBelowUriOne(existingRoute.getFrom(), tigerRoute.getFrom())
-                    || uriTwoIsBelowUriOne(tigerRoute.getFrom(), existingRoute.getFrom()))
+                criterionsAreEqual(tigerRoute, existingRoute)
+                    && routeMatches(tigerRoute, existingRoute))
         .findAny()
         .ifPresent(
             existingRoute -> {
               throw new TigerProxyRouteConflictException(existingRoute);
             });
+  }
+
+  private static boolean criterionsAreEqual(TigerRoute tigerRoute, TigerRoute existingRoute) {
+    if (tigerRoute.getCriterions() == null || existingRoute.getCriterions() == null) {
+      return tigerRoute.getCriterions() == existingRoute.getCriterions();
+    }
+    final HashSet<String> existingCriterions = new HashSet<>(existingRoute.getCriterions());
+    final HashSet<String> routeCriterions = new HashSet<>(tigerRoute.getCriterions());
+    return existingCriterions.equals(routeCriterions);
+  }
+
+  private boolean routeMatches(TigerRoute tigerRoute, TigerRoute existingRoute) {
+    return uriTwoIsBelowUriOne(existingRoute.getFrom(), tigerRoute.getFrom())
+        || uriTwoIsBelowUriOne(tigerRoute.getFrom(), existingRoute.getFrom());
   }
 
   private boolean uriTwoIsBelowUriOne(final String value1, final String value2) {
@@ -537,13 +544,13 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     if (!mockServer.isRunning()) {
       return;
     }
-    mockServer.removeExpectation(new ExpectationId().id(routeId));
+    mockServer.removeExpectation(routeId);
     final TigerRoute route = tigerRouteMap.remove(routeId);
 
     log.info(
         "Deleted route {}. Current # expectations {}",
         route,
-        mockServer.retrieveActiveExpectations(request()).size());
+        mockServer.retrieveActiveExpectations().size());
   }
 
   public SSLContext getConfiguredTigerProxySslContext() {
@@ -612,10 +619,10 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
       final KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
       ks.load(null);
       final TigerPkiIdentity serverIdentity =
-        Optional.ofNullable(getTigerProxyConfiguration().getTls())
-          .map(TigerTlsConfiguration::getServerIdentity)
-          .map(TigerPkiIdentity.class::cast)
-            .or(this::determineServerRootCa)
+          Optional.ofNullable(getTigerProxyConfiguration().getTls())
+              .map(TigerTlsConfiguration::getServerIdentity)
+              .map(TigerPkiIdentity.class::cast)
+              .or(this::determineServerRootCa)
               .orElseThrow(
                   () ->
                       new TigerProxyTrustManagerBuildingException(

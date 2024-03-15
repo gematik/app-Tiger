@@ -14,15 +14,10 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import com.google.common.collect.ImmutableList;
 import de.gematik.test.tiger.mockserver.ExpectationBuilder;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.lifecycle.ExpectationsListener;
 import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
-import de.gematik.test.tiger.mockserver.matchers.TimeToLive;
-import de.gematik.test.tiger.mockserver.matchers.Times;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
-import de.gematik.test.tiger.mockserver.model.ExpectationId;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
-import de.gematik.test.tiger.mockserver.model.RequestDefinition;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import io.netty.bootstrap.ServerBootstrap;
@@ -233,27 +228,22 @@ public class MockServer extends LifeCycle {
     return remoteSocket;
   }
 
-  public MockServer registerListener(ExpectationsListener expectationsListener) {
-    super.registerListener(expectationsListener);
-    return this;
-  }
-
   public ExpectationBuilder when(
-      RequestDefinition requestDefinition, Times times, TimeToLive timeToLive, Integer priority) {
+      HttpRequest httpRequest, Integer priority) {
     return new ExpectationBuilder(
-        new Expectation(requestDefinition, times, timeToLive, priority), this);
+        new Expectation(httpRequest, priority), this);
   }
 
   public ExpectationBuilder when(HttpRequest requestDefinition) {
     return new ExpectationBuilder(
-        new Expectation(requestDefinition, Times.unlimited(), TimeToLive.unlimited(), 0), this);
+        new Expectation(requestDefinition, 0), this);
   }
 
-  public void removeExpectation(ExpectationId expectationId) {
-    httpState.getRequestMatchers().clear(expectationId);
+  public void removeExpectation(String expectationId) {
+    httpState.clear(expectationId);
   }
 
-  public List<Expectation> retrieveActiveExpectations(HttpRequest request) {
-    return httpState.getRequestMatchers().retrieveActiveExpectations(request);
+  public List<Expectation> retrieveActiveExpectations() {
+    return httpState.retrieveActiveExpectations();
   }
 }

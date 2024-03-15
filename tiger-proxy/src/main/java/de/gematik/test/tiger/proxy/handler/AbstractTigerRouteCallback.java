@@ -22,6 +22,7 @@ import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -290,7 +291,11 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
 
     return getTigerProxy()
         .getMockServerToRbelConverter()
-        .convertResponse(resp, extractProtocolAndHostForRequest(req), req.getRemoteAddress(), Optional.of(ZonedDateTime.now()))
+        .convertResponse(
+            resp,
+            extractProtocolAndHostForRequest(req),
+            req.getRemoteAddress(),
+            Optional.of(ZonedDateTime.now()))
         .thenAccept(
             response ->
                 retrieveParsedRequest(req)
@@ -323,8 +328,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
       log.error(
           "Could not find request for response with id {}! Skipping response parsing!",
           req.getLogCorrelationId());
-      tigerProxy.getRbelMessages()
-          .forEach(msg -> log.info("Message: {} : {}", msg.getUuid(), msg));
+      tigerProxy.getRbelMessages().forEach(msg -> log.info("Message: {} : {}", msg.getUuid(), msg));
       throw new TigerProxyParsingException(
           "Not able to find parsed request for uuid " + req.getLogCorrelationId() + "!");
     }
@@ -450,5 +454,30 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
         .filter(StringUtils::isNotEmpty)
         .map(agent -> "User-Agent: '" + agent + "'")
         .orElse("");
+  }
+
+  @Override
+  public boolean matches(HttpRequest request) {
+    if (tigerRoute == null
+        || tigerRoute.getCriterions() == null
+        || tigerRoute.getCriterions().isEmpty()) {
+      return true;
+    }
+    final RbelElement convertedRequest =
+        getTigerProxy()
+            .getMockServerToRbelConverter()
+            .convertRequest(
+                request,
+                extractProtocolAndHostForRequest(request),
+                Optional.of(ZonedDateTime.now()))
+            .join();
+    request.setParsedRbelMessage(convertedRequest);
+    return tigerRoute.getCriterions().stream()
+        .allMatch(
+            criterion -> {
+              final boolean matches = TigerJexlExecutor.matchesAsJexlExpression(convertedRequest, criterion);
+              log.trace("Matching {} for {}: {}", criterion, convertedRequest.printHttpDescription(), matches);
+              return matches;
+            });
   }
 }

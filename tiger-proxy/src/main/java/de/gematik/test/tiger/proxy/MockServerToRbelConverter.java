@@ -69,6 +69,9 @@ public class MockServerToRbelConverter {
 
   public CompletableFuture<RbelElement> convertRequest(
       HttpRequest request, String protocolAndHost, Optional<ZonedDateTime> timestamp) {
+    if (request.getParsedRbelMessage() != null) {
+      return CompletableFuture.completedFuture(request.getParsedRbelMessage());
+    }
     if (log.isTraceEnabled()) {
       log.trace(
           "Converting request {}, headers {}, body {}",

@@ -11,9 +11,9 @@ import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
+import java.util.List;
 import java.util.function.BiConsumer;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -21,10 +21,9 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
 @ResetTigerConfiguration
-class TestTigerProxyCompetingRoutes extends AbstractTigerProxyTest {
+class TestTigerProxyJexlCriterionRoutes extends AbstractTigerProxyTest {
 
   @Test
-  @Disabled("Fails on build server")
   void competingRoutes_shouldSelectSecondRoute() {
     final String wrongDst = "http://localhost:" + fakeBackendServerPort + "/wrong";
     final String correctDst = "http://localhost:" + fakeBackendServerPort + "/right";
@@ -62,6 +61,37 @@ class TestTigerProxyCompetingRoutes extends AbstractTigerProxyTest {
     testRoutesInOrder.accept(route("/foobar/", correctDst), route("/foo/", wrongDst));
     testRoutesInOrder.accept(route("/foo/", wrongDst), route("/foobar/", correctDst));
     testRoutesInOrder.accept(route("/foo/", wrongDst), route("/foobar", correctDst));
+  }
+
+  @Test
+  void testRouteWithJexlCriterion() {
+    spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
+    tigerProxy.addRoute(
+      TigerRoute.builder()
+        .from("/foobar/")
+        .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar/")
+        .criterions(List.of("$.header.foo != 'bar'"))
+        .build());
+    tigerProxy.addRoute(
+        TigerRoute.builder()
+            .from("/foobar/")
+            .to("http://localhost:" + fakeBackendServerPort + "/foobar/")
+            .criterions(List.of("$.header.foo == 'bar'"))
+            .build());
+
+    assertThat(
+            proxyRest
+                .get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar/blub.html")
+                .asString()
+                .getStatus())
+        .isEqualTo(777);
+    assertThat(
+            proxyRest
+                .get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar/blub.nohtml")
+                .header("foo", "bar")
+                .asString()
+                .getStatus())
+        .isEqualTo(666);
   }
 
   private TigerRoute route(String from, String to) {
