@@ -3,7 +3,7 @@
 def CREDENTIAL_ID_GEMATIK_GIT = 'svc_gitlab_prod_credentials'
 def REPO_URL = createGitUrl('git/communications/ti-m/ti-m-testsuite')
 def BRANCH = 'main'
-def POM_PATH = 'pom.xml'
+def POM = 'pom.xml'
 
 pipeline {
       options {
@@ -21,6 +21,8 @@ pipeline {
               TIM_TRUSTSTORE_PW = 'gematik123'
               TIM_TRUSTSTORE = 'src/main/resources/certs/truststore.p12'
               TIM_KEYSTORE = 'src/main/resources/certs/c_keystore.p12'
+              BRANCH_LOWER_CASE = sh(returnStdout: true, script: "echo ${BRANCH_NAME} | tr '[:upper:]' '[:lower:]' | tr '/' '_' | tr -d '\n'")
+
       }
 
       parameters {
@@ -32,14 +34,6 @@ pipeline {
         stage('Initialise') {
             steps {
                 useJdk("OPENJDK17")
-
-                // TODO: script block can be removed when JSL v1.21.0 is released
-                script {
-                    env.DOCKER_HOST_HOSTNAME = sh(
-                            script: "docker info -f '{{ index .Name}}'",
-                            returnStdout: true
-                    ).trim() + getServerDomain()
-                }
             }
         }
 
@@ -53,22 +47,31 @@ pipeline {
 
         stage('Set Tiger version in TI-M') {
             steps {
-                sh "grep -q tiger.version ${POM_PATH}"
-                sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM_PATH}"
+                sh "grep -q tiger.version ${POM}"
+                sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM}"
             }
         }
 
         stage('Build') {
             steps {
-                mavenBuild(POM_PATH,"-Dprofile.ci")
+                mavenBuild(POM,"-Dprofile.ci")
             }
         }
 
-        stage('Tests') {
+        stage('Start DB') {
             steps {
-                withEnv(["TIGER_DOCKER_HOST=$DOCKER_HOST_HOSTNAME"]){
-                    mavenVerify("pom.xml", "-Dprofile.ci")
-                }
+                sh("docker compose -p ${BRANCH_LOWER_CASE} up -d")
+            }
+        }
+
+        stage('Test') {
+            environment {
+                TIGER_DOCKER_HOST = dockerGetCurrentHostname()
+                TIM_DB_PORT = sh(returnStdout: true, script: "docker ps --format='{{.Names}} {{.Ports}}' | grep '${BRANCH_LOWER_CASE}' | cut -d \' \' -f2 | grep -oP ':\\K\\d+(?=-)' | tr -d '\\n'")
+
+            }
+            steps {
+                mavenVerify(POM, "-Dprofile.ci")
             }
         }
 
@@ -77,7 +80,7 @@ pipeline {
                 script {
                     if (params.UPDATE == 'YES') {
                         catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                            sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM_PATH}"
+                            sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM}"
                             sh """
                                 git add -A
                                 git commit -m "Tiger version updated"
