@@ -21,14 +21,7 @@ import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.Setter;
@@ -155,6 +148,12 @@ public class TigerGlobalConfiguration {
     return globalConfigurationLoader.readStringOptional(key);
   }
 
+  public static Optional<byte[]> readByteArray(String key) {
+    assertGlobalConfigurationIsInitialized();
+    return globalConfigurationLoader.readStringOptional(key)
+      .map(Base64.getDecoder()::decode);
+  }
+
   @SneakyThrows
   public static synchronized <T> Optional<T> instantiateConfigurationBean(
       Class<T> configurationBeanClass, String... baseKeys) {
@@ -272,7 +271,7 @@ public class TigerGlobalConfiguration {
 
   public static void putValue(String key, Object value, SourceType sourceType) {
     assertGlobalConfigurationIsInitialized();
-    globalConfigurationLoader.putValue(key, value.toString(), sourceType);
+    globalConfigurationLoader.putValue(key, value, sourceType);
   }
 
   public static String resolvePlaceholders(String stringToSubstitute) {

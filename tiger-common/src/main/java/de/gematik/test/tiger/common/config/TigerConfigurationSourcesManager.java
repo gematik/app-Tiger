@@ -7,7 +7,7 @@ package de.gematik.test.tiger.common.config;
 import static java.util.Comparator.reverseOrder;
 
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Stream;
 
 /**
@@ -16,7 +16,7 @@ import java.util.stream.Stream;
  */
 public class TigerConfigurationSourcesManager {
 
-  private List<AbstractTigerConfigurationSource> loadedSources = new CopyOnWriteArrayList<>();
+  private ConcurrentSkipListSet<AbstractTigerConfigurationSource> loadedSources = new ConcurrentSkipListSet<>();
 
   public void reset() {
     loadedSources.clear();
@@ -24,7 +24,7 @@ public class TigerConfigurationSourcesManager {
 
   /** Get a list that has the most important value at the first position (for findFirst() calls) */
   public Stream<AbstractTigerConfigurationSource> getSortedStream() {
-    return loadedSources.stream().sorted();
+    return loadedSources.stream();
   }
 
   /**
@@ -35,7 +35,13 @@ public class TigerConfigurationSourcesManager {
   }
 
   public void addNewSource(AbstractTigerConfigurationSource source) {
-    loadedSources.add(source);
+    boolean success = loadedSources.add(source);
+    if (!success) {
+      final AbstractTigerConfigurationSource exisitingSource = loadedSources.stream()
+        .filter(src -> src.getSourceType() == source.getSourceType())
+        .findFirst().orElseThrow();
+      exisitingSource.putAll(source);
+    }
   }
 
   public boolean removeSource(AbstractTigerConfigurationSource source) {

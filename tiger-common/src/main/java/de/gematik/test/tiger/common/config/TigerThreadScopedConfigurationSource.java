@@ -73,6 +73,18 @@ public class TigerThreadScopedConfigurationSource extends AbstractTigerConfigura
     return retrieveFromCurrentThreadMap(m -> m.get(key));
   }
 
+  @Override
+  public void putAll(AbstractTigerConfigurationSource other) {
+    if (other instanceof TigerThreadScopedConfigurationSource otherThreadSource) {
+      for (var entry : otherThreadSource.threadIdToValuesMap.entrySet()) {
+        if (!threadIdToValuesMap.containsKey(entry.getKey())) {
+          threadIdToValuesMap.put(entry.getKey(), new ConcurrentHashMap<>());
+        }
+        threadIdToValuesMap.get(entry.getKey()).putAll(entry.getValue());
+      }
+    }
+  }
+
   private <T> T retrieveFromCurrentThreadMap(
       Function<Map<TigerConfigurationKey, String>, T> retriever) {
     final long threadId = Thread.currentThread().getId();

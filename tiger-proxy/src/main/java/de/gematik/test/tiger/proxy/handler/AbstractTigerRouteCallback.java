@@ -274,11 +274,8 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     return toBeConvertedRequest.thenApply(
         request -> {
           parseCertificateChainIfPresent(mockServerRequest, request).ifPresent(request::addFacet);
-
           getTigerProxy().triggerListener(request);
-
           addBundledServerNameToHostnameFacet(request);
-
           return request;
         });
   }

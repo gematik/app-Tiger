@@ -2,9 +2,13 @@
 
 # Release 3.0.2
 
-## Features
+## Bugfixes
+* TGR-1318: Byte-Arrays can now be stored and changed in TigerGlobalConfiguration
+
+## Features 
 
 * TGR-1313: Added support for the new VAU 'Epa für alle' format (VauEpa3).
+* TGR-1315: step ```TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline body:``` added
 * TGR-1325: Tiger-Proxy: Added new 'criterion' option for routes. This allows to match requests based on their content:
 ```
 tigerProxy:
@@ -14,8 +18,6 @@ tigerProxy:
         criterions:
           - $.header.foo == 'bar'
 ```
-* TGR-1315:
-  step ```TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline body:``` added
 
 # Release 3.0.1
 

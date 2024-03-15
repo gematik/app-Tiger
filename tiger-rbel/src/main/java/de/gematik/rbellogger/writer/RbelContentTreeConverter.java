@@ -69,7 +69,6 @@ public class RbelContentTreeConverter {
           Optional.of(
               new BasicTigerConfigurationSource(
                   SourceType.THREAD_CONTEXT,
-                  new TigerConfigurationKey(),
                   Map.of(ENCODE_AS, encodeAsOptional.get())));
       conversionContext.addConfigurationSource(encodingConfigurationSource.get());
     }
@@ -133,7 +132,6 @@ public class RbelContentTreeConverter {
       BasicTigerConfigurationSource localSource =
           new BasicTigerConfigurationSource(
               SourceType.THREAD_CONTEXT,
-              new TigerConfigurationKey(),
               TigerConfigurationLoader.addYamlToMap(
                   iterate,
                   new TigerConfigurationKey(loopStatement.split(":")[0].trim()),
