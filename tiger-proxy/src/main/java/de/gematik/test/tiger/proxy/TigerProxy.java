@@ -21,6 +21,7 @@ import de.gematik.test.tiger.mockserver.socket.tls.ForwardProxyTLSX509Certificat
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactorySupplier;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
+import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxySslException;
@@ -34,15 +35,13 @@ import de.gematik.test.tiger.proxy.tls.StaticTigerKeyAndCertificateFactory;
 import io.netty.handler.ssl.SslProvider;
 import jakarta.annotation.PreDestroy;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.*;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import javax.net.ssl.*;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
@@ -703,6 +702,16 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     super.close();
     remoteProxyClients.forEach(TigerRemoteProxyClient::close);
     mockServer.stop();
+  }
+
+  public Map<SocketAddress, TigerConnectionStatus> getOpenConnections() {
+    return getOpenConnections(TigerConnectionStatus.OPEN_TCP);
+  }
+
+  public Map<SocketAddress, TigerConnectionStatus> getOpenConnections(TigerConnectionStatus status) {
+    return mockServer.getOpenConnections().entrySet().stream()
+      .filter(entry -> entry.getValue().getValue() >= status.getValue())
+      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   private static class TigerProxyTrustManagerBuildingException extends RuntimeException {

@@ -4,9 +4,12 @@
 
 package de.gematik.test.tiger.mockserver.model;
 
+import lombok.Data;
+
 /*
  * @author jamesdbloom
  */
+@Data
 public class SocketAddress extends ObjectWithJsonToString {
   private String host;
   private Integer port = 80;

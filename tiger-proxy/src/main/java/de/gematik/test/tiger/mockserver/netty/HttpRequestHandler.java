@@ -14,7 +14,6 @@ import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
@@ -46,12 +45,12 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
       AttributeKey.valueOf("LOCAL_HOST_HEADERS");
   private HttpState httpState;
   private final Configuration configuration;
-  private LifeCycle server;
+  private MockServer server;
   private HttpActionHandler httpActionHandler;
 
   public HttpRequestHandler(
       Configuration configuration,
-      LifeCycle server,
+      MockServer server,
       HttpState httpState,
       HttpActionHandler httpActionHandler) {
     super(false);
