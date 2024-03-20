@@ -10,8 +10,13 @@
 * TGR-1313: Added support for the new VAU 'Epa für alle' format (VauEpa3).
 * TGR-1286: Tiger-Proxy: The number of open connections is now tracked and can be queried.
 * TGR-1315: step ```TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline body:``` added
-* TGR-1325: Tiger-Proxy: Added new 'criterion' option for routes. This allows to match requests based on their content:
+* TGR-1319: New Gluecode added for starting & stopping servers:
 ```
+    Given TGR stop server "remoteTigerProxy"
+    And TGR start server "remoteTigerProxy"
+```
+* TGR-1325: Tiger-Proxy: Added new 'criterion' option for routes. This allows to match requests based on their content:
+```yaml
 tigerProxy:
     proxyRoutes:
       - from: /

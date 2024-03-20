@@ -14,6 +14,7 @@ import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
+import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Gegebensei;
 import io.cucumber.java.de.Wenn;
@@ -183,5 +184,43 @@ public class TigerGlue {
   public void printVariable(String key) {
     final Optional<String> optionalValue = TigerGlobalConfiguration.readStringOptional(key);
     System.out.println(key + ": '" + optionalValue.orElse("This key is not set!") + "'"); // NOSONAR
+  }
+
+  /**
+   * Stops the given server. If the server is not running or the server is not found, an exception is thrown.
+   * @param servername The server to be stopped.
+   */
+  @Given("TGR stop server {tigerResolvedString}")
+  public static void tgrStopServer(String servername) {
+    final var server = TigerDirector.getTigerTestEnvMgr().getServers().get(servername);
+    if (server == null) {
+      throw new TigerServerNotFoundException(servername);
+    }
+    if (server.getStatus() != TigerServerStatus.RUNNING) {
+      throw new TigerLibraryException("Server with name " + servername + " is not running! Current status is " + server.getStatus());
+    }
+    server.shutdown();
+  }
+
+  /**
+   * Starts the given server. If the server is already running or the server is not found, an exception is thrown.
+   * @param servername The server to be started.
+   */
+  @Given("TGR start server {tigerResolvedString}")
+  public static void tgrStartServer(String servername) {
+    final var server = TigerDirector.getTigerTestEnvMgr().getServers().get(servername);
+    if (server == null) {
+      throw new TigerServerNotFoundException(servername);
+    }
+    if (server.getStatus() != TigerServerStatus.STOPPED) {
+      throw new TigerLibraryException("Server with name " + servername + " is not stopped! Current status is " + server.getStatus());
+    }
+    server.start(TigerDirector.getTigerTestEnvMgr());
+  }
+
+  public static class TigerServerNotFoundException extends TigerLibraryException {
+    public TigerServerNotFoundException(String servername) {
+      super("Server with name " + servername + " not found!");
+    }
   }
 }

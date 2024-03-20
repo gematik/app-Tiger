@@ -95,7 +95,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
       return;
     }
     synchronized (this) {
-      if (getStatus() != TigerServerStatus.NEW) {
+      if ((getStatus() != TigerServerStatus.NEW) && (getStatus() != TigerServerStatus.STOPPED)) {
         throw new TigerEnvironmentStartupException("Server %s was already started!", getServerId());
       }
     }

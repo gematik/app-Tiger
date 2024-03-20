@@ -7,7 +7,7 @@ package de.gematik.test.tiger.testenvmgr.junit;
 import java.lang.annotation.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-@Target({ElementType.METHOD})
+@Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Inherited
