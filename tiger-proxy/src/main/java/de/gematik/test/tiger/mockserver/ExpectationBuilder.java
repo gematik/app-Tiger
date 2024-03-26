@@ -24,4 +24,11 @@ public class ExpectationBuilder {
     mockServer.getHttpState().add(expectation);
     return new Expectation[] {expectation};
   }
+
+  public ExpectationBuilder id(String id) {
+    if (id != null) {
+      expectation.setId(id);
+    }
+    return this;
+  }
 }

@@ -29,7 +29,8 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
 
   private static final AtomicInteger EXPECTATION_COUNTER = new AtomicInteger(0);
   private static final long START_TIME = System.currentTimeMillis();
-  private final String id = UUID.randomUUID().toString();
+  @Setter
+  private String id = UUID.randomUUID().toString();
   private final int priority;
   private final HttpRequest requestPattern;
   @Setter private HttpAction httpAction;

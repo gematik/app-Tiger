@@ -591,13 +591,13 @@ public class TigerTestEnvMgr
     }
     isShuttingDown = true;
     log.info(Ansi.colorize("Shutting down all servers...", RbelAnsiColors.RED_BOLD));
-    for (AbstractTigerServer server : servers.values()) {
+    servers.values().stream().forEach(server -> {
       try {
-        server.shutdown();
+        server.stopServerAndCleanUp();
       } catch (RuntimeException e) {
         log.warn("Exception while shutting down server " + server.getServerId(), e);
       }
-    }
+    });
 
     log.info(Ansi.colorize("Sending shutdown to executor pool...", RbelAnsiColors.RED_BOLD));
     cachedExecutor.shutdownNow();
@@ -629,7 +629,7 @@ public class TigerTestEnvMgr
   @SuppressWarnings("unused")
   public List<TigerRoute> getRoutes() {
     return servers.values().stream()
-        .map(AbstractTigerServer::getRoutes)
+        .map(AbstractTigerServer::getServerRoutes)
         .flatMap(List::stream)
         .toList();
   }

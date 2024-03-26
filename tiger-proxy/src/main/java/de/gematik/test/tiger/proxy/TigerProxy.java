@@ -497,6 +497,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
   private Expectation[] buildReverseProxyRoute(final TigerRoute tigerRoute) {
     return mockServer
         .when(request().setPath(tigerRoute.getFrom() + ".*"))
+        .id(tigerRoute.getId())
         .forward(new ReverseProxyCallback(this, tigerRoute));
   }
 
@@ -507,6 +508,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
             request()
                 .withHeader("Host", url.getAuthority())
                 .setSecure(url.getProtocol().equals("https")))
+        .id(tigerRoute.getId())
         .forward(new ForwardProxyCallback(this, tigerRoute));
   }
 
@@ -547,8 +549,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     final TigerRoute route = tigerRouteMap.remove(routeId);
 
     log.info(
-        "Deleted route {}. Current # expectations {}",
-        route,
+        "Deleted route {} (id {}). Current # expectations {}",
+        route, routeId,
         mockServer.retrieveActiveExpectations().size());
   }
 

@@ -86,8 +86,7 @@ public class HttpState {
   public Expectation firstMatchingExpectation(HttpRequest request) {
     return expectations.stream()
         .filter(expectation -> expectation.matches(request))
-        .sorted(Comparator.naturalOrder())
-        .findFirst()
+        .min(Comparator.naturalOrder())
         .orElse(null);
   }
 
@@ -110,6 +109,8 @@ public class HttpState {
   }
 
   public void clear(String expectationId) {
-    expectations.removeIf(expectation -> expectation.getId().equals(expectationId));
+    boolean foundRoute =
+        expectations.removeIf(expectation -> expectation.getId().equals(expectationId));
+    log.info("removed expectation with id [{}]: {}", expectationId, foundRoute);
   }
 }

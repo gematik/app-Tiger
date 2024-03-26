@@ -76,6 +76,7 @@ public class HttpBinServer extends AbstractExternalTigerServer {
     if (httpbin != null) {
       httpbin.stop();
     }
+    setStatus(TigerServerStatus.STOPPED, "HttpBin-server " + getServerId() + " stopped");
   }
 
   @Override

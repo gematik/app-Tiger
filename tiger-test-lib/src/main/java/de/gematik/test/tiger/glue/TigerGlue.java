@@ -21,6 +21,7 @@ import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -215,7 +216,9 @@ public class TigerGlue {
               + " is not running! Current status is "
               + server.getStatus());
     }
-    server.shutdown();
+    log.trace("Starting shutdown at {}", LocalDateTime.now());
+    server.stopServerAndCleanUp();
+    log.trace("Shutdown complete at {} with status {}", LocalDateTime.now(), server.getStatus());
   }
 
   /**

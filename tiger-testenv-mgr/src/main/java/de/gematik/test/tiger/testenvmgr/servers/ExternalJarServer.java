@@ -220,8 +220,8 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
   @Override
   public void shutdown() {
     log.info("Stopping external jar {}...", getServerId());
-    removeAllRoutes();
     stopExternalProcess();
+    log.info("Shutdown of external jar {} complete with status {}", getServerId(), getStatus());
   }
 
   private void stopExternalProcess() {
