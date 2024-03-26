@@ -45,7 +45,8 @@ public class TigerGlue {
 
   /**
    * Sets the given key to the given value in the global configuration store. Variable substitution
-   * is performed. This value will only be accessible from this exact thread.
+   * is performed. This value will only be available in the given scenario being clear up after the
+   * scenario run is finished.
    *
    * @param key key of the context
    * @param value value for the context entry with given key
@@ -54,7 +55,14 @@ public class TigerGlue {
   @When("TGR set local variable {tigerResolvedString} to {tigerResolvedString}")
   public void ctxtISetLocalVariableTo(final String key, final String value) {
     log.debug("Setting local variable {} to '{}'", key, value);
-    TigerGlobalConfiguration.putValue(key, value, SourceType.THREAD_CONTEXT);
+    TigerGlobalConfiguration.putValue(key, value, SourceType.LOCAL_TEST_CASE_CONTEXT);
+  }
+
+  @Wenn("TGR setze lokale Feature Variable {tigerResolvedString} auf {tigerResolvedString}")
+  @When("TGR set local feature variable {tigerResolvedString} to {tigerResolvedString}")
+  public void setFeatureVariable(final String key, final String value) {
+    log.debug("Setting feature variable {} to '{}'", key, value);
+    TigerGlobalConfiguration.putValue(key, value, SourceType.TEST_CONTEXT);
   }
 
   /**
@@ -141,8 +149,10 @@ public class TigerGlue {
     TigerDirector.pauseExecution(TigerGlobalConfiguration.resolvePlaceholders(message));
   }
 
-  @When("TGR pause test run execution with message {tigerResolvedString} and message in case of error {tigerResolvedString}")
-  @Wenn("TGR pausiere Testausführung mit Nachricht {tigerResolvedString} und Meldung im Fehlerfall {tigerResolvedString}")
+  @When(
+      "TGR pause test run execution with message {tigerResolvedString} and message in case of error {tigerResolvedString}")
+  @Wenn(
+      "TGR pausiere Testausführung mit Nachricht {tigerResolvedString} und Meldung im Fehlerfall {tigerResolvedString}")
   public void tgrPauseExecutionWithMessageAndErrorMessage(String message, String errorMessage) {
     TigerDirector.pauseExecutionAndFailIfDesired(message, errorMessage);
   }
@@ -187,7 +197,9 @@ public class TigerGlue {
   }
 
   /**
-   * Stops the given server. If the server is not running or the server is not found, an exception is thrown.
+   * Stops the given server. If the server is not running or the server is not found, an exception
+   * is thrown.
+   *
    * @param servername The server to be stopped.
    */
   @Given("TGR stop server {tigerResolvedString}")
@@ -197,13 +209,19 @@ public class TigerGlue {
       throw new TigerServerNotFoundException(servername);
     }
     if (server.getStatus() != TigerServerStatus.RUNNING) {
-      throw new TigerLibraryException("Server with name " + servername + " is not running! Current status is " + server.getStatus());
+      throw new TigerLibraryException(
+          "Server with name "
+              + servername
+              + " is not running! Current status is "
+              + server.getStatus());
     }
     server.shutdown();
   }
 
   /**
-   * Starts the given server. If the server is already running or the server is not found, an exception is thrown.
+   * Starts the given server. If the server is already running or the server is not found, an
+   * exception is thrown.
+   *
    * @param servername The server to be started.
    */
   @Given("TGR start server {tigerResolvedString}")
@@ -213,7 +231,11 @@ public class TigerGlue {
       throw new TigerServerNotFoundException(servername);
     }
     if (server.getStatus() != TigerServerStatus.STOPPED) {
-      throw new TigerLibraryException("Server with name " + servername + " is not stopped! Current status is " + server.getStatus());
+      throw new TigerLibraryException(
+          "Server with name "
+              + servername
+              + " is not stopped! Current status is "
+              + server.getStatus());
     }
     server.start(TigerDirector.getTigerTestEnvMgr());
   }

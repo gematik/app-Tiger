@@ -15,11 +15,13 @@ import lombok.Getter;
 public abstract class AbstractTigerConfigurationSource
     implements Comparable<AbstractTigerConfigurationSource> {
 
-  private final SourceType sourceType;
+  protected final SourceType sourceType;
 
   AbstractTigerConfigurationSource(SourceType sourceType) {
     this.sourceType = sourceType;
   }
+
+  public abstract AbstractTigerConfigurationSource copy();
 
   public abstract Map<TigerConfigurationKey, String> applyTemplatesAndAddValuesToMap(
       List<TigerTemplateSource> loadedTemplates,

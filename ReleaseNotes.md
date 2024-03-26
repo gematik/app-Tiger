@@ -3,27 +3,38 @@
 # Release 3.0.2
 
 ## Bugfixes
+
 * TGR-1318: Byte-Arrays can now be stored and changed in TigerGlobalConfiguration
 
-## Features 
+## Features
 
 * TGR-1313: Added support for the new VAU 'Epa für alle' format (VauEpa3).
 * TGR-1286: Tiger-Proxy: The number of open connections is now tracked and can be queried.
-* TGR-1315: step ```TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline body:``` added
+* TGR-1315:
+  step ```TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline body:``` added
 * TGR-1319: New Gluecode added for starting & stopping servers:
+
 ```
     Given TGR stop server "remoteTigerProxy"
     And TGR start server "remoteTigerProxy"
 ```
+
 * TGR-1325: Tiger-Proxy: Added new 'criterion' option for routes. This allows to match requests based on their content:
+
 ```yaml
 tigerProxy:
-    proxyRoutes:
-      - from: /
-        to: http://orf.at/blub/
-        criterions:
-          - $.header.foo == 'bar'
+  proxyRoutes:
+    - from: /
+      to: http://orf.at/blub/
+      criterions:
+        - $.header.foo == 'bar'
 ```
+
+* TGR-1321: The variable set by the glue code
+  step ```TGR set local variable {tigerResolvedString} to {tigerResolvedString}``` now gets automatically cleared after
+  the test case run is finished. The new glue code
+  step ```TGR set local feature variable {tigerResolvedString} to {tigerResolvedString}``` sets a variable that is
+  cleared after the execution of the feature file is finished.
 
 # Release 3.0.1
 

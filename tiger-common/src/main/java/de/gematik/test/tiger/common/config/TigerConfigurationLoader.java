@@ -278,10 +278,7 @@ public class TigerConfigurationLoader {
     DeprecatedKeysForbiddenUsageChecker.checkForDeprecatedKeys(valueMap);
 
     sourcesManager.addNewSource(
-        BasicTigerConfigurationSource.builder()
-            .values(valueMap)
-            .sourceType(sourceType)
-            .build());
+        BasicTigerConfigurationSource.builder().values(valueMap).sourceType(sourceType).build());
   }
 
   public boolean readBoolean(String key) {
@@ -578,12 +575,8 @@ public class TigerConfigurationLoader {
   }
 
   private AbstractTigerConfigurationSource generateNewConfigurationSource(SourceType sourceType) {
-    final AbstractTigerConfigurationSource newSource;
-    if (sourceType == SourceType.THREAD_CONTEXT) {
-      newSource = new TigerThreadScopedConfigurationSource();
-    } else {
-      newSource = new BasicTigerConfigurationSource(sourceType);
-    }
+    final AbstractTigerConfigurationSource newSource =
+        new BasicTigerConfigurationSource(sourceType);
     sourcesManager.addNewSource(newSource);
     return newSource;
   }

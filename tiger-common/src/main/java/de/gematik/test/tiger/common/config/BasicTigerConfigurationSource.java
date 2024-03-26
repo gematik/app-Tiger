@@ -19,15 +19,22 @@ public class BasicTigerConfigurationSource extends AbstractTigerConfigurationSou
 
   @Builder
   public BasicTigerConfigurationSource(
-      SourceType sourceType,
-      Map<TigerConfigurationKey, String> values) {
+      SourceType sourceType, Map<TigerConfigurationKey, String> values) {
     super(sourceType);
-    this.values = values; // TODO deep copy
+    this.values = new HashMap<>(values);
   }
 
   public BasicTigerConfigurationSource(SourceType sourceType) {
     super(sourceType);
     this.values = new HashMap<>();
+  }
+
+  @Override
+  public AbstractTigerConfigurationSource copy() {
+    return BasicTigerConfigurationSource.builder()
+        .sourceType(sourceType)
+        .values(new HashMap<>(values))
+        .build();
   }
 
   /**

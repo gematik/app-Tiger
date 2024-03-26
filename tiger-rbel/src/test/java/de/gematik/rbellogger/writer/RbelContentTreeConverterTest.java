@@ -28,7 +28,7 @@ import org.xmlunit.assertj.XmlAssert;
 
 class RbelContentTreeConverterTest {
 
-  private RbelConverter rbelConverter = RbelConverter.builder().build();
+  private final RbelConverter rbelConverter = RbelConverter.builder().build();
 
   @SneakyThrows
   @Test

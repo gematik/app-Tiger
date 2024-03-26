@@ -47,3 +47,11 @@ editorExamples:
       "description": "This is an example JSON",
       "items": ["item1", "item2", "item3"]
     }
+
+tigerGlue:
+  helloTestLocal: "global value for helloTestLocal"
+  #to make sure that the test works no mather the order in which the
+  #features are executed, we use two test variables
+  helloTestFeature1: "global value for helloTestFeature1"
+  helloTestFeature2: "global value for helloTestFeature2"
+

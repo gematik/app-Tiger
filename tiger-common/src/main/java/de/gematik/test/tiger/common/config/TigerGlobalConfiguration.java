@@ -150,8 +150,7 @@ public class TigerGlobalConfiguration {
 
   public static Optional<byte[]> readByteArray(String key) {
     assertGlobalConfigurationIsInitialized();
-    return globalConfigurationLoader.readStringOptional(key)
-      .map(Base64.getDecoder()::decode);
+    return globalConfigurationLoader.readStringOptional(key).map(Base64.getDecoder()::decode);
   }
 
   @SneakyThrows
@@ -456,5 +455,27 @@ public class TigerGlobalConfiguration {
                                 k.downsampleKeyCaseSensitive(), Pair.of(s.getSourceType(), v))));
 
     return Collections.unmodifiableMap(exportedConfiguration);
+  }
+
+  /**
+   * Clears local test variables. These are variables from the source
+   * SourceType.LOCAL_TEST_CASE_CONTEXT, which should only be active during a single test case.
+   */
+  public static void clearLocalTestVariables() {
+    globalConfigurationLoader.listSources().stream()
+        .filter(s -> s.getSourceType() == SourceType.LOCAL_TEST_CASE_CONTEXT)
+        .findAny()
+        .ifPresent(globalConfigurationLoader::removeConfigurationSource);
+  }
+
+  /**
+   * Clears test variables. These are variables from the source SourceType.TEST_CONTEXT, which
+   * should only be active during the execution of a feature file.
+   */
+  public static void clearTestVariables() {
+    globalConfigurationLoader.listSources().stream()
+        .filter(s -> s.getSourceType() == SourceType.TEST_CONTEXT)
+        .findAny()
+        .ifPresent(globalConfigurationLoader::removeConfigurationSource);
   }
 }

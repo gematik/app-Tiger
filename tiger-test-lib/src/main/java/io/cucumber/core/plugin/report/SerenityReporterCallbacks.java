@@ -84,6 +84,8 @@ public class SerenityReporterCallbacks {
   /** number of failed scenarios / scenario data variants. */
   @Getter private int scFailed = 0;
 
+  private final FeatureExecutionMonitor featureExecutionMonitor = new FeatureExecutionMonitor();
+
   @NotNull
   private static Path getEvidenceDir() throws IOException {
     final Path parentDir = Path.of(TARGET_DIR, "evidences");
@@ -115,7 +117,14 @@ public class SerenityReporterCallbacks {
       initializeTiger();
       TigerDirector.assertThatTigerIsInitialized();
       shouldAbortTestExecution();
+      featureExecutionMonitor.startTestRun();
     }
+  }
+
+  @SuppressWarnings("java:S1172")
+  public void handleTestRunFinished(
+      TestRunFinished ignoredEvent, ScenarioContextDelegate ignoredContext) {
+    featureExecutionMonitor.stopTestRun();
   }
 
   private void showTigerVersion() {
@@ -181,6 +190,7 @@ public class SerenityReporterCallbacks {
 
     currentFeature.ifPresent(feature -> informWorkflowUiAboutCurrentScenario(feature, context));
     evidenceRecorder.reset();
+    featureExecutionMonitor.startTestCase(testCaseStartedEvent);
   }
 
   private int extractScenarioDataVariantIndex(
@@ -494,19 +504,21 @@ public class SerenityReporterCallbacks {
   //
   // test case end
   //
-  public void handleTestCaseFinished(Event event, ScenarioContextDelegate context) {
-    if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) return;
+  public void handleTestCaseFinished(TestCaseFinished event, ScenarioContextDelegate context) {
+    if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) {
+      return;
+    }
 
     currentStepIndex = -1;
-    TestCaseFinished tscEvent = ((TestCaseFinished) event);
-    String scenarioStatus = tscEvent.getResult().getStatus().toString();
+    String scenarioStatus = event.getResult().getStatus().toString();
 
     // dump overall status for updates while test is still running
     switch (scenarioStatus) {
       case "PASSED" -> scPassed++;
       case "ERROR", "FAILED" -> scFailed++;
-      default -> throw new UnsupportedOperationException(
-          "Unsupported scenario: %s".formatted(scenarioStatus));
+      default ->
+          throw new UnsupportedOperationException(
+              "Unsupported scenario: %s".formatted(scenarioStatus));
     }
     log.info(
         "------------ STATUS: {} passed {}",
@@ -514,10 +526,11 @@ public class SerenityReporterCallbacks {
         scFailed > 0 ? scFailed + " failed or error" : "");
 
     if (TigerDirector.getLibConfig().createRbelHtmlReports) {
-      createRbelLogReport(tscEvent.getTestCase().getName(), tscEvent.getTestCase().getUri());
+      createRbelLogReport(event.getTestCase().getName(), event.getTestCase().getUri());
     }
 
-    createEvidenceFile((TestCaseFinished) event, context);
+    createEvidenceFile(event, context);
+    TigerGlobalConfiguration.clearLocalTestVariables();
   }
 
   @SneakyThrows
