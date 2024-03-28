@@ -5,6 +5,7 @@
 ## Bugfixes
 
 * TGR-1318: Byte-Arrays can now be stored and changed in TigerGlobalConfiguration
+* TGR-327: Reasonphrase is no longer added implicitly in the TigerProxy (when the phrase is empty from the server it will stay empty)
 
 ## Features
 

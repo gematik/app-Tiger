@@ -102,6 +102,7 @@ public abstract class AbstractTigerProxyTest {
                 post("/echo")
                     .willReturn(
                         status(200)
+                            .withStatusMessage("")
                             .withBody("{{request.body}}")
                             .withTransformers("response-template"))));
   }

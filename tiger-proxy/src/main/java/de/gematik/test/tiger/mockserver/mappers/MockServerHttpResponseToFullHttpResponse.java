@@ -6,7 +6,6 @@ package de.gematik.test.tiger.mockserver.mappers;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 import de.gematik.test.tiger.mockserver.codec.BodyDecoderEncoder;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
@@ -41,11 +40,9 @@ public class MockServerHttpResponseToFullHttpResponse {
 
   private HttpResponseStatus getStatus(HttpResponse httpResponse) {
     int statusCode = httpResponse.getStatusCode() != null ? httpResponse.getStatusCode() : 200;
-    if (!isEmpty(httpResponse.getReasonPhrase())) {
-      return new HttpResponseStatus(statusCode, httpResponse.getReasonPhrase());
-    } else {
-      return HttpResponseStatus.valueOf(statusCode);
-    }
+    final String reasonPhrase =
+        httpResponse.getReasonPhrase() != null ? httpResponse.getReasonPhrase() : "";
+    return new HttpResponseStatus(statusCode, reasonPhrase);
   }
 
   private ByteBuf getBody(HttpResponse httpResponse) {

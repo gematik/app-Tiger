@@ -1161,4 +1161,27 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         .extractChildWithPath("$.path.foo.value")
         .hasStringContentEqualTo("this is bar");
   }
+
+  @Test
+  void emptyStatusMessageFromBackend_shouldBeEmptyAfterTigerProxyAsWell() {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("http://backend")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .build());
+
+    final HttpResponse<String> response =
+        proxyRest.post("http://backend/echo").body("Hello World!").asString();
+
+    awaitMessagesInTiger(2);
+
+    assertThat(response.getStatusText()).isEmpty();
+    assertThat(tigerProxy.getRbelMessagesList().get(1))
+        .extractChildWithPath("$.reasonPhrase")
+        .hasNullContent();
+  }
 }
