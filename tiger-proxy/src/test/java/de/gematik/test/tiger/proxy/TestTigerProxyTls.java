@@ -22,6 +22,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
+import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import io.restassured.RestAssured;
 import io.restassured.config.SSLConfig;
 import io.restassured.response.Response;
@@ -66,6 +67,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
@@ -387,22 +389,22 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     "'TLSv1.3', 'TLSv1.3', true, TLSv1.3"
   })
   void serverSslVersion_shouldBeHonored(
-      String clientTlsSuites,
-      String serverTlsSuites,
+      String clientTlsVersion,
+      String serverTlsVersion,
       boolean shouldConnect,
-      String assertSuiteUsed) {
+      String assertVersionUsed) {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
                     TigerRoute.builder()
                         .from("/")
-                        .to("https://localhost:" + fakeBackendServerPort)
+                        .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
             .tls(
                 TigerTlsConfiguration.builder()
                     .serverTlsProtocols(
-                        Stream.of(serverTlsSuites.split(",")).collect(Collectors.toList()))
+                        Stream.of(serverTlsVersion.split(",")).collect(Collectors.toList()))
                     .build())
             .build());
 
@@ -410,10 +412,10 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
       SSLConnectionSocketFactory sslSocketFactory =
           new SSLConnectionSocketFactory(
               tigerProxy.getConfiguredTigerProxySslContext(),
-              clientTlsSuites.split(","),
+              clientTlsVersion.split(","),
               null,
               (hostname, session) -> {
-                assertThat(session.getProtocol()).isEqualTo(assertSuiteUsed);
+                assertThat(session.getProtocol()).isEqualTo(assertVersionUsed);
                 return true;
               });
       var httpClient = HttpClients.custom().setSSLSocketFactory(sslSocketFactory).build();
@@ -422,6 +424,15 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
           unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar");
       if (shouldConnect) {
         request.asString();
+        tigerProxy.waitForAllCurrentMessagesToBeParsed();
+        assertThat(tigerProxy.getRbelMessagesList().get(0))
+            .hasFacet(TlsFacet.class)
+            .extractChildWithPath("$.tlsVersion")
+            .hasStringContentEqualTo(assertVersionUsed);
+        assertThat(tigerProxy.getRbelMessagesList().get(1))
+            .hasFacet(TlsFacet.class)
+            .extractChildWithPath("$.tlsVersion")
+            .hasStringContentEqualTo(assertVersionUsed);
       } else {
         assertThatThrownBy(request::asString).hasCauseInstanceOf(IllegalStateException.class);
       }
@@ -531,11 +542,18 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     return sslContext;
   }
 
-  @Test
-  void configureServerTslSuites() {
-    final String configuredSslSuite = "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA";
+  @ParameterizedTest
+  @ValueSource(
+      strings = {"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA", "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA"})
+  void configureServerTslSuites(String configuredSslSuite) {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
             .tls(
                 TigerTlsConfiguration.builder()
                     .serverSslSuites(List.of(configuredSslSuite))
@@ -543,10 +561,19 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             .build());
 
     SSLContext ctx = tigerProxy.buildSslContext();
-    new UnirestInstance(new Config().sslContext(ctx).proxy("localhost", tigerProxy.getProxyPort()))
-        .get("https://localhost:" + fakeBackendServerPort + "/foobar")
+    new UnirestInstance(new Config().sslContext(ctx))
+        .get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar")
         .asString();
 
+    tigerProxy.waitForAllCurrentMessagesToBeParsed();
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .hasFacet(TlsFacet.class)
+        .extractChildWithPath("$.cipherSuite")
+        .hasStringContentEqualTo(configuredSslSuite);
+    assertThat(tigerProxy.getRbelMessagesList().get(1))
+        .hasFacet(TlsFacet.class)
+        .extractChildWithPath("$.cipherSuite")
+        .hasStringContentEqualTo(configuredSslSuite);
     assertThat(
             ctx.getClientSessionContext()
                 .getSession(ctx.getClientSessionContext().getIds().nextElement())
@@ -902,13 +929,14 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   @Test
   void tigerProxyAsServerWithActivatedOcspStapling_shouldSendValidOcspResponseInHandshake() {
     spawnTigerProxyAndConnectWithBouncyCastleAndCheckServerCertificate(
-        serverCertificate -> assertThat(
-                serverCertificate
-                    .getCertificateStatus()
-                    .getOCSPResponse()
-                    .getResponseStatus()
-                    .getIntValue())
-            .isZero(),
+        serverCertificate ->
+            assertThat(
+                    serverCertificate
+                        .getCertificateStatus()
+                        .getOCSPResponse()
+                        .getResponseStatus()
+                        .getIntValue())
+                .isZero(),
         TigerProxyConfiguration.builder()
             .tls(
                 TigerTlsConfiguration.builder()

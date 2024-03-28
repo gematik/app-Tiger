@@ -9,6 +9,7 @@ import java.lang.reflect.Array;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.ToString;
@@ -30,6 +31,8 @@ public class PartialTracingMessage {
   private final ZonedDateTime transmissionTime;
   private final ZonedDateTime receivedTime = ZonedDateTime.now();
   private final List<TracingMessagePart> messageParts = new ArrayList<>();
+  @Builder.Default
+  private final Map<String, String> additionalInformation = Map.of();
 
   public boolean isComplete() {
     return !messageParts.isEmpty()

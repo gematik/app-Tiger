@@ -4,15 +4,18 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo.TigerFileSaveInfoBuilder;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
+import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -131,6 +134,32 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
           fileHasNLines(TGR_FILENAME + "4.tgr", 4);
         },
         TGR_FILENAME + "4.tgr");
+  }
+
+  @Test
+  void saveTlsConnection_detailsShouldBeIntactAfterReadingFromFile() {
+    executeFileWritingAndReadingTest(
+        otherProxy -> {
+          await().atMost(2, TimeUnit.SECONDS).until(otherProxy::isFileParsed);
+          final RbelElement request = otherProxy
+            .getRbelLogger()
+            .getMessageHistory()
+            .getFirst();
+          assertThat(request)
+            .hasFacet(TlsFacet.class)
+            .extractChildWithPath("$.cipherSuite")
+            .hasStringContentEqualTo("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
+          assertThat(request)
+            .extractChildWithPath("$.tlsVersion")
+            .hasStringContentEqualTo("TLSv1.2");
+        },
+        TigerFileSaveInfo.builder(),
+        () -> {
+          proxyRest.get("https://backend/foobar").asJson();
+          proxyRest.get("https://backend/faabor").asJson();
+          fileHasNLines(TGR_FILENAME + "5.tgr", 4);
+        },
+        TGR_FILENAME + "5.tgr");
   }
 
   @Test

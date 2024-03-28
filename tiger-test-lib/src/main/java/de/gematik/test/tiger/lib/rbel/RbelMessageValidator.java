@@ -11,7 +11,7 @@ import com.google.common.collect.Lists;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
-import de.gematik.rbellogger.util.RbelFileWriter;
+import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;

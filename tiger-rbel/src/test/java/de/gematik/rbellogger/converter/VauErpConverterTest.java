@@ -80,7 +80,7 @@ public class VauErpConverterTest {
     assertThat(
             rbelLogger
                 .getMessageList()
-                .get(47)
+                .get(45)
                 .findElement("$.body.keyId")
                 .get()
                 .seekValue(String.class))

@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.file.RbelFileWriter;
 import java.io.File;
 import java.io.IOException;
 import org.apache.commons.io.FileUtils;

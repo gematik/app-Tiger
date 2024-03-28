@@ -716,6 +716,10 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
       .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
+  public void waitForAllCurrentMessagesToBeParsed() {
+    getRbelLogger().getRbelConverter().waitForGivenElementToBeParsed(getRbelMessages().getLast());
+  }
+
   private static class TigerProxyTrustManagerBuildingException extends RuntimeException {
 
     public TigerProxyTrustManagerBuildingException(final String s, final Exception e) {

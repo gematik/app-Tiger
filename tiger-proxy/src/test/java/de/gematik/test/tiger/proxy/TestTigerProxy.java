@@ -1030,7 +1030,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     awaitMessagesInTiger(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0))
-        .doesNotContainChildWithPath("$.body.foobar");
+        .doesNotHaveChildWithPath("$.body.foobar");
   }
 
   @Test

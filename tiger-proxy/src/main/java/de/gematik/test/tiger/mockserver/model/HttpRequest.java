@@ -42,6 +42,8 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
   private Protocol protocol = null;
   private Integer streamId = null;
   private List<MockserverX509CertificateWrapper> clientCertificateChain;
+  private String tlsVersion = null;
+  private String cipherSuite = null;
   private SocketAddress socketAddress;
   private String localAddress;
   private String remoteAddress;
@@ -56,8 +58,12 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
   }
 
   public Boolean isSecure() {
-    if (socketAddress != null && socketAddress.getScheme() != null) {
-      setSecure(socketAddress.getScheme() == SocketAddress.Scheme.HTTPS);
+    if (secure == null) {
+      if (tlsVersion != null || cipherSuite != null) {
+        setSecure(true);
+      } else if (socketAddress != null && socketAddress.getScheme() != null) {
+        setSecure(socketAddress.getScheme() == SocketAddress.Scheme.HTTPS);
+      }
     }
     return secure;
   }

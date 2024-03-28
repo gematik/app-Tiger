@@ -2,17 +2,15 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.rbellogger.util;
+package de.gematik.rbellogger.file;
 
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
-import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.util.RbelMessagePostProcessor;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.function.BiConsumer;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,16 +20,22 @@ import org.json.JSONObject;
 @AllArgsConstructor
 @Slf4j
 public class RbelFileWriter {
-
   private static final String FILE_DIVIDER = "\n";
-  private static final String RAW_MESSAGE_CONTENT = "rawMessageContent";
-  private static final String SENDER_HOSTNAME = "senderHostname";
-  private static final String RECEIVER_HOSTNAME = "receiverHostname";
-  private static final String SEQUENCE_NUMBER = "sequenceNumber";
-  private static final String MESSAGE_TIME = "timestamp";
-  private static final String MESSAGE_UUID = "uuid";
-  public final List<RbelMessagePostProcessor> postConversionListener = new ArrayList<>();
-  public final List<BiConsumer<RbelElement, JSONObject>> preSaveListener = new ArrayList<>();
+  public static final String RAW_MESSAGE_CONTENT = "rawMessageContent";
+  public static final String SENDER_HOSTNAME = "senderHostname";
+  public static final String RECEIVER_HOSTNAME = "receiverHostname";
+  public static final String SEQUENCE_NUMBER = "sequenceNumber";
+  public static final String MESSAGE_TIME = "timestamp";
+  public static final String MESSAGE_UUID = "uuid";
+  public static final List<RbelFilePreSaveListener> DEFAULT_PRE_SAVE_LISTENER =
+      new ArrayList<>(List.of(new MessageTimeWriter(), new TcpIpMessageFacetWriter()));
+  public static final List<RbelMessagePostProcessor> DEFAULT_POST_CONVERSION_LISTENER =
+      new ArrayList<>();
+  public final List<RbelMessagePostProcessor> postConversionListener =
+      new ArrayList<>(DEFAULT_POST_CONVERSION_LISTENER);
+  public final List<RbelFilePreSaveListener> preSaveListener =
+      new ArrayList<>(DEFAULT_PRE_SAVE_LISTENER);
+
   private final RbelConverter rbelConverter;
 
   public String convertToRbelFileString(RbelElement rbelElement) {
@@ -40,36 +44,8 @@ public class RbelFileWriter {
             Map.of(
                 RAW_MESSAGE_CONTENT,
                     Base64.getEncoder().encodeToString(rbelElement.getRawContent()),
-                SENDER_HOSTNAME,
-                    rbelElement
-                        .getFacet(RbelTcpIpMessageFacet.class)
-                        .map(RbelTcpIpMessageFacet::getSender)
-                        .filter(Objects::nonNull)
-                        .flatMap(element -> element.getFacet(RbelHostnameFacet.class))
-                        .map(RbelHostnameFacet::toString)
-                        .orElse(""),
-                RECEIVER_HOSTNAME,
-                    rbelElement
-                        .getFacet(RbelTcpIpMessageFacet.class)
-                        .map(RbelTcpIpMessageFacet::getReceiver)
-                        .filter(Objects::nonNull)
-                        .flatMap(element -> element.getFacet(RbelHostnameFacet.class))
-                        .map(RbelHostnameFacet::toString)
-                        .orElse(""),
-                SEQUENCE_NUMBER,
-                    rbelElement
-                        .getFacet(RbelTcpIpMessageFacet.class)
-                        .map(RbelTcpIpMessageFacet::getSequenceNumber)
-                        .map(Object::toString)
-                        .orElse(""),
-                MESSAGE_TIME,
-                    rbelElement
-                        .getFacet(RbelMessageTimingFacet.class)
-                        .map(RbelMessageTimingFacet::getTransmissionTime)
-                        .map(Object::toString)
-                        .orElse(""),
                 MESSAGE_UUID, rbelElement.getUuid()));
-    preSaveListener.forEach(listener -> listener.accept(rbelElement, jsonObject));
+    preSaveListener.forEach(listener -> listener.preSaveCallback(rbelElement, jsonObject));
 
     return jsonObject + FILE_DIVIDER;
   }
@@ -81,18 +57,21 @@ public class RbelFileWriter {
 
   private List<RbelElement> readRbelFileStream(Stream<String> rbelFileStream) {
     final List<String> rawMessageStrings = rbelFileStream.filter(StringUtils::isNotEmpty).toList();
-    List<RbelElement> list = new ArrayList<>();
     log.info("Found {} messages in file, starting parsing...", rawMessageStrings.size());
-    int numberOfParsedMessages = 0;
-    for (String rawMessageString : rawMessageStrings) {
-      if ((++numberOfParsedMessages % 1000) == 0) {
-        log.info("Parsed {} messages, continuing...", numberOfParsedMessages);
-      }
-      JSONObject jsonObject = new JSONObject(rawMessageString);
-      var rbelElement = parseFileObject(jsonObject);
-      rbelElement.ifPresent(list::add);
-    }
-    return list;
+    AtomicInteger numberOfParsedMessages = new AtomicInteger(0);
+    return rawMessageStrings.stream()
+        .peek( // NOSONAR
+            str -> {
+              if ((numberOfParsedMessages.getAndIncrement() % 500) == 0) {
+                log.info("Parsed {} messages, continuing...", numberOfParsedMessages);
+              }
+            })
+        .map(JSONObject::new)
+        .sorted(Comparator.comparing(json -> json.optInt(SEQUENCE_NUMBER, Integer.MAX_VALUE)))
+        .map(this::parseFileObject)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .toList();
   }
 
   private Optional<RbelElement> parseFileObject(JSONObject messageObject) {
@@ -117,7 +96,8 @@ public class RbelFileWriter {
                   : Optional.empty());
       postConversionListener.forEach(
           listener ->
-              listener.performMessagePostConversionProcessing(parsedMessage, rbelConverter, messageObject));
+              listener.performMessagePostConversionProcessing(
+                  parsedMessage, rbelConverter, messageObject));
       return Optional.ofNullable(parsedMessage);
     } catch (Exception e) {
       throw new RbelFileReadingException(

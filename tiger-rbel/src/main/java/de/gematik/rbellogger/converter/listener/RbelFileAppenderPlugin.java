@@ -9,7 +9,7 @@ import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.exceptions.RbelRenderingException;
-import de.gematik.rbellogger.util.RbelFileWriter;
+import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo;
 import java.io.File;
 import java.io.IOException;

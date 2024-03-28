@@ -6,6 +6,7 @@ package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.rbellogger.data.RbelHostname;
 import java.time.ZonedDateTime;
+import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 
@@ -19,4 +20,5 @@ public class TigerTracingDto {
   private final RbelHostname receiver;
   private final ZonedDateTime requestTransmissionTime;
   private final ZonedDateTime responseTransmissionTime;
+  private final Map<String, String> additionalInformation;
 }

@@ -13,14 +13,8 @@ import de.gematik.rbellogger.data.decorator.MessageMetadataModifier;
 import de.gematik.rbellogger.data.decorator.ServerNameFromHostname;
 import de.gematik.rbellogger.data.decorator.ServernameFromProcessAndPortSupplier;
 import de.gematik.rbellogger.data.decorator.ServernameFromSpyPortMapping;
-import de.gematik.rbellogger.data.facet.RbelFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
-import de.gematik.rbellogger.data.facet.RbelListFacet;
-import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
-import de.gematik.rbellogger.data.facet.RbelNoteFacet;
+import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
-import de.gematik.rbellogger.data.facet.RbelUriFacet;
-import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndResponseCallback;
@@ -311,6 +305,25 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
             .orElse(RbelHttpResponseFacet.builder())
             .request(request)
             .build());
+    request
+        .getFacet(TlsFacet.class)
+        .ifPresent(
+            tlsFacet -> {
+              var respTlsFacet =
+                  new TlsFacet(
+                      tlsFacet
+                          .getTlsVersion()
+                          .seekValue(String.class)
+                          .map(value -> RbelElement.wrap(response, value))
+                          .orElse(null),
+                      tlsFacet
+                          .getCipherSuite()
+                          .seekValue(String.class)
+                          .map(value -> RbelElement.wrap(response, value))
+                          .orElse(null),
+                      null);
+              response.addFacet(respTlsFacet);
+            });
 
     getTigerProxy().triggerListener(response);
 
@@ -350,9 +363,16 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
 
   private Optional<RbelFacet> parseCertificateChainIfPresent(
       HttpRequest httpRequest, RbelElement message) {
+    if (StringUtils.isBlank(httpRequest.getTlsVersion())) {
+      return Optional.empty();
+    }
     if (httpRequest.getClientCertificateChain() == null
         || httpRequest.getClientCertificateChain().isEmpty()) {
-      return Optional.empty();
+      return Optional.of(
+          new TlsFacet(
+              RbelElement.wrap(message, httpRequest.getTlsVersion()),
+              RbelElement.wrap(message, httpRequest.getCipherSuite()),
+              null));
     }
     RbelElement certificateChainElement = new RbelElement(null, message);
     certificateChainElement.addFacet(
@@ -364,7 +384,11 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
                     .toList())
             .build());
 
-    return Optional.of(TlsFacet.builder().clientCertificateChain(certificateChainElement).build());
+    return Optional.of(
+        new TlsFacet(
+            RbelElement.wrap(message, httpRequest.getTlsVersion()),
+            RbelElement.wrap(message, httpRequest.getCipherSuite()),
+            certificateChainElement));
   }
 
   private RbelElement mapToRbelElement(Certificate certificate, RbelElement parentNode) {
@@ -472,8 +496,13 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     return tigerRoute.getCriterions().stream()
         .allMatch(
             criterion -> {
-              final boolean matches = TigerJexlExecutor.matchesAsJexlExpression(convertedRequest, criterion);
-              log.trace("Matching {} for {}: {}", criterion, convertedRequest.printHttpDescription(), matches);
+              final boolean matches =
+                  TigerJexlExecutor.matchesAsJexlExpression(convertedRequest, criterion);
+              log.trace(
+                  "Matching {} for {}: {}",
+                  criterion,
+                  convertedRequest.printHttpDescription(),
+                  matches);
               return matches;
             });
   }

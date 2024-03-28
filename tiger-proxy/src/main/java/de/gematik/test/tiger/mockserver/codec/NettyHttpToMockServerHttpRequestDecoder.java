@@ -9,12 +9,14 @@ import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.getALPNProt
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.mappers.FullHttpRequestToMockServerHttpRequest;
 import de.gematik.test.tiger.mockserver.model.Header;
+import de.gematik.test.tiger.mockserver.socket.tls.SniHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.http.FullHttpRequest;
 import java.net.SocketAddress;
 import java.security.cert.Certificate;
 import java.util.List;
+import javax.net.ssl.SSLSession;
 
 /*
  * @author jamesdbloom
@@ -40,17 +42,20 @@ public class NettyHttpToMockServerHttpRequestDecoder
     List<Header> preservedHeaders = null;
     SocketAddress localAddress = null;
     SocketAddress remoteAddress = null;
+    SSLSession sslSession = null;
     if (ctx != null && ctx.channel() != null) {
       preservedHeaders = PreserveHeadersNettyRemoves.preservedHeaders(ctx.channel());
       localAddress = ctx.channel().localAddress();
       remoteAddress = ctx.channel().remoteAddress();
+      sslSession = ctx.channel().attr(SniHandler.SSL_SESSION).get();
     }
     out.add(
-        fullHttpRequestToMockServerRequest.mapFullHttpRequestToMockServerRequest(
-            fullHttpRequest,
-            preservedHeaders,
-            localAddress,
-            remoteAddress,
-            getALPNProtocol(ctx)));
+          fullHttpRequestToMockServerRequest.mapFullHttpRequestToMockServerRequest(
+              fullHttpRequest,
+              preservedHeaders,
+              localAddress,
+              remoteAddress,
+              getALPNProtocol(ctx),
+            sslSession));
   }
 }

@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -11,12 +12,14 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
+import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
+import kong.unirest.UnirestInstance;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -74,9 +77,17 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   void aggregateFromOneRemoteProxy(TigerTestEnvMgr envMgr) {
     waitShortTime();
     final String path = "/status/404";
+    final UnirestInstance unirestInstance = Unirest.spawnInstance();
+    unirestInstance
+        .config()
+        .sslContext(
+            ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
+                .getTigerProxy()
+                .getConfiguredTigerProxySslContext());
 
     HttpResponse<String> response =
-        Unirest.get("http://localhost:" + TigerGlobalConfiguration.readString("free.port.5") + path)
+        unirestInstance
+            .get("https://localhost:" + TigerGlobalConfiguration.readString("free.port.5") + path)
             .asString();
     int status = response.getStatus();
 
@@ -87,8 +98,12 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         .until(
             () -> {
               log.info(
-                  "Message History: {}",
-                  envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size());
+                  "Message History: {}, Remote Proxy size {}",
+                  envMgr.getLocalTigerProxyOrFail().getRbelMessages().size(),
+                  ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
+                      .getTigerProxy()
+                      .getRbelMessages()
+                      .size());
               return envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size()
                       >= 2
                   && envMgr
@@ -101,6 +116,12 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                       .map(p -> p.endsWith(path))
                       .orElse(false);
             });
+    assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().getFirst())
+        .extractChildWithPath("$.tlsVersion")
+        .hasStringContentEqualTo("TLSv1.2")
+        .andTheInitialElement()
+        .extractChildWithPath("$.cipherSuite")
+        .hasStringContentEqualTo("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
     waitShortTime();
   }
 
