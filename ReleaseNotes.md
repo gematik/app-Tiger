@@ -5,19 +5,24 @@
 ## Bugfixes
 
 * TGR-1318: Byte-Arrays can now be stored and changed in TigerGlobalConfiguration
-* TGR-327: Reasonphrase is no longer added implicitly in the TigerProxy (when the phrase is empty from the server it will stay empty)
+* TGR-327: Reasonphrase is no longer added implicitly in the TigerProxy (when the phrase is empty from the server it
+  will stay empty)
+* TGR-1334: fixed issue where responses were not correctly paired with the requests in the workflow ui.
 
 ## Features
 
 * TGR-1313: Added support for the new VAU 'Epa für alle' format (VauEpa3).
 * TGR-1286: Tiger-Proxy: The number of open connections is now tracked and can be queried.
-* TGR-1315: step ```TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline body:``` added
+* TGR-1315:
+  step ```TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline body:``` added
 * TGR-1320: TLS-Facets now also carry the TLS-Protocol and the Cipher-Suite used for the connection
 * TGR-1319: New Gluecode added for starting & stopping servers:
+
 ```
     Given TGR stop server "remoteTigerProxy"
     And TGR start server "remoteTigerProxy"
 ```
+
 * TGR-1325: Tiger-Proxy: Added new 'criterion' option for routes. This allows to match requests based on their content:
 
 ```yaml

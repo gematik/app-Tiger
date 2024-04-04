@@ -111,7 +111,7 @@ defineProps<{
 }>();
 
 function findPair(currentMessage: MessageMetaDataDto, messages: MessageMetaDataDto[]) {
-  return messages.find(m => m.uuid === currentMessage.pairedUuid);
+  return messages.find(m => m.uuid === currentMessage.pairedUuid || m.pairedUuid === currentMessage.uuid);
 }
 
 function getPairResponseCode(currentMessage: MessageMetaDataDto, messages: MessageMetaDataDto[]) {
