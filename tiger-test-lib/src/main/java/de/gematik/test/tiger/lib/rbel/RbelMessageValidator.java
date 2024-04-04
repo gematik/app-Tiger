@@ -29,8 +29,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
@@ -66,8 +66,7 @@ public class RbelMessageValidator {
   private static final TigerTypedConfigurationKey<Integer> RBEL_REQUEST_TIMEOUT =
       new TigerTypedConfigurationKey<>("tiger.rbel.request.timeout", Integer.class);
 
-  private static final Map<String, Function<DiffBuilder, DiffBuilder>> diffOptionMap =
-      new HashMap<>();
+  private static final Map<String, UnaryOperator<DiffBuilder>> diffOptionMap = new HashMap<>();
 
   static {
     diffOptionMap.put("nocomment", DiffBuilder::ignoreComments);
@@ -110,7 +109,7 @@ public class RbelMessageValidator {
                               resp ->
                                   resp.getFacetOrFail(RbelHttpResponseFacet.class).getRequest()
                                       == currentRequest)
-                          .peek(rbelElement -> currentResponse = rbelElement)
+                          .map(rbelElement -> currentResponse = rbelElement)
                           .findAny()
                           .isPresent());
       if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) {
@@ -399,15 +398,17 @@ public class RbelMessageValidator {
   public void assertAttributeOfCurrentResponseMatchesAs(
       String rbelPath, ModeType mode, String oracle) {
     switch (mode) {
-      case JSON -> new JsonChecker()
-          .compareJsonStrings(
-              getValueOrContentString(findElementInCurrentResponse(rbelPath)), oracle, false);
+      case JSON ->
+          new JsonChecker()
+              .compareJsonStrings(
+                  getValueOrContentString(findElementInCurrentResponse(rbelPath)), oracle, false);
       case XML -> {
         final RbelElement el = findElementInCurrentResponse(rbelPath);
         compareXMLStructureOfRbelElement(el, oracle, "");
       }
-      default -> Assertions.fail(
-          "Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
+      default ->
+          Assertions.fail(
+              "Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
     }
   }
 
@@ -426,14 +427,12 @@ public class RbelMessageValidator {
   }
 
   public void compareXMLStructure(
-      final String test,
-      final String oracle,
-      final List<Function<DiffBuilder, DiffBuilder>> diffOptions) {
+      final String test, final String oracle, final List<UnaryOperator<DiffBuilder>> diffOptions) {
     final ArrayList<Difference> diffs = new ArrayList<>();
     final Source srcTest = Input.from(test).build();
     final Source srcOracle = Input.from(oracle).build();
     DiffBuilder db = DiffBuilder.compare(srcOracle).withTest(srcTest);
-    for (final Function<DiffBuilder, DiffBuilder> src : diffOptions) {
+    for (final UnaryOperator<DiffBuilder> src : diffOptions) {
       db = src.apply(db);
     }
 
@@ -459,7 +458,7 @@ public class RbelMessageValidator {
   @SneakyThrows
   public void compareXMLStructure(
       final String test, final String oracle, final String diffOptionCSV) {
-    final List<Function<DiffBuilder, DiffBuilder>> diffOptions = new ArrayList<>();
+    final List<UnaryOperator<DiffBuilder>> diffOptions = new ArrayList<>();
     Arrays.stream(diffOptionCSV.split(","))
         .map(String::trim)
         .forEach(

@@ -31,9 +31,15 @@ public class RbelValueShader {
                 return false;
               }
             })
-        .peek(entry -> entry.getNumberOfMatches().incrementAndGet())
+        .map(this::incrementNumberOfMatches)
         .map(entry -> String.format(entry.getShadingValue(), toStringValue(element)))
         .findFirst();
+  }
+
+  private RbelJexlShadingExpression incrementNumberOfMatches(
+      RbelJexlShadingExpression rbelJexlShadingExpression) {
+    rbelJexlShadingExpression.getNumberOfMatches().incrementAndGet();
+    return rbelJexlShadingExpression;
   }
 
   public void addNote(final RbelElement element) {
@@ -47,7 +53,7 @@ public class RbelValueShader {
                 return false;
               }
             })
-        .peek(entry -> entry.getNumberOfMatches().incrementAndGet())
+        .map(this::incrementNumberOfMatches)
         .map(entry -> String.format(entry.getShadingValue(), toStringValue(element)))
         .map(note -> new RbelNoteFacet(note, RbelNoteFacet.NoteStyling.INFO))
         .forEach(element::addFacet);

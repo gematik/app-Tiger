@@ -41,6 +41,7 @@ tigerProxy:
   step ```TGR set local feature variable {tigerResolvedString} to {tigerResolvedString}``` sets a variable that is
   cleared after the execution of the feature file is finished.
 * TGR-1331: remove no longer necessary dependency tools checker.
+* TGR-1238: refactored uses of Stream.peek().
 
 # Release 3.0.1
 
