@@ -15,8 +15,6 @@ import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.toolschecker.DependencyCheckResult;
-import de.gematik.test.tiger.common.toolschecker.DependencyToolsChecker;
 import de.gematik.test.tiger.common.web.TigerBrowserUtil;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
@@ -79,8 +77,6 @@ public class TigerDirector {
   private static ConfigurableApplicationContext envMgrApplicationContext;
   private static Runtime runtime;
 
-  private static DependencyToolsChecker dependencyToolsChecker = new DependencyToolsChecker();
-
   public static synchronized void start() {
     if (initialized) {
       log.info("Tiger Director already started, skipping");
@@ -89,7 +85,6 @@ public class TigerDirector {
     try {
       showTigerBanner();
       readConfiguration();
-      ensureDependenciesAreAvailable();
       registerRestAssuredFilter();
       applyLoggingLevels();
       applyTestLibConfig();
@@ -112,14 +107,6 @@ public class TigerDirector {
     }
 
     initialized = true;
-  }
-
-  private static void ensureDependenciesAreAvailable() {
-    DependencyCheckResult result = dependencyToolsChecker.areNecessaryDependenciesAvailable();
-    if (!result.isValid()) {
-      throw new TigerStartupException(
-          "Dependencies not met: " + String.join(";\n", result.validationMessage()));
-    }
   }
 
   private static void setupScenarioReplayer(Runtime runtime) {

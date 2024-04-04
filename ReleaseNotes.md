@@ -39,6 +39,7 @@ tigerProxy:
   the test case run is finished. The new glue code
   step ```TGR set local feature variable {tigerResolvedString} to {tigerResolvedString}``` sets a variable that is
   cleared after the execution of the feature file is finished.
+* TGR-1331: remove no longer necessary dependency tools checker.
 
 # Release 3.0.1
 
