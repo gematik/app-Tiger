@@ -8,6 +8,7 @@
 * TGR-327: Reasonphrase is no longer added implicitly in the TigerProxy (when the phrase is empty from the server it
   will stay empty)
 * TGR-1334: fixed issue where responses were not correctly paired with the requests in the workflow ui.
+* TGR-1194: Usability improvements for the configuration editor.
 
 ## Features
 

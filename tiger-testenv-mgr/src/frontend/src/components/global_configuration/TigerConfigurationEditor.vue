@@ -64,6 +64,8 @@ function onCellClicked(params: CellClickedEvent) {
     const action = (params.event?.target as HTMLElement).dataset.action
     if (action === 'delete') {
       deleteRow(params);
+    } else if (action === 'edit') {
+      startEdit(params);
     }
   }
 }
@@ -95,8 +97,21 @@ async function deleteRow(params: CellClickedEvent) {
   }
 }
 
+async function startEdit(params: CellClickedEvent) {
+  if (params.node.rowIndex !== null) {
+    params.api.startEditingCell({
+          rowIndex: params.node.rowIndex,
+          colKey: 'value',
+        }
+    );
+  }
+}
+
 const defaultColDef: ColDef = {
-  sortable: true, filter: true, editable: false, resizable: true
+  sortable: true, filter: true, editable: false, resizable: true,
+  icons: {
+    menu: '<i class="fa fa-filter"/>',
+  }
 }
 
 const columnDefs: ColDef[] = [
@@ -104,23 +119,27 @@ const columnDefs: ColDef[] = [
     headerName: "Source",
     field: "source",
     flex: 1,
-    cellRenderer: ConfigurationSourceCell
+    cellRenderer: ConfigurationSourceCell,
+    minWidth: 100,
   },
   {
     headerName: "Key",
     field: "key",
     flex: 6,
     cellEditorPopup: true,
+    minWidth: 80
   },
   {
     headerName: "Value", field: "value",
+    colId: 'value',
     cellRenderer: ConfigurationValueCell,
     cellEditorPopup: true,
     cellEditor: ConfigurationValueCellEditor,
     cellEditorPopupPosition: 'over',
     flex: 8,
     autoHeight: true,
-    editable: true
+    editable: true,
+    minWidth: 90
   },
   {
     headerName: "Action",
@@ -128,7 +147,8 @@ const columnDefs: ColDef[] = [
     colId: 'action',
     cellClass: "text-end",
     flex: 1,
-    filter: false
+    filter: false,
+    minWidth: 83
   }
 
 ];
@@ -151,6 +171,7 @@ const columnDefs: ColDef[] = [
         :defaultColDef="defaultColDef"
         suppressClickEdit="false"
         suppressNavigable="true"
+        suppressMenuHide="true"
         cellClass="no-border"
         domLayout="autoHeight"
         @cell-clicked="onCellClicked"
