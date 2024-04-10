@@ -45,6 +45,7 @@ import kong.unirest.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.http.NoHttpResponseException;
 import org.assertj.core.data.TemporalUnitWithinOffset;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -581,7 +582,6 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void basicAuthenticationRequiredAndConfigured_ShouldWork(WireMockRuntimeInfo runtimeInfo) {
-
     runtimeInfo
         .getWireMock()
         .register(
@@ -601,8 +601,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                         .build()))
             .build());
 
-    assertThat(proxyRest.get("http://backend/authenticatedPath").asJson().getStatus())
-        .isEqualTo(404);
+    assertThatThrownBy(() -> proxyRest.get("http://backend/authenticatedPath").asJson())
+        .isInstanceOf(UnirestException.class);
     assertThat(proxyRest.get("http://backendWithBasicAuth/authenticatedPath").asJson().getStatus())
         .isEqualTo(777);
   }
@@ -1029,8 +1029,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         .asString();
     awaitMessagesInTiger(2);
 
-    assertThat(tigerProxy.getRbelMessagesList().get(0))
-        .doesNotHaveChildWithPath("$.body.foobar");
+    assertThat(tigerProxy.getRbelMessagesList().get(0)).doesNotHaveChildWithPath("$.body.foobar");
   }
 
   @Test
@@ -1183,5 +1182,30 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     assertThat(tigerProxy.getRbelMessagesList().get(1))
         .extractChildWithPath("$.reasonPhrase")
         .hasNullContent();
+  }
+
+  @SneakyThrows
+  @Test
+  void connectionReset_shouldKeepRequestInLog() {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("http://backend")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .build());
+
+    proxyRest.config().automaticRetries(false);
+    assertThatThrownBy(() -> proxyRest.get("http://backend/error").asString())
+        .isInstanceOf(UnirestException.class)
+        .hasCauseInstanceOf(NoHttpResponseException.class);
+
+    awaitMessagesInTiger(2);
+
+    assertThat(tigerProxy.getRbelMessagesList().get(1))
+        .extractChildWithPath("$.sender")
+        .hasStringContentEqualTo("backend:80");
   }
 }

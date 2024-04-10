@@ -506,4 +506,16 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
               return matches;
             });
   }
+
+  @Override
+  public Action handleException(Throwable exception, HttpRequest request) {
+    log.info("Exception during handling of request", exception);
+    final RbelElement errorResponse =
+        tigerProxy
+            .getMockServerToRbelConverter()
+            .convertErrorResponse(request, extractProtocolAndHostForRequest(request));
+    errorResponse.addFacet(
+        RbelNoteFacet.builder().style(NoteStyling.ERROR).value(exception.getMessage()).build());
+    return new CloseChannel();
+  }
 }

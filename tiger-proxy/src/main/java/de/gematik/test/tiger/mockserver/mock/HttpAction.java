@@ -10,7 +10,7 @@ import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndRespons
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpForwardActionResult;
 import de.gematik.test.tiger.mockserver.model.*;
-import de.gematik.test.tiger.mockserver.responsewriter.ResponseWriter;
+import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
 import java.util.concurrent.CompletableFuture;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -34,7 +34,7 @@ public class HttpAction {
   public void handle(
       HttpRequest request,
       HttpActionHandler actionHandler,
-      ResponseWriter responseWriter,
+      NettyResponseWriter responseWriter,
       boolean synchronous) {
     final HttpRequest overriddenRequest = getOverridenRequest(request);
 
@@ -57,7 +57,7 @@ public class HttpAction {
               }
             } else if (exception != null) {
               actionHandler.handleExceptionDuringForwardingRequest(
-                  action, request, responseWriter, exception);
+                expectationForwardAndResponseCallback.handleException(exception, request), request, responseWriter, exception);
             }
           },
           synchronous);

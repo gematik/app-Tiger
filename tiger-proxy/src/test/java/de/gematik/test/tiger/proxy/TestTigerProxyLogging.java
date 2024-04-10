@@ -47,7 +47,7 @@ class TestTigerProxyLogging extends AbstractTigerProxyTest {
     checkForLogMessage(
         () -> proxyRest.get("http://localhost:" + fakeBackendServerPort + "/schmoobar"),
         "Received HTTP GET /schmoobar",
-        "Returning HTTP 404 Response-Length: 1 KB");
+        "Returning HTTP 404 Response-Length:");
     tigerProxy.getTigerProxyConfiguration().setActivateTrafficLogging(false);
     checkForLogMessage(
         () -> proxyRest.get("http://backend/foobar"),

@@ -27,11 +27,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 class TestRestAssuredLogToCurlCommandParser {
 
   private static String httpBaseUrl;
-  private static WireMockServer wireMockServer;
 
   @BeforeAll
   public static void setup() {
-    wireMockServer = new WireMockServer(0);
+    WireMockServer wireMockServer = new WireMockServer(0);
     wireMockServer.start();
 
     httpBaseUrl = wireMockServer.baseUrl();

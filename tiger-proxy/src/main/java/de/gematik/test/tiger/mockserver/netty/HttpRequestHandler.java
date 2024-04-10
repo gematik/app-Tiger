@@ -18,10 +18,8 @@ import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
-import de.gematik.test.tiger.mockserver.model.MediaType;
 import de.gematik.test.tiger.mockserver.netty.proxy.connect.HttpConnectHandler;
 import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
-import de.gematik.test.tiger.mockserver.responsewriter.ResponseWriter;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -79,7 +77,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
   @Override
   protected void channelRead0(final ChannelHandlerContext ctx, final HttpRequest request) {
 
-    ResponseWriter responseWriter = new NettyResponseWriter(configuration, ctx);
+    NettyResponseWriter responseWriter = new NettyResponseWriter(configuration, ctx);
     try {
       configuration.addSubjectAlternativeName(request.getFirstHeader(HOST.toString()));
 
@@ -141,15 +139,10 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
           }
         }
       }
-    } catch (IllegalArgumentException iae) {
-      log.error("exception processing request:{}error:{}", request, iae.getMessage());
-      // send request without API CORS headers
-      responseWriter.writeResponse(
-          request, BAD_REQUEST, iae.getMessage(), MediaType.create("text", "plain").toString());
     } catch (Exception ex) {
       log.error("exception processing ", request, ex);
       responseWriter.writeResponse(
-          request, response().withStatusCode(BAD_REQUEST.code()).withBody(ex.getMessage()), true);
+          request, response().withStatusCode(BAD_REQUEST.code()).withBody(ex.getMessage()));
     }
   }
 

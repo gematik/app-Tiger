@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder.responseDefinition;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static org.awaitility.Awaitility.await;
@@ -11,6 +12,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
@@ -105,6 +107,13 @@ public abstract class AbstractTigerProxyTest {
                             .withStatusMessage("")
                             .withBody("{{request.body}}")
                             .withTransformers("response-template"))));
+
+    runtimeInfo
+        .getWireMock()
+        .register(
+            stubFor(
+                get("/error")
+                    .willReturn(responseDefinition().withFault(Fault.CONNECTION_RESET_BY_PEER))));
   }
 
   @BeforeEach
@@ -135,7 +144,8 @@ public abstract class AbstractTigerProxyTest {
         new UnirestInstance(
             new Config()
                 .proxy("localhost", tigerProxy.getProxyPort())
-                .sslContext(tigerProxy.buildSslContext()));
+                .sslContext(tigerProxy.buildSslContext())
+                .automaticRetries(false));
   }
 
   public void awaitMessagesInTiger(int numberOfMessagesExpected) {

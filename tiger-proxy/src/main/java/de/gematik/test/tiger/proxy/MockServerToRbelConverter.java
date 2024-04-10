@@ -89,6 +89,14 @@ public class MockServerToRbelConverter {
         .thenApply(e -> addHttpRequestFacetIfNotPresent(request, e));
   }
 
+  public RbelElement convertErrorResponse(HttpRequest request, String protocolAndHost) {
+    return rbelConverter.parseMessage(
+        new byte[0],
+        convertUri(protocolAndHost),
+        RbelHostname.fromString(request.getRemoteAddress()).orElse(null),
+        Optional.of(ZonedDateTime.now()));
+  }
+
   private RbelElement addHttpRequestFacetIfNotPresent(HttpRequest request, RbelElement element) {
     if (!element.hasFacet(RbelHttpRequestFacet.class)) {
       element.addFacet(

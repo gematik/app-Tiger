@@ -66,19 +66,6 @@ public class NettyHttpClient {
       Configuration configuration,
       EventLoopGroup eventLoopGroup,
       List<ProxyConfiguration> proxyConfigurations,
-      boolean forwardProxyClient) {
-    this(
-        configuration,
-        eventLoopGroup,
-        proxyConfigurations,
-        forwardProxyClient,
-        new NettySslContextFactory(configuration, false));
-  }
-
-  public NettyHttpClient(
-      Configuration configuration,
-      EventLoopGroup eventLoopGroup,
-      List<ProxyConfiguration> proxyConfigurations,
       boolean forwardProxyClient,
       NettySslContextFactory nettySslContextFactory) {
     this.configuration = configuration;

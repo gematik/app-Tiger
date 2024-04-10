@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import kong.unirest.Config;
 import kong.unirest.Unirest;
+import kong.unirest.UnirestException;
 import kong.unirest.UnirestInstance;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -263,7 +264,8 @@ class TigerRemoteProxyClientTest {
 
     tigerRemoteProxyClient.removeRoute(routeId);
 
-    assertThat(unirestInstance.post("http://new.server/foo").asString().getStatus()).isEqualTo(404);
+    assertThatThrownBy(() -> unirestInstance.post("http://new.server/foo").asString())
+        .isInstanceOf(UnirestException.class);
   }
 
   @Test
