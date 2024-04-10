@@ -23,9 +23,11 @@ import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.When;
 import io.restassured.RestAssured;
+import io.restassured.config.EncoderConfig;
 import io.restassured.config.RedirectConfig;
 import io.restassured.http.Method;
 import io.restassured.internal.RequestSpecificationImpl;
+import io.restassured.specification.QueryableRequestSpecification;
 import io.restassured.specification.RequestSpecification;
 import java.net.URI;
 import java.net.URLEncoder;
@@ -55,9 +57,23 @@ public class HttpGlueCode {
   private static RbelWriter rbelWriter;
 
   private static RequestSpecification givenDefaultSpec() {
-    final RequestSpecification requestSpecification = RestAssured.given().urlEncodingEnabled(false);
-    return requestSpecification.headers(
+
+    EncoderConfig encoderConfig =
+        RestAssured.config()
+            .getEncoderConfig()
+            .appendDefaultContentCharsetToContentTypeIfUndefined(true);
+
+    final RequestSpecification requestSpecification =
+        RestAssured.given()
+            .urlEncodingEnabled(false)
+            .config(RestAssured.config().encoderConfig(encoderConfig));
+
+    requestSpecification.headers(
         TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER));
+
+    contentTypeFromRequestSpec(requestSpecification)
+        .ifPresent(ct -> setExactContentTypeHeader(requestSpecification, ct));
+    return requestSpecification;
   }
 
   private static void applyRedirectConfig(RedirectConfig newRedirectConfig) {
@@ -284,8 +300,9 @@ public class HttpGlueCode {
       Method method, URI address, String contentType, String body) {
     final RbelSerializationResult resolved = resolve(body);
     final RequestSpecification requestSpecification = givenDefaultSpec();
+
     if (contentType != null) {
-      requestSpecification.contentType(contentType);
+      setExactContentTypeHeader(requestSpecification, contentType);
     }
     resolved
         .getContentType()
@@ -296,6 +313,22 @@ public class HttpGlueCode {
                     ((RequestSpecificationImpl) requestSpecification).getContentType()))
         .ifPresent(requestSpecification::contentType);
     requestSpecification.body(resolved.getContent()).request(method, address);
+  }
+
+  private static Optional<String> contentTypeFromRequestSpec(
+      RequestSpecification requestSpecification) {
+    return Optional.ofNullable(
+        ((QueryableRequestSpecification) requestSpecification).getContentType());
+  }
+
+  private static void setExactContentTypeHeader(
+      RequestSpecification requestSpecification, String contentType) {
+    requestSpecification.config(
+        RestAssured.config()
+            .encoderConfig(
+                EncoderConfig.encoderConfig()
+                    .appendDefaultContentCharsetToContentTypeIfUndefined(false)));
+    requestSpecification.contentType(contentType);
   }
 
   /**
