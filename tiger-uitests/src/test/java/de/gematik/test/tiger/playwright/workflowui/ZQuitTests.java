@@ -52,7 +52,7 @@ class ZQuitTests extends AbstractTests {
     page.locator(".test-rbel-link").first().click();
     List<String> allNumbers = page.locator(".test-rbel-link").allTextContents();
     String number1 = allNumbers.get(0);
-    String number2 = allNumbers.get(allNumbers.size() - 1);
+    String number2 = String.valueOf(Integer.parseInt(allNumbers.get(allNumbers.size() - 1)) + 1);
 
     await()
         .untilAsserted(

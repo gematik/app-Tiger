@@ -13,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import java.util.Arrays;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -379,14 +380,18 @@ class ConfigurationEditorTest extends AbstractTests {
 
   @Test
   void testOpenAndClearFilter() {
-    page.locator(".ag-header-icon.ag-header-cell-menu-button .ag-icon.ag-icon-menu").nth(1).click();
+    page.locator(".ag-header-icon.ag-header-cell-menu-button").nth(1).click();
 
     var inputField = page.locator("input[placeholder='Filter...']").first();
     inputField.fill("tgr");
-    await().untilAsserted(() -> page.locator("#test-tg-config-editor-table").isVisible());
+    PlaywrightAssertions.assertThat(
+            page.locator("span.ag-header-label-icon.ag-filter-icon:not(.ag-hidden)"))
+        .isVisible();
 
     page.locator("#test-tg-config-editor-btn-clear-filters").click();
-    await().untilAsserted(() -> page.locator(".vsp__header").isVisible());
+    PlaywrightAssertions.assertThat(
+            page.locator("span.ag-header-label-icon.ag-filter-icon:not(.ag-hidden)"))
+        .hasCount(0);
     page.locator(".vsp__header h1").click();
   }
 }
