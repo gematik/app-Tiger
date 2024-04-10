@@ -80,6 +80,11 @@
             <version>${version.highlightjs}</version>
         </dependency>
         <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>dayjs</artifactId>
+            <version>1.11.10</version>
+        </dependency>
+        <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bctls-jdk18on</artifactId>
         </dependency>

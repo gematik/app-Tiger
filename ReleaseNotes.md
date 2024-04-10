@@ -9,6 +9,8 @@
   will stay empty)
 * TGR-1334: fixed issue where responses were not correctly paired with the requests in the workflow ui.
 * TGR-1194: Usability improvements for the configuration editor.
+* TGR-1172: fixed issue where messages coming from a remote tiger proxy would display the timestamp in a different
+  timezone.
 
 ## Features
 
