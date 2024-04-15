@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.mockserver.model;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /*

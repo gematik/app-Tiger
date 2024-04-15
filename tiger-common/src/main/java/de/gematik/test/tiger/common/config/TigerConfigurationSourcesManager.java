@@ -16,7 +16,8 @@ import java.util.stream.Stream;
  */
 public class TigerConfigurationSourcesManager {
 
-  private ConcurrentSkipListSet<AbstractTigerConfigurationSource> loadedSources = new ConcurrentSkipListSet<>();
+  private ConcurrentSkipListSet<AbstractTigerConfigurationSource> loadedSources =
+      new ConcurrentSkipListSet<>();
 
   public void reset() {
     loadedSources.clear();
@@ -37,9 +38,11 @@ public class TigerConfigurationSourcesManager {
   public void addNewSource(AbstractTigerConfigurationSource source) {
     boolean success = loadedSources.add(source);
     if (!success) {
-      final AbstractTigerConfigurationSource exisitingSource = loadedSources.stream()
-        .filter(src -> src.getSourceType() == source.getSourceType())
-        .findFirst().orElseThrow();
+      final AbstractTigerConfigurationSource exisitingSource =
+          loadedSources.stream()
+              .filter(src -> src.getSourceType() == source.getSourceType())
+              .findFirst()
+              .orElseThrow();
       exisitingSource.putAll(source);
     }
   }

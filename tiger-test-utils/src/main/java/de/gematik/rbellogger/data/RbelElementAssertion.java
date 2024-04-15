@@ -32,13 +32,13 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
     final List<RbelElement> kids = actual.findRbelPathMembers(rbelPath);
     if (kids.isEmpty()) {
       failWithMessage(
-        "Expected rbelPath %s to find member, but did not in tree %s",
-        rbelPath, actual.printTreeStructureWithoutColors());
+          "Expected rbelPath %s to find member, but did not in tree %s",
+          rbelPath, actual.printTreeStructureWithoutColors());
     }
     if (kids.size() > 1) {
       failWithMessage(
-        "Expected rbelPath %s to find one member, but did return %s in tree %s",
-        rbelPath, kids.size(), actual.printTreeStructureWithoutColors());
+          "Expected rbelPath %s to find one member, but did return %s in tree %s",
+          rbelPath, kids.size(), actual.printTreeStructureWithoutColors());
     }
     return new RbelElementAssertion(kids.get(0), this.actual);
   }
@@ -87,6 +87,7 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
     return this.myself;
   }
 
+  @Override
   public StringAssert asString() {
     return new StringAssert(actual.getRawStringContent());
   }
@@ -102,8 +103,8 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
   public RbelElementAssertion hasFacet(Class<? extends RbelFacet> facetToTest) {
     if (!actual.hasFacet(facetToTest)) {
       failWithMessage(
-        "Expecting element to have facet of type %s, but only found facets %s",
-        facetToTest.getSimpleName(), new ArrayList<>(actual.getFacets()));
+          "Expecting element to have facet of type %s, but only found facets %s",
+          facetToTest.getSimpleName(), new ArrayList<>(actual.getFacets()));
     }
     return this.myself;
   }
@@ -111,8 +112,8 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
   public RbelElementAssertion doesNotHaveFacet(Class<? extends RbelFacet> facetToTest) {
     if (actual.hasFacet(facetToTest)) {
       failWithMessage(
-        "Expecting element to have NOT facet of type %s, but it was found along with %s",
-        facetToTest.getSimpleName(), new ArrayList<>(actual.getFacets()));
+          "Expecting element to have NOT facet of type %s, but it was found along with %s",
+          facetToTest.getSimpleName(), new ArrayList<>(actual.getFacets()));
     }
     return this.myself;
   }
@@ -122,7 +123,7 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
     final Object actualValue = actual.getFacetOrFail(RbelValueFacet.class).getValue();
     if (!expected.equals(actualValue)) {
       failWithMessage(
-        "Expecting element to have value of %s, but found %s instead", expected, actualValue);
+          "Expecting element to have value of %s, but found %s instead", expected, actualValue);
     }
     return this.myself;
   }
@@ -130,8 +131,8 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
   public <F extends RbelFacet> ObjectAssert<F> extractFacet(Class<F> facetClass) {
     if (!actual.hasFacet(facetClass)) {
       failWithMessage(
-        "Expecting element to have facet of type %s, but only found facets %s",
-        facetClass.getSimpleName(), new ArrayList<>(actual.getFacets()));
+          "Expecting element to have facet of type %s, but only found facets %s",
+          facetClass.getSimpleName(), new ArrayList<>(actual.getFacets()));
     }
     return new ObjectAssert<>(actual.getFacetOrFail(facetClass));
   }

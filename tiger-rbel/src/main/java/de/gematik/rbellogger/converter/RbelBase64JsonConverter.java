@@ -23,23 +23,23 @@ public class RbelBase64JsonConverter extends RbelJsonConverter {
     safeConvertBase64Using(rbel.getRawContent(), Base64.getDecoder(), context, rbel)
         .or(
             () ->
-                safeConvertBase64Using(
-                    rbel.getRawContent(), Base64.getUrlDecoder(), context, rbel))
+                safeConvertBase64Using(rbel.getRawContent(), Base64.getUrlDecoder(), context, rbel))
         .ifPresent(rbel::addFacet);
   }
 
   private Optional<RbelBase64Facet> safeConvertBase64Using(
       byte[] input, Decoder decoder, RbelConverter context, RbelElement parentNode) {
-    final Optional<RbelElement> rawElement = Optional.ofNullable(input)
-      .map(
-        i -> {
-          try {
-            return decoder.decode(i);
-          } catch (IllegalArgumentException e) {
-            return null;
-          }
-        })
-      .map(data -> new RbelElement(data, parentNode));
+    final Optional<RbelElement> rawElement =
+        Optional.ofNullable(input)
+            .map(
+                i -> {
+                  try {
+                    return decoder.decode(i);
+                  } catch (IllegalArgumentException e) {
+                    return null;
+                  }
+                })
+            .map(data -> new RbelElement(data, parentNode));
     if (rawElement.isEmpty()) {
       return Optional.empty();
     }

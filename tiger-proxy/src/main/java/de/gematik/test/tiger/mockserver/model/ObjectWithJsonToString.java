@@ -14,7 +14,8 @@ import de.gematik.test.tiger.mockserver.serialization.ObjectMapperFactory;
 public abstract class ObjectWithJsonToString {
 
   private static final String ESCAPED_QUOTE = "\"";
-  private static final ObjectWriter OBJECT_MAPPER = ObjectMapperFactory.createObjectMapper(true, false);
+  private static final ObjectWriter OBJECT_MAPPER =
+      ObjectMapperFactory.createObjectMapper(true, false);
 
   @Override
   public String toString() {

@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.lib.rbel;
 
 import de.gematik.rbellogger.builder.RbelBuilder;
@@ -267,7 +271,7 @@ class RbelBuilderTests {
             }
         }
 
-                """;
+        """;
     String actualSerialized =
         builder
             .setValueAt("$.blub.foo", newArray)
@@ -317,19 +321,15 @@ class RbelBuilderTests {
       for (Object successNewValue : successNewValueParameters) {
         String expectedValue =
             switch (successPath) {
-              case "$.entry1.entry1a.entry1aI" ->
-                  insertIntoComplexStringAtPathentry1aI(
-                      convertNonPrimitiveToJson(successNewValue.toString()));
-              case "$.entry2.0.entry2a.entry2aIII.5" ->
-                  insertIntoComplexStringAtPathentry2aIII5(
-                      convertNonPrimitiveToJson(successNewValue.toString()));
-              case "$.entry3.entry3b.(/)§=$§)=)§" ->
-                  insertIntoComplexStringAtPathentry3bSpecialChars(
-                      convertNonPrimitiveToJson(successNewValue.toString()));
-              default ->
-                  throw new NotImplementedException(
-                      "SuccessPath %s is not yet implemented for Parameterized tests."
-                          .formatted(successPath));
+              case "$.entry1.entry1a.entry1aI" -> insertIntoComplexStringAtPathentry1aI(
+                  convertNonPrimitiveToJson(successNewValue.toString()));
+              case "$.entry2.0.entry2a.entry2aIII.5" -> insertIntoComplexStringAtPathentry2aIII5(
+                  convertNonPrimitiveToJson(successNewValue.toString()));
+              case "$.entry3.entry3b.(/)§=$§)=)§" -> insertIntoComplexStringAtPathentry3bSpecialChars(
+                  convertNonPrimitiveToJson(successNewValue.toString()));
+              default -> throw new NotImplementedException(
+                  "SuccessPath %s is not yet implemented for Parameterized tests."
+                      .formatted(successPath));
             };
         successParameters.add(Arguments.of(successPath, successNewValue, true, expectedValue));
       }
@@ -355,11 +355,11 @@ class RbelBuilderTests {
 
     if (expectSuccess) {
       System.out.println(
-        RbelConverter.builder()
-          .build()
-          .convertElement(
-            parameterizedRbelBuilder.getTreeRootNode().getRawStringContent(), null)
-          .printTreeStructureWithoutColors());
+          RbelConverter.builder()
+              .build()
+              .convertElement(
+                  parameterizedRbelBuilder.getTreeRootNode().getRawStringContent(), null)
+              .printTreeStructureWithoutColors());
       parameterizedRbelBuilder.setValueAt(insertPath, newStringValue);
       log.info("Inserting value {} into path: {}", newStringValue, insertPath);
       System.out.println(

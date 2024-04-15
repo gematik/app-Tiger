@@ -101,12 +101,12 @@ public class RbelConverter {
         plugin.consumeElement(convertedInput, this);
       } catch (RuntimeException e) {
         final String msg =
-          "Exception during conversion with plugin '"
-          + plugin.getClass().getName()
-          + "' ("
-          + e.getMessage()
-          + ")\n"
-          + ExceptionUtils.getStackTrace(e);
+            "Exception during conversion with plugin '"
+                + plugin.getClass().getName()
+                + "' ("
+                + e.getMessage()
+                + ")\n"
+                + ExceptionUtils.getStackTrace(e);
         log.info(msg, e);
         if (log.isDebugEnabled()) {
           log.debug(

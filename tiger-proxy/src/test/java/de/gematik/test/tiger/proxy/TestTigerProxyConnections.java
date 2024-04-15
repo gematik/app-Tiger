@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.proxy;
 
-import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -19,7 +18,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import kong.unirest.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -79,9 +77,11 @@ class TestTigerProxyConnections extends AbstractFastTigerProxyTest {
         () -> {
           assertThat(tigerProxy.getOpenConnections()).hasSize(1);
           withOpenTlsConnection(
-              () -> {
-                withOpenTlsConnection(() -> assertThat(tigerProxy.getOpenConnections(TigerConnectionStatus.OPEN_TLS)).hasSize(2));
-              });
+              () ->
+                  withOpenTlsConnection(
+                      () ->
+                          assertThat(tigerProxy.getOpenConnections(TigerConnectionStatus.OPEN_TLS))
+                              .hasSize(2)));
         });
     await()
         .catchUncaughtExceptions()

@@ -127,8 +127,7 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
   }
 
   public List<Parameter> getQueryStringParameterList() {
-    if (getQueryStringParameters() == null
-      || getQueryStringParameters().isEmpty()) {
+    if (getQueryStringParameters() == null || getQueryStringParameters().isEmpty()) {
       return List.of();
     } else {
       return getQueryStringParameters().getEntries();
@@ -146,10 +145,12 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
     getOrCreateQueryStringParameters().withEntry(name, values);
     return this;
   }
+
   public HttpRequest withBody(String body) {
     this.body = new StringBody(body);
     return this;
   }
+
   public HttpRequest withBody(String body, Charset charset) {
     if (body != null) {
       this.body = new StringBody(body, charset);

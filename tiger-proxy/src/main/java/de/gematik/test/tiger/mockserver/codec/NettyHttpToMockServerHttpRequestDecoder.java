@@ -50,12 +50,12 @@ public class NettyHttpToMockServerHttpRequestDecoder
       sslSession = ctx.channel().attr(SniHandler.SSL_SESSION).get();
     }
     out.add(
-          fullHttpRequestToMockServerRequest.mapFullHttpRequestToMockServerRequest(
-              fullHttpRequest,
-              preservedHeaders,
-              localAddress,
-              remoteAddress,
-              getALPNProtocol(ctx),
+        fullHttpRequestToMockServerRequest.mapFullHttpRequestToMockServerRequest(
+            fullHttpRequest,
+            preservedHeaders,
+            localAddress,
+            remoteAddress,
+            getALPNProtocol(ctx),
             sslSession));
   }
 }

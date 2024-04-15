@@ -46,7 +46,8 @@ public class ExpandedParameterDecoder {
                     true)
                 .parameters());
       } catch (IllegalArgumentException iae) {
-        log.error("exception{}while parsing query string{}", parameterString, iae.getMessage(), iae);
+        log.error(
+            "exception{}while parsing query string{}", parameterString, iae.getMessage(), iae);
       }
       return new Parameters().withEntries(parameterMap).withRawParameterString(rawParameterString);
     }

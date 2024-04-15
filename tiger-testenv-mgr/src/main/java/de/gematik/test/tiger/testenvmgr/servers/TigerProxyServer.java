@@ -63,7 +63,8 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
             .statusMessage("Pre-start Tiger Proxy " + getServerId())
             .build());
 
-    TigerProxyConfiguration tigerProxyConfiguration = getConfiguration().getTigerProxyConfiguration();
+    TigerProxyConfiguration tigerProxyConfiguration =
+        getConfiguration().getTigerProxyConfiguration();
     tigerProxyConfiguration.setStandalone(false);
     CfgStandaloneProxy standaloneCfg = new CfgStandaloneProxy();
     standaloneCfg.setTigerProxy(tigerProxyConfiguration);
@@ -168,7 +169,8 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
 
   @Override
   public Optional<String> getHealthcheckUrl() {
-    return Optional.of("http://127.0.0.1:" + getConfiguration().getTigerProxyConfiguration().getAdminPort());
+    return Optional.of(
+        "http://127.0.0.1:" + getConfiguration().getTigerProxyConfiguration().getAdminPort());
   }
 
   @Override

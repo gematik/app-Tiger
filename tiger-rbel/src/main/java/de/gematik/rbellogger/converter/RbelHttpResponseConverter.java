@@ -51,7 +51,10 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
     final byte[] bodyData =
         extractBodyData(
-            targetElement, endOfHeadIndex, headerElement.getFacetOrFail(RbelHttpHeaderFacet.class), eol);
+            targetElement,
+            endOfHeadIndex,
+            headerElement.getFacetOrFail(RbelHttpHeaderFacet.class),
+            eol);
     final RbelElement bodyElement =
         new RbelElement(
             bodyData,

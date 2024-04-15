@@ -27,33 +27,37 @@ import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 public class OcspUtils {
   @SneakyThrows
   public static byte[] buildOcspResponse(
-    X509Certificate certificate, TigerConfigurationPkiIdentity ocspSignerIdentity) {
+      X509Certificate certificate, TigerConfigurationPkiIdentity ocspSignerIdentity) {
     log.info("Building OCSP response...");
 
     CertificateID certID =
-      new CertificateID(
-        new BcDigestCalculatorProvider().get(CertificateID.HASH_SHA1),
-        new JcaX509CertificateHolder(certificate),
-        certificate.getSerialNumber());
+        new CertificateID(
+            new BcDigestCalculatorProvider().get(CertificateID.HASH_SHA1),
+            new JcaX509CertificateHolder(certificate),
+            certificate.getSerialNumber());
 
     final String signerDigestAlgorithm = ocspSignerIdentity.getCertificate().getSigAlgName();
     ContentSigner contentSigner =
-      new JcaContentSignerBuilder(signerDigestAlgorithm)
-        .setProvider(BouncyCastleProvider.PROVIDER_NAME)
-        .build(ocspSignerIdentity.getPrivateKey());
+        new JcaContentSignerBuilder(signerDigestAlgorithm)
+            .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+            .build(ocspSignerIdentity.getPrivateKey());
 
     BasicOCSPRespBuilder basicRespGen =
-      new BasicOCSPRespBuilder(
-        SubjectPublicKeyInfo.getInstance(
-          ocspSignerIdentity.getCertificate().getPublicKey().getEncoded()),
-        new JcaDigestCalculatorProviderBuilder()
-          .setProvider(BouncyCastleProvider.PROVIDER_NAME)
-          .build()
-          .get(RespID.HASH_SHA1));
+        new BasicOCSPRespBuilder(
+            SubjectPublicKeyInfo.getInstance(
+                ocspSignerIdentity.getCertificate().getPublicKey().getEncoded()),
+            new JcaDigestCalculatorProviderBuilder()
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .build()
+                .get(RespID.HASH_SHA1));
     basicRespGen.addResponse(certID, CertificateStatus.GOOD);
-    BasicOCSPResp basicOcspResp = basicRespGen.build(contentSigner, new X509CertificateHolder[]{
-      new X509CertificateHolder(ocspSignerIdentity.getCertificate().getEncoded())
-    }, new Date());
+    BasicOCSPResp basicOcspResp =
+        basicRespGen.build(
+            contentSigner,
+            new X509CertificateHolder[] {
+              new X509CertificateHolder(ocspSignerIdentity.getCertificate().getEncoded())
+            },
+            new Date());
 
     var ocspResponseGenerator = new OCSPRespBuilder();
     var ocspResponse = ocspResponseGenerator.build(OCSPRespBuilder.SUCCESSFUL, basicOcspResp);

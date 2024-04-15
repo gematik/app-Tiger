@@ -296,7 +296,9 @@ public class HttpActionHandler {
   }
 
   public void writeForwardActionResponse(
-      final HttpResponse response, final NettyResponseWriter responseWriter, final HttpRequest request) {
+      final HttpResponse response,
+      final NettyResponseWriter responseWriter,
+      final HttpRequest request) {
     try {
       responseWriter.writeResponse(request, response);
       log.debug(
@@ -336,7 +338,8 @@ public class HttpActionHandler {
     }
   }
 
-  private void returnNotFound(NettyResponseWriter responseWriter, HttpRequest request, String error) {
+  private void returnNotFound(
+      NettyResponseWriter responseWriter, HttpRequest request, String error) {
     HttpResponse response = notFoundResponse();
     if (request.getHeaders() != null
         && request
@@ -349,7 +352,8 @@ public class HttpActionHandler {
           httpStateHandler.getUniqueLoopPreventionHeaderValue());
       log.trace("no expectation for:{}returning response:{}", request, notFoundResponse());
     } else if (isNotBlank(error)) {
-      log.debug("error:{}handling request:{}returning response:{}", error, request, notFoundResponse());
+      log.debug(
+          "error:{}handling request:{}returning response:{}", error, request, notFoundResponse());
     } else {
       log.debug("no expectation for:{}returning response:{}", request, notFoundResponse());
     }

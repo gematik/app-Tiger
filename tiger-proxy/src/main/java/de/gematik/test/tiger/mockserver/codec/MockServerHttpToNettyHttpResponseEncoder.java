@@ -16,7 +16,8 @@ import java.util.List;
 public class MockServerHttpToNettyHttpResponseEncoder
     extends MessageToMessageEncoder<HttpResponse> {
 
-  private final MockServerHttpResponseToFullHttpResponse mockServerHttpResponseToFullHttpResponse = new MockServerHttpResponseToFullHttpResponse();
+  private final MockServerHttpResponseToFullHttpResponse mockServerHttpResponseToFullHttpResponse =
+      new MockServerHttpResponseToFullHttpResponse();
 
   @Override
   protected void encode(ChannelHandlerContext ctx, HttpResponse response, List<Object> out) {

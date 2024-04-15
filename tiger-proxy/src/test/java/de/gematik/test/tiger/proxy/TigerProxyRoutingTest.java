@@ -84,7 +84,7 @@ class TigerProxyRoutingTest {
   @Test
   void deleteRoute_shouldWork() {
     assertThatThrownBy(() -> unirestInstance.get("http://temp.server/foo").asEmpty())
-      .isInstanceOf(UnirestException.class);
+        .isInstanceOf(UnirestException.class);
 
     String routeId =
         unirestInstance
@@ -114,7 +114,7 @@ class TigerProxyRoutingTest {
                         + response.getBody()));
 
     assertThatThrownBy(() -> unirestInstance.get("http://temp.server/foo").asEmpty())
-      .isInstanceOf(UnirestException.class);
+        .isInstanceOf(UnirestException.class);
   }
 
   @Test

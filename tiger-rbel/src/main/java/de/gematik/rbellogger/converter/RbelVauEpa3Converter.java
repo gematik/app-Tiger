@@ -42,7 +42,9 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
   private static final String K1_S2C_NOTE = "S_K1_s2c, absent in a real-life implementation";
   private static final String VAU_3_PAYLOAD_KEYS = "vau_non_pu_tracing_";
   private static final String AEAD_CT_KEY_CONFIRMATION_NOTE =
-      "Decrypted AEAD_ct_key_confirmation. This is the server's transcript hash. Decryption for clarification purposes only. In a real-life implementation, this would be done by the client.";
+      "Decrypted AEAD_ct_key_confirmation. This is the server's transcript hash. Decryption for"
+          + " clarification purposes only. In a real-life implementation, this would be done by the"
+          + " client.";
 
   @Override
   public void consumeElement(RbelElement element, RbelConverter context) {
@@ -137,9 +139,8 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
           case "M2" -> parseM2(element, context);
           case "M3" -> parseM3(element, context);
           case "M4" -> parseM4(element, context);
-          default ->
-              element.addFacet(
-                  new RbelNoteFacet("Unknown VAU EPA3 message type: " + messageTypeContent));
+          default -> element.addFacet(
+              new RbelNoteFacet("Unknown VAU EPA3 message type: " + messageTypeContent));
         }
       }
     } catch (RuntimeException e) {
@@ -197,7 +198,8 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
         .flatMap(key -> CryptoUtils.decrypt(rawEncodedHashBytes, key))
         .ifPresent(
             decrypted -> {
-              final var printableHashFacet = new RbelPrintableHashFacet("SHA-256 Hash of the transcript");
+              final var printableHashFacet =
+                  new RbelPrintableHashFacet("SHA-256 Hash of the transcript");
               ctKeyConfirmation.addFacet(
                   new RbelNestedFacet(
                       new RbelElement(decrypted, ctKeyConfirmation)
@@ -258,7 +260,8 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
         .get()
         .addFacet(
             new RbelNoteFacet(
-                "Kyber public key of the client for this handshake (Concatenation of the two kyber parameters)"));
+                "Kyber public key of the client for this handshake (Concatenation of the two kyber"
+                    + " parameters)"));
     tryToAddEccKeyToKeyManager(element, context);
   }
 

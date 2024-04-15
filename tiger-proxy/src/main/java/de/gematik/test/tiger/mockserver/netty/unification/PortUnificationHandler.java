@@ -298,18 +298,26 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable throwable) {
     if (connectionClosedException(throwable)) {
-     log.error("exception caught by port unification handler -> closing pipeline {}", ctx.channel(), throwable);
+      log.error(
+          "exception caught by port unification handler -> closing pipeline {}",
+          ctx.channel(),
+          throwable);
     } else if (sslHandshakeException(throwable)) {
       if (throwable.getMessage().contains("certificate_unknown")) {
-        log.warn("TLS handshake failure:"
-                          + NEW_LINE
-                          + NEW_LINE
-                          + " Client does not trust MockServer Certificate Authority for:{}See"
-                          + " http://mock-server.com/mock_server/HTTPS_TLS.html to enable the"
-                          + " client to trust MocksServer Certificate Authority."
-                          + NEW_LINE, ctx.channel());
+        log.warn(
+            "TLS handshake failure:"
+                + NEW_LINE
+                + NEW_LINE
+                + " Client does not trust MockServer Certificate Authority for:{}See"
+                + " http://mock-server.com/mock_server/HTTPS_TLS.html to enable the"
+                + " client to trust MocksServer Certificate Authority."
+                + NEW_LINE,
+            ctx.channel());
       } else if (!throwable.getMessage().contains("close_notify during handshake")) {
-        log.error("TLS handshake failure while a client attempted to connect to {}", ctx.channel(), throwable);
+        log.error(
+            "TLS handshake failure while a client attempted to connect to {}",
+            ctx.channel(),
+            throwable);
       }
     }
     closeOnFlush(ctx.channel());

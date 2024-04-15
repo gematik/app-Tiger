@@ -138,7 +138,10 @@ class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
 
     @Override
     public CompletableFuture<RbelElement> convertResponse(
-        HttpResponse response, String senderUrl, String clientAddress, Optional<ZonedDateTime> timestamp) {
+        HttpResponse response,
+        String senderUrl,
+        String clientAddress,
+        Optional<ZonedDateTime> timestamp) {
       throw new RuntimeException("foobar");
     }
   }

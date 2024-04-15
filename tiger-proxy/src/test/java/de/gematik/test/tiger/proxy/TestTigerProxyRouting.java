@@ -26,7 +26,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
 
   @ParameterizedTest
-  @CsvSource(textBlock = """
+  @CsvSource(
+      textBlock =
+          """
       http, http, http
       https, https, https
       http, https, http
@@ -35,17 +37,15 @@ class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
   void testHttpsAndHttpCombinations(
       String routeFromProtocol, String routeToProtocol, String requestProtocol) {
     tigerProxy.addRoute(
-      TigerRoute.builder()
-        .from(routeFromProtocol + "://backend/combotest")
-        .to(routeToProtocol + "://localhost:" + tigerProxy.getProxyPort() + "/foobar")
-        .build());
-    tigerProxy.addRoute(TigerRoute.builder()
-        .from("/")
-        .to("http://localhost:" + fakeBackendServerPort)
-        .build());
+        TigerRoute.builder()
+            .from(routeFromProtocol + "://backend/combotest")
+            .to(routeToProtocol + "://localhost:" + tigerProxy.getProxyPort() + "/foobar")
+            .build());
+    tigerProxy.addRoute(
+        TigerRoute.builder().from("/").to("http://localhost:" + fakeBackendServerPort).build());
 
     assertThat(proxyRest.get(requestProtocol + "://backend/combotest").asString().getStatus())
-      .isEqualTo(666);
+        .isEqualTo(666);
 
     awaitMessagesInTiger(4);
     if (routeToProtocol.equals("https")) {
@@ -54,8 +54,7 @@ class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
           .asString()
           .isNotBlank();
     } else {
-      assertThat(tigerProxy.getRbelMessagesList().get(1))
-        .doesNotHaveChildWithPath("$.tlsVersion");
+      assertThat(tigerProxy.getRbelMessagesList().get(1)).doesNotHaveChildWithPath("$.tlsVersion");
     }
   }
 

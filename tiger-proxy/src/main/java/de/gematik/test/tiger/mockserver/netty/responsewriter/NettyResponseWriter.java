@@ -5,7 +5,6 @@
 package de.gematik.test.tiger.mockserver.netty.responsewriter;
 
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
-import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -27,9 +26,7 @@ public class NettyResponseWriter {
   private final ChannelHandlerContext ctx;
   private final Configuration configuration;
 
-  public NettyResponseWriter(
-    Configuration configuration,
-    ChannelHandlerContext ctx) {
+  public NettyResponseWriter(Configuration configuration, ChannelHandlerContext ctx) {
     this.configuration = configuration;
     this.ctx = ctx;
   }
@@ -44,9 +41,10 @@ public class NettyResponseWriter {
         int contentLength = Integer.parseInt(contentLengthHeader);
         if (response.getBodyAsRawBytes().length > contentLength) {
           log.info(
-            "returning response with content-length header {} which is smaller then response body length {}, body will likely be truncated by client receiving request",
-            contentLength,
-            response.getBodyAsRawBytes().length);
+              "returning response with content-length header {} which is smaller then response body"
+                  + " length {}, body will likely be truncated by client receiving request",
+              contentLength,
+              response.getBodyAsRawBytes().length);
         }
       } catch (NumberFormatException ignore) {
         log.trace("NumberFormatException while parsing content-length header", ignore);
@@ -72,9 +70,7 @@ public class NettyResponseWriter {
 
     ChannelFuture channelFuture = ctx.writeAndFlush(response);
     if (closeChannel || configuration.alwaysCloseSocketConnections()) {
-      channelFuture.addListener(
-          (ChannelFutureListener)
-            this::disconnectAndCloseChannel);
+      channelFuture.addListener((ChannelFutureListener) this::disconnectAndCloseChannel);
     }
   }
 
@@ -88,28 +84,34 @@ public class NettyResponseWriter {
 
   private static ChannelFuture gracefulClose(Channel channel) {
     return channel
-      .disconnect()
-      .addListener(
-        disconnectFuture -> {
-          if (disconnectFuture.isSuccess()) {
-            channel
-              .close()
-              .addListener(
-                closeFuture -> {
-                  if (disconnectFuture.isSuccess()) {
-                    if (log.isTraceEnabled()) {
-                      log.trace("disconnected and closed socket {}", channel.localAddress());
-                    }
-                  } else {
-                    if (log.isWarnEnabled()) {
-                      log.warn("exception closing socket {}", channel.localAddress(),
-                        disconnectFuture.cause());
-                    }
-                  }
-                });
-          } else if (log.isWarnEnabled()) {
-            log.warn("exception disconnecting socket {}", channel.localAddress(), disconnectFuture.cause());
-          }
-        });
+        .disconnect()
+        .addListener(
+            disconnectFuture -> {
+              if (disconnectFuture.isSuccess()) {
+                channel
+                    .close()
+                    .addListener(
+                        closeFuture -> {
+                          if (disconnectFuture.isSuccess()) {
+                            if (log.isTraceEnabled()) {
+                              log.trace(
+                                  "disconnected and closed socket {}", channel.localAddress());
+                            }
+                          } else {
+                            if (log.isWarnEnabled()) {
+                              log.warn(
+                                  "exception closing socket {}",
+                                  channel.localAddress(),
+                                  disconnectFuture.cause());
+                            }
+                          }
+                        });
+              } else if (log.isWarnEnabled()) {
+                log.warn(
+                    "exception disconnecting socket {}",
+                    channel.localAddress(),
+                    disconnectFuture.cause());
+              }
+            });
   }
 }

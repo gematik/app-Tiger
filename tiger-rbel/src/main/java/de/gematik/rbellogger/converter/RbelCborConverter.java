@@ -10,9 +10,8 @@ import de.gematik.rbellogger.data.facet.*;
 
 /**
  * Converter for CBOR(Concise Binary Object Representation) format.
- * <p>
- * This class utilizes the Jackson library for CBOR serialization and deserialization.
- * </p>
+ *
+ * <p>This class utilizes the Jackson library for CBOR serialization and deserialization.
  */
 public class RbelCborConverter extends AbstractJacksonConverter<RbelCborFacet> {
 

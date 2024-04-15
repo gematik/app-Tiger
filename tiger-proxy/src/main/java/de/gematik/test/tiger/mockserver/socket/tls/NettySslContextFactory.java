@@ -162,18 +162,15 @@ public class NettySslContextFactory {
     }
     try {
       keyAndCertificateFactory.buildAndSavePrivateKeyAndX509Certificate();
-      log.debug("using certificate authority serial:{}issuer:{}subject:{}and certificate"
-                      + " serial:{}issuer:{}subject:{}",
-                  keyAndCertificateFactory.certificateAuthorityX509Certificate().getSerialNumber(),
-                  keyAndCertificateFactory
-                      .certificateAuthorityX509Certificate()
-                      .getIssuerX500Principal(),
-                  keyAndCertificateFactory
-                      .certificateAuthorityX509Certificate()
-                      .getSubjectX500Principal(),
-                  keyAndCertificateFactory.x509Certificate().getSerialNumber(),
-                  keyAndCertificateFactory.x509Certificate().getIssuerX500Principal(),
-                  keyAndCertificateFactory.x509Certificate().getSubjectX500Principal());
+      log.debug(
+          "using certificate authority serial:{}issuer:{}subject:{}and certificate"
+              + " serial:{}issuer:{}subject:{}",
+          keyAndCertificateFactory.certificateAuthorityX509Certificate().getSerialNumber(),
+          keyAndCertificateFactory.certificateAuthorityX509Certificate().getIssuerX500Principal(),
+          keyAndCertificateFactory.certificateAuthorityX509Certificate().getSubjectX500Principal(),
+          keyAndCertificateFactory.x509Certificate().getSerialNumber(),
+          keyAndCertificateFactory.x509Certificate().getIssuerX500Principal(),
+          keyAndCertificateFactory.x509Certificate().getSubjectX500Principal());
       final SslContextBuilder sslContextBuilder =
           SslContextBuilder.forServer(
                   keyAndCertificateFactory.privateKey(),

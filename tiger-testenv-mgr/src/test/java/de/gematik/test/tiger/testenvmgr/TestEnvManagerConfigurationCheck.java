@@ -74,11 +74,12 @@ class TestEnvManagerConfigurationCheck {
   @Test
   @TigerTest(
       tigerYaml =
-          "servers:\n"
-              + "  testTigerProxy:\n"
-              + "    type: tigerProxy\n"
-              + "    tigerProxyConfiguration:\n"
-              + "      adminPort: 9999",
+          """
+                      servers:
+                        testTigerProxy:
+                          type: tigerProxy
+                          tigerProxyConfiguration:
+                            adminPort: 9999""",
       skipEnvironmentSetup = true)
   void testCheckCfgPropertiesMissingParamMandatoryServerPortProp_NOK(TigerTestEnvMgr envMgr) {
     CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
@@ -136,25 +137,26 @@ class TestEnvManagerConfigurationCheck {
   @Test
   @TigerTest(
       tigerYaml =
-          "servers:\n"
-              + "  tigerServer1:\n"
-              + "    hostname: testReverseProxy\n"
-              + "    type: tigerProxy\n"
-              + "    exports: \n"
-              + "      - FOO_BAR=${custom.value}\n"
-              + "      - OTHER_PORT=${FREE_PORT_203}\n"
-              + "    tigerProxyConfiguration:\n"
-              + "      adminPort: ${FREE_PORT_201}\n"
-              + "      proxyPort: ${FREE_PORT_202}\n"
-              + "  tigerServer2:\n"
-              + "    hostname: ${foo.bar}\n"
-              + "    type: tigerProxy\n"
-              + "    dependsUpon: tigerServer1\n"
-              + "    tigerProxyConfiguration:\n"
-              + "      adminPort: ${free.port.203}\n"
-              + "      proxiedServerProtocol: ${FOO_BAR}\n"
-              + "      proxyPort: ${free.port.204}\n"
-              + "localProxyActive: false",
+          """
+                      servers:
+                        tigerServer1:
+                          hostname: testReverseProxy
+                          type: tigerProxy
+                          exports:\s
+                            - FOO_BAR=${custom.value}
+                            - OTHER_PORT=${FREE_PORT_203}
+                          tigerProxyConfiguration:
+                            adminPort: ${FREE_PORT_201}
+                            proxyPort: ${FREE_PORT_202}
+                        tigerServer2:
+                          hostname: ${foo.bar}
+                          type: tigerProxy
+                          dependsUpon: tigerServer1
+                          tigerProxyConfiguration:
+                            adminPort: ${free.port.203}
+                            proxiedServerProtocol: ${FOO_BAR}
+                            proxyPort: ${free.port.204}
+                      localProxyActive: false""",
       additionalProperties = {"custom.value = ftp"})
   /**
    * we test here that (1) exports are working as expected (other.port is exported by server 1). (2)
@@ -172,7 +174,8 @@ class TestEnvManagerConfigurationCheck {
         .asString()
         .isEqualTo(TigerGlobalConfiguration.readString("free.port.204"));
     assertThat(TigerGlobalConfiguration.readString("other.port")).isEqualTo(port203);
-    assertThat(tigerServer2.getConfiguration().getTigerProxyConfiguration().getProxiedServerProtocol())
+    assertThat(
+            tigerServer2.getConfiguration().getTigerProxyConfiguration().getProxiedServerProtocol())
         .isEqualTo("ftp");
   }
 
@@ -198,7 +201,7 @@ class TestEnvManagerConfigurationCheck {
           tigerProxy:
             tls:
               forwardMutualTlsIdentity: "${TIM_KEYSTORE};${TIM_KEYSTORE_PW};00"
-                  """,
+          """,
       additionalProperties = {
         "tim.keystore = src\\test\\resources\\egk_aut_keystore.jks",
         "tim.keystore.pw = gematik"
@@ -222,11 +225,12 @@ class TestEnvManagerConfigurationCheck {
   @Test
   void testCreateInvalidInstanceType() {
     TigerGlobalConfiguration.readFromYaml(
-        "servers:\n"
-            + "  testInvalidType:\n"
-            + "    type: NOTEXISTING\n"
-            + "    source:\n"
-            + "      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/",
+        """
+                    servers:
+                      testInvalidType:
+                        type: NOTEXISTING
+                        source:
+                          - https://idp-test.zentral.idp.splitdns.ti-dienste.de/""",
         "tiger");
     TigerGlobalConfiguration.setRequireTigerYaml(false);
 
@@ -241,12 +245,13 @@ class TestEnvManagerConfigurationCheck {
   void testCreateUnknownTemplate() {
     TigerGlobalConfiguration.setRequireTigerYaml(false);
     TigerGlobalConfiguration.readFromYaml(
-        "servers:\n"
-            + "  unknownTemplate:\n"
-            + "    template: some_template_that_does_not_exist\n"
-            + "    type: externalUrl\n"
-            + "    source:\n"
-            + "      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/",
+        """
+                    servers:
+                      unknownTemplate:
+                        template: some_template_that_does_not_exist
+                        type: externalUrl
+                        source:
+                          - https://idp-test.zentral.idp.splitdns.ti-dienste.de/""",
         "tiger");
     TigerGlobalConfiguration.initialize();
     assertThatThrownBy(TigerTestEnvMgr::new).isInstanceOf(TigerConfigurationException.class);
@@ -291,13 +296,15 @@ class TestEnvManagerConfigurationCheck {
   void testInvalidUrlMappings_noArrow() {
     TigerGlobalConfiguration.setRequireTigerYaml(false);
     TigerGlobalConfiguration.readFromYaml(
-        "servers:\n"
-            + "  testInvalidUrlMappings_noArrow:\n"
-            + "    type: externalUrl\n"
-            + "    source:\n"
-            + "      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/\n"
-            + "    urlMappings:\n"
-            + "      - https://bla\n",
+        """
+                    servers:
+                      testInvalidUrlMappings_noArrow:
+                        type: externalUrl
+                        source:
+                          - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+                        urlMappings:
+                          - https://bla
+                    """,
         "tiger");
 
     final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
@@ -312,13 +319,14 @@ class TestEnvManagerConfigurationCheck {
   void testInvalidUrlMappings_noDestinationRoute() {
     TigerGlobalConfiguration.setRequireTigerYaml(false);
     TigerGlobalConfiguration.readFromYaml(
-        "servers:\n"
-            + "  testInvalidUrlMappings_noDestinationRoute:\n"
-            + "    type: externalUrl\n"
-            + "    source:\n"
-            + "      - https://idp-test.zentral.idp.splitdns.ti-dienste.de/\n"
-            + "    urlMappings:\n"
-            + "      - https://bla -->",
+        """
+                    servers:
+                      testInvalidUrlMappings_noDestinationRoute:
+                        type: externalUrl
+                        source:
+                          - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
+                        urlMappings:
+                          - https://bla -->""",
         "tiger");
 
     final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
@@ -332,10 +340,11 @@ class TestEnvManagerConfigurationCheck {
   @Test
   @TigerTest(
       tigerYaml =
-          "additionalYamls:\n"
-              + "  - filename: src/test/resources/externalConfiguration.yaml\n"
-              + "    baseKey: foobar\n"
-              + "localProxyActive: false")
+          """
+                      additionalYamls:
+                        - filename: src/test/resources/externalConfiguration.yaml
+                          baseKey: foobar
+                      localProxyActive: false""")
   void readAdditionalYamlFilesWithDifferingBaseKey() {
     assertThat(TigerGlobalConfiguration.readString("foobar.some.keys")).isEqualTo("andValues");
   }
@@ -343,11 +352,12 @@ class TestEnvManagerConfigurationCheck {
   @Test
   @TigerTest(
       tigerYaml =
-          "additionalYamls:\n"
-              + "  - filename: src/test/resources/defineFooAsBar.yaml\n"
-              + "  - filename: src/test/resources/${foo}.yaml\n"
-              + "    baseKey: baseKey\n"
-              + "localProxyActive: false")
+          """
+                      additionalYamls:
+                        - filename: src/test/resources/defineFooAsBar.yaml
+                        - filename: src/test/resources/${foo}.yaml
+                          baseKey: baseKey
+                      localProxyActive: false""")
   void readAdditionalYamlFilesWithPlaceholdersInName() {
     assertThat(TigerGlobalConfiguration.readString("baseKey.someKey")).isEqualTo("someValue");
   }
@@ -454,11 +464,12 @@ class TestEnvManagerConfigurationCheck {
   @Test
   @TigerTest(
       tigerYaml =
-          "servers:\n"
-              + "  testTigerProxy:\n"
-              + "    type: tigerProxy\n"
-              + "    tigerProxyConfiguration:\n"
-              + "      adminPort: 9999",
+          """
+                      servers:
+                        testTigerProxy:
+                          type: tigerProxy
+                          tigerProxyConfiguration:
+                            adminPort: 9999""",
       skipEnvironmentSetup = true)
   void defaultForLocalTigerProxyShouldBeBlockingMode(TigerTestEnvMgr envMgr) {
     envMgr.startLocalTigerProxyIfActivated();
@@ -489,21 +500,23 @@ class TestEnvManagerConfigurationCheck {
   @Test
   @TigerTest(
       tigerYaml =
-          "servers:\n"
-              + "  tigerServer1:\n"
-              + "    type: tigerProxy\n"
-              + "    exports: \n"
-              + "      - OTHER_PORT=${FREE_PORT_3}\n"
-              + "    tigerProxyConfiguration:\n"
-              + "      adminPort: ${FREE_PORT_1}\n"
-              + "      proxyPort: ${FREE_PORT_2}\n"
-              + "  tigerServer2:\n"
-              + "    type: tigerProxy\n"
-              + "    dependsUpon: tigerServer1\n"
-              + "    tigerProxyConfiguration:\n"
-              + "      adminPort: ${OTHER_PORT}\n"
-              + "      proxyPort: ${free.port.4}\n"
-              + "localProxyActive: false\n")
+          """
+                      servers:
+                        tigerServer1:
+                          type: tigerProxy
+                          exports:\s
+                            - OTHER_PORT=${FREE_PORT_3}
+                          tigerProxyConfiguration:
+                            adminPort: ${FREE_PORT_1}
+                            proxyPort: ${FREE_PORT_2}
+                        tigerServer2:
+                          type: tigerProxy
+                          dependsUpon: tigerServer1
+                          tigerProxyConfiguration:
+                            adminPort: ${OTHER_PORT}
+                            proxyPort: ${free.port.4}
+                      localProxyActive: false
+                      """)
   void testDelayedEvaluation(TigerTestEnvMgr envMgr) {
     assertThat(
             envMgr
@@ -518,12 +531,14 @@ class TestEnvManagerConfigurationCheck {
   @Test
   @TigerTest(
       tigerYaml =
-          "servers:\n"
-              + "  google:\n"
-              + "    type: externalUrl\n"
-              + "    source:\n"
-              + "      - https://www.google.com\n"
-              + "localProxyActive: true\n")
+          """
+                      servers:
+                        google:
+                          type: externalUrl
+                          source:
+                            - https://www.google.com
+                      localProxyActive: true
+                      """)
   void testExtUrlServer_healthCheckUrlDefaultsToSource(TigerTestEnvMgr envMgr) {
     assertThat(envMgr.getServers().get("google").getStatus()).isEqualTo(TigerServerStatus.RUNNING);
     final UnirestInstance instance = Unirest.spawnInstance();

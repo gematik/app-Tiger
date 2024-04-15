@@ -550,7 +550,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
     log.info(
         "Deleted route {} (id {}). Current # expectations {}",
-        route, routeId,
+        route,
+        routeId,
         mockServer.retrieveActiveExpectations().size());
   }
 
@@ -710,10 +711,11 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     return getOpenConnections(TigerConnectionStatus.OPEN_TCP);
   }
 
-  public Map<SocketAddress, TigerConnectionStatus> getOpenConnections(TigerConnectionStatus status) {
+  public Map<SocketAddress, TigerConnectionStatus> getOpenConnections(
+      TigerConnectionStatus status) {
     return mockServer.getOpenConnections().entrySet().stream()
-      .filter(entry -> entry.getValue().getValue() >= status.getValue())
-      .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        .filter(entry -> entry.getValue().getValue() >= status.getValue())
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   public void waitForAllCurrentMessagesToBeParsed() {

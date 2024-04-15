@@ -398,17 +398,15 @@ public class RbelMessageValidator {
   public void assertAttributeOfCurrentResponseMatchesAs(
       String rbelPath, ModeType mode, String oracle) {
     switch (mode) {
-      case JSON ->
-          new JsonChecker()
-              .compareJsonStrings(
-                  getValueOrContentString(findElementInCurrentResponse(rbelPath)), oracle, false);
+      case JSON -> new JsonChecker()
+          .compareJsonStrings(
+              getValueOrContentString(findElementInCurrentResponse(rbelPath)), oracle, false);
       case XML -> {
         final RbelElement el = findElementInCurrentResponse(rbelPath);
         compareXMLStructureOfRbelElement(el, oracle, "");
       }
-      default ->
-          Assertions.fail(
-              "Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
+      default -> Assertions.fail(
+          "Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
     }
   }
 

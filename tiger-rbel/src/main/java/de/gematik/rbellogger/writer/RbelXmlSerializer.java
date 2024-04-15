@@ -90,7 +90,11 @@ public class RbelXmlSerializer implements RbelSerializer {
     }
   }
 
-  private void addXmlNode(RbelContentTreeNode treeNode, Branch parentBranch, RbelWriterInstance rbelWriter, String key) {
+  private void addXmlNode(
+      RbelContentTreeNode treeNode,
+      Branch parentBranch,
+      RbelWriterInstance rbelWriter,
+      String key) {
     final Element newElement = parentBranch.addElement(determineQualifiedName(treeNode, key));
 
     for (RbelContentTreeNode childNode : treeNode.getChildNodes()) {
@@ -100,8 +104,8 @@ public class RbelXmlSerializer implements RbelSerializer {
 
   private static boolean isATextNode(RbelContentTreeNode treeNode, String key) {
     return "text".equals(key)
-           && !treeNode.hasTypeOptional(RbelContentType.XML).orElse(false)
-           && !treeNode.attributes().containsKey(IS_XML_ATTRIBUTE);
+        && !treeNode.hasTypeOptional(RbelContentType.XML).orElse(false)
+        && !treeNode.attributes().containsKey(IS_XML_ATTRIBUTE);
   }
 
   private QName determineQualifiedName(RbelContentTreeNode treeNode, String key) {

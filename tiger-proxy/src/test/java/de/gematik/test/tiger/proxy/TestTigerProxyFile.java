@@ -141,17 +141,14 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
     executeFileWritingAndReadingTest(
         otherProxy -> {
           await().atMost(2, TimeUnit.SECONDS).until(otherProxy::isFileParsed);
-          final RbelElement request = otherProxy
-            .getRbelLogger()
-            .getMessageHistory()
-            .getFirst();
+          final RbelElement request = otherProxy.getRbelLogger().getMessageHistory().getFirst();
           assertThat(request)
-            .hasFacet(TlsFacet.class)
-            .extractChildWithPath("$.cipherSuite")
-            .hasStringContentEqualTo("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
+              .hasFacet(TlsFacet.class)
+              .extractChildWithPath("$.cipherSuite")
+              .hasStringContentEqualTo("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
           assertThat(request)
-            .extractChildWithPath("$.tlsVersion")
-            .hasStringContentEqualTo("TLSv1.2");
+              .extractChildWithPath("$.tlsVersion")
+              .hasStringContentEqualTo("TLSv1.2");
         },
         TigerFileSaveInfo.builder(),
         () -> {

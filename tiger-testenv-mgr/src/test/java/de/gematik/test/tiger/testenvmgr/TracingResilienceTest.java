@@ -128,7 +128,10 @@ class TracingResilienceTest {
   }
 
   private void startReceivingProxy() {
-    log.info("Starting Receiving Proxy (Ports {} & {})...", readIntegerOptional("free.port.10").orElseThrow(), readIntegerOptional("free.port.20").orElseThrow());
+    log.info(
+        "Starting Receiving Proxy (Ports {} & {})...",
+        readIntegerOptional("free.port.10").orElseThrow(),
+        readIntegerOptional("free.port.20").orElseThrow());
     receivingProxy =
         new TigerProxy(
             TigerProxyConfiguration.builder()

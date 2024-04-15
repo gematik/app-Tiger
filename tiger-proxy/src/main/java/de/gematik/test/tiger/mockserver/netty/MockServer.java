@@ -252,13 +252,14 @@ public class MockServer extends LifeCycle {
     return httpState.retrieveActiveExpectations();
   }
 
-  public synchronized void addConnectionWithStatus(SocketAddress socketAddress, TigerConnectionStatus status) {
+  public synchronized void addConnectionWithStatus(
+      SocketAddress socketAddress, TigerConnectionStatus status) {
     connectionStatusMap.put(socketAddress, status);
   }
 
   public synchronized Map<SocketAddress, TigerConnectionStatus> getOpenConnections() {
     return connectionStatusMap.entrySet().stream()
-      .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
   }
 
   public synchronized void removeRemoteAddress(SocketAddress socketAddress) {

@@ -53,15 +53,15 @@ public abstract class RbelPathAble {
     final AtomicReference<RbelPathAble> ptr = new AtomicReference<>(this);
     while (ptr.get().getParentNode() != null) {
       keyList.addFirst(
-        ptr.get().getParentNode().getChildNodesWithKey().stream()
-          .filter(entry -> entry.getValue() == ptr.get())
-          .map(Map.Entry::getKey)
-          .findFirst());
+          ptr.get().getParentNode().getChildNodesWithKey().stream()
+              .filter(entry -> entry.getValue() == ptr.get())
+              .map(Map.Entry::getKey)
+              .findFirst());
       ptr.set(ptr.get().getParentNode());
     }
     return keyList.stream()
-      .filter(Optional::isPresent)
-      .map(Optional::get)
-      .collect(Collectors.joining("."));
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .collect(Collectors.joining("."));
   }
 }

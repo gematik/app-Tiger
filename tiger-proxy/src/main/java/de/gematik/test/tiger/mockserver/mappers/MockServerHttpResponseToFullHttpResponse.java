@@ -39,7 +39,8 @@ public class MockServerHttpResponseToFullHttpResponse {
   }
 
   private HttpResponseStatus getStatus(HttpResponse httpResponse) {
-    final int statusCode = httpResponse.getStatusCode() != null ? httpResponse.getStatusCode() : 200;
+    final int statusCode =
+        httpResponse.getStatusCode() != null ? httpResponse.getStatusCode() : 200;
     final String reasonPhrase =
         httpResponse.getReasonPhrase() != null ? httpResponse.getReasonPhrase() : "";
     return new HttpResponseStatus(statusCode, reasonPhrase);

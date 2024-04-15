@@ -32,9 +32,8 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
   public static final AttributeKey<SslHandler> UPSTREAM_SSL_HANDLER =
       AttributeKey.valueOf("UPSTREAM_SSL_HANDLER");
   public static final AttributeKey<Certificate[]> UPSTREAM_CLIENT_CERTIFICATES =
-    AttributeKey.valueOf("UPSTREAM_CLIENT_CERTIFICATES");
-  public static final AttributeKey<SSLSession> SSL_SESSION =
-    AttributeKey.valueOf("SSL_SESSION");
+      AttributeKey.valueOf("UPSTREAM_CLIENT_CERTIFICATES");
+  public static final AttributeKey<SSLSession> SSL_SESSION = AttributeKey.valueOf("SSL_SESSION");
   public static final AttributeKey<Protocol> NEGOTIATED_APPLICATION_PROTOCOL =
       AttributeKey.valueOf("NEGOTIATED_APPLICATION_PROTOCOL");
 

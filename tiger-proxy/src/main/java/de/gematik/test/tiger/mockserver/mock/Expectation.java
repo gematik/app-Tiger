@@ -21,7 +21,9 @@ import org.apache.commons.lang3.StringUtils;
  * @author jamesdbloom
  */
 @SuppressWarnings("rawtypes")
-@EqualsAndHashCode(exclude = {"created", "sortableExpectationId"}, callSuper = false)
+@EqualsAndHashCode(
+    exclude = {"created", "sortableExpectationId"},
+    callSuper = false)
 @Accessors(chain = true)
 @Getter
 @Slf4j
@@ -29,8 +31,7 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
 
   private static final AtomicInteger EXPECTATION_COUNTER = new AtomicInteger(0);
   private static final long START_TIME = System.currentTimeMillis();
-  @Setter
-  private String id = UUID.randomUUID().toString();
+  @Setter private String id = UUID.randomUUID().toString();
   private final int priority;
   private final HttpRequest requestPattern;
   @Setter private HttpAction httpAction;
@@ -112,9 +113,9 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
 
   public boolean matches(HttpRequest request) {
     return protocolMatches(this.requestPattern.getProtocol(), request.getProtocol())
-           && hostMatches(request)
-           && pathMatches(this.requestPattern.getPath(), request.getPath())
-           && (expectationCallback == null || expectationCallback.matches(request));
+        && hostMatches(request)
+        && pathMatches(this.requestPattern.getPath(), request.getPath())
+        && (expectationCallback == null || expectationCallback.matches(request));
   }
 
   private boolean hostMatches(HttpRequest request) {

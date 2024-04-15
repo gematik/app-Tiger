@@ -34,7 +34,10 @@ public class MockServerToRbelConverter {
   private final RbelConverter rbelConverter;
 
   public CompletableFuture<RbelElement> convertResponse(
-      HttpResponse response, String senderUrl, String receiverUrl, Optional<ZonedDateTime> timestamp) {
+      HttpResponse response,
+      String senderUrl,
+      String receiverUrl,
+      Optional<ZonedDateTime> timestamp) {
     if (log.isTraceEnabled()) {
       log.trace(
           "Converting response {}, headers {}, body {}",

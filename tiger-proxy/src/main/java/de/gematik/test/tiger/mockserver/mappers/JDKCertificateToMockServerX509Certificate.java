@@ -4,7 +4,6 @@
 
 package de.gematik.test.tiger.mockserver.mappers;
 
-
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.MockserverX509CertificateWrapper;
 import java.io.ByteArrayInputStream;

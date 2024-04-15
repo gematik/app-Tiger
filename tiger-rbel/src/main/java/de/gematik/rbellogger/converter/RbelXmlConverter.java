@@ -112,7 +112,8 @@ public class RbelXmlConverter implements RbelConverterPlugin {
         childElements.put(((AbstractBranch) child).getName(), element);
       } else if (child instanceof Namespace namespace) {
         final String childXmlName = namespace.asXML().split("=")[0];
-        final RbelElement namespaceAttributeElement = converter.convertElement(namespace.getText(), parentElement);
+        final RbelElement namespaceAttributeElement =
+            converter.convertElement(namespace.getText(), parentElement);
         namespaceAttributeElement.addFacet(new RbelXmlAttributeFacet());
         namespaceAttributeElement.addFacet(new RbelXmlNamespaceFacet());
         childElements.put(childXmlName, namespaceAttributeElement);

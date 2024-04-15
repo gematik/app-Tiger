@@ -18,7 +18,8 @@ public class ConnectionCounterHandler extends ChannelInboundHandlerAdapter {
 
   @Override
   public void channelActive(ChannelHandlerContext ctx) {
-    mockServer.addConnectionWithStatus(ctx.channel().remoteAddress(), TigerConnectionStatus.OPEN_TCP);
+    mockServer.addConnectionWithStatus(
+        ctx.channel().remoteAddress(), TigerConnectionStatus.OPEN_TCP);
   }
 
   @Override

@@ -111,8 +111,9 @@ public class NettyHttpClient {
       }
       if (Protocol.HTTP_2.equals(httpRequest.getProtocol())
           && !Boolean.TRUE.equals(httpRequest.isSecure())) {
-        log.warn("HTTP2 requires ALPN but request is not secure (i.e. TLS) so protocol changed"
-                        + " to HTTP1");
+        log.warn(
+            "HTTP2 requires ALPN but request is not secure (i.e. TLS) so protocol changed"
+                + " to HTTP1");
         httpRequest.setProtocol(Protocol.HTTP_1_1);
       }
 
@@ -123,10 +124,7 @@ public class NettyHttpClient {
 
       final HttpClientInitializer clientInitializer =
           new HttpClientInitializer(
-              proxyConfigurations,
-              forwardProxyClient,
-              nettySslContextFactory,
-              httpProtocol);
+              proxyConfigurations, forwardProxyClient, nettySslContextFactory, httpProtocol);
 
       new Bootstrap()
           .group(eventLoopGroup)

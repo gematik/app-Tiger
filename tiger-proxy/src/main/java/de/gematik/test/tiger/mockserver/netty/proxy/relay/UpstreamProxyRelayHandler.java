@@ -86,7 +86,10 @@ public class UpstreamProxyRelayHandler extends SimpleChannelInboundHandler<FullH
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     if (connectionClosedException(cause)) {
-      log.error("exception caught by upstream relay handler -> closing pipeline {}", ctx.channel(), cause);
+      log.error(
+          "exception caught by upstream relay handler -> closing pipeline {}",
+          ctx.channel(),
+          cause);
     }
     closeOnFlush(ctx.channel());
   }

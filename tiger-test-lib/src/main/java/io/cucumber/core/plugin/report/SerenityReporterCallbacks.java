@@ -516,9 +516,8 @@ public class SerenityReporterCallbacks {
     switch (scenarioStatus) {
       case "PASSED" -> scPassed++;
       case "ERROR", "FAILED" -> scFailed++;
-      default ->
-          throw new UnsupportedOperationException(
-              "Unsupported scenario: %s".formatted(scenarioStatus));
+      default -> throw new UnsupportedOperationException(
+          "Unsupported scenario: %s".formatted(scenarioStatus));
     }
     log.info(
         "------------ STATUS: {} passed {}",

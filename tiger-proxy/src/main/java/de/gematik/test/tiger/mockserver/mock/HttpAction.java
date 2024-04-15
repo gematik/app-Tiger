@@ -57,7 +57,10 @@ public class HttpAction {
               }
             } else if (exception != null) {
               actionHandler.handleExceptionDuringForwardingRequest(
-                expectationForwardAndResponseCallback.handleException(exception, request), request, responseWriter, exception);
+                  expectationForwardAndResponseCallback.handleException(exception, request),
+                  request,
+                  responseWriter,
+                  exception);
             }
           },
           synchronous);

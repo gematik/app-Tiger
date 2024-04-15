@@ -321,7 +321,8 @@ public class RbelElement extends RbelPathAble {
 
   @Override
   public List<RbelPathAble> descendToContentNodeIfAdvised() {
-    if ((hasFacet(RbelJsonFacet.class) || hasFacet(RbelCborFacet.class)) && hasFacet(RbelNestedFacet.class)) {
+    if ((hasFacet(RbelJsonFacet.class) || hasFacet(RbelCborFacet.class))
+        && hasFacet(RbelNestedFacet.class)) {
       return List.of(
           getFacet(RbelNestedFacet.class).map(RbelNestedFacet::getNestedElement).orElseThrow(),
           this);

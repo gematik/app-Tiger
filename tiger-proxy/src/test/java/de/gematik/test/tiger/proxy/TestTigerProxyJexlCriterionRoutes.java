@@ -67,11 +67,11 @@ class TestTigerProxyJexlCriterionRoutes extends AbstractTigerProxyTest {
   void testRouteWithJexlCriterion() {
     spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
     tigerProxy.addRoute(
-      TigerRoute.builder()
-        .from("/foobar/")
-        .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar/")
-        .criterions(List.of("$.header.foo != 'bar'"))
-        .build());
+        TigerRoute.builder()
+            .from("/foobar/")
+            .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar/")
+            .criterions(List.of("$.header.foo != 'bar'"))
+            .build());
     tigerProxy.addRoute(
         TigerRoute.builder()
             .from("/foobar/")

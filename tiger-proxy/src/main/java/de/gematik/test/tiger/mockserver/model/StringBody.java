@@ -16,8 +16,7 @@ import lombok.Getter;
  */
 public class StringBody extends Body {
   public static final MediaType DEFAULT_CONTENT_TYPE = MediaType.create("text", "plain");
-  @Getter
-  private final String value;
+  @Getter private final String value;
   private byte[] rawBytes;
 
   public StringBody(String value) {

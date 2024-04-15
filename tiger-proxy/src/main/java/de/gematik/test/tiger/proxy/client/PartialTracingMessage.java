@@ -31,8 +31,7 @@ public class PartialTracingMessage {
   private final ZonedDateTime transmissionTime;
   private final ZonedDateTime receivedTime = ZonedDateTime.now();
   private final List<TracingMessagePart> messageParts = new ArrayList<>();
-  @Builder.Default
-  private final Map<String, String> additionalInformation = Map.of();
+  @Builder.Default private final Map<String, String> additionalInformation = Map.of();
 
   public boolean isComplete() {
     return !messageParts.isEmpty()
@@ -48,14 +47,9 @@ public class PartialTracingMessage {
                 .mapToInt(Array::getLength)
                 .sum()];
     int resultIndex = 0;
-    for (int i = 0; i < messageParts.size(); i++) {
-      System.arraycopy(
-          messageParts.get(i).getData(),
-          0,
-          result,
-          resultIndex,
-          messageParts.get(i).getData().length);
-      resultIndex += messageParts.get(i).getData().length;
+    for (TracingMessagePart messagePart : messageParts) {
+      System.arraycopy(messagePart.getData(), 0, result, resultIndex, messagePart.getData().length);
+      resultIndex += messagePart.getData().length;
     }
     return result;
   }

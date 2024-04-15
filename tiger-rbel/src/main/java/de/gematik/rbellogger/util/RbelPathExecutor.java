@@ -237,7 +237,8 @@ public class RbelPathExecutor<T extends RbelPathAble> {
       }
     } else if (functionExpression.startsWith("~")) {
       if (functionExpression.startsWith("~'") && functionExpression.endsWith("'")) {
-        return executeNamedSelection(functionExpression.substring(1), content, String::equalsIgnoreCase);
+        return executeNamedSelection(
+            functionExpression.substring(1), content, String::equalsIgnoreCase);
       } else {
         throw new RbelPathException(
             "Invalid JEXL-Expression encountered (Does not start with \"~'\"' and end with \")\"): "

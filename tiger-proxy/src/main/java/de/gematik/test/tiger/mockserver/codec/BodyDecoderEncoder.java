@@ -31,7 +31,8 @@ public class BodyDecoderEncoder {
       if (body instanceof StringBody stringBody) {
         Charset contentTypeCharset = MediaType.parse(contentTypeHeader).getCharsetOrDefault();
         Charset bodyCharset = body.getCharset(contentTypeCharset);
-        return stringBody.getValue()
+        return stringBody
+            .getValue()
             .getBytes(
                 bodyCharset != null ? bodyCharset : MediaType.DEFAULT_TEXT_HTTP_CHARACTER_SET);
       } else {
