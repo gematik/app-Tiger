@@ -21,6 +21,7 @@ copyFiles:
 * TGR-1174: when a content-type header is set in a request made with the tiger http client, the charset is no longer
   automatically appended. If no content-type header is set and `activateRbelWriter = true` the content type and charset
   are automatically generated.
+* TGR-1342: Zion can now handle root arrays in JSON responses.
 * TGR-1318: Byte-Arrays can now be stored and changed in TigerGlobalConfiguration
 * TGR-327: Reasonphrase is no longer added implicitly in the TigerProxy (when the phrase is empty from the server it
   will stay empty)
