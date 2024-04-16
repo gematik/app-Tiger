@@ -25,7 +25,6 @@ public class CfgTemplate {
   private String logFile;
 
   private CfgExternalJarOptions externalJarOptions;
-  private CfgDockerOptions dockerOptions = new CfgDockerOptions();
   private TigerProxyConfiguration tigerProxyConfiguration;
   private CfgHelmChartOptions helmChartOptions = new CfgHelmChartOptions();
 

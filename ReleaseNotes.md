@@ -2,6 +2,20 @@
 
 # Release 3.0.2
 
+## Breaking changes
+
+* TCLE-7: if you use the tiger-cloud-extension you need to update it to version 1.10.0 due to changes in organisation of
+  some configuration classes. The new tiger-cloud-extension version adds support for copying files into the docker
+  container created by the server
+  type `docker`. You can copy the files by adding the following configuration to the `dockerOptions`:
+
+```yaml
+copyFiles:
+  - sourcePath: ./example/path/file_to_copy.txt
+    destinationPath: /path/in/container/file_to_copy.txt
+    fileMode: 0633
+``` 
+
 ## Bugfixes
 
 * TGR-1174: when a content-type header is set in a request made with the tiger http client, the charset is no longer

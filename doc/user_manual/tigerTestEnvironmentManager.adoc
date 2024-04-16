@@ -312,6 +312,8 @@ The exposed port of the docker container is available as a special token in the 
 To customize the docker container you may alter the entry point command line and add the Tiger Proxy certificate to the container's operating system list of trusted certificates.
 For containers that should exit after a single command you may enable the oneShot property.
 
+You can also copy files to the container by configuring the source and destinations paths of files or folder to be copied.
+
 If there is no health check configured inside the docker image, Tiger will try to guess a healthcheck url by assuming the first exposed port as a get request to localhost to check for a successful startup of the docker container (e.g. http://127.0.0.1:xxxx).
 
 If no port is exposed at all, the startupTimeoutSec property will determine the wait period, after which Tiger assumes the container is up and running.
@@ -351,6 +353,18 @@ dockerContainer_001:
     # overwriting any configured entry point in the docker image.
     # Default value is empty meaning to use the configured entry point command line.
     entryPoint: chmod a+x /startup.sh && /startup.sh
+    # OPTIONAL list of files to be copied to the container
+    copyFiles:
+      # path to the file or the folder to copy inside the container
+      - sourcePath: ./example/path/file_to_copy.txt
+      # path inside the container where the file should be copied to
+        destinationPath: /path/in/container/file_to_copy.txt
+      # OPTIONAL the file mode of the copied file as octal representation (see https://en.wikipedia.org/wiki/File-system_permissions#numericNotation
+        fileMode: 0633
+      # a complete folder can also be copied instead of a single file
+      - sourcePath: ./example/copy_folder
+        destinationPath: /path/in/container/copy_folder
+
 
   # The following properties are explained in the General properties section above
   pkiKeys: []
@@ -366,7 +380,7 @@ So many of the yaml compose files will need to be modified to work with the test
 
 For now, we support the ePA2 FD module and the DEMIS Meldeportal.
 
-If you want to use your own compose files, please note that Tiger copies and processes your yml files to the target/tiger-testenv-mgr/${serverId} folder, replacing all variable/property expressions (for details check xref:tigerConfiguration.adoc#_tiger_configuration[this chapter]).
+If you want to use your own compose files, please note that Tiger copies and processes your yml files to the target/tiger-testenv-mgr/$+{serverId}+ folder, replacing all variable/property expressions (for details check xref:tigerConfiguration.adoc#_tiger_configuration[this chapter]).
 
 The processing/copying flattens the file hierarchy, thus you must not depend on any additional file resources in your docker compose files.
 Each copied compose file will have a random UUID appended to its filename.
