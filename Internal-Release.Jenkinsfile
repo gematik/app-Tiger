@@ -136,5 +136,43 @@ pipeline {
                 }
             }
         }
+		stage('Docker Images') {
+            matrix {
+
+                axes {
+                    axis {
+                        name 'APP'
+                        values 'tiger-proxy', 'tiger-zion'
+                    }
+                }
+                environment {
+                    IMAGE_NAME = "tiger/${APP}"
+                    PREFIX = "${APP}_"
+                    BUILD_ARGS = "--build-arg APP=${APP}"
+                }
+                stages {
+                    stage('Build Docker Image') {
+					       steps {
+                              dockerBuild(IMAGE_NAME, RELEASE_VERSION, RELEASE_VERSION, BUILD_ARGS)
+                        }
+                    }
+
+                    stage('Push Docker Image') {
+					   when {
+                            branch BRANCH
+                        }
+                        steps {
+                            dockerPushImage(IMAGE_NAME, RELEASE_VERSION)
+                        }
+                    }
+
+                    stage('Cleanup Docker Image') {
+                        steps {
+                            dockerRemoveLocalImage(IMAGE_NAME, RELEASE_VERSION)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
