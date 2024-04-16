@@ -15,7 +15,6 @@ import static org.slf4j.event.Level.*;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.scheduler.Scheduler;
-import de.gematik.test.tiger.mockserver.stop.Stoppable;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -33,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Getter
 @Slf4j
-public abstract class LifeCycle implements Stoppable {
+public abstract class LifeCycle {
 
   protected final EventLoopGroup bossGroup;
   protected final EventLoopGroup workerGroup;
@@ -127,7 +126,6 @@ public abstract class LifeCycle implements Stoppable {
     }
   }
 
-  @Override
   public void close() {
     stop();
   }

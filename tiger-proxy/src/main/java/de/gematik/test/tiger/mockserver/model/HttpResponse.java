@@ -18,11 +18,12 @@ import lombok.Data;
  * @author jamesdbloom
  */
 @Data
-public class HttpResponse extends Action implements HttpMessage<HttpResponse> {
+public class HttpResponse extends Action<HttpResponse>
+    implements HttpMessage<HttpResponse, BodyWithContentType> {
   private int hashCode;
   private Integer statusCode;
   private String reasonPhrase;
-  private Body body;
+  private BodyWithContentType body;
   private Headers headers;
   private Cookies cookies;
   private Integer streamId = null;
@@ -155,7 +156,7 @@ public class HttpResponse extends Action implements HttpMessage<HttpResponse> {
    *
    * @param body an instance of one of the Body subclasses including StringBody or BinaryBody
    */
-  public HttpResponse withBody(Body body) {
+  public HttpResponse withBody(BodyWithContentType body) {
     this.body = body;
     this.hashCode = 0;
     return this;
@@ -280,6 +281,14 @@ public class HttpResponse extends Action implements HttpMessage<HttpResponse> {
     }
   }
 
+  private Cookies getOrCreateCookies() {
+    if (this.cookies == null) {
+      this.cookies = new Cookies();
+      this.hashCode = 0;
+    }
+    return this.cookies;
+  }
+
   public HttpResponse withCookies(Cookies cookies) {
     if (cookies == null || cookies.isEmpty()) {
       this.cookies = null;
@@ -304,6 +313,13 @@ public class HttpResponse extends Action implements HttpMessage<HttpResponse> {
     return this;
   }
 
+  @Override
+  @JsonIgnore
+  public Type getType() {
+    return Type.RESPONSE;
+  }
+
+
   @SuppressWarnings("MethodDoesntCallSuperMethod")
   public HttpResponse clone() {
     return response()
@@ -312,6 +328,7 @@ public class HttpResponse extends Action implements HttpMessage<HttpResponse> {
         .withBody(body)
         .withHeaders(headers != null ? headers.clone() : null)
         .withCookies(cookies != null ? cookies.clone() : null)
+        .withDelay(getDelay())
         .withStreamId(streamId);
   }
 

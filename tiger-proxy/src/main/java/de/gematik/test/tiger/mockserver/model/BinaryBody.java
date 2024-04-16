@@ -13,7 +13,7 @@ import lombok.EqualsAndHashCode;
  * @author jamesdbloom
  */
 @EqualsAndHashCode
-public class BinaryBody extends Body {
+public class BinaryBody extends BodyWithContentType<byte[]> {
   private final byte[] bytes;
 
   public BinaryBody(byte[] bytes) {

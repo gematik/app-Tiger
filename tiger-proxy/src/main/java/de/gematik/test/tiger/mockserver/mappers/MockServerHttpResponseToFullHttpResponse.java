@@ -47,8 +47,7 @@ public class MockServerHttpResponseToFullHttpResponse {
   }
 
   private ByteBuf getBody(HttpResponse httpResponse) {
-    return bodyDecoderEncoder.bodyToByteBuf(
-        httpResponse.getBody(), httpResponse.getFirstHeader(CONTENT_TYPE.toString()));
+    return bodyDecoderEncoder.bodyToByteBuf(httpResponse.getBody());
   }
 
   private void setHeaders(HttpResponse httpResponse, DefaultHttpResponse response, ByteBuf body) {

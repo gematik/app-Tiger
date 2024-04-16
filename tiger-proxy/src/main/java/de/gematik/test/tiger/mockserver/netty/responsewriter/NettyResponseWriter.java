@@ -5,10 +5,14 @@
 package de.gematik.test.tiger.mockserver.netty.responsewriter;
 
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
+import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
+import static io.netty.handler.codec.http.HttpHeaderValues.CLOSE;
+import static io.netty.handler.codec.http.HttpHeaderValues.KEEP_ALIVE;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.model.Header;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import io.netty.channel.Channel;
@@ -57,7 +61,22 @@ public class NettyResponseWriter {
       response.withStreamId(request.getStreamId());
     }
 
-    sendResponse(request, response);
+    sendResponse(request, addConnectionHeader(request, response));
+  }
+
+  protected HttpResponse addConnectionHeader(
+    final HttpRequest request, final HttpResponse response) {
+    HttpResponse responseWithConnectionHeader = response.clone();
+
+    if (Boolean.TRUE.equals(request.getKeepAlive())) {
+      responseWithConnectionHeader.replaceHeader(
+          new Header(CONNECTION.toString(), KEEP_ALIVE.toString()));
+    } else {
+      responseWithConnectionHeader.replaceHeader(
+          new Header(CONNECTION.toString(), CLOSE.toString()));
+    }
+
+    return responseWithConnectionHeader;
   }
 
   public void sendResponse(HttpRequest request, HttpResponse response) {

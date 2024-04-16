@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.mockserver.model;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
@@ -13,7 +14,7 @@ import lombok.Getter;
  */
 @EqualsAndHashCode
 @Getter
-public class HttpOverrideForwardedRequest extends Action {
+public class HttpOverrideForwardedRequest extends Action<HttpOverrideForwardedRequest> {
   @JsonAlias("httpRequest")
   private HttpRequest requestOverride;
 
@@ -65,5 +66,11 @@ public class HttpOverrideForwardedRequest extends Action {
   public HttpOverrideForwardedRequest withResponseOverride(HttpResponse httpResponse) {
     this.responseOverride = httpResponse;
     return this;
+  }
+
+  @Override
+  @JsonIgnore
+  public Type getType() {
+    return Type.FORWARD_REPLACE;
   }
 }

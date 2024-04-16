@@ -137,9 +137,6 @@ Example:
 *param* body body content of the request
 *see* TigerGlobalConfiguration#resolvePlaceholders(String)
 
-##### TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline body:
-##### TGR eine {requestType} Anfrage an {tigerResolvedUrl} mit ContentType {string} und den folgenden mehrzeiligen Daten sendet:
-##### TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit ContentType {string} und folgenden mehrzeiligen Daten:
 ##### TGR send {requestType} request to {tigerResolvedUrl} without waiting for the response with:
 ##### TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten mit folgenden Daten:
 Sends a request via the selected method. The request is expanded by the provided key-value

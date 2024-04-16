@@ -4,40 +4,57 @@
 
 package de.gematik.test.tiger.mockserver.model;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.nio.charset.Charset;
-import lombok.Data;
+import java.util.Objects;
 
 /*
  * @author jamesdbloom
  */
-@Data
-public abstract class Body {
-
+public abstract class Body<T> extends Not {
+  private int hashCode;
   private final Type type;
-  private final MediaType contentType;
+  private Boolean optional;
+
+  public Body(Type type) {
+    this.type = type;
+  }
+
+  public Type getType() {
+    return type;
+  }
+
+  public Boolean getOptional() {
+    return optional;
+  }
+
+  public Body<T> withOptional(Boolean optional) {
+    this.optional = optional;
+    return this;
+  }
+
+  public abstract T getValue();
 
   @JsonIgnore
-  public abstract byte[] getRawBytes();
-
-  @JsonIgnore
-  Charset determineCharacterSet(MediaType mediaType, Charset defaultCharset) {
-    if (mediaType != null) {
-      Charset charset = mediaType.getCharset();
-      if (charset != null) {
-        return charset;
-      }
-    }
-    return defaultCharset;
+  public byte[] getRawBytes() {
+    return toString().getBytes(UTF_8);
   }
 
   @JsonIgnore
   public Charset getCharset(Charset defaultIfNotSet) {
-    return determineCharacterSet(contentType, defaultIfNotSet);
+    if (this instanceof BodyWithContentType) {
+      return this.getCharset(defaultIfNotSet);
+    }
+    return defaultIfNotSet;
   }
 
   public String getContentType() {
-    return (contentType != null ? contentType.toString() : null);
+    if (this instanceof BodyWithContentType) {
+      return this.getContentType();
+    }
+    return null;
   }
 
   public enum Type {
@@ -52,5 +69,31 @@ public abstract class Body {
     XML_SCHEMA,
     XPATH,
     LOG_EVENT,
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (hashCode() != o.hashCode()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
+    Body<?> body = (Body<?>) o;
+    return type == body.type && Objects.equals(optional, body.optional);
+  }
+
+  @Override
+  public int hashCode() {
+    if (hashCode == 0) {
+      hashCode = Objects.hash(super.hashCode(), type, optional);
+    }
+    return hashCode;
   }
 }
