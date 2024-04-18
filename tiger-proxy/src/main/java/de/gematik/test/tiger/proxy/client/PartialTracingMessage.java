@@ -48,7 +48,12 @@ public class PartialTracingMessage {
                 .sum()];
     int resultIndex = 0;
     for (TracingMessagePart messagePart : messageParts) {
-      System.arraycopy(messagePart.getData(), 0, result, resultIndex, messagePart.getData().length);
+      System.arraycopy(
+        messagePart.getData(),
+        0,
+        result,
+        resultIndex,
+        messagePart.getData().length);
       resultIndex += messagePart.getData().length;
     }
     return result;

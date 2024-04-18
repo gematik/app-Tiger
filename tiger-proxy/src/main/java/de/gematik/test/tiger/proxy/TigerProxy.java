@@ -369,6 +369,13 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
   }
 
   public void subscribeToTrafficEndpoints(final List<String> trafficEndpointUrls) {
+    if (log.isInfoEnabled()) {
+      log.info(
+          "Subscribing to traffic endpoints for Tiger Proxy '{}'. Found {} endpoints",
+          getName().orElse("?"),
+          trafficEndpointUrls.size());
+    }
+
     Optional.of(trafficEndpointUrls).stream()
         .flatMap(List::stream)
         .parallel()

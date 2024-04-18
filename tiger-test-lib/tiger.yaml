@@ -18,8 +18,6 @@ servers:
     type: tigerProxy
     tigerProxyConfiguration:
       adminPort: ${free.port.2}
-      activateRbelParsing: false
-      rbelBufferSizeInMb: 0
       proxyPort: ${free.port.1}
       proxyRoutes:
         - from: http://httpbin
@@ -30,6 +28,7 @@ servers:
 lib:
   rbelPathDebugging: false
   activateWorkflowUi: false
+  trafficVisualization: true
 
 additionalYamls:
   - filename: src/test/resources/testdata/specialEnvironment.yaml

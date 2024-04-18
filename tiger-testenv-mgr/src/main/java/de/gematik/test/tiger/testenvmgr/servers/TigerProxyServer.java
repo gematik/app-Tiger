@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import static de.gematik.rbellogger.util.GlobalServerMap.addServerNameForPort;
 import static de.gematik.test.tiger.common.SocketHelper.findFreePort;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
@@ -55,6 +57,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
     }
   }
 
+  @SneakyThrows
   @Override
   public void performStartup() {
     log.info("Entering pre-startup of tiger-proxy {}", getServerId());
@@ -133,6 +136,12 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
                         .getPort()
                     + "/webui")
             .build());
+    addServerNameForPort(
+      tigerProxyConfiguration.getProxyPort(),
+      this.getServerId());
+    addServerNameForPort(
+      tigerProxyConfiguration.getAdminPort(),
+      this.getServerId());
   }
 
   @Override

@@ -70,7 +70,9 @@ public class TracingPushController {
     if (msg.hasFacet(TigerNonPairedMessageFacet.class)) {
       sendNonPairedMessage(msg);
     } else if (msg.hasFacet(RbelHttpResponseFacet.class)
-        || msg.hasFacet(TracingMessagePairFacet.class)) {
+        || (msg.getFacet(TracingMessagePairFacet.class)
+            .map(facet -> facet.isResponse(msg))
+            .orElse(false))) {
       sendPairedMessage(msg);
     } else {
       log.trace(
@@ -106,6 +108,7 @@ public class TracingPushController {
                   msg.getFacet(RbelMessageTimingFacet.class)
                       .map(RbelMessageTimingFacet::getTransmissionTime)
                       .orElse(null))
+              .additionalInformationRequest(gatherAdditionalInformation(msg))
               .build());
 
       mapRbelMessageAndSent(msg);
@@ -158,11 +161,12 @@ public class TracingPushController {
                     .getFacet(RbelMessageTimingFacet.class)
                     .map(RbelMessageTimingFacet::getTransmissionTime)
                     .orElse(null))
-            .additionalInformation(gatherAdditionalInformation(msg))
+            .additionalInformationRequest(gatherAdditionalInformation(request))
+            .additionalInformationResponse(gatherAdditionalInformation(msg))
             .build());
 
-    mapRbelMessageAndSent(msg);
     mapRbelMessageAndSent(request);
+    mapRbelMessageAndSent(msg);
   }
 
   private Map<String, String> gatherAdditionalInformation(RbelElement msg) {
@@ -202,7 +206,11 @@ public class TracingPushController {
               Math.min((i + 1) * MAX_MESSAGE_SIZE, rbelMessage.getRawContent().length));
 
       log.trace(
-          "Sending part {} of {} for UUID {}...", i + 1, numberOfParts, rbelMessage.getUuid());
+          "{} sending part {} of {} for UUID {}...",
+          tigerProxy.proxyName(),
+          i + 1,
+          numberOfParts,
+          rbelMessage.getUuid());
       template.convertAndSend(
           TigerRemoteProxyClient.WS_DATA,
           TracingMessagePart.builder()

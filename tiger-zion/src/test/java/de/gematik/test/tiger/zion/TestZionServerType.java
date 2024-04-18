@@ -644,7 +644,6 @@ servers:
   @TigerTest(
       tigerYaml =
           """
-        logging.level.de.gematik.test.tiger.zion: TRACE
         servers:
           zionServer:
             type: zion

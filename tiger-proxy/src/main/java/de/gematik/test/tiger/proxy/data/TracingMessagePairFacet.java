@@ -34,4 +34,8 @@ public class TracingMessagePairFacet implements RbelFacet {
       return Optional.empty();
     }
   }
+
+  public boolean isResponse(RbelElement msg) {
+    return response == msg;
+  }
 }

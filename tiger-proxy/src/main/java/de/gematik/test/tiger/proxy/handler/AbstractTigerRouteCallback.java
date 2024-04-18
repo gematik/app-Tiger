@@ -249,7 +249,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     }
   }
 
-  public CompletableFuture<Object> executeHttpRequestParsing(HttpRequest mockServerRequest) {
+  public CompletableFuture<RbelElement> executeHttpRequestParsing(HttpRequest mockServerRequest) {
     if (isHealthEndpointRequest(mockServerRequest)) {
       return CompletableFuture.completedFuture(null);
     }
@@ -265,13 +265,20 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     requestLogIdToParsingFuture.put(mockServerRequest.getLogCorrelationId(), toBeConvertedRequest);
     log.trace("Added request to pairingMap with id {}", mockServerRequest.getLogCorrelationId());
 
-    return toBeConvertedRequest.thenApply(
-        request -> {
-          parseCertificateChainIfPresent(mockServerRequest, request).ifPresent(request::addFacet);
-          getTigerProxy().triggerListener(request);
-          addBundledServerNameToHostnameFacet(request);
-          return request;
-        });
+    return toBeConvertedRequest
+        .thenApply(
+            request -> {
+              parseCertificateChainIfPresent(mockServerRequest, request)
+                  .ifPresent(request::addFacet);
+              addBundledServerNameToHostnameFacet(request);
+              getTigerProxy().triggerListener(request);
+              return request;
+            })
+        .exceptionally(
+            e -> {
+              log.error("Error while parsing request", e);
+              return null;
+            });
   }
 
   private CompletableFuture<Void> executeHttpTrafficPairParsing(
@@ -290,8 +297,17 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
         .thenAccept(
             response ->
                 retrieveParsedRequest(req)
-                    .thenAccept(
-                        request -> postProcessingAfterBothMessageParsed(response, request)));
+                    .thenAccept(request -> postProcessingAfterBothMessageParsed(response, request))
+                    .exceptionally(
+                        e -> {
+                          log.error("Error while both processing message pair", e);
+                          return null;
+                        }))
+        .exceptionally(
+            e -> {
+              log.error("Error while parsing response", e);
+              return null;
+            });
   }
 
   private void postProcessingAfterBothMessageParsed(RbelElement response, RbelElement request) {
@@ -324,10 +340,9 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
                       null);
               response.addFacet(respTlsFacet);
             });
+    addBundledServerNameToHostnameFacet(response);
 
     getTigerProxy().triggerListener(response);
-
-    addBundledServerNameToHostnameFacet(response);
   }
 
   private CompletableFuture<RbelElement> retrieveParsedRequest(HttpRequest req) {
@@ -414,10 +429,6 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
   }
 
   protected abstract String extractProtocolAndHostForRequest(HttpRequest request);
-
-  private void addTimingFacet(RbelElement message, ZonedDateTime requestTime) {
-    message.addFacet(RbelMessageTimingFacet.builder().transmissionTime(requestTime).build());
-  }
 
   HttpRequest cloneRequest(HttpRequest req) {
     final HttpOverrideForwardedRequest clonedRequest = forwardOverriddenRequest(req);

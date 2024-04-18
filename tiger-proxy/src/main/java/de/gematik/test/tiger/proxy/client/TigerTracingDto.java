@@ -20,5 +20,6 @@ public class TigerTracingDto {
   private final RbelHostname receiver;
   private final ZonedDateTime requestTransmissionTime;
   private final ZonedDateTime responseTransmissionTime;
-  private final Map<String, String> additionalInformation;
+  private final Map<String, String> additionalInformationRequest;
+  private final Map<String, String> additionalInformationResponse;
 }

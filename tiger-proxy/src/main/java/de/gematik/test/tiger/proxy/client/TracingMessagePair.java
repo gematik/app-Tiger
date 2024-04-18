@@ -60,17 +60,16 @@ public class TracingMessagePair implements TracingMessageFrame {
       return;
     }
 
-    var additionalData = new JSONObject(this.request.getAdditionalInformation());
     RbelFileWriter.DEFAULT_POST_CONVERSION_LISTENER.forEach(
         listener -> {
           listener.performMessagePostConversionProcessing(
               requestParsed.get(),
               remoteProxyClient.getRbelLogger().getRbelConverter(),
-              additionalData);
+              new JSONObject(this.request.getAdditionalInformation()));
           listener.performMessagePostConversionProcessing(
               responseParsed.get(),
               remoteProxyClient.getRbelLogger().getRbelConverter(),
-              additionalData);
+              new JSONObject(this.response.getAdditionalInformation()));
         });
 
     val pairFacet =

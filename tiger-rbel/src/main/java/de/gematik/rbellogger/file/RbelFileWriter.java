@@ -28,9 +28,9 @@ public class RbelFileWriter {
   public static final String MESSAGE_TIME = "timestamp";
   public static final String MESSAGE_UUID = "uuid";
   public static final List<RbelFilePreSaveListener> DEFAULT_PRE_SAVE_LISTENER =
-      new ArrayList<>(List.of(new MessageTimeWriter(), new TcpIpMessageFacetWriter()));
+      new ArrayList<>(List.of(new MessageTimeWriter(), new TcpIpMessageFaceWriter(), new BundledServerNameWriterAndReader()));
   public static final List<RbelMessagePostProcessor> DEFAULT_POST_CONVERSION_LISTENER =
-      new ArrayList<>();
+      new ArrayList<>(List.of(new BundledServerNameWriterAndReader()));
   public final List<RbelMessagePostProcessor> postConversionListener =
       new ArrayList<>(DEFAULT_POST_CONVERSION_LISTENER);
   public final List<RbelFilePreSaveListener> preSaveListener =

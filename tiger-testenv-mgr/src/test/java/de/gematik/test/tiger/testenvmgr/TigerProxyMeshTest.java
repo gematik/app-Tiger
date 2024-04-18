@@ -44,6 +44,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
     await().pollDelay(4, TimeUnit.SECONDS).until(() -> true);
   }
 
+  @SneakyThrows
   @Test
   @TigerTest(
       tigerYaml =
@@ -73,8 +74,10 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                   adminPort: ${free.port.4}
                   proxiedServer: httpbin
                   proxyPort: ${free.port.5}
+            lib:
+              trafficVisualization: true
             """)
-  void aggregateFromOneRemoteProxy(TigerTestEnvMgr envMgr) {
+  void aggregateFromOneRemoteProxy_shouldTransmitMetadata(TigerTestEnvMgr envMgr) {
     waitShortTime();
     final String path = "/status/404";
     final UnirestInstance unirestInstance = Unirest.spawnInstance();
@@ -98,8 +101,12 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         .until(
             () -> {
               log.info(
-                  "Message History: {}, Remote Proxy size {}",
+                  "Local Proxy size: {}, aggregating Proxy size: {}, Remote Proxy size {}",
                   envMgr.getLocalTigerProxyOrFail().getRbelMessages().size(),
+                  ((TigerProxyServer) envMgr.getServers().get("aggregatingProxy"))
+                      .getTigerProxy()
+                      .getRbelMessages()
+                      .size(),
                   ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
                       .getTigerProxy()
                       .getRbelMessages()
@@ -116,15 +123,26 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                       .map(p -> p.endsWith(path))
                       .orElse(false);
             });
+
+    envMgr.getLocalTigerProxyOrFail().waitForAllCurrentMessagesToBeParsed();
     assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().getFirst())
         .extractChildWithPath("$.tlsVersion")
         .hasStringContentEqualTo("TLSv1.2")
         .andTheInitialElement()
         .extractChildWithPath("$.cipherSuite")
         .hasStringContentEqualTo("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
+
+    assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageList().get(0))
+        .extractChildWithPath("$.sender.bundledServerName")
+        .hasStringContentEqualTo("local client")
+        .andTheInitialElement()
+        .extractChildWithPath("$.receiver.bundledServerName")
+        .hasStringContentEqualTo("httpbin");
+
     waitShortTime();
   }
 
+  @SneakyThrows
   @Test
   @TigerTest(
       tigerYaml =
