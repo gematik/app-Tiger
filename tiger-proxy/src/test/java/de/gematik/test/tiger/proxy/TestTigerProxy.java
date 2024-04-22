@@ -135,30 +135,18 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         .asString();
     awaitMessagesInTiger(2);
 
-    assertThat(
-            tigerProxy
-                .getRbelMessagesList()
-                .get(0)
-                .findElement("$.header.foo")
-                .get()
-                .getRawStringContent())
-        .isEqualTo("bar");
-    assertThat(
-            tigerProxy
-                .getRbelMessagesList()
-                .get(0)
-                .findElement("$.header.x-forwarded-for")
-                .get()
-                .getRawStringContent())
-        .isEqualTo("someStuff");
-    assertThat(
-            tigerProxy
-                .getRbelMessagesList()
-                .get(0)
-                .findElement("$.header.Host")
-                .get()
-                .getRawStringContent())
-        .isEqualTo("localhost:" + fakeBackendServerPort);
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .extractChildWithPath("$.header.foo")
+        .hasStringContentEqualTo("bar")
+        .andTheInitialElement()
+        .extractChildWithPath("$.header.x-forwarded-for")
+        .hasStringContentEqualTo("someStuff")
+        .andTheInitialElement()
+        .extractChildWithPath("$.header.Host")
+        .hasStringContentEqualTo("localhost:" + fakeBackendServerPort);
+    assertThat(tigerProxy.getRbelMessagesList().get(1))
+        .extractChildWithPath("$.header.[~'content-length']")
+        .hasStringContentEqualTo("13");
   }
 
   @Test
@@ -178,32 +166,29 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         .header("x-forwarded-for", "someStuff")
         .header("Host", "RandomStuffShouldBePreserved")
         .asString();
-    awaitMessagesInTiger(2);
+    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
+        .header("foo", "bar")
+        .header("x-forwarded-for", "someStuff")
+        .header("Host", "RandomStuffShouldBePreserved")
+        .asString();
+    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
+        .header("foo", "bar")
+        .header("x-forwarded-for", "someStuff")
+        .header("Host", "RandomStuffShouldBePreserved")
+        .asString();
+    awaitMessagesInTiger(6);
 
-    assertThat(
-            tigerProxy
-                .getRbelMessagesList()
-                .get(0)
-                .findElement("$.header.foo")
-                .get()
-                .getRawStringContent())
-        .isEqualTo("bar");
-    assertThat(
-            tigerProxy
-                .getRbelMessagesList()
-                .get(0)
-                .findElement("$.header.x-forwarded-for")
-                .get()
-                .getRawStringContent())
-        .isEqualTo("someStuff");
-    assertThat(
-            tigerProxy
-                .getRbelMessagesList()
-                .get(0)
-                .findElement("$.header.Host")
-                .get()
-                .getRawStringContent())
-        .isEqualTo("RandomStuffShouldBePreserved");
+    final RbelElement request = tigerProxy.getRbelMessagesList().get(0);
+    assertThat(request).extractChildWithPath("$.header.foo").hasStringContentEqualTo("bar");
+    assertThat(request)
+        .extractChildWithPath("$.header.x-forwarded-for")
+        .hasStringContentEqualTo("someStuff");
+    assertThat(request)
+        .extractChildWithPath("$.header.Host")
+        .hasStringContentEqualTo("RandomStuffShouldBePreserved");
+    assertThat(tigerProxy.getRbelMessagesList().get(1))
+        .extractChildWithPath("$.header.[~'content-length']")
+        .hasStringContentEqualTo("13");
   }
 
   @Test

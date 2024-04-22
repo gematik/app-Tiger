@@ -100,8 +100,7 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
                                       if (isSslEnabledDownstream(proxyClientCtx.channel())) {
                                         pipelineToMockServer.addLast(
                                             nettySslContextFactory(proxyClientCtx.channel())
-                                                .createClientSslContext(
-                                                    true, http2EnabledDownstream)
+                                                .createClientSslContext(http2EnabledDownstream)
                                                 .newHandler(mockServerCtx.alloc(), host, port));
                                       }
 

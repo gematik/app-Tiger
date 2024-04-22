@@ -54,18 +54,17 @@ public class NettySslContextFactory {
     }
   }
 
-  public synchronized SslContext createClientSslContext(
-      boolean forwardProxyClient, boolean enableHttp2) {
-    String key = "forwardProxyClient=" + forwardProxyClient + ",enableHttp2=" + enableHttp2;
+  public synchronized SslContext createClientSslContext(boolean enableHttp2) {
+    String key = "enableHttp2=" + enableHttp2;
     SslContext clientSslContext = clientSslContexts.get(key);
     if (clientSslContext != null && !configuration.rebuildTLSContext()) {
       return clientSslContext;
     } else {
-      return buildFreshClientSslContext(forwardProxyClient, enableHttp2);
+      return buildFreshClientSslContext(enableHttp2);
     }
   }
 
-  private SslContext buildFreshClientSslContext(boolean forwardProxyClient, boolean enableHttp2) {
+  private SslContext buildFreshClientSslContext(boolean enableHttp2) {
     try {
       // create x509 and private key if none exist yet
       if (keyAndCertificateFactory.certificateNotYetCreated()) {
@@ -78,33 +77,25 @@ public class NettySslContextFactory {
       if (enableHttp2) {
         configureALPN(sslContextBuilder);
       }
-      if (forwardProxyClient) {
-        switch (configuration.forwardProxyTLSX509CertificatesTrustManagerType()) {
-          case ANY:
-            sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
-            break;
-          case JVM:
-            List<X509Certificate> mockServerX509Certificates = new ArrayList<>();
-            mockServerX509Certificates.add(keyAndCertificateFactory.x509Certificate());
-            mockServerX509Certificates.add(
-                keyAndCertificateFactory.certificateAuthorityX509Certificate());
-            sslContextBuilder.trustManager(jvmCAX509TrustCertificates(mockServerX509Certificates));
-            break;
-          case CUSTOM:
-            sslContextBuilder.trustManager(customCAX509TrustCertificates());
-            break;
-        }
-      } else {
-        List<X509Certificate> mockServerX509Certificates = new ArrayList<>();
-        mockServerX509Certificates.add(
-            keyAndCertificateFactory.certificateAuthorityX509Certificate());
-        sslContextBuilder.trustManager(jvmCAX509TrustCertificates(mockServerX509Certificates));
+      switch (configuration.forwardProxyTLSX509CertificatesTrustManagerType()) {
+        case ANY:
+          sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
+          break;
+        case JVM:
+          List<X509Certificate> mockServerX509Certificates = new ArrayList<>();
+          mockServerX509Certificates.add(keyAndCertificateFactory.x509Certificate());
+          mockServerX509Certificates.add(
+              keyAndCertificateFactory.certificateAuthorityX509Certificate());
+          sslContextBuilder.trustManager(jvmCAX509TrustCertificates(mockServerX509Certificates));
+          break;
+        case CUSTOM:
+          sslContextBuilder.trustManager(customCAX509TrustCertificates());
+          break;
       }
       var clientSslContext =
           buildClientSslContext(
               configuration.sslClientContextBuilderCustomizer().apply(sslContextBuilder));
-      clientSslContexts.put(
-          "forwardProxyClient=" + forwardProxyClient + ",enableHttp2=" + enableHttp2,
+      clientSslContexts.put("enableHttp2=" + enableHttp2,
           clientSslContext);
       configuration.rebuildTLSContext(false);
       return clientSslContext;

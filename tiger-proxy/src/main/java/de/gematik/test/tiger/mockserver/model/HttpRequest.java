@@ -47,6 +47,7 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
   private SocketAddress socketAddress;
   private String localAddress;
   private String remoteAddress;
+  private Boolean forwardProxyRequest = true;
   private RbelElement parsedRbelMessage = null;
 
   public static HttpRequest request() {

@@ -25,6 +25,7 @@ copyFiles:
 * TGR-1318: Byte-Arrays can now be stored and changed in TigerGlobalConfiguration
 * TGR-327: Reasonphrase is no longer added implicitly in the TigerProxy (when the phrase is empty from the server it
   will stay empty)
+* TGR-1314: Tiger-Proxy: The content-length headers are no longer removed from the responses logged.
 * TGR-1334: fixed issue where responses were not correctly paired with the requests in the workflow ui.
 * TGR-1194: Usability improvements for the configuration editor.
 * TGR-1172: fixed issue where messages coming from a remote tiger proxy would display the timestamp in a different

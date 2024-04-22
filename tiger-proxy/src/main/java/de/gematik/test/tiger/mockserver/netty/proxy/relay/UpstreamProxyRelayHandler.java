@@ -51,7 +51,7 @@ public class UpstreamProxyRelayHandler extends SimpleChannelInboundHandler<FullH
           .pipeline()
           .addFirst(
               nettySslContextFactory(ctx.channel())
-                  .createClientSslContext(true, HTTP_2.equals(getALPNProtocol(ctx)))
+                  .createClientSslContext(HTTP_2.equals(getALPNProtocol(ctx)))
                   .newHandler(ctx.alloc()));
     }
     downstreamChannel

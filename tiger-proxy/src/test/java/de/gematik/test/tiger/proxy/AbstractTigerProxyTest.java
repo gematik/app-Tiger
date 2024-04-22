@@ -145,6 +145,8 @@ public abstract class AbstractTigerProxyTest {
             new Config()
                 .proxy("localhost", tigerProxy.getProxyPort())
                 .sslContext(tigerProxy.buildSslContext())
+                .connectTimeout(1000 * 1000)
+                .socketTimeout(1000 * 1000)
                 .automaticRetries(false));
   }
 

@@ -70,9 +70,7 @@ public class HttpActionHandler {
     this.configuration = configuration;
     this.httpStateHandler = httpStateHandler;
     this.scheduler = httpStateHandler.getScheduler();
-    this.httpClient =
-        new NettyHttpClient(
-            configuration, eventLoopGroup, proxyConfigurations, true, nettySslContextFactory);
+    this.httpClient = new NettyHttpClient(configuration, eventLoopGroup, proxyConfigurations, nettySslContextFactory);
   }
 
   public void processAction(
@@ -102,7 +100,6 @@ public class HttpActionHandler {
       scheduler.schedule(
           () -> action.handle(request, this, responseWriter, synchronous), synchronous);
     } else if (proxyingRequest || potentiallyHttpProxy) {
-
       if (request.getHeaders() != null
           && request
               .getHeaders()

@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -76,24 +77,21 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
     proxyRest.post("http://backend/notFoobar").asJson();
     awaitMessagesInTiger(2);
 
-    assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.header.user-agent"))
-        .get()
-        .extracting(RbelElement::getRawStringContent)
-        .isEqualTo("modified user-agent");
-    assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.path"))
-        .get()
-        .extracting(RbelElement::getRawStringContent)
-        .isEqualTo("/foobar");
-    assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.header.Some-Header-Field"))
-        .get()
-        .extracting(RbelElement::getRawStringContent)
-        .isEqualTo("modified value");
-    assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.header.Content-Length"))
-        .isEmpty(); // not present in mocked response, not added by tiger-proxy
-    assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body.another.node.path"))
-        .get()
-        .extracting(RbelElement::getRawStringContent)
-        .isEqualTo("correctValue");
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .extractChildWithPath("$.header.user-agent")
+        .hasStringContentEqualTo("modified user-agent");
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .extractChildWithPath("$.path")
+        .hasStringContentEqualTo("/foobar");
+    assertThat(tigerProxy.getRbelMessagesList().get(1))
+        .extractChildWithPath("$.header.Some-Header-Field")
+        .hasStringContentEqualTo("modified value");
+    assertThat(tigerProxy.getRbelMessagesList().get(1))
+        .extractChildWithPath("$.header.Content-Length")
+        .hasStringContentEqualTo("44");
+    assertThat(tigerProxy.getRbelMessagesList().get(1))
+        .extractChildWithPath("$.body.another.node.path")
+        .hasStringContentEqualTo("correctValue");
   }
 
   @Test
