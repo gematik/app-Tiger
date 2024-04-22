@@ -9,7 +9,7 @@ public class TigerConfigurationKeys {
   private TigerConfigurationKeys() {}
 
   public static final TigerTypedConfigurationKey<Integer> TESTENV_MGR_RESERVED_PORT =
-      new TigerTypedConfigurationKey<>("tiger.internal.testenvmgr.port", Integer.class);
+      new TigerTypedConfigurationKey<>("tiger.lib.workflowUiPort", Integer.class);
   public static final TigerTypedConfigurationKey<Integer> LOCALPROXY_ADMIN_RESERVED_PORT =
       new TigerTypedConfigurationKey<>("tiger.internal.localproxy.admin.port", Integer.class);
 

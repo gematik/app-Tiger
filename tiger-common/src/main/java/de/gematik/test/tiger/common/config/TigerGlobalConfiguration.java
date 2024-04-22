@@ -93,6 +93,9 @@ public class TigerGlobalConfiguration {
     List<ServerSocket> sockets = new ArrayList<>();
     for (TigerTypedConfigurationKey<Integer> key :
         List.of(TESTENV_MGR_RESERVED_PORT, LOCALPROXY_ADMIN_RESERVED_PORT)) {
+      if (key.getValue().filter(v -> v > 0).isPresent()) {
+        continue;
+      }
       try {
         final ServerSocket serverSocket = new ServerSocket(0);
         key.putValue(serverSocket.getLocalPort());

@@ -37,6 +37,7 @@ copyFiles:
 * TGR-1286: Tiger-Proxy: The number of open connections is now tracked and can be queried.
 * TGR-1210: Tiger-Proxy: Connection problems to remote servers are now logged.
 * TGR-1351: Tiger-Proxy: Competing routes are now supported. The proxy automatically selects the most specific route if multiple routes are matching.
+* TGR-1353: You can set a defined port to be used for the WorkflowUI using the configuration key `tiger.lib.workflowUiPort`.
 * TGR-1315:
   step ```TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline body:``` added
 * TGR-1320: TLS-Facets now also carry the TLS-Protocol and the Cipher-Suite used for the connection
