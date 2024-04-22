@@ -218,37 +218,6 @@ class TigerRemoteProxyClientTest {
         .isEqualTo(body);
   }
 
-  @ParameterizedTest
-  @CsvSource({
-    "/foo, /foo/bar",
-    "/foo/bar, /foo",
-    "/foo/robots.txt, /foo",
-    "/foo, /foo",
-    "/foo, /foo/robots.txt",
-    "http://foo/bar, http://foo/",
-    "http://foo/, http://foo/bar",
-    "http://foo/, http://foo",
-    "http://foo, http://foo/",
-    "http://foo/, http://foo/",
-    "https://foo, http://foo"
-  })
-  void addTwoCompetingRoutes_secondOneShouldFail(
-      String firstRoute, String secondRoute, WireMockRuntimeInfo runtimeInfo) {
-    tigerRemoteProxyClient.addRoute(
-        TigerRoute.builder()
-            .from(firstRoute)
-            .to("http://localhost:" + runtimeInfo.getHttpPort())
-            .build());
-
-    var route =
-        TigerRoute.builder()
-            .from(secondRoute)
-            .to("http://localhost:" + runtimeInfo.getHttpPort())
-            .build();
-    assertThatThrownBy(() -> tigerRemoteProxyClient.addRoute(route))
-        .isInstanceOf(RuntimeException.class);
-  }
-
   @Test
   void addAndDeleteRoute_shouldWork(WireMockRuntimeInfo runtimeInfo) {
     final String routeId =

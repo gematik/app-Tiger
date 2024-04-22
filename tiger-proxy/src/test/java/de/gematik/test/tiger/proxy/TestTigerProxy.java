@@ -22,7 +22,6 @@ import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
-import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
@@ -379,27 +378,6 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .getResponseCode()
                 .getRawStringContent())
         .isEqualTo("666");
-  }
-
-  @Test
-  void addAlreadyExistingRoute_shouldThrowException() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
-
-    var route =
-        TigerRoute.builder()
-            .from("http://backend")
-            .to("http://localhost:" + fakeBackendServerPort)
-            .build();
-    assertThatThrownBy(() -> tigerProxy.addRoute(route))
-        .isInstanceOf(TigerProxyConfigurationException.class);
   }
 
   @Test

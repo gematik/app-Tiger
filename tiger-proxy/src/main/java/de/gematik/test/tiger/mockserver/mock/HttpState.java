@@ -91,7 +91,6 @@ public class HttpState {
   }
 
   public boolean handle(HttpRequest request) {
-
     request.withLogCorrelationId(UUIDService.getUUID());
     setPort(request);
 

@@ -56,6 +56,8 @@ From where should the traffic be collected?
 This can either be an absolute URL (e.g. http://foobar), which defines a forward-proxy route, or relative (e.g. /blub), defining a reverse-proxy-route.
 Please note: You can freely add parts (e.g. http://foobar/extra/part) to further specify the mapping.
 
+You can add multiple routes that match the same URL. If multiple matches are found the most specific route is select. For example if you have two routes `/` and `/foo` then for a request to `/foo/bar` the route `/foo` will be selected.
+
 ==== to
 
 The target of the mapping.

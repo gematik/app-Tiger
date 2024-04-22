@@ -23,7 +23,6 @@ import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
-import de.gematik.test.tiger.proxy.exceptions.TigerProxyRouteConflictException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxySslException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
@@ -48,9 +47,9 @@ import kong.unirest.UnirestInstance;
 import kong.unirest.apache.ApacheClient;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -436,8 +435,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
   @Override
   public synchronized TigerRoute addRoute(final TigerRoute tigerRoute) {
-    assertThatRouteIsUnique(tigerRoute);
-
     log.info("Adding route {} -> {}", tigerRoute.getFrom(), tigerRoute.getTo());
     final Expectation[] expectations = buildRouteAndReturnExpectation(tigerRoute);
     if (expectations.length > 1) {
@@ -454,43 +451,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
     log.debug("Created route from {} to {}", tigerRoute.getFrom(), tigerRoute.getTo());
     return createdTigerRoute;
-  }
-
-  private void assertThatRouteIsUnique(TigerRoute tigerRoute) {
-    tigerRouteMap.values().stream()
-        .filter(
-            existingRoute ->
-                criterionsAreEqual(tigerRoute, existingRoute)
-                    && routeMatches(tigerRoute, existingRoute))
-        .findAny()
-        .ifPresent(
-            existingRoute -> {
-              throw new TigerProxyRouteConflictException(existingRoute);
-            });
-  }
-
-  private static boolean criterionsAreEqual(TigerRoute tigerRoute, TigerRoute existingRoute) {
-    if (tigerRoute.getCriterions() == null || existingRoute.getCriterions() == null) {
-      return tigerRoute.getCriterions() == existingRoute.getCriterions();
-    }
-    final HashSet<String> existingCriterions = new HashSet<>(existingRoute.getCriterions());
-    final HashSet<String> routeCriterions = new HashSet<>(tigerRoute.getCriterions());
-    return existingCriterions.equals(routeCriterions);
-  }
-
-  private boolean routeMatches(TigerRoute tigerRoute, TigerRoute existingRoute) {
-    return uriTwoIsBelowUriOne(existingRoute.getFrom(), tigerRoute.getFrom())
-        || uriTwoIsBelowUriOne(tigerRoute.getFrom(), existingRoute.getFrom());
-  }
-
-  private boolean uriTwoIsBelowUriOne(final String value1, final String value2) {
-    try {
-      final URI uri1 = new URI(value1);
-      final URI uri2WithUri1Scheme = new URIBuilder(value2).setScheme(uri1.getScheme()).build();
-      return !new URI(value1).relativize(uri2WithUri1Scheme).equals(uri2WithUri1Scheme);
-    } catch (final URISyntaxException e) {
-      return false;
-    }
   }
 
   private Expectation[] buildRouteAndReturnExpectation(final TigerRoute tigerRoute) {
@@ -514,9 +474,15 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         .when(
             request()
                 .withHeader("Host", url.getAuthority())
-                .setSecure(url.getProtocol().equals("https")))
+                .setSecure(url.getProtocol().equals("https"))
+                .setPath(extractPath(tigerRoute.getFrom()) + ".*"))
         .id(tigerRoute.getId())
         .forward(new ForwardProxyCallback(this, tigerRoute));
+  }
+
+  @SneakyThrows
+  private static String extractPath(String url) {
+    return new URI(url).getPath();
   }
 
   /**
