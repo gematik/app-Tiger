@@ -22,12 +22,13 @@ import de.gematik.rbellogger.converter.RbelErpVauDecrpytionConverter;
 import de.gematik.rbellogger.converter.RbelVauEpaConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.rbellogger.key.RbelKey;
-import de.gematik.rbellogger.util.RbelFileWriter;
 import de.gematik.rbellogger.util.RbelMessagePostProcessor;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
+import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import de.gematik.test.tiger.proxy.client.ProxyFileReadingFilter;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
@@ -59,6 +60,10 @@ import org.slf4j.LoggerFactory;
 
 @Data
 public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
+
+  static {
+    TlsFacet.init();
+  }
 
   public static final String PAIRED_MESSAGE_UUID = "pairedMessageUuid";
   public static final RbelMessagePostProcessor pairingPostProcessor =
@@ -214,6 +219,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
     if (configuration.isActivateErpVauAnalysis()) {
       rbelConfiguration.addAdditionalConverter(new RbelErpVauDecrpytionConverter());
     }
+    rbelConfiguration.setActivateVauEpa3Parsing(configuration.isActivateEpa3VauAnalysis());
     initializeFileSaver(configuration);
     rbelConfiguration.setActivateAsn1Parsing(configuration.isActivateAsn1Parsing());
     rbelConfiguration.setRbelBufferSizeInMb(configuration.getRbelBufferSizeInMb());

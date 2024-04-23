@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import kong.unirest.*;
@@ -531,9 +532,7 @@ class TestTigerProxyMockResponses {
   void testOneZionServerAsZionServerType(
       TigerTestEnvMgr testEnvMgr, UnirestInstance unirestInstance) {
 
-    unirestInstance
-        .get("http://zionHello/helloWorld")
-        .asJson();
+    unirestInstance.get("http://zionHello/helloWorld").asJson();
 
     assertThat(
             testEnvMgr
@@ -559,11 +558,12 @@ class TestTigerProxyMockResponses {
                       hello:
                         response:
                           bodyFile: 'this/is/not/a/real/file.yaml'
-         """, skipEnvironmentSetup = true)
+         """,
+      skipEnvironmentSetup = true)
   void bodyFileWithNonExistentFile_shouldThrowException(TigerTestEnvMgr testEnvMgr) {
     assertThatThrownBy(testEnvMgr::setUpEnvironment)
-      .isInstanceOf(TigerEnvironmentStartupException.class)
-      .hasRootCauseInstanceOf(NoSuchFileException.class)
-      .hasRootCauseMessage("this/is/not/a/real/file.yaml");
+        .isInstanceOf(TigerEnvironmentStartupException.class)
+        .hasRootCauseInstanceOf(NoSuchFileException.class)
+        .hasRootCauseMessage(Paths.get("this", "is", "not", "a", "real", "file.yaml").toString());
   }
 }

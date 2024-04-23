@@ -25,7 +25,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.0.1</version>
+        <version>3.0.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -44,7 +44,6 @@
     <properties>
         <version.io.rest-assured>5.4.0</version.io.rest-assured>
         <version.jcommander>1.82</version.jcommander>
-        <version.jose4j>0.9.2</version.jose4j>
         <version.okhttp>4.11.0</version.okhttp>
         <build.date>${maven.build.timestamp}</build.date>
         <maven.build.timestamp.format>dd-MM-yyyy HH:mm:ss</maven.build.timestamp.format>
@@ -91,6 +90,11 @@
             <groupId>org.webjars</groupId>
             <artifactId>highlightjs</artifactId>
             <version>${version.highlightjs}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.webjars.npm</groupId>
+            <artifactId>dayjs</artifactId>
+            <version>1.11.10</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -238,7 +242,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-tcnative-boringssl-static</artifactId>
-            <version>2.0.52.Final</version>
+            <version>2.0.65.Final</version>
         </dependency>
 
         <!-- test -->
@@ -315,6 +319,22 @@
                             <outputDirectory>
                                 ${project.build.directory}/delombok
                             </outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!-- create repackaged jar with docker classifier to be executed in docker container -->
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>3.2.4</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>docker</classifier>
                         </configuration>
                     </execution>
                 </executions>

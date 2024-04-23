@@ -150,9 +150,12 @@ public class MediaType extends ObjectWithJsonToString {
                             LinkedHashMap::new));
           }
         } catch (RuntimeException throwable) {
-          log.warn("invalid parameters format \"" + parameters + "\", expected{}see:{}", "Content-Type := type \"/\" subtype *[\";\" parameter]\n"
-                          + "parameter := attribute \"=\" value",
-                      "https://www.w3.org/Protocols/rfc1341/4_Content-Type.html", throwable);
+          log.warn(
+              "invalid parameters format \"" + parameters + "\", expected{}see:{}",
+              "Content-Type := type \"/\" subtype *[\";\" parameter]\n"
+                  + "parameter := attribute \"=\" value",
+              "https://www.w3.org/Protocols/rfc1341/4_Content-Type.html",
+              throwable);
         }
       }
       return new MediaType(type, subType, parameterMap);

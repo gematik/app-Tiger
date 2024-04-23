@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.testenvmgr;
 
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -23,12 +24,14 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
+import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.concurrent.TimeUnit;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
+import kong.unirest.UnirestInstance;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +56,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
     await().pollDelay(4, TimeUnit.SECONDS).until(() -> true);
   }
 
+  @SneakyThrows
   @Test
   @TigerTest(
       tigerYaml =
@@ -82,13 +86,23 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                   adminPort: ${free.port.4}
                   proxiedServer: httpbin
                   proxyPort: ${free.port.5}
+            lib:
+              trafficVisualization: true
             """)
-  void aggregateFromOneRemoteProxy(TigerTestEnvMgr envMgr) {
+  void aggregateFromOneRemoteProxy_shouldTransmitMetadata(TigerTestEnvMgr envMgr) {
     waitShortTime();
     final String path = "/status/404";
+    final UnirestInstance unirestInstance = Unirest.spawnInstance();
+    unirestInstance
+        .config()
+        .sslContext(
+            ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
+                .getTigerProxy()
+                .getConfiguredTigerProxySslContext());
 
     HttpResponse<String> response =
-        Unirest.get("http://localhost:" + TigerGlobalConfiguration.readString("free.port.5") + path)
+        unirestInstance
+            .get("https://localhost:" + TigerGlobalConfiguration.readString("free.port.5") + path)
             .asString();
     int status = response.getStatus();
 
@@ -99,8 +113,16 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         .until(
             () -> {
               log.info(
-                  "Message History: {}",
-                  envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size());
+                  "Local Proxy size: {}, aggregating Proxy size: {}, Remote Proxy size {}",
+                  envMgr.getLocalTigerProxyOrFail().getRbelMessages().size(),
+                  ((TigerProxyServer) envMgr.getServers().get("aggregatingProxy"))
+                      .getTigerProxy()
+                      .getRbelMessages()
+                      .size(),
+                  ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
+                      .getTigerProxy()
+                      .getRbelMessages()
+                      .size());
               return envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size()
                       >= 2
                   && envMgr
@@ -113,9 +135,26 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                       .map(p -> p.endsWith(path))
                       .orElse(false);
             });
+
+    envMgr.getLocalTigerProxyOrFail().waitForAllCurrentMessagesToBeParsed();
+    assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().getFirst())
+        .extractChildWithPath("$.tlsVersion")
+        .hasStringContentEqualTo("TLSv1.2")
+        .andTheInitialElement()
+        .extractChildWithPath("$.cipherSuite")
+        .hasStringContentEqualTo("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
+
+    assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageList().get(0))
+        .extractChildWithPath("$.sender.bundledServerName")
+        .hasStringContentEqualTo("local client")
+        .andTheInitialElement()
+        .extractChildWithPath("$.receiver.bundledServerName")
+        .hasStringContentEqualTo("httpbin");
+
     waitShortTime();
   }
 
+  @SneakyThrows
   @Test
   @TigerTest(
       tigerYaml =
@@ -224,8 +263,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
           .atMost(10, TimeUnit.SECONDS)
           .until(
               () ->
-                  envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size()
-                      >= 1);
+                  !envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().isEmpty());
     }
     waitShortTime();
   }
@@ -257,7 +295,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                   adminPort: ${free.port.34}
                   proxyPort: ${free.port.35}
                   directReverseProxy:
-                    hostname: localhost
+                    hostname: reverseHostname
                     port: ${free.port.36}
             """)
   void testDirectReverseProxyMeshSetup_withResponse(TigerTestEnvMgr envMgr) {
@@ -274,6 +312,60 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
           .until(
               () ->
                   !envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().isEmpty());
+    }
+    waitShortTime();
+  }
+
+  @SneakyThrows
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+         tigerProxy:
+           skipTrafficEndpointsSubscription: true
+           adminPort: ${free.port.36}
+           trafficEndpoints:
+             - http://localhost:${free.port.34}
+         servers:
+           reverseProxy:
+             type: tigerProxy
+             tigerProxyConfiguration:
+               adminPort: ${free.port.34}
+               proxyPort: ${free.port.35}
+               directReverseProxy:
+                 hostname: reverseHostname
+                 port: ${free.port.50}
+        """)
+  void testDirectReverseProxyMeshSetup_senderAndReceiverAreCorrect(TigerTestEnvMgr envMgr) {
+    waitShortTime();
+
+    try (Socket clientSocket =
+        new Socket(
+            "127.0.0.1",
+            Integer.parseInt(TigerGlobalConfiguration.resolvePlaceholders("${free.port.35}")))) {
+
+      clientSocket.setSoTimeout(1);
+      clientSocket.getOutputStream().write("{\"foo\":\"bar\"}".getBytes());
+      clientSocket.getOutputStream().flush();
+      await()
+          .atMost(10, TimeUnit.SECONDS)
+          .until(
+              () ->
+                  envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size()
+                      == 1);
+
+      var senderPort = clientSocket.getLocalPort();
+      var receiverPort =
+          Integer.parseInt(TigerGlobalConfiguration.resolvePlaceholders("${free.port.50}"));
+      var message =
+          envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().getFirst();
+      assertThat(message)
+          .extractChildWithPath("$.receiver")
+          .hasStringContentEqualTo("reverseHostname:" + receiverPort)
+          .andTheInitialElement()
+          .extractChildWithPath("$.sender")
+          .asString()
+          .isIn("localhost:" + senderPort, "127.0.0.1:" + senderPort);
     }
     waitShortTime();
   }

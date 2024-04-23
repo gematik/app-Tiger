@@ -22,19 +22,55 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
+import java.util.List;
 import java.util.stream.Stream;
 import kong.unirest.*;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
 @ResetTigerConfiguration
 class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
+
+  @ParameterizedTest
+  @CsvSource(
+      textBlock =
+          """
+      http, http, http
+      https, https, https
+      http, https, http
+      https, http, https
+""")
+  void testHttpsAndHttpCombinations(
+      String routeFromProtocol, String routeToProtocol, String requestProtocol) {
+    tigerProxy.addRoute(
+        TigerRoute.builder()
+            .from(routeFromProtocol + "://backend/combotest")
+            .to(routeToProtocol + "://localhost:" + tigerProxy.getProxyPort() + "/foobar")
+            .build());
+    tigerProxy.addRoute(
+        TigerRoute.builder().from("/").to("http://localhost:" + fakeBackendServerPort).build());
+
+    assertThat(proxyRest.get(requestProtocol + "://backend/combotest").asString().getStatus())
+        .isEqualTo(666);
+
+    awaitMessagesInTiger(4);
+    if (routeToProtocol.equals("https")) {
+      assertThat(tigerProxy.getRbelMessagesList().get(1))
+          .extractChildWithPath("$.tlsVersion")
+          .asString()
+          .isNotBlank();
+    } else {
+      assertThat(tigerProxy.getRbelMessagesList().get(1)).doesNotHaveChildWithPath("$.tlsVersion");
+    }
+  }
 
   @ParameterizedTest
   @MethodSource("nestedAndShallowPathTestCases")
@@ -106,5 +142,67 @@ class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
         Arguments.of("", "/", "/", 888),
         Arguments.of("/", "", "/", 888),
         Arguments.of("/", "/", "/", 888));
+  }
+
+  @Test
+  void addCompetingRouteWithLowerPriorityForwardProxy_shouldWorkOnlyInSpecializedCases() {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("http://backend/other")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build(),
+                    TigerRoute.builder()
+                        .from("http://backend/hallo")
+                        .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar")
+                        .build(),
+                    TigerRoute.builder()
+                        .from("http://backend")
+                        .to("http://localhost:" + fakeBackendServerPort + "/foobar")
+                        .build(),
+                    TigerRoute.builder()
+                        .from("http://backend/else")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .build());
+
+    assertThat(proxyRest.get("http://backend").asJson().getStatus()).isEqualTo(666);
+    assertThat(proxyRest.get("http://backend/hallo").asJson().getStatus()).isEqualTo(777);
+  }
+
+  @Test
+  void addCompetingRouteWithLowerPriorityReverseProxy_shouldWorkOnlyInSpecializedCases() {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("/other")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build(),
+                    TigerRoute.builder()
+                        .from("/hallo")
+                        .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar")
+                        .build(),
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort + "/foobar")
+                        .build(),
+                    TigerRoute.builder()
+                        .from("/else")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .build());
+
+    assertThat(
+            proxyRest
+                .get("http://localhost:" + tigerProxy.getProxyPort() + "/hallo")
+                .asJson()
+                .getStatus())
+        .isEqualTo(777);
+    assertThat(proxyRest.get("http://localhost:" + tigerProxy.getProxyPort()).asJson().getStatus())
+        .isEqualTo(666);
   }
 }

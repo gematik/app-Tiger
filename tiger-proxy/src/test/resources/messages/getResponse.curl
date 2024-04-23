@@ -2,5 +2,4 @@ HTTP/1.1 200
 Cache-Control: no-store
 Connection: keep-alive
 
-
-{"foo": "bar"}
+foobar

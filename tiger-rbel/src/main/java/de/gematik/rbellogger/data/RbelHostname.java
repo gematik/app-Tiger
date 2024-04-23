@@ -88,4 +88,8 @@ public class RbelHostname {
       return hostname;
     }
   }
+
+  public boolean isLocalHost() {
+    return "localhost".equals(hostname) || "127.0.0.1".equals(hostname);
+  }
 }

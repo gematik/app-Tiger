@@ -27,15 +27,16 @@ import static java.util.Collections.unmodifiableSet;
 
 import de.gematik.test.tiger.mockserver.codec.MockServerHttpServerCodec;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
 import de.gematik.test.tiger.mockserver.mappers.MockServerHttpResponseToFullHttpResponse;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import de.gematik.test.tiger.mockserver.netty.HttpRequestHandler;
+import de.gematik.test.tiger.mockserver.netty.MockServer;
 import de.gematik.test.tiger.mockserver.netty.proxy.BinaryHandler;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import de.gematik.test.tiger.mockserver.socket.tls.SniHandler;
+import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
@@ -70,7 +71,7 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
       new ConcurrentHashMap<>();
   private final HttpContentLengthRemover httpContentLengthRemover = new HttpContentLengthRemover();
   private final Configuration configuration;
-  private final LifeCycle server;
+  private final MockServer server;
   private final HttpState httpState;
   private final HttpActionHandler actionHandler;
   private final NettySslContextFactory nettySslContextFactory;
@@ -78,7 +79,7 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
 
   public PortUnificationHandler(
       Configuration configuration,
-      LifeCycle server,
+      MockServer server,
       HttpState httpState,
       HttpActionHandler actionHandler,
       NettySslContextFactory nettySslContextFactory) {
@@ -110,14 +111,6 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
     } else {
       return false;
     }
-  }
-
-  public static void enableSslDownstream(Channel channel) {
-    channel.attr(TLS_ENABLED_DOWNSTREAM).set(Boolean.TRUE);
-  }
-
-  public static void disableSslDownstream(Channel channel) {
-    channel.attr(TLS_ENABLED_DOWNSTREAM).set(Boolean.FALSE);
   }
 
   public static boolean isSslEnabledDownstream(Channel channel) {
@@ -159,6 +152,7 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
 
   private void enableTls(ChannelHandlerContext ctx, ByteBuf msg) {
     ChannelPipeline pipeline = ctx.pipeline();
+    server.addConnectionWithStatus(ctx.channel().remoteAddress(), TigerConnectionStatus.OPEN_TLS);
     pipeline.addFirst(new SniHandler(configuration, nettySslContextFactory));
     enableSslUpstreamAndDownstream(ctx.channel());
 
@@ -316,18 +310,26 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable throwable) {
     if (connectionClosedException(throwable)) {
-     log.error("exception caught by port unification handler -> closing pipeline {}", ctx.channel(), throwable);
+      log.error(
+          "exception caught by port unification handler -> closing pipeline {}",
+          ctx.channel(),
+          throwable);
     } else if (sslHandshakeException(throwable)) {
       if (throwable.getMessage().contains("certificate_unknown")) {
-        log.warn("TLS handshake failure:"
-                          + NEW_LINE
-                          + NEW_LINE
-                          + " Client does not trust MockServer Certificate Authority for:{}See"
-                          + " http://mock-server.com/mock_server/HTTPS_TLS.html to enable the"
-                          + " client to trust MocksServer Certificate Authority."
-                          + NEW_LINE, ctx.channel());
+        log.warn(
+            "TLS handshake failure:"
+                + NEW_LINE
+                + NEW_LINE
+                + " Client does not trust MockServer Certificate Authority for:{}See"
+                + " http://mock-server.com/mock_server/HTTPS_TLS.html to enable the"
+                + " client to trust MocksServer Certificate Authority."
+                + NEW_LINE,
+            ctx.channel());
       } else if (!throwable.getMessage().contains("close_notify during handshake")) {
-        log.error("TLS handshake failure while a client attempted to connect to {}", ctx.channel(), throwable);
+        log.error(
+            "TLS handshake failure while a client attempted to connect to {}",
+            ctx.channel(),
+            throwable);
       }
     }
     closeOnFlush(ctx.channel());

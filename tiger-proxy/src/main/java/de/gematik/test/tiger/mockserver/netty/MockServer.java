@@ -26,25 +26,26 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import com.google.common.collect.ImmutableList;
 import de.gematik.test.tiger.mockserver.ExpectationBuilder;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.lifecycle.ExpectationsListener;
 import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
-import de.gematik.test.tiger.mockserver.matchers.TimeToLive;
-import de.gematik.test.tiger.mockserver.matchers.Times;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
-import de.gematik.test.tiger.mockserver.model.ExpectationId;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
-import de.gematik.test.tiger.mockserver.model.RequestDefinition;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
+import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.WriteBufferWaterMark;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -58,6 +59,7 @@ public class MockServer extends LifeCycle {
 
   private InetSocketAddress remoteSocket;
   private HttpActionHandler actionHandler;
+  private Map<SocketAddress, TigerConnectionStatus> connectionStatusMap = new ConcurrentHashMap<>();
 
   /**
    * Start the instance using the ports provided
@@ -221,6 +223,7 @@ public class MockServer extends LifeCycle {
             .option(
                 ChannelOption.WRITE_BUFFER_WATER_MARK,
                 new WriteBufferWaterMark(8 * 1024, 32 * 1024))
+            .childHandler(new ConnectionCounterHandler(this))
             .childHandler(
                 new MockServerUnificationInitializer(
                     configuration,
@@ -245,27 +248,33 @@ public class MockServer extends LifeCycle {
     return remoteSocket;
   }
 
-  public MockServer registerListener(ExpectationsListener expectationsListener) {
-    super.registerListener(expectationsListener);
-    return this;
-  }
-
-  public ExpectationBuilder when(
-      RequestDefinition requestDefinition, Times times, TimeToLive timeToLive, Integer priority) {
-    return new ExpectationBuilder(
-        new Expectation(requestDefinition, times, timeToLive, priority), this);
+  public ExpectationBuilder when(HttpRequest httpRequest, Integer priority) {
+    return new ExpectationBuilder(new Expectation(httpRequest, priority), this);
   }
 
   public ExpectationBuilder when(HttpRequest requestDefinition) {
-    return new ExpectationBuilder(
-        new Expectation(requestDefinition, Times.unlimited(), TimeToLive.unlimited(), 0), this);
+    return new ExpectationBuilder(new Expectation(requestDefinition, 0), this);
   }
 
-  public void removeExpectation(ExpectationId expectationId) {
-    httpState.getRequestMatchers().clear(expectationId);
+  public void removeExpectation(String expectationId) {
+    httpState.clear(expectationId);
   }
 
-  public List<Expectation> retrieveActiveExpectations(HttpRequest request) {
-    return httpState.getRequestMatchers().retrieveActiveExpectations(request);
+  public List<Expectation> retrieveActiveExpectations() {
+    return httpState.retrieveActiveExpectations();
+  }
+
+  public synchronized void addConnectionWithStatus(
+      SocketAddress socketAddress, TigerConnectionStatus status) {
+    connectionStatusMap.put(socketAddress, status);
+  }
+
+  public synchronized Map<SocketAddress, TigerConnectionStatus> getOpenConnections() {
+    return connectionStatusMap.entrySet().stream()
+        .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
+  }
+
+  public synchronized void removeRemoteAddress(SocketAddress socketAddress) {
+    connectionStatusMap.remove(socketAddress);
   }
 }

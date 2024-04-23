@@ -38,13 +38,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockserver.client.MockServerClient;
 import org.mockserver.junit.jupiter.MockServerExtension;
 
@@ -74,6 +76,11 @@ public class TestHttpClientSteps {
       TigerDirector.getLibConfig().getHttpClientConfig().setActivateRbelWriter(true);
     }
     rbelValidatorGlueCode.tgrClearRecordedMessages();
+  }
+
+  @AfterEach
+  void clearDefaultHeaders() {
+    httpGlueCode.clearDefaultHeaders();
   }
 
   @AfterAll
@@ -117,6 +124,31 @@ public class TestHttpClientSteps {
         tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "POST");
     tigerGlue.tgrAssertMatches(
         tigerResolvedString("!{rbel:currentRequestAsString('$.header.Content-Type')}"),
+        "application/json; charset=UTF-8");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.body.object.field')}"), "value");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentResponseAsString('$.responseCode')}"), "200");
+  }
+
+  @Test
+  void sendComplexPostMultiLine() { // NOSONAR
+    httpGlueCode.sendRequestWithMultiLineBody(
+        Method.POST,
+        createAddress("http://httpbin/post"),
+        "application/json",
+        """
+                        {
+                          "object": { "field": "value" },
+                          "array" : [ "1", 2, { "field2": "value2" } ],
+                          "member" : "test"
+                        }
+                        """);
+    rbelValidatorGlueCode.findLastRequestToPath(".*");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "POST");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.Content-Type')}"),
         "application/json");
     tigerGlue.tgrAssertMatches(
         tigerResolvedString("!{rbel:currentRequestAsString('$.body.object.field')}"), "value");
@@ -141,7 +173,7 @@ public class TestHttpClientSteps {
         tigerResolvedString("!{rbel:currentRequestAsString('$.method')}"), "PUT");
     tigerGlue.tgrAssertMatches(
         tigerResolvedString("!{rbel:currentRequestAsString('$.header.Content-Type')}"),
-        "application/json");
+        "application/json; charset=UTF-8");
     tigerGlue.tgrAssertMatches(
         tigerResolvedString("!{rbel:currentRequestAsString('$.body.object.field')}"), "value");
     tigerGlue.tgrAssertMatches(
@@ -235,7 +267,7 @@ public class TestHttpClientSteps {
     rbelValidatorGlueCode.findLastRequestToPath(".*");
     tigerGlue.tgrAssertMatches(
         tigerResolvedString("!{rbel:currentRequestAsString('$.header.Content-Type')}"),
-        "text/plain.*");
+        "text/plain");
   }
 
   @Test
@@ -382,8 +414,48 @@ public class TestHttpClientSteps {
         "value with spaces");
   }
 
-  @SneakyThrows
+  @ParameterizedTest
+  @CsvSource(
+      textBlock =
+          """
+    {"hello": "world"}, application/json; charset=UTF-8
+    <this><is>xml</is></this>, application/xml; charset=ISO-8859-1
+    just some text, application/octet-stream; charset=ISO-8859-1
+    """)
+  void
+      sendRequestWithoutExplicitHeaders_shouldAutomaticallyAddContentTypeAndCharsetBasedOnContent( // NOSONAR
+      String bodyContent, String expectedContentTypeHeader) {
+    httpGlueCode.sendRequestWithBody(
+        Method.POST, createAddress("http://httpbin/headers"), bodyContent);
+    rbelValidatorGlueCode.findLastRequestToPath(".*");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.Content-Type')}"),
+        expectedContentTypeHeader);
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+      textBlock =
+          """
+        {"hello": "world"}, application/my-own-thing
+        <this><is>xml</is></this>, application/fancy-xml
+        just some text, application/text
+        {"hello": "world"}, application/json; charset=ISO-8859-1
+        <this><is>xml</is></this>, application/xml; charset=UTF-8
+        just some text, application/text; charset=UTF-8
+    """)
+  void sendRequestWithExplicitHeaders_shouldNotAddAnythingAutomatically( // NOSONAR
+      String bodyContent, String explicitSetContentTypeHeader) {
+    httpGlueCode.setDefaultHeader("Content-Type", explicitSetContentTypeHeader);
+    httpGlueCode.sendRequestWithBody(
+        Method.POST, createAddress("http://httpbin/headers"), bodyContent);
+    rbelValidatorGlueCode.findLastRequestToPath(".*");
+    tigerGlue.tgrAssertMatches(
+        tigerResolvedString("!{rbel:currentRequestAsString('$.header.Content-Type')}"),
+        explicitSetContentTypeHeader);
+  }
+
   private static URI createAddress(String urlString) {
-    return new URI(urlString);
+    return URI.create(urlString);
   }
 }

@@ -89,14 +89,18 @@ public class RbelXmlElementToNodeConverter implements RbelElementToContentTreeNo
           addChildNode(node, childNode, childNodes);
         }
         node.setupChildNodes(childNodes);
-        entry.getValue().getFacet(RbelXmlFacet.class).ifPresent(rbelXmlFacet -> {
-          if (rbelXmlFacet.getNamespacePrefix() != null) {
-            node.attributes().put(XML_NAMESPACE_PREFIX, rbelXmlFacet.getNamespacePrefix());
-          }
-          if (rbelXmlFacet.getNamespaceUri() != null) {
-            node.attributes().put(XML_NAMESPACE_URI, rbelXmlFacet.getNamespaceUri());
-          }
-        });
+        entry
+            .getValue()
+            .getFacet(RbelXmlFacet.class)
+            .ifPresent(
+                rbelXmlFacet -> {
+                  if (rbelXmlFacet.getNamespacePrefix() != null) {
+                    node.attributes().put(XML_NAMESPACE_PREFIX, rbelXmlFacet.getNamespacePrefix());
+                  }
+                  if (rbelXmlFacet.getNamespaceUri() != null) {
+                    node.attributes().put(XML_NAMESPACE_URI, rbelXmlFacet.getNamespaceUri());
+                  }
+                });
       }
       nodes.add(node);
     }

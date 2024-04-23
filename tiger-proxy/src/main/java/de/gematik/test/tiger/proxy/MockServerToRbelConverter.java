@@ -46,7 +46,10 @@ public class MockServerToRbelConverter {
   private final RbelConverter rbelConverter;
 
   public CompletableFuture<RbelElement> convertResponse(
-      HttpResponse response, String senderUrl, String receiverUrl, Optional<ZonedDateTime> timestamp) {
+      HttpResponse response,
+      String senderUrl,
+      String receiverUrl,
+      Optional<ZonedDateTime> timestamp) {
     if (log.isTraceEnabled()) {
       log.trace(
           "Converting response {}, headers {}, body {}",
@@ -81,6 +84,9 @@ public class MockServerToRbelConverter {
 
   public CompletableFuture<RbelElement> convertRequest(
       HttpRequest request, String protocolAndHost, Optional<ZonedDateTime> timestamp) {
+    if (request.getParsedRbelMessage() != null) {
+      return CompletableFuture.completedFuture(request.getParsedRbelMessage());
+    }
     if (log.isTraceEnabled()) {
       log.trace(
           "Converting request {}, headers {}, body {}",
@@ -96,6 +102,14 @@ public class MockServerToRbelConverter {
             convertUri(protocolAndHost),
             timestamp)
         .thenApply(e -> addHttpRequestFacetIfNotPresent(request, e));
+  }
+
+  public RbelElement convertErrorResponse(HttpRequest request, String protocolAndHost) {
+    return rbelConverter.parseMessage(
+        new byte[0],
+        convertUri(protocolAndHost),
+        RbelHostname.fromString(request.getRemoteAddress()).orElse(null),
+        Optional.of(ZonedDateTime.now()));
   }
 
   private RbelElement addHttpRequestFacetIfNotPresent(HttpRequest request, RbelElement element) {

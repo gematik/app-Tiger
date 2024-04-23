@@ -61,6 +61,7 @@ public class TigerSerenityReporterPlugin extends SerenityReporter {
   @Override
   protected void handleTestSourceRead(TestSourceRead event) {
     super.handleTestSourceRead(event);
+    log.info("Feature file started: {}", event.getUri());
     reporterCallbacks.handleTestSourceRead(event);
   }
 
@@ -85,7 +86,14 @@ public class TigerSerenityReporterPlugin extends SerenityReporter {
   @Override
   protected void handleTestCaseFinished(TestCaseFinished event) {
     reporterCallbacks.handleTestCaseFinished(event, getScenarioContextDelegate());
+
     super.handleTestCaseFinished(event);
+  }
+
+  @Override
+  protected void handleTestRunFinished(TestRunFinished event) {
+    reporterCallbacks.handleTestRunFinished(event, getScenarioContextDelegate());
+    super.handleTestRunFinished(event);
   }
 
   protected void handleWriteEvent(WriteEvent event) {

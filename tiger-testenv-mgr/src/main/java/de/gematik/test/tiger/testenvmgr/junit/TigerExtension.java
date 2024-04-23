@@ -67,6 +67,7 @@ public class TigerExtension
     return context
         .getTestMethod()
         .map(m -> m.getAnnotation(TigerTest.class))
+        .or(() -> context.getTestClass().map(c -> c.getAnnotation(TigerTest.class)))
         .orElseThrow(
             () ->
                 new TigerEnvironmentStartupException(

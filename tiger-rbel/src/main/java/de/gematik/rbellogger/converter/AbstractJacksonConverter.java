@@ -31,15 +31,13 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 
-/**
- * Abstract converter for structured formats that are parsed via Jackson.
- */
+/** Abstract converter for structured formats that are parsed via Jackson. */
 @RequiredArgsConstructor
-public abstract class AbstractJacksonConverter<F extends RbelFacet>
-    implements RbelConverterPlugin {
+public abstract class AbstractJacksonConverter<F extends RbelFacet> implements RbelConverterPlugin {
 
   @Getter(AccessLevel.PACKAGE)
   private final ObjectMapper mapper;
+
   private final Class<F> facetClass;
 
   private Optional<JsonNode> convertToJacksonNode(final RbelElement target) {
@@ -91,8 +89,8 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet>
 
   abstract F buildFacetForNode(JsonNode node);
 
-  private void convertPrimitive(
-      JsonNode node, RbelConverter context, RbelElement parentElement) throws IOException {
+  private void convertPrimitive(JsonNode node, RbelConverter context, RbelElement parentElement)
+      throws IOException {
     if (node.isTextual()) {
       addFacetAndConvertNestedElement(parentElement, node.asText(), context);
     } else if (node.isFloatingPointNumber()) {
@@ -108,8 +106,7 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet>
     }
   }
 
-  private void convertArray(
-      JsonNode node, RbelConverter context, RbelElement parentElement) {
+  private void convertArray(JsonNode node, RbelConverter context, RbelElement parentElement) {
     final ArrayList<RbelElement> elementList = new ArrayList<>();
 
     parentElement.addFacet(RbelListFacet.builder().childNodes(elementList).build());
@@ -123,8 +120,7 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet>
     }
   }
 
-  private void convertObject(
-      JsonNode node, RbelConverter context, RbelElement parentElement) {
+  private void convertObject(JsonNode node, RbelConverter context, RbelElement parentElement) {
     final RbelMultiMap<RbelElement> elementMap = new RbelMultiMap<>();
     parentElement.addFacet(RbelMapFacet.builder().childNodes(elementMap).build());
     for (Iterator<Entry<String, JsonNode>> it = node.fields(); it.hasNext(); ) {

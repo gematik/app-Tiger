@@ -57,6 +57,11 @@ public class RbelJsonElementToNodeConverter implements RbelElementToContentTreeN
             .readStringOptional(ENCODE_AS)
             .map(RbelContentType::seekValueFor)
             .orElse(RbelContentType.JSON));
+    if (el.getFacet(RbelJsonFacet.class)
+      .map(facet -> facet.getJsonElement().isArray())
+      .orElse(false)) {
+      result.attributes().put(JSON_ARRAY, "true");
+    }
     return result;
   }
 
@@ -86,12 +91,6 @@ public class RbelJsonElementToNodeConverter implements RbelElementToContentTreeN
       return nodes;
     }
     final List<RbelContentTreeNode> result = converter.convertNode(value, key, context);
-    if (value
-        .getFacet(RbelJsonFacet.class)
-        .map(facet -> facet.getJsonElement().isArray())
-        .orElse(false)) {
-      result.forEach(node -> node.attributes().put(JSON_ARRAY, "true"));
-    }
     return result;
   }
 

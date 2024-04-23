@@ -57,6 +57,7 @@ public class TigerProxyConfiguration {
   @Builder.Default private int skipDisplayWhenMessageLargerThanKb = 512;
   @Builder.Default private boolean activateRbelParsing = true;
   @Builder.Default private boolean activateEpaVauAnalysis = false;
+  @Builder.Default private boolean activateEpa3VauAnalysis = false;
   @Builder.Default private boolean activateErpVauAnalysis = false;
   @Builder.Default private boolean parsingShouldBlockCommunication = false;
   @Builder.Default private boolean rewriteHostHeader = false;

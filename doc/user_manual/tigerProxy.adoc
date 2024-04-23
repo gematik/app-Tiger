@@ -56,6 +56,8 @@ From where should the traffic be collected?
 This can either be an absolute URL (e.g. http://foobar), which defines a forward-proxy route, or relative (e.g. /blub), defining a reverse-proxy-route.
 Please note: You can freely add parts (e.g. http://foobar/extra/part) to further specify the mapping.
 
+You can add multiple routes that match the same URL. If multiple matches are found the most specific route is select. For example if you have two routes `/` and `/foo` then for a request to `/foo/bar` the route `/foo` will be selected.
+
 ==== to
 
 The target of the mapping.
@@ -97,6 +99,22 @@ tigerProxy:
 ----
 
 and you execute GET http://my.domain/deep/deeper, you will get the result of GET http://orf.at/blub/deeper (the /deep in between has been eliminated along with my.domain).
+
+==== criterions
+
+As an additional measure for a more fine-grained matching you can use criterions. These are JEXL-expressions which have to be fulfilled for the route to be used. This can be leveraged to make the routing decision dependent on the content of the message.
+
+[source,yaml]
+----
+tigerProxy:
+    proxyRoutes:
+      - from: /
+        to: http://orf.at/blub/
+        criterions:
+          - $.header.foo == 'bar'
+----
+
+This will only forward messages where the header contains a key "foo" with the value "bar".
 
 ==== disableRbelLogging
 

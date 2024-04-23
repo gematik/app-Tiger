@@ -71,27 +71,12 @@ public class NettyHttpClient {
   private final Configuration configuration;
   private final EventLoopGroup eventLoopGroup;
   private final Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations;
-  private final boolean forwardProxyClient;
   private final NettySslContextFactory nettySslContextFactory;
 
   public NettyHttpClient(
       Configuration configuration,
       EventLoopGroup eventLoopGroup,
       List<ProxyConfiguration> proxyConfigurations,
-      boolean forwardProxyClient) {
-    this(
-        configuration,
-        eventLoopGroup,
-        proxyConfigurations,
-        forwardProxyClient,
-        new NettySslContextFactory(configuration, false));
-  }
-
-  public NettyHttpClient(
-      Configuration configuration,
-      EventLoopGroup eventLoopGroup,
-      List<ProxyConfiguration> proxyConfigurations,
-      boolean forwardProxyClient,
       NettySslContextFactory nettySslContextFactory) {
     this.configuration = configuration;
     this.eventLoopGroup = eventLoopGroup;
@@ -102,7 +87,6 @@ public class NettyHttpClient {
                     Collectors.toMap(
                         ProxyConfiguration::getType, proxyConfiguration -> proxyConfiguration))
             : ImmutableMap.of();
-    this.forwardProxyClient = forwardProxyClient;
     this.nettySslContextFactory = nettySslContextFactory;
   }
 
@@ -136,8 +120,9 @@ public class NettyHttpClient {
       }
       if (Protocol.HTTP_2.equals(httpRequest.getProtocol())
           && !Boolean.TRUE.equals(httpRequest.isSecure())) {
-        log.warn("HTTP2 requires ALPN but request is not secure (i.e. TLS) so protocol changed"
-                        + " to HTTP1");
+        log.warn(
+            "HTTP2 requires ALPN but request is not secure (i.e. TLS) so protocol changed"
+                + " to HTTP1");
         httpRequest.setProtocol(Protocol.HTTP_1_1);
       }
 
@@ -147,11 +132,7 @@ public class NettyHttpClient {
           httpRequest.getProtocol() != null ? httpRequest.getProtocol() : Protocol.HTTP_1_1;
 
       final HttpClientInitializer clientInitializer =
-          new HttpClientInitializer(
-              proxyConfigurations,
-              forwardProxyClient,
-              nettySslContextFactory,
-              httpProtocol);
+          new HttpClientInitializer(proxyConfigurations, nettySslContextFactory, httpProtocol);
 
       new Bootstrap()
           .group(eventLoopGroup)
@@ -192,12 +173,7 @@ public class NettyHttpClient {
           (message, throwable) -> {
             if (throwable == null) {
               if (message != null) {
-                if (forwardProxyClient) {
-                  httpResponseFuture.complete(
-                      hopByHopHeaderFilter.onResponse((HttpResponse) message));
-                } else {
-                  httpResponseFuture.complete((HttpResponse) message);
-                }
+                httpResponseFuture.complete((HttpResponse) message);
               } else {
                 httpResponseFuture.complete(response());
               }
@@ -249,8 +225,7 @@ public class NettyHttpClient {
               ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE,
               !configuration.forwardBinaryRequestsWithoutWaitingForResponse())
           .handler(
-              new HttpClientInitializer(
-                  proxyConfigurations, forwardProxyClient, nettySslContextFactory, null))
+              new HttpClientInitializer(proxyConfigurations, nettySslContextFactory, null))
           .connect(remoteAddress)
           .addListener(
               (ChannelFutureListener)
@@ -325,10 +300,6 @@ public class NettyHttpClient {
       }
     }
     return httpResponse;
-  }
-
-  public HttpResponse sendRequest(HttpRequest httpRequest, long timeout, TimeUnit unit) {
-    return sendRequest(httpRequest, timeout, unit, false);
   }
 
   private boolean isHostNotOnNoProxyHostList(InetSocketAddress remoteAddress) {

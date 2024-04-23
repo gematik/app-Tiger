@@ -34,4 +34,8 @@ public interface ExpectationCallback<T extends HttpMessage> {
    * @return the request that will be proxied or the response that will be returned
    */
   T handle(HttpRequest httpRequest) throws Exception;
+
+  default boolean matches(HttpRequest httpRequest) {
+    return true;
+  }
 }

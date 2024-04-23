@@ -59,36 +59,36 @@ public class Configuration {
   private Integer clientNioEventLoopThreadCount = 5;
   private Integer webSocketClientEventLoopThreadCount = 5;
   private Long maxFutureTimeoutInMillis = TimeUnit.SECONDS.toMillis(90);
-  private Boolean matchersFailFast = true;
+  private boolean matchersFailFast = true;
 
   // socket
   private Long maxSocketTimeoutInMillis = TimeUnit.SECONDS.toMillis(20);
   private Long socketConnectionTimeoutInMillis = TimeUnit.SECONDS.toMillis(20);
-  private Boolean alwaysCloseSocketConnections = false;
+  private boolean alwaysCloseSocketConnections = false;
   private String localBoundIP = "";
 
   // http request parsing
   private Integer maxInitialLineLength = Integer.MAX_VALUE;
   private Integer maxHeaderSize = Integer.MAX_VALUE;
   private Integer maxChunkSize = Integer.MAX_VALUE;
-  private Boolean useSemicolonAsQueryParameterSeparator = true;
-  private Boolean assumeAllRequestsAreHttp = false;
+  private boolean useSemicolonAsQueryParameterSeparator = true;
+  private boolean assumeAllRequestsAreHttp = false;
 
   // non http proxying
-  private Boolean forwardBinaryRequestsWithoutWaitingForResponse = false;
+  private boolean forwardBinaryRequestsWithoutWaitingForResponse = false;
   private BinaryProxyListener binaryProxyListener = null;
 
   // CORS
-  private Boolean enableCORSForAPI = false;
-  private Boolean enableCORSForAllResponses = false;
+  private boolean enableCORSForAPI = false;
+  private boolean enableCORSForAllResponses = false;
   private String corsAllowOrigin = "";
   private String corsAllowMethods = "";
   private String corsAllowHeaders = "";
-  private Boolean corsAllowCredentials = false;
+  private boolean corsAllowCredentials = false;
   private Integer corsMaxAgeInSeconds = 0;
 
   // proxy
-  private Boolean attemptToProxyIfNoMatchingExpectation = false;
+  private boolean attemptToProxyIfNoMatchingExpectation = false;
   private InetSocketAddress forwardHttpProxy = null;
   private InetSocketAddress forwardHttpsProxy = null;
   private InetSocketAddress forwardSocksProxy = null;

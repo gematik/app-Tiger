@@ -635,21 +635,25 @@ public class TigerConfigurationTest { // NOSONAR
 
   @SneakyThrows
   @Test
-  @DisplayName(
-      "I place a new value in the thread local store. A different thread should NOT see the value")
-  void placeNewValueThreadLocal_differentThreadShouldNotFindValueAgain() {
+  void placeNewStructuredValueWithScope_shouldFindNestedValueAgain() {
     TigerGlobalConfiguration.reset();
-    final Thread thread =
-        new Thread(
-            () -> {
-              TigerGlobalConfiguration.putValue("foo.value", "bar", SourceType.THREAD_CONTEXT);
+    TigerGlobalConfiguration.putValue(
+        "foo.value",
+        TigerConfigurationTest.NestedBean.builder().bar(42).build(),
+        SourceType.RUNTIME_EXPORT);
+    assertThat(TigerGlobalConfiguration.readString("foo.value.bar")).isEqualTo("42");
+  }
 
-              assertThat(TigerGlobalConfiguration.readString("foo.value")).isEqualTo("bar");
-            });
-    thread.start();
-    thread.join();
-
-    assertThat(TigerGlobalConfiguration.readStringOptional("foo.value")).isEmpty();
+  @SneakyThrows
+  @Test
+  void overwriteStructuredValueWithScope_shouldFindNestedValueAgain() {
+    TigerGlobalConfiguration.reset();
+    TigerGlobalConfiguration.putValue(
+        "foo.value",
+        TigerConfigurationTest.NestedBean.builder().bar(42).build(),
+        SourceType.RUNTIME_EXPORT);
+    TigerGlobalConfiguration.putValue("foo.value.bar", "schmoo", SourceType.RUNTIME_EXPORT);
+    assertThat(TigerGlobalConfiguration.readString("foo.value.bar")).isEqualTo("schmoo");
   }
 
   @SneakyThrows
@@ -977,6 +981,17 @@ public class TigerConfigurationTest { // NOSONAR
       System.clearProperty("TIGER_FOO_BAR");
       System.clearProperty("tiger.foo.bar");
     }
+  }
+
+  @Test
+  void test() {
+    byte[] b1 = new byte[] {0x1};
+    byte[] b2 = new byte[] {0x2};
+    TigerGlobalConfiguration.putValue("testkey", b1);
+    assertThat(TigerGlobalConfiguration.readByteArray("testkey")).get().isEqualTo(b1);
+
+    TigerGlobalConfiguration.putValue("testkey", b2);
+    assertThat(TigerGlobalConfiguration.readByteArray("testkey")).get().isEqualTo(b2);
   }
 
   @Data

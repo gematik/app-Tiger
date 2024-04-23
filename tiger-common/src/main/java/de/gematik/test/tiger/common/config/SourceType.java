@@ -33,8 +33,7 @@ public enum SourceType {
   CLI(60),
   RUNTIME_EXPORT(50),
   TEST_CONTEXT(40),
-  THREAD_CONTEXT(30),
-  SCOPE_LOCAL_CONTEXT(20);
+  LOCAL_TEST_CASE_CONTEXT(20);
 
   private final int precedence;
 }

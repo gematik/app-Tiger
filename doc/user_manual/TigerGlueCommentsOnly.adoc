@@ -9,11 +9,14 @@ is performed.
 ##### TGR setze lokale Variable {tigerResolvedString} auf {tigerResolvedString}
 ##### TGR set local variable {tigerResolvedString} to {tigerResolvedString}
 Sets the given key to the given value in the global configuration store. Variable substitution
-is performed. This value will only be accessible from this exact thread.
+is performed. This value will only be available in the given scenario being clear up after the
+scenario run is finished.
 
 *param* key key of the context
 *param* value value for the context entry with given key
 
+##### TGR setze lokale Feature Variable {tigerResolvedString} auf {tigerResolvedString}
+##### TGR set local feature variable {tigerResolvedString} to {tigerResolvedString}
 ##### TGR prüfe Variable {tigerResolvedString} stimmt überein mit {tigerResolvedString}
 asserts that value with given key either equals or matches (regex) the given regex string.
 Variable substitution is performed. This checks both global and local variables!
@@ -43,11 +46,23 @@ Special values can be used:
 ##### TGR pausiere Testausführung
 ##### TGR pause test run execution with message {string}
 ##### TGR pausiere Testausführung mit Nachricht {string}
-##### TGR pause test run execution with message {tigerResolvedString} and message in case of error {tigerResolvedString}
-##### TGR pausiere Testausführung mit Nachricht {tigerResolvedString} und Meldung im Fehlerfall {tigerResolvedString}
+##### TGR pause test run execution with message {tigerResolvedString} and message in case of error" + " {tigerResolvedString}
+##### TGR pausiere Testausführung mit Nachricht {tigerResolvedString} und Meldung im Fehlerfall" + " {tigerResolvedString}
 ##### TGR show HTML Notification:
 ##### TGR zeige HTML Notification:
 ##### TGR assert {tigerResolvedString} matches {tigerResolvedString}
 ##### TGR prüfe das {tigerResolvedString} mit {tigerResolvedString} überein stimmt
 ##### TGR gebe variable {tigerResolvedString} aus
 Prints the value of the given variable to the System-out
+
+##### TGR stop server {tigerResolvedString}
+Stops the given server. If the server is not running or the server is not found, an exception
+is thrown.
+
+*param* servername The server to be stopped.
+
+##### TGR start server {tigerResolvedString}
+Starts the given server. If the server is already running or the server is not found, an
+exception is thrown.
+
+*param* servername The server to be started.

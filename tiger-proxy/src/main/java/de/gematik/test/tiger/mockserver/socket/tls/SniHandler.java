@@ -39,13 +39,14 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SniHandler extends AbstractSniHandler<SslContext> {
 
-  private static final AttributeKey<SSLEngine> UPSTREAM_SSL_ENGINE =
+  public static final AttributeKey<SSLEngine> UPSTREAM_SSL_ENGINE =
       AttributeKey.valueOf("UPSTREAM_SSL_ENGINE");
-  private static final AttributeKey<SslHandler> UPSTREAM_SSL_HANDLER =
+  public static final AttributeKey<SslHandler> UPSTREAM_SSL_HANDLER =
       AttributeKey.valueOf("UPSTREAM_SSL_HANDLER");
-  private static final AttributeKey<Certificate[]> UPSTREAM_CLIENT_CERTIFICATES =
+  public static final AttributeKey<Certificate[]> UPSTREAM_CLIENT_CERTIFICATES =
       AttributeKey.valueOf("UPSTREAM_CLIENT_CERTIFICATES");
-  private static final AttributeKey<Protocol> NEGOTIATED_APPLICATION_PROTOCOL =
+  public static final AttributeKey<SSLSession> SSL_SESSION = AttributeKey.valueOf("SSL_SESSION");
+  public static final AttributeKey<Protocol> NEGOTIATED_APPLICATION_PROTOCOL =
       AttributeKey.valueOf("NEGOTIATED_APPLICATION_PROTOCOL");
 
   private final Configuration configuration;
@@ -108,8 +109,7 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
       sslHandler = null;
     } finally {
       // Since the SslHandler was not inserted into the pipeline the ownership of the SSLEngine was
-      // not
-      // transferred to the SslHandler.
+      // not transferred to the SslHandler.
       // See https://github.com/netty/netty/issues/5678
       if (sslHandler != null) {
         ReferenceCountUtil.safeRelease(sslHandler.engine());
@@ -127,6 +127,7 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
         SSLSession sslSession = sslEngine.getSession();
         if (sslSession != null) {
           try {
+            ctx.channel().attr(SSL_SESSION).set(sslSession);
             Certificate[] peerCertificates = sslSession.getPeerCertificates();
             ctx.channel().attr(UPSTREAM_CLIENT_CERTIFICATES).set(peerCertificates);
             return peerCertificates;

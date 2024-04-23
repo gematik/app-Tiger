@@ -18,9 +18,6 @@ package de.gematik.test.tiger.mockserver;
 
 import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndResponseCallback;
-import de.gematik.test.tiger.mockserver.mock.listeners.MockServerMatcherNotifier.Cause;
-import de.gematik.test.tiger.mockserver.model.Delay;
-import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import de.gematik.test.tiger.mockserver.netty.MockServer;
 import lombok.AllArgsConstructor;
 
@@ -36,19 +33,14 @@ public class ExpectationBuilder {
   public Expectation[] forward(
       final ExpectationForwardAndResponseCallback expectationForwardAndResponseCallback) {
     expectation.thenForward(expectationForwardAndResponseCallback);
-    return new Expectation[] {
-      mockServer.getHttpState().getRequestMatchers().add(expectation, Cause.API)
-    };
+    mockServer.getHttpState().add(expectation);
+    return new Expectation[] {expectation};
   }
 
-  public Expectation[] respond(HttpResponse httpResponse) {
-    return respond(httpResponse, Delay.seconds(0));
-  }
-
-  public Expectation[] respond(HttpResponse httpResponse, Delay seconds) {
-    expectation.thenRespond(httpResponse);
-    return new Expectation[] {
-      mockServer.getHttpState().getRequestMatchers().add(expectation, Cause.API)
-    };
+  public ExpectationBuilder id(String id) {
+    if (id != null) {
+      expectation.setId(id);
+    }
+    return this;
   }
 }

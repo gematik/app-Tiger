@@ -26,14 +26,14 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
 import java.util.Optional;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-@Builder
-public class RbelCetpFacet extends RbelResponseFacet {
+@SuperBuilder
+public class RbelCetpFacet extends RbelRequestFacet {
 
   static {
     RbelHtmlRenderer.registerFacetRenderer(

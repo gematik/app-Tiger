@@ -18,6 +18,7 @@ package de.gematik.test.tiger.proxy;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -26,10 +27,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRouteDto;
 import java.util.List;
-import kong.unirest.Config;
-import kong.unirest.GenericType;
-import kong.unirest.HttpResponse;
-import kong.unirest.UnirestInstance;
+import kong.unirest.*;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -97,7 +95,8 @@ class TigerProxyRoutingTest {
 
   @Test
   void deleteRoute_shouldWork() {
-    assertThat(unirestInstance.get("http://temp.server/foo").asEmpty().getStatus()).isEqualTo(404);
+    assertThatThrownBy(() -> unirestInstance.get("http://temp.server/foo").asEmpty())
+        .isInstanceOf(UnirestException.class);
 
     String routeId =
         unirestInstance
@@ -126,7 +125,8 @@ class TigerProxyRoutingTest {
                         + " "
                         + response.getBody()));
 
-    assertThat(unirestInstance.get("http://temp.server/foo").asEmpty().getStatus()).isEqualTo(404);
+    assertThatThrownBy(() -> unirestInstance.get("http://temp.server/foo").asEmpty())
+        .isInstanceOf(UnirestException.class);
   }
 
   @Test

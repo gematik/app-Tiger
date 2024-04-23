@@ -56,11 +56,7 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
   protected final String host;
   protected final int port;
 
-  public RelayConnectHandler(
-      Configuration configuration,
-      LifeCycle server,
-      String host,
-      int port) {
+  public RelayConnectHandler(Configuration configuration, LifeCycle server, String host, int port) {
     this.configuration = configuration;
     this.server = server;
     this.host = host;
@@ -107,8 +103,7 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
                                       // TODO(jamesdbloom) this is never true - probably due to race
                                       // condition
                                       boolean http2EnabledDownstream =
-                                          HTTP_2.equals(
-                                              getALPNProtocol(proxyClientCtx));
+                                          HTTP_2.equals(getALPNProtocol(proxyClientCtx));
 
                                       // upstream (to MockServer)
                                       ChannelPipeline pipelineToMockServer =
@@ -117,8 +112,7 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
                                       if (isSslEnabledDownstream(proxyClientCtx.channel())) {
                                         pipelineToMockServer.addLast(
                                             nettySslContextFactory(proxyClientCtx.channel())
-                                                .createClientSslContext(
-                                                    true, http2EnabledDownstream)
+                                                .createClientSslContext(http2EnabledDownstream)
                                                 .newHandler(mockServerCtx.alloc(), host, port));
                                       }
 
@@ -132,7 +126,8 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
                                           new HttpObjectAggregator(Integer.MAX_VALUE));
 
                                       pipelineToMockServer.addLast(
-                                          new DownstreamProxyRelayHandler(proxyClientCtx.channel()));
+                                          new DownstreamProxyRelayHandler(
+                                              proxyClientCtx.channel()));
 
                                       // downstream (to proxy client)
                                       ChannelPipeline pipelineToProxyClient =
@@ -185,8 +180,7 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
 
                                       pipelineToProxyClient.addLast(
                                           new UpstreamProxyRelayHandler(
-                                              proxyClientCtx.channel(),
-                                              mockServerCtx.channel()));
+                                              proxyClientCtx.channel(), mockServerCtx.channel()));
                                     });
                       } else {
                         mockServerCtx.fireChannelRead(msg);

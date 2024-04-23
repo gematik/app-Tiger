@@ -290,11 +290,7 @@ public class TigerConfigurationLoader {
     DeprecatedKeysForbiddenUsageChecker.checkForDeprecatedKeys(valueMap);
 
     sourcesManager.addNewSource(
-        BasicTigerConfigurationSource.builder()
-            .values(valueMap)
-            .sourceType(sourceType)
-            .basePath(new TigerConfigurationKey(baseKeys))
-            .build());
+        BasicTigerConfigurationSource.builder().values(valueMap).sourceType(sourceType).build());
   }
 
   public boolean readBoolean(String key) {
@@ -342,7 +338,6 @@ public class TigerConfigurationLoader {
 
     sourcesManager.addNewSource(
         BasicTigerConfigurationSource.builder()
-            .basePath(new TigerConfigurationKey())
             .values(
                 System.getenv().entrySet().stream()
                     .collect(
@@ -362,7 +357,6 @@ public class TigerConfigurationLoader {
 
     sourcesManager.addNewSource(
         BasicTigerConfigurationSource.builder()
-            .basePath(new TigerConfigurationKey())
             .values(
                 System.getProperties().entrySet().stream()
                     .collect(
@@ -556,59 +550,47 @@ public class TigerConfigurationLoader {
     return sourcesManager.getSortedListReversed();
   }
 
-  public void putValue(String key, String value) {
-    if (value == null) {
-      throw new TigerConfigurationException(
-          "Trying to store null-value. Only non-values are allowed!");
-    }
+  public void putValue(String key, Object value) {
     putValue(key, value, SourceType.RUNTIME_EXPORT);
   }
 
-  public void putValue(String key, Object value) {
+  public void putValue(String key, Object value, SourceType sourceType) {
+    putValue(new TigerConfigurationKey(key), value, sourceType);
+  }
+
+  public void putValue(TigerConfigurationKey key, Object value, SourceType sourceType) {
     if (value == null) {
       throw new TigerConfigurationException(
           "Trying to store null-value. Only non-values are allowed!");
     }
+
+    final AbstractTigerConfigurationSource configurationSource =
+        sourcesManager
+            .getSortedStream()
+            .filter(source -> source.getSourceType() == sourceType)
+            .findAny()
+            .orElseGet(() -> generateNewConfigurationSource(sourceType));
+
     if (value instanceof String asString) {
-      putValue(key, asString);
+      configurationSource.putValue(key, asString);
     } else {
       try {
         Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
         final HashMap<TigerConfigurationKey, String> valueMap = new HashMap<>();
-        addYamlToMap(
-            yaml.load(objectMapper.writeValueAsString(value)),
-            new TigerConfigurationKey(key),
-            valueMap);
-        sourcesManager.addNewSource(
-            BasicTigerConfigurationSource.builder()
-                .values(valueMap)
-                .sourceType(SourceType.RUNTIME_EXPORT)
-                .basePath(new TigerConfigurationKey(key))
-                .build());
+        addYamlToMap(yaml.load(objectMapper.writeValueAsString(value)), key, valueMap);
+
+        valueMap.forEach(configurationSource::putValue);
       } catch (JsonProcessingException e) {
         throw new TigerConfigurationException("Error during serialization", e);
       }
     }
   }
 
-  public void putValue(String key, String value, SourceType sourceType) {
-    final Optional<AbstractTigerConfigurationSource> configurationSource =
-        sourcesManager
-            .getSortedStream()
-            .filter(source -> source.getSourceType() == sourceType)
-            .findAny();
-    if (configurationSource.isEmpty()) {
-      final AbstractTigerConfigurationSource newSource;
-      if (sourceType == SourceType.THREAD_CONTEXT) {
-        newSource = new TigerThreadScopedConfigurationSource();
-      } else {
-        newSource = new BasicTigerConfigurationSource(sourceType);
-      }
-      sourcesManager.addNewSource(newSource);
-      newSource.putValue(new TigerConfigurationKey(key), value);
-    } else {
-      configurationSource.get().putValue(new TigerConfigurationKey(key), value);
-    }
+  private AbstractTigerConfigurationSource generateNewConfigurationSource(SourceType sourceType) {
+    final AbstractTigerConfigurationSource newSource =
+        new BasicTigerConfigurationSource(sourceType);
+    sourcesManager.addNewSource(newSource);
+    return newSource;
   }
 
   public void addConfigurationSource(AbstractTigerConfigurationSource configurationSource) {

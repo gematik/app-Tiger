@@ -27,18 +27,13 @@ import lombok.Getter;
 public abstract class AbstractTigerConfigurationSource
     implements Comparable<AbstractTigerConfigurationSource> {
 
-  private final TigerConfigurationKey basePath;
-  private final SourceType sourceType;
+  protected final SourceType sourceType;
 
   AbstractTigerConfigurationSource(SourceType sourceType) {
     this.sourceType = sourceType;
-    this.basePath = new TigerConfigurationKey();
   }
 
-  AbstractTigerConfigurationSource(SourceType sourceType, TigerConfigurationKey basePath) {
-    this.sourceType = sourceType;
-    this.basePath = basePath;
-  }
+  public abstract AbstractTigerConfigurationSource copy();
 
   public abstract Map<TigerConfigurationKey, String> applyTemplatesAndAddValuesToMap(
       List<TigerTemplateSource> loadedTemplates,
@@ -61,4 +56,6 @@ public abstract class AbstractTigerConfigurationSource
     }
     return Integer.compare(sourceType.getPrecedence(), other.getSourceType().getPrecedence());
   }
+
+  public abstract void putAll(AbstractTigerConfigurationSource other);
 }

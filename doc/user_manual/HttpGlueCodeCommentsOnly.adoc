@@ -19,7 +19,7 @@ test.
 *see* TigerGlobalConfiguration#resolvePlaceholders(String)
 
 ##### TGR send empty {requestType} request to {tigerResolvedUrl} with headers:
-##### TGR eine leere {requestType} Anfrage an {tigerResolvedUrl} und den folgenden Headern sendet:
+##### TGR eine leere {requestType} Anfrage an {tigerResolvedUrl} und den folgenden Headern" + " sendet:
 ##### TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} mit folgenden Headern:
 Sends an empty request via the selected method and expands the list of default headers with the
 headers provided by the caller. Placeholders in address and in the data table will be resolved.
@@ -43,8 +43,8 @@ the headers which are used by default.
 *param* customHeaders Markdown table of custom headers and their values
 *see* TigerGlobalConfiguration#resolvePlaceholders(String)
 
-##### TGR send empty {requestType} request to {tigerResolvedUrl} without waiting for the response with headers:
-##### TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten mit folgenden Headern:
+##### TGR send empty {requestType} request to {tigerResolvedUrl} without waiting for the response" + " with headers:
+##### TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten" + " mit folgenden Headern:
 Sends an empty request via the selected method and expands the list of default headers with the
 headers provided by the caller. Placeholders in address and in the data table will be resolved.
 
@@ -57,7 +57,7 @@ test.
 *see* TigerGlobalConfiguration#resolvePlaceholders(String)
 
 ##### TGR send {requestType} request to {tigerResolvedUrl} with body {string}
-##### TGR eine leere {requestType} Anfrage an {tigerResolvedUrl} und dem folgenden body {string} sendet
+##### TGR eine leere {requestType} Anfrage an {tigerResolvedUrl} und dem folgenden body {string}" + " sendet
 ##### TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit Body {string}
 Sends a request containing the provided body via the selected method. Placeholders in the body
 and in address will be resolved.
@@ -67,8 +67,8 @@ and in address will be resolved.
 *param* address target address
 *see* TigerGlobalConfiguration#resolvePlaceholders(String)
 
-##### TGR send {requestType} request to {tigerResolvedUrl} with body {string} without waiting for the response
-##### TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit Body {string} ohne auf Antwort zu warten
+##### TGR send {requestType} request to {tigerResolvedUrl} with body {string} without waiting for" + " the response
+##### TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit Body {string} ohne auf" + " Antwort zu warten
 Sends a request containing the provided body via the selected method. Placeholders in the body
 and in address will be resolved.
 
@@ -107,8 +107,8 @@ this is done by the step. Example:
 *see* TigerGlobalConfiguration#resolvePlaceholders(String)
 
 ##### TGR send {requestType} request to {tigerResolvedUrl} with multiline body:
-##### TGR eine {requestType} Anfrage an {tigerResolvedUrl} mit den folgenden mehrzeiligen Daten sendet:
-##### TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit folgenden mehrzeiligen Daten:
+##### TGR eine {requestType} Anfrage an {tigerResolvedUrl} mit den folgenden mehrzeiligen Daten" + " sendet:
+##### TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit folgenden mehrzeiligen" + " Daten:
 Sends a request via the selected method. For the given request's body placeholders in keys and
 values will be resolved. This step is meant to be used for more complex bodys spanning multiple
 lines.
@@ -137,8 +137,11 @@ Example:
 *param* body body content of the request
 *see* TigerGlobalConfiguration#resolvePlaceholders(String)
 
+##### TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline" + " body:
+##### TGR eine {requestType} Anfrage an {tigerResolvedUrl} mit ContentType {string} und den" + " folgenden mehrzeiligen Daten sendet:
+##### TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit ContentType {string} und" + " folgenden mehrzeiligen Daten:
 ##### TGR send {requestType} request to {tigerResolvedUrl} without waiting for the response with:
-##### TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten mit folgenden Daten:
+##### TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten mit" + " folgenden Daten:
 Sends a request via the selected method. The request is expanded by the provided key-value
 pairs. Placeholders in keys and values will be resolved. The values must not be URL encoded, as
 this is done by the step.

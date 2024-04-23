@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.mockserver.mock.action;
 
+import de.gematik.test.tiger.mockserver.model.Action;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
 
@@ -45,4 +46,6 @@ public interface ExpectationForwardAndResponseCallback extends ExpectationForwar
    * @return the request that will be proxied
    */
   HttpResponse handle(HttpRequest httpRequest, HttpResponse httpResponse);
+
+  Action handleException(Throwable exception, HttpRequest request);
 }

@@ -31,16 +31,22 @@ public class BasicTigerConfigurationSource extends AbstractTigerConfigurationSou
 
   @Builder
   public BasicTigerConfigurationSource(
-      SourceType sourceType,
-      TigerConfigurationKey basePath,
-      Map<TigerConfigurationKey, String> values) {
-    super(sourceType, basePath);
-    this.values = values; // TODO deep copy
+      SourceType sourceType, Map<TigerConfigurationKey, String> values) {
+    super(sourceType);
+    this.values = new HashMap<>(values);
   }
 
   public BasicTigerConfigurationSource(SourceType sourceType) {
     super(sourceType);
     this.values = new HashMap<>();
+  }
+
+  @Override
+  public AbstractTigerConfigurationSource copy() {
+    return BasicTigerConfigurationSource.builder()
+        .sourceType(sourceType)
+        .values(new HashMap<>(values))
+        .build();
   }
 
   /**
@@ -94,5 +100,14 @@ public class BasicTigerConfigurationSource extends AbstractTigerConfigurationSou
   @Override
   public synchronized String getValue(TigerConfigurationKey key) {
     return values.get(key);
+  }
+
+  @Override
+  public void putAll(AbstractTigerConfigurationSource other) {
+    if (other instanceof BasicTigerConfigurationSource otherBasicSource) {
+      values.putAll(otherBasicSource.values);
+    } else {
+      throw new IllegalArgumentException("Cannot merge different source types");
+    }
   }
 }

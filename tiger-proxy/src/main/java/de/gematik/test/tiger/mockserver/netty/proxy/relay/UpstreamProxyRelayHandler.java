@@ -63,7 +63,7 @@ public class UpstreamProxyRelayHandler extends SimpleChannelInboundHandler<FullH
           .pipeline()
           .addFirst(
               nettySslContextFactory(ctx.channel())
-                  .createClientSslContext(true, HTTP_2.equals(getALPNProtocol(ctx)))
+                  .createClientSslContext(HTTP_2.equals(getALPNProtocol(ctx)))
                   .newHandler(ctx.alloc()));
     }
     downstreamChannel
@@ -98,7 +98,10 @@ public class UpstreamProxyRelayHandler extends SimpleChannelInboundHandler<FullH
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     if (connectionClosedException(cause)) {
-      log.error("exception caught by upstream relay handler -> closing pipeline {}", ctx.channel(), cause);
+      log.error(
+          "exception caught by upstream relay handler -> closing pipeline {}",
+          ctx.channel(),
+          cause);
     }
     closeOnFlush(ctx.channel());
   }

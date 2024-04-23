@@ -60,11 +60,15 @@ public class RbelJsonFacet implements RbelFacet {
               Optional<String> key,
               RbelHtmlRenderingToolkit renderingToolkit) {
             String formatedJson =
-                renderingToolkit.getObjectMapper().writeValueAsString(
-                    renderingToolkit.shadeJson(
-                        renderingToolkit.getObjectMapper().readTree(element.getRawStringContent()),
-                        Optional.empty(),
-                        element));
+                renderingToolkit
+                    .getObjectMapper()
+                    .writeValueAsString(
+                        renderingToolkit.shadeJson(
+                            renderingToolkit
+                                .getObjectMapper()
+                                .readTree(element.getRawStringContent()),
+                            Optional.empty(),
+                            element));
             for (final Entry<UUID, JsonNoteEntry> entry :
                 renderingToolkit.getNoteTags().entrySet()) {
               if (formatedJson.contains(entry.getValue().getStringToMatch() + ",")) {

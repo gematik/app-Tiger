@@ -75,7 +75,10 @@ public class DownstreamProxyRelayHandler extends SimpleChannelInboundHandler<Ful
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     if (connectionClosedException(cause)) {
-      log.error("exception caught by downstream relay handler -> closing pipeline {}", ctx.channel(), cause);
+      log.error(
+          "exception caught by downstream relay handler -> closing pipeline {}",
+          ctx.channel(),
+          cause);
     }
     closeOnFlush(ctx.channel());
   }

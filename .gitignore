@@ -22,7 +22,11 @@ Maven-Central-Release.Jenkinsfile
 Nightly.Jenkinsfile
 Release.Jenkinsfile
 Dependabot.Jenkinsfile
-/tiger-integration-tests/
 IntegrationTest.Jenkinsfile
+tiger-proxy/DockerHub-Release.Jenkinsfile
+tiger-zion/DockerHub-Release.Jenkinsfile
+Dockerfile
+/tiger-integration-tests/
 /doc/adr/
+README_INTERNAL.md
 

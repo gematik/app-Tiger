@@ -94,4 +94,8 @@ function clickExpandButton() {
 .multi-line {
   white-space: normal;
 }
+
+.row > * {
+  margin-bottom: var(--bs-gutter-y);
+}
 </style>

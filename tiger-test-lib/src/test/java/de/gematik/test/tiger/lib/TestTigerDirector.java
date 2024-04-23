@@ -45,6 +45,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.springframework.test.util.TestSocketUtils;
 import uk.org.webcompere.systemstubs.ThrowingRunnable;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
@@ -296,7 +297,7 @@ class TestTigerDirector {
    * see doc/specification/TigerTestEnvWaitForQuit.puml
    */
   @Test
-  void testQuitTestRunViaWorkFlowUi() throws Exception {
+  void testQuitTestRunViaWorkFlowUi() {
     TigerDirector.start();
     EnvStatusController envStatusController =
         new EnvStatusController(
@@ -311,6 +312,19 @@ class TestTigerDirector {
             () ->
                 TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedOnWorkflowUi()
                     && TigerDirector.getTigerTestEnvMgr().isShutDown());
+  }
+
+  @Test
+  void fixedPortForWorkflowUi_shouldBeUsed() throws Exception {
+    final int availableTcpPort = TestSocketUtils.findAvailableTcpPort();
+    new EnvironmentVariables("TIGER_LIB_WORKFLOWUIPORT", Integer.toString(availableTcpPort))
+        .execute(
+            () -> {
+              TigerDirector.start();
+              final var response =
+                  Unirest.get("http://localhost:" + availableTcpPort + "/").asString();
+              assertThat(response.getStatus()).isEqualTo(200);
+            });
   }
 
   private void executeWithSecureShutdown(ThrowingRunnable test) {

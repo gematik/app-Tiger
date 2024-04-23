@@ -140,7 +140,8 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                 span()
                     .with(
                         a().withClass(
-                                "btn modal-button modal-button-details float-end partner-message-button")
+                                "btn modal-button modal-button-details float-end"
+                                    + " partner-message-button")
                             .attr(
                                 "onclick",
                                 "scrollToMessage('"

@@ -16,6 +16,8 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
+import static de.gematik.rbellogger.util.GlobalServerMap.addServerNameForPort;
+
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -64,6 +66,9 @@ public class HttpBinServer extends AbstractExternalTigerServer {
 
     waitForServerUp();
     addServerToLocalProxyRouteMap(httpBinEndpoint.toURL());
+    addServerNameForPort(
+      getServerport(),
+      this.getServerId());
   }
 
   private HttpBinConfiguration getHttbBinConfiguration() {
@@ -88,6 +93,7 @@ public class HttpBinServer extends AbstractExternalTigerServer {
     if (httpbin != null) {
       httpbin.stop();
     }
+    setStatus(TigerServerStatus.STOPPED, "HttpBin-server " + getServerId() + " stopped");
   }
 
   @Override

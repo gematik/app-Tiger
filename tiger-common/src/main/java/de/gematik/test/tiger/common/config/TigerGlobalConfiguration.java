@@ -33,14 +33,7 @@ import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.Setter;
@@ -112,6 +105,9 @@ public class TigerGlobalConfiguration {
     List<ServerSocket> sockets = new ArrayList<>();
     for (TigerTypedConfigurationKey<Integer> key :
         List.of(TESTENV_MGR_RESERVED_PORT, LOCALPROXY_ADMIN_RESERVED_PORT)) {
+      if (key.getValue().filter(v -> v > 0).isPresent()) {
+        continue;
+      }
       try {
         final ServerSocket serverSocket = new ServerSocket(0);
         key.putValue(serverSocket.getLocalPort());
@@ -165,6 +161,11 @@ public class TigerGlobalConfiguration {
   public static synchronized Optional<String> readStringWithoutResolving(String key) {
     assertGlobalConfigurationIsInitialized();
     return globalConfigurationLoader.readStringOptional(key);
+  }
+
+  public static Optional<byte[]> readByteArray(String key) {
+    assertGlobalConfigurationIsInitialized();
+    return globalConfigurationLoader.readStringOptional(key).map(Base64.getDecoder()::decode);
   }
 
   @SneakyThrows
@@ -284,7 +285,7 @@ public class TigerGlobalConfiguration {
 
   public static void putValue(String key, Object value, SourceType sourceType) {
     assertGlobalConfigurationIsInitialized();
-    globalConfigurationLoader.putValue(key, value.toString(), sourceType);
+    globalConfigurationLoader.putValue(key, value, sourceType);
   }
 
   public static String resolvePlaceholders(String stringToSubstitute) {
@@ -469,5 +470,27 @@ public class TigerGlobalConfiguration {
                                 k.downsampleKeyCaseSensitive(), Pair.of(s.getSourceType(), v))));
 
     return Collections.unmodifiableMap(exportedConfiguration);
+  }
+
+  /**
+   * Clears local test variables. These are variables from the source
+   * SourceType.LOCAL_TEST_CASE_CONTEXT, which should only be active during a single test case.
+   */
+  public static void clearLocalTestVariables() {
+    globalConfigurationLoader.listSources().stream()
+        .filter(s -> s.getSourceType() == SourceType.LOCAL_TEST_CASE_CONTEXT)
+        .findAny()
+        .ifPresent(globalConfigurationLoader::removeConfigurationSource);
+  }
+
+  /**
+   * Clears test variables. These are variables from the source SourceType.TEST_CONTEXT, which
+   * should only be active during the execution of a feature file.
+   */
+  public static void clearTestVariables() {
+    globalConfigurationLoader.listSources().stream()
+        .filter(s -> s.getSourceType() == SourceType.TEST_CONTEXT)
+        .findAny()
+        .ifPresent(globalConfigurationLoader::removeConfigurationSource);
   }
 }

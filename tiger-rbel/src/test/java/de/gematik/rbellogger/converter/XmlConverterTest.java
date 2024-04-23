@@ -216,12 +216,12 @@ class XmlConverterTest {
   @Test
   void namespacesShouldBeCorrectlyParsedAndStored() {
     final RbelElement convertedMessage =
-      RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+        RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
 
     assertThat(convertedMessage)
-      .extractChildWithPath("$.body.RegistryResponse.xmlns:ns")
-      .hasStringContentEqualTo("urn:oasis:names:tc:ebxml-regrep:xsd:rim:3.0")
-      .hasFacet(RbelXmlAttributeFacet.class)
-      .hasFacet(RbelXmlNamespaceFacet.class);
+        .extractChildWithPath("$.body.RegistryResponse.xmlns:ns")
+        .hasStringContentEqualTo("urn:oasis:names:tc:ebxml-regrep:xsd:rim:3.0")
+        .hasFacet(RbelXmlAttributeFacet.class)
+        .hasFacet(RbelXmlNamespaceFacet.class);
   }
 }

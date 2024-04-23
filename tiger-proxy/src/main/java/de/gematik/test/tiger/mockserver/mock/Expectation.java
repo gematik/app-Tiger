@@ -16,251 +16,148 @@
 
 package de.gematik.test.tiger.mockserver.mock;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.gematik.test.tiger.mockserver.matchers.TimeToLive;
-import de.gematik.test.tiger.mockserver.matchers.Times;
+import de.gematik.test.tiger.mockserver.mock.action.ExpectationCallback;
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import de.gematik.test.tiger.mockserver.model.*;
-import de.gematik.test.tiger.mockserver.uuid.UUIDService;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.PatternSyntaxException;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URIBuilder;
 
 /*
  * @author jamesdbloom
  */
 @SuppressWarnings("rawtypes")
-@EqualsAndHashCode(exclude = {"id", "created", "sortableExpectationId"})
+@EqualsAndHashCode(
+    exclude = {"created", "sortableExpectationId"},
+    callSuper = false)
 @Accessors(chain = true)
 @Getter
-public class Expectation extends ObjectWithJsonToString {
+@Slf4j
+public class Expectation extends ObjectWithJsonToString implements Comparable<Expectation> {
 
   private static final AtomicInteger EXPECTATION_COUNTER = new AtomicInteger(0);
   private static final long START_TIME = System.currentTimeMillis();
-  private String id;
-  @JsonIgnore private long created;
-  private int priority;
-  private SortableExpectationId sortableExpectationId;
-  private final RequestDefinition httpRequest;
-  private final Times times;
-  private final TimeToLive timeToLive;
+  @Setter private String id = UUID.randomUUID().toString();
+  private final int priority;
+  private final HttpRequest requestPattern;
   @Setter private HttpAction httpAction;
+  private ExpectationCallback expectationCallback;
 
-  /**
-   * Specify the HttpRequest to match against as follows:
-   *
-   * <p>
-   *
-   * <pre>
-   *     when(
-   *         request()
-   *             .withMethod("GET")
-   *             .withPath("/some/path")
-   *     ).thenRespond(
-   *         response()
-   *             .withContentType(APPLICATION_JSON_UTF_8)
-   *             .withBody("{\"some\": \"body\"}")
-   *     );
-   * </pre>
-   *
-   * <p>
-   *
-   * @param httpRequest the HttpRequest to match against
-   * @return the Expectation
-   */
-  public static Expectation when(HttpRequest httpRequest) {
-    return new Expectation(httpRequest);
-  }
-
-  /**
-   * Specify the HttpRequest to match against with a match priority as follows:
-   *
-   * <p>
-   *
-   * <pre>
-   *     when(
-   *         request()
-   *             .withMethod("GET")
-   *             .withPath("/some/path"),
-   *         10
-   *     ).thenRespond(
-   *         response()
-   *             .withContentType(APPLICATION_JSON_UTF_8)
-   *             .withBody("{\"some\": \"body\"}")
-   *     );
-   * </pre>
-   *
-   * <p>
-   *
-   * @param httpRequest the HttpRequest to match against
-   * @param priority the priority with which this expectation is used to match requests compared to
-   *     other expectations (high first)
-   * @return the Expectation
-   */
-  public static Expectation when(HttpRequest httpRequest, int priority) {
-    return new Expectation(httpRequest, Times.unlimited(), TimeToLive.unlimited(), priority);
-  }
-
-  /**
-   * Specify the HttpRequest to match against for a limit number of times or time as follows:
-   *
-   * <p>
-   *
-   * <pre>
-   *     when(
-   *         request()
-   *             .withMethod("GET")
-   *             .withPath("/some/path"),
-   *         5,
-   *         exactly(TimeUnit.SECONDS, 90)
-   *     ).thenRespond(
-   *         response()
-   *             .withContentType(APPLICATION_JSON_UTF_8)
-   *             .withBody("{\"some\": \"body\"}")
-   *     );
-   * </pre>
-   *
-   * <p>
-   *
-   * @param httpRequest the HttpRequest to match against
-   * @param times the number of times to use this expectation to match requests
-   * @param timeToLive the time this expectation should be used to match requests
-   * @return the Expectation
-   */
-  public static Expectation when(HttpRequest httpRequest, Times times, TimeToLive timeToLive) {
-    return new Expectation(httpRequest, times, timeToLive, 0);
-  }
-
-  /**
-   * Specify the HttpRequest to match against for a limit number of times or time and a match
-   * priority as follows:
-   *
-   * <p>
-   *
-   * <pre>
-   *     when(
-   *         request()
-   *             .withMethod("GET")
-   *             .withPath("/some/path"),
-   *         5,
-   *         exactly(TimeUnit.SECONDS, 90),
-   *         10
-   *     ).thenRespond(
-   *         response()
-   *             .withContentType(APPLICATION_JSON_UTF_8)
-   *             .withBody("{\"some\": \"body\"}")
-   *     );
-   * </pre>
-   *
-   * <p>
-   *
-   * @param httpRequest the HttpRequest to match against
-   * @param times the number of times to use this expectation to match requests
-   * @param timeToLive the time this expectation should be used to match requests
-   * @param priority the priority with which this expectation is used to match requests compared to
-   *     other expectations (high first)
-   * @return the Expectation
-   */
-  public static Expectation when(
-      HttpRequest httpRequest, Times times, TimeToLive timeToLive, int priority) {
-    return new Expectation(httpRequest, times, timeToLive, priority);
-  }
-
-  public Expectation(RequestDefinition requestDefinition) {
-    this(requestDefinition, Times.unlimited(), TimeToLive.unlimited(), 0);
-  }
-
-  public Expectation(
-      RequestDefinition requestDefinition, Times times, TimeToLive timeToLive, int priority) {
+  public Expectation(HttpRequest requestDefinition, int priority) {
     // ensure created enforces insertion order by relying on system time, and a counter
     EXPECTATION_COUNTER.compareAndSet(Integer.MAX_VALUE, 0);
-    this.created = System.currentTimeMillis() - START_TIME + EXPECTATION_COUNTER.incrementAndGet();
-    this.httpRequest = requestDefinition;
-    this.times = times;
-    this.timeToLive = timeToLive;
+    this.requestPattern = requestDefinition;
     this.priority = priority;
-  }
-
-  /**
-   * Set id of this expectation which can be used to update this expectation later or for clearing
-   * or verifying by expectation id.
-   *
-   * <p>Note: Each unique expectation must have a unique id otherwise this expectation will update a
-   * existing expectation with the same id.
-   *
-   * @param id unique string for expectation's id
-   */
-  public Expectation withId(String id) {
-    this.id = id;
-    this.sortableExpectationId = null;
-    return this;
-  }
-
-  public String getId() {
-    if (id == null) {
-      withId(UUIDService.getUUID());
-    }
-    return id;
-  }
-
-  public Expectation withCreated(long created) {
-    this.created = created;
-    this.sortableExpectationId = null;
-    return this;
-  }
-
-  @JsonIgnore
-  public SortableExpectationId getSortableId() {
-    if (sortableExpectationId == null) {
-      sortableExpectationId = new SortableExpectationId(getId(), priority, created);
-    }
-    return sortableExpectationId;
-  }
-
-  public Expectation thenRespond(HttpResponse httpResponse) {
-    this.httpAction = HttpAction.of(httpResponse);
-    return this;
   }
 
   public Expectation thenForward(ExpectationForwardAndResponseCallback callback) {
     this.httpAction =
         HttpAction.of(new HttpOverrideForwardedRequest())
             .setExpectationForwardAndResponseCallback(callback);
+    this.expectationCallback = callback;
     return this;
   }
 
-  @JsonIgnore
-  public boolean isActive() {
-    return hasRemainingMatches() && isStillAlive();
+  public boolean matches(HttpRequest request) {
+    return protocolMatches(this.requestPattern.getProtocol(), request.getProtocol())
+        && hostMatches(request)
+        && pathMatches(this.requestPattern.getPath(), request.getPath())
+        && (expectationCallback == null || expectationCallback.matches(request));
   }
 
-  private boolean hasRemainingMatches() {
-    return times == null || times.greaterThenZero();
+  private boolean hostMatches(HttpRequest request) {
+    if (!requestPattern.getHeaders().containsEntry("Host")) {
+      return true;
+    }
+    return StringUtils.equals(
+        requestPattern.getFirstHeader("Host"), request.getFirstHeader("Host"));
   }
 
-  private boolean isStillAlive() {
-    return timeToLive == null || timeToLive.stillAlive();
+  private boolean protocolMatches(Protocol protocol, Protocol otherProtocol) {
+    if (protocol == null) {
+      return true;
+    } else {
+      return protocol.equals(otherProtocol);
+    }
   }
 
-  public boolean decrementRemainingMatches() {
-    if (times != null) {
-      return times.decrement();
+  public static boolean pathMatches(String matcherValue, String matchedValue) {
+    if (matcherValue == null) {
+      return true;
+    }
+    if (StringUtils.isBlank(matcherValue)) {
+      return true;
+    } else {
+      if (matchedValue != null) {
+        // match as exact string
+        if (matchedValue.equals(matcherValue) || matchedValue.equalsIgnoreCase(matcherValue)) {
+          return true;
+        }
+
+        // match as regex - matcher -> matched (data plane or control plane)
+        try {
+          if (matchedValue.matches(matcherValue)) {
+            return true;
+          }
+        } catch (PatternSyntaxException pse) {
+          log.debug(
+              "error while matching regex [{}] for string [{}]", matcherValue, matchedValue, pse);
+        }
+        // match as regex - matched -> matcher (control plane only)
+        try {
+          if (matcherValue.matches(matchedValue)) {
+            return true;
+          }
+        } catch (PatternSyntaxException pse) {
+          log.trace(
+              "error while matching regex [{}] for string [{}]", matchedValue, matcherValue, pse);
+        }
+      }
     }
     return false;
   }
 
-  @SuppressWarnings("PointlessNullCheck")
-  public boolean contains(HttpRequest httpRequest) {
-    return httpRequest != null && this.httpRequest.equals(httpRequest);
+  @Override
+  public int compareTo(Expectation o) {
+    if (o == null) {
+      return 1;
+    }
+    if (priority == o.priority) {
+      if (requestPattern == null
+          || o.requestPattern == null
+          || requestPattern.getPath() == null
+          || o.requestPattern.getPath() == null) {
+        return 0;
+      }
+      final String thisPath = requestPattern.getPath();
+      final String otherPath = o.requestPattern.getPath();
+      if (uriTwoIsBelowUriOne(thisPath, otherPath)) {
+        return -1;
+      } else if (uriTwoIsBelowUriOne(otherPath, thisPath)) {
+        return 1;
+      } else {
+        return 0;
+      }
+    }
+    return Integer.compare(o.priority, priority);
   }
 
-  @SuppressWarnings("MethodDoesntCallSuperMethod")
-  public Expectation clone() {
-    return new Expectation(httpRequest, times.clone(), timeToLive, priority)
-        .withId(id)
-        .withCreated(created)
-        .setHttpAction(httpAction);
+  private static boolean uriTwoIsBelowUriOne(final String value1, final String value2) {
+    try {
+      final URI uri1 = new URI(value1);
+      final URI uri2WithUri1Scheme = new URIBuilder(value2).setScheme(uri1.getScheme()).build();
+      return !uri1.relativize(uri2WithUri1Scheme).equals(uri2WithUri1Scheme);
+    } catch (final URISyntaxException e) {
+      return false;
+    }
   }
 }

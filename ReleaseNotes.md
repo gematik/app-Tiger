@@ -1,5 +1,74 @@
 # Changelog Tiger Test platform
 
+# Release 3.0.2
+
+## Breaking changes
+
+* TCLE-7: if you use the tiger-cloud-extension you need to update it to version 1.10.0 due to changes in organisation of
+  some configuration classes. The new tiger-cloud-extension version adds support for copying files into the docker
+  container created by the server
+  type `docker`. You can copy the files by adding the following configuration to the `dockerOptions`:
+
+```yaml
+copyFiles:
+  - sourcePath: ./example/path/file_to_copy.txt
+    destinationPath: /path/in/container/file_to_copy.txt
+    fileMode: 0633
+``` 
+
+## Bugfixes
+
+* TGR-1174: when a content-type header is set in a request made with the tiger http client, the charset is no longer
+  automatically appended. If no content-type header is set and `activateRbelWriter = true` the content type and charset
+  are automatically generated.
+* TGR-1342: Zion can now handle root arrays in JSON responses.
+* TGR-1318: Byte-Arrays can now be stored and changed in TigerGlobalConfiguration
+* TGR-327: Reasonphrase is no longer added implicitly in the TigerProxy (when the phrase is empty from the server it
+  will stay empty)
+* TGR-1314: Tiger-Proxy: The content-length headers are no longer removed from the responses logged.
+* TGR-1334: fixed issue where responses were not correctly paired with the requests in the workflow ui.
+* TGR-1194: Usability improvements for the configuration editor.
+* TGR-1172: fixed issue where messages coming from a remote tiger proxy would display the timestamp in a different
+  timezone.
+* TGR-1330: fixed issue where messages coming from a remote tiger proxy on a meshed setup would have the sender and
+  receiver addresses switched.
+
+## Features
+
+* TGR-1313: Added support for the new VAU 'Epa für alle' format (VauEpa3).
+* TGR-1286: Tiger-Proxy: The number of open connections is now tracked and can be queried.
+* TGR-1210: Tiger-Proxy: Connection problems to remote servers are now logged.
+* TGR-1351: Tiger-Proxy: Competing routes are now supported. The proxy automatically selects the most specific route if multiple routes are matching.
+* TGR-1353: You can set a defined port to be used for the WorkflowUI using the configuration key `tiger.lib.workflowUiPort`.
+* TGR-1315:
+  step ```TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline body:``` added
+* TGR-1320: TLS-Facets now also carry the TLS-Protocol and the Cipher-Suite used for the connection
+* TGR-1319: New Gluecode added for starting & stopping servers:
+
+```
+    Given TGR stop server "remoteTigerProxy"
+    And TGR start server "remoteTigerProxy"
+```
+
+* TGR-1325: Tiger-Proxy: Added new 'criterion' option for routes. This allows to match requests based on their content:
+
+```yaml
+tigerProxy:
+  proxyRoutes:
+    - from: /
+      to: http://orf.at/blub/
+      criterions:
+        - $.header.foo == 'bar'
+```
+
+* TGR-1321: The variable set by the glue code
+  step ```TGR set local variable {tigerResolvedString} to {tigerResolvedString}``` now gets automatically cleared after
+  the test case run is finished. The new glue code
+  step ```TGR set local feature variable {tigerResolvedString} to {tigerResolvedString}``` sets a variable that is
+  cleared after the execution of the feature file is finished.
+* TGR-1331: remove no longer necessary dependency tools checker.
+* TGR-1238: refactored uses of Stream.peek().
+
 # Release 3.0.1
 
 * Serenity BDD 4.1.0

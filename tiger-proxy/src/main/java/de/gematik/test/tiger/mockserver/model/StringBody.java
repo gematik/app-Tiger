@@ -21,14 +21,13 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.nio.charset.Charset;
-import java.util.Arrays;
-import java.util.Objects;
+import lombok.EqualsAndHashCode;
 
 /*
  * @author jamesdbloom
  */
+@EqualsAndHashCode(callSuper = true)
 public class StringBody extends BodyWithContentType<String> {
-  private int hashCode;
   public static final MediaType DEFAULT_CONTENT_TYPE = MediaType.create("text", "plain");
   private final boolean subString;
   private final String value;
@@ -100,34 +99,5 @@ public class StringBody extends BodyWithContentType<String> {
   @Override
   public String toString() {
     return value;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    if (hashCode() != o.hashCode()) {
-      return false;
-    }
-    if (!super.equals(o)) {
-      return false;
-    }
-    StringBody that = (StringBody) o;
-    return subString == that.subString
-        && Objects.equals(value, that.value)
-        && Arrays.equals(rawBytes, that.rawBytes);
-  }
-
-  @Override
-  public int hashCode() {
-    if (hashCode == 0) {
-      int result = Objects.hash(super.hashCode(), subString, value);
-      hashCode = 31 * result + Arrays.hashCode(rawBytes);
-    }
-    return hashCode;
   }
 }

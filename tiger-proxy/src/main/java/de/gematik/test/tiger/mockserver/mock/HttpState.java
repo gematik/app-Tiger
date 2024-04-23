@@ -19,29 +19,29 @@ package de.gematik.test.tiger.mockserver.mock;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static org.apache.commons.lang3.StringUtils.*;
 
-import com.google.common.annotations.VisibleForTesting;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.mock.listeners.MockServerMatcherNotifier.Cause;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.scheduler.Scheduler;
 import de.gematik.test.tiger.mockserver.uuid.UUIDService;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /*
  * @author jamesdbloom
  */
 @Slf4j
+@Getter
 public class HttpState {
 
   private static final ThreadLocal<Integer> LOCAL_PORT = new ThreadLocal<>(); // NOSONAR
   private final String uniqueLoopPreventionHeaderValue = "MockServer_" + UUIDService.getUUID();
   private final Scheduler scheduler;
   // mockserver
-  private final RequestMatchers requestMatchers;
   private final Configuration configuration;
+  private List<Expectation> expectations = new ArrayList<>();
 
   public static void setPort(final HttpRequest request) {
     if (request != null && request.getSocketAddress() != null) {
@@ -77,48 +77,32 @@ public class HttpState {
   public HttpState(Configuration configuration, Scheduler scheduler) {
     this.configuration = configuration;
     this.scheduler = scheduler;
-    this.requestMatchers = new RequestMatchers(configuration, scheduler);
   }
 
   public void reset() {
-    requestMatchers.reset();
     log.info("resetting all expectations and request logs");
   }
 
   public List<Expectation> add(Expectation... expectations) {
-    List<Expectation> upsertedExpectations = new ArrayList<>();
     for (Expectation expectation : expectations) {
-      RequestDefinition requestDefinition = expectation.getHttpRequest();
-      if (requestDefinition instanceof HttpRequest) {
-        final String hostHeader = ((HttpRequest) requestDefinition).getFirstHeader(HOST.toString());
-        if (isNotBlank(hostHeader)) {
-          scheduler.submit(() -> configuration.addSubjectAlternativeName(hostHeader));
-        }
+      this.expectations.add(expectation);
+
+      final String hostHeader = expectation.getRequestPattern().getFirstHeader(HOST.toString());
+      if (isNotBlank(hostHeader)) {
+        scheduler.submit(() -> configuration.addSubjectAlternativeName(hostHeader));
       }
-      upsertedExpectations.add(requestMatchers.add(expectation, Cause.API));
     }
-    return upsertedExpectations;
+    return List.of();
   }
 
   public Expectation firstMatchingExpectation(HttpRequest request) {
-    if (requestMatchers.isEmpty()) {
-      return null;
-    } else {
-      return requestMatchers.firstMatchingExpectation(request);
-    }
-  }
-
-  @VisibleForTesting
-  public List<Expectation> allMatchingExpectation(HttpRequest request) {
-    if (requestMatchers.isEmpty()) {
-      return Collections.emptyList();
-    } else {
-      return requestMatchers.retrieveActiveExpectations(request);
-    }
+    return expectations.stream()
+        .filter(expectation -> expectation.matches(request))
+        .min(Comparator.naturalOrder())
+        .orElse(null);
   }
 
   public boolean handle(HttpRequest request) {
-
     request.withLogCorrelationId(UUIDService.getUUID());
     setPort(request);
 
@@ -127,21 +111,17 @@ public class HttpState {
     return false;
   }
 
-  public RequestMatchers getRequestMatchers() {
-    return requestMatchers;
-  }
-
-  public Scheduler getScheduler() {
-    return scheduler;
-  }
-
   public String getUniqueLoopPreventionHeaderName() {
     return "x-forwarded-by";
   }
 
-  public String getUniqueLoopPreventionHeaderValue() {
-    return uniqueLoopPreventionHeaderValue;
+  public List<Expectation> retrieveActiveExpectations() {
+    return expectations;
   }
 
-  public void stop() {}
+  public void clear(String expectationId) {
+    boolean foundRoute =
+        expectations.removeIf(expectation -> expectation.getId().equals(expectationId));
+    log.info("removed expectation with id [{}]: {}", expectationId, foundRoute);
+  }
 }

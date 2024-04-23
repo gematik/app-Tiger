@@ -41,7 +41,7 @@ public class RbelKeyFolderInitializer implements Consumer<RbelConverter> {
     AtomicReference<Path> currentFile = new AtomicReference<>();
     try (final Stream<Path> fileStream = Files.walk(Path.of(keyFolderPath))) {
       fileStream
-          .peek(currentFile::set)
+          .map(path -> setCurrentFile(path, currentFile))
           .map(Path::toFile)
           .filter(File::isFile)
           .filter(File::canRead)
@@ -60,5 +60,10 @@ public class RbelKeyFolderInitializer implements Consumer<RbelConverter> {
               + "'",
           e);
     }
+  }
+
+  private Path setCurrentFile(Path path, AtomicReference<Path> currentFile) {
+    currentFile.set(path);
+    return path;
   }
 }

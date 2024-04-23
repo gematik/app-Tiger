@@ -21,7 +21,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.0.1</version>
+        <version>3.0.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -68,23 +68,18 @@
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>${version.commons-lang3}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
             <artifactId>commons-text</artifactId>
             <version>${version.commons-text}</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.0.0-jre</version>
+            <version>33.1.0-jre</version>
         </dependency>
         <dependency>
             <artifactId>jose4j</artifactId>
             <groupId>org.bitbucket.b_c</groupId>
-            <version>0.9.2</version>
+            <version>${version.jose4j}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>

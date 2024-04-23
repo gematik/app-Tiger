@@ -18,13 +18,13 @@ package de.gematik.rbellogger.data.facet;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 /** Empty marker: The element is a request. */
 @Data
-@Builder
+@SuperBuilder
 @RequiredArgsConstructor
 public class RbelRequestFacet implements RbelFacet {
 

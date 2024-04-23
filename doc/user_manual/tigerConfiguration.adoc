@@ -136,21 +136,29 @@ If that key is not found, the fallback value "orThisValue" will be used.
 
 === Localized configuration
 
-Sometimes scope-creep can be a concern: Say you want to add a bunch of values right for one specific call but want to avoid that those values can be seen from everywhere else.
-By default, TigerGlobalConfiguration does not honor scope, which is a deliberate design-choice.
-To give you greater control over scope-behavior use the `.localScope()`-method:
+It is possible to set a local variable in the TigerGlobalConfiguration which will only be active for the duration of the test case execution.
 
-[source,java]
+This can be achieved with the glue code step:
+
+[source,gherkin]
 ----
-TigerGlobalConfiguration.localScope()
-    .withValue("local.key", "localValue")
-    .withValue("another.key", "anotherValue")
-    .execute(() -> assertThat(TigerGlobalConfiguration.readString("local.key"))
-        .isEqualTo("localValue"));
+TGR setze lokale Variable {tigerResolvedString} auf {tigerResolvedString}
+TGR set local variable {tigerResolvedString} to {tigerResolvedString}
 ----
 
-Bear in mind that this does not work with threading: The values are added to the global store and will remain in the store for the duration of the execution of the given runnable.
-If you execute multiple tests in parallel you should look into the `TigerThreadScopedConfigurationSource` (which comes with other drawbacks, threading is not an easy problem to solve).
+The variables will be removed from the TigerGlobalConfiguration after the test case execution.
+Bear in mind that this does not work with threading: The values are added to the global store and are removed automatically, but will still be visible by any parallel thread that attempts to read the TigerGlobalConfiguration.
+
+It is also possible to set a variable that is local to the feature file where it is defined.
+With the glue code step:
+
+[source,gherkin]
+----
+TGR setze lokale Feature Variable {tigerResolvedString} auf {tigerResolvedString}
+TGR set local feature variable {tigerResolvedString} to {tigerResolvedString}
+----
+
+a variable can be set that will be removed from the TigerGlobalConfiguration when the execution of the feature file is finished.
 
 === Examples
 

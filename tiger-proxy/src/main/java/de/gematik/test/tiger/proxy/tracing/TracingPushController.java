@@ -16,21 +16,27 @@
 
 package de.gematik.test.tiger.proxy.tracing;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.file.MessageTimeWriter;
+import de.gematik.rbellogger.file.RbelFileWriter;
+import de.gematik.rbellogger.file.TcpIpMessageFacetWriter;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.*;
 import de.gematik.test.tiger.proxy.data.TigerNonPairedMessageFacet;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import jakarta.annotation.PostConstruct;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.json.JSONObject;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +45,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 public class TracingPushController {
 
+  private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
   public static final int MAX_MESSAGE_SIZE = 512 * 1024;
   public final SimpMessagingTemplate template;
   public final TigerProxy tigerProxy;
@@ -75,7 +82,9 @@ public class TracingPushController {
     if (msg.hasFacet(TigerNonPairedMessageFacet.class)) {
       sendNonPairedMessage(msg);
     } else if (msg.hasFacet(RbelHttpResponseFacet.class)
-        || msg.hasFacet(TracingMessagePairFacet.class)) {
+        || (msg.getFacet(TracingMessagePairFacet.class)
+            .map(facet -> facet.isResponse(msg))
+            .orElse(false))) {
       sendPairedMessage(msg);
     } else {
       log.trace(
@@ -111,6 +120,7 @@ public class TracingPushController {
                   msg.getFacet(RbelMessageTimingFacet.class)
                       .map(RbelMessageTimingFacet::getTransmissionTime)
                       .orElse(null))
+              .additionalInformationRequest(gatherAdditionalInformation(msg))
               .build());
 
       mapRbelMessageAndSent(msg);
@@ -163,10 +173,25 @@ public class TracingPushController {
                     .getFacet(RbelMessageTimingFacet.class)
                     .map(RbelMessageTimingFacet::getTransmissionTime)
                     .orElse(null))
+            .additionalInformationRequest(gatherAdditionalInformation(request))
+            .additionalInformationResponse(gatherAdditionalInformation(msg))
             .build());
 
-    mapRbelMessageAndSent(msg);
     mapRbelMessageAndSent(request);
+    mapRbelMessageAndSent(msg);
+  }
+
+  private Map<String, String> gatherAdditionalInformation(RbelElement msg) {
+    // create new blank jackson object
+    var infoObject = new JSONObject();
+    RbelFileWriter.DEFAULT_PRE_SAVE_LISTENER.stream()
+        .filter(
+            listener ->
+                !(listener instanceof TcpIpMessageFacetWriter)
+                    && !(listener instanceof MessageTimeWriter))
+        .forEach(listener -> listener.preSaveCallback(msg, infoObject));
+    return infoObject.toMap().entrySet().stream()
+        .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().toString()));
   }
 
   private void propagateException(Throwable exception) {
@@ -193,7 +218,11 @@ public class TracingPushController {
               Math.min((i + 1) * MAX_MESSAGE_SIZE, rbelMessage.getRawContent().length));
 
       log.trace(
-          "Sending part {} of {} for UUID {}...", i + 1, numberOfParts, rbelMessage.getUuid());
+          "{} sending part {} of {} for UUID {}...",
+          tigerProxy.proxyName(),
+          i + 1,
+          numberOfParts,
+          rbelMessage.getUuid());
       template.convertAndSend(
           TigerRemoteProxyClient.WS_DATA,
           TracingMessagePart.builder()

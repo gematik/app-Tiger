@@ -45,13 +45,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelBinaryFacet;
-import de.gematik.rbellogger.data.facet.RbelListFacet;
-import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
-import de.gematik.rbellogger.data.facet.RbelNoteFacet;
-import de.gematik.rbellogger.data.facet.RbelRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelResponseFacet;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.exceptions.RbelRenderingException;
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
@@ -391,6 +385,11 @@ public class RbelHtmlRenderingToolkit {
                             localRessources
                                 ? "../webjars/highlightjs/languages/xml.min.js"
                                 : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/languages/xml.min.js"),
+                    script()
+                        .withSrc(
+                            localRessources
+                                ? "../webjars/dayjs/dayjs.min.js"
+                                : "https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js"),
                     link2CSS(
                         localRessources
                             ? "../webjars/bootstrap/css/bootstrap.min.css"
@@ -469,7 +468,8 @@ public class RbelHtmlRenderingToolkit {
                 script()
                     .with(
                         new UnescapedText(
-                            IOUtils.resourceToString("/rbel.js", StandardCharsets.UTF_8))),
+                            IOUtils.resourceToString("/rbel.js", StandardCharsets.UTF_8)))
+                    .attr("id", "mainWebUiScript"),
                 script(elements.stream().map(this::menuTab).collect(Collectors.joining("\n")))));
   }
 

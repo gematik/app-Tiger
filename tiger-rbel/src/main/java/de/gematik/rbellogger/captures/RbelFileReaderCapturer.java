@@ -17,7 +17,7 @@
 package de.gematik.rbellogger.captures;
 
 import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.util.RbelFileWriter;
+import de.gematik.rbellogger.file.RbelFileWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;

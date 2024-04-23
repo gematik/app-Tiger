@@ -34,7 +34,6 @@ import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
-import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
@@ -57,6 +56,7 @@ import kong.unirest.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.http.NoHttpResponseException;
 import org.assertj.core.data.TemporalUnitWithinOffset;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -146,30 +146,18 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         .asString();
     awaitMessagesInTiger(2);
 
-    assertThat(
-            tigerProxy
-                .getRbelMessagesList()
-                .get(0)
-                .findElement("$.header.foo")
-                .get()
-                .getRawStringContent())
-        .isEqualTo("bar");
-    assertThat(
-            tigerProxy
-                .getRbelMessagesList()
-                .get(0)
-                .findElement("$.header.x-forwarded-for")
-                .get()
-                .getRawStringContent())
-        .isEqualTo("someStuff");
-    assertThat(
-            tigerProxy
-                .getRbelMessagesList()
-                .get(0)
-                .findElement("$.header.Host")
-                .get()
-                .getRawStringContent())
-        .isEqualTo("localhost:" + fakeBackendServerPort);
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .extractChildWithPath("$.header.foo")
+        .hasStringContentEqualTo("bar")
+        .andTheInitialElement()
+        .extractChildWithPath("$.header.x-forwarded-for")
+        .hasStringContentEqualTo("someStuff")
+        .andTheInitialElement()
+        .extractChildWithPath("$.header.Host")
+        .hasStringContentEqualTo("localhost:" + fakeBackendServerPort);
+    assertThat(tigerProxy.getRbelMessagesList().get(1))
+        .extractChildWithPath("$.header.[~'content-length']")
+        .hasStringContentEqualTo("13");
   }
 
   @Test
@@ -189,32 +177,29 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         .header("x-forwarded-for", "someStuff")
         .header("Host", "RandomStuffShouldBePreserved")
         .asString();
-    awaitMessagesInTiger(2);
+    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
+        .header("foo", "bar")
+        .header("x-forwarded-for", "someStuff")
+        .header("Host", "RandomStuffShouldBePreserved")
+        .asString();
+    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
+        .header("foo", "bar")
+        .header("x-forwarded-for", "someStuff")
+        .header("Host", "RandomStuffShouldBePreserved")
+        .asString();
+    awaitMessagesInTiger(6);
 
-    assertThat(
-            tigerProxy
-                .getRbelMessagesList()
-                .get(0)
-                .findElement("$.header.foo")
-                .get()
-                .getRawStringContent())
-        .isEqualTo("bar");
-    assertThat(
-            tigerProxy
-                .getRbelMessagesList()
-                .get(0)
-                .findElement("$.header.x-forwarded-for")
-                .get()
-                .getRawStringContent())
-        .isEqualTo("someStuff");
-    assertThat(
-            tigerProxy
-                .getRbelMessagesList()
-                .get(0)
-                .findElement("$.header.Host")
-                .get()
-                .getRawStringContent())
-        .isEqualTo("RandomStuffShouldBePreserved");
+    final RbelElement request = tigerProxy.getRbelMessagesList().get(0);
+    assertThat(request).extractChildWithPath("$.header.foo").hasStringContentEqualTo("bar");
+    assertThat(request)
+        .extractChildWithPath("$.header.x-forwarded-for")
+        .hasStringContentEqualTo("someStuff");
+    assertThat(request)
+        .extractChildWithPath("$.header.Host")
+        .hasStringContentEqualTo("RandomStuffShouldBePreserved");
+    assertThat(tigerProxy.getRbelMessagesList().get(1))
+        .extractChildWithPath("$.header.[~'content-length']")
+        .hasStringContentEqualTo("13");
   }
 
   @Test
@@ -408,27 +393,6 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   }
 
   @Test
-  void addAlreadyExistingRoute_shouldThrowException() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
-
-    var route =
-        TigerRoute.builder()
-            .from("http://backend")
-            .to("http://localhost:" + fakeBackendServerPort)
-            .build();
-    assertThatThrownBy(() -> tigerProxy.addRoute(route))
-        .isInstanceOf(TigerProxyConfigurationException.class);
-  }
-
-  @Test
   void binaryMessage_shouldGiveBinaryResult(WireMockRuntimeInfo runtimeInfo) {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
@@ -593,7 +557,6 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void basicAuthenticationRequiredAndConfigured_ShouldWork(WireMockRuntimeInfo runtimeInfo) {
-
     runtimeInfo
         .getWireMock()
         .register(
@@ -613,8 +576,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                         .build()))
             .build());
 
-    assertThat(proxyRest.get("http://backend/authenticatedPath").asJson().getStatus())
-        .isEqualTo(404);
+    assertThatThrownBy(() -> proxyRest.get("http://backend/authenticatedPath").asJson())
+        .isInstanceOf(UnirestException.class);
     assertThat(proxyRest.get("http://backendWithBasicAuth/authenticatedPath").asJson().getStatus())
         .isEqualTo(777);
   }
@@ -1041,8 +1004,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         .asString();
     awaitMessagesInTiger(2);
 
-    assertThat(tigerProxy.getRbelMessagesList().get(0))
-        .doesNotContainChildWithPath("$.body.foobar");
+    assertThat(tigerProxy.getRbelMessagesList().get(0)).doesNotHaveChildWithPath("$.body.foobar");
   }
 
   @Test
@@ -1172,5 +1134,53 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     assertThat(tigerProxy.getRbelMessagesList().get(0))
         .extractChildWithPath("$.path.foo.value")
         .hasStringContentEqualTo("this is bar");
+  }
+
+  @Test
+  void emptyStatusMessageFromBackend_shouldBeEmptyAfterTigerProxyAsWell() {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("http://backend")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .build());
+
+    final HttpResponse<String> response =
+        proxyRest.post("http://backend/echo").body("Hello World!").asString();
+
+    awaitMessagesInTiger(2);
+
+    assertThat(response.getStatusText()).isEmpty();
+    assertThat(tigerProxy.getRbelMessagesList().get(1))
+        .extractChildWithPath("$.reasonPhrase")
+        .hasNullContent();
+  }
+
+  @SneakyThrows
+  @Test
+  void connectionReset_shouldKeepRequestInLog() {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("http://backend")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .build());
+
+    proxyRest.config().automaticRetries(false);
+    assertThatThrownBy(() -> proxyRest.get("http://backend/error").asString())
+        .isInstanceOf(UnirestException.class)
+        .hasCauseInstanceOf(NoHttpResponseException.class);
+
+    awaitMessagesInTiger(2);
+
+    assertThat(tigerProxy.getRbelMessagesList().get(1))
+        .extractChildWithPath("$.sender")
+        .hasStringContentEqualTo("backend:80");
   }
 }

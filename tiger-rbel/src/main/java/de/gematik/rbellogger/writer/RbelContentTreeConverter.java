@@ -59,7 +59,9 @@ public class RbelContentTreeConverter {
 
   private static TigerConfigurationLoader initializeConversionContext() {
     TigerConfigurationLoader conversionContext = new TigerConfigurationLoader();
-    TigerGlobalConfiguration.listSources().forEach(conversionContext::addConfigurationSource);
+    TigerGlobalConfiguration.listSources().stream()
+        .map(AbstractTigerConfigurationSource::copy)
+        .forEach(conversionContext::addConfigurationSource);
     return conversionContext;
   }
 
@@ -76,15 +78,18 @@ public class RbelContentTreeConverter {
     // tgrEncodeAs
     final Optional<String> encodeAsOptional =
         input.getFirst(TGR_ENCODE_AS).flatMap(el -> extractEncodingType(conversionContext, el));
-    if (encodeAsOptional.isPresent() && isTransitiveType(encodeAsOptional.get())) {
-      encodingConfigurationSource =
-          Optional.of(
-              new BasicTigerConfigurationSource(
-                  SourceType.THREAD_CONTEXT,
-                  new TigerConfigurationKey(),
-                  Map.of(ENCODE_AS, encodeAsOptional.get())));
-      conversionContext.addConfigurationSource(encodingConfigurationSource.get());
-    }
+
+    encodingConfigurationSource =
+        encodeAsOptional
+            .filter(this::isTransitiveType)
+            .map(
+                s -> {
+                  var source =
+                      new BasicTigerConfigurationSource(
+                          SourceType.RUNTIME_EXPORT, Map.of(ENCODE_AS, s));
+                  conversionContext.addConfigurationSource(source);
+                  return source;
+                });
 
     List<RbelContentTreeNode> result;
 
@@ -144,8 +149,7 @@ public class RbelContentTreeConverter {
     for (Object iterate : ((Collection) context.get("t"))) {
       BasicTigerConfigurationSource localSource =
           new BasicTigerConfigurationSource(
-              SourceType.THREAD_CONTEXT,
-              new TigerConfigurationKey(),
+              SourceType.RUNTIME_EXPORT,
               TigerConfigurationLoader.addYamlToMap(
                   iterate,
                   new TigerConfigurationKey(loopStatement.split(":")[0].trim()),

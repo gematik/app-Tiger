@@ -42,6 +42,8 @@ lib:
     # Customize your Rbel-Logs with your own logo. Must be PNG format.
     # Path should be relative to execution-location
     rbelLogoFilePath: "myLogo.png"
+    # If you want to use a fixed port for the workflowUI you can set it here.
+    workflowUiPort: 8123
 
 # flag whether to start the local Tiger Proxy (default) or to omit it completely.
 # if you have the local Tiger Proxy deactivated you will NOT be able to

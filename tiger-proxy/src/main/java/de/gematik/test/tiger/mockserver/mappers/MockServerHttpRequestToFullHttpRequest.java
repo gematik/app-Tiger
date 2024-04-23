@@ -111,8 +111,7 @@ public class MockServerHttpRequestToFullHttpRequest {
   }
 
   private ByteBuf getBody(HttpRequest httpRequest) {
-    return bodyDecoderEncoder.bodyToByteBuf(
-        httpRequest.getBody(), httpRequest.getFirstHeader(CONTENT_TYPE.toString()));
+    return bodyDecoderEncoder.bodyToByteBuf(httpRequest.getBody());
   }
 
   private void setCookies(HttpRequest httpRequest, FullHttpRequest request) {

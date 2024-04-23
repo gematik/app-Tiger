@@ -26,19 +26,14 @@ import static org.slf4j.event.Level.*;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
-import de.gematik.test.tiger.mockserver.mock.listeners.MockServerMatcherNotifier;
 import de.gematik.test.tiger.mockserver.scheduler.Scheduler;
-import de.gematik.test.tiger.mockserver.stop.Stoppable;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 import lombok.Getter;
@@ -49,7 +44,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Getter
 @Slf4j
-public abstract class LifeCycle implements Stoppable {
+public abstract class LifeCycle {
 
   protected final EventLoopGroup bossGroup;
   protected final EventLoopGroup workerGroup;
@@ -115,7 +110,6 @@ public abstract class LifeCycle implements Stoppable {
                   log.debug("Ignoring exception", e);
                 }
 
-                httpState.stop();
                 scheduler.shutdown();
 
                 // Shut down all event loops to terminate all threads.
@@ -144,7 +138,6 @@ public abstract class LifeCycle implements Stoppable {
     }
   }
 
-  @Override
   public void close() {
     stop();
   }
@@ -281,17 +274,5 @@ public abstract class LifeCycle implements Stoppable {
         "started on port" + (ports.size() == 1 ? ": " + ports.get(0) : "s: " + ports);
     setPort(ports);
     log.info(message);
-  }
-
-  public LifeCycle registerListener(ExpectationsListener expectationsListener) {
-    httpState
-        .getRequestMatchers()
-        .registerListener(
-            (requestMatchers, cause) -> {
-              if (cause == MockServerMatcherNotifier.Cause.API) {
-                expectationsListener.updated(requestMatchers.retrieveActiveExpectations(null));
-              }
-            });
-    return this;
   }
 }

@@ -42,10 +42,15 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
     return new RbelElementAssertion(kids.get(0), this.actual);
   }
 
+  public RbelElementAssertion hasChildWithPath(String rbelPath) {
+    extractChildWithPath(rbelPath);
+    return this;
+  }
+
   public RbelElementAssertion doesNotHaveChildWithPath(String rbelPath) {
     final List<RbelElement> kids = actual.findRbelPathMembers(rbelPath);
     if (!kids.isEmpty()) {
-      failWithMessage("Expected rbelPath $s not not find anything, but found %s", rbelPath, kids);
+      failWithMessage("Expected rbelPath $s not to find anything, but found %s", rbelPath, kids);
     }
     return this.myself;
   }

@@ -99,7 +99,7 @@ public class RbelContentTreeNode extends RbelPathAble {
    * entry
    *
    * @param key key of entry to be replaced
-   * @param value new value of entry
+   * @param newChildNode new node
    */
   private void addOrReplaceUniqueEntry(String key, RbelContentTreeNode newChildNode) {
     List<RbelContentTreeNode> matchingEntries = childNodes.getAll(key);
@@ -108,9 +108,10 @@ public class RbelContentTreeNode extends RbelPathAble {
           "It was attempted to replace a unique key '%s', but multiple entries with that key existed."
               .formatted(key));
     } else if (matchingEntries.size() == 1) {
-      childNodes = childNodes.stream()
-        .map(e -> e.getKey().equals(key) ? Pair.of(key, newChildNode) : e)
-        .collect(RbelMultiMap.COLLECTOR);
+      childNodes =
+          childNodes.stream()
+              .map(e -> e.getKey().equals(key) ? Pair.of(key, newChildNode) : e)
+              .collect(RbelMultiMap.COLLECTOR);
     } else {
       childNodes.put(key, newChildNode);
     }
@@ -202,6 +203,7 @@ public class RbelContentTreeNode extends RbelPathAble {
     return result;
   }
 
+  @Override
   public String findNodePath() {
     LinkedList<Optional<String>> keyList = new LinkedList<>();
     final AtomicReference<RbelContentTreeNode> ptr = new AtomicReference<>(this);

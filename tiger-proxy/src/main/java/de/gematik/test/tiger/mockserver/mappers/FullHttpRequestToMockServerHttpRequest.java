@@ -37,6 +37,7 @@ import java.net.SocketAddress;
 import java.security.cert.Certificate;
 import java.util.List;
 import java.util.Set;
+import javax.net.ssl.SSLSession;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -72,7 +73,8 @@ public class FullHttpRequestToMockServerHttpRequest {
       List<Header> preservedHeaders,
       SocketAddress localAddress,
       SocketAddress remoteAddress,
-      Protocol protocol) {
+      Protocol protocol,
+      SSLSession sslSession) {
     HttpRequest httpRequest = new HttpRequest();
     try {
       if (fullHttpRequest != null) {
@@ -95,11 +97,20 @@ public class FullHttpRequestToMockServerHttpRequest {
         setSocketAddress(httpRequest, fullHttpRequest, isSecure, port, localAddress, remoteAddress);
         jdkCertificateToMockServerX509Certificate.setClientCertificates(
             httpRequest, clientCertificates);
+
+        tryToSetTlsParameter(httpRequest, sslSession);
       }
     } catch (RuntimeException e) {
       log.error("exception decoding request{}", fullHttpRequest, e);
     }
     return httpRequest;
+  }
+
+  private void tryToSetTlsParameter(HttpRequest httpRequest, SSLSession sslSession) {
+    if (sslSession != null) {
+      httpRequest.setTlsVersion(sslSession.getProtocol());
+      httpRequest.setCipherSuite(sslSession.getCipherSuite());
+    }
   }
 
   private void setSocketAddress(

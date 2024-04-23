@@ -33,6 +33,7 @@ import org.custommonkey.xmlunit.exceptions.XpathException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import org.xml.sax.SAXException;
@@ -40,7 +41,7 @@ import org.xmlunit.assertj.XmlAssert;
 
 class RbelContentTreeConverterTest {
 
-  private RbelConverter rbelConverter = RbelConverter.builder().build();
+  private final RbelConverter rbelConverter = RbelConverter.builder().build();
 
   @SneakyThrows
   @Test
@@ -203,7 +204,6 @@ class RbelContentTreeConverterTest {
     final String result =
         new String(
             new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent());
-    System.out.println(result);
     assertThatJson(result).isEqualTo("{'foo':'bar'}");
   }
 
@@ -216,7 +216,6 @@ class RbelContentTreeConverterTest {
     final String result =
         new String(
             new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent());
-    System.out.println(result);
     assertThatJson(result).isEqualTo(inputJson);
   }
 
@@ -280,7 +279,6 @@ class RbelContentTreeConverterTest {
     final String output =
         new String(
             new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent());
-    System.out.println("\n\n\n" + output);
 
     XmlAssert.assertThat(output)
         .and(
@@ -329,7 +327,6 @@ class RbelContentTreeConverterTest {
     final String output =
         new String(
             new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent());
-    System.out.println(output);
     XmlAssert.assertThat(output)
         .and(
             """
@@ -433,7 +430,6 @@ class RbelContentTreeConverterTest {
     final String serializedElement =
         new String(
             new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent());
-    System.out.println(serializedElement);
     JSONAssert.assertEquals(
         """
             {
@@ -462,26 +458,25 @@ class RbelContentTreeConverterTest {
     final String serializedElement =
         new String(
             new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent());
-    System.out.println(serializedElement);
     JSONAssert.assertEquals("{\"primitiveValue\": " + result + "}", serializedElement, false);
   }
 
-  @Test
-  void testSerializationOfEmptyJsonArray() {
-    String jsonWithEmptyArray =
-        """
-                {
-                  "hello": []
-                }
-                """;
-    RbelElement convertedRbelElement = rbelConverter.convertElement(jsonWithEmptyArray, null);
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "{\"hello\": []}",
+        "[1,2,3]",
+        "['1','2','3']"
+      })
+  void testSerializationOfJson(String value) {
+    RbelElement convertedRbelElement = rbelConverter.convertElement(value, null);
 
     String serializedJson =
         new RbelWriter(rbelConverter)
             .serialize(convertedRbelElement, new TigerJexlContext())
             .getContentAsString();
 
-    JSONAssert.assertEquals(jsonWithEmptyArray, serializedJson, JSONCompareMode.LENIENT);
+    JSONAssert.assertEquals(value, serializedJson, JSONCompareMode.LENIENT);
   }
 
   @ParameterizedTest
@@ -510,7 +505,6 @@ class RbelContentTreeConverterTest {
 
     RbelWriter writer = new RbelWriter(rbelConverter);
     final String output = new String(writer.serialize(input, new TigerJexlContext()).getContent());
-    System.out.println(output);
     XmlAssert.assertThat(output).and(new String(xmlInput)).ignoreWhitespace().areIdentical();
   }
 }

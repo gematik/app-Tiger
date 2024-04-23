@@ -21,14 +21,12 @@ import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.*;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import static io.netty.handler.codec.http.HttpResponseStatus.OK;
 import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.cors.CORSHeaders;
 import de.gematik.test.tiger.mockserver.filters.HopByHopHeaderFilter;
 import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
 import de.gematik.test.tiger.mockserver.httpclient.SocketCommunicationException;
@@ -36,8 +34,8 @@ import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.mock.HttpAction;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.model.*;
+import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
-import de.gematik.test.tiger.mockserver.responsewriter.ResponseWriter;
 import de.gematik.test.tiger.mockserver.scheduler.Scheduler;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import io.netty.buffer.Unpooled;
@@ -84,14 +82,12 @@ public class HttpActionHandler {
     this.configuration = configuration;
     this.httpStateHandler = httpStateHandler;
     this.scheduler = httpStateHandler.getScheduler();
-    this.httpClient =
-        new NettyHttpClient(
-            configuration, eventLoopGroup, proxyConfigurations, true, nettySslContextFactory);
+    this.httpClient = new NettyHttpClient(configuration, eventLoopGroup, proxyConfigurations, nettySslContextFactory);
   }
 
   public void processAction(
       final HttpRequest request,
-      final ResponseWriter responseWriter,
+      final NettyResponseWriter responseWriter,
       final ChannelHandlerContext ctx,
       Set<String> localAddresses,
       boolean proxyingRequest,
@@ -115,13 +111,7 @@ public class HttpActionHandler {
       final HttpAction action = expectation.getHttpAction();
       scheduler.schedule(
           () -> action.handle(request, this, responseWriter, synchronous), synchronous);
-    } else if (CORSHeaders.isPreflightRequest(configuration, request)
-        && (configuration.enableCORSForAPI() || configuration.enableCORSForAllResponses())) {
-
-      responseWriter.writeResponse(request, OK);
-      log.debug("returning CORS response for OPTIONS request");
     } else if (proxyingRequest || potentiallyHttpProxy) {
-
       if (request.getHeaders() != null
           && request
               .getHeaders()
@@ -159,7 +149,7 @@ public class HttpActionHandler {
                       "Basic realm=\""
                           + StringEscapeUtils.escapeJava(configuration.proxyAuthenticationRealm())
                           + "\", charset=\"UTF-8\"");
-          responseWriter.writeResponse(request, response, false);
+          responseWriter.writeResponse(request, response);
           log.debug(
               "proxy authentication failed so returning response:{}for forwarded" + " request:{}",
               response,
@@ -210,7 +200,7 @@ public class HttpActionHandler {
                         request,
                         response);
                   }
-                  responseWriter.writeResponse(request, response, false);
+                  responseWriter.writeResponse(request, response);
                 } catch (SocketCommunicationException sce) {
                   log.warn("Exception while writing response", sce);
                   returnNotFound(responseWriter, request, sce.getMessage());
@@ -275,7 +265,7 @@ public class HttpActionHandler {
 
   public void writeForwardActionResponse(
       final HttpForwardActionResult responseFuture,
-      final ResponseWriter responseWriter,
+      final NettyResponseWriter responseWriter,
       final HttpRequest request,
       final Action action,
       boolean synchronous) {
@@ -287,7 +277,7 @@ public class HttpActionHandler {
                 responseFuture
                     .getHttpResponse()
                     .get(configuration.maxFutureTimeoutInMillis(), MILLISECONDS);
-            responseWriter.writeResponse(request, response, false);
+            responseWriter.writeResponse(request, response);
             log.debug(
                 "returning response:{}for forwarded request"
                     + NEW_LINE
@@ -315,9 +305,11 @@ public class HttpActionHandler {
   }
 
   public void writeForwardActionResponse(
-      final HttpResponse response, final ResponseWriter responseWriter, final HttpRequest request) {
+      final HttpResponse response,
+      final NettyResponseWriter responseWriter,
+      final HttpRequest request) {
     try {
-      responseWriter.writeResponse(request, response, false);
+      responseWriter.writeResponse(request, response);
       log.debug(
           "returning response:{}for forwarded request" + NEW_LINE + NEW_LINE + " in json:{}",
           response,
@@ -328,29 +320,35 @@ public class HttpActionHandler {
   }
 
   public void handleExceptionDuringForwardingRequest(
-      Action action, HttpRequest request, ResponseWriter responseWriter, Throwable exception) {
-    if (connectionException(exception)) {
-      log.error(
-          "failed to connect to remote socket while forwarding request {} for action {}",
-          request,
-          action,
-          exception);
-      returnNotFound(
-          responseWriter, request, "failed to connect to remote socket while forwarding request");
-    } else if (sslHandshakeException(exception)) {
-      log.error(
-          "TLS handshake exception while forwarding request {} for action {}",
-          request,
-          action,
-          exception);
-      returnNotFound(responseWriter, request, "TLS handshake exception while forwarding request");
+      Action action, HttpRequest request, NettyResponseWriter responseWriter, Throwable exception) {
+    if (action instanceof CloseChannel) {
+      log.debug("closing channel due to close action");
+      responseWriter.closeChannel();
     } else {
-      log.error("Exception while forwading request", exception);
-      returnNotFound(responseWriter, request, exception != null ? exception.getMessage() : null);
+      if (connectionException(exception)) {
+        log.error(
+            "failed to connect to remote socket while forwarding request {} for action {}",
+            request,
+            action,
+            exception);
+        returnNotFound(
+            responseWriter, request, "failed to connect to remote socket while forwarding request");
+      } else if (sslHandshakeException(exception)) {
+        log.error(
+            "TLS handshake exception while forwarding request {} for action {}",
+            request,
+            action,
+            exception);
+        returnNotFound(responseWriter, request, "TLS handshake exception while forwarding request");
+      } else {
+        log.error("Exception while forwarding request", exception);
+        returnNotFound(responseWriter, request, exception != null ? exception.getMessage() : null);
+      }
     }
   }
 
-  private void returnNotFound(ResponseWriter responseWriter, HttpRequest request, String error) {
+  private void returnNotFound(
+      NettyResponseWriter responseWriter, HttpRequest request, String error) {
     HttpResponse response = notFoundResponse();
     if (request.getHeaders() != null
         && request
@@ -363,11 +361,12 @@ public class HttpActionHandler {
           httpStateHandler.getUniqueLoopPreventionHeaderValue());
       log.trace("no expectation for:{}returning response:{}", request, notFoundResponse());
     } else if (isNotBlank(error)) {
-      log.debug("error:{}handling request:{}returning response:{}", error, request, notFoundResponse());
+      log.debug(
+          "error:{}handling request:{}returning response:{}", error, request, notFoundResponse());
     } else {
       log.debug("no expectation for:{}returning response:{}", request, notFoundResponse());
     }
-    responseWriter.writeResponse(request, response, false);
+    responseWriter.writeResponse(request, response);
   }
 
   public HttpForwardActionHandler getHttpForwardActionHandler() {

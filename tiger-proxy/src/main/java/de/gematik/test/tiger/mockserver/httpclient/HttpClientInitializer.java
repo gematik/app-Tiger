@@ -49,7 +49,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
 
-  private final boolean forwardProxyClient;
   private final Protocol httpProtocol;
   private final HttpClientConnectionErrorHandler httpClientConnectionHandler;
   private final CompletableFuture<Protocol> protocolFuture;
@@ -59,11 +58,9 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
 
   HttpClientInitializer(
       Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations,
-      boolean forwardProxyClient,
       NettySslContextFactory nettySslContextFactory,
       Protocol httpProtocol) {
     this.proxyConfigurations = proxyConfigurations;
-    this.forwardProxyClient = forwardProxyClient;
     this.httpProtocol = httpProtocol;
     this.protocolFuture = new CompletableFuture<>();
     this.httpClientHandler = new HttpClientHandler();
@@ -118,8 +115,7 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
       InetSocketAddress remoteAddress = channel.attr(REMOTE_SOCKET).get();
       pipeline.addLast(
           nettySslContextFactory
-              .createClientSslContext(
-                  forwardProxyClient, httpProtocol != null && httpProtocol.equals(Protocol.HTTP_2))
+              .createClientSslContext(httpProtocol != null && httpProtocol.equals(Protocol.HTTP_2))
               .newHandler(channel.alloc(), remoteAddress.getHostName(), remoteAddress.getPort()));
     }
 

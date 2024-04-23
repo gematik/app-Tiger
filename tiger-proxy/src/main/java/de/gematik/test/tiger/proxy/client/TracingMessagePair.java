@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -25,6 +26,7 @@ import lombok.Data;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.json.JSONObject;
 
 @Data
 @Slf4j
@@ -69,6 +71,18 @@ public class TracingMessagePair implements TracingMessageFrame {
     if (requestParsed.isEmpty() || responseParsed.isEmpty()) {
       return;
     }
+
+    RbelFileWriter.DEFAULT_POST_CONVERSION_LISTENER.forEach(
+        listener -> {
+          listener.performMessagePostConversionProcessing(
+              requestParsed.get(),
+              remoteProxyClient.getRbelLogger().getRbelConverter(),
+              new JSONObject(this.request.getAdditionalInformation()));
+          listener.performMessagePostConversionProcessing(
+              responseParsed.get(),
+              remoteProxyClient.getRbelLogger().getRbelConverter(),
+              new JSONObject(this.response.getAdditionalInformation()));
+        });
 
     val pairFacet =
         TracingMessagePairFacet.builder()

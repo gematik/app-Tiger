@@ -63,10 +63,11 @@ class TracingStompHandler implements StompFrameHandler {
     isolani.setMessage(
         PartialTracingMessage.builder()
             .tracingDto(tigerTracingDto)
-            .receiver(tigerTracingDto.getSender())
-            .sender(tigerTracingDto.getReceiver())
+            .receiver(tigerTracingDto.getReceiver())
+            .sender(tigerTracingDto.getSender())
             .messageFrame(isolani)
             .transmissionTime(tigerTracingDto.getRequestTransmissionTime())
+            .additionalInformation(tigerTracingDto.getAdditionalInformationRequest())
             .build());
     remoteProxyClient.initOrUpdateMessagePart(
         tigerTracingDto.getRequestUuid(), isolani.getMessage());
@@ -77,10 +78,11 @@ class TracingStompHandler implements StompFrameHandler {
     messagePair.setRequest(
         PartialTracingMessage.builder()
             .tracingDto(tigerTracingDto)
-            .receiver(tigerTracingDto.getSender())
-            .sender(tigerTracingDto.getReceiver())
+            .receiver(tigerTracingDto.getReceiver())
+            .sender(tigerTracingDto.getSender())
             .messageFrame(messagePair)
             .transmissionTime(tigerTracingDto.getRequestTransmissionTime())
+            .additionalInformation(tigerTracingDto.getAdditionalInformationRequest())
             .build());
     messagePair.setResponse(
         PartialTracingMessage.builder()
@@ -89,6 +91,7 @@ class TracingStompHandler implements StompFrameHandler {
             .sender(tigerTracingDto.getSender())
             .messageFrame(messagePair)
             .transmissionTime(tigerTracingDto.getResponseTransmissionTime())
+            .additionalInformation(tigerTracingDto.getAdditionalInformationResponse())
             .build());
     remoteProxyClient.initOrUpdateMessagePart(
         tigerTracingDto.getRequestUuid(), messagePair.getRequest());

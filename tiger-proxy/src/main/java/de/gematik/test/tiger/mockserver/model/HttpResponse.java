@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.mockserver.model;
 
-import static de.gematik.test.tiger.mockserver.model.Header.header;
 import static de.gematik.test.tiger.mockserver.model.HttpStatusCode.NOT_FOUND_404;
 import static de.gematik.test.tiger.mockserver.model.HttpStatusCode.OK_200;
 

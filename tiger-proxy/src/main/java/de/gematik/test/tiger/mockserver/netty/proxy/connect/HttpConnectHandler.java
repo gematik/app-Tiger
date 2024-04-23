@@ -37,11 +37,7 @@ import io.netty.handler.codec.http.HttpServerCodec;
 @ChannelHandler.Sharable
 public final class HttpConnectHandler extends RelayConnectHandler<HttpRequest> {
 
-  public HttpConnectHandler(
-      Configuration configuration,
-      LifeCycle server,
-      String host,
-      int port) {
+  public HttpConnectHandler(Configuration configuration, LifeCycle server, String host, int port) {
     super(configuration, server, host, port);
   }
 

@@ -53,7 +53,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
   private final String hostname;
   private final String serverId;
   private final List<String> environmentProperties = new ArrayList<>();
-  private final List<TigerRoute> routes = new ArrayList<>();
+  private final List<TigerRoute> serverRoutes = new ArrayList<>();
   private final TigerTestEnvMgr tigerTestEnvMgr;
   private final List<TigerUpdateListener> listeners = new ArrayList<>();
   private final List<TigerServerLogListener> logListeners = new ArrayList<>();
@@ -107,7 +107,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
       return;
     }
     synchronized (this) {
-      if (getStatus() != TigerServerStatus.NEW) {
+      if ((getStatus() != TigerServerStatus.NEW) && (getStatus() != TigerServerStatus.STOPPED)) {
         throw new TigerEnvironmentStartupException("Server %s was already started!", getServerId());
       }
     }
@@ -139,30 +139,32 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     if (configuration.getUrlMappings() != null
         && testEnvMgr.getLocalTigerProxyOptional().isPresent()) {
       statusMessage("Adding routes to local tiger proxy for server " + getServerId() + "...");
-      configuration
-          .getUrlMappings()
-          .forEach(
-              mapping -> {
-                if (StringUtils.isBlank(mapping)
-                    || !mapping.contains("-->")
-                    || mapping.split(" --> ", 2).length != 2) {
-                  throw new TigerConfigurationException(
-                      "The urlMappings configuration '"
-                          + mapping
-                          + "' is not correct. Please check your .yaml-file.");
-                }
+      serverRoutes.addAll(
+          configuration.getUrlMappings().stream()
+              .map(
+                  mapping -> {
+                    if (StringUtils.isBlank(mapping)
+                        || !mapping.contains("-->")
+                        || mapping.split(" --> ", 2).length != 2) {
+                      throw new TigerConfigurationException(
+                          "The urlMappings configuration '"
+                              + mapping
+                              + "' is not correct. Please check your .yaml-file.");
+                    }
 
-                String[] routeParts = mapping.split(" --> ", 2);
-                testEnvMgr
-                    .getLocalTigerProxyOptional()
-                    .ifPresent(
-                        proxy ->
-                            proxy.addRoute(
-                                TigerRoute.builder()
-                                    .from(routeParts[0])
-                                    .to(routeParts[1])
-                                    .build()));
-              });
+                    String[] routeParts = mapping.split(" --> ", 2);
+                    return testEnvMgr
+                        .getLocalTigerProxyOptional()
+                        .map(
+                            proxy ->
+                                proxy.addRoute(
+                                    TigerRoute.builder()
+                                        .from(routeParts[0])
+                                        .to(routeParts[1])
+                                        .build()));
+                  })
+              .map(Optional::orElseThrow)
+              .toList());
     }
 
     loadPkiForProxy();
@@ -356,21 +358,22 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
   void addRoute(TigerRoute newRoute) {
     getTigerTestEnvMgr()
         .getLocalTigerProxyOptional()
-        .ifPresent(
-            proxy -> {
-              proxy.addRoute(newRoute);
-              routes.add(newRoute);
-            });
+        .ifPresent(proxy -> serverRoutes.add(proxy.addRoute(newRoute)));
   }
 
-  void removeAllRoutes() {
+  void removeAllRoutesForServer() {
     getTigerTestEnvMgr()
         .getLocalTigerProxyOptional()
         .ifPresent(
             proxy -> {
               log.info("Removing routes for {}...", getServerId());
-              routes.stream().map(TigerRoute::getId).forEach(proxy::removeRoute);
+              serverRoutes.stream().map(TigerRoute::getId).forEach(proxy::removeRoute);
             });
+  }
+
+  public void stopServerAndCleanUp() {
+    shutdown();
+    removeAllRoutesForServer();
   }
 
   public abstract void shutdown();

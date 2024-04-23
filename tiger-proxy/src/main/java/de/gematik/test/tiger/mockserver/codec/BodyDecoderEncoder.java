@@ -29,13 +29,14 @@ import java.nio.charset.Charset;
 @SuppressWarnings("rawtypes")
 public class BodyDecoderEncoder {
 
-  public ByteBuf bodyToByteBuf(Body body, String contentTypeHeader) {
-    byte[] bytes = bodyToBytes(body, contentTypeHeader);
-    if (bytes != null) {
-      return Unpooled.copiedBuffer(bytes);
-    } else {
-      return Unpooled.buffer(0, 0);
+  public ByteBuf bodyToByteBuf(Body body) {
+    if (body != null) {
+      final byte[] rawBytes = body.getRawBytes();
+      if (rawBytes != null) {
+        return Unpooled.copiedBuffer(rawBytes);
+      }
     }
+    return Unpooled.buffer(0, 0);
   }
 
   public ByteBuf[] bodyToByteBuf(Body body, String contentTypeHeader, int chunkSize) {

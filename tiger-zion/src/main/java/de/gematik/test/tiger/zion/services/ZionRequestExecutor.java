@@ -183,7 +183,7 @@ public class ZionRequestExecutor {
               .map(r -> findMatchingResponse(r, requestRbelMessage, context.cloneContext()))
               .filter(Optional::isPresent)
               .map(Optional::get)
-              .peek(
+              .peek( // NOSONAR - used for logging
                   respPair ->
                       log.trace(
                           CONSIDERING_RESPONSE,
@@ -225,7 +225,10 @@ public class ZionRequestExecutor {
               TigerGlobalConfiguration.resolvePlaceholdersWithContext(requestCriterion, context),
               context);
       if (!criterionMatches) {
-        log.trace("Criterion does not match for response {}: {}", mockResponse.getName(), requestCriterion);
+        log.trace(
+            "Criterion does not match for response {}: {}",
+            mockResponse.getName(),
+            requestCriterion);
         return false;
       }
     }

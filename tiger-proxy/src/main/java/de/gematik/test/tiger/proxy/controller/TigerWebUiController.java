@@ -436,9 +436,12 @@ public class TigerWebUiController implements ApplicationContextAware {
 
   private String replaceScript(String html) {
     var jsoup = Jsoup.parse(html);
-    final Element script = jsoup.select("script").get(6);
-    script.attr("type", "module");
-    script.dataNodes().get(0).replaceWith(new DataNode(loadResourceToString("/tigerProxy.js")));
+    final Element mainWebUiScript = jsoup.getElementById("mainWebUiScript");
+    mainWebUiScript.attr("type", "module");
+    mainWebUiScript
+        .dataNodes()
+        .get(0)
+        .replaceWith(new DataNode(loadResourceToString("/tigerProxy.js")));
     return jsoup.html();
   }
 

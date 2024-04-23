@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2024 gematik GmbH
+ * 
+ * Licensed under the Apache License, Version 2.0 (the License);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an 'AS IS' BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package de.gematik.test.tiger.lib.rbel;
 
 import de.gematik.rbellogger.builder.RbelBuilder;
@@ -267,7 +283,7 @@ class RbelBuilderTests {
             }
         }
 
-                """;
+        """;
     String actualSerialized =
         builder
             .setValueAt("$.blub.foo", newArray)
@@ -317,19 +333,15 @@ class RbelBuilderTests {
       for (Object successNewValue : successNewValueParameters) {
         String expectedValue =
             switch (successPath) {
-              case "$.entry1.entry1a.entry1aI" ->
-                  insertIntoComplexStringAtPathentry1aI(
-                      convertNonPrimitiveToJson(successNewValue.toString()));
-              case "$.entry2.0.entry2a.entry2aIII.5" ->
-                  insertIntoComplexStringAtPathentry2aIII5(
-                      convertNonPrimitiveToJson(successNewValue.toString()));
-              case "$.entry3.entry3b.(/)§=$§)=)§" ->
-                  insertIntoComplexStringAtPathentry3bSpecialChars(
-                      convertNonPrimitiveToJson(successNewValue.toString()));
-              default ->
-                  throw new NotImplementedException(
-                      "SuccessPath %s is not yet implemented for Parameterized tests."
-                          .formatted(successPath));
+              case "$.entry1.entry1a.entry1aI" -> insertIntoComplexStringAtPathentry1aI(
+                  convertNonPrimitiveToJson(successNewValue.toString()));
+              case "$.entry2.0.entry2a.entry2aIII.5" -> insertIntoComplexStringAtPathentry2aIII5(
+                  convertNonPrimitiveToJson(successNewValue.toString()));
+              case "$.entry3.entry3b.(/)§=$§)=)§" -> insertIntoComplexStringAtPathentry3bSpecialChars(
+                  convertNonPrimitiveToJson(successNewValue.toString()));
+              default -> throw new NotImplementedException(
+                  "SuccessPath %s is not yet implemented for Parameterized tests."
+                      .formatted(successPath));
             };
         successParameters.add(Arguments.of(successPath, successNewValue, true, expectedValue));
       }
@@ -355,11 +367,11 @@ class RbelBuilderTests {
 
     if (expectSuccess) {
       System.out.println(
-        RbelConverter.builder()
-          .build()
-          .convertElement(
-            parameterizedRbelBuilder.getTreeRootNode().getRawStringContent(), null)
-          .printTreeStructureWithoutColors());
+          RbelConverter.builder()
+              .build()
+              .convertElement(
+                  parameterizedRbelBuilder.getTreeRootNode().getRawStringContent(), null)
+              .printTreeStructureWithoutColors());
       parameterizedRbelBuilder.setValueAt(insertPath, newStringValue);
       log.info("Inserting value {} into path: {}", newStringValue, insertPath);
       System.out.println(

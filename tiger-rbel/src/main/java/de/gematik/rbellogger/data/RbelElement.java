@@ -19,10 +19,7 @@ package de.gematik.rbellogger.data;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
-import de.gematik.rbellogger.util.RbelException;
-import de.gematik.rbellogger.util.RbelJexlExecutor;
-import de.gematik.rbellogger.util.RbelPathAble;
-import de.gematik.rbellogger.util.RbelPathExecutor;
+import de.gematik.rbellogger.util.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -301,7 +298,11 @@ public class RbelElement extends RbelPathAble {
         .flatMap(
             facet -> {
               if (facet instanceof RbelNestedFacet asRbelNestedFacet) {
-                return asRbelNestedFacet.getNestedElement().getFacets().stream();
+                if (asRbelNestedFacet.getNestedElement().hasFacet(RbelRootFacet.class)) {
+                  return Stream.empty();
+                } else {
+                  return asRbelNestedFacet.getNestedElement().getFacets().stream();
+                }
               } else {
                 return Stream.of(facet);
               }
@@ -332,7 +333,8 @@ public class RbelElement extends RbelPathAble {
 
   @Override
   public List<RbelPathAble> descendToContentNodeIfAdvised() {
-    if ((hasFacet(RbelJsonFacet.class) || hasFacet(RbelCborFacet.class)) && hasFacet(RbelNestedFacet.class)) {
+    if ((hasFacet(RbelJsonFacet.class) || hasFacet(RbelCborFacet.class))
+        && hasFacet(RbelNestedFacet.class)) {
       return List.of(
           getFacet(RbelNestedFacet.class).map(RbelNestedFacet::getNestedElement).orElseThrow(),
           this);

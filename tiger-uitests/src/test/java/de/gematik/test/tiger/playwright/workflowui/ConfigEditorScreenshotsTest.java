@@ -20,6 +20,7 @@ import static de.gematik.test.tiger.playwright.workflowui.ConfigurationEditorTes
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import org.junit.jupiter.api.Test;
 
 class ConfigEditorScreenshotsTest extends AbstractTests {
@@ -37,7 +38,6 @@ class ConfigEditorScreenshotsTest extends AbstractTests {
         "config_editor_example_filter_popup.png",
         "ag-labeled ag-label-align-left ag-text-field ag-input-field ag-filter-from"
             + " ag-filter-filter");
-    await().untilAsserted(() -> page.locator(".vsp__header").isVisible());
     page.locator(".vsp__header").click();
     screenshotByClassname(page, "tg_global_config_editor.png", "vsp__header");
 
@@ -62,10 +62,9 @@ class ConfigEditorScreenshotsTest extends AbstractTests {
             + " contains(@class, 'fa-up-right-and-down-left-from-center')]";
 
     page.locator(xpathToExpand).click();
-    await()
-        .untilAsserted(
-            () ->
-                page.locator(".test-tg-config-editor-table-row.text-break.multi-line").isVisible());
+    PlaywrightAssertions.assertThat(
+            page.locator(".test-tg-config-editor-table-row.text-break.multi-line"))
+        .isVisible();
 
     screenshotByClassname(
         page, "config_editor_expand_icon.png", "value col-11 gy-1 hljs text-break multi-line");
@@ -75,9 +74,12 @@ class ConfigEditorScreenshotsTest extends AbstractTests {
   }
 
   private void openMenuAndFilter() {
-    page.locator(".ag-header-icon.ag-header-cell-menu-button .ag-icon.ag-icon-menu").nth(1).click();
+    page.locator(".ag-header-icon.ag-header-cell-menu-button").nth(1).click();
     var inputField = page.locator("input[placeholder='Filter...']").first();
     inputField.fill("tgr");
-    await().untilAsserted(() -> page.locator("#test-tg-config-editor-table").isVisible());
+    // waiting for the small filter icon to appear that indicates that a filter is applied
+    PlaywrightAssertions.assertThat(
+            page.locator("span.ag-header-label-icon.ag-filter-icon:not(.ag-hidden)"))
+        .isVisible();
   }
 }
