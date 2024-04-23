@@ -42,7 +42,8 @@ class RbelBuilderGlueCodeTests {
 
   @BeforeAll
   static void startTigerDirector() {
-    TigerDirector.start();
+    TigerGlobalConfiguration.reset();
+    TigerDirector.readConfiguration();
   }
 
   @Test
