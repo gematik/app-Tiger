@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.17">
+<meta name="generator" content="Asciidoctor 2.0.22">
 <meta name="description" content="User Manual for Tiger">
 <meta name="author" content="TIGER@gematik.de">
 <title>Tiger User Manual</title>
@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 3.0.1-SNAPSHOT - 2024-02-28</span>
+<span id="revdate">Version 3.0.2-SNAPSHOT - 2024-04-23</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -1731,6 +1731,9 @@ The exposed port of the docker container is available as a special token in the 
 For containers that should exit after a single command you may enable the oneShot property.</p>
 </div>
 <div class="paragraph">
+<p>You can also copy files to the container by configuring the source and destinations paths of files or folder to be copied.</p>
+</div>
+<div class="paragraph">
 <p>If there is no health check configured inside the docker image, Tiger will try to guess a healthcheck url by assuming the first exposed port as a get request to localhost to check for a successful startup of the docker container (e.g. <a href="http://127.0.0.1:xxxx" class="bare">http://127.0.0.1:xxxx</a>).</p>
 </div>
 <div class="paragraph">
@@ -1783,6 +1786,18 @@ To use this server type you must include the tiger-cloud-extension dependency!
     <span class="comment"># overwriting any configured entry point in the docker image.</span>
     <span class="comment"># Default value is empty meaning to use the configured entry point command line.</span>
     <span class="key">entryPoint</span>: <span class="string"><span class="content">chmod a+x /startup.sh &amp;&amp; /startup.sh</span></span>
+    <span class="comment"># OPTIONAL list of files to be copied to the container</span>
+    <span class="key">copyFiles</span>:
+      <span class="comment"># path to the file or the folder to copy inside the container</span>
+      - <span class="string"><span class="content">sourcePath: ./example/path/file_to_copy.txt</span></span>
+      <span class="comment"># path inside the container where the file should be copied to</span>
+        <span class="key">destinationPath</span>: <span class="string"><span class="content">/path/in/container/file_to_copy.txt</span></span>
+      <span class="comment"># OPTIONAL the file mode of the copied file as octal representation (see https://en.wikipedia.org/wiki/File-system_permissions#numericNotation</span>
+        <span class="key">fileMode</span>: <span class="string"><span class="content">0633</span></span>
+      <span class="comment"># a complete folder can also be copied instead of a single file</span>
+      - <span class="string"><span class="content">sourcePath: ./example/copy_folder</span></span>
+        <span class="key">destinationPath</span>: <span class="string"><span class="content">/path/in/container/copy_folder</span></span>
+
 
   <span class="comment"># The following properties are explained in the General properties section above</span>
   <span class="key">pkiKeys</span>: <span class="string"><span class="content">[]</span></span>
@@ -2629,6 +2644,9 @@ A route has the following properties:</p>
 This can either be an absolute URL (e.g. <a href="http://foobar" class="bare">http://foobar</a>), which defines a forward-proxy route, or relative (e.g. /blub), defining a reverse-proxy-route.<br>
 Please note: You can freely add parts (e.g. <a href="http://foobar/extra/part" class="bare">http://foobar/extra/part</a>) to further specify the mapping.</p>
 </div>
+<div class="paragraph">
+<p>You can add multiple routes that match the same URL. If multiple matches are found the most specific route is select. For example if you have two routes <code>/</code> and <code>/foo</code> then for a request to <code>/foo/bar</code> the route <code>/foo</code> will be selected.</p>
+</div>
 </div>
 <div class="sect3">
 <h4 id="_to"><a class="anchor" href="#_to"></a>4.3.2. to</h4>
@@ -2687,7 +2705,26 @@ Meaning: If you have a mapping</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_disablerbellogging"><a class="anchor" href="#_disablerbellogging"></a>4.3.3. disableRbelLogging</h4>
+<h4 id="_criterions"><a class="anchor" href="#_criterions"></a>4.3.3. criterions</h4>
+<div class="paragraph">
+<p>As an additional measure for a more fine-grained matching you can use criterions. These are JEXL-expressions which have to be fulfilled for the route to be used. This can be leveraged to make the routing decision dependent on the content of the message.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">tigerProxy</span>:
+    <span class="key">proxyRoutes</span>:
+      - <span class="string"><span class="content">from: /</span></span>
+        <span class="key">to</span>: <span class="string"><span class="content">http://orf.at/blub/</span></span>
+        <span class="key">criterions</span>:
+          - <span class="string"><span class="content">$.header.foo == 'bar'</span></span></code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will only forward messages where the header contains a key "foo" with the value "bar".</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_disablerbellogging"><a class="anchor" href="#_disablerbellogging"></a>4.3.4. disableRbelLogging</h4>
 <div class="paragraph">
 <p>You can deactivate the rbel-Logging on a per-Route basis.<br>
 Rbel is a versatile and powerful tool, but the analysis of individual messages consumes a lot of both CPU and memory.<br>
@@ -2695,7 +2732,7 @@ Deactivating it for routes in which it is not needed is therefore a good idea.</
 </div>
 </div>
 <div class="sect3">
-<h4 id="_basicauth"><a class="anchor" href="#_basicauth"></a>4.3.4. basicAuth</h4>
+<h4 id="_basicauth"><a class="anchor" href="#_basicauth"></a>4.3.5. basicAuth</h4>
 <div class="paragraph">
 <p>You can add optional basic-auth configuration which will be added to the forwarded message.<br>
 Theoretically this could also be done via modifications, but this a more convenient approach.</p>
@@ -3580,6 +3617,8 @@ As of now we do not support multithreaded / parallel test runs.
     <span class="comment"># Customize your Rbel-Logs with your own logo. Must be PNG format.</span>
     <span class="comment"># Path should be relative to execution-location</span>
     <span class="key">rbelLogoFilePath</span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">myLogo.png</span><span class="delimiter">&quot;</span></span>
+    <span class="comment"># If you want to use a fixed port for the workflowUI you can set it here.</span>
+    <span class="key">workflowUiPort</span>: <span class="string"><span class="content">8123</span></span>
 
 <span class="comment"># flag whether to start the local Tiger Proxy (default) or to omit it completely.</span>
 <span class="comment"># if you have the local Tiger Proxy deactivated you will NOT be able to</span>
@@ -3783,11 +3822,11 @@ expression</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_setzt_rbel_objekt_tigerresolvedstring_an_stelle_tigerresolvedstring_auf_wert_tigerresolvedstring"><a class="anchor" href="#_tgr_setzt_rbel_objekt_tigerresolvedstring_an_stelle_tigerresolvedstring_auf_wert_tigerresolvedstring"></a>TGR setzt Rbel-Objekt {tigerResolvedString} an Stelle {tigerResolvedString} auf Wert {tigerResolvedString}</h5>
+<h5 id="_tgr_setzt_rbel_objekt_tigerresolvedstring_an_stelle_tigerresolvedstring_auf_wert_tigerresolvedstring"><a class="anchor" href="#_tgr_setzt_rbel_objekt_tigerresolvedstring_an_stelle_tigerresolvedstring_auf_wert_tigerresolvedstring"></a>TGR setzt Rbel-Objekt {tigerResolvedString} an Stelle {tigerResolvedString} auf Wert" + " {tigerResolvedString}</h5>
 
 </div>
 <div class="sect4">
-<h5 id="_tgr_sets_rbel_object_tigerresolvedstring_at_tigerresolvedstring_to_new_value_tigerresolvedstring"><a class="anchor" href="#_tgr_sets_rbel_object_tigerresolvedstring_at_tigerresolvedstring_to_new_value_tigerresolvedstring"></a>TGR sets Rbel object {tigerResolvedString} at {tigerResolvedString} to new value {tigerResolvedString}</h5>
+<h5 id="_tgr_sets_rbel_object_tigerresolvedstring_at_tigerresolvedstring_to_new_value_tigerresolvedstring"><a class="anchor" href="#_tgr_sets_rbel_object_tigerresolvedstring_at_tigerresolvedstring_to_new_value_tigerresolvedstring"></a>TGR sets Rbel object {tigerResolvedString} at {tigerResolvedString} to new value" + " {tigerResolvedString}</h5>
 <div class="paragraph">
 <p>Sets a value of an object at a specified path; newValue is of type String</p>
 </div>
@@ -3798,11 +3837,11 @@ expression</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_ergänzt_rbel_objekt_tigerresolvedstring_an_stelle_tigerresolvedstring_um_tigerresolvedstring"><a class="anchor" href="#_tgr_ergänzt_rbel_objekt_tigerresolvedstring_an_stelle_tigerresolvedstring_um_tigerresolvedstring"></a>TGR ergänzt Rbel-Objekt {tigerResolvedString} an Stelle {tigerResolvedString} um {tigerResolvedString}</h5>
+<h5 id="_tgr_ergänzt_rbel_objekt_tigerresolvedstring_an_stelle_tigerresolvedstring_um_tigerresolvedstring"><a class="anchor" href="#_tgr_ergänzt_rbel_objekt_tigerresolvedstring_an_stelle_tigerresolvedstring_um_tigerresolvedstring"></a>TGR ergänzt Rbel-Objekt {tigerResolvedString} an Stelle {tigerResolvedString} um" + " {tigerResolvedString}</h5>
 
 </div>
 <div class="sect4">
-<h5 id="_tgr_extends_rbel_object_tigerresolvedstring_at_path_tigerresolvedstring_by_a_new_entry_tigerresolvedstring"><a class="anchor" href="#_tgr_extends_rbel_object_tigerresolvedstring_at_path_tigerresolvedstring_by_a_new_entry_tigerresolvedstring"></a>TGR extends Rbel object {tigerResolvedString} at path {tigerResolvedString} by a new entry {tigerResolvedString}</h5>
+<h5 id="_tgr_extends_rbel_object_tigerresolvedstring_at_path_tigerresolvedstring_by_a_new_entry_tigerresolvedstring"><a class="anchor" href="#_tgr_extends_rbel_object_tigerresolvedstring_at_path_tigerresolvedstring_by_a_new_entry_tigerresolvedstring"></a>TGR extends Rbel object {tigerResolvedString} at path {tigerResolvedString} by a new entry" + " {tigerResolvedString}</h5>
 <div class="paragraph">
 <p>Adds a new entry to an array or a list of a Rbel object at a specific path</p>
 </div>
@@ -3813,11 +3852,11 @@ expression</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_prüft_dass_rbel_objekt_tigerresolvedstring_an_stelle_tigerresolvedstring_gleich_tigerresolvedstring_ist"><a class="anchor" href="#_tgr_prüft_dass_rbel_objekt_tigerresolvedstring_an_stelle_tigerresolvedstring_gleich_tigerresolvedstring_ist"></a>TGR prüft, dass Rbel-Objekt {tigerResolvedString} an Stelle {tigerResolvedString} gleich {tigerResolvedString} ist</h5>
+<h5 id="_tgr_prüft_dass_rbel_objekt_tigerresolvedstring_an_stelle_tigerresolvedstring_gleich_tigerresolvedstring_ist"><a class="anchor" href="#_tgr_prüft_dass_rbel_objekt_tigerresolvedstring_an_stelle_tigerresolvedstring_gleich_tigerresolvedstring_ist"></a>TGR prüft, dass Rbel-Objekt {tigerResolvedString} an Stelle {tigerResolvedString} gleich" + " {tigerResolvedString} ist</h5>
 
 </div>
 <div class="sect4">
-<h5 id="_tgr_asserts_rbel_object_tigerresolvedstring_at_tigerresolvedstring_equals_tigerresolvedstring"><a class="anchor" href="#_tgr_asserts_rbel_object_tigerresolvedstring_at_tigerresolvedstring_equals_tigerresolvedstring"></a>TGR asserts Rbel object {tigerResolvedString} at {tigerResolvedString} equals {tigerResolvedString}</h5>
+<h5 id="_tgr_asserts_rbel_object_tigerresolvedstring_at_tigerresolvedstring_equals_tigerresolvedstring"><a class="anchor" href="#_tgr_asserts_rbel_object_tigerresolvedstring_at_tigerresolvedstring_equals_tigerresolvedstring"></a>TGR asserts Rbel object {tigerResolvedString} at {tigerResolvedString} equals" + " {tigerResolvedString}</h5>
 <div class="paragraph">
 <p>Asserts whether a string value at a given path of the rootTreeNode of a RbelBuilder is a<br>
 certain value</p>
@@ -3829,7 +3868,7 @@ certain value</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_prüft_dass_tigerresolvedstring_gleich_tigerresolvedstring_mit_typ_rbelcontenttype_ist"><a class="anchor" href="#_tgr_prüft_dass_tigerresolvedstring_gleich_tigerresolvedstring_mit_typ_rbelcontenttype_ist"></a>TGR prüft, dass {tigerResolvedString} gleich {tigerResolvedString} mit Typ {rbelContentType} ist</h5>
+<h5 id="_tgr_prüft_dass_tigerresolvedstring_gleich_tigerresolvedstring_mit_typ_rbelcontenttype_ist"><a class="anchor" href="#_tgr_prüft_dass_tigerresolvedstring_gleich_tigerresolvedstring_mit_typ_rbelcontenttype_ist"></a>TGR prüft, dass {tigerResolvedString} gleich {tigerResolvedString} mit Typ {rbelContentType}" + " ist</h5>
 
 </div>
 <div class="sect4">
@@ -4252,7 +4291,7 @@ reported via the rbel log HTML page or the messages shown on web ui of tiger pro
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_warte_auf_eine_nachricht_in_der_knoten_tigerresolvedstring_mit_tigerresolvedstring_übereinstimmt"><a class="anchor" href="#_tgr_warte_auf_eine_nachricht_in_der_knoten_tigerresolvedstring_mit_tigerresolvedstring_übereinstimmt"></a>TGR warte auf eine Nachricht, in der Knoten {tigerResolvedString} mit {tigerResolvedString} übereinstimmt</h5>
+<h5 id="_tgr_warte_auf_eine_nachricht_in_der_knoten_tigerresolvedstring_mit_tigerresolvedstring_übereinstimmt"><a class="anchor" href="#_tgr_warte_auf_eine_nachricht_in_der_knoten_tigerresolvedstring_mit_tigerresolvedstring_übereinstimmt"></a>TGR warte auf eine Nachricht, in der Knoten {tigerResolvedString} mit {tigerResolvedString}" + " übereinstimmt</h5>
 
 </div>
 <div class="sect4">
@@ -4267,7 +4306,7 @@ matches the given value. This method will NOT alter currentRequest/currentRespon
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_warte_auf_eine_neue_nachricht_in_der_knoten_tigerresolvedstring_mit_tigerresolvedstring_übereinstimmt"><a class="anchor" href="#_tgr_warte_auf_eine_neue_nachricht_in_der_knoten_tigerresolvedstring_mit_tigerresolvedstring_übereinstimmt"></a>TGR warte auf eine neue Nachricht, in der Knoten {tigerResolvedString} mit {tigerResolvedString} übereinstimmt</h5>
+<h5 id="_tgr_warte_auf_eine_neue_nachricht_in_der_knoten_tigerresolvedstring_mit_tigerresolvedstring_übereinstimmt"><a class="anchor" href="#_tgr_warte_auf_eine_neue_nachricht_in_der_knoten_tigerresolvedstring_mit_tigerresolvedstring_übereinstimmt"></a>TGR warte auf eine neue Nachricht, in der Knoten {tigerResolvedString} mit" + " {tigerResolvedString} übereinstimmt</h5>
 
 </div>
 <div class="sect4">
@@ -4299,7 +4338,7 @@ find next steps are not altered by this step.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_finde_die_erste_anfrage_mit_pfad_string_und_knoten_string_der_mit_string_übereinstimmt"><a class="anchor" href="#_tgr_finde_die_erste_anfrage_mit_pfad_string_und_knoten_string_der_mit_string_übereinstimmt"></a>TGR finde die erste Anfrage mit Pfad {string} und Knoten {string} der mit {string} übereinstimmt</h5>
+<h5 id="_tgr_finde_die_erste_anfrage_mit_pfad_string_und_knoten_string_der_mit_string_übereinstimmt"><a class="anchor" href="#_tgr_finde_die_erste_anfrage_mit_pfad_string_und_knoten_string_der_mit_string_übereinstimmt"></a>TGR finde die erste Anfrage mit Pfad {string} und Knoten {string} der mit {string}" + " übereinstimmt</h5>
 
 </div>
 <div class="sect4">
@@ -4329,7 +4368,7 @@ find next steps are not altered by this step.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_finde_die_nächste_anfrage_mit_pfad_string_und_knoten_string_der_mit_string_übereinstimmt"><a class="anchor" href="#_tgr_finde_die_nächste_anfrage_mit_pfad_string_und_knoten_string_der_mit_string_übereinstimmt"></a>TGR finde die nächste Anfrage mit Pfad {string} und Knoten {string} der mit {string} übereinstimmt</h5>
+<h5 id="_tgr_finde_die_nächste_anfrage_mit_pfad_string_und_knoten_string_der_mit_string_übereinstimmt"><a class="anchor" href="#_tgr_finde_die_nächste_anfrage_mit_pfad_string_und_knoten_string_der_mit_string_übereinstimmt"></a>TGR finde die nächste Anfrage mit Pfad {string} und Knoten {string} der mit {string}" + " übereinstimmt</h5>
 
 </div>
 <div class="sect4">
@@ -4389,7 +4428,7 @@ memorize it in the {<strong>link</strong> #rbelValidator} instance.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_finde_die_letzte_anfrage_mit_pfad_string_und_knoten_string_der_mit_string_übereinstimmt"><a class="anchor" href="#_tgr_finde_die_letzte_anfrage_mit_pfad_string_und_knoten_string_der_mit_string_übereinstimmt"></a>TGR finde die letzte Anfrage mit Pfad {string} und Knoten {string} der mit {string} übereinstimmt</h5>
+<h5 id="_tgr_finde_die_letzte_anfrage_mit_pfad_string_und_knoten_string_der_mit_string_übereinstimmt"><a class="anchor" href="#_tgr_finde_die_letzte_anfrage_mit_pfad_string_und_knoten_string_der_mit_string_übereinstimmt"></a>TGR finde die letzte Anfrage mit Pfad {string} und Knoten {string} der mit {string}" + " übereinstimmt</h5>
 
 </div>
 <div class="sect4">
@@ -4415,7 +4454,7 @@ memorize it in the {<strong>link</strong> #rbelValidator} instance.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_finde_eine_nachricht_mit_knoten_tigerresolvedstring_der_mit_tigerresolvedstring_übereinstimmt"><a class="anchor" href="#_tgr_finde_eine_nachricht_mit_knoten_tigerresolvedstring_der_mit_tigerresolvedstring_übereinstimmt"></a>TGR finde eine Nachricht mit Knoten {tigerResolvedString} der mit {tigerResolvedString} übereinstimmt</h5>
+<h5 id="_tgr_finde_eine_nachricht_mit_knoten_tigerresolvedstring_der_mit_tigerresolvedstring_übereinstimmt"><a class="anchor" href="#_tgr_finde_eine_nachricht_mit_knoten_tigerresolvedstring_der_mit_tigerresolvedstring_übereinstimmt"></a>TGR finde eine Nachricht mit Knoten {tigerResolvedString} der mit {tigerResolvedString}" + " übereinstimmt</h5>
 
 </div>
 <div class="sect4">
@@ -4433,7 +4472,7 @@ instance.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_speichere_wert_des_knotens_tigerresolvedstring_der_aktuellen_antwort_in_der_variable_tigerresolvedstring"><a class="anchor" href="#_tgr_speichere_wert_des_knotens_tigerresolvedstring_der_aktuellen_antwort_in_der_variable_tigerresolvedstring"></a>TGR speichere Wert des Knotens {tigerResolvedString} der aktuellen Antwort in der Variable {tigerResolvedString}</h5>
+<h5 id="_tgr_speichere_wert_des_knotens_tigerresolvedstring_der_aktuellen_antwort_in_der_variable_tigerresolvedstring"><a class="anchor" href="#_tgr_speichere_wert_des_knotens_tigerresolvedstring_der_aktuellen_antwort_in_der_variable_tigerresolvedstring"></a>TGR speichere Wert des Knotens {tigerResolvedString} der aktuellen Antwort in der Variable" + " {tigerResolvedString}</h5>
 <div class="paragraph">
 <p>store given rbel path node/attribute text value of current response.</p>
 </div>
@@ -4443,7 +4482,7 @@ instance.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_ersetze_tigerresolvedstring_mit_tigerresolvedstring_im_inhalt_der_variable_tigerresolvedstring"><a class="anchor" href="#_tgr_ersetze_tigerresolvedstring_mit_tigerresolvedstring_im_inhalt_der_variable_tigerresolvedstring"></a>TGR ersetze {tigerResolvedString} mit {tigerResolvedString} im Inhalt der Variable {tigerResolvedString}</h5>
+<h5 id="_tgr_ersetze_tigerresolvedstring_mit_tigerresolvedstring_im_inhalt_der_variable_tigerresolvedstring"><a class="anchor" href="#_tgr_ersetze_tigerresolvedstring_mit_tigerresolvedstring_im_inhalt_der_variable_tigerresolvedstring"></a>TGR ersetze {tigerResolvedString} mit {tigerResolvedString} im Inhalt der Variable" + " {tigerResolvedString}</h5>
 <div class="paragraph">
 <p>replace stored content with given regex</p>
 </div>
@@ -4472,7 +4511,7 @@ instance.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_prüfe_aktuelle_antwort_stimmt_im_knoten_tigerresolvedstring_überein_mit_tigerresolvedstring"><a class="anchor" href="#_tgr_prüfe_aktuelle_antwort_stimmt_im_knoten_tigerresolvedstring_überein_mit_tigerresolvedstring"></a>TGR prüfe aktuelle Antwort stimmt im Knoten {tigerResolvedString} überein mit {tigerResolvedString}</h5>
+<h5 id="_tgr_prüfe_aktuelle_antwort_stimmt_im_knoten_tigerresolvedstring_überein_mit_tigerresolvedstring"><a class="anchor" href="#_tgr_prüfe_aktuelle_antwort_stimmt_im_knoten_tigerresolvedstring_überein_mit_tigerresolvedstring"></a>TGR prüfe aktuelle Antwort stimmt im Knoten {tigerResolvedString} überein mit" + " {tigerResolvedString}</h5>
 <div class="paragraph">
 <p>assert that response of filtered request matches at given rbel path node/attribute.</p>
 </div>
@@ -4483,7 +4522,7 @@ instance.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_prüfe_aktuelle_antwort_stimmt_im_knoten_tigerresolvedstring_nicht_überein_mit_tigerresolvedstring"><a class="anchor" href="#_tgr_prüfe_aktuelle_antwort_stimmt_im_knoten_tigerresolvedstring_nicht_überein_mit_tigerresolvedstring"></a>TGR prüfe aktuelle Antwort stimmt im Knoten {tigerResolvedString} nicht überein mit {tigerResolvedString}</h5>
+<h5 id="_tgr_prüfe_aktuelle_antwort_stimmt_im_knoten_tigerresolvedstring_nicht_überein_mit_tigerresolvedstring"><a class="anchor" href="#_tgr_prüfe_aktuelle_antwort_stimmt_im_knoten_tigerresolvedstring_nicht_überein_mit_tigerresolvedstring"></a>TGR prüfe aktuelle Antwort stimmt im Knoten {tigerResolvedString} nicht überein mit" + " {tigerResolvedString}</h5>
 <div class="paragraph">
 <p>assert that response of filtered request does not match at given rbel path node/attribute.</p>
 </div>
@@ -4516,7 +4555,7 @@ instance.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_prüfe_aktuelle_antwort_im_knoten_tigerresolvedstring_stimmt_als_modetype_überein_mit"><a class="anchor" href="#_tgr_prüfe_aktuelle_antwort_im_knoten_tigerresolvedstring_stimmt_als_modetype_überein_mit"></a>TGR prüfe aktuelle Antwort im Knoten {tigerResolvedString} stimmt als {modeType} überein mit:</h5>
+<h5 id="_tgr_prüfe_aktuelle_antwort_im_knoten_tigerresolvedstring_stimmt_als_modetype_überein_mit"><a class="anchor" href="#_tgr_prüfe_aktuelle_antwort_im_knoten_tigerresolvedstring_stimmt_als_modetype_überein_mit"></a>TGR prüfe aktuelle Antwort im Knoten {tigerResolvedString} stimmt als {modeType} überein" + " mit:</h5>
 <div class="paragraph">
 <p>assert that response of filtered request matches at given rbel path node/attribute assuming its<br>
 JSON or XML</p>
@@ -4529,7 +4568,7 @@ JSON or XML</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_prüfe_aktuelle_antwort_im_knoten_tigerresolvedstring_stimmt_als_xml_mit_folgenden_diff_optionen_tigerresolvedstring_überein_mit"><a class="anchor" href="#_tgr_prüfe_aktuelle_antwort_im_knoten_tigerresolvedstring_stimmt_als_xml_mit_folgenden_diff_optionen_tigerresolvedstring_überein_mit"></a>TGR prüfe aktuelle Antwort im Knoten {tigerResolvedString} stimmt als XML mit folgenden diff Optionen {tigerResolvedString} überein mit:</h5>
+<h5 id="_tgr_prüfe_aktuelle_antwort_im_knoten_tigerresolvedstring_stimmt_als_xml_mit_folgenden_diff_optionen_tigerresolvedstring_überein_mit"><a class="anchor" href="#_tgr_prüfe_aktuelle_antwort_im_knoten_tigerresolvedstring_stimmt_als_xml_mit_folgenden_diff_optionen_tigerresolvedstring_überein_mit"></a>TGR prüfe aktuelle Antwort im Knoten {tigerResolvedString} stimmt als XML mit folgenden diff" + " Optionen {tigerResolvedString} überein mit:</h5>
 <div class="paragraph">
 <p>assert that response of filtered request matches at given rbel path node/attribute assuming its<br>
 XML with given list of diff options.</p>
@@ -4613,7 +4652,7 @@ test.</p>
 
 </div>
 <div class="sect4">
-<h5 id="_tgr_eine_leere_requesttype_anfrage_an_tigerresolvedurl_und_den_folgenden_headern_sendet"><a class="anchor" href="#_tgr_eine_leere_requesttype_anfrage_an_tigerresolvedurl_und_den_folgenden_headern_sendet"></a>TGR eine leere {requestType} Anfrage an {tigerResolvedUrl} und den folgenden Headern sendet:</h5>
+<h5 id="_tgr_eine_leere_requesttype_anfrage_an_tigerresolvedurl_und_den_folgenden_headern_sendet"><a class="anchor" href="#_tgr_eine_leere_requesttype_anfrage_an_tigerresolvedurl_und_den_folgenden_headern_sendet"></a>TGR eine leere {requestType} Anfrage an {tigerResolvedUrl} und den folgenden Headern" + " sendet:</h5>
 
 </div>
 <div class="sect4">
@@ -4642,11 +4681,11 @@ the headers which are used by default.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_send_empty_requesttype_request_to_tigerresolvedurl_without_waiting_for_the_response_with_headers"><a class="anchor" href="#_tgr_send_empty_requesttype_request_to_tigerresolvedurl_without_waiting_for_the_response_with_headers"></a>TGR send empty {requestType} request to {tigerResolvedUrl} without waiting for the response with headers:</h5>
+<h5 id="_tgr_send_empty_requesttype_request_to_tigerresolvedurl_without_waiting_for_the_response_with_headers"><a class="anchor" href="#_tgr_send_empty_requesttype_request_to_tigerresolvedurl_without_waiting_for_the_response_with_headers"></a>TGR send empty {requestType} request to {tigerResolvedUrl} without waiting for the response" + " with headers:</h5>
 
 </div>
 <div class="sect4">
-<h5 id="_tgr_sende_eine_leere_requesttype_anfrage_an_tigerresolvedurl_ohne_auf_antwort_zu_warten_mit_folgenden_headern"><a class="anchor" href="#_tgr_sende_eine_leere_requesttype_anfrage_an_tigerresolvedurl_ohne_auf_antwort_zu_warten_mit_folgenden_headern"></a>TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten mit folgenden Headern:</h5>
+<h5 id="_tgr_sende_eine_leere_requesttype_anfrage_an_tigerresolvedurl_ohne_auf_antwort_zu_warten_mit_folgenden_headern"><a class="anchor" href="#_tgr_sende_eine_leere_requesttype_anfrage_an_tigerresolvedurl_ohne_auf_antwort_zu_warten_mit_folgenden_headern"></a>TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten" + " mit folgenden Headern:</h5>
 <div class="paragraph">
 <p>Sends an empty request via the selected method and expands the list of default headers with the<br>
 headers provided by the caller. Placeholders in address and in the data table will be resolved.</p>
@@ -4667,7 +4706,7 @@ test.</p>
 
 </div>
 <div class="sect4">
-<h5 id="_tgr_eine_leere_requesttype_anfrage_an_tigerresolvedurl_und_dem_folgenden_body_string_sendet"><a class="anchor" href="#_tgr_eine_leere_requesttype_anfrage_an_tigerresolvedurl_und_dem_folgenden_body_string_sendet"></a>TGR eine leere {requestType} Anfrage an {tigerResolvedUrl} und dem folgenden body {string} sendet</h5>
+<h5 id="_tgr_eine_leere_requesttype_anfrage_an_tigerresolvedurl_und_dem_folgenden_body_string_sendet"><a class="anchor" href="#_tgr_eine_leere_requesttype_anfrage_an_tigerresolvedurl_und_dem_folgenden_body_string_sendet"></a>TGR eine leere {requestType} Anfrage an {tigerResolvedUrl} und dem folgenden body {string}" + " sendet</h5>
 
 </div>
 <div class="sect4">
@@ -4684,11 +4723,11 @@ and in address will be resolved.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_tgr_send_requesttype_request_to_tigerresolvedurl_with_body_string_without_waiting_for_the_response"><a class="anchor" href="#_tgr_send_requesttype_request_to_tigerresolvedurl_with_body_string_without_waiting_for_the_response"></a>TGR send {requestType} request to {tigerResolvedUrl} with body {string} without waiting for the response</h5>
+<h5 id="_tgr_send_requesttype_request_to_tigerresolvedurl_with_body_string_without_waiting_for_the_response"><a class="anchor" href="#_tgr_send_requesttype_request_to_tigerresolvedurl_with_body_string_without_waiting_for_the_response"></a>TGR send {requestType} request to {tigerResolvedUrl} with body {string} without waiting for" + " the response</h5>
 
 </div>
 <div class="sect4">
-<h5 id="_tgr_sende_eine_requesttype_anfrage_an_tigerresolvedurl_mit_body_string_ohne_auf_antwort_zu_warten"><a class="anchor" href="#_tgr_sende_eine_requesttype_anfrage_an_tigerresolvedurl_mit_body_string_ohne_auf_antwort_zu_warten"></a>TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit Body {string} ohne auf Antwort zu warten</h5>
+<h5 id="_tgr_sende_eine_requesttype_anfrage_an_tigerresolvedurl_mit_body_string_ohne_auf_antwort_zu_warten"><a class="anchor" href="#_tgr_sende_eine_requesttype_anfrage_an_tigerresolvedurl_mit_body_string_ohne_auf_antwort_zu_warten"></a>TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit Body {string} ohne auf" + " Antwort zu warten</h5>
 <div class="paragraph">
 <p>Sends a request containing the provided body via the selected method. Placeholders in the body<br>
 and in address will be resolved.</p>
@@ -4742,11 +4781,11 @@ this is done by the step. Example:</p>
 
 </div>
 <div class="sect4">
-<h5 id="_tgr_eine_requesttype_anfrage_an_tigerresolvedurl_mit_den_folgenden_mehrzeiligen_daten_sendet"><a class="anchor" href="#_tgr_eine_requesttype_anfrage_an_tigerresolvedurl_mit_den_folgenden_mehrzeiligen_daten_sendet"></a>TGR eine {requestType} Anfrage an {tigerResolvedUrl} mit den folgenden mehrzeiligen Daten sendet:</h5>
+<h5 id="_tgr_eine_requesttype_anfrage_an_tigerresolvedurl_mit_den_folgenden_mehrzeiligen_daten_sendet"><a class="anchor" href="#_tgr_eine_requesttype_anfrage_an_tigerresolvedurl_mit_den_folgenden_mehrzeiligen_daten_sendet"></a>TGR eine {requestType} Anfrage an {tigerResolvedUrl} mit den folgenden mehrzeiligen Daten" + " sendet:</h5>
 
 </div>
 <div class="sect4">
-<h5 id="_tgr_sende_eine_requesttype_anfrage_an_tigerresolvedurl_mit_folgenden_mehrzeiligen_daten"><a class="anchor" href="#_tgr_sende_eine_requesttype_anfrage_an_tigerresolvedurl_mit_folgenden_mehrzeiligen_daten"></a>TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit folgenden mehrzeiligen Daten:</h5>
+<h5 id="_tgr_sende_eine_requesttype_anfrage_an_tigerresolvedurl_mit_folgenden_mehrzeiligen_daten"><a class="anchor" href="#_tgr_sende_eine_requesttype_anfrage_an_tigerresolvedurl_mit_folgenden_mehrzeiligen_daten"></a>TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit folgenden mehrzeiligen" + " Daten:</h5>
 <div class="paragraph">
 <p>Sends a request via the selected method. For the given request&#8217;s body placeholders in keys and<br>
 values will be resolved. This step is meant to be used for more complex bodys spanning multiple<br>
@@ -4775,11 +4814,23 @@ lines.</p>
 </div>
 </div>
 <div class="sect4">
+<h5 id="_tgr_send_requesttype_request_to_tigerresolvedurl_with_contenttype_string_and_multiline_body"><a class="anchor" href="#_tgr_send_requesttype_request_to_tigerresolvedurl_with_contenttype_string_and_multiline_body"></a>TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline" + " body:</h5>
+
+</div>
+<div class="sect4">
+<h5 id="_tgr_eine_requesttype_anfrage_an_tigerresolvedurl_mit_contenttype_string_und_den_folgenden_mehrzeiligen_daten_sendet"><a class="anchor" href="#_tgr_eine_requesttype_anfrage_an_tigerresolvedurl_mit_contenttype_string_und_den_folgenden_mehrzeiligen_daten_sendet"></a>TGR eine {requestType} Anfrage an {tigerResolvedUrl} mit ContentType {string} und den" + " folgenden mehrzeiligen Daten sendet:</h5>
+
+</div>
+<div class="sect4">
+<h5 id="_tgr_sende_eine_requesttype_anfrage_an_tigerresolvedurl_mit_contenttype_string_und_folgenden_mehrzeiligen_daten"><a class="anchor" href="#_tgr_sende_eine_requesttype_anfrage_an_tigerresolvedurl_mit_contenttype_string_und_folgenden_mehrzeiligen_daten"></a>TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit ContentType {string} und" + " folgenden mehrzeiligen Daten:</h5>
+
+</div>
+<div class="sect4">
 <h5 id="_tgr_send_requesttype_request_to_tigerresolvedurl_without_waiting_for_the_response_with"><a class="anchor" href="#_tgr_send_requesttype_request_to_tigerresolvedurl_without_waiting_for_the_response_with"></a>TGR send {requestType} request to {tigerResolvedUrl} without waiting for the response with:</h5>
 
 </div>
 <div class="sect4">
-<h5 id="_tgr_sende_eine_requesttype_anfrage_an_tigerresolvedurl_ohne_auf_antwort_zu_warten_mit_folgenden_daten"><a class="anchor" href="#_tgr_sende_eine_requesttype_anfrage_an_tigerresolvedurl_ohne_auf_antwort_zu_warten_mit_folgenden_daten"></a>TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten mit folgenden Daten:</h5>
+<h5 id="_tgr_sende_eine_requesttype_anfrage_an_tigerresolvedurl_ohne_auf_antwort_zu_warten_mit_folgenden_daten"><a class="anchor" href="#_tgr_sende_eine_requesttype_anfrage_an_tigerresolvedurl_ohne_auf_antwort_zu_warten_mit_folgenden_daten"></a>TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten mit" + " folgenden Daten:</h5>
 <div class="paragraph">
 <p>Sends a request via the selected method. The request is expanded by the provided key-value<br>
 pairs. Placeholders in keys and values will be resolved. The values must not be URL encoded, as<br>
@@ -4919,12 +4970,21 @@ is performed.</p>
 <h5 id="_tgr_set_local_variable_tigerresolvedstring_to_tigerresolvedstring"><a class="anchor" href="#_tgr_set_local_variable_tigerresolvedstring_to_tigerresolvedstring"></a>TGR set local variable {tigerResolvedString} to {tigerResolvedString}</h5>
 <div class="paragraph">
 <p>Sets the given key to the given value in the global configuration store. Variable substitution<br>
-is performed. This value will only be accessible from this exact thread.</p>
+is performed. This value will only be available in the given scenario being clear up after the<br>
+scenario run is finished.</p>
 </div>
 <div class="paragraph">
 <p><strong>param</strong> key key of the context<br>
 <strong>param</strong> value value for the context entry with given key</p>
 </div>
+</div>
+<div class="sect4">
+<h5 id="_tgr_setze_lokale_feature_variable_tigerresolvedstring_auf_tigerresolvedstring"><a class="anchor" href="#_tgr_setze_lokale_feature_variable_tigerresolvedstring_auf_tigerresolvedstring"></a>TGR setze lokale Feature Variable {tigerResolvedString} auf {tigerResolvedString}</h5>
+
+</div>
+<div class="sect4">
+<h5 id="_tgr_set_local_feature_variable_tigerresolvedstring_to_tigerresolvedstring"><a class="anchor" href="#_tgr_set_local_feature_variable_tigerresolvedstring_to_tigerresolvedstring"></a>TGR set local feature variable {tigerResolvedString} to {tigerResolvedString}</h5>
+
 </div>
 <div class="sect4">
 <h5 id="_tgr_prüfe_variable_tigerresolvedstring_stimmt_überein_mit_tigerresolvedstring"><a class="anchor" href="#_tgr_prüfe_variable_tigerresolvedstring_stimmt_überein_mit_tigerresolvedstring"></a>TGR prüfe Variable {tigerResolvedString} stimmt überein mit {tigerResolvedString}</h5>
@@ -4999,11 +5059,11 @@ regex string. Variable substitution is performed.</p>
 
 </div>
 <div class="sect4">
-<h5 id="_tgr_pause_test_run_execution_with_message_tigerresolvedstring_and_message_in_case_of_error_tigerresolvedstring"><a class="anchor" href="#_tgr_pause_test_run_execution_with_message_tigerresolvedstring_and_message_in_case_of_error_tigerresolvedstring"></a>TGR pause test run execution with message {tigerResolvedString} and message in case of error {tigerResolvedString}</h5>
+<h5 id="_tgr_pause_test_run_execution_with_message_tigerresolvedstring_and_message_in_case_of_error_tigerresolvedstring"><a class="anchor" href="#_tgr_pause_test_run_execution_with_message_tigerresolvedstring_and_message_in_case_of_error_tigerresolvedstring"></a>TGR pause test run execution with message {tigerResolvedString} and message in case of error" + " {tigerResolvedString}</h5>
 
 </div>
 <div class="sect4">
-<h5 id="_tgr_pausiere_testausführung_mit_nachricht_tigerresolvedstring_und_meldung_im_fehlerfall_tigerresolvedstring"><a class="anchor" href="#_tgr_pausiere_testausführung_mit_nachricht_tigerresolvedstring_und_meldung_im_fehlerfall_tigerresolvedstring"></a>TGR pausiere Testausführung mit Nachricht {tigerResolvedString} und Meldung im Fehlerfall {tigerResolvedString}</h5>
+<h5 id="_tgr_pausiere_testausführung_mit_nachricht_tigerresolvedstring_und_meldung_im_fehlerfall_tigerresolvedstring"><a class="anchor" href="#_tgr_pausiere_testausführung_mit_nachricht_tigerresolvedstring_und_meldung_im_fehlerfall_tigerresolvedstring"></a>TGR pausiere Testausführung mit Nachricht {tigerResolvedString} und Meldung im Fehlerfall" + " {tigerResolvedString}</h5>
 
 </div>
 <div class="sect4">
@@ -5026,6 +5086,26 @@ regex string. Variable substitution is performed.</p>
 <h5 id="_tgr_gebe_variable_tigerresolvedstring_aus"><a class="anchor" href="#_tgr_gebe_variable_tigerresolvedstring_aus"></a>TGR gebe variable {tigerResolvedString} aus</h5>
 <div class="paragraph">
 <p>Prints the value of the given variable to the System-out</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_tgr_stop_server_tigerresolvedstring"><a class="anchor" href="#_tgr_stop_server_tigerresolvedstring"></a>TGR stop server {tigerResolvedString}</h5>
+<div class="paragraph">
+<p>Stops the given server. If the server is not running or the server is not found, an exception<br>
+is thrown.</p>
+</div>
+<div class="paragraph">
+<p><strong>param</strong> servername The server to be stopped.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_tgr_start_server_tigerresolvedstring"><a class="anchor" href="#_tgr_start_server_tigerresolvedstring"></a>TGR start server {tigerResolvedString}</h5>
+<div class="paragraph">
+<p>Starts the given server. If the server is already running or the server is not found, an<br>
+exception is thrown.</p>
+</div>
+<div class="paragraph">
+<p><strong>param</strong> servername The server to be started.</p>
 </div>
 <div class="paragraph">
 <p>The pause steps allow to pause the validation test suite.<br>
@@ -5382,22 +5462,33 @@ If that key is not found, the fallback value "orThisValue" will be used.</p>
 <div class="sect2">
 <h3 id="_localized_configuration"><a class="anchor" href="#_localized_configuration"></a>6.7. Localized configuration</h3>
 <div class="paragraph">
-<p>Sometimes scope-creep can be a concern: Say you want to add a bunch of values right for one specific call but want to avoid that those values can be seen from everywhere else.<br>
-By default, TigerGlobalConfiguration does not honor scope, which is a deliberate design-choice.<br>
-To give you greater control over scope-behavior use the <code>.localScope()</code>-method:</p>
+<p>It is possible to set a local variable in the TigerGlobalConfiguration which will only be active for the duration of the test case execution.</p>
+</div>
+<div class="paragraph">
+<p>This can be achieved with the glue code step:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="CodeRay highlight"><code data-lang="java">TigerGlobalConfiguration.localScope()
-    .withValue(<span class="string"><span class="delimiter">&quot;</span><span class="content">local.key</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">localValue</span><span class="delimiter">&quot;</span></span>)
-    .withValue(<span class="string"><span class="delimiter">&quot;</span><span class="content">another.key</span><span class="delimiter">&quot;</span></span>, <span class="string"><span class="delimiter">&quot;</span><span class="content">anotherValue</span><span class="delimiter">&quot;</span></span>)
-    .execute(() -&gt; assertThat(TigerGlobalConfiguration.readString(<span class="string"><span class="delimiter">&quot;</span><span class="content">local.key</span><span class="delimiter">&quot;</span></span>))
-        .isEqualTo(<span class="string"><span class="delimiter">&quot;</span><span class="content">localValue</span><span class="delimiter">&quot;</span></span>));</code></pre>
+<pre class="CodeRay highlight"><code data-lang="gherkin">TGR setze lokale Variable {tigerResolvedString} auf {tigerResolvedString}
+TGR set local variable {tigerResolvedString} to {tigerResolvedString}</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Bear in mind that this does not work with threading: The values are added to the global store and will remain in the store for the duration of the execution of the given runnable.<br>
-If you execute multiple tests in parallel you should look into the <code>TigerThreadScopedConfigurationSource</code> (which comes with other drawbacks, threading is not an easy problem to solve).</p>
+<p>The variables will be removed from the TigerGlobalConfiguration after the test case execution.<br>
+Bear in mind that this does not work with threading: The values are added to the global store and are removed automatically, but will still be visible by any parallel thread that attempts to read the TigerGlobalConfiguration.</p>
+</div>
+<div class="paragraph">
+<p>It is also possible to set a variable that is local to the feature file where it is defined.<br>
+With the glue code step:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="gherkin">TGR setze lokale Feature Variable {tigerResolvedString} auf {tigerResolvedString}
+TGR set local feature variable {tigerResolvedString} to {tigerResolvedString}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>a variable can be set that will be removed from the TigerGlobalConfiguration when the execution of the feature file is finished.</p>
 </div>
 </div>
 <div class="sect2">
@@ -6726,7 +6817,7 @@ Rather you have to specify the importance of a response, with a higher number me
 </div>
 </div>
 <div class="paragraph">
-<p>Here we have two nested responses in the <code>/users</code> path. One will match GET requests to the path <code>/users/+{userId}+</code> and the other will match POST-Requests to the path <code>/users</code>.</p>
+<p>Here we have two nested responses in the <code>/users</code> path. One will match GET requests to the path <code>/users/{userId}</code> and the other will match POST-Requests to the path <code>/users</code>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -7078,7 +7169,7 @@ This is an internal gematik extension and can be found on GitLab <a href="https:
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-02-28 12:56:04 UTC
+Last updated 2024-04-23 08:31:20 UTC
 </div>
 </div>
 </body>
