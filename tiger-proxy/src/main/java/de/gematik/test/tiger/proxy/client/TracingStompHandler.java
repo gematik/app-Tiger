@@ -51,8 +51,8 @@ class TracingStompHandler implements StompFrameHandler {
     isolani.setMessage(
         PartialTracingMessage.builder()
             .tracingDto(tigerTracingDto)
-            .receiver(tigerTracingDto.getSender())
-            .sender(tigerTracingDto.getReceiver())
+            .receiver(tigerTracingDto.getReceiver())
+            .sender(tigerTracingDto.getSender())
             .messageFrame(isolani)
             .transmissionTime(tigerTracingDto.getRequestTransmissionTime())
             .additionalInformation(tigerTracingDto.getAdditionalInformationRequest())
@@ -66,8 +66,8 @@ class TracingStompHandler implements StompFrameHandler {
     messagePair.setRequest(
         PartialTracingMessage.builder()
             .tracingDto(tigerTracingDto)
-            .receiver(tigerTracingDto.getSender())
-            .sender(tigerTracingDto.getReceiver())
+            .receiver(tigerTracingDto.getReceiver())
+            .sender(tigerTracingDto.getSender())
             .messageFrame(messagePair)
             .transmissionTime(tigerTracingDto.getRequestTransmissionTime())
             .additionalInformation(tigerTracingDto.getAdditionalInformationRequest())

@@ -251,8 +251,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
           .atMost(10, TimeUnit.SECONDS)
           .until(
               () ->
-                  envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size()
-                      >= 1);
+                  !envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().isEmpty());
     }
     waitShortTime();
   }
@@ -284,7 +283,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                   adminPort: ${free.port.34}
                   proxyPort: ${free.port.35}
                   directReverseProxy:
-                    hostname: localhost
+                    hostname: reverseHostname
                     port: ${free.port.36}
             """)
   void testDirectReverseProxyMeshSetup_withResponse(TigerTestEnvMgr envMgr) {
@@ -301,6 +300,60 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
           .until(
               () ->
                   !envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().isEmpty());
+    }
+    waitShortTime();
+  }
+
+  @SneakyThrows
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+         tigerProxy:
+           skipTrafficEndpointsSubscription: true
+           adminPort: ${free.port.36}
+           trafficEndpoints:
+             - http://localhost:${free.port.34}
+         servers:
+           reverseProxy:
+             type: tigerProxy
+             tigerProxyConfiguration:
+               adminPort: ${free.port.34}
+               proxyPort: ${free.port.35}
+               directReverseProxy:
+                 hostname: reverseHostname
+                 port: ${free.port.50}
+        """)
+  void testDirectReverseProxyMeshSetup_senderAndReceiverAreCorrect(TigerTestEnvMgr envMgr) {
+    waitShortTime();
+
+    try (Socket clientSocket =
+        new Socket(
+            "127.0.0.1",
+            Integer.parseInt(TigerGlobalConfiguration.resolvePlaceholders("${free.port.35}")))) {
+
+      clientSocket.setSoTimeout(1);
+      clientSocket.getOutputStream().write("{\"foo\":\"bar\"}".getBytes());
+      clientSocket.getOutputStream().flush();
+      await()
+          .atMost(10, TimeUnit.SECONDS)
+          .until(
+              () ->
+                  envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size()
+                      == 1);
+
+      var senderPort = clientSocket.getLocalPort();
+      var receiverPort =
+          Integer.parseInt(TigerGlobalConfiguration.resolvePlaceholders("${free.port.50}"));
+      var message =
+          envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().getFirst();
+      assertThat(message)
+          .extractChildWithPath("$.receiver")
+          .hasStringContentEqualTo("reverseHostname:" + receiverPort)
+          .andTheInitialElement()
+          .extractChildWithPath("$.sender")
+          .asString()
+          .isIn("localhost:" + senderPort, "127.0.0.1:" + senderPort);
     }
     waitShortTime();
   }

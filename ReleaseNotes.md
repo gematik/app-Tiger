@@ -30,6 +30,8 @@ copyFiles:
 * TGR-1194: Usability improvements for the configuration editor.
 * TGR-1172: fixed issue where messages coming from a remote tiger proxy would display the timestamp in a different
   timezone.
+* TGR-1330: fixed issue where messages coming from a remote tiger proxy on a meshed setup would have the sender and
+  receiver addresses switched.
 
 ## Features
 

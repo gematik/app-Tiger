@@ -77,7 +77,6 @@ function handleClickOnSequenceNumber(sequenceNumber: number) {
   console.info("handling sequence number" + sequenceNumber)
   const metadata = parsedData.value.find(m => m.sequenceNumber === sequenceNumber);
   if (metadata) {
-    //TODO: it does not work yet
     prop.ui.showRbelLogDetails(metadata?.uuid, sequenceNumber.toString(), new MouseEvent("ignore"))
   }
 }

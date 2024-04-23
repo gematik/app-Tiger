@@ -51,15 +51,16 @@ public class BundledServerNameWriterAndReader
           .getFacet(RbelTcpIpMessageFacet.class)
           .map(targetRecipient)
           .ifPresent(
-              recepient -> {
-                RbelHostnameFacet oldFacet = recepient.getFacet(RbelHostnameFacet.class).orElse(null);
+              recipient -> {
+                RbelHostnameFacet oldFacet =
+                    recipient.getFacet(RbelHostnameFacet.class).orElse(null);
                 if (oldFacet != null) {
-                  recepient.addOrReplaceFacet(
+                  recipient.addOrReplaceFacet(
                       RbelHostnameFacet.builder()
                           .domain(oldFacet.getDomain())
                           .port(oldFacet.getPort())
                           .bundledServerName(
-                              Optional.of(RbelElement.wrap(recepient, bundledServername)))
+                              Optional.of(RbelElement.wrap(recipient, bundledServername)))
                           .build());
                 }
               });
