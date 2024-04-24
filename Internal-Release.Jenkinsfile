@@ -81,94 +81,92 @@ pipeline {
                         mavenBuild(POM_PATH)
                     }
                 }
-                stage('prepare external release') {
-                    steps {
-                        dockerLoginGematikRegistry()
-                        mavenSetVersion("${RELEASE_VERSION}")
-                        gitCommitAndTag("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
+                stage('Docker Images') {
+                    matrix {
 
-                        sh 'git stash'
-                        //GH Pages
+                        axes {
+                            axis {
+                                name 'APP'
+                                values 'tiger-proxy', 'tiger-zion'
+                            }
+                        }
+                        environment {
+                            IMAGE_NAME = "tiger/${APP}"
+                            PREFIX = "${APP}_"
+                            BUILD_ARGS = "--build-arg APP=${APP}"
+                        }
+                        stages {
+                            stage('Build Docker Image') {
+                                steps {
+                                    dockerBuild(IMAGE_NAME, RELEASE_VERSION, RELEASE_VERSION, BUILD_ARGS)
+                                }
+                            }
 
-                        sh '''
+                            stage('Push Docker Image') {
+                                steps {
+                                    dockerPushImage(IMAGE_NAME, RELEASE_VERSION)
+                                }
+                            }
+
+                            stage('Cleanup Docker Image') {
+                                steps {
+                                    dockerRemoveLocalImage(IMAGE_NAME, RELEASE_VERSION)
+                                }
+                            }
+                        }
+                    }
+
+                    stage('prepare external release') {
+                        steps {
+                            dockerLoginGematikRegistry()
+                            mavenSetVersion("${RELEASE_VERSION}")
+                            gitCommitAndTag("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
+
+                            sh 'git stash'
+                            //GH Pages
+
+                            sh '''
                           docker pull eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest
-                          docker create --name tiger-gemdoc-'''+BUILD_NUMBER+''' eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
-                          docker cp '''+pwd()+''' tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata
-                          docker start --attach tiger-gemdoc-'''+BUILD_NUMBER+'''
-                          docker cp tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata/doc/user_manual/tiger_user_manual.pdf .
-                          docker cp tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata/doc/user_manual/tiger_user_manual.html .
-                          docker cp tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata/doc/user_manual/media .
-                          docker cp tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata/doc/user_manual/screenshots .
-                          docker rm tiger-gemdoc-'''+BUILD_NUMBER+'''
+                          docker create --name tiger-gemdoc-''' + BUILD_NUMBER + ''' eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
+                          docker cp ''' + pwd() + ''' tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata
+                          docker start --attach tiger-gemdoc-''' + BUILD_NUMBER + '''
+                          docker cp tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata/doc/user_manual/tiger_user_manual.pdf .
+                          docker cp tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata/doc/user_manual/tiger_user_manual.html .
+                          docker cp tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata/doc/user_manual/media .
+                          docker cp tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata/doc/user_manual/screenshots .
+                          docker rm tiger-gemdoc-''' + BUILD_NUMBER + '''
                         '''
-                        // to test local:
-                        // docker run --name tiger-gemdoc --rm -v $(pwd):/tmpdata eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
-                        // or for windows users:
-                        // docker run --name tiger-gemdoc --rm -v /$PWD://tmpdata eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest //tmpdata/doc/user_manual/tiger_user_manual.adoc
-                        stash includes: 'tiger_user_manual.pdf,tiger_user_manual.html,media/**/*,screenshots/*.png', name: 'manual'
+                            // to test local:
+                            // docker run --name tiger-gemdoc --rm -v $(pwd):/tmpdata eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
+                            // or for windows users:
+                            // docker run --name tiger-gemdoc --rm -v /$PWD://tmpdata eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest //tmpdata/doc/user_manual/tiger_user_manual.adoc
+                            stash includes: 'tiger_user_manual.pdf,tiger_user_manual.html,media/**/*,screenshots/*.png', name: 'manual'
 
-                        sh label: 'checkoutGhPages', script: """
+                            sh label: 'checkoutGhPages', script: """
                             git checkout gh-pages
                             git clean -df
                             """
-                        unstash 'manual'
-                        sh label: 'createManual', script: """
+                            unstash 'manual'
+                            sh label: 'createManual', script: """
                             mv ./tiger_user_manual.pdf ./Tiger-User-Manual.pdf
                             mv ./tiger_user_manual.html ./Tiger-User-Manual.html
                             """
 
-                        gitCommitAndTagDocu("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
-                        sh "git checkout master"
-                    }
-                }
-                stage('UpdateProject with new Version') {
-                    steps {
-                        mavenSetVersion("${NEW_VERSION}-SNAPSHOT")
-                        gitPushVersionUpdate(JIRA_PROJECT_ID, "${NEW_VERSION}-SNAPSHOT", BRANCH)
-                    }
-                }
-                stage('deleteOldArtifacts') {
-                    steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                            nexusDeleteArtifacts(RELEASE_VERSION, ARTIFACT_IDs, GROUP_ID)
+                            gitCommitAndTagDocu("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
+                            sh "git checkout master"
                         }
                     }
-                }
-            }
-        }
-		stage('Docker Images') {
-            matrix {
-
-                axes {
-                    axis {
-                        name 'APP'
-                        values 'tiger-proxy', 'tiger-zion'
-                    }
-                }
-                environment {
-                    IMAGE_NAME = "tiger/${APP}"
-                    PREFIX = "${APP}_"
-                    BUILD_ARGS = "--build-arg APP=${APP}"
-                }
-                stages {
-                    stage('Build Docker Image') {
-					       steps {
-                              dockerBuild(IMAGE_NAME, RELEASE_VERSION, RELEASE_VERSION, BUILD_ARGS)
-                        }
-                    }
-
-                    stage('Push Docker Image') {
-					   when {
-                            branch BRANCH
-                        }
+                    stage('UpdateProject with new Version') {
                         steps {
-                            dockerPushImage(IMAGE_NAME, RELEASE_VERSION)
+                            mavenSetVersion("${NEW_VERSION}-SNAPSHOT")
+                            gitPushVersionUpdate(JIRA_PROJECT_ID, "${NEW_VERSION}-SNAPSHOT", BRANCH)
                         }
                     }
-
-                    stage('Cleanup Docker Image') {
+                    stage('deleteOldArtifacts') {
                         steps {
-                            dockerRemoveLocalImage(IMAGE_NAME, RELEASE_VERSION)
+                            catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                                nexusDeleteArtifacts(RELEASE_VERSION, ARTIFACT_IDs, GROUP_ID)
+                            }
                         }
                     }
                 }

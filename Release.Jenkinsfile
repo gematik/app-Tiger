@@ -23,7 +23,7 @@ pipeline {
         choice(name: 'INTERNAL', choices: ['YES', 'NO'], description: 'Internes Release wird ausgeführt.')
         choice(name: 'GITHUB', choices: ['YES', 'NO'], description: 'GitHub-Release wird ausgeführt.')
         choice(name: 'MAVENCENTRAL', choices: ['YES', 'NO'], description: 'Maven-Central-Release wird ausgeführt.')
-        choice(name: 'DOCKER_HUB', choices:  ['YES', 'NO'], description: 'Publish Image from a GCR Repository to DockerHub.')
+        choice(name: 'DOCKER_HUB', choices: ['YES', 'NO'], description: 'Publish Image from a GCR Repository to DockerHub.')
     }
 
     stages {
@@ -40,10 +40,10 @@ pipeline {
             }
             steps {
                 build job: 'Tiger-TIGER-Internal-Release',
-                parameters: [
-                    string(name: 'NEW_VERSION', value: String.valueOf("${NEW_VERSION}")),
-                    string(name: 'RELEASE_VERSION', value: String.valueOf("${RELEASE_VERSION}")),
-                ]
+                        parameters: [
+                                string(name: 'NEW_VERSION', value: String.valueOf("${NEW_VERSION}")),
+                                string(name: 'RELEASE_VERSION', value: String.valueOf("${RELEASE_VERSION}")),
+                        ]
             }
         }
 
@@ -52,13 +52,31 @@ pipeline {
                 expression { params.GITHUB == 'YES' }
             }
             steps {
-               build job: 'Tiger-TIGER-GitHub-Release',
-               parameters: [
-                    string(name: 'TAGNAME', value: String.valueOf("R${RELEASE_VERSION}")),
-                    string(name: 'RELEASE_VERSION', value: String.valueOf("${RELEASE_VERSION}")),
-                    text(name: 'COMMIT_MESSAGE', value: String.valueOf("Release ${RELEASE_VERSION}")),
-                    string(name: 'DRY_RUN', value: String.valueOf(params.DRY_RUN)),
-               ]
+                build job: 'Tiger-TIGER-GitHub-Release',
+                        parameters: [
+                                string(name: 'TAGNAME', value: String.valueOf("R${RELEASE_VERSION}")),
+                                string(name: 'RELEASE_VERSION', value: String.valueOf("${RELEASE_VERSION}")),
+                                text(name: 'COMMIT_MESSAGE', value: String.valueOf("Release ${RELEASE_VERSION}")),
+                                string(name: 'DRY_RUN', value: String.valueOf(params.DRY_RUN)),
+                        ]
+            }
+        }
+
+        stage('Publish Images to Docker-Hub') {
+            when {
+                expression { params.DOCKER_HUB == 'YES' }
+            }
+            steps {
+                script {
+                    def images = ['tiger-proxy-image', 'tiger-zion-image']
+
+                    images.each { imageName ->
+                        build job: "Tiger-TIGER-${imageName}-DockerHub-Release",
+                                parameters: [
+                                        string(name: 'PUBLISH_VERSION', value: String.valueOf("${RELEASE_VERSION}"))
+                                ]
+                    }
+                }
             }
         }
 
@@ -70,25 +88,7 @@ pipeline {
                 build job: 'Tiger-TIGER-Maven-Central-Release'
             }
         }
-
-		stage('Publish Images to Docker-Hub') {
-			when {
-				expression { params.DOCKER_HUB == 'YES' }
-			}
-			steps {
-				script {
-					def images = ['tiger-proxy-image', 'tiger-zion-image']
-
-					images.each { imageName ->
-					build job: "Tiger-TIGER-${imageName}-DockerHub-Release",
-                    parameters: [
-                        string(name: 'PUBLISH_VERSION', value: String.valueOf("${RELEASE_VERSION}"))
-                   ]
-                }
-            }
-        }
     }
-}
     post {
         always {
             sendEMailNotification(getTigerEMailList())

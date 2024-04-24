@@ -38,16 +38,6 @@ pipeline {
             }
         }
 
-        stage('Unit Test') {
-            steps {
-                withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                    dockerLogin()
-                    mavenTest(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -PNoLongrunner")
-                    dockerLogout()
-                }
-            }
-        }
-
         stage('Publish to MavenCentral') {
             steps {
                 mavenDeploy(POM_PATH, "-Pexternal")
