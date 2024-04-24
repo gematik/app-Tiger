@@ -44,22 +44,22 @@ class TestPathVariables {
   private static Stream<Arguments> provideNonNestedTestArguments() {
     return Stream.of(
         Arguments.of(
-            "/foobar/{myVar}", HttpStatus.OK, "${myVar}", "/foobar/valueToAssign", "valueToAssign"),
+            "/foobar/{myVar}", "200", "${myVar}", "/foobar/valueToAssign", "valueToAssign"),
         Arguments.of(
             "/foobar/{var1}/{var2}",
-            HttpStatus.OK,
+            "200",
             "${var1} and ${var2}",
             "/foobar/valueFor1/valueFor2",
             "valueFor1 and valueFor2"),
         Arguments.of(
             "/this/path/has/no/variables",
-            HttpStatus.OK,
+            "200",
             "no variables",
             "/this/path/has/no/variables",
             "no variables"),
         Arguments.of(
             "/foobar/{myVar}",
-            HttpStatus.OK,
+            "200",
             "${myVar}",
             "/foobar/valueToAssign?someQuerParams=blabla",
             "valueToAssign"));
@@ -83,7 +83,7 @@ class TestPathVariables {
   @MethodSource("provideNonNestedTestArguments")
   void testPathVariablesAssignments(
       String configuredPath,
-      int configuredStatusCode,
+      String configuredStatusCode,
       String configuredBody,
       String pathToTest,
       String expectedBody) {
@@ -107,7 +107,7 @@ class TestPathVariables {
     HttpResponse<String> actualResponse =
         Unirest.get("http://localhost:" + port + pathToTest).asString();
 
-    assertThat(actualResponse.getStatus()).isEqualTo(configuredStatusCode);
+    assertThat(actualResponse.getStatus()).isEqualTo(Integer.parseInt(configuredStatusCode));
     assertThat(actualResponse.getBody()).isEqualTo(expectedBody);
   }
 
@@ -125,7 +125,7 @@ class TestPathVariables {
                             .request(ZionRequestMatchDefinition.builder().path("/{myVar}").build())
                             .response(
                                 TigerMockResponseDescription.builder()
-                                    .statusCode(201)
+                                    .statusCode("201")
                                     .body("${myVar}")
                                     .build())
                             .build()))
@@ -153,7 +153,7 @@ class TestPathVariables {
                             .requestCriterions(List.of("'${myVar}' == 'valueToAssign'"))
                             .response(
                                 TigerMockResponseDescription.builder()
-                                    .statusCode(HttpStatus.OK)
+                                    .statusCode("200")
                                     .body("${myVar}")
                                     .build())
                             .importance(10)
@@ -162,7 +162,7 @@ class TestPathVariables {
                         TigerMockResponse.builder()
                             .response(
                                 TigerMockResponseDescription.builder()
-                                    .statusCode(HttpStatus.NOT_FOUND)
+                                    .statusCode("404")
                                     .build())
                             .importance(0)
                             .build()))

@@ -60,7 +60,7 @@ class TestMeshedSetups {
                         "wrongPassword",
                         TigerMockResponse.builder()
                             .response(
-                                TigerMockResponseDescription.builder().statusCode(405).build())
+                                TigerMockResponseDescription.builder().statusCode("405").build())
                             .importance(0)
                             .build(),
                         "rightPassword",
@@ -68,7 +68,7 @@ class TestMeshedSetups {
                             .requestCriterions(
                                 List.of("$.header.password == '" + passwordString + "'"))
                             .response(
-                                TigerMockResponseDescription.builder().statusCode(200).build())
+                                TigerMockResponseDescription.builder().statusCode("200").build())
                             .importance(10)
                             .build()))
                 .build()));

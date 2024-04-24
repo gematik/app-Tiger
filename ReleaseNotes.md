@@ -1,5 +1,11 @@
 # Changelog Tiger Test platform
 
+# Release 3.0.3
+
+## Features
+
+* TGR-1372: Zion: The responseCode is now a string, meaning it now supports the use of TigerConfiguration values.
+
 # Release 3.0.2
 
 ## Breaking changes

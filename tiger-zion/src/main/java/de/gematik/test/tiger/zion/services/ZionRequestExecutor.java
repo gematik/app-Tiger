@@ -118,7 +118,10 @@ public class ZionRequestExecutor {
         renderResponseBody(response, context);
 
     final BodyBuilder responseBuilder =
-        ResponseEntity.status(response.getResponse().getStatusCode());
+        ResponseEntity.status(
+            Integer.parseInt(
+                TigerGlobalConfiguration.resolvePlaceholders(
+                    response.getResponse().getStatusCode())));
     serializationResult
         .flatMap(RbelSerializationResult::getMediaType)
         .map(Object::toString)

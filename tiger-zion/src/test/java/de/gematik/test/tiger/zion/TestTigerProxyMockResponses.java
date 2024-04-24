@@ -76,7 +76,7 @@ class TestTigerProxyMockResponses {
                     List.of("message.method == 'GET'", "message.url =~ '.*/userJsonPath.*'"))
                 .response(
                     TigerMockResponseDescription.builder()
-                        .statusCode(666)
+                        .statusCode("666")
                         .body(
                             """
                         {
@@ -179,7 +179,7 @@ class TestTigerProxyMockResponses {
             "backend_foobar",
             TigerMockResponse.builder()
                 .requestCriterions(List.of("$.path.username.value=='someUsername'"))
-                .response(TigerMockResponseDescription.builder().statusCode(666).build())
+                .response(TigerMockResponseDescription.builder().statusCode("666").build())
                 .build()));
 
     final HttpResponse<Empty> response =
@@ -197,7 +197,7 @@ class TestTigerProxyMockResponses {
                 .assignments(Map.of("foo.bar.variable", "$.path.username.value"))
                 .response(
                     TigerMockResponseDescription.builder()
-                        .statusCode(666)
+                        .statusCode("666")
                         .body("{\"authorizedUser\": \"${foo.bar.variable}\"}\n")
                         .build())
                 .build()));
@@ -217,7 +217,7 @@ class TestTigerProxyMockResponses {
                 .requestCriterions(List.of("message.method == 'GET'"))
                 .response(
                     TigerMockResponseDescription.builder()
-                        .statusCode(666)
+                        .statusCode("666")
                         .body(
                             "{'headers': \n"
                                 + "    ["
@@ -248,7 +248,7 @@ class TestTigerProxyMockResponses {
                 .requestCriterions(List.of("message.method == 'GET'"))
                 .response(
                     TigerMockResponseDescription.builder()
-                        .statusCode(666)
+                        .statusCode("666")
                         .body(
                             "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n"
                                 + "<loops>\n"

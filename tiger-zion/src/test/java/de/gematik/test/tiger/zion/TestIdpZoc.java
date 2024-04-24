@@ -92,7 +92,7 @@ class TestIdpZoc {
             List.of("message.method == 'POST'", "message.url =~ '.*/sign_response?.*'"))
         .response(
             TigerMockResponseDescription.builder()
-                .statusCode(302)
+                .statusCode("302")
                 .headers(
                     Map.of(
                         "Location",

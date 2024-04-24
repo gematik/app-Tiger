@@ -59,7 +59,7 @@ class TestNestedResponses {
                         "wrongPassword",
                         TigerMockResponse.builder()
                             .response(
-                                TigerMockResponseDescription.builder().statusCode(405).build())
+                                TigerMockResponseDescription.builder().statusCode("405").build())
                             .importance(0)
                             .build(),
                         "rightPassword",
@@ -67,7 +67,7 @@ class TestNestedResponses {
                             .requestCriterions(
                                 List.of("$.header.password == '" + passwordString + "'"))
                             .response(
-                                TigerMockResponseDescription.builder().statusCode(200).build())
+                                TigerMockResponseDescription.builder().statusCode("200").build())
                             .importance(10)
                             .build()))
                 .build()));
@@ -99,7 +99,7 @@ class TestNestedResponses {
                         "nestedResponse",
                         TigerMockResponse.builder()
                             .response(
-                                TigerMockResponseDescription.builder().statusCode(666).build())
+                                TigerMockResponseDescription.builder().statusCode("666").build())
                             .build()))
                 .build()));
 
