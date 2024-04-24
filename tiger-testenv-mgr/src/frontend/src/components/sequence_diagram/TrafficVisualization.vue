@@ -27,6 +27,7 @@ interface RbelMetaData {
   path: string;
   method: string;
   responseCode: number;
+  menuInfoString: string;
   recipient: string;
   sequenceNumber: number;
   bundledServerNameSender: string;
@@ -44,7 +45,7 @@ function parseFeatureMap(featureUpdateMap: Map<string, FeatureUpdate>): RbelMeta
           const rbelMetaSequenceNumber = rbelMeta.sequenceNumber + 1;
           stepRbelMetaDataList.push({
             ...rbelMeta,
-            sequenceNumber: rbelMetaSequenceNumber,
+            sequenceNumber: rbelMetaSequenceNumber
           });
         }
       }
@@ -62,11 +63,8 @@ watchEffect(() => {
 });
 
 function convertToDiagramStepString(metadata: RbelMetaData) {
-  if (isResponse(metadata)) {
-    return `${metadata.bundledServerNameSender || "no symbolic name"}-->>${metadata.bundledServerNameReceiver || "no symbolic name"}: #35;${metadata.sequenceNumber}: ${metadata.responseCode}`
-  } else {
-    return `${metadata.bundledServerNameSender || "no symbolic name"}->>${metadata.bundledServerNameReceiver || "no symbolic name"}: #35;${metadata.sequenceNumber}: ${metadata.method} ${metadata.path}`
-  }
+  const arrow = isResponse(metadata) ? "-->>" : "->>";
+  return `${metadata.bundledServerNameSender || "no symbolic name"}${arrow}${metadata.bundledServerNameReceiver || "no symbolic name"}: #35;${metadata.sequenceNumber}: ${metadata.menuInfoString}`
 }
 
 function isResponse(metadata: RbelMetaData) {

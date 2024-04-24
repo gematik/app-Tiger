@@ -33,6 +33,7 @@ public class RbelCetpConverter implements RbelConverterPlugin {
 
     final RbelCetpFacet cetpFacet =
         RbelCetpFacet.builder()
+            .menuInfoString("CETP")
             .messageLength(RbelElement.wrap(messageLengthBytes, targetElement, messageLength))
             .body(converter.convertElement(messageBody, targetElement))
             .build();

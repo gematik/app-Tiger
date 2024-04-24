@@ -8,11 +8,6 @@ import static de.gematik.test.tiger.mockserver.model.Header.header;
 import static de.gematik.test.tiger.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.decorator.AddBundledServerNamesModifier;
-import de.gematik.rbellogger.data.decorator.MessageMetadataModifier;
-import de.gematik.rbellogger.data.decorator.ServerNameFromHostname;
-import de.gematik.rbellogger.data.decorator.ServernameFromProcessAndPortSupplier;
-import de.gematik.rbellogger.data.decorator.ServernameFromSpyPortMapping;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
@@ -51,9 +46,8 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
   public static final String LOCATION_HEADER_KEY = "Location";
   private final TigerProxy tigerProxy;
   private final TigerRoute tigerRoute;
-  private final MessageMetadataModifier modifierBasedOnProcessAndPort;
-  private final MessageMetadataModifier modifierBasedOnHostname;
-  private final MessageMetadataModifier modifierBasedOnlyOnPort;
+  private BundledServerNamesAdder bundledServerNamesAdder = new BundledServerNamesAdder();
+
   // Maps the Log-IDs to the (to be parsed) Rbel-messages
   private Map<String, CompletableFuture<RbelElement>> requestLogIdToParsingFuture =
       new ConcurrentHashMap<>();
@@ -61,12 +55,6 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
   protected AbstractTigerRouteCallback(TigerProxy tigerProxy, TigerRoute tigerRoute) {
     this.tigerProxy = tigerProxy;
     this.tigerRoute = tigerRoute;
-    this.modifierBasedOnProcessAndPort =
-        AddBundledServerNamesModifier.createModifier(new ServernameFromProcessAndPortSupplier());
-    this.modifierBasedOnHostname =
-        AddBundledServerNamesModifier.createModifier(new ServerNameFromHostname());
-    this.modifierBasedOnlyOnPort =
-        AddBundledServerNamesModifier.createModifier(new ServernameFromSpyPortMapping());
   }
 
   public void applyModifications(HttpRequest request) {
@@ -362,10 +350,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
   }
 
   private void addBundledServerNameToHostnameFacet(RbelElement element) {
-    // order is important!!
-    modifierBasedOnHostname.modifyMetadata(element);
-    modifierBasedOnlyOnPort.modifyMetadata(element);
-    modifierBasedOnProcessAndPort.modifyMetadata(element);
+    bundledServerNamesAdder.addBundledServerNameToHostnameFacet(element);
   }
 
   private boolean isHealthEndpointRequest(HttpRequest request) {

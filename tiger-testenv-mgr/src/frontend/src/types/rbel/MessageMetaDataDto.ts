@@ -6,6 +6,7 @@ export default class MessageMetaDataDto {
   uuid: string = '';
   path: string = '';
   method: string = '';
+  menuInfoString: string = '';
   responseCode: number = -1;
   recipient: string = '';
   sender: string = '';

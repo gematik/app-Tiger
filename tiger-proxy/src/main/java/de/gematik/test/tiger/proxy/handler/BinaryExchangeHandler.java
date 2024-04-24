@@ -32,6 +32,7 @@ import org.bouncycastle.util.Arrays;
 @Slf4j
 public class BinaryExchangeHandler implements BinaryProxyListener {
 
+  private final BundledServerNamesAdder bundledServerNamesAdder = new BundledServerNamesAdder();
   private final TigerProxy tigerProxy;
   private final Map<Pair<SocketAddress, SocketAddress>, byte[]> bufferedParts = new HashMap<>();
 
@@ -190,6 +191,7 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
       getTigerProxy().getRbelLogger().getRbelConverter().removeMessage(result);
       return Optional.empty();
     }
+    bundledServerNamesAdder.addBundledServerNameToHostnameFacet(result);
     return Optional.of(result);
   }
 

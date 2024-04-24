@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.test.tiger.proxy.data.TigerNonPairedMessageFacet;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -13,6 +14,7 @@ import lombok.Data;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.json.JSONObject;
 
 @Data
 @Slf4j
@@ -48,6 +50,13 @@ public class TracingMessageIsolani implements TracingMessageFrame {
     if (messageParsed.isEmpty()) {
       return;
     }
+
+    RbelFileWriter.DEFAULT_POST_CONVERSION_LISTENER.forEach(
+        listener ->
+            listener.performMessagePostConversionProcessing(
+                messageParsed.get(),
+                remoteProxyClient.getRbelLogger().getRbelConverter(),
+                new JSONObject(this.message.getAdditionalInformation())));
 
     messageParsed.get().addFacet(new TigerNonPairedMessageFacet());
     if (log.isTraceEnabled()) {

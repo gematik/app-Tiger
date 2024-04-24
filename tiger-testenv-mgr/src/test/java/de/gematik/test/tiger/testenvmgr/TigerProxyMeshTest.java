@@ -309,6 +309,8 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
+         lib:
+             trafficVisualization: true
          tigerProxy:
            skipTrafficEndpointsSubscription: true
            adminPort: ${free.port.36}
@@ -329,7 +331,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
 
     try (Socket clientSocket =
         new Socket(
-            "127.0.0.1",
+            "localhost",
             Integer.parseInt(TigerGlobalConfiguration.resolvePlaceholders("${free.port.35}")))) {
 
       clientSocket.setSoTimeout(1);
@@ -354,6 +356,10 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
           .extractChildWithPath("$.sender")
           .asString()
           .isIn("localhost:" + senderPort, "127.0.0.1:" + senderPort);
+
+      assertThat(message)
+          .extractChildWithPath("$.receiver.bundledServerName")
+          .hasStringContentEqualTo("reverseHostname");
     }
     waitShortTime();
   }
