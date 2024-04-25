@@ -21,6 +21,7 @@ import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.lib.json.JsonChecker;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.net.URI;
@@ -85,6 +86,9 @@ public class RbelMessageValidator {
   }
 
   public List<RbelElement> getRbelMessages() {
+    TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOptional()
+      .ifPresent(TigerProxy::waitForAllCurrentMessagesToBeParsed);
+
     return new UnmodifiableList<>(
         new ArrayList<>(LocalProxyRbelMessageListener.getValidatableRbelMessages()));
   }

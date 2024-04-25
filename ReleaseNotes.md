@@ -2,6 +2,10 @@
 
 # Release 3.0.3
 
+## Breaking changes
+
+* TGR-1362: HttpGlueCode now waits by default for the request to be received before continuing. This can be changed by setting the configuration key `tiger.httpClient.executeBlocking` to `false`.
+
 ## Features
 
 * TGR-1372: Zion: The responseCode is now a string, meaning it now supports the use of TigerConfiguration values.
