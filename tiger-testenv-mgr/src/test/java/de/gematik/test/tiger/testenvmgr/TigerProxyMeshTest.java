@@ -139,6 +139,13 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         .extractChildWithPath("$.receiver.bundledServerName")
         .hasStringContentEqualTo("httpbin");
 
+    assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageList().get(0))
+        .extractChildWithPath("$.receiver.port")
+        .hasStringContentEqualTo(TigerGlobalConfiguration.readString("free.port.0"));
+    assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageList().get(1))
+        .extractChildWithPath("$.sender.port")
+        .hasStringContentEqualTo(TigerGlobalConfiguration.readString("free.port.0"));
+
     waitShortTime();
   }
 

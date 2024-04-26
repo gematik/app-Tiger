@@ -10,6 +10,10 @@
 
 * TGR-1372: Zion: The responseCode is now a string, meaning it now supports the use of TigerConfiguration values.
 
+## Bugfixes
+
+* TGR-1373: Fixed an issue where in a meshed setup the sender and receiver addresses were switched in the receiving tiger proxy.
+
 # Release 3.0.2
 
 ## Breaking changes

@@ -75,8 +75,9 @@ class TracingStompHandler implements StompFrameHandler {
     messagePair.setResponse(
         PartialTracingMessage.builder()
             .tracingDto(tigerTracingDto)
-            .receiver(tigerTracingDto.getReceiver())
-            .sender(tigerTracingDto.getSender())
+            // This is intentional: sender and receiver are swapped for the response.
+            .receiver(tigerTracingDto.getSender())
+            .sender(tigerTracingDto.getReceiver())
             .messageFrame(messagePair)
             .transmissionTime(tigerTracingDto.getResponseTransmissionTime())
             .additionalInformation(tigerTracingDto.getAdditionalInformationResponse())

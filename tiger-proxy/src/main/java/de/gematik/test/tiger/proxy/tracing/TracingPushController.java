@@ -118,42 +118,42 @@ public class TracingPushController {
     }
   }
 
-  private void sendPairedMessage(RbelElement msg) {
-    RbelTcpIpMessageFacet rbelTcpIpMessageFacet = msg.getFacetOrFail(RbelTcpIpMessageFacet.class);
-    final RbelHostname sender =
-        RbelHostname.fromString(rbelTcpIpMessageFacet.getSender().getRawStringContent())
-            .orElse(null);
-    final RbelHostname receiver =
-        RbelHostname.fromString(rbelTcpIpMessageFacet.getReceiver().getRawStringContent())
-            .orElse(null);
+  private void sendPairedMessage(RbelElement response) {
     final RbelElement request =
-        msg.getFacet(TracingMessagePairFacet.class)
+        response.getFacet(TracingMessagePairFacet.class)
             .map(TracingMessagePairFacet::getRequest)
             .or(
                 () ->
-                    msg.getFacet(RbelHttpResponseFacet.class)
+                    response.getFacet(RbelHttpResponseFacet.class)
                         .map(RbelHttpResponseFacet::getRequest))
             .orElseThrow(
                 () ->
                     new TigerRemoteProxyClientException(
                         "Failure to correctly push message with id '"
-                            + msg.getUuid()
+                            + response.getUuid()
                             + "': Unable to find matching request"));
 
+    RbelTcpIpMessageFacet rbelTcpIpMessageFacet = request.getFacetOrFail(RbelTcpIpMessageFacet.class);
+    final RbelHostname sender =
+      RbelHostname.fromString(rbelTcpIpMessageFacet.getSender().getRawStringContent())
+        .orElse(null);
+    final RbelHostname receiver =
+      RbelHostname.fromString(rbelTcpIpMessageFacet.getReceiver().getRawStringContent())
+        .orElse(null);
     log.trace(
         "{}Propagating new request/response pair (IDs: {} and {})",
         tigerProxy.proxyName(),
         request.getUuid(),
-        msg.getUuid());
+        response.getUuid());
     template.convertAndSend(
         TigerRemoteProxyClient.WS_TRACING,
         TigerTracingDto.builder()
             .receiver(receiver)
             .sender(sender)
-            .responseUuid(msg.getUuid())
+            .responseUuid(response.getUuid())
             .requestUuid(request.getUuid())
             .responseTransmissionTime(
-                msg.getFacet(RbelMessageTimingFacet.class)
+                response.getFacet(RbelMessageTimingFacet.class)
                     .map(RbelMessageTimingFacet::getTransmissionTime)
                     .orElse(null))
             .requestTransmissionTime(
@@ -162,11 +162,11 @@ public class TracingPushController {
                     .map(RbelMessageTimingFacet::getTransmissionTime)
                     .orElse(null))
             .additionalInformationRequest(gatherAdditionalInformation(request))
-            .additionalInformationResponse(gatherAdditionalInformation(msg))
+            .additionalInformationResponse(gatherAdditionalInformation(response))
             .build());
 
     mapRbelMessageAndSent(request);
-    mapRbelMessageAndSent(msg);
+    mapRbelMessageAndSent(response);
   }
 
   private Map<String, String> gatherAdditionalInformation(RbelElement msg) {
