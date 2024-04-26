@@ -13,6 +13,7 @@
 ## Bugfixes
 
 * TGR-1373: Fixed an issue where in a meshed setup the sender and receiver addresses were switched in the receiving tiger proxy.
+* TGR-1381: Tiger-Proxy: Use the correct length for IV and AD in AES-GCM decryption.
 
 # Release 3.0.2
 

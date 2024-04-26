@@ -5,25 +5,7 @@
 package de.gematik.rbellogger.renderer;
 
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
-import static j2html.TagCreator.a;
-import static j2html.TagCreator.article;
-import static j2html.TagCreator.b;
-import static j2html.TagCreator.body;
-import static j2html.TagCreator.div;
-import static j2html.TagCreator.h1;
-import static j2html.TagCreator.h2;
-import static j2html.TagCreator.head;
-import static j2html.TagCreator.html;
-import static j2html.TagCreator.i;
-import static j2html.TagCreator.img;
-import static j2html.TagCreator.link;
-import static j2html.TagCreator.meta;
-import static j2html.TagCreator.pre;
-import static j2html.TagCreator.script;
-import static j2html.TagCreator.section;
-import static j2html.TagCreator.span;
-import static j2html.TagCreator.tag;
-import static j2html.TagCreator.title;
+import static j2html.TagCreator.*;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -182,7 +164,7 @@ public class RbelHtmlRenderingToolkit {
         element.getFacets().stream()
             .filter(RbelNoteFacet.class::isInstance)
             .map(RbelNoteFacet.class::cast)
-            .map(note -> div(i(note.getValue())).withClass(note.getStyle().toCssClass()))
+            .map(RbelNoteFacet::renderToHtml)
             .toList());
     return elementTag;
   }
@@ -598,7 +580,7 @@ public class RbelHtmlRenderingToolkit {
                           originalElement.getNotes().stream()
                               .map(
                                   note ->
-                                      div(i(note.getValue()))
+                                      div(i(text(note.getValue())))
                                           .withClass(note.getStyle().toCssClass()))
                               .toList())
                       .withClass(JSON_NOTE))

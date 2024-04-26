@@ -4,8 +4,13 @@
 
 package de.gematik.rbellogger.data.facet;
 
+import static j2html.TagCreator.div;
+import static j2html.TagCreator.i;
+
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
+import j2html.tags.UnescapedText;
+import j2html.tags.specialized.DivTag;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,6 +31,11 @@ public class RbelNoteFacet implements RbelFacet {
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
     return new RbelMultiMap<>();
+  }
+
+  public DivTag renderToHtml() {
+    return div(i(new UnescapedText(getValue()
+      .replace("\n", "<br/>")))).withClass(getStyle().toCssClass());
   }
 
   @RequiredArgsConstructor
