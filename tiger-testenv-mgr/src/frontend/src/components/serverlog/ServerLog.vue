@@ -4,12 +4,12 @@
 
 <template>
   <div class="tab-pane execution-pane-tabs" id="logs_pane" role="tabpanel">
-    <div class="ps-3">
+    <div class="ps-3 sticky-element">
       <table aria-label="Filter and search toolbar of the server log tab pane">
         <thead>
         <tr>
           <th>Filter servers:</th>
-          <th class="ps-2">Text:</th>
+          <th class="ps-2">Filter by Text:</th>
           <th>Loglevel:</th>
         </tr>
         </thead>
@@ -19,11 +19,22 @@
             <div class="ps-0 pt-2 pb-4">
               <div class="justify-content-between" id="test-server-log-pane-buttons" style="display: inline-block;">
                 <div class="btn active server-buttons" id="test-server-log-pane-server-all"
-                     @click="setServer(selectedServers, '__all__', $event)">Show all logs
+                     @click="setServer(selectedServers, '__all__', $event)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                       class="bi bi-circle-fill" fill="currentColor" viewBox="0 0 16 16">
+                    <circle cx="8" cy="8" r="8"/>
+                  </svg>
+                  Show all logs
                 </div>
                 <div v-for="(serverName,logIndex) in logServers" :key="logIndex" style="display: inline-block;">
-                  <div class="btn server-buttons" :id="`test-server-log-pane-server-${serverName}`"
-                       @click="setServer(selectedServers, serverName, $event)">{{ serverName }}
+                  <div class="btn server-buttons"
+                       :id="`test-server-log-pane-server-${serverName}`"
+                       @click="setServer(selectedServers, serverName, $event)">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="16" height="16" fill="currentColor" class="bi bi-circle-fill" viewBox="0 0 16 16">
+                      <circle cx="8" cy="8" r="8"/>
+                    </svg>
+                    {{ serverName }}
                   </div>
                 </div>
               </div>
@@ -31,7 +42,7 @@
           </td>
           <td>
             <div class="container-fluid ps-2 pt-2 pb-4">
-              <input v-model="selectedText" placeholder="add text" id="test-server-log-pane-input-text"/>
+              <input v-model="selectedText" placeholder="filter text" id="test-server-log-pane-input-text"/>
             </div>
           </td>
           <td>
@@ -82,6 +93,7 @@ const selectedText = ref(props.selectedText);
 const selectedLoglevel = ref(props.selectedLoglevel);
 
 const formatter: DateTimeFormatter = DateTimeFormatter.ofPattern('MM/dd/yyyy HH:mm:ss.SSS');
+
 
 function getReadableTime(localDateTime: LocalDateTime): string {
   if (localDateTime) {
@@ -209,7 +221,15 @@ function filterLogLevel(log: TigerServerLogDto, selectedText: string, selectedLo
 
 .server-buttons.active {
   background: #FCFCFD;
-  color: var(--bs-primary);
+  color: var(--bs-success);
   cursor: default;
 }
+
+.sticky-element {
+  position: sticky;
+  top: 0;
+  background-color: #ffffff;
+  padding: 10px;
+}
+
 </style>
