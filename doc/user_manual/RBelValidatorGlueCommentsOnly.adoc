@@ -123,6 +123,45 @@ instance.
 *param* value value to match at given node/attribute
 *deprecated*
 
+##### TGR prüfe aktueller Request stimmt im Body überein mit:
+assert that request body matches.
+
+*param* docString value / regex that should equal or match
+
+##### TGR prüfe aktueller Request stimmt im Knoten {tigerResolvedString} überein mit" + " {tigerResolvedString}
+assert that request matches at given rbel path node/attribute.
+
+*param* rbelPath path to node/attribute
+*param* value value / regex that should equal or match as string content with MultiLine and
+    DotAll regex option
+
+##### TGR prüfe aktueller Request enthält Knoten {tigerResolvedString}
+assert that request contains node/attribute at given rbel path.
+
+*param* rbelPath path to node/attribute
+
+##### TGR prüfe aktueller Request im Knoten {tigerResolvedString} stimmt überein mit:
+assert that request matches at given rbel path node/attribute.
+
+*param* rbelPath path to node/attribute
+*param* docString value / regex that should equal or match as string content with MultiLine and
+    DotAll regex option supplied as DocString
+
+##### TGR prüfe aktueller Request im Knoten {tigerResolvedString} stimmt als {modeType} überein" + " mit:
+assert that request matches at given rbel path node/attribute assuming its JSON or XML
+
+*param* rbelPath path to node/attribute
+*param* mode one of JSON|XML
+*param* oracleDocStr value / regex that should equal or match as JSON or XML content
+*see* JsonChecker#compareJsonStrings(String, String, boolean)
+
+##### TGR prüfe aktueller Request stimmt im Knoten {tigerResolvedString} nicht überein mit" + " {tigerResolvedString}
+assert that request does not match at given rbel path node/attribute.
+
+*param* rbelPath path to node/attribute
+*param* value value / regex that should NOT BE equal or should NOT match as string content with
+    MultiLine and DotAll regex option
+
 ##### TGR speichere Wert des Knotens {tigerResolvedString} der aktuellen Antwort in der Variable" + " {tigerResolvedString}
 store given rbel path node/attribute text value of current response.
 
@@ -199,6 +238,9 @@ XML with given list of diff options.
 *param* xmlDocStr value / regex that should equal or match as JSON content
 *see* <a href="https://github.com/xmlunit/user-guide/wiki/DifferenceEvaluator">More on
     DifferenceEvaluator</a>
+
+##### TGR gebe alle Nachrichten als Rbel-Tree aus
+Prints the rbel-tree of all requests and responses to the System-out
 
 ##### TGR gebe aktuelle Response als Rbel-Tree aus
 Prints the rbel-tree of the current response to the System-out
