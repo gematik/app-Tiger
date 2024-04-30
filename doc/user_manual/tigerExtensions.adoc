@@ -13,7 +13,7 @@ This is an internal gematik extension and can be found on GitLab https://gitlab.
 
 The Tiger-On-Fhir-extension provides a set of simple BDD steps which can be used to check for valid FHIR content therein.
 FHIR stands for Fast Healthcare Interoperability Resources.
-The tiger-on-fhir can be found on GitHub https://github.com/gematik/tiger-on-fhir-extension and it uses the Gematik Referenzvalidator located on GitHub https://github.com/gematik/app-referencevalidator.
+The tiger-on-fhir can be found on GitHub https://github.com/gematik/tiger-on-fhir and it uses the Gematik Referenzvalidator located on GitHub https://github.com/gematik/app-referencevalidator.
 
 === Tiger CATS Extension
 

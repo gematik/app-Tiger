@@ -180,6 +180,43 @@ servers:
   @TigerTest(
       tigerYaml =
           """
+        servers:
+          mainServer:
+            type: zion
+            zionConfiguration:
+              serverPort: "${free.port.50}"
+              mockResponses:
+                passwordCheckResponse:
+                  requestCriterions:
+                    - message.method == 'GET'
+                    - message.path == '/helloWorld'
+                  nestedResponses:
+                    regularResponse:
+                      importance: 10
+                      requestCriterions:
+                        - "${shouldSendEmptyResponse|false}"
+                      response:
+                        statusCode: ${responseCode|200}
+                    emptyResponse:
+                      importance: 0
+                      response:
+                        statusCode: ${responseCode|200}
+                        body: '{"Wrong":"Password"}'
+        """)
+  @Test
+  void configureVariousResponseCodes(UnirestInstance unirest) {
+    assertThat(unirest.get("http://mainServer/helloWorld").asJson().getStatus()).isEqualTo(200);
+
+    TigerGlobalConfiguration.putValue("responseCode", "666");
+    assertThat(unirest.get("http://mainServer/helloWorld").asJson().getStatus()).isEqualTo(666);
+
+    TigerGlobalConfiguration.putValue("shouldSendEmptyResponse", "true");
+    assertThat(unirest.get("http://mainServer/helloWorld").asString().getBody()).isEmpty();
+  }
+
+  @TigerTest(
+      tigerYaml =
+          """
  servers:
    mainServer:
      type: zion
@@ -632,7 +669,8 @@ servers:
     HttpResponse<String> responseExisting =
         unirest
             .post("http://serverTestName/")
-            .body("""
+            .body(
+                """
               {"urn:telematik:claims:email": "test"}
               """)
             .asString();

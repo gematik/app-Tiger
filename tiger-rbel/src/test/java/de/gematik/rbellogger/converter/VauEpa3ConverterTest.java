@@ -43,7 +43,7 @@ public class VauEpa3ConverterTest {
                 .setActivateVauEpa3Parsing(true)
                 .addCapturer(
                     RbelFileReaderCapturer.builder()
-                        .rbelFile("src/test/resources/vau3Traffic.tgr")
+                        .rbelFile("src/test/resources/vau3traffic.tgr")
                         .build()));
     try (final var capturer = rbelLogger.getRbelCapturer()) {
       capturer.initialize();
@@ -67,7 +67,7 @@ public class VauEpa3ConverterTest {
         .hasChildWithPath("$.body.AEAD_ct.decrypted_content");
     RbelElementAssertion.assertThat(rbelLogger.getMessageList().get(4))
         .extractChildWithPath("$.body.decrypted")
-        .hasStringContentEqualTo("Hello World!");
+        .hasStringContentEqualTo("Hello World");
     RbelElementAssertion.assertThat(rbelLogger.getMessageList().get(5))
         .extractChildWithPath("$.body.decrypted")
         .hasStringContentEqualTo("Right back at ya!");

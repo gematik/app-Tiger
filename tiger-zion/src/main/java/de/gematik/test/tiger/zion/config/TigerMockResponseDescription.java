@@ -21,10 +21,10 @@ public class TigerMockResponseDescription {
   @TigerSkipEvaluation private String body;
   private String bodyFile;
   @TigerSkipEvaluation @Builder.Default private Map<String, String> headers = new HashMap<>();
-  @Builder.Default private Integer statusCode = 200;
+  @TigerSkipEvaluation @Builder.Default private String statusCode = "200";
 
   public TigerMockResponseDescription(
-      String body, String bodyFile, Map<String, String> headers, Integer statusCode) {
+      String body, String bodyFile, Map<String, String> headers, String statusCode) {
     this.body = body;
     setBodyFile(bodyFile);
     this.headers = headers;

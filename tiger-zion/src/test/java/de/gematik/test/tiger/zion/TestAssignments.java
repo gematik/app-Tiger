@@ -58,7 +58,7 @@ class TestAssignments {
                 .assignments(Map.of("theAssignedValue", extractorString))
                 .response(
                     TigerMockResponseDescription.builder()
-                        .statusCode(666)
+                        .statusCode("666")
                         .body("${theAssignedValue}")
                         .build())
                 .build()));
@@ -82,7 +82,7 @@ class TestAssignments {
                             .assignments(Map.of("level2Assignment", "level2Value"))
                             .response(
                                 TigerMockResponseDescription.builder()
-                                    .statusCode(666)
+                                    .statusCode("666")
                                     .body("${level1Assignment} + ${level2Assignment}")
                                     .build())
                             .build()))
@@ -106,7 +106,7 @@ class TestAssignments {
             TigerMockResponse.builder()
                 .request(ZionRequestMatchDefinition.builder().method("PUT").build())
                 .assignments(Map.of("myStoredValue", "!{$.body}"))
-                .response(TigerMockResponseDescription.builder().statusCode(200).build())
+                .response(TigerMockResponseDescription.builder().statusCode("200").build())
                 .build()));
 
     Unirest.put("http://localhost:" + port).body("foobar").asEmpty();
@@ -127,7 +127,7 @@ class TestAssignments {
                         TigerMockResponse.builder()
                             .response(
                                 TigerMockResponseDescription.builder()
-                                    .statusCode(666)
+                                    .statusCode("666")
                                     .body(
                                         "${level1Assignment|fallback1} +"
                                             + " ${level2AssignmentNotReallyExisting|fallback2}")

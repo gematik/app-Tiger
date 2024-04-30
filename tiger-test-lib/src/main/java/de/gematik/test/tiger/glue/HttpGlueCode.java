@@ -62,7 +62,7 @@ public class HttpGlueCode {
       new TigerTypedConfigurationKey<>(
           new TigerConfigurationKey(KEY_TIGER, KEY_HTTP_CLIENT, "executeBlocking"),
           Boolean.class,
-          false);
+          true);
   private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
   public static final String KEY_DEFAULT_HEADER = "defaultHeader";
   private static RbelLogger rbelLogger;
@@ -112,13 +112,13 @@ public class HttpGlueCode {
 
   private static void executeCommandWithContingentWait(ThrowingRunnable command) {
     if (Boolean.TRUE.equals(executeBlocking.getValueOrDefault())) {
-      executeCommandInBackground(command);
-    } else {
       try {
         command.run();
       } catch (Exception e) {
         throw new TigerHttpGlueCodeException("Error during request execution", e);
       }
+    } else {
+      executeCommandInBackground(command);
     }
   }
 

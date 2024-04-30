@@ -19,19 +19,24 @@ package de.gematik.test.tiger.lib.rbel;
 import static de.gematik.test.tiger.lib.rbel.TestsuiteUtils.addSomeMessagesToTigerTestHooks;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.glue.TigerParameterTypeDefinitions;
+import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.enums.ModeType;
+import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import io.restassured.http.Method;
 import java.net.URI;
 import lombok.SneakyThrows;
 import org.apache.commons.jexl3.JexlException;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 public class InlineJexlTest {
 
@@ -41,7 +46,17 @@ public class InlineJexlTest {
 
   @BeforeAll
   public static void addSomeMessages() {
+    TigerGlobalConfiguration.reset();
+    ReflectionTestUtils.setField(TigerDirector.class, "initialized", true);
+    final TigerTestEnvMgr mock = mock(TigerTestEnvMgr.class);
+    ReflectionTestUtils.setField(TigerDirector.class, "tigerTestEnvMgr", mock);
     addSomeMessagesToTigerTestHooks();
+  }
+
+  @AfterAll
+  public static void cleanUp() {
+    ReflectionTestUtils.setField(TigerDirector.class, "initialized", false);
+    ReflectionTestUtils.setField(TigerDirector.class, "tigerTestEnvMgr", null);
   }
 
   @ParameterizedTest

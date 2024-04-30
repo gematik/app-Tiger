@@ -1,5 +1,31 @@
 # Changelog Tiger Test platform
 
+# Release 3.0.3
+
+## Breaking changes
+
+* TGR-1362: HttpGlueCode now waits by default for the request to be received before continuing. This can be changed by setting the configuration
+  key `tiger.httpClient.executeBlocking` to `false`.
+
+## Features
+
+* TGR-1372: Zion: The responseCode is now a string, meaning it now supports the use of TigerConfiguration values.
+* TGR-1384: Tiger-Test-Lib: CBOR messages can now also be asserted using JSON structures (`And TGR current response at "$.body" matches as JSON:`)
+* TGR-1377: Tiger-Test-Lib:
+    * Added Request Validation Steps:
+        * @Then("TGR current request body matches:")
+        * @Then("TGR current request with attribute {tigerResolvedString} matches {tigerResolvedString}")
+        * @Then("TGR current request contains node {tigerResolvedString}")
+        * @Then("TGR current request at {tigerResolvedString} matches:")
+        * @Then("TGR current request at {tigerResolvedString} matches as {modeType}:")
+        * @Then("TGR current request with attribute {tigerResolvedString} does not match {tigerResolvedString}")
+    * Updated user manual, see section "Tiger Test Lib > Validating requests"
+
+## Bugfixes
+
+* TGR-1373: Fixed an issue where in a meshed setup the sender and receiver addresses were switched in the receiving tiger proxy.
+* TGR-1381: Tiger-Proxy: Use the correct length for IV and AD in AES-GCM decryption.
+
 # Release 3.0.2
 
 ## Breaking changes

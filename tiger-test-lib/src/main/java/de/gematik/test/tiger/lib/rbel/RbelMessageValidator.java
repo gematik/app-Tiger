@@ -19,6 +19,7 @@ package de.gematik.test.tiger.lib.rbel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
@@ -33,6 +34,7 @@ import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.lib.json.JsonChecker;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.net.URI;
@@ -97,6 +99,10 @@ public class RbelMessageValidator {
   }
 
   public List<RbelElement> getRbelMessages() {
+    TigerDirector.getTigerTestEnvMgr()
+        .getLocalTigerProxyOptional()
+        .ifPresent(TigerProxy::waitForAllCurrentMessagesToBeParsed);
+
     return new UnmodifiableList<>(
         new ArrayList<>(LocalProxyRbelMessageListener.getValidatableRbelMessages()));
   }
@@ -381,8 +387,20 @@ public class RbelMessageValidator {
 
   public void assertAttributeOfCurrentResponseMatches(
       final String rbelPath, final String value, boolean shouldMatch) {
+    assertAttributesOfElements(
+        rbelPath, value, shouldMatch, findElementsInCurrentResponse(rbelPath));
+  }
+
+  public void assertAttributeOfCurrentRequestMatches(
+      final String rbelPath, final String value, boolean shouldMatch) {
+    assertAttributesOfElements(
+        rbelPath, value, shouldMatch, findElementsInCurrentRequest(rbelPath));
+  }
+
+  private void assertAttributesOfElements(
+      String rbelPath, String value, boolean shouldMatch, List<RbelElement> elements) {
     final String text =
-        findElementsInCurrentResponse(rbelPath).stream()
+        elements.stream()
             .map(this::getValueOrContentString)
             .filter(Objects::nonNull)
             .map(String::trim)
@@ -409,16 +427,34 @@ public class RbelMessageValidator {
 
   public void assertAttributeOfCurrentResponseMatchesAs(
       String rbelPath, ModeType mode, String oracle) {
+    assertAttributeForMessage(mode, oracle, findElementInCurrentResponse(rbelPath));
+  }
+
+  public void assertAttributeOfCurrentRequestMatchesAs(
+      String rbelPath, ModeType mode, String oracle) {
+    assertAttributeForMessage(mode, oracle, findElementInCurrentRequest(rbelPath));
+  }
+
+  public void assertAttributeForMessage(ModeType mode, String oracle, RbelElement element) {
     switch (mode) {
       case JSON -> new JsonChecker()
           .compareJsonStrings(
-              getValueOrContentString(findElementInCurrentResponse(rbelPath)), oracle, false);
-      case XML -> {
-        final RbelElement el = findElementInCurrentResponse(rbelPath);
-        compareXMLStructureOfRbelElement(el, oracle, "");
-      }
+              getAsJsonString(element), oracle, false);
+      case XML -> compareXMLStructureOfRbelElement(element, oracle, "");
       default -> Assertions.fail(
           "Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
+    }
+  }
+
+  private String getAsJsonString(RbelElement target) {
+    if (target.hasFacet(RbelJsonFacet.class)) {
+      return target.getRawStringContent();
+    } else if (target.hasFacet(RbelCborFacet.class)) {
+      return target.getFacet(RbelCborFacet.class).map(RbelCborFacet::getNode)
+        .map(JsonNode::toString)
+        .orElse("");
+    } else {
+      throw new AssertionError("Node is neither JSON nor CBOR, can not match with JSON");
     }
   }
 
@@ -529,6 +565,17 @@ public class RbelMessageValidator {
     } catch (final Exception e) {
       throw new AssertionError(
           "Unable to find element in last response for rbel path '" + rbelPath + "'");
+    }
+  }
+
+  public List<RbelElement> findElementsInCurrentRequest(final String rbelPath) {
+    try {
+      final List<RbelElement> elems = currentRequest.findRbelPathMembers(rbelPath);
+      assertThat(elems).isNotEmpty();
+      return elems;
+    } catch (final Exception e) {
+      throw new AssertionError(
+          "Unable to find element in request for rbel path '" + rbelPath + "'");
     }
   }
 

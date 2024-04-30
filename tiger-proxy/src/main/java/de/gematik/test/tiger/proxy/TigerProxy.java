@@ -704,7 +704,9 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
   }
 
   public void waitForAllCurrentMessagesToBeParsed() {
-    getRbelLogger().getRbelConverter().waitForGivenElementToBeParsed(getRbelMessages().getLast());
+    if (!getRbelLogger().getMessageHistory().isEmpty()) {
+      getRbelLogger().getRbelConverter().waitForGivenElementToBeParsed(getRbelMessages().getLast());
+    }
   }
 
   private static class TigerProxyTrustManagerBuildingException extends RuntimeException {

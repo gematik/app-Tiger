@@ -120,7 +120,7 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
   @SneakyThrows
   private static byte[] performActualDecryption(Key key, byte[] iv, byte[] ciphertext, byte[] ad) {
     Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding"); // NOSONAR
-    cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(iv.length * 8, iv));
+    cipher.init(Cipher.DECRYPT_MODE, key, new GCMParameterSpec(128, iv));
     cipher.updateAAD(ad);
     return cipher.doFinal(ciphertext);
   }
@@ -151,8 +151,9 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
           case "M2" -> parseM2(element, context);
           case "M3" -> parseM3(element, context);
           case "M4" -> parseM4(element, context);
-          default -> element.addFacet(
-              new RbelNoteFacet("Unknown VAU EPA3 message type: " + messageTypeContent));
+          default ->
+              element.addFacet(
+                  new RbelNoteFacet("Unknown VAU EPA3 message type: " + messageTypeContent));
         }
       }
     } catch (RuntimeException e) {
@@ -236,7 +237,7 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
     if (contentNode.isEmpty()) {
       return false;
     }
-    final Optional<byte[]> decrypt = CryptoUtils.decrypt(contentNode.get().getRawContent(), aesKey);
+    final Optional<byte[]> decrypt = CryptoUtils.decrypt(contentNode.get().getRawContent(), aesKey, 12, 16);
     if (decrypt.isEmpty()) {
       return false;
     }

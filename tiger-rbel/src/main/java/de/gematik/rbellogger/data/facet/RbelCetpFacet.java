@@ -86,12 +86,6 @@ public class RbelCetpFacet extends RbelRequestFacet {
   private final RbelElement messageLength;
   private final RbelElement body;
 
-  public RbelCetpFacet(RbelElement messageLength, RbelElement body) {
-    super("CETP");
-    this.body = body;
-    this.messageLength = messageLength;
-  }
-
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
     return new RbelMultiMap<RbelElement>().with("messageLength", messageLength).with("body", body);

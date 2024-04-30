@@ -77,7 +77,7 @@ public class RbelLogger {
     if (configuration.isActivateAsn1Parsing()) {
       rbelConverter.addConverter(new RbelAsn1Converter());
     }
-    if (configuration.isActivateAsn1Parsing()) {
+    if (configuration.isActivateVauEpa3Parsing()) {
       rbelConverter.addConverter(new RbelVauEpa3Converter());
     }
 
