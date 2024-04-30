@@ -10,6 +10,7 @@
 ## Features
 
 * TGR-1372: Zion: The responseCode is now a string, meaning it now supports the use of TigerConfiguration values.
+* TGR-1384: Tiger-Test-Lib: CBOR messages can now also be asserted using JSON structures (`And TGR current response at "$.body" matches as JSON:`)
 * TGR-1377: Tiger-Test-Lib:
     * Added Request Validation Steps:
         * @Then("TGR current request body matches:")

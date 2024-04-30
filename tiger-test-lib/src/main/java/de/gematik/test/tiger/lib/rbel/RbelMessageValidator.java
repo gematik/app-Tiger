@@ -7,6 +7,7 @@ package de.gematik.test.tiger.lib.rbel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
@@ -414,31 +415,34 @@ public class RbelMessageValidator {
 
   public void assertAttributeOfCurrentResponseMatchesAs(
       String rbelPath, ModeType mode, String oracle) {
+    assertAttributeForMessage(mode, oracle, findElementInCurrentResponse(rbelPath));
+  }
+
+  public void assertAttributeOfCurrentRequestMatchesAs(
+      String rbelPath, ModeType mode, String oracle) {
+    assertAttributeForMessage(mode, oracle, findElementInCurrentRequest(rbelPath));
+  }
+
+  public void assertAttributeForMessage(ModeType mode, String oracle, RbelElement element) {
     switch (mode) {
       case JSON -> new JsonChecker()
           .compareJsonStrings(
-              getValueOrContentString(findElementInCurrentResponse(rbelPath)), oracle, false);
-      case XML -> {
-        final RbelElement el = findElementInCurrentResponse(rbelPath);
-        compareXMLStructureOfRbelElement(el, oracle, "");
-      }
+              getAsJsonString(element), oracle, false);
+      case XML -> compareXMLStructureOfRbelElement(element, oracle, "");
       default -> Assertions.fail(
           "Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
     }
   }
 
-  public void assertAttributeOfCurrentRequestMatchesAs(
-      String rbelPath, ModeType mode, String oracle) {
-    switch (mode) {
-      case JSON -> new JsonChecker()
-          .compareJsonStrings(
-              getValueOrContentString(findElementInCurrentRequest(rbelPath)), oracle, false);
-      case XML -> {
-        final RbelElement el = findElementInCurrentRequest(rbelPath);
-        compareXMLStructureOfRbelElement(el, oracle, "");
-      }
-      default -> Assertions.fail(
-          "Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
+  private String getAsJsonString(RbelElement target) {
+    if (target.hasFacet(RbelJsonFacet.class)) {
+      return target.getRawStringContent();
+    } else if (target.hasFacet(RbelCborFacet.class)) {
+      return target.getFacet(RbelCborFacet.class).map(RbelCborFacet::getNode)
+        .map(JsonNode::toString)
+        .orElse("");
+    } else {
+      throw new AssertionError("Node is neither JSON nor CBOR, can not match with JSON");
     }
   }
 
