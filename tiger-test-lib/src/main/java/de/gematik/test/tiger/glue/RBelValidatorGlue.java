@@ -23,6 +23,7 @@ import io.cucumber.java.en.When;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.xmlunit.builder.DiffBuilder;
 
 @Slf4j
@@ -605,6 +606,19 @@ public class RBelValidatorGlue {
         rbelValidator.findElementInCurrentResponse(rbelPath),
         TigerGlobalConfiguration.resolvePlaceholders(xmlDocStr),
         diffOptionsCSV);
+  }
+
+  /** Prints the rbel-tree of all requests and responses to the System-out */
+  @Dann("TGR gebe alle Nachrichten als Rbel-Tree aus")
+  @Then("TGR print all messages as rbel-tree")
+  @SuppressWarnings("java:S106")
+  public void printAllMessages() {
+    RBelValidatorGlue.getRbelValidator()
+        .getRbelMessages()
+        .forEach(
+            message ->
+                System.out.println(
+                    StringUtils.repeat('=', 80) + "\n" + message.printTreeStructure()));
   }
 
   /** Prints the rbel-tree of the current response to the System-out */

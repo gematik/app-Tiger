@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger.glue;
 
 import com.github.javaparser.StaticJavaParser;
@@ -30,9 +34,14 @@ public class AnnotationParser {
   }
 
   public static void main(String[] args) throws IOException {
-    AnnotationParser annotationParser =
-        new AnnotationParser(
-            "tiger-test-lib/src/main/java/de/gematik/test/tiger/glue/", "./doc/user_manual/");
+    File f = new File(".");
+    String folder = "src/main/java/de/gematik/test/tiger/glue/";
+    String docFolder = "../doc/user_manual/";
+    if (!f.getAbsolutePath().endsWith("tiger-test-lib/.")) {
+      folder = "tiger-test-lib/" + folder;
+      docFolder = "./doc/user_manual/";
+    }
+    AnnotationParser annotationParser = new AnnotationParser(folder, docFolder);
     annotationParser.extractJavaDocsToAdoc(args);
   }
 
