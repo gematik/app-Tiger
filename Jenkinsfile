@@ -87,6 +87,48 @@ pipeline {
                 gitLabUpdateMavenSnapshot(JIRA_PROJECT_ID, GITLAB_PROJECT_ID, POM_PATH_PRODUCT)
             }
         }
+
+		stage('Docker Images') {
+            matrix {
+
+                axes {
+                    axis {
+                        name 'APP'
+                        values 'tiger-proxy', 'tiger-zion'
+                    }
+                }
+                environment {
+                    IMAGE_NAME = "tiger/${APP}"
+                    IMAGE_VERSION = 'latest'
+					VERSION= 'latest'
+                    PREFIX = "${APP}_"
+                    BUILD_ARGS = "--build-arg APP=${APP}"
+                }
+                stages {
+                    stage('Build Docker Image') {
+					       steps {
+                              dockerBuild(IMAGE_NAME, VERSION, IMAGE_VERSION, BUILD_ARGS)
+
+                        }
+                    }
+
+                    stage('Push Docker Image') {
+					   when {
+                            branch BRANCH
+                        }
+                        steps {
+                            dockerPushImage(IMAGE_NAME, VERSION)
+                        }
+                    }
+
+                    stage('Cleanup Docker Image') {
+                        steps {
+                            dockerRemoveLocalImage(IMAGE_NAME, VERSION)
+                        }
+                    }
+                }
+            }
+        }
     }
     post {
         always {
