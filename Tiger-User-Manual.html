@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 3.0.2-SNAPSHOT - 2024-04-23</span>
+<span id="revdate">Version 3.0.3-SNAPSHOT - 2024-04-30</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -3758,6 +3758,65 @@ In order to use these steps you must ensure that the relevant traffic is routed 
 </div>
 </div>
 </div>
+<div class="sect3">
+<h4 id="_validating_requests"><a class="anchor" href="#_validating_requests"></a>5.3.3. Validating requests</h4>
+<div class="ulist">
+<div class="title">Core features</div>
+<ul>
+<li>
+<p>Assert that the body of the request matches regex</p>
+</li>
+<li>
+<p>Assert that a given RBelPath contains node</p>
+</li>
+<li>
+<p>Assert that a given RBelPath node matches regex</p>
+</li>
+<li>
+<p>Assert that a given RBelPath matches regex</p>
+</li>
+<li>
+<p>Assert that a given RBelPath node matches as JSON or XML</p>
+</li>
+<li>
+<p>Assert that a given RBelPath node does not match regex</p>
+</li>
+</ul>
+</div>
+<div class="listingblock">
+<div class="title">Listing 17. Tiger request validation steps example</div>
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="gherkin">Feature Tiger request validation steps
+
+  Background:
+    Given TGR clear recorded messages
+
+  Scenario: Test validation Request
+    When TGR send PUT request to &quot;http://httpbin/put&quot; with body &quot;{'foo': 'bar'}&quot;
+    Then TGR find last request to path &quot;.*&quot;
+    Then TGR current request body matches:
+    &quot;&quot;&quot;
+    {'foo': 'bar'}
+        &quot;&quot;&quot;
+
+    Then TGR current request contains node &quot;$.body.foo&quot;
+    Then TGR current request with attribute &quot;$.body.foo&quot; matches &quot;bar&quot;
+    Then TGR current request at &quot;$.body&quot; matches:
+    &quot;&quot;&quot;
+    {'foo': 'bar'}
+        &quot;&quot;&quot;
+
+    Then TGR current request at &quot;$.body&quot; matches as JSON:
+    &quot;&quot;&quot;
+    {
+      &quot;foo&quot;: &quot;${json-unit.ignore}&quot;
+    }
+        &quot;&quot;&quot;
+
+    Then TGR current request with attribute &quot;$.body.foo&quot; does not match &quot;foo&quot;</code></pre>
+</div>
+</div>
+</div>
 </div>
 <div class="sect2">
 <h3 id="_modifying_rbelobjects_rbelbuilder"><a class="anchor" href="#_modifying_rbelobjects_rbelbuilder"></a>5.4. Modifying RbelObjects (RbelBuilder)</h3>
@@ -3886,7 +3945,7 @@ certain value</p>
 <div class="sect3">
 <h4 id="_usage_examples"><a class="anchor" href="#_usage_examples"></a>5.4.3. Usage examples</h4>
 <div class="listingblock">
-<div class="title">Listing 17. Tiger Rbel Builder steps example</div>
+<div class="title">Listing 18. Tiger Rbel Builder steps example</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="gherkin">Feature Tiger validation steps
 
@@ -3929,7 +3988,7 @@ certain value</p>
 <p>The Tiger HTTP client steps are a set of Cucumber steps that enable you to perform simple HTTP requests, with bodies, default and custom headers.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 18. Tiger response validation steps example</div>
+<div class="title">Listing 19. Tiger response validation steps example</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="gherkin">Feature: HTTP/HTTPS GlueCode Test feature
 
@@ -4185,7 +4244,7 @@ It will be first checked, whether the expected value is equal to the actual one,
 We are working on it :)</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 19. Simple adapted example from the IDP test suite</div>
+<div class="title">Listing 20. Simple adapted example from the IDP test suite</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="json">  {
     <span class="key"><span class="delimiter">&quot;</span><span class="content">alg</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">dir</span><span class="delimiter">&quot;</span></span>,
@@ -4472,6 +4531,69 @@ instance.</p>
 </div>
 </div>
 <div class="sect4">
+<h5 id="_tgr_prüfe_aktueller_request_stimmt_im_body_überein_mit"><a class="anchor" href="#_tgr_prüfe_aktueller_request_stimmt_im_body_überein_mit"></a>TGR prüfe aktueller Request stimmt im Body überein mit:</h5>
+<div class="paragraph">
+<p>assert that request body matches.</p>
+</div>
+<div class="paragraph">
+<p><strong>param</strong> docString value / regex that should equal or match</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_tgr_prüfe_aktueller_request_stimmt_im_knoten_tigerresolvedstring_überein_mit_tigerresolvedstring"><a class="anchor" href="#_tgr_prüfe_aktueller_request_stimmt_im_knoten_tigerresolvedstring_überein_mit_tigerresolvedstring"></a>TGR prüfe aktueller Request stimmt im Knoten {tigerResolvedString} überein mit" + " {tigerResolvedString}</h5>
+<div class="paragraph">
+<p>assert that request matches at given rbel path node/attribute.</p>
+</div>
+<div class="paragraph">
+<p><strong>param</strong> rbelPath path to node/attribute<br>
+<strong>param</strong> value value / regex that should equal or match as string content with MultiLine and<br>
+    DotAll regex option</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_tgr_prüfe_aktueller_request_enthält_knoten_tigerresolvedstring"><a class="anchor" href="#_tgr_prüfe_aktueller_request_enthält_knoten_tigerresolvedstring"></a>TGR prüfe aktueller Request enthält Knoten {tigerResolvedString}</h5>
+<div class="paragraph">
+<p>assert that request contains node/attribute at given rbel path.</p>
+</div>
+<div class="paragraph">
+<p><strong>param</strong> rbelPath path to node/attribute</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_tgr_prüfe_aktueller_request_im_knoten_tigerresolvedstring_stimmt_überein_mit"><a class="anchor" href="#_tgr_prüfe_aktueller_request_im_knoten_tigerresolvedstring_stimmt_überein_mit"></a>TGR prüfe aktueller Request im Knoten {tigerResolvedString} stimmt überein mit:</h5>
+<div class="paragraph">
+<p>assert that request matches at given rbel path node/attribute.</p>
+</div>
+<div class="paragraph">
+<p><strong>param</strong> rbelPath path to node/attribute<br>
+<strong>param</strong> docString value / regex that should equal or match as string content with MultiLine and<br>
+    DotAll regex option supplied as DocString</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_tgr_prüfe_aktueller_request_im_knoten_tigerresolvedstring_stimmt_als_modetype_überein_mit"><a class="anchor" href="#_tgr_prüfe_aktueller_request_im_knoten_tigerresolvedstring_stimmt_als_modetype_überein_mit"></a>TGR prüfe aktueller Request im Knoten {tigerResolvedString} stimmt als {modeType} überein" + " mit:</h5>
+<div class="paragraph">
+<p>assert that request matches at given rbel path node/attribute assuming its JSON or XML</p>
+</div>
+<div class="paragraph">
+<p><strong>param</strong> rbelPath path to node/attribute<br>
+<strong>param</strong> mode one of JSON|XML<br>
+<strong>param</strong> oracleDocStr value / regex that should equal or match as JSON or XML content<br>
+<strong>see</strong> JsonChecker#compareJsonStrings(String, String, boolean)</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_tgr_prüfe_aktueller_request_stimmt_im_knoten_tigerresolvedstring_nicht_überein_mit_tigerresolvedstring"><a class="anchor" href="#_tgr_prüfe_aktueller_request_stimmt_im_knoten_tigerresolvedstring_nicht_überein_mit_tigerresolvedstring"></a>TGR prüfe aktueller Request stimmt im Knoten {tigerResolvedString} nicht überein mit" + " {tigerResolvedString}</h5>
+<div class="paragraph">
+<p>assert that request does not match at given rbel path node/attribute.</p>
+</div>
+<div class="paragraph">
+<p><strong>param</strong> rbelPath path to node/attribute<br>
+<strong>param</strong> value value / regex that should NOT BE equal or should NOT match as string content with<br>
+    MultiLine and DotAll regex option</p>
+</div>
+</div>
+<div class="sect4">
 <h5 id="_tgr_speichere_wert_des_knotens_tigerresolvedstring_der_aktuellen_antwort_in_der_variable_tigerresolvedstring"><a class="anchor" href="#_tgr_speichere_wert_des_knotens_tigerresolvedstring_der_aktuellen_antwort_in_der_variable_tigerresolvedstring"></a>TGR speichere Wert des Knotens {tigerResolvedString} der aktuellen Antwort in der Variable" + " {tigerResolvedString}</h5>
 <div class="paragraph">
 <p>store given rbel path node/attribute text value of current response.</p>
@@ -4586,6 +4708,12 @@ XML with given list of diff options.</p>
 <strong>param</strong> xmlDocStr value / regex that should equal or match as JSON content<br>
 <strong>see</strong> &lt;a href="https://github.com/xmlunit/user-guide/wiki/DifferenceEvaluator"&gt;More on<br>
     DifferenceEvaluator&lt;/a&gt;</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_tgr_gebe_alle_nachrichten_als_rbel_tree_aus"><a class="anchor" href="#_tgr_gebe_alle_nachrichten_als_rbel_tree_aus"></a>TGR gebe alle Nachrichten als Rbel-Tree aus</h5>
+<div class="paragraph">
+<p>Prints the rbel-tree of all requests and responses to the System-out</p>
 </div>
 </div>
 <div class="sect4">
@@ -5361,7 +5489,7 @@ The server "B" should now use the activated server, without having to set it man
 The first part here before the equal is the name of the environment variable passed into server "B" while booting, the second part behind the equal is the name of the property. compare this to the exports in the two serverA-options):</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 20. Configuring using placeholders and exports</div>
+<div class="title">Listing 21. Configuring using placeholders and exports</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">servers</span>:
   <span class="key">serverAInternet</span>:
@@ -5506,7 +5634,7 @@ You can simply set an environment variable to do the job for you.<br>
 Below are the relevant snippets:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 21. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 22. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">tigerProxy</span>:
     <span class="key">proxyRoutes</span>:
@@ -5530,7 +5658,7 @@ Below are the relevant snippets:</p>
 This can be done by using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 22. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 23. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="YAML"><span class="key">tigerProxy</span>:
     <span class="key">proxyRoutes</span>:
@@ -5555,7 +5683,7 @@ To do this we have to reference the configured URL from above, since the value c
 We can solve this using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 23. The testsuite</div>
+<div class="title">Listing 24. The testsuite</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="Gherkin">    TGR current response with attribute &quot;$.body.ReplyStructure.Header.Sender.url&quot; matches &quot;http://127.0.0.1:${backend.server.port}&quot;</code></pre>
 </div>
@@ -6432,7 +6560,7 @@ It can be used both as a standalone server or as a server directly inside of tig
 We do this as part of a tiger testsuite.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 24. tiger.yaml</div>
+<div class="title">Listing 25. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -6475,7 +6603,7 @@ And please return it as an XML!</p>
 So we reference an external file, where we do the heavy lifting:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 25. tiger.yaml</div>
+<div class="title">Listing 26. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -6493,7 +6621,7 @@ So we reference an external file, where we do the heavy lifting:</p>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 26. complicatedResponse.xml</div>
+<div class="title">Listing 27. complicatedResponse.xml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="preprocessor">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;</span>
 <span class="tag">&lt;requestDescription&gt;</span>
@@ -6559,7 +6687,7 @@ So to access it directly, use <code>${myLoopVariable}</code>.<br>
 You can then also combine the loop-variable with JEXL like so:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 27. complicatedResponse.xml</div>
+<div class="title">Listing 28. complicatedResponse.xml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code>&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;
 &lt;requestDescription&gt;
@@ -6595,7 +6723,7 @@ You can then also combine the loop-variable with JEXL like so:</p>
 <p>To make the presence of elements conditional you can use the <code>tgrIf</code> statement. Consider the following example:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 28. complicatedResponse.xml</div>
+<div class="title">Listing 29. complicatedResponse.xml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="preprocessor">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;</span>
 <span class="tag">&lt;requestDescription&gt;</span>
@@ -6620,7 +6748,7 @@ You can then also combine the loop-variable with JEXL like so:</p>
 The result must be of type boolean. Please note that the tgrIf-statement, like the tgrFor, has to be beneath the target element in the document tree. This can be done via an attribute in XML, but it can also be done using a tag:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 29. complicatedResponse.xml</div>
+<div class="title">Listing 30. complicatedResponse.xml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="xml"><span class="preprocessor">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot; ?&gt;</span>
 <span class="tag">&lt;requestDescription&gt;</span>
@@ -6660,7 +6788,7 @@ The following example should clarify the mechanism:</p>
 <p>We want measure the length of the response by google to a query:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 30. tiger.yaml</div>
+<div class="title">Listing 31. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -6708,7 +6836,7 @@ This allows subdividing responses.<br>
 Consider the following example, where we check the password of the calling party (which is given in cleartext in the request header).</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 31. tiger.yaml</div>
+<div class="title">Listing 32. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -6747,7 +6875,7 @@ Rather you have to specify the importance of a response, with a higher number me
 <p>In many REST-Apis it is usual to include variables as part of the resource path. Zion allows to configure a response that will match a path and extract the given variables. The assigned values can then be used in the response or be used in additional matching criteria. Here is an example:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 32. tiger.yaml</div>
+<div class="title">Listing 33. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -6785,7 +6913,7 @@ Rather you have to specify the importance of a response, with a higher number me
 <p>The matching of paths using the <code>request</code> configuration can also be made using nested responses. The path to match will combine paths specified in the different levels of the nested response. For example:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 33. tiger.yaml</div>
+<div class="title">Listing 34. tiger.yaml</div>
 <div class="content">
 <pre class="CodeRay highlight"><code data-lang="yaml"><span class="key">servers</span>:
   <span class="key">zionServer</span>:
@@ -6832,7 +6960,7 @@ You can also embed one into the other.</p>
 For this we use the following response body file:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 34. complicatedResponse.json</div>
+<div class="title">Listing 35. complicatedResponse.json</div>
 <div class="content">
 <pre class="CodeRay highlight"><code>{
   &quot;myToken&quot;: {
@@ -7047,7 +7175,7 @@ This is an internal gematik extension and can be found on GitLab <a href="https:
 <div class="paragraph">
 <p>The Tiger-On-Fhir-extension provides a set of simple BDD steps which can be used to check for valid FHIR content therein.<br>
 FHIR stands for Fast Healthcare Interoperability Resources.<br>
-The tiger-on-fhir can be found on GitHub <a href="https://github.com/gematik/tiger-on-fhir-extension" class="bare">https://github.com/gematik/tiger-on-fhir-extension</a> and it uses the Gematik Referenzvalidator located on GitHub <a href="https://github.com/gematik/app-referencevalidator" class="bare">https://github.com/gematik/app-referencevalidator</a>.</p>
+The tiger-on-fhir can be found on GitHub <a href="https://github.com/gematik/tiger-on-fhir" class="bare">https://github.com/gematik/tiger-on-fhir</a> and it uses the Gematik Referenzvalidator located on GitHub <a href="https://github.com/gematik/app-referencevalidator" class="bare">https://github.com/gematik/app-referencevalidator</a>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -7169,7 +7297,7 @@ This is an internal gematik extension and can be found on GitLab <a href="https:
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-04-23 08:31:20 UTC
+Last updated 2024-04-30 13:05:07 UTC
 </div>
 </div>
 </body>
