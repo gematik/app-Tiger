@@ -86,8 +86,9 @@ public class RbelMessageValidator {
   }
 
   public List<RbelElement> getRbelMessages() {
-    TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOptional()
-      .ifPresent(TigerProxy::waitForAllCurrentMessagesToBeParsed);
+    TigerDirector.getTigerTestEnvMgr()
+        .getLocalTigerProxyOptional()
+        .ifPresent(TigerProxy::waitForAllCurrentMessagesToBeParsed);
 
     return new UnmodifiableList<>(
         new ArrayList<>(LocalProxyRbelMessageListener.getValidatableRbelMessages()));
@@ -373,8 +374,20 @@ public class RbelMessageValidator {
 
   public void assertAttributeOfCurrentResponseMatches(
       final String rbelPath, final String value, boolean shouldMatch) {
+    assertAttributesOfElements(
+        rbelPath, value, shouldMatch, findElementsInCurrentResponse(rbelPath));
+  }
+
+  public void assertAttributeOfCurrentRequestMatches(
+      final String rbelPath, final String value, boolean shouldMatch) {
+    assertAttributesOfElements(
+        rbelPath, value, shouldMatch, findElementsInCurrentRequest(rbelPath));
+  }
+
+  private void assertAttributesOfElements(
+      String rbelPath, String value, boolean shouldMatch, List<RbelElement> elements) {
     final String text =
-        findElementsInCurrentResponse(rbelPath).stream()
+        elements.stream()
             .map(this::getValueOrContentString)
             .filter(Objects::nonNull)
             .map(String::trim)
@@ -407,6 +420,21 @@ public class RbelMessageValidator {
               getValueOrContentString(findElementInCurrentResponse(rbelPath)), oracle, false);
       case XML -> {
         final RbelElement el = findElementInCurrentResponse(rbelPath);
+        compareXMLStructureOfRbelElement(el, oracle, "");
+      }
+      default -> Assertions.fail(
+          "Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
+    }
+  }
+
+  public void assertAttributeOfCurrentRequestMatchesAs(
+      String rbelPath, ModeType mode, String oracle) {
+    switch (mode) {
+      case JSON -> new JsonChecker()
+          .compareJsonStrings(
+              getValueOrContentString(findElementInCurrentRequest(rbelPath)), oracle, false);
+      case XML -> {
+        final RbelElement el = findElementInCurrentRequest(rbelPath);
         compareXMLStructureOfRbelElement(el, oracle, "");
       }
       default -> Assertions.fail(
@@ -521,6 +549,17 @@ public class RbelMessageValidator {
     } catch (final Exception e) {
       throw new AssertionError(
           "Unable to find element in last response for rbel path '" + rbelPath + "'");
+    }
+  }
+
+  public List<RbelElement> findElementsInCurrentRequest(final String rbelPath) {
+    try {
+      final List<RbelElement> elems = currentRequest.findRbelPathMembers(rbelPath);
+      assertThat(elems).isNotEmpty();
+      return elems;
+    } catch (final Exception e) {
+      throw new AssertionError(
+          "Unable to find element in request for rbel path '" + rbelPath + "'");
     }
   }
 

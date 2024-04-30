@@ -29,7 +29,9 @@ import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.glue.RBelValidatorGlue;
 import de.gematik.test.tiger.lib.TigerDirector;
+import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.io.IOException;
@@ -552,6 +554,63 @@ class RbelMessageValidatorTest {
             () ->
                 validator.findAnyMessageMatchingAtNode(
                     "$.body.challenge.content.signature.isValid", "true"))
+        .isInstanceOf(AssertionError.class);
+  }
+
+  @Test
+  void testCurrentRequestMatchesAsExpected() {
+    final RbelConverter rbelConverter = RbelLogger.build().getRbelConverter();
+    RbelMessageValidator validator = RbelMessageValidator.instance;
+    final String challengeMessage =
+        readCurlFromFileWithCorrectedLineBreaks("getCurrentRequest.curl", StandardCharsets.UTF_8);
+    final RbelElement convertedMessage =
+        rbelConverter.parseMessage(
+            challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+    validator.currentRequest = convertedMessage;
+    LocalProxyRbelMessageListener.getValidatableRbelMessages().add(convertedMessage);
+    validator.findElementsInCurrentRequest("$.body.foo");
+    validator.assertAttributeOfCurrentRequestMatches("$.body.foo", "bar", true);
+    String oracleStr = "{'foo': '${json-unit.ignore}'}";
+    validator.assertAttributeOfCurrentRequestMatchesAs("$.body", ModeType.JSON, oracleStr);
+
+    RBelValidatorGlue glue = new RBelValidatorGlue();
+
+    glue.currentRequestBodyMatches("!{rbel:currentRequestAsString('$.body')}");
+    glue.currentRequestMessageAttributeMatches("$.body.foo", "bar");
+    glue.currentRequestMessageContainsNode("$.body.foo");
+    glue.currentRequestMessageAtMatchesDocString("$.body", "{\"foo\":\"bar\"}");
+    glue.currentRequestAtMatchesAsJsonOrXml("$.body", ModeType.JSON, oracleStr);
+    glue.currentRequestMessageAttributeDoesNotMatch("$.body.foo", "foo");
+  }
+
+  @Test
+  void testCurrentRequestDoesNotMatchAsExpected() {
+    final RbelConverter rbelConverter = RbelLogger.build().getRbelConverter();
+    RbelMessageValidator validator = RbelMessageValidator.instance;
+    final String challengeMessage =
+        readCurlFromFileWithCorrectedLineBreaks("getCurrentRequest.curl", StandardCharsets.UTF_8);
+    final RbelElement convertedMessage =
+        rbelConverter.parseMessage(
+            challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+    validator.currentRequest = convertedMessage;
+    LocalProxyRbelMessageListener.getValidatableRbelMessages().add(convertedMessage);
+
+    validator.assertAttributeOfCurrentRequestMatches("$.body.foo", "blala", false);
+  }
+
+  @Test
+  void testCurrentRequestMatchesFailure() {
+    final RbelConverter rbelConverter = RbelLogger.build().getRbelConverter();
+    RbelMessageValidator validator = RbelMessageValidator.instance;
+    final String challengeMessage =
+        readCurlFromFileWithCorrectedLineBreaks("getCurrentRequest.curl", StandardCharsets.UTF_8);
+    final RbelElement convertedMessage =
+        rbelConverter.parseMessage(
+            challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+    validator.currentRequest = convertedMessage;
+    LocalProxyRbelMessageListener.getValidatableRbelMessages().add(convertedMessage);
+    assertThatThrownBy(
+            () -> validator.assertAttributeOfCurrentRequestMatches("$.body.foo", "blabla", true))
         .isInstanceOf(AssertionError.class);
   }
 

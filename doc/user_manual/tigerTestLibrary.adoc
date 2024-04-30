@@ -113,6 +113,22 @@ With the `TGR find next request ...` steps you can validate a complete workflow 
 include::validation-example.feature[]
 --
 
+==== Validating requests
+
+.Core features
+* Assert that the body of the request matches regex
+* Assert that a given RBelPath contains node
+* Assert that a given RBelPath node matches regex
+* Assert that a given RBelPath matches regex
+* Assert that a given RBelPath node matches as JSON or XML
+* Assert that a given RBelPath node does not match regex
+
+.Tiger request validation steps example
+[source,gherkin]
+--
+include::request-validation-example.feature[]
+--
+
 === Modifying RbelObjects (RbelBuilder)
 
 ==== Introduction

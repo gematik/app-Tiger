@@ -312,6 +312,100 @@ public class RBelValidatorGlue {
 
   // =================================================================================================================
   //
+  //    R E Q U E S T  V A L I D A T I O N
+  //
+  // =================================================================================================================
+
+  /**
+   * assert that request body matches.
+   *
+   * @param docString value / regex that should equal or match
+   */
+  @Dann("TGR prüfe aktueller Request stimmt im Body überein mit:")
+  @Then("TGR current request body matches:")
+  public void currentRequestBodyMatches(final String docString) {
+    currentRequestMessageAttributeMatches(
+        "$.body", TigerParameterTypeDefinitions.tigerResolvedString(docString));
+  }
+
+  /**
+   * assert that request matches at given rbel path node/attribute.
+   *
+   * @param rbelPath path to node/attribute
+   * @param value value / regex that should equal or match as string content with MultiLine and
+   *     DotAll regex option
+   */
+  @Dann(
+      "TGR prüfe aktueller Request stimmt im Knoten {tigerResolvedString} überein mit"
+          + " {tigerResolvedString}")
+  @Then("TGR current request with attribute {tigerResolvedString} matches {tigerResolvedString}")
+  public void currentRequestMessageAttributeMatches(final String rbelPath, final String value) {
+    rbelValidator.assertAttributeOfCurrentRequestMatches(rbelPath, value, true);
+  }
+
+  /**
+   * assert that request contains node/attribute at given rbel path.
+   *
+   * @param rbelPath path to node/attribute
+   */
+  @Dann("TGR prüfe aktueller Request enthält Knoten {tigerResolvedString}")
+  @Then("TGR current request contains node {tigerResolvedString}")
+  public void currentRequestMessageContainsNode(final String rbelPath) {
+    assertThat(rbelValidator.findElementsInCurrentRequest(rbelPath)).isNotEmpty();
+  }
+
+  /**
+   * assert that request matches at given rbel path node/attribute.
+   *
+   * @param rbelPath path to node/attribute
+   * @param docString value / regex that should equal or match as string content with MultiLine and
+   *     DotAll regex option supplied as DocString
+   */
+  @Dann("TGR prüfe aktueller Request im Knoten {tigerResolvedString} stimmt überein mit:")
+  @Then("TGR current request at {tigerResolvedString} matches:")
+  public void currentRequestMessageAtMatchesDocString(
+      final String rbelPath, final String docString) {
+    currentRequestMessageAttributeMatches(rbelPath, docString);
+  }
+
+  /**
+   * assert that request matches at given rbel path node/attribute assuming its JSON or XML
+   *
+   * @param rbelPath path to node/attribute
+   * @param mode one of JSON|XML
+   * @param oracleDocStr value / regex that should equal or match as JSON or XML content
+   * @see JsonChecker#compareJsonStrings(String, String, boolean)
+   */
+  @Dann(
+      "TGR prüfe aktueller Request im Knoten {tigerResolvedString} stimmt als {modeType} überein"
+          + " mit:")
+  @Then("TGR current request at {tigerResolvedString} matches as {modeType}:")
+  public void currentRequestAtMatchesAsJsonOrXml(
+      final String rbelPath, final ModeType mode, final String oracleDocStr) {
+    rbelValidator.assertAttributeOfCurrentRequestMatchesAs(
+        rbelPath, mode, TigerGlobalConfiguration.resolvePlaceholders(oracleDocStr));
+  }
+
+  /**
+   * assert that request does not match at given rbel path node/attribute.
+   *
+   * @param rbelPath path to node/attribute
+   * @param value value / regex that should NOT BE equal or should NOT match as string content with
+   *     MultiLine and DotAll regex option
+   */
+  @Dann(
+      "TGR prüfe aktueller Request stimmt im Knoten {tigerResolvedString} nicht überein mit"
+          + " {tigerResolvedString}")
+  @Then(
+      "TGR current request with attribute {tigerResolvedString} does not match"
+          + " {tigerResolvedString}")
+  public void currentRequestMessageAttributeDoesNotMatch(
+      final String rbelPath, final String value) {
+    rbelValidator.assertAttributeOfCurrentRequestMatches(rbelPath, value, false);
+  }
+
+  // =================================================================================================================
+  //
   //    S T O R E   R E S P O N S E   N O D E   I N   C O N T E X T
   //
   // =================================================================================================================
