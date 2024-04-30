@@ -30,7 +30,7 @@ pipeline {
 
     parameters {
         string(name: 'NEW_VERSION', defaultValue: '', description: 'Bitte die nächste Version für das Projekt eingeben, format [0-9]+.[0-9]+.[0-9]+ \nHinweis: Version 0.0.[0-9] ist keine gültige Version!')
-		choice(name: 'DOCKER_HUB', choices: ['YES', 'NO'], description: 'Publish Image from a GCR Repository to DockerHub.')
+        choice(name: 'DOCKER_HUB', choices: ['YES', 'NO'], description: 'Publish Image from a GCR Repository to DockerHub.')
     }
 
     stages {
@@ -93,14 +93,14 @@ pipeline {
 
                         sh '''
                           docker pull eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest
-                          docker create --name tiger-gemdoc-'''+BUILD_NUMBER+''' eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
-                          docker cp '''+pwd()+''' tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata
-                          docker start --attach tiger-gemdoc-'''+BUILD_NUMBER+'''
-                          docker cp tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata/doc/user_manual/tiger_user_manual.pdf .
-                          docker cp tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata/doc/user_manual/tiger_user_manual.html .
-                          docker cp tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata/doc/user_manual/media .
-                          docker cp tiger-gemdoc-'''+BUILD_NUMBER+''':/tmpdata/doc/user_manual/screenshots .
-                          docker rm tiger-gemdoc-'''+BUILD_NUMBER+'''
+                          docker create --name tiger-gemdoc-''' + BUILD_NUMBER + ''' eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
+                          docker cp ''' + pwd() + ''' tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata
+                          docker start --attach tiger-gemdoc-''' + BUILD_NUMBER + '''
+                          docker cp tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata/doc/user_manual/tiger_user_manual.pdf .
+                          docker cp tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata/doc/user_manual/tiger_user_manual.html .
+                          docker cp tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata/doc/user_manual/media .
+                          docker cp tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata/doc/user_manual/screenshots .
+                          docker rm tiger-gemdoc-''' + BUILD_NUMBER + '''
                         '''
                         // to test local:
                         // docker run --name tiger-gemdoc --rm -v $(pwd):/tmpdata eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
@@ -138,45 +138,45 @@ pipeline {
             }
         }
         stage('Retag Docker Images') {
-				matrix {
-					axes {
-						axis {
-							name 'APP'
-							values 'tiger-proxy', 'tiger-zion'
-						}
-					}
-					environment {
-						IMAGE_NAME = "tiger/${APP}"
-					}
-					stages {
-						stage('Retag Docker Image') {
-							steps {
-								dockerPull(IMAGE_NAME)
-								dockerReTagImage(IMAGE_NAME, RELEASE_VERSION)
-								dockerPushImage(IMAGE_NAME, RELEASE_VERSION)
-								dockerRemoveLocalImage(IMAGE_NAME, RELEASE_VERSION)
-							}
-						}
-					}
-				}
-			}
+            matrix {
+                axes {
+                    axis {
+                        name 'APP'
+                        values 'tiger-proxy', 'tiger-zion'
+                    }
+                }
+                environment {
+                    IMAGE_NAME = "tiger/${APP}"
+                }
+                stages {
+                    stage('Retag Docker Image') {
+                        steps {
+                            dockerPull(IMAGE_NAME)
+                            dockerReTagImage(IMAGE_NAME, RELEASE_VERSION)
+                            dockerPushImage(IMAGE_NAME, RELEASE_VERSION)
+                            dockerRemoveLocalImage(IMAGE_NAME, RELEASE_VERSION)
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Publish Images to Docker-Hub') {
+            when {
+                expression { params.DOCKER_HUB == 'YES' }
+            }
+            steps {
+                script {
+                    def images = ['tiger-proxy-image', 'tiger-zion-image']
+
+                    images.each { imageName ->
+                        build job: "Tiger-TIGER-${imageName}-DockerHub-Release",
+                                parameters: [
+                                        string(name: 'PUBLISH_VERSION', value: String.valueOf("${RELEASE_VERSION}"))
+                                ]
+                    }
+                }
+            }
+        }
     }
-
-	stage('Publish Images to Docker-Hub') {
-		when {
-			expression { params.DOCKER_HUB == 'YES' }
-		}
-		steps {
-			script {
-				def images = ['tiger-proxy-image', 'tiger-zion-image']
-
-				images.each { imageName ->
-					build job: "Tiger-TIGER-${imageName}-DockerHub-Release",
-							parameters: [
-									string(name: 'PUBLISH_VERSION', value: String.valueOf("${RELEASE_VERSION}"))
-							]
-				}
-			}
-		}
-	}
 }
