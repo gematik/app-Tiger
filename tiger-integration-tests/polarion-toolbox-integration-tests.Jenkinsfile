@@ -35,14 +35,16 @@ pipeline {
               }
           }
 
-        stage('Tests') {
-            environment {
-                POLARION_CREDENTIALS = credentials('svc_aurora_test')
-            }
-            steps {
-                mavenVerify(POM_PATH, "-DPolarionPassword=$POLARION_CREDENTIALS_PSW")
-            }
-        }
+          stage('Test') {
+              environment {
+                  POLARION_CREDENTIALS_DEV= credentials('svc_aurora_test_PAT_DEV')
+                  POTO_PASSWORD = "$POLARION_CREDENTIALS_DEV_PSW"
+                  POLARION_CREDENTIALS_TEST = credentials('svc_aurora_test_PAT_TEST')
+              }
+              steps {
+                  mavenVerify(POM_PATH, "-DPolarionPasswordDev=$POLARION_CREDENTIALS_DEV_PSW -DPolarionPasswordTest=$POLARION_CREDENTIALS_TEST_PSW")
+              }
+          }
       }
 
        post {

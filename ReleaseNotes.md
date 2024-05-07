@@ -1,16 +1,28 @@
 # Changelog Tiger Test platform
 
+# Release 3.0.4
+
+* Serenity BDD 4.1.10
+* Cucumber 7.17.0
+* RestAssured 5.4.0
+* Selenium 4.18.1
+* Appium 9.0.0
+* Spring Boot 3.2.2
+* Logback 1.4.9
+
 # Release 3.0.3
 
 ## Breaking changes
 
-* TGR-1362: HttpGlueCode now waits by default for the request to be received before continuing. This can be changed by setting the configuration
+* TGR-1362: HttpGlueCode now waits by default for the request to be received before continuing. This can be changed by
+  setting the configuration
   key `tiger.httpClient.executeBlocking` to `false`.
 
 ## Features
 
 * TGR-1372: Zion: The responseCode is now a string, meaning it now supports the use of TigerConfiguration values.
-* TGR-1384: Tiger-Test-Lib: CBOR messages can now also be asserted using JSON structures (`And TGR current response at "$.body" matches as JSON:`)
+* TGR-1384: Tiger-Test-Lib: CBOR messages can now also be asserted using JSON
+  structures (`And TGR current response at "$.body" matches as JSON:`)
 * TGR-1377: Tiger-Test-Lib:
     * Added Request Validation Steps:
         * @Then("TGR current request body matches:")
@@ -23,7 +35,8 @@
 
 ## Bugfixes
 
-* TGR-1373: Fixed an issue where in a meshed setup the sender and receiver addresses were switched in the receiving tiger proxy.
+* TGR-1373: Fixed an issue where in a meshed setup the sender and receiver addresses were switched in the receiving
+  tiger proxy.
 * TGR-1381: Tiger-Proxy: Use the correct length for IV and AD in AES-GCM decryption.
 
 # Release 3.0.2
@@ -64,8 +77,10 @@ copyFiles:
 * TGR-1313: Added support for the new VAU 'Epa für alle' format (VauEpa3).
 * TGR-1286: Tiger-Proxy: The number of open connections is now tracked and can be queried.
 * TGR-1210: Tiger-Proxy: Connection problems to remote servers are now logged.
-* TGR-1351: Tiger-Proxy: Competing routes are now supported. The proxy automatically selects the most specific route if multiple routes are matching.
-* TGR-1353: You can set a defined port to be used for the WorkflowUI using the configuration key `tiger.lib.workflowUiPort`.
+* TGR-1351: Tiger-Proxy: Competing routes are now supported. The proxy automatically selects the most specific route if
+  multiple routes are matching.
+* TGR-1353: You can set a defined port to be used for the WorkflowUI using the configuration
+  key `tiger.lib.workflowUiPort`.
 * TGR-1315:
   step ```TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline body:``` added
 * TGR-1320: TLS-Facets now also carry the TLS-Protocol and the Cipher-Suite used for the connection

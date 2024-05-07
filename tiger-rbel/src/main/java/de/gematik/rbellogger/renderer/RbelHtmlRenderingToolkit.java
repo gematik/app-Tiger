@@ -371,7 +371,7 @@ public class RbelHtmlRenderingToolkit {
                     link2CSS(
                         localRessources
                             ? "../webjars/font-awesome/css/all.min.css"
-                            : "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"),
+                            : "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"),
                     link().withRel("icon").withType("image/png").withHref(getLogoBase64Str()),
                     tag("style")
                         .with(
