@@ -1,0 +1,70 @@
+@startuml
+title The parsing of an incoming HttpRequest
+actor "Local Client" as lc
+participant TigerProxy as tigerProxy
+participant LocalProxyRbelMessageListener as lpml
+participant ForwardProxyCallback as fpc
+participant MockServerToRbelConverter as m2rc
+participant RbelConverter as rc
+participant RbelMessageValidator as rmv
+
+lc -> fpc : handle(req: HttpRequest)
+fpc -> fpc: parseMessage(mockServerRequest: HttpRequest)
+fpc -> fpc: executeHttpRequestParsing(mockServerRequest: HttpRequest)
+fpc -> m2rc: convertRequest(mockServerRequest: HttpRequest)
+m2rc -> rc: parseMessageAsync()
+rc -> rc: addMessageToHistory()
+note right of rc: after adding message to history,\n\
+we add the facets\n\
+ RbelTcpIpMessageFacet and\n\
+ RbelParsingNotCompleteFacet\n\
+to the message
+rc -> rc: CompletableFuture.supplyAsync()
+note right of rc: here the asynchronity\n\
+begins. The ForkJoinPool.commonPool() is\n\
+automatically used.
+rc --> m2rc: CompletableFuture
+m2rc --> fpc: CompletableFuture
+fpc --> lc
+
+group CompletableFuture work made in separate thread:
+rc -> rc: messageElement.removeFacetsOfType(RbelParsingNotCompleteFacet.class);
+m2rc -> m2rc: addHttpRequestFacetIfNotPresent()
+fpc -> fpc: parseCertificateChainIfPresent()
+fpc -> fpc: addBundledServverNameToHostnameFacet()
+fpc -> tigerProxy: triggerListener()
+tigerProxy -> lpml: triggerListener()
+lpml -> lpml: rbelMessages.add(e)
+lpml -> lpml: validatableRbelMessages.add(e)
+lpml -> lpml: stepRbelMessages.add(e)
+end
+
+note across:  here the test suite will try to get the find last request and validate it.\n\
+there are no guarantees that the work made by the CompletableFuture is already finished
+lc -> rmv: findLastRequest()
+rmv -> rmv: getRbelMessages()
+rmv -> tigerProxy: waitForAllCurrentMessagesToBeParsed()
+tigerProxy -> rc: getMessageHistory().getLast()
+rc --> tigerProxy: lastMessageInHistory
+tigerProxy -> rc: waitForGivenElementToBeParsed(lastMessageInHistory)
+note left of rc: probable bug. if lastMessage is parsed,\n\
+ there can be others before, that take longer to be fully parsed
+note across: blocks until all messages are parsed, ensuring all messages in \n\
+the messageHistory list (inside RbelConverter) are parsed (= do not have the RbelParsingNotCompleteFacet), but \n\
+not necessarily already present in the LocalProxyRbelMessageListener.validatableRbelMesages.
+rc --> tigerProxy
+tigerProxy --> rmv
+rmv -> lpml: getValidatableRbelMessages()
+lpml --> rmv: validatableRbelMessages
+note left of rmv: these validatableRbelMessages\n\
+may not have the same last message as the\n\
+message history. Things are added to this list inside the\n\
+CompletableFuture.thenApply() block, so if the parsing\n\
+is slower we don't see it here, even though we waited\n\
+for all messages to be parsed.\n\
+Additionally, the waitForElementsBeforeGivenToBeParsed() only checks\n\
+ that the last message is actually parsed.\n\
+ If a previous message in the list takes longer, we may still have some unparsed\n\
+ messages.
+
+@enduml

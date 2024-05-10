@@ -938,7 +938,7 @@ function addMessageToMenu(msgMetaData, index) {
     if (msgMetaData.timestamp != null) {
         menuItem = menuItem
             .replace("${timestamp}",
-                dayjs(msgMetaData.timestamp).format("HH:mm:ss.SSS"));
+                formatTimeStamp(msgMetaData.timestamp));
     } else {
         menuItem = menuItem
             .replace("${timestamp}", " ");
@@ -947,6 +947,15 @@ function addMessageToMenu(msgMetaData, index) {
         .appendChild(htmlToElement(menuItem));
 
     senderReceiversFreqCounter.addSenderAndReceiver(msgMetaData)
+}
+
+function formatTimeStamp(timestampIsoString) {
+    const containsZoneId = timestampIsoString.includes('[');
+    let stringToConvert = timestampIsoString;
+    if (containsZoneId) {
+        stringToConvert = timestampIsoString.substring(0, timestampIsoString.indexOf('['));
+    }
+    return dayjs(stringToConvert).format("HH:mm:ss.SSS");
 }
 
 function filterAtLeastN(frequencyMap, atLeastN) {

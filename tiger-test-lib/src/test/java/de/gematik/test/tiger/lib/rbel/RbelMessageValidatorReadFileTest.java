@@ -6,16 +6,13 @@ package de.gematik.test.tiger.lib.rbel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
-import java.util.Deque;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @Slf4j
 class RbelMessageValidatorReadFileTest {
@@ -23,10 +20,6 @@ class RbelMessageValidatorReadFileTest {
   @BeforeEach
   @AfterEach
   public void reset() {
-    ((Deque<RbelElement>)
-            ReflectionTestUtils.getField(
-                LocalProxyRbelMessageListener.class, "validatableRbelMessages"))
-        .clear();
     TigerGlobalConfiguration.reset();
   }
 
@@ -37,7 +30,7 @@ class RbelMessageValidatorReadFileTest {
     executeWithSecureShutdown(
         () -> {
           TigerDirector.start();
-
+          LocalProxyRbelMessageListener.clearValidatableRbelMessages();
           RbelMessageValidator.instance.readTgrFile(
               "src/test/resources/testdata/rezepsFiltered.tgr");
 

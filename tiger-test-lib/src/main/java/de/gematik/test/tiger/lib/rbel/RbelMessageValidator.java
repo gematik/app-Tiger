@@ -41,7 +41,7 @@ import javax.xml.transform.Source;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections.iterators.ReverseListIterator;
+import org.apache.commons.collections4.iterators.ReverseListIterator;
 import org.apache.commons.collections4.list.UnmodifiableList;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
@@ -96,7 +96,7 @@ public class RbelMessageValidator {
   }
 
   public void clearRbelMessages() {
-    LocalProxyRbelMessageListener.getValidatableRbelMessages().clear();
+    LocalProxyRbelMessageListener.clearValidatableRbelMessages();
   }
 
   public void filterRequestsAndStoreInContext(final RequestParameter requestParameter) {
@@ -183,15 +183,14 @@ public class RbelMessageValidator {
   }
 
   private Optional<RbelElement> getInitialElement(RequestParameter requestParameter) {
+    var validatableRbelMessages = LocalProxyRbelMessageListener.getValidatableRbelMessages();
     if (requestParameter.isStartFromLastRequest()) {
-      return LocalProxyRbelMessageListener.getValidatableRbelMessages().stream()
+      return validatableRbelMessages.stream()
           .dropWhile(msg -> msg != currentRequest)
           .skip(1)
           .findFirst();
-    } else if (requestParameter.isRequireNewMessage()
-        && !LocalProxyRbelMessageListener.getValidatableRbelMessages().isEmpty()) {
-      return Optional.ofNullable(
-          LocalProxyRbelMessageListener.getValidatableRbelMessages().getLast());
+    } else if (requestParameter.isRequireNewMessage() && !validatableRbelMessages.isEmpty()) {
+      return Optional.ofNullable(validatableRbelMessages.get(validatableRbelMessages.size() - 1));
     } else {
       return Optional.empty();
     }
@@ -342,7 +341,7 @@ public class RbelMessageValidator {
     }
   }
 
-  public static boolean doesHostMatch(final RbelElement req, final String hostFilter) {
+  public boolean doesHostMatch(final RbelElement req, final String hostFilter) {
     try {
       final String host =
           req.getFacet(RbelHttpMessageFacet.class)
@@ -425,12 +424,11 @@ public class RbelMessageValidator {
 
   public void assertAttributeForMessage(ModeType mode, String oracle, RbelElement element) {
     switch (mode) {
-      case JSON -> new JsonChecker()
-          .compareJsonStrings(
-              getAsJsonString(element), oracle, false);
+      case JSON -> new JsonChecker().compareJsonStrings(getAsJsonString(element), oracle, false);
       case XML -> compareXMLStructureOfRbelElement(element, oracle, "");
-      default -> Assertions.fail(
-          "Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
+      default ->
+          Assertions.fail(
+              "Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
     }
   }
 
@@ -438,9 +436,11 @@ public class RbelMessageValidator {
     if (target.hasFacet(RbelJsonFacet.class)) {
       return target.getRawStringContent();
     } else if (target.hasFacet(RbelCborFacet.class)) {
-      return target.getFacet(RbelCborFacet.class).map(RbelCborFacet::getNode)
-        .map(JsonNode::toString)
-        .orElse("");
+      return target
+          .getFacet(RbelCborFacet.class)
+          .map(RbelCborFacet::getNode)
+          .map(JsonNode::toString)
+          .orElse("");
     } else {
       throw new AssertionError("Node is neither JSON nor CBOR, can not match with JSON");
     }
@@ -589,7 +589,7 @@ public class RbelMessageValidator {
   }
 
   public void findLastRequest() {
-    final Iterator<RbelElement> descendingIterator = new ReverseListIterator(getRbelMessages());
+    final Iterator<RbelElement> descendingIterator = new ReverseListIterator<>(getRbelMessages());
     final RbelElement lastRequest =
         StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(descendingIterator, Spliterator.ORDERED), false)
@@ -663,7 +663,7 @@ public class RbelMessageValidator {
 
     private RbelElement lastMessageMatching(Predicate<RbelElement> testMessage) {
       final Iterator<RbelElement> backwardsIterator =
-          LocalProxyRbelMessageListener.getValidatableRbelMessages().descendingIterator();
+          new ReverseListIterator<>(LocalProxyRbelMessageListener.getValidatableRbelMessages());
       while (backwardsIterator.hasNext()) {
         final RbelElement element = backwardsIterator.next();
         if (testMessage.test(element)) {

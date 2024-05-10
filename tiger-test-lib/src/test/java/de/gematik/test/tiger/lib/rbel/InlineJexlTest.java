@@ -8,19 +8,26 @@ import static de.gematik.test.tiger.lib.rbel.TestsuiteUtils.addSomeMessagesToTig
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.writer.RbelContentType;
+import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.glue.TigerParameterTypeDefinitions;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.enums.ModeType;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import io.restassured.http.Method;
 import java.net.URI;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import lombok.SneakyThrows;
 import org.apache.commons.jexl3.JexlException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -28,17 +35,28 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 public class InlineJexlTest {
 
-  {
+  { // We need this so that the static instance from RbelMessageValidator actually
+    // gets initialized and registers its namespace in the TigerJexlExecutor
     RbelMessageValidator.instance.getRbelMessages();
   }
+
+  private static final Deque<RbelElement> validatableMessagesMock = new ArrayDeque<>();
 
   @BeforeAll
   public static void addSomeMessages() {
     TigerGlobalConfiguration.reset();
     ReflectionTestUtils.setField(TigerDirector.class, "initialized", true);
-    final TigerTestEnvMgr mock = mock(TigerTestEnvMgr.class);
-    ReflectionTestUtils.setField(TigerDirector.class, "tigerTestEnvMgr", mock);
-    addSomeMessagesToTigerTestHooks();
+    final TigerTestEnvMgr tigerTestEnvMgr = mock(TigerTestEnvMgr.class);
+    final TigerProxy tigerProxy = mock(TigerProxy.class);
+    when(tigerTestEnvMgr.getLocalTigerProxyOrFail()).thenReturn(tigerProxy);
+    when(tigerProxy.getRbelMessages()).thenReturn(validatableMessagesMock);
+    ReflectionTestUtils.setField(TigerDirector.class, "tigerTestEnvMgr", tigerTestEnvMgr);
+  }
+
+  @BeforeEach
+  public void reset() {
+    LocalProxyRbelMessageListener.clearValidatableRbelMessages();
+    addSomeMessagesToTigerTestHooks(validatableMessagesMock);
   }
 
   @AfterAll

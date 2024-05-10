@@ -178,6 +178,7 @@ public class RbelConverter {
       final RbelHostname receiver,
       final Optional<ZonedDateTime> transmissionTime) {
     addMessageToHistory(messageElement);
+
     messageElement.addFacet(
         RbelTcpIpMessageFacet.builder()
             .receiver(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, receiver))
@@ -352,6 +353,10 @@ public class RbelConverter {
       }
     }
     waitForGivenMessagesToBeParsed(unfinishedMessages);
+  }
+
+  public void waitForAllCurrentMessagesToBeParsed() {
+    waitForGivenMessagesToBeParsed(new ArrayList<>(messageHistory));
   }
 
   private void waitForGivenMessagesToBeParsed(List<RbelElement> unfinishedMessages) {

@@ -1,0 +1,36 @@
+@startuml
+class TigerProxy
+class MockServerToRbelConverter{
+convertRequest() : CompletableFuture<RbelElement>
+}
+class ForwardProxyCallback extends AbstractRouteProxyCallback
+
+TigerProxy --> RbelConverter : uses
+TigerProxy --> MockServerToRbelConverter: uses
+TigerProxy -> ForwardProxyCallback : uses
+
+MockServerToRbelConverter -> RbelConverter : uses
+
+class RbelConverter{
+    messageHistory
+    messagesWaitingForCompletion
+}
+
+class LocalProxyRbelMessageListener{
+    validatableRbelMessages
+    rbelMessages
+}
+
+LocalProxyRbelMessageListener --> rbelMessageListener : uses
+
+class rbelMessageListener <<Anonymous>> implements RbelMessageProvider{
+triggerNewReceiveMessage(e: RbelElement)
+}
+
+class RbelMessageValidator
+
+RbelMessageValidator --> LocalProxyRbelMessageListener : uses
+
+class RbelMessageProvider
+
+@enduml
