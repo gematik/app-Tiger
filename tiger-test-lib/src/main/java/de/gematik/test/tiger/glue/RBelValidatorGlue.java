@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.SourceType;
+import de.gematik.test.tiger.common.config.TigerConfigurationKey;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.enums.ModeType;
@@ -91,8 +92,8 @@ public class RBelValidatorGlue {
   @Wenn("TGR lösche den gesetzten HTTP Methodenfilter")
   @When("TGR reset request method filter")
   public void tgrResetRequestMethodFilter() {
-    TigerGlobalConfiguration.putValue(
-        "tiger.rbel.request.filter.method", null, SourceType.TEST_CONTEXT);
+    TigerGlobalConfiguration.deleteFromAllSources(
+        new TigerConfigurationKey("tiger.rbel.request.filter.method"));
   }
 
   /**

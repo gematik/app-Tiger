@@ -174,3 +174,27 @@ Feature: HTTP/HTTPS GlueCode Test feature
     And TGR send empty GET request to "http://httpbin/redirect-to?url=!{urlEncoded('http://httpbin/status/200')}"
     Then TGR find the last request
     Then TGR current response with attribute "$.responseCode" matches "200"
+
+  Scenario: Test check filter POST request
+    Given TGR send POST request to "http://httpbin/post" with body "{'foobar': '4'}"
+    And TGR send empty GET request to "http://httpbin/anything?foobar=22"
+    And TGR filter requests based on method "POST"
+    Then TGR find last request to path ".*"
+    Then TGR current response with attribute "$.body.data.foobar" matches "4"
+
+  Scenario: Test check filter GET request
+    Given TGR send empty GET request to "http://httpbin/anything?foobar=22"
+    And TGR send POST request to "http://httpbin/post" with body "{'foobar': '4'}"
+    And TGR filter requests based on method "GET"
+    Then TGR find last request to path ".*"
+    Then TGR current response with attribute "$.body.args.foobar" matches "22"
+
+  Scenario: Test check filter method reset
+    Given TGR reset request method filter
+    # check resetting it works even if done twice
+    And TGR reset request method filter
+    And TGR send empty GET request to "http://httpbin/anything?foobar=22"
+    And TGR send POST request to "http://httpbin/post" with body "{'foobar': '4'}"
+    Given TGR reset request method filter
+    Then TGR find last request to path ".*"
+    Then TGR current response with attribute "$.body.data.foobar" matches "4"

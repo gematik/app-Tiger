@@ -10,6 +10,11 @@
 * Spring Boot 3.2.2
 * Logback 1.4.9
 
+## Bugs
+
+* TGR-1398: fixing reset of filter method in rbel validator glue code which caused an NPE if used in feature files (
+  regression).
+
 # Release 3.0.3
 
 ## Breaking changes
