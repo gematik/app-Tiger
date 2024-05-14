@@ -55,33 +55,30 @@ public class RbelKeyManager {
       return;
     }
 
-    if (keyIsPresentInList(rbelKey.getKey())) {
+    if (keyIsPresentInList(rbelKey)) {
       log.trace("Skipping adding key: Key is already known!");
+    } else {
+      keyList.add(rbelKey);
     }
-
-    keyList.add(rbelKey);
   }
 
   public synchronized RbelKey addKey(String keyId, Key key, int precedence) {
-    if (keyIsPresentInList(key)) {
-      log.trace("Skipping adding key: Key is already known!");
-    }
-
     final RbelKey rbelKey =
         RbelKey.builder().keyName(keyId).key(key).precedence(precedence).build();
 
-    keyList.add(rbelKey);
+    if (keyIsPresentInList(rbelKey)) {
+      log.trace("Skipping adding key: Key is already known!");
+    } else {
+      keyList.add(rbelKey);
 
-    log.debug("Added key {} (Now there are {} keys known)", keyId, keyList.size());
+      log.debug("Added key {} (Now there are {} keys known)", keyId, keyList.size());
+    }
 
     return rbelKey;
   }
 
-  private synchronized boolean keyIsPresentInList(Key key) {
-    return keyList.stream()
-        .map(RbelKey::getKey)
-        .map(Key::getEncoded)
-        .anyMatch(oldKey -> Arrays.equals(oldKey, key.getEncoded()));
+  private synchronized boolean keyIsPresentInList(RbelKey key) {
+    return keyList.stream().anyMatch(oldKey -> oldKey.equals(key));
   }
 
   public synchronized Stream<RbelKey> getAllKeys() {
