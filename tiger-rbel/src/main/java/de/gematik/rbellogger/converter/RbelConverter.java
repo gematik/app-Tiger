@@ -265,11 +265,10 @@ public class RbelConverter {
           }
           while (exceedingLimit > 0 && !messageHistory.isEmpty()) {
             log.trace("Exceeded buffer size, dropping oldest message in history");
-            final RbelElement messageToDrop = messageHistory.getFirst();
+            final RbelElement messageToDrop = messageHistory.removeFirst();
             exceedingLimit -= messageToDrop.getSize();
             currentBufferSize -= messageToDrop.getSize();
             knownMessageUuids.remove(messageToDrop.getUuid());
-            messageHistory.removeLast();
           }
         }
       }
