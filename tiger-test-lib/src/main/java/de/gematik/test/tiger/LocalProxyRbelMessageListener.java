@@ -7,10 +7,12 @@ package de.gematik.test.tiger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -80,13 +82,13 @@ public class LocalProxyRbelMessageListener {
    * List of messages received via local Tiger Proxy. It is used by the TGR validation steps. The
    * list is not cleared at the end of / start of new scenarios!
    */
-  public static List<RbelElement> getValidatableRbelMessages() {
+  public static Deque<RbelElement> getValidatableRbelMessages() {
     // we make a new unmodifiable list that is read directly from the tiger proxy messageHistory
     // but without the elements that should habe been deleted by the clearValidatableRbelMessages()
     // call.
     return getMessageHistoryFromTigerProxy().stream()
         .dropWhile(e -> lastDeletedElement != null && e != lastDeletedElement)
-        .toList();
+        .collect(Collectors.toCollection(ArrayDeque::new));
   }
 
   private static Deque<RbelElement> getMessageHistoryFromTigerProxy() {

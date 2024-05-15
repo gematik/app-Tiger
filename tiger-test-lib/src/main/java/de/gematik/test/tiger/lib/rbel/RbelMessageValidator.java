@@ -190,7 +190,7 @@ public class RbelMessageValidator {
           .skip(1)
           .findFirst();
     } else if (requestParameter.isRequireNewMessage() && !validatableRbelMessages.isEmpty()) {
-      return Optional.ofNullable(validatableRbelMessages.get(validatableRbelMessages.size() - 1));
+      return Optional.ofNullable(validatableRbelMessages.getLast());
     } else {
       return Optional.empty();
     }
@@ -663,7 +663,7 @@ public class RbelMessageValidator {
 
     private RbelElement lastMessageMatching(Predicate<RbelElement> testMessage) {
       final Iterator<RbelElement> backwardsIterator =
-          new ReverseListIterator<>(LocalProxyRbelMessageListener.getValidatableRbelMessages());
+          LocalProxyRbelMessageListener.getValidatableRbelMessages().descendingIterator();
       while (backwardsIterator.hasNext()) {
         final RbelElement element = backwardsIterator.next();
         if (testMessage.test(element)) {
