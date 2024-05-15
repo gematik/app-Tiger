@@ -21,6 +21,7 @@ class RbelMessageValidatorReadFileTest {
   @AfterEach
   public void reset() {
     TigerGlobalConfiguration.reset();
+    TigerDirector.testUninitialize();
   }
 
   @Test
@@ -42,6 +43,7 @@ class RbelMessageValidatorReadFileTest {
     try {
       test.run();
     } finally {
+
       TigerDirector.getTigerTestEnvMgr().shutDown();
     }
   }

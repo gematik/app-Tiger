@@ -20,6 +20,7 @@ import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
@@ -31,6 +32,8 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Slf4j
 class PcapCaptureTest {
@@ -129,11 +132,12 @@ class PcapCaptureTest {
   }
 
   @SneakyThrows
-  @Test
-  void readPcapFile_shouldParseMessages() {
+  @ParameterizedTest
+  @ValueSource(strings = {"deregisterPairing-noPairedUuid.tgr", "deregisterPairing.tgr"})
+  void readPcapFile_shouldParseMessages(String fileName) {
     final RbelFileReaderCapturer fileReaderCapturer =
         RbelFileReaderCapturer.builder()
-            .rbelFile("src/test/resources/deregisterPairing.tgr")
+            .rbelFile(Path.of("src", "test", "resources", fileName).toString())
             .build();
     final RbelLogger rbelLogger =
         new RbelConfiguration()

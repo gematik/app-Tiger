@@ -6,6 +6,7 @@ package de.gematik.test.tiger.proxy.client;
 
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelElementConvertionPair;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
@@ -18,6 +19,7 @@ import jakarta.websocket.WebSocketContainer;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -268,6 +270,26 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
       byte[] messageBytes,
       Optional<ZonedDateTime> transmissionTime,
       String uuid) {
+    return buildNewMessage(sender, receiver, messageBytes, null, transmissionTime, uuid);
+  }
+
+  Optional<RbelElement> buildNewRbelResponse(
+      RbelHostname sender,
+      RbelHostname receiver,
+      byte[] messageBytes,
+      RbelElement parsedRequest,
+      Optional<ZonedDateTime> transmissionTime,
+      String uuid) {
+    return buildNewMessage(sender, receiver, messageBytes, parsedRequest, transmissionTime, uuid);
+  }
+
+  private Optional<RbelElement> buildNewMessage(
+      RbelHostname sender,
+      RbelHostname receiver,
+      byte[] messageBytes,
+      RbelElement parsedRequest,
+      Optional<ZonedDateTime> transmissionTime,
+      String uuid) {
     if (messageBytes != null) {
       if (log.isTraceEnabled()) {
         log.trace("{}Received new message with ID '{}'", proxyName(), uuid);
@@ -277,7 +299,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
           getRbelLogger()
               .getRbelConverter()
               .parseMessage(
-                  RbelElement.builder().uuid(uuid).rawContent(messageBytes).build(),
+                  new RbelElementConvertionPair(
+                      RbelElement.builder().uuid(uuid).rawContent(messageBytes).build(),
+                      CompletableFuture.completedFuture(parsedRequest)),
                   sender,
                   receiver,
                   transmissionTime);

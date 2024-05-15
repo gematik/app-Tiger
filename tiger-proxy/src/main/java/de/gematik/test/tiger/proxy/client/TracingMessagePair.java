@@ -50,10 +50,11 @@ public class TracingMessagePair implements TracingMessageFrame {
             Optional.ofNullable(request.getTransmissionTime()),
             request.getTracingDto().getRequestUuid());
     val responseParsed =
-        remoteProxyClient.buildNewRbelMessage(
+        remoteProxyClient.buildNewRbelResponse(
             response.getSender(),
             response.getReceiver(),
             response.buildCompleteContent(),
+            requestParsed.orElse(null),
             Optional.ofNullable(response.getTransmissionTime()),
             response.getTracingDto().getResponseUuid());
     if (requestParsed.isEmpty() || responseParsed.isEmpty()) {
@@ -78,6 +79,7 @@ public class TracingMessagePair implements TracingMessageFrame {
             .request(requestParsed.get())
             .build();
     responseParsed.get().addFacet(pairFacet);
+
     if (log.isTraceEnabled()) {
       log.trace(
           "{}Received pair to {} (UUIDs {} and {})",

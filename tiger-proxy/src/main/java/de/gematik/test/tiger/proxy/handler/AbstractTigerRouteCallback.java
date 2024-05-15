@@ -275,25 +275,32 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
       return CompletableFuture.completedFuture(null);
     }
 
+    CompletableFuture<RbelElement> futureParsedRequest = retrieveParsedRequest(req);
     return getTigerProxy()
         .getMockServerToRbelConverter()
         .convertResponse(
             resp,
             extractProtocolAndHostForRequest(req),
             req.getRemoteAddress(),
+            futureParsedRequest,
             Optional.of(ZonedDateTime.now()))
-        .thenAccept(
-            response ->
-                retrieveParsedRequest(req)
-                    .thenAccept(request -> postProcessingAfterBothMessageParsed(response, request))
-                    .exceptionally(
-                        e -> {
-                          log.error("Error while both processing message pair", e);
-                          return null;
-                        }))
+        .thenCombine(
+            futureParsedRequest,
+            (parsedResponse, parsedRequest) -> {
+              postProcessingAfterBothMessageParsed(parsedResponse, parsedRequest);
+              return null;
+            })
+        .thenAccept(ignore -> {}) // Here just to have the future stay a CompletableFuture<Void>
+        .exceptionally(
+            e -> {
+              log.error("Error while both processing message pair", e);
+              getTigerProxy().propagateException(e);
+              return null;
+            })
         .exceptionally(
             e -> {
               log.error("Error while parsing response", e);
+              getTigerProxy().propagateException(e);
               return null;
             });
   }

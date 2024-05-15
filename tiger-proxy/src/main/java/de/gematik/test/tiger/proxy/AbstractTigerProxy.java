@@ -4,6 +4,8 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static de.gematik.rbellogger.file.RbelFileWriter.PAIRED_MESSAGE_UUID;
+
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelErpVauDecrpytionConverter;
@@ -12,7 +14,6 @@ import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.rbellogger.key.RbelKey;
-import de.gematik.rbellogger.util.RbelMessagePostProcessor;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
@@ -53,23 +54,6 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
     TlsFacet.init();
   }
 
-  public static final String PAIRED_MESSAGE_UUID = "pairedMessageUuid";
-  public static final RbelMessagePostProcessor pairingPostProcessor =
-      (el, conv, json) -> {
-        if (json.has(PAIRED_MESSAGE_UUID)) {
-          final String partnerUuid = json.getString(PAIRED_MESSAGE_UUID);
-          final Optional<RbelElement> partner =
-              conv.messagesStreamLatestFirst()
-                  .filter(element -> element.getUuid().equals(partnerUuid))
-                  .findFirst();
-          if (partner.isPresent()) {
-            final TracingMessagePairFacet pairFacet =
-                TracingMessagePairFacet.builder().response(el).request(partner.get()).build();
-            el.addFacet(pairFacet);
-            partner.get().addFacet(pairFacet);
-          }
-        }
-      };
   private static final String FIX_VAU_KEY =
       """
             -----BEGIN PRIVATE KEY-----
@@ -158,7 +142,9 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
 
   public synchronized List<RbelElement> readTrafficFromString(String tgrFileContent) {
     try {
-      rbelFileWriter.postConversionListener.add(pairingPostProcessor);
+      rbelFileWriter.postConversionListener.add(TracingMessagePairFacet.pairingPostProcessor);
+      rbelFileWriter.postConversionListener.add(
+          TracingMessagePairFacet.updateHttpFacetsBasedOnPairsPostProcessor);
       if (getTigerProxyConfiguration().getFileSaveInfo() != null
           && StringUtils.isNotEmpty(
               getTigerProxyConfiguration().getFileSaveInfo().getReadFilter())) {
@@ -168,7 +154,9 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
       }
       return rbelFileWriter.convertFromRbelFile(tgrFileContent);
     } finally {
-      rbelFileWriter.postConversionListener.remove(pairingPostProcessor);
+      rbelFileWriter.postConversionListener.remove(TracingMessagePairFacet.pairingPostProcessor);
+      rbelFileWriter.postConversionListener.remove(
+          TracingMessagePairFacet.updateHttpFacetsBasedOnPairsPostProcessor);
     }
   }
 

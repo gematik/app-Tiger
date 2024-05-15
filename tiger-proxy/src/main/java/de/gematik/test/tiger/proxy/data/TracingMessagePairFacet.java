@@ -4,9 +4,14 @@
 
 package de.gematik.test.tiger.proxy.data;
 
+import static de.gematik.rbellogger.file.RbelFileWriter.PAIRED_MESSAGE_UUID;
+
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelFacet;
+import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
+import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.util.RbelMessagePostProcessor;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,4 +43,48 @@ public class TracingMessagePairFacet implements RbelFacet {
   public boolean isResponse(RbelElement msg) {
     return response == msg;
   }
+
+  public static final RbelMessagePostProcessor pairingPostProcessor =
+      (el, conv, json) -> {
+        if (json.has(PAIRED_MESSAGE_UUID)) {
+          final String partnerUuid = json.getString(PAIRED_MESSAGE_UUID);
+          final Optional<RbelElement> partner =
+              conv.messagesStreamLatestFirst()
+                  .filter(element -> element.getUuid().equals(partnerUuid))
+                  .findFirst();
+          if (partner.isPresent()) {
+            final TracingMessagePairFacet pairFacet =
+                TracingMessagePairFacet.builder().response(el).request(partner.get()).build();
+            el.addFacet(pairFacet);
+            partner.get().addFacet(pairFacet);
+          }
+        }
+      };
+
+  public static final RbelMessagePostProcessor updateHttpFacetsBasedOnPairsPostProcessor =
+      (currentMessage, converter, messageObject) -> {
+        var pairFacet = currentMessage.getFacet(TracingMessagePairFacet.class);
+
+        if (pairFacet.isPresent()) {
+          var pairedRequest = pairFacet.get().getRequest();
+          var pairedResponse = pairFacet.get().getResponse();
+          RbelHttpRequestFacet.updateResponseOfRequestFacet(pairedRequest, pairedResponse);
+          RbelHttpResponseFacet.updateRequestOfResponseFacet(pairedResponse, pairedRequest);
+        } else { // fallback for old .tgr files that may not have the pairedMessageUuid in the
+          // file
+          if (currentMessage.hasFacet(RbelHttpResponseFacet.class)) { // if it is a response
+            // we assume the request before it is the request
+            converter
+                .messagesStreamLatestFirst()
+                .dropWhile(e -> e != currentMessage)
+                .filter(e -> e.hasFacet(RbelHttpRequestFacet.class))
+                .findFirst()
+                .ifPresent(
+                    e -> {
+                      RbelHttpRequestFacet.updateResponseOfRequestFacet(e, currentMessage);
+                      RbelHttpResponseFacet.updateRequestOfResponseFacet(currentMessage, e);
+                    });
+          }
+        }
+      };
 }
