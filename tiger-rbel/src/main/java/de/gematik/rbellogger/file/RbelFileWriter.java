@@ -18,10 +18,12 @@ package de.gematik.rbellogger.file;
 
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelElementConvertionPair;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.util.RbelMessagePostProcessor;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 import lombok.AllArgsConstructor;
@@ -39,8 +41,13 @@ public class RbelFileWriter {
   public static final String SEQUENCE_NUMBER = "sequenceNumber";
   public static final String MESSAGE_TIME = "timestamp";
   public static final String MESSAGE_UUID = "uuid";
+  public static final String PAIRED_MESSAGE_UUID = "pairedMessageUuid";
   public static final List<RbelFilePreSaveListener> DEFAULT_PRE_SAVE_LISTENER =
-      new ArrayList<>(List.of(new MessageTimeWriter(), new TcpIpMessageFaceWriter(), new BundledServerNameWriterAndReader()));
+      new ArrayList<>(
+          List.of(
+              new MessageTimeWriter(),
+              new TcpIpMessageFacetWriter(),
+              new BundledServerNameWriterAndReader()));
   public static final List<RbelMessagePostProcessor> DEFAULT_POST_CONVERSION_LISTENER =
       new ArrayList<>(List.of(new BundledServerNameWriterAndReader()));
   public final List<RbelMessagePostProcessor> postConversionListener =
@@ -89,18 +96,33 @@ public class RbelFileWriter {
   private Optional<RbelElement> parseFileObject(JSONObject messageObject) {
     try {
       final String msgUuid = messageObject.optString(MESSAGE_UUID);
+
       if (rbelConverter.isMessageUuidAlreadyKnown(msgUuid)) {
         return Optional.empty();
       }
+
       final RbelElement rawMessageObject =
           RbelElement.builder()
               .rawContent(Base64.getDecoder().decode(messageObject.getString(RAW_MESSAGE_CONTENT)))
               .uuid(msgUuid)
               .parentNode(null)
               .build();
+
+      RbelElementConvertionPair messageToConvert =
+          Optional.ofNullable(messageObject.optString(PAIRED_MESSAGE_UUID, null))
+              .map(
+                  pairedUuid ->
+                      new RbelElementConvertionPair(
+                          rawMessageObject,
+                          CompletableFuture.completedFuture(
+                              rbelConverter.findMessageByUuid(pairedUuid).orElse(null))))
+              .orElse(
+                  new RbelElementByOrderConvertionPair(
+                      rawMessageObject, rbelConverter.getMessageList()));
+
       final RbelElement parsedMessage =
           rbelConverter.parseMessage(
-              rawMessageObject,
+              messageToConvert,
               RbelHostname.fromString(messageObject.getString(SENDER_HOSTNAME)).orElse(null),
               RbelHostname.fromString(messageObject.getString(RECEIVER_HOSTNAME)).orElse(null),
               messageObject.has(MESSAGE_TIME)

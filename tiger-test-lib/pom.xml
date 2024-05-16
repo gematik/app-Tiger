@@ -26,14 +26,14 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.0.3</version>
+        <version>3.0.4</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <properties>
 
         <version.jsonassert>1.5.1</version.jsonassert>
-        <version.xmlunit-core>2.9.1</version.xmlunit-core>
+        <version.xmlunit-core>2.10.0</version.xmlunit-core>
 
         <tiger.build.timestamp>${maven.build.timestamp}</tiger.build.timestamp>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>

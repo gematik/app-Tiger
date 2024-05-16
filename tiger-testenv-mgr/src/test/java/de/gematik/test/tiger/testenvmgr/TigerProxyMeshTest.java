@@ -21,14 +21,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
+import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
@@ -36,6 +40,7 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
+import org.assertj.core.presentation.Representation;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
@@ -381,5 +386,120 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
           .hasStringContentEqualTo("reverseHostname");
     }
     waitShortTime();
+  }
+
+  /**
+   * This test sends multiple messages in parallel to the "reverseProxy". This will be transmitted
+   * to the local tiger proxy. We check that the messages are correctly paired by comparing the
+   * request inside the RbelHttpResponseFacet with the request inside the TracingMessagePairFacet.
+   *
+   * <p>Before TGR-1387, these were not always matching.
+   */
+  @SneakyThrows
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+    tigerProxy:
+      skipTrafficEndpointsSubscription: true
+      trafficEndpoints:
+        - http://localhost:${free.port.2}
+    servers:
+      httpbin:
+        type: httpbin
+        serverPort: ${free.port.0}
+        healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
+      aggregatingProxy:
+        type: tigerProxy
+        dependsUpon: reverseProxy
+        tigerProxyConfiguration:
+          adminPort: ${free.port.2}
+          proxyPort: ${free.port.3}
+          activateRbelParsing: false
+          rbelBufferSizeInMb: 0
+          trafficEndpoints:
+            - http://localhost:${free.port.4}
+      reverseProxy:
+        type: tigerProxy
+        tigerProxyConfiguration:
+          adminPort: ${free.port.4}
+          proxiedServer: httpbin
+          proxyPort: ${free.port.5}
+    lib:
+      trafficVisualization: true
+    """)
+  void testTracingFacetsAndHttpFacetHaveCorrectRequest(TigerTestEnvMgr envMgr) {
+
+    waitShortTime();
+    final String path = "/anything/";
+    final UnirestInstance unirestInstance = Unirest.spawnInstance();
+    unirestInstance
+        .config()
+        .sslContext(
+            ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
+                .getTigerProxy()
+                .getConfiguredTigerProxySslContext());
+
+    var futures =
+        IntStream.range(0, 200)
+            .parallel()
+            .mapToObj(
+                i ->
+                    CompletableFuture.runAsync(
+                        () -> {
+                          HttpResponse<String> response =
+                              unirestInstance
+                                  .get(
+                                      "https://localhost:"
+                                          + TigerGlobalConfiguration.readString("free.port.5")
+                                          + path
+                                          + i)
+                                  .asString();
+                          int status = response.getStatus();
+                          assertThat(status).isEqualTo(200);
+                        }));
+
+    CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .until(
+            () ->
+                envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size()
+                    == 400);
+
+    envMgr.getLocalTigerProxyOrFail().waitForAllCurrentMessagesToBeParsed();
+
+    var messages = envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageList();
+
+    var responses = messages.stream().filter(m -> m.hasFacet(RbelHttpResponseFacet.class)).toList();
+
+    for (RbelElement r : responses) {
+      var httpFacet = r.getFacet(RbelHttpResponseFacet.class).orElseThrow();
+      var tracingFacet = r.getFacet(TracingMessagePairFacet.class).orElseThrow();
+      assertThat(tracingFacet.getRequest())
+          .withRepresentation(new RbelElementRepresentation())
+          .isEqualTo(httpFacet.getRequest());
+
+      var requestPath =
+          httpFacet.getRequest().findElement("$.path").orElseThrow().getRawStringContent();
+      var responsePath = r.findElement("$.body.url").orElseThrow().getRawStringContent();
+
+      assertThat(responsePath).endsWith(requestPath);
+    }
+
+    waitShortTime();
+  }
+
+  static class RbelElementRepresentation implements Representation {
+
+    @Override
+    public String toStringOf(Object object) {
+      if (object instanceof RbelElement rbelElement) {
+        return rbelElement.printTreeStructureWithoutColors();
+      } else {
+        return object.toString();
+      }
+    }
   }
 }

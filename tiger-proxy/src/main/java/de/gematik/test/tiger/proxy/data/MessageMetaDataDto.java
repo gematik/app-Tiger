@@ -25,6 +25,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Data
 @AllArgsConstructor
@@ -68,18 +69,12 @@ public class MessageMetaDataDto {
             .bundledServerNameSender(
                 el.getFacet(RbelTcpIpMessageFacet.class)
                     .map(RbelTcpIpMessageFacet::getSender)
-                    .flatMap(sender -> sender.getFacet(RbelHostnameFacet.class))
-                    .flatMap(RbelHostnameFacet::getBundledServerName)
-                    .filter(element -> element.getRawStringContent() != null)
-                    .flatMap(element -> Optional.of(element.getRawStringContent()))
-                    .orElse(""))
+                  .flatMap(MessageMetaDataDto::tryToExtractServerName)
+                  .orElse(""))
             .bundledServerNameReceiver(
                 el.getFacet(RbelTcpIpMessageFacet.class)
                     .map(RbelTcpIpMessageFacet::getReceiver)
-                    .flatMap(receiver -> receiver.getFacet(RbelHostnameFacet.class))
-                    .flatMap(RbelHostnameFacet::getBundledServerName)
-                    .filter(element -> element.getRawStringContent() != null)
-                    .flatMap(element -> Optional.of(element.getRawStringContent()))
+                    .flatMap(MessageMetaDataDto::tryToExtractServerName)
                     .orElse(""))
             .pairedUuid(
                 el.getFacet(TracingMessagePairFacet.class)
@@ -114,6 +109,22 @@ public class MessageMetaDataDto {
                     el.getFacet(RbelResponseFacet.class).map(RbelResponseFacet::getMenuInfoString))
             .orElse(null));
     return builder.build();
+  }
+
+  private static Optional<String> tryToExtractServerName(RbelElement element) {
+    final Optional<RbelHostnameFacet> hostnameFacet = element.getFacet(RbelHostnameFacet.class);
+    if (hostnameFacet.isEmpty()) {
+      return Optional.empty();
+    }
+    return hostnameFacet
+      .flatMap(RbelHostnameFacet::getBundledServerName)
+      .filter(e -> e.getRawStringContent() != null)
+      .flatMap(e -> Optional.of(e.getRawStringContent()))
+      .or(() -> hostnameFacet
+        .map(RbelHostnameFacet::getDomain)
+        .map(RbelElement::getRawStringContent)
+        .filter(StringUtils::isNotEmpty)
+        .filter(s -> !s.startsWith("localhost") && !s.startsWith("127.0.0.1")));
   }
 
   public static long getElementSequenceNumber(RbelElement rbelElement) {

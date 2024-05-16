@@ -17,12 +17,14 @@
 package de.gematik.test.tiger;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.proxy.RbelMessageProvider;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -44,13 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class LocalProxyRbelMessageListener {
 
-  /**
-   * List of messages received via local Tiger Proxy. You may clear/manipulate this list if you know
-   * what you do. It is used by the TGR validation steps. The list is not cleared at the end of /
-   * start of new scenarios!
-   */
-  @Getter
-  private static final Deque<RbelElement> validatableRbelMessages = new ConcurrentLinkedDeque<>();
+  private static RbelElement lastDeletedElement = null;
 
   /**
    * list of messages received from local Tiger Proxy and used to create the RBelLog HTML page and
@@ -70,7 +66,6 @@ public class LocalProxyRbelMessageListener {
         @Override
         public void triggerNewReceivedMessage(RbelElement e) {
           rbelMessages.add(e);
-          validatableRbelMessages.add(e);
           stepRbelMessages.add(e);
         }
       };
@@ -81,5 +76,34 @@ public class LocalProxyRbelMessageListener {
 
   public static List<RbelElement> getMessages() {
     return Collections.unmodifiableList(rbelMessages);
+  }
+
+  /** clears the validatable messages list* */
+  public static void clearValidatableRbelMessages() {
+    // we dont actually delete anything, we just remember the last element
+    // when this method is called.
+    var messageHistory = getMessageHistoryFromTigerProxy();
+    if (messageHistory.isEmpty()) {
+      lastDeletedElement = null;
+    } else {
+      lastDeletedElement = messageHistory.getLast();
+    }
+  }
+
+  /**
+   * List of messages received via local Tiger Proxy. It is used by the TGR validation steps. The
+   * list is not cleared at the end of / start of new scenarios!
+   */
+  public static Deque<RbelElement> getValidatableRbelMessages() {
+    // we make a new unmodifiable list that is read directly from the tiger proxy messageHistory
+    // but without the elements that should habe been deleted by the clearValidatableRbelMessages()
+    // call.
+    return getMessageHistoryFromTigerProxy().stream()
+        .dropWhile(e -> lastDeletedElement != null && e != lastDeletedElement)
+        .collect(Collectors.toCollection(ArrayDeque::new));
+  }
+
+  private static Deque<RbelElement> getMessageHistoryFromTigerProxy() {
+    return TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail().getRbelMessages();
   }
 }

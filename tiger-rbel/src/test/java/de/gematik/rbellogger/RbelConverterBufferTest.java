@@ -24,7 +24,9 @@ import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import java.io.IOException;
 import java.time.ZonedDateTime;
+import java.util.LinkedList;
 import java.util.Optional;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 
 class RbelConverterBufferTest {
@@ -48,24 +50,27 @@ class RbelConverterBufferTest {
   }
 
   @Test
-  void fullBuffer_shouldNotExceedBufferSize() throws IOException {
-    final String curlMessage =
-        readCurlFromFileWithCorrectedLineBreaks(
-            "src/test/resources/sampleMessages/jsonMessage.curl");
-
+  void triggerBufferOverflow_shouldRemoveOldestMessages() {
+    final String curlMessage = RandomStringUtils.randomAlphanumeric(5000);
     final RbelLogger rbelLogger =
         RbelLogger.build(
             RbelConfiguration.builder().manageBuffer(true).rbelBufferSizeInMb(1).build());
     RbelConverter rbelConverter = rbelLogger.getRbelConverter();
-    int i = 0;
-    while (i < 1000) {
-      rbelConverter.parseMessage(
-          curlMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
-      i++;
+
+    var allParsedMessages = new LinkedList<RbelElement>();
+    final int maxBufferSizeInBytes = 1024 * 1024;
+    for (int i = 0; i < maxBufferSizeInBytes / curlMessage.getBytes().length + 1; i++) {
+      allParsedMessages.add(rbelConverter.parseMessage(
+        curlMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now())));
     }
 
-    assertThat(1024 * 1024)
-        .isGreaterThan(
-            (int) rbelLogger.getMessageHistory().stream().mapToLong(RbelElement::getSize).sum());
+    var rbelLoggerHistory = rbelLogger.getMessageHistory();
+    final int sizeOfMessagesInRbelLogger =
+        (int) rbelLoggerHistory.stream().mapToLong(RbelElement::getSize).sum();
+    assertThat(maxBufferSizeInBytes).isGreaterThan(sizeOfMessagesInRbelLogger);
+    assertThat(allParsedMessages.size()).isGreaterThan(rbelLoggerHistory.size());
+    assertThat(rbelLoggerHistory)
+      .containsExactlyElementsOf(
+            allParsedMessages.subList(allParsedMessages.size() - rbelLoggerHistory.size(), allParsedMessages.size()));
   }
 }

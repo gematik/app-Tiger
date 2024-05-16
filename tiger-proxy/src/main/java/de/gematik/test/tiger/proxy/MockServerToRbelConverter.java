@@ -18,6 +18,7 @@ package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelElementConvertionPair;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
@@ -49,6 +50,7 @@ public class MockServerToRbelConverter {
       HttpResponse response,
       String senderUrl,
       String receiverUrl,
+      CompletableFuture<RbelElement> pairedParsedRequest,
       Optional<ZonedDateTime> timestamp) {
     if (log.isTraceEnabled()) {
       log.trace(
@@ -60,7 +62,7 @@ public class MockServerToRbelConverter {
 
     return rbelConverter
         .parseMessageAsync(
-            responseToRbelMessage(response),
+            new RbelElementConvertionPair(responseToRbelMessage(response), pairedParsedRequest),
             convertUri(senderUrl),
             RbelHostname.fromString(receiverUrl).orElse(null),
             timestamp)
@@ -97,7 +99,7 @@ public class MockServerToRbelConverter {
 
     return rbelConverter
         .parseMessageAsync(
-            requestToRbelMessage(request),
+            new RbelElementConvertionPair(requestToRbelMessage(request)),
             RbelHostname.fromString(request.getRemoteAddress()).orElse(null),
             convertUri(protocolAndHost),
             timestamp)
@@ -146,7 +148,7 @@ public class MockServerToRbelConverter {
 
   private byte[] requestToRawMessage(HttpRequest request) {
     byte[] httpRequestHeader =
-        (request.getMethod().toString()
+        (request.getMethod()
                 + " "
                 + getRequestUrl(request)
                 + " HTTP/1.1\r\n"

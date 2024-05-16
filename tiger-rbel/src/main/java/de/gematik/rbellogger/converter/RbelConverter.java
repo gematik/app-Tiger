@@ -17,6 +17,7 @@
 package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelElementConvertionPair;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.*;
@@ -136,16 +137,6 @@ public class RbelConverter {
     return convertedInput;
   }
 
-  private Optional<RbelElement> findLastRequest() {
-    for (var iterator = messageHistory.descendingIterator(); iterator.hasNext(); ) {
-      var element = iterator.next();
-      if (element.hasFacet(RbelHttpRequestFacet.class)) {
-        return Optional.of(element);
-      }
-    }
-    return Optional.empty();
-  }
-
   public void registerListener(final RbelConverterPlugin listener) {
     postConversionListeners.add(listener);
   }
@@ -166,16 +157,17 @@ public class RbelConverter {
       RbelHostname receiver,
       Optional<ZonedDateTime> transmissionTime) {
     final RbelElement messageElement = RbelElement.builder().rawContent(content).build();
-    return parseMessage(messageElement, sender, receiver, transmissionTime);
+    return parseMessage(
+        new RbelElementConvertionPair(messageElement), sender, receiver, transmissionTime);
   }
 
   public RbelElement parseMessage(
-      @NonNull final RbelElement messageElement,
+      @NonNull final RbelElementConvertionPair messagePair,
       final RbelHostname sender,
       final RbelHostname receiver,
       final Optional<ZonedDateTime> transmissionTime) {
     try {
-      return parseMessageAsync(messageElement, sender, receiver, transmissionTime).get();
+      return parseMessageAsync(messagePair, sender, receiver, transmissionTime).get();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new RbelConversionException(e);
@@ -185,11 +177,13 @@ public class RbelConverter {
   }
 
   public CompletableFuture<RbelElement> parseMessageAsync(
-      @NonNull final RbelElement messageElement,
+      @NonNull final RbelElementConvertionPair messagePair,
       final RbelHostname sender,
       final RbelHostname receiver,
       final Optional<ZonedDateTime> transmissionTime) {
+    var messageElement = messagePair.getMessage();
     addMessageToHistory(messageElement);
+
     messageElement.addFacet(
         RbelTcpIpMessageFacet.builder()
             .receiver(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, receiver))
@@ -202,7 +196,7 @@ public class RbelConverter {
         () -> {
           try {
             convertElement(messageElement);
-            doMessagePostConversion(messageElement, transmissionTime);
+            doMessagePostConversion(messagePair, transmissionTime);
             return messageElement;
           } finally {
             messageElement.removeFacetsOfType(RbelParsingNotCompleteFacet.class);
@@ -211,33 +205,26 @@ public class RbelConverter {
   }
 
   public RbelElement doMessagePostConversion(
-      @NonNull final RbelElement rbelElement, Optional<ZonedDateTime> transmissionTime) {
-    if (rbelElement
+      @NonNull final RbelElementConvertionPair messagePair,
+      Optional<ZonedDateTime> transmissionTime) {
+    var message = messagePair.getMessage();
+    transmissionTime.ifPresent(
+        tt -> message.addFacet(RbelMessageTimingFacet.builder().transmissionTime(tt).build()));
+
+    if (message
         .getFacet(RbelHttpResponseFacet.class)
         .map(resp -> resp.getRequest() == null)
         .orElse(false)) {
-      final Optional<RbelElement> request = findLastRequest();
-      rbelElement.addOrReplaceFacet(
-          rbelElement
-              .getFacet(RbelHttpResponseFacet.class)
-              .map(RbelHttpResponseFacet::toBuilder)
-              .orElse(RbelHttpResponseFacet.builder())
-              .request(request.orElse(null))
-              .build());
-      request
-          .flatMap(req -> req.getFacet(RbelHttpRequestFacet.class))
-          .ifPresent(
-              reqFacet ->
-                  request
-                      .get()
-                      .addOrReplaceFacet(reqFacet.toBuilder().response(rbelElement).build()));
+      RbelHttpResponseFacet.updateRequestOfResponseFacet(
+          message, messagePair.getPairedRequest().map(CompletableFuture::join).orElse(null));
+      messagePair
+          .getPairedRequest()
+          .map(CompletableFuture::join)
+          .ifPresent(req -> RbelHttpRequestFacet.updateResponseOfRequestFacet(req, message));
     }
 
-    transmissionTime.ifPresent(
-        tt -> rbelElement.addFacet(RbelMessageTimingFacet.builder().transmissionTime(tt).build()));
-
-    rbelElement.triggerPostConversionListener(this);
-    return rbelElement;
+    message.triggerPostConversionListener(this);
+    return message;
   }
 
   private void addMessageToHistory(RbelElement rbelElement) {
@@ -276,11 +263,10 @@ public class RbelConverter {
           }
           while (exceedingLimit > 0 && !messageHistory.isEmpty()) {
             log.trace("Exceeded buffer size, dropping oldest message in history");
-            final RbelElement messageToDrop = messageHistory.getFirst();
+            final RbelElement messageToDrop = messageHistory.removeFirst();
             exceedingLimit -= messageToDrop.getSize();
             currentBufferSize -= messageToDrop.getSize();
             knownMessageUuids.remove(messageToDrop.getUuid());
-            messageHistory.removeLast();
           }
         }
       }
@@ -313,6 +299,10 @@ public class RbelConverter {
           .takeWhile(msg -> !msg.hasFacet(RbelParsingNotCompleteFacet.class))
           .toList();
     }
+  }
+
+  public Optional<RbelElement> findMessageByUuid(String uuid) {
+    return getMessageHistoryAsync().stream().filter(msg -> msg.getUuid().equals(uuid)).findAny();
   }
 
   /**
@@ -364,6 +354,10 @@ public class RbelConverter {
       }
     }
     waitForGivenMessagesToBeParsed(unfinishedMessages);
+  }
+
+  public void waitForAllCurrentMessagesToBeParsed() {
+    waitForGivenMessagesToBeParsed(new ArrayList<>(messageHistory));
   }
 
   private void waitForGivenMessagesToBeParsed(List<RbelElement> unfinishedMessages) {

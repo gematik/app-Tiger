@@ -80,10 +80,10 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
         .filter(key -> key.getKey() instanceof SecretKeySpec)
         .filter(key -> key.getKey().getAlgorithm().equals("AES"))
         .filter(key -> key.getKeyName().startsWith(VAU_3_PAYLOAD_KEYS))
-        .forEach(key -> decryptEpa3Vau(element, key.getKey(), context));
+        .anyMatch(key -> decryptEpa3VauSuccessfull(element, key.getKey(), context)); //NOSONAR
   }
 
-  private void decryptEpa3Vau(RbelElement element, Key key, RbelConverter context) {
+  private boolean decryptEpa3VauSuccessfull(RbelElement element, Key key, RbelConverter context) {
     try {
       final byte[] rawContent = element.getRawContent();
       byte[] header = ArrayUtils.subarray(rawContent, 0, 43);
@@ -112,8 +112,10 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
                       new RbelElement(Arrays.copyOfRange(header, 11, 43), headerElement))));
       final RbelElement cleartextElement = context.convertElement(cleartext, element);
       element.addFacet(new RbelVau3EncryptionFacet(cleartextElement, headerElement));
+      return true;
     } catch (Exception e) {
       log.trace("Failed to parse VAU EPA3: ", e);
+      return false;
     }
   }
 
@@ -237,7 +239,8 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
     if (contentNode.isEmpty()) {
       return false;
     }
-    final Optional<byte[]> decrypt = CryptoUtils.decrypt(contentNode.get().getRawContent(), aesKey, 12, 16);
+    final Optional<byte[]> decrypt =
+        CryptoUtils.decrypt(contentNode.get().getRawContent(), aesKey, 12, 16);
     if (decrypt.isEmpty()) {
       return false;
     }

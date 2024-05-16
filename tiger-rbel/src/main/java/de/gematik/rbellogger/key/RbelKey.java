@@ -21,12 +21,13 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Optional;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.apache.commons.codec.digest.DigestUtils;
 
 @Data
-@AllArgsConstructor
+@EqualsAndHashCode(of = "hash")
 public class RbelKey {
 
   public static final int PRECEDENCE_X5C_HEADER_VALUE = 100;
@@ -35,6 +36,7 @@ public class RbelKey {
 
   private final Key key;
   private final String keyName;
+  private final byte[] hash;
 
   /**
    * The importance of this particular key. Higher value means it will be considered before
@@ -49,6 +51,7 @@ public class RbelKey {
     this.key = key;
     this.keyName = keyName;
     this.precedence = precedence;
+    this.hash = DigestUtils.sha256(key.getEncoded());
     this.matchingPublicKey = Optional.ofNullable(matchingPublicKey);
   }
 
@@ -56,7 +59,16 @@ public class RbelKey {
     this.key = key;
     this.keyName = keyName;
     this.precedence = precedence;
+    this.hash = DigestUtils.sha256(key.getEncoded());
     this.matchingPublicKey = Optional.empty();
+  }
+
+  public RbelKey(Key key, String keyName, int precedence, Optional<RbelKey> matchingPublicKey) {
+    this.key = key;
+    this.keyName = keyName;
+    this.precedence = precedence;
+    this.hash = DigestUtils.sha256(key.getEncoded());
+    this.matchingPublicKey = matchingPublicKey;
   }
 
   public Optional<KeyPair> retrieveCorrespondingKeyPair() {

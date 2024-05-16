@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.core.ConditionTimeoutException;
 
@@ -33,7 +34,7 @@ public class RbelMessageProvider implements IRbelMessageListener {
 
   private final List<RbelElement> messages = new ArrayList<>();
 
-  private long timeoutms = 5000;
+  @Setter private long timeoutms = 5000;
 
   private boolean wait = false;
 
@@ -71,9 +72,5 @@ public class RbelMessageProvider implements IRbelMessageListener {
   public void clearMessageQueue() {
     messages.clear();
     wait = false;
-  }
-
-  public void setTimeoutms(long timeout) {
-    timeoutms = timeout;
   }
 }

@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.proxy.client;
 
-import static de.gematik.test.tiger.proxy.AbstractTigerProxy.PAIRED_MESSAGE_UUID;
+import static de.gematik.rbellogger.file.RbelFileWriter.PAIRED_MESSAGE_UUID;
 
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;

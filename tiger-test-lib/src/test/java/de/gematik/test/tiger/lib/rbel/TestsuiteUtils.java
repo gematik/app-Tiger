@@ -27,11 +27,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Deque;
 import org.apache.commons.io.FileUtils;
 
 public class TestsuiteUtils {
 
-  public static void addSomeMessagesToTigerTestHooks() {
+  public static void addSomeMessagesToTigerTestHooks(Deque<RbelElement> validatableMessagesMock) {
     final RbelLogger logger =
         RbelLogger.build(
             RbelConfiguration.builder()
@@ -41,20 +42,21 @@ public class TestsuiteUtils {
                         .build())
                 .build());
     logger.getRbelCapturer().initialize();
-    LocalProxyRbelMessageListener.getValidatableRbelMessages().addAll(logger.getMessageHistory());
+    validatableMessagesMock.addAll(logger.getMessageHistory());
   }
 
-  public static void addTwoRequestsToTigerTestHooks() {
+  /* we add requests to the given validatableMessagesMock. The calling code must ensure that
+  this validatableMessagesMock is returned by the TigerProxy.getRbelMessages() method.
+   */
+  public static void addTwoRequestsToTigerTestHooks(Deque<RbelElement> validatableMessagesMock) {
     TigerGlobalConfiguration.putValue("tiger.rbel.request.timeout", 1);
-    LocalProxyRbelMessageListener.getValidatableRbelMessages().clear();
+    LocalProxyRbelMessageListener.clearValidatableRbelMessages();
     RbelElement request = buildRequestFromCurlFile("getRequestLocalhost.curl");
-    LocalProxyRbelMessageListener.getValidatableRbelMessages().add(request);
-    LocalProxyRbelMessageListener.getValidatableRbelMessages()
-        .add(buildResponseFromCurlFile("htmlMessage.curl", request));
+    validatableMessagesMock.add(request);
+    validatableMessagesMock.add(buildResponseFromCurlFile("htmlMessage.curl", request));
     request = buildRequestFromCurlFile("getRequestEitzenAt.curl");
-    LocalProxyRbelMessageListener.getValidatableRbelMessages().add(request);
-    LocalProxyRbelMessageListener.getValidatableRbelMessages()
-        .add(buildResponseFromCurlFile("htmlMessageEitzenAt.curl", request));
+    validatableMessagesMock.add(request);
+    validatableMessagesMock.add(buildResponseFromCurlFile("htmlMessageEitzenAt.curl", request));
   }
 
   public static RbelElement buildRequestFromCurlFile(String curlFileName) {

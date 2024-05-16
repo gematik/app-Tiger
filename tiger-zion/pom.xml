@@ -25,7 +25,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.0.3</version>
+        <version>3.0.4</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -138,7 +138,7 @@
         <dependency>
             <groupId>de.gematik.idp</groupId>
             <artifactId>idp-client</artifactId>
-            <version>27.0.1</version>
+            <version>27.0.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -223,7 +223,7 @@
                 <!-- create repackaged jar with docker classifier to be executed in docker container -->
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>3.2.4</version>
+                <version>3.2.5</version>
                 <executions>
                     <execution>
                         <goals>

@@ -23,6 +23,8 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
+import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
@@ -64,6 +66,8 @@ class RbelJexlExecutorTest {
                 null,
                 null,
                 Optional.of(ZonedDateTime.now()));
+    RbelHttpResponseFacet.updateRequestOfResponseFacet(response, request);
+    RbelHttpRequestFacet.updateResponseOfRequestFacet(request, response);
   }
 
   @Test

@@ -49,6 +49,7 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
+import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -68,6 +69,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 class RbelMessageValidatorTest {
 
   private TigerProxy tigerProxy;
+  private static final Deque<RbelElement> validatableMessagesMock = new ArrayDeque<>();
 
   @BeforeEach
   public void clearConfig() {
@@ -76,16 +78,14 @@ class RbelMessageValidatorTest {
     final TigerTestEnvMgr testEnvMock = mock(TigerTestEnvMgr.class);
     tigerProxy = mock(TigerProxy.class);
     when(testEnvMock.getLocalTigerProxyOptional()).thenReturn(Optional.of(tigerProxy));
+    when(testEnvMock.getLocalTigerProxyOrFail()).thenReturn(tigerProxy);
+    when(tigerProxy.getRbelMessages()).thenReturn(validatableMessagesMock);
     ReflectionTestUtils.setField(TigerDirector.class, "tigerTestEnvMgr", testEnvMock);
   }
 
   @AfterEach
   public void cleanUp() {
-    Deque<RbelElement> validatableRbelMessages =
-        (Deque<RbelElement>)
-            ReflectionTestUtils.getField(
-                LocalProxyRbelMessageListener.class, "validatableRbelMessages");
-    validatableRbelMessages.clear();
+    LocalProxyRbelMessageListener.clearValidatableRbelMessages();
     ReflectionTestUtils.setField(TigerDirector.class, "initialized", false);
     ReflectionTestUtils.setField(TigerDirector.class, "tigerTestEnvMgr", null);
   }
@@ -332,7 +332,7 @@ class RbelMessageValidatorTest {
 
   @Test
   void testFilterRequests_OK() {
-    addTwoRequestsToTigerTestHooks();
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = RbelMessageValidator.instance;
     validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").build());
     RbelElement request = validator.currentRequest;
@@ -341,7 +341,7 @@ class RbelMessageValidatorTest {
 
   @Test
   void testFilterRequestsWrongPath_OK() {
-    addTwoRequestsToTigerTestHooks();
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = RbelMessageValidator.instance;
     final RequestParameter requestParameter = RequestParameter.builder().path("/NOWAY.*").build();
     assertThatThrownBy(() -> validator.filterRequestsAndStoreInContext(requestParameter))
@@ -350,7 +350,7 @@ class RbelMessageValidatorTest {
 
   @Test
   void testFilterRequestsNextRequest_OK() {
-    addTwoRequestsToTigerTestHooks();
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = RbelMessageValidator.instance;
     validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").build());
 
@@ -363,7 +363,7 @@ class RbelMessageValidatorTest {
 
   @Test
   void testFindLastRequest_OK() {
-    addTwoRequestsToTigerTestHooks();
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = RbelMessageValidator.instance;
     validator.findLastRequest();
     RbelElement request = validator.currentRequest;
@@ -372,7 +372,7 @@ class RbelMessageValidatorTest {
 
   @Test
   void testFilterRequestsRbelPath_OK() {
-    addTwoRequestsToTigerTestHooks();
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = RbelMessageValidator.instance;
     validator.filterRequestsAndStoreInContext(
         RequestParameter.builder()
@@ -385,7 +385,7 @@ class RbelMessageValidatorTest {
 
   @Test
   void testFilterRequestsRbelPathNotMatching_OK() {
-    addTwoRequestsToTigerTestHooks();
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     var reuqest =
         RequestParameter.builder()
             .path(".*")
@@ -401,7 +401,7 @@ class RbelMessageValidatorTest {
 
   @Test
   void testFilterRequestsRbelPathRegex_OK() {
-    addTwoRequestsToTigerTestHooks();
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = RbelMessageValidator.instance;
     validator.filterRequestsAndStoreInContext(
         RequestParameter.builder()
@@ -414,7 +414,7 @@ class RbelMessageValidatorTest {
 
   @Test
   void testFilterRequestsRbelPathExists_OK() {
-    addTwoRequestsToTigerTestHooks();
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = RbelMessageValidator.instance;
     validator.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").build());
@@ -423,7 +423,7 @@ class RbelMessageValidatorTest {
 
   @Test
   void testFilterRequestsRbelPathExists2_OK() {
-    addTwoRequestsToTigerTestHooks();
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = RbelMessageValidator.instance;
     validator.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(".*").rbelPath("$.header.Eitzen-Specific-header").build());
@@ -432,7 +432,7 @@ class RbelMessageValidatorTest {
 
   @Test
   void testFilterRequestsRbelPathExists_NOK() {
-    addTwoRequestsToTigerTestHooks();
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     var request = RequestParameter.builder().path(".*").rbelPath("$.header.User-AgentXXX").build();
     assertThatThrownBy(
             () -> {
@@ -443,7 +443,7 @@ class RbelMessageValidatorTest {
 
   @Test
   void testFilterRequestsAttachResponseCorrectly_OK() {
-    addTwoRequestsToTigerTestHooks();
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = RbelMessageValidator.instance;
     validator.filterRequestsAndStoreInContext(
         RequestParameter.builder()
@@ -464,7 +464,7 @@ class RbelMessageValidatorTest {
 
   @Test
   void testFindElementInCurrentResponse_OK() {
-    addTwoRequestsToTigerTestHooks();
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = RbelMessageValidator.instance;
     validator.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(".*").rbelPath("$.header.Eitzen-Specific-header").build());
@@ -474,7 +474,7 @@ class RbelMessageValidatorTest {
 
   @Test
   void testFindElementInCurrentResponse_NOK() {
-    addTwoRequestsToTigerTestHooks();
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = RbelMessageValidator.instance;
     validator.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(".*").rbelPath("$.header.Eitzen-Specific-header").build());
@@ -484,7 +484,7 @@ class RbelMessageValidatorTest {
 
   @Test
   void testFindElementInCurrentRequest_OK() {
-    addTwoRequestsToTigerTestHooks();
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = RbelMessageValidator.instance;
     validator.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(".*").rbelPath("$.header.Eitzen-Specific-header").build());
@@ -494,7 +494,7 @@ class RbelMessageValidatorTest {
 
   @Test
   void testFindElementInCurrentRequest_NOK() {
-    addTwoRequestsToTigerTestHooks();
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = RbelMessageValidator.instance;
     validator.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(".*").rbelPath("$.header.Eitzen-Specific-header").build());
@@ -544,7 +544,7 @@ class RbelMessageValidatorTest {
         rbelConverter.parseMessage(
             challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
     validator.currentResponse = convertedMessage;
-    LocalProxyRbelMessageListener.getValidatableRbelMessages().add(convertedMessage);
+    validatableMessagesMock.add(convertedMessage);
 
     // validate
     validator.assertAttributeOfCurrentResponseMatches(
@@ -579,7 +579,7 @@ class RbelMessageValidatorTest {
         rbelConverter.parseMessage(
             challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
     validator.currentRequest = convertedMessage;
-    LocalProxyRbelMessageListener.getValidatableRbelMessages().add(convertedMessage);
+    validatableMessagesMock.add(convertedMessage);
     validator.findElementsInCurrentRequest("$.body.foo");
     validator.assertAttributeOfCurrentRequestMatches("$.body.foo", "bar", true);
     String oracleStr = "{'foo': '${json-unit.ignore}'}";
@@ -605,7 +605,7 @@ class RbelMessageValidatorTest {
         rbelConverter.parseMessage(
             challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
     validator.currentRequest = convertedMessage;
-    LocalProxyRbelMessageListener.getValidatableRbelMessages().add(convertedMessage);
+    validatableMessagesMock.add(convertedMessage);
 
     validator.assertAttributeOfCurrentRequestMatches("$.body.foo", "blala", false);
   }
@@ -620,7 +620,7 @@ class RbelMessageValidatorTest {
         rbelConverter.parseMessage(
             challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
     validator.currentRequest = convertedMessage;
-    LocalProxyRbelMessageListener.getValidatableRbelMessages().add(convertedMessage);
+    validatableMessagesMock.add(convertedMessage);
     assertThatThrownBy(
             () -> validator.assertAttributeOfCurrentRequestMatches("$.body.foo", "blabla", true))
         .isInstanceOf(AssertionError.class);
@@ -707,10 +707,9 @@ class RbelMessageValidatorTest {
     final String keyMessage =
         readCurlFromFileWithCorrectedLineBreaks("idpSigMessage.curl", StandardCharsets.UTF_8);
     final RbelConverter rbelConverter = RbelLogger.build().getRbelConverter();
-    LocalProxyRbelMessageListener.getValidatableRbelMessages()
-        .add(
-            rbelConverter.parseMessage(
-                keyMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now())));
+    validatableMessagesMock.add(
+        rbelConverter.parseMessage(
+            keyMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now())));
 
     // now add signed response as current response
     RbelMessageValidator validator = RbelMessageValidator.instance;
@@ -720,7 +719,7 @@ class RbelMessageValidatorTest {
         rbelConverter.parseMessage(
             challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
     validator.currentResponse = convertedMessage;
-    LocalProxyRbelMessageListener.getValidatableRbelMessages().add(convertedMessage);
+    validatableMessagesMock.add(convertedMessage);
 
     return validator;
   }
@@ -732,10 +731,6 @@ class RbelMessageValidatorTest {
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
                 .addCapturer(RbelFileReaderCapturer.builder().rbelFile(rbelFile).build()));
     rbelLogger.getRbelCapturer().initialize();
-    Deque<RbelElement> validatableRbelMessages =
-        (Deque<RbelElement>)
-            ReflectionTestUtils.getField(
-                LocalProxyRbelMessageListener.class, "validatableRbelMessages");
-    validatableRbelMessages.addAll(rbelLogger.getMessageHistory());
+    validatableMessagesMock.addAll(rbelLogger.getMessageHistory());
   }
 }

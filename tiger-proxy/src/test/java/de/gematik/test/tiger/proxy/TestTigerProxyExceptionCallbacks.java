@@ -53,17 +53,12 @@ class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
             .build());
-    ReflectionTestUtils.setField(
-        tigerProxy,
-        "mockServerToRbelConverter",
-        new ExceptionThrowingMockRbelConverter(tigerProxy.getRbelLogger().getRbelConverter()));
-    AtomicReference<Throwable> caughtExceptionReference = new AtomicReference<>();
-    tigerProxy.addNewExceptionConsumer(caughtExceptionReference::set);
+    var caughtExceptionReference = setExceptionThrowingMockRbelConverter(tigerProxy);
 
     proxyRest.get("http://backend/foobar").asString();
     await().until(() -> caughtExceptionReference.get() != null);
 
-    assertThat(caughtExceptionReference.get().getMessage()).isEqualTo("foobar");
+    assertThat(caughtExceptionReference.get().getMessage()).contains("foobar");
   }
 
   @Test
@@ -77,19 +72,14 @@ class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
             .build());
-    ReflectionTestUtils.setField(
-        tigerProxy,
-        "mockServerToRbelConverter",
-        new ExceptionThrowingMockRbelConverter(tigerProxy.getRbelLogger().getRbelConverter()));
-    AtomicReference<Throwable> caughtExceptionReference = new AtomicReference<>();
-    tigerProxy.addNewExceptionConsumer(caughtExceptionReference::set);
+    var caughtExceptionReference = setExceptionThrowingMockRbelConverter(tigerProxy);
 
     Unirest.spawnInstance()
         .get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
         .asString();
     await().until(() -> caughtExceptionReference.get() != null);
 
-    assertThat(caughtExceptionReference.get().getMessage()).isEqualTo("foobar");
+    assertThat(caughtExceptionReference.get().getMessage()).contains("foobar");
   }
 
   @Test
@@ -103,17 +93,12 @@ class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
             .build());
-    ReflectionTestUtils.setField(
-        tigerProxy,
-        "mockServerToRbelConverter",
-        new ExceptionThrowingMockRbelConverter(tigerProxy.getRbelLogger().getRbelConverter()));
-    AtomicReference<Throwable> caughtExceptionReference = new AtomicReference<>();
-    tigerProxy.addNewExceptionConsumer(caughtExceptionReference::set);
+    var caughtExceptionReference = setExceptionThrowingMockRbelConverter(tigerProxy);
 
     proxyRest.get("http://backend/foobar").asString();
     await().until(() -> caughtExceptionReference.get() != null);
 
-    assertThat(caughtExceptionReference.get().getMessage()).isEqualTo("foobar");
+    assertThat(caughtExceptionReference.get().getMessage()).contains("foobar");
   }
 
   @Test
@@ -127,19 +112,14 @@ class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
             .build());
-    ReflectionTestUtils.setField(
-        tigerProxy,
-        "mockServerToRbelConverter",
-        new ExceptionThrowingMockRbelConverter(tigerProxy.getRbelLogger().getRbelConverter()));
-    AtomicReference<Throwable> caughtExceptionReference = new AtomicReference<>();
-    tigerProxy.addNewExceptionConsumer(caughtExceptionReference::set);
 
+    var caughtExceptionReference = setExceptionThrowingMockRbelConverter(tigerProxy);
     Unirest.spawnInstance()
         .get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
         .asString();
     await().until(() -> caughtExceptionReference.get() != null);
 
-    assertThat(caughtExceptionReference.get().getMessage()).isEqualTo("foobar");
+    assertThat(caughtExceptionReference.get().getMessage()).contains("foobar");
   }
 
   public static class ExceptionThrowingMockRbelConverter extends MockServerToRbelConverter {
@@ -153,8 +133,20 @@ class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
         HttpResponse response,
         String senderUrl,
         String clientAddress,
+        CompletableFuture<RbelElement> pairedParsedRequest,
         Optional<ZonedDateTime> timestamp) {
       throw new RuntimeException("foobar");
     }
+  }
+
+  private AtomicReference<Throwable> setExceptionThrowingMockRbelConverter(TigerProxy tigerProxy) {
+    ReflectionTestUtils.setField(
+        tigerProxy,
+        "mockServerToRbelConverter",
+        new ExceptionThrowingMockRbelConverter(tigerProxy.getRbelLogger().getRbelConverter()));
+    AtomicReference<Throwable> caughtExceptionReference = new AtomicReference<>();
+
+    tigerProxy.addNewExceptionConsumer(caughtExceptionReference::set);
+    return caughtExceptionReference;
   }
 }

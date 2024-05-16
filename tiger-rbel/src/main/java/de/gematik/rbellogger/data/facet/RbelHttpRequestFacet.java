@@ -50,4 +50,14 @@ public class RbelHttpRequestFacet implements RbelFacet {
   public boolean shouldExpectReplyMessage() {
     return true;
   }
+
+  public static void updateResponseOfRequestFacet(RbelElement request, RbelElement response) {
+    request.addOrReplaceFacet(
+        request
+            .getFacet(RbelHttpRequestFacet.class)
+            .map(RbelHttpRequestFacet::toBuilder)
+            .orElse(RbelHttpRequestFacet.builder())
+            .response(response)
+            .build());
+  }
 }

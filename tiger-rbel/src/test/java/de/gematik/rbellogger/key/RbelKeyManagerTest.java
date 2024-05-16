@@ -26,34 +26,36 @@ import de.gematik.rbellogger.converter.RbelConverter;
 import java.io.IOException;
 import java.security.Key;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class RbelKeyManagerTest {
 
   private final RbelKeyManager keyManager = new RbelKeyManager();
-  private final Key mock = mock(Key.class);
 
-  @BeforeEach
-  public void initEach() {
-    doReturn(new byte[] {}).when(mock).getEncoded();
+  private Key mockKey() {
+    final byte[] bytes = new byte[32];
+    ThreadLocalRandom.current().nextBytes(bytes);
+    var mock = mock(Key.class);
+    doReturn(bytes).when(mock).getEncoded();
+    return mock;
   }
 
   @Test
   void shouldFindPrivateKeyIfPresent() {
-    RbelKey publicKey = RbelKey.builder().keyName("publicKey").key(mock).build();
+    RbelKey publicKey = RbelKey.builder().keyName("publicKey").key(mockKey()).build();
     keyManager.addKey(publicKey);
     RbelKey falsePrivateKey =
         RbelKey.builder()
-            .matchingPublicKey(RbelKey.builder().keyName("other publicKey").key(mock).build())
+            .matchingPublicKey(RbelKey.builder().keyName("other publicKey").key(mockKey()).build())
             .keyName("falsePrivateKey")
-            .key(mock)
+            .key(mockKey())
             .build();
     keyManager.addKey(falsePrivateKey);
 
     RbelKey privateKey =
-        RbelKey.builder().matchingPublicKey(publicKey).keyName("privateKey").key(mock).build();
+        RbelKey.builder().matchingPublicKey(publicKey).keyName("privateKey").key(mockKey()).build();
     keyManager.addKey(privateKey);
 
     assertThat(keyManager.findCorrespondingPrivateKey(publicKey.getKeyName()))
@@ -65,7 +67,7 @@ class RbelKeyManagerTest {
   void shouldThrowExceptionWhenPrivateKeyNotPresent() {
     keyManager.getAllKeys().collect(Collectors.toList()).clear();
 
-    RbelKey publicKey = RbelKey.builder().keyName("publicKey").key(mock).build();
+    RbelKey publicKey = RbelKey.builder().keyName("publicKey").key(mockKey()).build();
     keyManager.addKey(publicKey);
 
     assertThat(keyManager.findCorrespondingPrivateKey(publicKey.getKeyName())).isEmpty();

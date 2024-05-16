@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelElementConvertionPair;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
@@ -30,6 +31,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.time.ZonedDateTime;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
@@ -95,46 +97,26 @@ class RbelConverterTest {
     var rbelLogger = RbelLogger.build();
     rbelLogger
         .getRbelConverter()
-        .parseMessage(pair1A, null, null, Optional.of(ZonedDateTime.now()));
+        .parseMessage(
+            new RbelElementConvertionPair(pair1A), null, null, Optional.of(ZonedDateTime.now()));
     rbelLogger
         .getRbelConverter()
-        .parseMessage(pair2A, null, null, Optional.of(ZonedDateTime.now()));
+        .parseMessage(
+            new RbelElementConvertionPair(pair1A, CompletableFuture.completedFuture(pair1B)),
+            null,
+            null,
+            Optional.of(ZonedDateTime.now()));
     rbelLogger
         .getRbelConverter()
-        .parseMessage(pair2A, null, null, Optional.of(ZonedDateTime.now()));
+        .parseMessage(
+            new RbelElementConvertionPair(pair2A), null, null, Optional.of(ZonedDateTime.now()));
     rbelLogger
         .getRbelConverter()
-        .parseMessage(pair1B, null, null, Optional.of(ZonedDateTime.now()));
-
-    assertThat(pair1B.getFacetOrFail(RbelHttpResponseFacet.class).getRequest()).isEqualTo(pair1A);
-    assertThat(pair2B.getFacetOrFail(RbelHttpResponseFacet.class).getRequest()).isEqualTo(pair2A);
-  }
-
-  @Test
-  void implicitPairingOfConsecutivePairs() {
-    RbelElement pair1A = new RbelElement("foo".getBytes(), null);
-    RbelElement pair1B = new RbelElement("foo".getBytes(), null);
-    RbelElement pair2A = new RbelElement("foo".getBytes(), null);
-    RbelElement pair2B = new RbelElement("foo".getBytes(), null);
-
-    pair1A.addFacet(new RbelHttpRequestFacet(null, null, null));
-    pair2A.addFacet(new RbelHttpRequestFacet(null, null, null));
-    pair1B.addFacet(new RbelHttpResponseFacet(null, null, null));
-    pair2B.addFacet(new RbelHttpResponseFacet(null, null, null));
-
-    var rbelLogger = RbelLogger.build();
-    rbelLogger
-        .getRbelConverter()
-        .parseMessage(pair1A, null, null, Optional.of(ZonedDateTime.now()));
-    rbelLogger
-        .getRbelConverter()
-        .parseMessage(pair1B, null, null, Optional.of(ZonedDateTime.now()));
-    rbelLogger
-        .getRbelConverter()
-        .parseMessage(pair2A, null, null, Optional.of(ZonedDateTime.now()));
-    rbelLogger
-        .getRbelConverter()
-        .parseMessage(pair2B, null, null, Optional.of(ZonedDateTime.now()));
+        .parseMessage(
+            new RbelElementConvertionPair(pair2A, CompletableFuture.completedFuture(pair2B)),
+            null,
+            null,
+            Optional.of(ZonedDateTime.now()));
 
     assertThat(pair1B.getFacetOrFail(RbelHttpResponseFacet.class).getRequest()).isEqualTo(pair1A);
     assertThat(pair2B.getFacetOrFail(RbelHttpResponseFacet.class).getRequest()).isEqualTo(pair2A);

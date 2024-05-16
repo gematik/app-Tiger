@@ -132,11 +132,13 @@ public class TracingPushController {
 
   private void sendPairedMessage(RbelElement response) {
     final RbelElement request =
-        response.getFacet(TracingMessagePairFacet.class)
+        response
+            .getFacet(TracingMessagePairFacet.class)
             .map(TracingMessagePairFacet::getRequest)
             .or(
                 () ->
-                    response.getFacet(RbelHttpResponseFacet.class)
+                    response
+                        .getFacet(RbelHttpResponseFacet.class)
                         .map(RbelHttpResponseFacet::getRequest))
             .orElseThrow(
                 () ->
@@ -145,13 +147,14 @@ public class TracingPushController {
                             + response.getUuid()
                             + "': Unable to find matching request"));
 
-    RbelTcpIpMessageFacet rbelTcpIpMessageFacet = request.getFacetOrFail(RbelTcpIpMessageFacet.class);
+    RbelTcpIpMessageFacet rbelTcpIpMessageFacet =
+        request.getFacetOrFail(RbelTcpIpMessageFacet.class);
     final RbelHostname sender =
-      RbelHostname.fromString(rbelTcpIpMessageFacet.getSender().getRawStringContent())
-        .orElse(null);
+        RbelHostname.fromString(rbelTcpIpMessageFacet.getSender().getRawStringContent())
+            .orElse(null);
     final RbelHostname receiver =
-      RbelHostname.fromString(rbelTcpIpMessageFacet.getReceiver().getRawStringContent())
-        .orElse(null);
+        RbelHostname.fromString(rbelTcpIpMessageFacet.getReceiver().getRawStringContent())
+            .orElse(null);
     log.trace(
         "{}Propagating new request/response pair (IDs: {} and {})",
         tigerProxy.proxyName(),
@@ -165,7 +168,8 @@ public class TracingPushController {
             .responseUuid(response.getUuid())
             .requestUuid(request.getUuid())
             .responseTransmissionTime(
-                response.getFacet(RbelMessageTimingFacet.class)
+                response
+                    .getFacet(RbelMessageTimingFacet.class)
                     .map(RbelMessageTimingFacet::getTransmissionTime)
                     .orElse(null))
             .requestTransmissionTime(

@@ -44,4 +44,14 @@ public class RbelHttpResponseFacet implements RbelFacet {
         .with("responseCode", responseCode)
         .with("reasonPhrase", reasonPhrase);
   }
+
+  public static void updateRequestOfResponseFacet(RbelElement response, RbelElement request) {
+    response.addOrReplaceFacet(
+        response
+            .getFacet(RbelHttpResponseFacet.class)
+            .map(RbelHttpResponseFacet::toBuilder)
+            .orElse(RbelHttpResponseFacet.builder())
+            .request(request)
+            .build());
+  }
 }
