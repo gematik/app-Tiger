@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 3.0.3-SNAPSHOT - 2024-04-30</span>
+<span id="revdate">Version 3.0.4-SNAPSHOT - 2024-05-16</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -678,8 +678,8 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
   --&gt;</span>
 
 <span class="tag">&lt;project</span> <span class="attribute-name">xmlns</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">http://maven.apache.org/POM/4.0.0</span><span class="delimiter">&quot;</span></span>
-    <span class="attribute-name">xmlns:xsi</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">http://www.w3.org/2001/XMLSchema-instance</span><span class="delimiter">&quot;</span></span>
-    <span class="attribute-name">xsi:schemaLocation</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd</span><span class="delimiter">&quot;</span></span><span class="tag">&gt;</span>
+         <span class="attribute-name">xmlns:xsi</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">http://www.w3.org/2001/XMLSchema-instance</span><span class="delimiter">&quot;</span></span>
+         <span class="attribute-name">xsi:schemaLocation</span>=<span class="string"><span class="delimiter">&quot;</span><span class="content">http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd</span><span class="delimiter">&quot;</span></span><span class="tag">&gt;</span>
     <span class="tag">&lt;modelVersion&gt;</span>4.0.0<span class="tag">&lt;/modelVersion&gt;</span>
 
     <span class="tag">&lt;groupId&gt;</span>de.gematik.test.tiger.examples<span class="tag">&lt;/groupId&gt;</span>
@@ -719,7 +719,7 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
         <span class="tag">&lt;dependency&gt;</span>
             <span class="tag">&lt;groupId&gt;</span>io.cucumber<span class="tag">&lt;/groupId&gt;</span>
             <span class="tag">&lt;artifactId&gt;</span>cucumber-junit-platform-engine<span class="tag">&lt;/artifactId&gt;</span>
-            <span class="tag">&lt;version&gt;</span>7.15.0<span class="tag">&lt;/version&gt;</span>
+            <span class="tag">&lt;version&gt;</span>7.17.0<span class="tag">&lt;/version&gt;</span>
             <span class="tag">&lt;scope&gt;</span>test<span class="tag">&lt;/scope&gt;</span>
         <span class="tag">&lt;/dependency&gt;</span>
         <span class="comment">&lt;!-- Optional if you have JUnit5 dependencies
@@ -3995,26 +3995,8 @@ certain value</p>
   Background:
     Given TGR clear recorded messages
 
-  Scenario Outline:  Test &lt;color&gt; with &lt;inhalt&gt;
-    And TGR show &lt;color&gt; text &quot;${my.string}&quot;
-    Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
-      | color  | inhalt |
-      | red    | Dagmar |
-      | blue   | Nils   |
-      | green  | Tim    |
-      | yellow | Sophie |
-
-  Scenario Outline: Test &lt;color&gt; with &lt;text&gt; again
-    Given TGR show &lt;color&gt; banner &quot;&lt;text&gt;&quot;
-    And TGR clear recorded messages
-    Then TGR clear recorded messages
-    Examples:
-    # Test comment
-      | color | text |
-      | green | foo  |
-      | red   | bar  |
-
   Scenario: Simple Get Request
+    Given TGR clear recorded messages
     When TGR send empty GET request to &quot;http://httpbin/&quot;
     Then TGR find last request to path &quot;.*&quot;
     And TGR assert &quot;!{rbel:currentRequestAsString('$.method')}&quot; matches &quot;GET&quot;
@@ -4165,7 +4147,31 @@ certain value</p>
     When TGR reset HttpClient followRedirects configuration
     And TGR send empty GET request to &quot;http://httpbin/redirect-to?url=!{urlEncoded('http://httpbin/status/200')}&quot;
     Then TGR find the last request
-    Then TGR current response with attribute &quot;$.responseCode&quot; matches &quot;200&quot;</code></pre>
+    Then TGR current response with attribute &quot;$.responseCode&quot; matches &quot;200&quot;
+
+  Scenario: Test check filter POST request
+    Given TGR send POST request to &quot;http://httpbin/post&quot; with body &quot;{'foobar': '4'}&quot;
+    And TGR send empty GET request to &quot;http://httpbin/anything?foobar=22&quot;
+    And TGR filter requests based on method &quot;POST&quot;
+    Then TGR find last request to path &quot;.*&quot;
+    Then TGR current response with attribute &quot;$.body.data.foobar&quot; matches &quot;4&quot;
+
+  Scenario: Test check filter GET request
+    Given TGR send empty GET request to &quot;http://httpbin/anything?foobar=22&quot;
+    And TGR send POST request to &quot;http://httpbin/post&quot; with body &quot;{'foobar': '4'}&quot;
+    And TGR filter requests based on method &quot;GET&quot;
+    Then TGR find last request to path &quot;.*&quot;
+    Then TGR current response with attribute &quot;$.body.args.foobar&quot; matches &quot;22&quot;
+
+  Scenario: Test check filter method reset
+    Given TGR reset request method filter
+    # check resetting it works even if done twice
+    And TGR reset request method filter
+    And TGR send empty GET request to &quot;http://httpbin/anything?foobar=22&quot;
+    And TGR send POST request to &quot;http://httpbin/post&quot; with body &quot;{'foobar': '4'}&quot;
+    Given TGR reset request method filter
+    Then TGR find last request to path &quot;.*&quot;
+    Then TGR current response with attribute &quot;$.body.data.foobar&quot; matches &quot;4&quot;</code></pre>
 </div>
 </div>
 <div class="sect3">
@@ -7297,7 +7303,7 @@ This is an internal gematik extension and can be found on GitLab <a href="https:
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-04-30 13:05:07 UTC
+Last updated 2024-05-16 11:11:45 UTC
 </div>
 </div>
 </body>
