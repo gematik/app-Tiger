@@ -319,7 +319,6 @@ public class HttpResponse extends Action<HttpResponse>
     return Type.RESPONSE;
   }
 
-
   @SuppressWarnings("MethodDoesntCallSuperMethod")
   public HttpResponse clone() {
     return response()

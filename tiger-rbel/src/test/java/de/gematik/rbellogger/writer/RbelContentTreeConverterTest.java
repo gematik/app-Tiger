@@ -450,12 +450,7 @@ class RbelContentTreeConverterTest {
   }
 
   @ParameterizedTest
-  @ValueSource(
-      strings = {
-        "{\"hello\": []}",
-        "[1,2,3]",
-        "['1','2','3']"
-      })
+  @ValueSource(strings = {"{\"hello\": []}", "[1,2,3]", "['1','2','3']"})
   void testSerializationOfJson(String value) {
     RbelElement convertedRbelElement = rbelConverter.convertElement(value, null);
 

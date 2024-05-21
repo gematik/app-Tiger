@@ -32,7 +32,7 @@ public class RbelNestedFacet implements RbelFacet {
   }
 
   @Override
-  public RbelMultiMap getChildElements() {
+  public RbelMultiMap<RbelElement> getChildElements() {
     return new RbelMultiMap<RbelElement>().with(nestedElementName, nestedElement);
   }
 }

@@ -10,6 +10,7 @@ import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.t2;
 import static j2html.TagCreator.div;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
@@ -84,5 +85,10 @@ public class RbelVau3EncryptionFacet extends RbelNestedFacet {
   public RbelVau3EncryptionFacet(RbelElement nestedElement, RbelElement header) {
     super(nestedElement, "decrypted");
     this.header = header;
+  }
+
+  @Override
+  public RbelMultiMap<RbelElement> getChildElements() {
+    return super.getChildElements().with("header", header);
   }
 }

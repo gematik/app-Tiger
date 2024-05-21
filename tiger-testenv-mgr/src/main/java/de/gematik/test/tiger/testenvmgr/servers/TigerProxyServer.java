@@ -136,12 +136,8 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
                         .getPort()
                     + "/webui")
             .build());
-    addServerNameForPort(
-      tigerProxyConfiguration.getProxyPort(),
-      this.getServerId());
-    addServerNameForPort(
-      tigerProxyConfiguration.getAdminPort(),
-      this.getServerId());
+    addServerNameForPort(tigerProxyConfiguration.getProxyPort(), this.getServerId());
+    addServerNameForPort(tigerProxyConfiguration.getAdminPort(), this.getServerId());
   }
 
   @Override

@@ -95,8 +95,7 @@ public class NettySslContextFactory {
       var clientSslContext =
           buildClientSslContext(
               configuration.sslClientContextBuilderCustomizer().apply(sslContextBuilder));
-      clientSslContexts.put("enableHttp2=" + enableHttp2,
-          clientSslContext);
+      clientSslContexts.put("enableHttp2=" + enableHttp2, clientSslContext);
       configuration.rebuildTLSContext(false);
       return clientSslContext;
     } catch (Exception e) {

@@ -161,9 +161,7 @@ class TestPathVariables {
                         "doesNotEqualPathVariable",
                         TigerMockResponse.builder()
                             .response(
-                                TigerMockResponseDescription.builder()
-                                    .statusCode("404")
-                                    .build())
+                                TigerMockResponseDescription.builder().statusCode("404").build())
                             .importance(0)
                             .build()))
                 .build()));

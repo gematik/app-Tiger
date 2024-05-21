@@ -57,8 +57,8 @@ public class MessageMetaDataDto {
             .bundledServerNameSender(
                 el.getFacet(RbelTcpIpMessageFacet.class)
                     .map(RbelTcpIpMessageFacet::getSender)
-                  .flatMap(MessageMetaDataDto::tryToExtractServerName)
-                  .orElse(""))
+                    .flatMap(MessageMetaDataDto::tryToExtractServerName)
+                    .orElse(""))
             .bundledServerNameReceiver(
                 el.getFacet(RbelTcpIpMessageFacet.class)
                     .map(RbelTcpIpMessageFacet::getReceiver)
@@ -105,14 +105,16 @@ public class MessageMetaDataDto {
       return Optional.empty();
     }
     return hostnameFacet
-      .flatMap(RbelHostnameFacet::getBundledServerName)
-      .filter(e -> e.getRawStringContent() != null)
-      .flatMap(e -> Optional.of(e.getRawStringContent()))
-      .or(() -> hostnameFacet
-        .map(RbelHostnameFacet::getDomain)
-        .map(RbelElement::getRawStringContent)
-        .filter(StringUtils::isNotEmpty)
-        .filter(s -> !s.startsWith("localhost") && !s.startsWith("127.0.0.1")));
+        .flatMap(RbelHostnameFacet::getBundledServerName)
+        .filter(e -> e.getRawStringContent() != null)
+        .flatMap(e -> Optional.of(e.getRawStringContent()))
+        .or(
+            () ->
+                hostnameFacet
+                    .map(RbelHostnameFacet::getDomain)
+                    .map(RbelElement::getRawStringContent)
+                    .filter(StringUtils::isNotEmpty)
+                    .filter(s -> !s.startsWith("localhost") && !s.startsWith("127.0.0.1")));
   }
 
   public static long getElementSequenceNumber(RbelElement rbelElement) {

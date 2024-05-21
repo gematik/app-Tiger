@@ -13,8 +13,10 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import lombok.SneakyThrows;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -58,24 +60,40 @@ public class VauEpa3ConverterTest {
         .hasStringContentEqualTo("Hello World");
     assertThat(rbelLogger.getMessageList().get(5))
         .extractChildWithPath("$.body.decrypted")
-        .hasStringContentEqualTo("Right back at ya!");
+        .hasStringContentEqualTo("Right back at ya!")
+        .andTheInitialElement()
+        .extractChildWithPath("$.body.header.reqCtr")
+        .hasValueEqualTo(1)
+        .andTheInitialElement()
+        .extractChildWithPath("$.body.header.version")
+        .hasValueEqualTo((byte) 2)
+        .andTheInitialElement()
+        .extractChildWithPath("$.body.header.req")
+        .hasValueEqualTo((byte) 2)
+        .andTheInitialElement()
+        .extractChildWithPath("$.body.header.reqCtr")
+        .hasValueEqualTo(1)
+        .andTheInitialElement()
+        .extractChildWithPath("$.body.header.keyId")
+        .hasValueEqualTo(
+            new BigInteger(
+                Hex.decode("609634c43539eb416e09f70c596d8a9da475908760e287e260f23b11601741d0")));
   }
 
   @Test
   void nestedPathProblems() throws Exception {
     var logger =
-      RbelLogger.build(
-        new RbelConfiguration()
-          .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-          .setActivateVauEpa3Parsing(true)
-          .addCapturer(
-            RbelFileReaderCapturer.builder()
-              .rbelFile("src/test/resources/nestedPathProblems.tgr")
-              .build()));
+        RbelLogger.build(
+            new RbelConfiguration()
+                .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+                .setActivateVauEpa3Parsing(true)
+                .addCapturer(
+                    RbelFileReaderCapturer.builder()
+                        .rbelFile("src/test/resources/nestedPathProblems.tgr")
+                        .build()));
     try (final var capturer = logger.getRbelCapturer()) {
       capturer.initialize();
     }
-    assertThat(logger.getMessageList().get(9))
-      .extractChildWithPath("$.body.decrypted.path");
+    assertThat(logger.getMessageList().get(9)).extractChildWithPath("$.body.decrypted.path");
   }
 }

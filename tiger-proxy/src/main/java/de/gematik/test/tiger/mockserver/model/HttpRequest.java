@@ -343,7 +343,10 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
         .setClientCertificateChain(
             clientCertificateChain != null && !clientCertificateChain.isEmpty()
                 ? clientCertificateChain.stream()
-                    .map(c -> MockserverX509CertificateWrapper.with((java.security.cert.X509Certificate) c.certificate()))
+                    .map(
+                        c ->
+                            MockserverX509CertificateWrapper.with(
+                                (java.security.cert.X509Certificate) c.certificate()))
                     .toList()
                 : null)
         .setSocketAddress(socketAddress)

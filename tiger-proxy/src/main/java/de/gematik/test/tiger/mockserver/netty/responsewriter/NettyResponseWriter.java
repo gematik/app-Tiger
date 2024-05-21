@@ -65,7 +65,7 @@ public class NettyResponseWriter {
   }
 
   protected HttpResponse addConnectionHeader(
-    final HttpRequest request, final HttpResponse response) {
+      final HttpRequest request, final HttpResponse response) {
     HttpResponse responseWithConnectionHeader = response.clone();
 
     if (Boolean.TRUE.equals(request.getKeepAlive())) {

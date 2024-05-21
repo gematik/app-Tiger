@@ -36,6 +36,20 @@ import org.bouncycastle.pqc.jcajce.provider.kyber.BCKyberPublicKey;
 @Slf4j
 public class RbelVauEpa3Converter implements RbelConverterPlugin {
 
+  // Constants for complete VAU cipher message: (see A_24628 to A_24633 in gemSpec_Krypt V2.30.0)
+  private static final int HEADER_VERSION_INDEX = 0;
+  private static final int HEADER_PU_INDEX = 1;
+  private static final int HEADER_REQ_INDEX = 2;
+  private static final int HEADER_REQ_COUNTER_INDEX = 3;
+  private static final int HEADER_REQ_COUNTER_LENGTH = 8;
+  private static final int HEADER_KEY_ID_INDEX =
+      HEADER_REQ_COUNTER_INDEX + HEADER_REQ_COUNTER_LENGTH;
+  private static final int HEADER_KEY_ID_LENGTH = 32;
+
+  private static final int BODY_INDEX = HEADER_KEY_ID_INDEX + HEADER_KEY_ID_LENGTH;
+  private static final int BODY_IV_LENGTH = 12;
+  private static final int BODY_CT_INDEX = BODY_INDEX + BODY_IV_LENGTH;
+
   private static final String VAU_3_HANDSHAKE_S_K1_C2S = "vau3_handshake_s_k1_c2s_";
   private static final String VAU_DEBUG_K1_C2S = "VAU-DEBUG-S_K1_c2s";
   private static final String VAU_DEBUG_K1_S2C = "VAU-DEBUG-S_K1_s2c";
@@ -68,27 +82,43 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
         .filter(key -> key.getKey() instanceof SecretKeySpec)
         .filter(key -> key.getKey().getAlgorithm().equals("AES"))
         .filter(key -> key.getKeyName().startsWith(VAU_3_PAYLOAD_KEYS))
-        .anyMatch(key -> decryptEpa3VauSuccessfull(element, key.getKey(), context)); //NOSONAR
+        .anyMatch(key -> decryptEpa3VauSuccessfull(element, key.getKey(), context)); // NOSONAR
   }
 
   private boolean decryptEpa3VauSuccessfull(RbelElement element, Key key, RbelConverter context) {
     try {
       final byte[] rawContent = element.getRawContent();
-      byte[] header = ArrayUtils.subarray(rawContent, 0, 43);
-      byte[] iv = ArrayUtils.subarray(rawContent, 43, 43 + 12);
-      byte[] ct = ArrayUtils.subarray(rawContent, 55, rawContent.length);
+      // These numbers are derived from A_24628 to A_24633 in gemSpec_Krypt V2.30.0
+      byte[] header = ArrayUtils.subarray(rawContent, 0, BODY_INDEX);
+      byte[] iv = ArrayUtils.subarray(rawContent, BODY_INDEX, BODY_INDEX + BODY_IV_LENGTH);
+      byte[] ct = ArrayUtils.subarray(rawContent, BODY_CT_INDEX, rawContent.length);
       final byte[] cleartext = performActualDecryption(key, iv, ct, header);
       if (log.isTraceEnabled()) {
         log.trace("Decrypted VAU EPA3: {}", new String(cleartext));
       }
       final RbelElement headerElement = context.convertElement(header, element);
-      final byte[] reqCounterBytes = Arrays.copyOfRange(header, 3, 3 + 8);
+      final byte[] reqCounterBytes =
+          Arrays.copyOfRange(
+              header,
+              HEADER_REQ_COUNTER_INDEX,
+              HEADER_REQ_COUNTER_INDEX + HEADER_REQ_COUNTER_LENGTH);
       headerElement.addFacet(
           new RbelMapFacet(
               new RbelMultiMap<RbelElement>()
-                  .with("version", new RbelElement(Arrays.copyOfRange(header, 0, 1), headerElement))
-                  .with("pu", new RbelElement(Arrays.copyOfRange(header, 1, 2), headerElement))
-                  .with("req", new RbelElement(Arrays.copyOfRange(header, 2, 3), headerElement))
+                  .with(
+                      "version", RbelElement.wrap(new byte[] {header[0]}, headerElement, header[0]))
+                  .with(
+                      "pu",
+                      RbelElement.wrap(
+                          new byte[] {header[HEADER_PU_INDEX]},
+                          headerElement,
+                          header[HEADER_PU_INDEX]))
+                  .with(
+                      "req",
+                      RbelElement.wrap(
+                          new byte[] {header[HEADER_REQ_INDEX]},
+                          headerElement,
+                          header[HEADER_REQ_INDEX]))
                   .with(
                       "reqCtr",
                       RbelElement.wrap(
@@ -97,7 +127,17 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
                           ByteBuffer.wrap(reqCounterBytes).getInt()))
                   .with(
                       "keyId",
-                      new RbelElement(Arrays.copyOfRange(header, 11, 43), headerElement))));
+                      RbelElement.wrap(
+                          Arrays.copyOfRange(
+                              header,
+                              HEADER_KEY_ID_INDEX,
+                              HEADER_KEY_ID_INDEX + HEADER_KEY_ID_LENGTH),
+                          headerElement,
+                          new BigInteger(
+                              Arrays.copyOfRange(
+                                  header,
+                                  HEADER_KEY_ID_INDEX,
+                                  HEADER_KEY_ID_INDEX + HEADER_KEY_ID_LENGTH))))));
       final RbelElement cleartextElement = context.convertElement(cleartext, element);
       element.addFacet(new RbelVau3EncryptionFacet(cleartextElement, headerElement));
       return true;
@@ -141,9 +181,8 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
           case "M2" -> parseM2(element, context);
           case "M3" -> parseM3(element, context);
           case "M4" -> parseM4(element, context);
-          default ->
-              element.addFacet(
-                  new RbelNoteFacet("Unknown VAU EPA3 message type: " + messageTypeContent));
+          default -> element.addFacet(
+              new RbelNoteFacet("Unknown VAU EPA3 message type: " + messageTypeContent));
         }
       }
     } catch (RuntimeException e) {

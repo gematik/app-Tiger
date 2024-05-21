@@ -12,10 +12,11 @@
 
 ## Bugfixes
 
-* TGR-1398: fixing reset of filter method in rbel validator glue code which caused an NPE if used in feature files (
+* TGR-1398: Fixing reset of filter method in rbel validator glue code which caused an NPE if used in feature files (
   regression).
 * TGR-1389: Fixed an issue where the RbelLogger would decrypt a VAU-EPA3-message multiple times.
 * TGR-1387: Fixed an issue where in a meshed setup messages where not correctly paired.
+* TGR-1406: Added the already parsed information in an Epa 3 message to the Rbel-tree.
 
 # Release 3.0.3
 
