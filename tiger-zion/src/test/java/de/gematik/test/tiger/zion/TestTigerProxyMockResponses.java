@@ -22,6 +22,8 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import kong.unirest.*;
@@ -565,5 +567,31 @@ class TestTigerProxyMockResponses {
         .isInstanceOf(TigerEnvironmentStartupException.class)
         .hasRootCauseInstanceOf(NoSuchFileException.class)
         .hasRootCauseMessage(Paths.get("this", "is", "not", "a", "real", "file.yaml").toString());
+  }
+
+  @Test
+  void testDelay() {
+    configuration.setMockResponses(
+      Map.of(
+        "delay",
+        TigerMockResponse.builder()
+          .requestCriterions(
+            List.of("message.method == 'GET'"))
+          .response(
+            TigerMockResponseDescription.builder()
+              .statusCode("666")
+              .body("{\"foo\": \"bar\"}")
+              .responseDelay("800")
+              .build())
+          .build()));
+
+    final GetRequest getRequest = Unirest.get("http://localhost:" + port + "/delayIt");
+    // once before to reduce warmup
+    getRequest.asJson();
+    final LocalDateTime start = LocalDateTime.now();
+    getRequest.asJson();
+    final LocalDateTime end = LocalDateTime.now();
+    assertThat(Duration.between(start, end))
+      .isGreaterThan(Duration.ofMillis(800));
   }
 }

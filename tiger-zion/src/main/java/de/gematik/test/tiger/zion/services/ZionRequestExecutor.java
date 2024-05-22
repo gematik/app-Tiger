@@ -16,10 +16,13 @@ import de.gematik.rbellogger.writer.RbelWriter;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import de.gematik.test.tiger.zion.ZionException;
 import de.gematik.test.tiger.zion.config.*;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.Map.Entry;
@@ -47,6 +50,7 @@ public class ZionRequestExecutor {
   private static final String CONSIDERING_RESPONSE = "Considering response {} {}";
   @NonNull private final RbelElement requestRbelMessage;
   private final int localServerPort;
+  private final LocalDateTime responseStartTime;
   @NonNull private final RbelHostname clientHostname;
   @NonNull private final RbelHostname serverHostname;
   @NonNull private final ObjectMapper objectMapper;
@@ -69,6 +73,7 @@ public class ZionRequestExecutor {
       final ResponseEntity<byte[]> responseEntity = renderResponse(chosenResponse, responseContext);
       responseContext.allNonStandardValues().forEach(TigerGlobalConfiguration::putValue);
       parseResponseWithRbelLogger(responseEntity);
+      delayResponseIfNecessary(chosenResponse);
       return responseEntity;
     } else {
       return spyWithRemoteServer(request)
@@ -78,6 +83,25 @@ public class ZionRequestExecutor {
                 return new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR, "No suitable return value found");
               });
+    }
+  }
+
+  private void delayResponseIfNecessary(TigerMockResponse chosenResponse) {
+    final long actualMillis = Duration.between(responseStartTime, LocalDateTime.now()).toMillis();
+    final String responseDelay = chosenResponse.getResponse().getResponseDelay();
+    if (StringUtils.isEmpty(responseDelay)) {
+      return;
+    }
+
+    final long necessaryDelay =
+        Long.parseLong(TigerGlobalConfiguration.resolvePlaceholders(responseDelay)) - actualMillis;
+    if (necessaryDelay > 0) {
+      try {
+        Thread.sleep(necessaryDelay);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new ZionException("Interrupt received", e);
+      }
     }
   }
 

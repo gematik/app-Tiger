@@ -1,5 +1,12 @@
 # Changelog Tiger Test platform
 
+# Release 3.0.5
+
+## Features
+
+* TGR-1406: Added the already parsed information in an Epa 3 message to the Rbel-tree.
+* TGR-1407: Zion: Added the possibility to delay responses for a fixed amount of time.
+
 # Release 3.0.4
 
 * Serenity BDD 4.1.10
@@ -16,7 +23,6 @@
   regression).
 * TGR-1389: Fixed an issue where the RbelLogger would decrypt a VAU-EPA3-message multiple times.
 * TGR-1387: Fixed an issue where in a meshed setup messages where not correctly paired.
-* TGR-1406: Added the already parsed information in an Epa 3 message to the Rbel-tree.
 
 # Release 3.0.3
 
