@@ -4,6 +4,7 @@
 
 ## Features
 
+* TGR-1400: RbelParser: Added support for XML-Processing Instructions.
 * TGR-1406: Added the already parsed information in an Epa 3 message to the Rbel-tree.
 * TGR-1407: Zion: Added the possibility to delay responses for a fixed amount of time.
 
