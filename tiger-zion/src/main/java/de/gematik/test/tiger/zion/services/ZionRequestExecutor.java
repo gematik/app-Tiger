@@ -158,10 +158,9 @@ public class ZionRequestExecutor {
       final RbelSerializationResult serialized =
           rbelWriter.serialize(
               convertedElement, new TigerJexlContext().withRootElement(requestRbelMessage));
-      if (serialized.getContent() != null) {
+      String headerValue = serialized.getContentAsString();
+      if (StringUtils.isNotEmpty(headerValue)) {
         responseBuilder.header(entry.getKey(), serialized.getContentAsString());
-      } else {
-        responseBuilder.header(entry.getKey(), "");
       }
     }
 

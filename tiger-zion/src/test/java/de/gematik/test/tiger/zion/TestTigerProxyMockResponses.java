@@ -572,18 +572,17 @@ class TestTigerProxyMockResponses {
   @Test
   void testDelay() {
     configuration.setMockResponses(
-      Map.of(
-        "delay",
-        TigerMockResponse.builder()
-          .requestCriterions(
-            List.of("message.method == 'GET'"))
-          .response(
-            TigerMockResponseDescription.builder()
-              .statusCode("666")
-              .body("{\"foo\": \"bar\"}")
-              .responseDelay("800")
-              .build())
-          .build()));
+        Map.of(
+            "delay",
+            TigerMockResponse.builder()
+                .requestCriterions(List.of("message.method == 'GET'"))
+                .response(
+                    TigerMockResponseDescription.builder()
+                        .statusCode("666")
+                        .body("{\"foo\": \"bar\"}")
+                        .responseDelay("800")
+                        .build())
+                .build()));
 
     final GetRequest getRequest = Unirest.get("http://localhost:" + port + "/delayIt");
     // once before to reduce warmup
@@ -591,7 +590,25 @@ class TestTigerProxyMockResponses {
     final LocalDateTime start = LocalDateTime.now();
     getRequest.asJson();
     final LocalDateTime end = LocalDateTime.now();
-    assertThat(Duration.between(start, end))
-      .isGreaterThan(Duration.ofMillis(800));
+    assertThat(Duration.between(start, end)).isGreaterThan(Duration.ofMillis(800));
+  }
+
+  @Test
+  void emptyHttpHeadersShouldNotBeTransmitted() {
+    configuration.setMockResponses(
+        Map.of(
+            "response",
+            TigerMockResponse.builder()
+                .response(
+                    TigerMockResponseDescription.builder()
+                        .headers(Map.of("foo", "", "bar", "baz"))
+                        .body("{\"foo\": \"bar\"}")
+                        .build())
+                .build()));
+
+    final HttpResponse<JsonNode> response =
+        Unirest.get("http://localhost:" + port + "/myRequest").asJson();
+    assertThat(response.getHeaders().containsKey("foo")).isFalse();
+    assertThat(response.getHeaders().containsKey("bar")).isTrue();
   }
 }
