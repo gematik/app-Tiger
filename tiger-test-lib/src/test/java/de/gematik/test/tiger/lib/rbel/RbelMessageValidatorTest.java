@@ -245,25 +245,23 @@ class RbelMessageValidatorTest {
   void testSourceNoCommetTxtTrim2_OK() {
     assertThatNoException()
         .isThrownBy(
-            () -> {
-              RbelMessageValidator.instance.compareXMLStructure(
-                  "<root><header></header><body>    test     <!-- test comment --></body></root>",
-                  "<root><header></header><body>test</body></root>",
-                  "nocomment,txttrim");
-            });
+            () ->
+                RbelMessageValidator.instance.compareXMLStructure(
+                    "<root><header></header><body>    test     <!-- test comment --></body></root>",
+                    "<root><header></header><body>test</body></root>",
+                    "nocomment,txttrim"));
   }
 
   @Test
   void testSourceNoCommetTxtTrim3_OK() {
     assertThatNoException()
         .isThrownBy(
-            () -> {
-              RbelMessageValidator.instance.compareXMLStructure(
-                  "<root><header></header><body>    test xxx    <!-- test comment"
-                      + " --></body></root>",
-                  "<root><header></header><body>test xxx</body></root>",
-                  "nocomment,txttrim");
-            });
+            () ->
+                RbelMessageValidator.instance.compareXMLStructure(
+                    "<root><header></header><body>    test xxx    <!-- test comment"
+                        + " --></body></root>",
+                    "<root><header></header><body>test xxx</body></root>",
+                    "nocomment,txttrim"));
   }
 
   @Test
@@ -282,24 +280,22 @@ class RbelMessageValidatorTest {
   void testSourceNoCommetTxtNormalize_OK() {
     assertThatNoException()
         .isThrownBy(
-            () -> {
-              RbelMessageValidator.instance.compareXMLStructure(
-                  "<root><header></header><body>  test    xxxx   </body>  <!-- test comment"
-                      + " --></root>",
-                  "<root><header></header><body>test xxxx </body></root>",
-                  "nocomment,txtnormalize");
-            });
+            () ->
+                RbelMessageValidator.instance.compareXMLStructure(
+                    "<root><header></header><body>  test    xxxx   </body>  <!-- test comment"
+                        + " --></root>",
+                    "<root><header></header><body>test xxxx </body></root>",
+                    "nocomment,txtnormalize"));
   }
 
   @Test
   void testSourceAttrOrder_OK() {
     assertThatNoException()
         .isThrownBy(
-            () -> {
-              RbelMessageValidator.instance.compareXMLStructure(
-                  "<root><header></header><body attr1='1'   attr2='2'></body></root>",
-                  "<root><header></header><body attr2='2' attr1='1'></body></root>");
-            });
+            () ->
+                RbelMessageValidator.instance.compareXMLStructure(
+                    "<root><header></header><body attr1='1'   attr2='2'></body></root>",
+                    "<root><header></header><body attr2='2' attr1='1'></body></root>"));
   }
 
   @ParameterizedTest
@@ -422,10 +418,7 @@ class RbelMessageValidatorTest {
   void testFilterRequestsRbelPathExists_NOK() {
     addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     var request = RequestParameter.builder().path(".*").rbelPath("$.header.User-AgentXXX").build();
-    assertThatThrownBy(
-            () -> {
-              RbelMessageValidator.instance.filterRequestsAndStoreInContext(request);
-            })
+    assertThatThrownBy(() -> RbelMessageValidator.instance.filterRequestsAndStoreInContext(request))
         .isInstanceOf(AssertionError.class);
   }
 
@@ -573,8 +566,10 @@ class RbelMessageValidatorTest {
     String oracleStr = "{'foo': '${json-unit.ignore}'}";
     validator.assertAttributeOfCurrentRequestMatchesAs("$.body", ModeType.JSON, oracleStr);
 
-    RBelValidatorGlue glue = new RBelValidatorGlue();
+    log.info("Current Request: {}", validator.currentRequest);
+    log.info("converted message: {}", convertedMessage);
 
+    RBelValidatorGlue glue = new RBelValidatorGlue();
     glue.currentRequestBodyMatches("!{rbel:currentRequestAsString('$.body')}");
     glue.currentRequestMessageAttributeMatches("$.body.foo", "bar");
     glue.currentRequestMessageContainsNode("$.body.foo");

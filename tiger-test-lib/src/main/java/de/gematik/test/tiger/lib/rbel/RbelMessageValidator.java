@@ -392,19 +392,32 @@ public class RbelMessageValidator {
             .filter(Objects::nonNull)
             .map(String::trim)
             .collect(Collectors.joining());
-    if (shouldMatch) {
-      if (!text.equals(value)) {
+
+    final Optional<Pattern> compiledPattern =
+        Optional.ofNullable(value)
+            .filter(StringUtils::isNotBlank)
+            .map(
+                v -> {
+                  try {
+                    return Pattern.compile(v, Pattern.MULTILINE | Pattern.DOTALL);
+                  } catch (PatternSyntaxException e) {
+                    return null;
+                  }
+                });
+
+    if (compiledPattern.isPresent()) {
+      if (shouldMatch) {
+        if (!text.equals(value)) {
+          assertThat(text).as("Rbelpath '%s' matches", rbelPath).matches(compiledPattern.get());
+        }
+      } else {
+        if (text.equals(value)) {
+          Assertions.fail("Did not expect that node '" + rbelPath + "' is equal to '" + value);
+        }
         assertThat(text)
-            .as("Rbelpath '%s' matches", rbelPath)
-            .matches(Pattern.compile(value, Pattern.MULTILINE | Pattern.DOTALL));
+            .as("Rbelpath '%s' does not match", rbelPath)
+            .doesNotMatch(compiledPattern.get());
       }
-    } else {
-      if (text.equals(value)) {
-        Assertions.fail("Did not expect that node '" + rbelPath + "' is equal to '" + value);
-      }
-      assertThat(text)
-          .as("Rbelpath '%s' does not match", rbelPath)
-          .doesNotMatch(Pattern.compile(value, Pattern.MULTILINE | Pattern.DOTALL));
     }
   }
 
@@ -426,8 +439,9 @@ public class RbelMessageValidator {
     switch (mode) {
       case JSON -> new JsonChecker().compareJsonStrings(getAsJsonString(element), oracle, false);
       case XML -> compareXMLStructureOfRbelElement(element, oracle, "");
-      default -> Assertions.fail(
-          "Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
+      default ->
+          Assertions.fail(
+              "Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
     }
   }
 
