@@ -66,7 +66,9 @@ public class RbelConverter {
               new RbelSicctEnvelopeConverter(),
               new RbelSicctCommandConverter(),
               new RbelCetpConverter(),
-              new RbelCborConverter()));
+              new RbelCborConverter(),
+              new RbelPop3CommandConverter(),
+              new RbelPop3ResponseConverter()));
   @Builder.Default private int rbelBufferSizeInMb = 1024;
   @Builder.Default private boolean manageBuffer = false;
   @Getter @Builder.Default private long currentBufferSize = 0;
