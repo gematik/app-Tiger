@@ -27,19 +27,17 @@ public class RbelHttpResponseFacet implements RbelFacet {
   }
 
   @Override
-  public RbelMultiMap getChildElements() {
+  public RbelMultiMap<RbelElement> getChildElements() {
     return new RbelMultiMap<RbelElement>()
         .with("responseCode", responseCode)
         .with("reasonPhrase", reasonPhrase);
   }
 
   public static void updateRequestOfResponseFacet(RbelElement response, RbelElement request) {
-    response.addOrReplaceFacet(
-        response
-            .getFacet(RbelHttpResponseFacet.class)
-            .map(RbelHttpResponseFacet::toBuilder)
-            .orElse(RbelHttpResponseFacet.builder())
-            .request(request)
-            .build());
+    response
+        .getFacet(RbelHttpResponseFacet.class)
+        .map(RbelHttpResponseFacet::toBuilder)
+        .map(builder -> builder.request(request).build())
+        .ifPresent(response::addOrReplaceFacet);
   }
 }

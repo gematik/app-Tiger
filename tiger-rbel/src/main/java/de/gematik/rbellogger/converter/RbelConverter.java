@@ -171,7 +171,7 @@ public class RbelConverter {
       final RbelHostname sender,
       final RbelHostname receiver,
       final Optional<ZonedDateTime> transmissionTime) {
-    var messageElement = messagePair.getMessage();
+    final var messageElement = messagePair.getMessage();
     addMessageToHistory(messageElement);
 
     messageElement.addFacet(
@@ -182,6 +182,21 @@ public class RbelConverter {
             .build());
 
     messageElement.addFacet(new RbelParsingNotCompleteFacet(this));
+    messagePair
+        .getPairedRequest()
+        .ifPresent(
+            requestFuture ->
+                requestFuture.thenAccept(
+                    request -> {
+                      final var pairFacet =
+                          TracingMessagePairFacet.builder()
+                              .response(messageElement)
+                              .request(request)
+                              .build();
+                      request.addOrReplaceFacet(pairFacet);
+                      messageElement.addOrReplaceFacet(pairFacet);
+                    }));
+
     return CompletableFuture.supplyAsync(
         () -> {
           try {
@@ -205,12 +220,9 @@ public class RbelConverter {
         .getFacet(RbelHttpResponseFacet.class)
         .map(resp -> resp.getRequest() == null)
         .orElse(false)) {
-      RbelHttpResponseFacet.updateRequestOfResponseFacet(
-          message, messagePair.getPairedRequest().map(CompletableFuture::join).orElse(null));
-      messagePair
-          .getPairedRequest()
-          .map(CompletableFuture::join)
-          .ifPresent(req -> RbelHttpRequestFacet.updateResponseOfRequestFacet(req, message));
+      final var request = messagePair.getPairedRequest().map(CompletableFuture::join);
+      RbelHttpResponseFacet.updateRequestOfResponseFacet(message, request.orElse(null));
+      request.ifPresent(req -> RbelHttpRequestFacet.updateResponseOfRequestFacet(req, message));
     }
 
     message.triggerPostConversionListener(this);

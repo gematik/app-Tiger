@@ -32,7 +32,7 @@ public class TlsFacet implements RbelFacet {
     RbelFileWriter.DEFAULT_POST_CONVERSION_LISTENER.add(
         (msg, converter, json) -> {
           if (json.has(TLS_VERSION) && json.has(CIPHER_SUITE)) {
-            msg.addFacet(
+            msg.addOrReplaceFacet(
                 new TlsFacet(
                     RbelElement.wrap(msg, json.getString(TLS_VERSION)),
                     RbelElement.wrap(msg, json.getString(CIPHER_SUITE)),
@@ -42,7 +42,7 @@ public class TlsFacet implements RbelFacet {
                 .map(TracingMessagePairFacet::getRequest)
                 .ifPresent(
                     req ->
-                        req.addFacet(
+                        req.addOrReplaceFacet(
                             new TlsFacet(
                                 RbelElement.wrap(req, json.getString(TLS_VERSION)),
                                 RbelElement.wrap(req, json.getString(CIPHER_SUITE)),
