@@ -7,8 +7,8 @@ package de.gematik.test.tiger.proxy.certificate;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelFacet;
+import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.rbellogger.file.RbelFileWriter;
-import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import lombok.Value;
 
 @Value

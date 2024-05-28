@@ -8,6 +8,7 @@ import static j2html.TagCreator.*;
 
 import com.google.common.html.HtmlEscapers;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;

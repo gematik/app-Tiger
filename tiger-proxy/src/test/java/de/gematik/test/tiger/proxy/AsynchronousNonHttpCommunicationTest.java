@@ -7,6 +7,10 @@ package de.gematik.test.tiger.proxy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import de.gematik.rbellogger.converter.RbelConverterPlugin;
+import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMultiMap;
+import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -66,7 +70,8 @@ class AsynchronousNonHttpCommunicationTest extends AbstractNonHttpTest {
           assertThat(serverCalled).hasValue(2);
           assertThat(responseCalls).hasValue(0);
           assertThat(requestCalls).hasValue(2);
-        });
+        },
+        (element, converter) -> element.addFacet(new RbelFacetExpectingReplyMessage()));
   }
 
   @Test
@@ -88,7 +93,8 @@ class AsynchronousNonHttpCommunicationTest extends AbstractNonHttpTest {
           assertThat(requestCalls).hasValue(2);
           assertThat(responseCalls).hasValue(2);
           assertThat(serverCalled).hasValue(2);
-        });
+        },
+        (element, converter) -> element.addFacet(new RbelFacetExpectingReplyMessage()));
   }
 
   @Test
@@ -170,7 +176,8 @@ class AsynchronousNonHttpCommunicationTest extends AbstractNonHttpTest {
   public void executeTestRun(
       ThrowingConsumer<Socket> clientActionCallback,
       ThrowingConsumer<Socket> serverActionCallback,
-      VerifyInteractionsConsumer interactionsVerificationCallback)
+      VerifyInteractionsConsumer interactionsVerificationCallback,
+      RbelConverterPlugin... postConversionListener)
       throws Exception {
     executeTestRun(
         clientActionCallback,
@@ -182,6 +189,19 @@ class AsynchronousNonHttpCommunicationTest extends AbstractNonHttpTest {
           log.info("listener server: read message");
           serverActionCallback.accept(serverSocket);
           assertThat(serverArrivedMessage + "\n").isEqualTo(MESSAGE);
-        });
+        },
+        postConversionListener);
+  }
+
+  private static class RbelFacetExpectingReplyMessage implements RbelFacet {
+    @Override
+    public RbelMultiMap<RbelElement> getChildElements() {
+      return new RbelMultiMap<>();
+    }
+
+    @Override
+    public boolean shouldExpectReplyMessage() {
+      return true;
+    }
   }
 }

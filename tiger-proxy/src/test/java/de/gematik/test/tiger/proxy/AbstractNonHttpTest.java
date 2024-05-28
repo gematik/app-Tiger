@@ -7,6 +7,9 @@ package de.gematik.test.tiger.proxy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
@@ -17,6 +20,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.security.KeyStore;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -63,21 +67,32 @@ public abstract class AbstractNonHttpTest {
   public void executeTestRun(
       ThrowingConsumer<Socket> clientActionCallback,
       VerifyInteractionsConsumer interactionsVerificationCallback,
-      ThrowingConsumer<Socket> serverAcceptedConnectionCallback)
+      ThrowingConsumer<Socket> serverAcceptedConnectionCallback,
+      RbelConverterPlugin... postConversionListeners)
       throws Exception {
     executeTestRun(
         clientActionCallback,
         interactionsVerificationCallback,
         serverAcceptedConnectionCallback,
-        serverPort ->
-            new TigerProxy(
-                TigerProxyConfiguration.builder()
-                    .directReverseProxy(
-                        DirectReverseProxyInfo.builder()
-                            .port(serverPort)
-                            .hostname("localhost")
-                            .build())
-                    .build()));
+        serverPort -> {
+          var tigerProxy =
+              new TigerProxy(
+                  TigerProxyConfiguration.builder()
+                      .directReverseProxy(
+                          DirectReverseProxyInfo.builder()
+                              .port(serverPort)
+                              .hostname("localhost")
+                              .build())
+                      .build());
+          if (postConversionListeners.length > 0) {
+            tigerProxy.setRbelLogger(
+                RbelLogger.build(
+                    RbelConfiguration.builder()
+                        .postConversionListener(List.of(postConversionListeners))
+                        .build()));
+          }
+          return tigerProxy;
+        });
   }
 
   public void executeTestRun(

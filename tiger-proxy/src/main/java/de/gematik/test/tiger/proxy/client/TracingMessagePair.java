@@ -5,8 +5,8 @@
 package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.rbellogger.file.RbelFileWriter;
-import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
