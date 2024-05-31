@@ -63,7 +63,6 @@ import org.springframework.stereotype.Component;
 public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
   private static final String CA_CERT_ALIAS = "caCert";
-  private static final String JDK_TLS_NAMED_GROUPS = "jdk.tls.namedGroups";
   private final List<DynamicTigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();
   private final List<Consumer<Throwable>> exceptionListeners = new ArrayList<>();
   @Getter private final MockServerToRbelConverter mockServerToRbelConverter;
@@ -295,22 +294,15 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         && !tlsConfiguration.getClientSupportedGroups().isEmpty()) {
       mockServerConfiguration.clientSslContextBuilderFunction(
           sslContextBuilder -> {
-            String before = System.getProperty(JDK_TLS_NAMED_GROUPS);
             try {
               System.setProperty(
-                  JDK_TLS_NAMED_GROUPS,
+                  "jdk.tls.namedGroups",
                   String.join(",", tlsConfiguration.getClientSupportedGroups()));
               sslContextBuilder.sslProvider(SslProvider.JDK);
               return sslContextBuilder.build();
             } catch (SSLException e) {
               throw new TigerProxySslException(
                   "Error while building SSL context in Tiger-Proxy " + getName().orElse(""), e);
-            } finally {
-              if (before != null) {
-                System.setProperty(JDK_TLS_NAMED_GROUPS, before);
-              } else {
-                System.clearProperty(JDK_TLS_NAMED_GROUPS);
-              }
             }
           });
     }

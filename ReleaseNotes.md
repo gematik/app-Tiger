@@ -2,6 +2,10 @@
 
 # Release 3.0.5
 
+## Bugfixes
+
+* TGR-1415: TigerProxy: Fixed a bug when multiple Tiger-Proxies would interfere with each other when selecting client-groups. Client-Groups can now be correctly selected, but not multiple settings in a single JVM. If that is desired you will have to boot the Tiger-Proxies through an external-JAR server.
+
 ## Features
 
 * TGR-1400: RbelParser: Added support for XML-Processing Instructions.
