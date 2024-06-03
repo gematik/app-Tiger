@@ -124,7 +124,7 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
                       RbelElement.wrap(
                           reqCounterBytes,
                           headerElement,
-                          ByteBuffer.wrap(reqCounterBytes).getInt()))
+                          ByteBuffer.wrap(reqCounterBytes).getLong()))
                   .with(
                       "keyId",
                       RbelElement.wrap(

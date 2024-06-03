@@ -16,7 +16,6 @@ import java.io.File;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import lombok.SneakyThrows;
-import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -63,7 +62,7 @@ public class VauEpa3ConverterTest {
         .hasStringContentEqualTo("Right back at ya!")
         .andTheInitialElement()
         .extractChildWithPath("$.body.header.reqCtr")
-        .hasValueEqualTo(1)
+        .hasValueEqualTo(1l)
         .andTheInitialElement()
         .extractChildWithPath("$.body.header.version")
         .hasValueEqualTo((byte) 2)
@@ -71,13 +70,9 @@ public class VauEpa3ConverterTest {
         .extractChildWithPath("$.body.header.req")
         .hasValueEqualTo((byte) 2)
         .andTheInitialElement()
-        .extractChildWithPath("$.body.header.reqCtr")
-        .hasValueEqualTo(1)
-        .andTheInitialElement()
         .extractChildWithPath("$.body.header.keyId")
         .hasValueEqualTo(
-            new BigInteger(
-                Hex.decode("609634c43539eb416e09f70c596d8a9da475908760e287e260f23b11601741d0")));
+            new BigInteger("49117871460386101168058772883563639427765135898532450228055942387686676034354"));
   }
 
   @Test

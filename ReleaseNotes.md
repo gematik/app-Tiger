@@ -5,6 +5,7 @@
 ## Bugfixes
 
 * TGR-1415: TigerProxy: Fixed a bug when multiple Tiger-Proxies would interfere with each other when selecting client-groups. Client-Groups can now be correctly selected, but not multiple settings in a single JVM. If that is desired you will have to boot the Tiger-Proxies through an external-JAR server.
+* ANFEPA-2559: Rbel-Logger: Fixed the handling of the request-counter for EPA3-messages.
 
 ## Features
 
