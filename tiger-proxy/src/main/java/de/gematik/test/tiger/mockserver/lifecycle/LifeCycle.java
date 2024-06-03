@@ -10,7 +10,6 @@ import static de.gematik.test.tiger.mockserver.mock.HttpState.setPort;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.slf4j.event.Level.*;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
@@ -50,15 +49,22 @@ public abstract class LifeCycle {
     this.bossGroup =
         new NioEventLoopGroup(
             5,
-            new Scheduler.SchedulerThreadFactory(
-                this.getClass().getSimpleName() + "-bossEventLoop"));
+            new Scheduler.SchedulerThreadFactory(getMockServerName() + "-bossGroup"));
     this.workerGroup =
         new NioEventLoopGroup(
             this.configuration.nioEventLoopThreadCount(),
             new Scheduler.SchedulerThreadFactory(
-                this.getClass().getSimpleName() + "-workerEventLoop"));
+                getMockServerName() + "-workerEventLoop"));
     this.scheduler = new Scheduler(this.configuration);
     this.httpState = new HttpState(this.configuration, this.scheduler);
+  }
+
+  private String getMockServerName() {
+    if (configuration.mockServerName() != null) {
+      return configuration.mockServerName();
+    } else {
+      return this.getClass().getSimpleName();
+    }
   }
 
   public CompletableFuture<String> stopAsync() {
@@ -205,7 +211,7 @@ public abstract class LifeCycle {
       try {
         final CompletableFuture<Channel> channelOpened = new CompletableFuture<>();
         channelFutures.add(channelOpened);
-        new Scheduler.SchedulerThreadFactory("MockServer thread for port: " + portToBind, false)
+        new Scheduler.SchedulerThreadFactory(getMockServerName() + " thread for port: " + portToBind, false)
             .newThread(
                 () -> {
                   try {

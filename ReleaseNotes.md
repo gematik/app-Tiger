@@ -15,6 +15,12 @@
 * TGR-1407: Zion: Added the possibility to delay responses for a fixed amount of time.
 * TGR-1376: RbelParser: Conversion of POP3 Messages to Rbel trees
 
+## Bugfixes
+
+* TGR-1405: TigerProxy: Proxies in directReverseProxy-mode now report correct health status.
+* TGR-1405: TigerProxy: More resilient re-connnect logic in mesh-setups.
+* TGR-1405: TigerProxy: Fixed an issue where in a mesh-setup the order of the messages would sometimes be mixed up.
+
 # Release 3.0.4
 
 * Serenity BDD 4.1.10

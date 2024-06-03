@@ -8,8 +8,11 @@ import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -18,7 +21,7 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
-import java.util.concurrent.CompletableFuture;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import kong.unirest.HttpResponse;
@@ -27,6 +30,7 @@ import kong.unirest.UnirestInstance;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import net.jcip.annotations.NotThreadSafe;
 import org.assertj.core.presentation.Representation;
 import org.junit.jupiter.api.Test;
@@ -295,7 +299,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                   adminPort: ${free.port.34}
                   proxyPort: ${free.port.35}
                   directReverseProxy:
-                    hostname: reverseHostname
+                    hostname: localhost
                     port: ${free.port.36}
             """)
   void testDirectReverseProxyMeshSetup_withResponse(TigerTestEnvMgr envMgr) {
@@ -356,10 +360,10 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                   envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size()
                       == 1);
 
-      var senderPort = clientSocket.getLocalPort();
-      var receiverPort =
+      val senderPort = clientSocket.getLocalPort();
+      val receiverPort =
           Integer.parseInt(TigerGlobalConfiguration.resolvePlaceholders("${free.port.50}"));
-      var message =
+      val message =
           envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().getFirst();
       assertThat(message)
           .extractChildWithPath("$.receiver")
@@ -391,34 +395,130 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
     tigerProxy:
       skipTrafficEndpointsSubscription: true
       trafficEndpoints:
-        - http://localhost:${free.port.2}
+        - http://localhost:${free.port.4}
     servers:
       httpbin:
         type: httpbin
         serverPort: ${free.port.0}
         healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
-      aggregatingProxy:
-        type: tigerProxy
-        dependsUpon: reverseProxy
-        tigerProxyConfiguration:
-          adminPort: ${free.port.2}
-          proxyPort: ${free.port.3}
-          activateRbelParsing: false
-          rbelBufferSizeInMb: 0
-          trafficEndpoints:
-            - http://localhost:${free.port.4}
       reverseProxy:
         type: tigerProxy
         tigerProxyConfiguration:
           adminPort: ${free.port.4}
           proxiedServer: httpbin
           proxyPort: ${free.port.5}
-    lib:
-      trafficVisualization: true
     """)
   void testTracingFacetsAndHttpFacetHaveCorrectRequest(TigerTestEnvMgr envMgr) {
+    waitShortTime();
+    val numberOfMessages = 200;
+    final Random random = new Random();
+    final RbelConverter reverseProxyConverter = ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
+      .getTigerProxy()
+      .getRbelLogger()
+      .getRbelConverter();
+    reverseProxyConverter.addConverter(
+        (e, c) -> {
+          try {
+            if (e.hasFacet(RbelTcpIpMessageFacet.class)) {
+              Thread.sleep(random.nextInt(10));
+            }
+          } catch (InterruptedException ex) {
+            throw new RuntimeException(ex);
+          }
+        });
+    final String path = "/anything/";
+    final UnirestInstance unirestInstance = Unirest.spawnInstance();
+
+    for (int i = 0; i < numberOfMessages; i++) {
+      unirestInstance
+          .get("http://localhost:" + TigerGlobalConfiguration.readString("free.port.5") + path + i)
+          .asString();
+    }
+
+    await()
+        .atMost(100, TimeUnit.SECONDS)
+        .pollInterval(1, TimeUnit.SECONDS)
+        .until(
+            () -> {
+              final int size =
+                  envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size();
+              log.info("Size: {}", size);
+              return size == numberOfMessages * 2;
+            });
+
+    envMgr.getLocalTigerProxyOrFail().waitForAllCurrentMessagesToBeParsed();
+
+    var messages = envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageList();
+    var responses = messages.stream().filter(m -> m.hasFacet(RbelHttpResponseFacet.class)).toList();
+
+    for (RbelElement r : responses) {
+      var httpFacet = r.getFacet(RbelHttpResponseFacet.class).orElseThrow();
+      var tracingFacet = r.getFacet(TracingMessagePairFacet.class).orElseThrow();
+      assertThat(tracingFacet.getRequest())
+          .withRepresentation(new RbelElementRepresentation())
+          .isEqualTo(httpFacet.getRequest());
+
+      var requestPath =
+          httpFacet.getRequest().findElement("$.path").orElseThrow().getRawStringContent();
+      var responsePath = r.findElement("$.body.url").orElseThrow().getRawStringContent();
+
+      assertThat(responsePath).endsWith(requestPath);
+    }
+
+    messages.stream().map(RbelElement::printHttpDescription).forEach(log::info);
+
+    for (int i = 0; i < numberOfMessages; i++) {
+      log.info("Processing message {}", i);
+      var req = messages.get(i * 2);
+      var resp = messages.get(i * 2 + 1);
+
+      assertThat(req).extractChildWithPath("$.path").asString().contains(i + "");
+      assertThat(resp).extractChildWithPath("$.body.url").asString().contains(i + "");
+    }
 
     waitShortTime();
+  }
+
+  @SneakyThrows
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+    tigerProxy:
+      skipTrafficEndpointsSubscription: true
+      trafficEndpoints:
+        - http://localhost:${free.port.4}
+    servers:
+      httpbin:
+        type: httpbin
+        serverPort: ${free.port.0}
+        healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
+      reverseProxy:
+        type: tigerProxy
+        tigerProxyConfiguration:
+          adminPort: ${free.port.4}
+          proxiedServer: httpbin
+          proxyPort: ${free.port.5}
+    """)
+  void delayedParsing_sequenceShouldStillMatch(TigerTestEnvMgr envMgr) {
+    waitShortTime();
+    final Random random = new Random();
+    ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
+        .getTigerProxy()
+        .getRbelLogger()
+        .getRbelConverter()
+        .addConverter(
+            (e, c) -> {
+              if (e.hasFacet(RbelHttpRequestFacet.class)) {
+                try {
+                  final int millis = random.nextInt(0, 100);
+                  log.info("Delaying for {} ms", millis);
+                  Thread.sleep(millis);
+                } catch (InterruptedException ex) {
+                  throw new RuntimeException(ex);
+                }
+              }
+            });
     final String path = "/anything/";
     final UnirestInstance unirestInstance = Unirest.spawnInstance();
     unirestInstance
@@ -428,26 +528,20 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                 .getTigerProxy()
                 .getConfiguredTigerProxySslContext());
 
-    var futures =
-        IntStream.range(0, 200)
-            .parallel()
-            .mapToObj(
-                i ->
-                    CompletableFuture.runAsync(
-                        () -> {
-                          HttpResponse<String> response =
-                              unirestInstance
-                                  .get(
-                                      "https://localhost:"
-                                          + TigerGlobalConfiguration.readString("free.port.5")
-                                          + path
-                                          + i)
-                                  .asString();
-                          int status = response.getStatus();
-                          assertThat(status).isEqualTo(200);
-                        }));
-
-    CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+    IntStream.range(0, 200)
+        .parallel()
+        .forEach(
+            i ->
+                new Thread(
+                        () ->
+                            unirestInstance
+                                .get(
+                                    "https://localhost:"
+                                        + TigerGlobalConfiguration.readString("free.port.5")
+                                        + path
+                                        + i)
+                                .asString())
+                    .run());
 
     await()
         .atMost(10, TimeUnit.SECONDS)
@@ -462,7 +556,8 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
 
     var responses = messages.stream().filter(m -> m.hasFacet(RbelHttpResponseFacet.class)).toList();
 
-    for (RbelElement r : responses) {
+    for (int i = 0; i < responses.size(); i++) {
+      RbelElement r = responses.get(i);
       var httpFacet = r.getFacet(RbelHttpResponseFacet.class).orElseThrow();
       var tracingFacet = r.getFacet(TracingMessagePairFacet.class).orElseThrow();
       assertThat(tracingFacet.getRequest())
@@ -471,6 +566,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
 
       var requestPath =
           httpFacet.getRequest().findElement("$.path").orElseThrow().getRawStringContent();
+      requestPath.contains("/anything/" + i);
       var responsePath = r.findElement("$.body.url").orElseThrow().getRawStringContent();
 
       assertThat(responsePath).endsWith(requestPath);

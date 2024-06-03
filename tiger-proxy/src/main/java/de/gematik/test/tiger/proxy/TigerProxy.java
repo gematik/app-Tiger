@@ -48,18 +48,14 @@ import kong.unirest.apache.ApacheClient;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.tomcat.util.buf.UriUtil;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-import org.springframework.stereotype.Component;
 
-@Component
 @EqualsAndHashCode(callSuper = true)
-@Slf4j
 public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
   private static final String CA_CERT_ALIAS = "caCert";
@@ -85,10 +81,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
     mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
     bootMockServer();
-
-    if (!configuration.isSkipTrafficEndpointsSubscription()) {
-      subscribeToTrafficEndpoints(configuration);
-    }
 
     if (configuration.getModifications() != null) {
       int counter = 0;
@@ -203,6 +195,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
   private void createNewMockServer() {
     Configuration mockServerConfiguration = Configuration.configuration();
+    mockServerConfiguration.mockServerName(getName().orElse("MockServer"));
     mockServerConfiguration.customKeyAndCertificateFactorySupplier(buildKeyAndCertificateFactory());
     mockServerConfiguration.forwardProxyTLSX509CertificatesTrustManagerType(
         ForwardProxyTLSX509CertificatesTrustManager.ANY);
@@ -353,8 +346,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     }
   }
 
-  public void subscribeToTrafficEndpoints(final TigerProxyConfiguration configuration) {
-    Optional.of(configuration)
+  public void subscribeToTrafficEndpoints() {
+    Optional.of(getTigerProxyConfiguration())
         .map(TigerProxyConfiguration::getTrafficEndpoints)
         .ifPresent(this::subscribeToTrafficEndpoints);
   }

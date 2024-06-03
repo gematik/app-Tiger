@@ -86,7 +86,7 @@ public class TigerWebUiController implements ApplicationContextAware {
   public static final String REGEX_STATUSCODE_TOKEN = ".*:\\d* ";
 
   public static final String DROPDOWN = "dropdown";
-  private final TigerProxy tigerProxy;
+  private TigerProxy tigerProxy;
   private final RbelHtmlRenderer renderer;
 
   private final ApplicationConfiguration applicationConfiguration;
@@ -99,11 +99,10 @@ public class TigerWebUiController implements ApplicationContextAware {
 
   @PostConstruct
   public void addWebSocketListener() {
-    tigerProxy.addRbelMessageListener(this::informClientOfNewMessageArrival);
     renderer.setSubTitle(getVersionStringAsRawHtml() + renderer.getSubTitle());
   }
 
-  private void informClientOfNewMessageArrival(RbelElement element) {
+  public void informClientOfNewMessageArrival(RbelElement element) {
     log.trace(
         "Pushing new message (uUID: {}) from proxy {} to webUI-clients",
         element.getUuid(),

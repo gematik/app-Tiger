@@ -300,7 +300,9 @@ public class TigerTestEnvMgr
       configuration.setTigerProxy(TigerProxyConfiguration.builder().build());
     }
     TigerProxyConfiguration proxyConfig = configuration.getTigerProxy();
-    proxyConfig.setName(LOCAL_TIGER_PROXY_TYPE);
+    if (StringUtils.isEmpty(proxyConfig.getName())) {
+      proxyConfig.setName(LOCAL_TIGER_PROXY_TYPE);
+    }
     proxyConfig.setSkipTrafficEndpointsSubscription(true);
     proxyConfig.setStandalone(false);
     if (proxyConfig.getProxyRoutes() == null) {
@@ -491,7 +493,8 @@ public class TigerTestEnvMgr
     initialServersToBoot.parallelStream().forEach(this::startServer);
 
     if (isLocalTigerProxyActive()) {
-      localTigerProxy.subscribeToTrafficEndpoints(configuration.getTigerProxy());
+      log.info("Subscribing to traffic endpoints with local tiger proxy...");
+      localTigerProxy.subscribeToTrafficEndpoints();
     }
 
     log.info(Ansi.colorize("Finished set up test environment OK", RbelAnsiColors.GREEN_BOLD));

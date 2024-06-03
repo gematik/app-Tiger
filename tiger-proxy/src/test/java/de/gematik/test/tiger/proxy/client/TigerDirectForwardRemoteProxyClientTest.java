@@ -121,6 +121,8 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
                     .bannerMode(Mode.OFF)
                     .properties(
                         Map.of(
+                            "tigerProxy.name",
+                            "tigerProxyApplication",
                             "tigerProxy.directReverseProxy.hostname",
                             "127.0.0.1",
                             "tigerProxy.directReverseProxy.port",
@@ -136,7 +138,10 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
             tigerRemoteProxyClient.set(
                 new TigerRemoteProxyClient(
                     "http://localhost:" + tigerProxy.getAdminPort(),
-                    TigerProxyConfiguration.builder().proxyLogLevel("WARN").build()));
+                    TigerProxyConfiguration.builder()
+                        .name("tigerRemoteProxyClient")
+                        .proxyLogLevel("WARN")
+                        .build()));
             tigerRemoteProxyClient.get().connect();
             await().until(tigerRemoteProxyClient.get()::isConnected);
             return tigerProxy;

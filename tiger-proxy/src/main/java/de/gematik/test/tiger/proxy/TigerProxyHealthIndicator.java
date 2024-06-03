@@ -42,6 +42,14 @@ public class TigerProxyHealthIndicator implements HealthIndicator {
   }
 
   private Status checkProxyAlive() {
+    if (tigerProxy.isShuttingDown()) {
+      return Status.DOWN;
+    }
+
+    // skip health check if direct reverse proxy is configured
+    if (tigerProxy.getTigerProxyConfiguration().getDirectReverseProxy() != null) {
+      return Status.UP;
+    }
     int adminPort = tigerProxy.getAdminPort();
 
     LocalDateTime timestamp = LocalDateTime.now();
@@ -49,6 +57,7 @@ public class TigerProxyHealthIndicator implements HealthIndicator {
       unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
       unirestInstance.config().connectTimeout(2000);
       unirestInstance.config().socketTimeout(2000);
+      unirestInstance.config().automaticRetries(false);
       unirestInstance
           .get(
               "http://localhost:"
