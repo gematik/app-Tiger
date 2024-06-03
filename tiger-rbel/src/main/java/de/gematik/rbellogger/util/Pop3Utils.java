@@ -2,7 +2,10 @@ package de.gematik.rbellogger.util;
 
 import de.gematik.rbellogger.data.RbelElement;
 import java.nio.charset.StandardCharsets;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Pop3Utils {
   public static final String CRLF = "\r\n";
 

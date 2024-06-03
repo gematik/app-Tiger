@@ -9,7 +9,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelPop3ResponseFacet;
+import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,62 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class RbelPop3ResponseConverterTest {
+
+  @Test
+  void shouldConvertListHeader() {
+    String request = "LIST\r\n";
+    String status = "+OK";
+    String count = "2";
+    String size = "320";
+    String header = count + " messages (" + size + " octets)";
+    String response = status + " " + header + "\r\n";
+    RbelElement element = convertMessagePair(request, response);
+
+    checkListOrStatResponseWithoutBody(element, status, header, count, size);
+  }
+
+  @Test
+  void shouldConvertStatHeader() {
+    String request = "STAT\r\n";
+    String status = "+OK";
+    String count = "2";
+    String size = "320";
+    String header = count + " " + size;
+    String response = status + " " + header + "\r\n";
+    RbelElement element = convertMessagePair(request, response);
+
+    checkListOrStatResponseWithoutBody(element, status, header, count, size);
+  }
+
+  private static RbelElementAssertion checkListOrStatResponseWithoutBody(
+      RbelElement element, String status, String header, String count, String size) {
+    return RbelElementAssertion.assertThat(element)
+        .extractChildWithPath("$.status")
+        .hasStringContentEqualTo(status)
+        .andTheInitialElement()
+        .extractChildWithPath("$.header")
+        .hasStringContentEqualTo(header)
+        .andTheInitialElement()
+        .extractChildWithPath("$.header.count")
+        .hasStringContentEqualTo(count)
+        .andTheInitialElement()
+        .extractChildWithPath("$.header.size")
+        .hasStringContentEqualTo(size)
+        .andTheInitialElement()
+        .doesNotHaveChildWithPath("$.body");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"LIST", "STAT"})
+  void shouldRejectMalformedListHeader(String command) {
+    String request = command + "\r\n";
+    String status = "+OK";
+    String header = "foobar foobar";
+    String response = status + " " + header + "\r\n";
+    RbelElement element = convertMessagePair(request, response);
+
+    RbelElementAssertion.assertThat(element).doesNotHaveFacet(RbelPop3ResponseFacet.class);
+  }
 
   @ParameterizedTest
   @ValueSource(strings = {"+OK", "-ERR"})
@@ -81,6 +139,16 @@ class RbelPop3ResponseConverterTest {
   void shouldRejectMalformedPop3Response(String input) {
     RbelElement element = convertToRbelElement(input);
     assertThat(element.hasFacet(RbelPop3ResponseFacet.class)).isFalse();
+  }
+
+  private static RbelElement convertMessagePair(String request, String response) {
+    var requestElement = convertToRbelElement(request);
+    var responseElement = new RbelElement(response.getBytes(StandardCharsets.UTF_8), null);
+    var pairFacet =
+        TracingMessagePairFacet.builder().request(requestElement).response(responseElement).build();
+    requestElement.addOrReplaceFacet(pairFacet);
+    responseElement.addOrReplaceFacet(pairFacet);
+    return RbelLogger.build().getRbelConverter().convertElement(responseElement);
   }
 
   private static RbelElement convertToRbelElement(String input) {

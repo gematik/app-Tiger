@@ -472,6 +472,8 @@ class TigerRemoteProxyClientTest {
   @Test
   void longBuffer_shouldDownloadTrafficPaged() {
     final int numberOfInteractions = 1000;
+    final int expectedMessages = numberOfInteractions * 2;
+    final int pageSize = 50;
     for (int i = 0; i < numberOfInteractions; i++) {
       addRequestResponsePair(tigerProxy.getRbelLogger().getRbelConverter());
     }
@@ -484,20 +486,20 @@ class TigerRemoteProxyClientTest {
       log.info("after generation we now have {} messages", tigerProxy.getRbelMessagesList().size());
 
       await()
-          .atMost(20, TimeUnit.SECONDS)
+          .atMost(numberOfInteractions * 20, TimeUnit.MILLISECONDS)
           .pollDelay(20, TimeUnit.MILLISECONDS)
           .until(
               () ->
                   newlyConnectedRemoteClient.getRbelMessagesList().size()
-                      == numberOfInteractions * 2);
+                      == expectedMessages);
     }
 
     Mockito.verify(tigerWebUiController, Mockito.times(1))
         .downloadTraffic(
-            Mockito.isNull(), Mockito.any(), Mockito.eq(Optional.of(50)), Mockito.any());
-    Mockito.verify(tigerWebUiController, Mockito.times(39))
+            Mockito.isNull(), Mockito.any(), Mockito.eq(Optional.of(pageSize)), Mockito.any());
+    Mockito.verify(tigerWebUiController, Mockito.times(expectedMessages/pageSize - 1))
         .downloadTraffic(
-            Mockito.matches(".*"), Mockito.any(), Mockito.eq(Optional.of(50)), Mockito.any());
+            Mockito.matches(".*"), Mockito.any(), Mockito.eq(Optional.of(pageSize)), Mockito.any());
   }
 
   @Test
