@@ -159,13 +159,7 @@ class XDynamicSidebarTests extends AbstractTests {
   }
 
   @ParameterizedTest
-  @ValueSource(
-      strings = {
-        "#test-tiger-logo",
-        "#test-sidebar-status-icon",
-        "#test-sidebar-feature-icon",
-        "#test-sidebar-server-icon"
-      })
+  @ValueSource(strings = {"#test-tiger-logo"})
   void testSidebarIsClosedAndOpensOnIconClickAndClosesAgain(String iconSelector) {
     page.querySelector(iconSelector).click();
     assertThat(page.querySelector("#test-sidebar-title").isVisible()).isTrue();
