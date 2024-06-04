@@ -60,8 +60,9 @@ class RbelConverterBufferTest {
     var allParsedMessages = new LinkedList<RbelElement>();
     final int maxBufferSizeInBytes = 1024 * 1024;
     for (int i = 0; i < maxBufferSizeInBytes / curlMessage.getBytes().length + 1; i++) {
-      allParsedMessages.add(rbelConverter.parseMessage(
-        curlMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now())));
+      allParsedMessages.add(
+          rbelConverter.parseMessage(
+              curlMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now())));
     }
 
     var rbelLoggerHistory = rbelLogger.getMessageHistory();
@@ -70,7 +71,8 @@ class RbelConverterBufferTest {
     assertThat(maxBufferSizeInBytes).isGreaterThan(sizeOfMessagesInRbelLogger);
     assertThat(allParsedMessages.size()).isGreaterThan(rbelLoggerHistory.size());
     assertThat(rbelLoggerHistory)
-      .containsExactlyElementsOf(
-            allParsedMessages.subList(allParsedMessages.size() - rbelLoggerHistory.size(), allParsedMessages.size()));
+        .containsExactlyElementsOf(
+            allParsedMessages.subList(
+                allParsedMessages.size() - rbelLoggerHistory.size(), allParsedMessages.size()));
   }
 }

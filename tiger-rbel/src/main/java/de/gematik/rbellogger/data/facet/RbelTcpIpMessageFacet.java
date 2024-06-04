@@ -34,7 +34,8 @@ public class RbelTcpIpMessageFacet implements RbelFacet {
     RbelHtmlRenderer.registerFacetRenderer(new RbelMessageRenderer());
   }
 
-  private final long sequenceNumber;
+  private final Long sequenceNumber;
+  private final String receivedFromRemoteWithUrl;
   private final RbelElement sender;
   private final RbelElement receiver;
 

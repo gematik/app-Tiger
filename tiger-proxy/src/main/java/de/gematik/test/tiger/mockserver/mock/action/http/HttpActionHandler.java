@@ -82,7 +82,9 @@ public class HttpActionHandler {
     this.configuration = configuration;
     this.httpStateHandler = httpStateHandler;
     this.scheduler = httpStateHandler.getScheduler();
-    this.httpClient = new NettyHttpClient(configuration, eventLoopGroup, proxyConfigurations, nettySslContextFactory);
+    this.httpClient =
+        new NettyHttpClient(
+            configuration, eventLoopGroup, proxyConfigurations, nettySslContextFactory);
   }
 
   public void processAction(

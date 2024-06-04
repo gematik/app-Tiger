@@ -25,6 +25,7 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeAll;
@@ -70,24 +71,36 @@ public class VauEpa3ConverterTest {
         .hasStringContentEqualTo("Hello World");
     assertThat(rbelLogger.getMessageList().get(5))
         .extractChildWithPath("$.body.decrypted")
-        .hasStringContentEqualTo("Right back at ya!");
+        .hasStringContentEqualTo("Right back at ya!")
+        .andTheInitialElement()
+        .extractChildWithPath("$.body.header.reqCtr")
+        .hasValueEqualTo(1l)
+        .andTheInitialElement()
+        .extractChildWithPath("$.body.header.version")
+        .hasValueEqualTo((byte) 2)
+        .andTheInitialElement()
+        .extractChildWithPath("$.body.header.req")
+        .hasValueEqualTo((byte) 2)
+        .andTheInitialElement()
+        .extractChildWithPath("$.body.header.keyId")
+        .hasValueEqualTo(
+            new BigInteger("49117871460386101168058772883563639427765135898532450228055942387686676034354"));
   }
 
   @Test
   void nestedPathProblems() throws Exception {
     var logger =
-      RbelLogger.build(
-        new RbelConfiguration()
-          .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-          .setActivateVauEpa3Parsing(true)
-          .addCapturer(
-            RbelFileReaderCapturer.builder()
-              .rbelFile("src/test/resources/nestedPathProblems.tgr")
-              .build()));
+        RbelLogger.build(
+            new RbelConfiguration()
+                .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+                .setActivateVauEpa3Parsing(true)
+                .addCapturer(
+                    RbelFileReaderCapturer.builder()
+                        .rbelFile("src/test/resources/nestedPathProblems.tgr")
+                        .build()));
     try (final var capturer = logger.getRbelCapturer()) {
       capturer.initialize();
     }
-    assertThat(logger.getMessageList().get(9))
-      .extractChildWithPath("$.body.decrypted.path");
+    assertThat(logger.getMessageList().get(9)).extractChildWithPath("$.body.decrypted.path");
   }
 }

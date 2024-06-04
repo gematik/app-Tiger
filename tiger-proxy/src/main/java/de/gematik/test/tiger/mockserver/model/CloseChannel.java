@@ -16,9 +16,7 @@
 
 package de.gematik.test.tiger.mockserver.model;
 
-/**
- * Signifies a graceful channel close.
- */
+/** Signifies a graceful channel close. */
 public class CloseChannel extends Action {
 
   @Override

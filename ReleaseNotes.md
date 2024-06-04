@@ -1,5 +1,26 @@
 # Changelog Tiger Test platform
 
+# Release 3.0.5
+
+## Bugfixes
+
+* TGR-1415: TigerProxy: Fixed a bug when multiple Tiger-Proxies would interfere with each other when selecting client-groups. Client-Groups can now be correctly selected, but not multiple settings in a single JVM. If that is desired you will have to boot the Tiger-Proxies through an external-JAR server.
+* ANFEPA-2559: Rbel-Logger: Fixed the handling of the request-counter for EPA3-messages.
+
+## Features
+
+* TGR-1400: RbelParser: Added support for XML-Processing Instructions.
+* TGR-1406: Added the already parsed information in an Epa 3 message to the Rbel-tree.
+* TGR-1408: Zion: Empty headers are no longer transmitted.
+* TGR-1407: Zion: Added the possibility to delay responses for a fixed amount of time.
+* TGR-1376: RbelParser: Conversion of POP3 Messages to Rbel trees
+
+## Bugfixes
+
+* TGR-1405: TigerProxy: Proxies in directReverseProxy-mode now report correct health status.
+* TGR-1405: TigerProxy: More resilient re-connnect logic in mesh-setups.
+* TGR-1405: TigerProxy: Fixed an issue where in a mesh-setup the order of the messages would sometimes be mixed up.
+
 # Release 3.0.4
 
 * Serenity BDD 4.1.10
@@ -12,7 +33,7 @@
 
 ## Bugfixes
 
-* TGR-1398: fixing reset of filter method in rbel validator glue code which caused an NPE if used in feature files (
+* TGR-1398: Fixing reset of filter method in rbel validator glue code which caused an NPE if used in feature files (
   regression).
 * TGR-1389: Fixed an issue where the RbelLogger would decrypt a VAU-EPA3-message multiple times.
 * TGR-1387: Fixed an issue where in a meshed setup messages where not correctly paired.

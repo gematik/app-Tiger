@@ -47,7 +47,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.Banner.Mode;
@@ -61,6 +60,7 @@ class TracingResilienceTest {
 
   private static final int MASTER_ROUNDS = 1000;
   private static final int MESSAGES_PER_ROUND = 2;
+  private static final String EMPTY_MESSAGE_STRING = "                             ";
   private ConfigurableApplicationContext aggregatingProxyContext;
   private TigerProxy receivingProxy;
 
@@ -78,7 +78,6 @@ class TracingResilienceTest {
           name: Sending proxy
         """,
       skipEnvironmentSetup = true)
-  @Disabled("deactivated due to buildserver problems") // TODO TGR-794
   void generateTrafficAndBounceViaRemoteProxy(TigerTestEnvMgr testEnvMgr) throws IOException {
     try (ServerSocket socket = new ServerSocket(0)) {
       aggregatingAdminPort = socket.getLocalPort();
@@ -99,11 +98,10 @@ class TracingResilienceTest {
       randomlyCrashAggregatingProxy();
       randomlyRebootAggregatingProxy(aggregatingAdminPort);
       // this line makes it easier to catch up: we remove the race condition of new traffic coming
-      // in
-      // WHILE aggregating and receiving proxy are trying to catch up.
-      // giveAggregatingProxyTimeToCatchUpIfRunning(testEnvMgr);
+      // in WHILE aggregating and receiving proxy are trying to catch up.
+      giveAggregatingProxyTimeToCatchUpIfRunning(testEnvMgr, i);
       for (int j = 0; j < MESSAGES_PER_ROUND; j++) {
-        var randomMarker = RandomStringUtils.randomAlphanumeric(20);
+        var randomMarker = "messageNumber" + (i*MESSAGES_PER_ROUND + j);//RandomStringUtils.randomAlphanumeric(20);
         log.info("Sending message {}", randomMarker);
         instance
             .get(
@@ -155,13 +153,14 @@ class TracingResilienceTest {
                 .skipTrafficEndpointsSubscription(false)
                 .name("Receiving proxy")
                 .build());
+    receivingProxy.subscribeToTrafficEndpoints();
     log.info("Started Receiving Proxy");
   }
 
   private void giveAggregatingProxyTimeToCatchUpIfRunning(TigerTestEnvMgr testEnvMgr, int round) {
     if (aggregatingProxyContext != null) {
       try {
-        waitAtMost(10, TimeUnit.SECONDS)
+        waitAtMost(20, TimeUnit.SECONDS)
             .until(
                 () ->
                     testEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().size()
@@ -173,25 +172,40 @@ class TracingResilienceTest {
             testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().size(),
             aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessages().size(),
             getReceivingTigerProxyMessages().size());
+        final int toBeSkippedMessages =
+            Math.max(0, testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().size() - 200);
         final List<RbelElement> sendingMsgs =
-            getLastRequestPaths(testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList());
+            getLastRequestPaths(
+                testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList(), toBeSkippedMessages);
         final List<RbelElement> aggregatingMsgs =
             getLastRequestPaths(
-                aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessagesList());
+                aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessagesList(),
+                toBeSkippedMessages);
         final List<RbelElement> receivingMsgs =
-            getLastRequestPaths(receivingProxy.getRbelMessagesList());
+            getLastRequestPaths(receivingProxy.getRbelMessagesList(), toBeSkippedMessages);
         for (int i = 0; i < sendingMsgs.size(); i++) {
           if (makeReadable(sendingMsgs.get(i)).contains("/")) {
             log.error(
                 "{}, {}, {}",
-                makeReadable(sendingMsgs.get(i)),
-                makeReadable(aggregatingMsgs.get(i)),
-                makeReadable(receivingMsgs.get(i)));
+                softQueryList(sendingMsgs, i).map(this::makeReadable).orElse(EMPTY_MESSAGE_STRING),
+                softQueryList(aggregatingMsgs, i)
+                    .map(this::makeReadable)
+                    .orElse(EMPTY_MESSAGE_STRING),
+                softQueryList(receivingMsgs, i)
+                    .map(this::makeReadable)
+                    .orElse(EMPTY_MESSAGE_STRING));
           }
         }
         fail();
       }
     }
+  }
+
+  private Optional<RbelElement> softQueryList(List<RbelElement> list, int i) {
+    if (list.size() < i + 1) {
+      return Optional.empty();
+    }
+    return Optional.of(list.get(i));
   }
 
   private String makeReadable(RbelElement message) {
@@ -215,10 +229,8 @@ class TracingResilienceTest {
   }
 
   @NotNull
-  private List<RbelElement> getLastRequestPaths(List<RbelElement> rbelMessages) {
-    return rbelMessages.stream()
-        .skip(Math.max(0, rbelMessages.size() - 200))
-        .collect(Collectors.toList());
+  private List<RbelElement> getLastRequestPaths(List<RbelElement> rbelMessages, int skip) {
+    return rbelMessages.stream().skip(skip).collect(Collectors.toList());
   }
 
   private void randomlyRebootAggregatingProxy(int aggregatingAdminPort) {

@@ -200,7 +200,7 @@ public class RbelElement extends RbelPathAble {
   }
 
   public <T extends RbelFacet> T getFacetOrFail(Class<T> facetClass) {
-    return getFacet(facetClass).orElseThrow();
+    return getFacet(facetClass).orElseThrow(() -> new RbelException("Facet not found: " + facetClass.getSimpleName()));
   }
 
   @Override

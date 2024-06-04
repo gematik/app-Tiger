@@ -71,6 +71,11 @@ import org.assertj.core.api.InstanceOfAssertFactories;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.tls.*;
+import org.bouncycastle.tls.DefaultTlsClient;
+import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
+import org.bouncycastle.tls.TlsAuthentication;
+import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Disabled;
@@ -616,7 +621,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                             "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
                             "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"))
                     .clientSupportedGroups(
-                        List.of("brainpoolP256r1", "brainpoolP384r1", "prime256v1", "secp384r1"))
+                        List.of("brainpoolP256r1", "brainpoolP384r1", "secp256r1", "secp384r1"))
                     .build())
             .build());
 

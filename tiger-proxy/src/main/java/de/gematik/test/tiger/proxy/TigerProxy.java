@@ -60,22 +60,17 @@ import kong.unirest.apache.ApacheClient;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.tomcat.util.buf.UriUtil;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-import org.springframework.stereotype.Component;
 
-@Component
 @EqualsAndHashCode(callSuper = true)
-@Slf4j
 public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
   private static final String CA_CERT_ALIAS = "caCert";
-  private static final String JDK_TLS_NAMED_GROUPS = "jdk.tls.namedGroups";
   private final List<DynamicTigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();
   private final List<Consumer<Throwable>> exceptionListeners = new ArrayList<>();
   @Getter private final MockServerToRbelConverter mockServerToRbelConverter;
@@ -98,10 +93,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
     mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
     bootMockServer();
-
-    if (!configuration.isSkipTrafficEndpointsSubscription()) {
-      subscribeToTrafficEndpoints(configuration);
-    }
 
     if (configuration.getModifications() != null) {
       int counter = 0;
@@ -216,6 +207,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
   private void createNewMockServer() {
     Configuration mockServerConfiguration = Configuration.configuration();
+    mockServerConfiguration.mockServerName(getName().orElse("MockServer"));
     mockServerConfiguration.customKeyAndCertificateFactorySupplier(buildKeyAndCertificateFactory());
     mockServerConfiguration.forwardProxyTLSX509CertificatesTrustManagerType(
         ForwardProxyTLSX509CertificatesTrustManager.ANY);
@@ -307,22 +299,15 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
         && !tlsConfiguration.getClientSupportedGroups().isEmpty()) {
       mockServerConfiguration.clientSslContextBuilderFunction(
           sslContextBuilder -> {
-            String before = System.getProperty(JDK_TLS_NAMED_GROUPS);
             try {
               System.setProperty(
-                  JDK_TLS_NAMED_GROUPS,
+                  "jdk.tls.namedGroups",
                   String.join(",", tlsConfiguration.getClientSupportedGroups()));
               sslContextBuilder.sslProvider(SslProvider.JDK);
               return sslContextBuilder.build();
             } catch (SSLException e) {
               throw new TigerProxySslException(
                   "Error while building SSL context in Tiger-Proxy " + getName().orElse(""), e);
-            } finally {
-              if (before != null) {
-                System.setProperty(JDK_TLS_NAMED_GROUPS, before);
-              } else {
-                System.clearProperty(JDK_TLS_NAMED_GROUPS);
-              }
             }
           });
     }
@@ -373,8 +358,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
     }
   }
 
-  public void subscribeToTrafficEndpoints(final TigerProxyConfiguration configuration) {
-    Optional.of(configuration)
+  public void subscribeToTrafficEndpoints() {
+    Optional.of(getTigerProxyConfiguration())
         .map(TigerProxyConfiguration::getTrafficEndpoints)
         .ifPresent(this::subscribeToTrafficEndpoints);
   }

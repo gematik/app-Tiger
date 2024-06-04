@@ -13,5 +13,6 @@ import lombok.*;
 @JsonInclude(Include.NON_NULL)
 public class TigerHttpClientConfig {
 
+  @Builder.Default
   private boolean activateRbelWriter = false;
 }

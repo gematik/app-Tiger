@@ -37,10 +37,11 @@ import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
 import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
-import de.gematik.test.tiger.proxy.tracing.TracingPushController;
+import de.gematik.test.tiger.proxy.tracing.TracingPushService;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -89,12 +90,13 @@ class TigerRemoteProxyClientTest {
    *  Our Testsetup:
    *
    *
-   * -------------------     --------------    ---------------------------
-   * | unirestInstance |  -> | tigerProxy | -> | remoteServer (Wiremock) |
-   * -------------------     ------    ----    ---------------------------
-   *          ^                     \ /
-   *          ?                      V
-   *          ----<-----<-----<--Tracing
+   * --------------------------     --------------    ---------------------------
+   * | unirestInstance        |  -> | tigerProxy | -> | remoteServer (Wiremock) |
+   * | tigerRemoteProxyClient |  -> |            | -> |                         |
+   * --------------------------     ------    ----    ---------------------------
+   *          ^                           \ /
+   *          ?                            V
+   *          ----<-----<-----<-----<---Tracing
    *
    */
 
@@ -130,7 +132,10 @@ class TigerRemoteProxyClientTest {
       tigerRemoteProxyClient =
           new TigerRemoteProxyClient(
               "http://localhost:" + springServerPort,
-              TigerProxyConfiguration.builder().proxyLogLevel("WARN").build());
+              TigerProxyConfiguration.builder()
+                  .proxyLogLevel("WARN")
+                  .trafficDownloadPageSize(10)
+                  .build());
       tigerRemoteProxyClient.connect();
 
       unirestInstance =
@@ -144,6 +149,8 @@ class TigerRemoteProxyClientTest {
         .register(stubFor(get("/").willReturn(badRequest().withBody("emptyPath!!!"))));
 
     log.info("Configuring routes...");
+    new ArrayList<>(tigerRemoteProxyClient.getRbelMessageListeners())
+        .forEach(tigerRemoteProxyClient::removeRbelMessageListener);
     tigerRemoteProxyClient.clearAllMessages();
     tigerRemoteProxyClient.clearAllRoutes();
     tigerProxy.clearAllRoutes();
@@ -210,14 +217,14 @@ class TigerRemoteProxyClientTest {
     tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
 
     final String body =
-        RandomStringUtils.randomAlphanumeric(TracingPushController.MAX_MESSAGE_SIZE * 2);
+        RandomStringUtils.randomAlphanumeric(TracingPushService.MAX_MESSAGE_SIZE * 2);
     unirestInstance
         .post("http://myserv.er/foo")
         .body(body)
         .asString()
         .ifFailure(response -> fail(""));
 
-    await().atMost(20, TimeUnit.SECONDS).until(() -> listenerCallCounter.get() > 0);
+    await().atMost(10, TimeUnit.SECONDS).until(() -> listenerCallCounter.get() > 0);
 
     assertThat(
             new String(
@@ -483,33 +490,37 @@ class TigerRemoteProxyClientTest {
 
   @Test
   void longBuffer_shouldDownloadTrafficPaged() {
-    final int numberOfInteractions = 1000;
+    final int numberOfInteractions = 200;
+    final int expectedMessages = numberOfInteractions * 2;
+    final int pageSize = 10;
     for (int i = 0; i < numberOfInteractions; i++) {
-      addRequestResponsePair(tigerProxy.getRbelLogger().getRbelConverter());
+      unirestInstance.get("http://myserv.er/foo").asString();
     }
     try (TigerRemoteProxyClient newlyConnectedRemoteClient =
         new TigerRemoteProxyClient(
             "http://localhost:" + springServerPort,
-            TigerProxyConfiguration.builder().downloadInitialTrafficFromEndpoints(true).build())) {
+            TigerProxyConfiguration.builder()
+                .trafficDownloadPageSize(pageSize)
+                .downloadInitialTrafficFromEndpoints(true)
+                .build())) {
       newlyConnectedRemoteClient.connect();
 
       log.info("after generation we now have {} messages", tigerProxy.getRbelMessagesList().size());
 
       await()
-          .atMost(20, TimeUnit.SECONDS)
+          .atMost(numberOfInteractions * 20, TimeUnit.MILLISECONDS)
           .pollDelay(20, TimeUnit.MILLISECONDS)
           .until(
               () ->
-                  newlyConnectedRemoteClient.getRbelMessagesList().size()
-                      == numberOfInteractions * 2);
+                  newlyConnectedRemoteClient.getRbelMessagesList().size() == expectedMessages);
     }
 
     Mockito.verify(tigerWebUiController, Mockito.times(1))
         .downloadTraffic(
-            Mockito.isNull(), Mockito.any(), Mockito.eq(Optional.of(50)), Mockito.any());
-    Mockito.verify(tigerWebUiController, Mockito.times(39))
+            Mockito.isNull(), Mockito.any(), Mockito.eq(Optional.of(pageSize)), Mockito.any());
+    Mockito.verify(tigerWebUiController, Mockito.times(expectedMessages/pageSize - 1))
         .downloadTraffic(
-            Mockito.matches(".*"), Mockito.any(), Mockito.eq(Optional.of(50)), Mockito.any());
+            Mockito.matches(".*"), Mockito.any(), Mockito.eq(Optional.of(pageSize)), Mockito.any());
   }
 
   @Test

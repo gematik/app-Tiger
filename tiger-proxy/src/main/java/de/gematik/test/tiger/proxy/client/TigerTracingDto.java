@@ -34,4 +34,6 @@ public class TigerTracingDto {
   private final ZonedDateTime responseTransmissionTime;
   private final Map<String, String> additionalInformationRequest;
   private final Map<String, String> additionalInformationResponse;
+  private final Long sequenceNumberRequest;
+  private final Long sequenceNumberResponse;
 }

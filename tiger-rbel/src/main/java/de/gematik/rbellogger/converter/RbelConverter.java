@@ -78,7 +78,9 @@ public class RbelConverter {
               new RbelSicctEnvelopeConverter(),
               new RbelSicctCommandConverter(),
               new RbelCetpConverter(),
-              new RbelCborConverter()));
+              new RbelCborConverter(),
+              new RbelPop3CommandConverter(),
+              new RbelPop3ResponseConverter()));
   @Builder.Default private int rbelBufferSizeInMb = 1024;
   @Builder.Default private boolean manageBuffer = false;
   @Getter @Builder.Default private long currentBufferSize = 0;
@@ -181,7 +183,7 @@ public class RbelConverter {
       final RbelHostname sender,
       final RbelHostname receiver,
       final Optional<ZonedDateTime> transmissionTime) {
-    var messageElement = messagePair.getMessage();
+    final var messageElement = messagePair.getMessage();
     addMessageToHistory(messageElement);
 
     messageElement.addFacet(
@@ -192,6 +194,21 @@ public class RbelConverter {
             .build());
 
     messageElement.addFacet(new RbelParsingNotCompleteFacet(this));
+    messagePair
+        .getPairedRequest()
+        .ifPresent(
+            requestFuture ->
+                requestFuture.thenAccept(
+                    request -> {
+                      final var pairFacet =
+                          TracingMessagePairFacet.builder()
+                              .response(messageElement)
+                              .request(request)
+                              .build();
+                      request.addOrReplaceFacet(pairFacet);
+                      messageElement.addOrReplaceFacet(pairFacet);
+                    }));
+
     return CompletableFuture.supplyAsync(
         () -> {
           try {
@@ -215,12 +232,9 @@ public class RbelConverter {
         .getFacet(RbelHttpResponseFacet.class)
         .map(resp -> resp.getRequest() == null)
         .orElse(false)) {
-      RbelHttpResponseFacet.updateRequestOfResponseFacet(
-          message, messagePair.getPairedRequest().map(CompletableFuture::join).orElse(null));
-      messagePair
-          .getPairedRequest()
-          .map(CompletableFuture::join)
-          .ifPresent(req -> RbelHttpRequestFacet.updateResponseOfRequestFacet(req, message));
+      final var request = messagePair.getPairedRequest().map(CompletableFuture::join);
+      RbelHttpResponseFacet.updateRequestOfResponseFacet(message, request.orElse(null));
+      request.ifPresent(req -> RbelHttpRequestFacet.updateResponseOfRequestFacet(req, message));
     }
 
     message.triggerPostConversionListener(this);

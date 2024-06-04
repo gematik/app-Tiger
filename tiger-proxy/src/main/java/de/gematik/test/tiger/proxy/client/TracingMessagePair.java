@@ -17,11 +17,10 @@
 package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.rbellogger.file.RbelFileWriter;
-import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.Data;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
@@ -39,7 +38,7 @@ public class TracingMessagePair implements TracingMessageFrame {
   @Override
   public void checkForCompletePairAndPropagateIfComplete() {
     if (request != null && response != null && request.isComplete() && response.isComplete()) {
-      remoteProxyClient.submitNewMessageTask(this::parseAndPropagate);
+      parseAndPropagate();
     }
   }
 
@@ -54,64 +53,104 @@ public class TracingMessagePair implements TracingMessageFrame {
           request.getTracingDto().getResponseUuid());
       return;
     }
-    val requestParsed =
+    final var requestParsed =
         remoteProxyClient.buildNewRbelMessage(
             request.getSender(),
             request.getReceiver(),
             request.buildCompleteContent(),
             Optional.ofNullable(request.getTransmissionTime()),
             request.getTracingDto().getRequestUuid());
-    val responseParsed =
+    final var responseParsed =
         remoteProxyClient.buildNewRbelResponse(
             response.getSender(),
             response.getReceiver(),
             response.buildCompleteContent(),
-            requestParsed.orElse(null),
+            requestParsed,
             Optional.ofNullable(response.getTransmissionTime()),
             response.getTracingDto().getResponseUuid());
     if (requestParsed.isEmpty() || responseParsed.isEmpty()) {
       return;
     }
 
-    RbelFileWriter.DEFAULT_POST_CONVERSION_LISTENER.forEach(
-        listener -> {
-          listener.performMessagePostConversionProcessing(
-              requestParsed.get(),
-              remoteProxyClient.getRbelLogger().getRbelConverter(),
-              new JSONObject(this.request.getAdditionalInformation()));
-          listener.performMessagePostConversionProcessing(
-              responseParsed.get(),
-              remoteProxyClient.getRbelLogger().getRbelConverter(),
-              new JSONObject(this.response.getAdditionalInformation()));
-        });
+    requestParsed
+        .get()
+        .thenCombineAsync(
+            responseParsed.get(),
+            (req, res) -> {
+              try {
+                performPostConversion(req, res);
+                return null;
+              } catch (RuntimeException e){
+                log.info(
+                  "{} - Error while processing pair with UUIDs {} and {}",
+                  remoteProxyClient.proxyName(),
+                  request.getTracingDto().getRequestUuid(),
+                  request.getTracingDto().getResponseUuid(),
+                  e);
+                throw e;
+              }
+            })
+      .exceptionally(
+          e -> {
+            log.error(
+                "{} - Error while processing pair with UUIDs {} and {}",
+                remoteProxyClient.proxyName(),
+                request.getTracingDto().getRequestUuid(),
+                request.getTracingDto().getResponseUuid(),
+                e);
+            return null;
+          });
+  }
 
-    val pairFacet =
-        TracingMessagePairFacet.builder()
-            .response(responseParsed.get())
-            .request(requestParsed.get())
-            .build();
-    responseParsed.get().addFacet(pairFacet);
-
+  private void performPostConversion(RbelElement req, RbelElement res) {
+    if (request.getTracingDto().getSequenceNumberRequest() != null
+        && response.getTracingDto().getSequenceNumberResponse() != null) {
+      req.addOrReplaceFacet(
+          req.getFacetOrFail(RbelTcpIpMessageFacet.class).toBuilder()
+              .sequenceNumber(request.getTracingDto().getSequenceNumberRequest())
+              .receivedFromRemoteWithUrl(remoteProxyClient.getRemoteProxyUrl())
+              .build());
+      res.addOrReplaceFacet(
+          res.getFacetOrFail(RbelTcpIpMessageFacet.class).toBuilder()
+              .sequenceNumber(request.getTracingDto().getSequenceNumberResponse())
+              .receivedFromRemoteWithUrl(remoteProxyClient.getRemoteProxyUrl())
+              .build());
+    }
+    tigerPostConversionListener(req, res);
+    val pairFacet = TracingMessagePairFacet.builder().response(res).request(req).build();
+    res.addFacet(pairFacet);
     if (log.isTraceEnabled()) {
       log.trace(
           "{}Received pair to {} (UUIDs {} and {})",
           remoteProxyClient.proxyName(),
-          requestParsed
-              .map(RbelElement::getRawStringContent)
-              .map(s -> Stream.of(s.split(" ")).skip(1).limit(1).collect(Collectors.joining(",")))
-              .orElse("<>"),
-          requestParsed.get().getUuid(),
-          responseParsed.get().getUuid());
+          req.printHttpDescription(),
+          req.getUuid(),
+          res.getUuid());
     }
-    remoteProxyClient.getLastMessageUuid().set(responseParsed.get().getUuid());
 
-    if (remoteProxyClient.messageMatchesFilterCriterion(requestParsed.get())
-        || remoteProxyClient.messageMatchesFilterCriterion(responseParsed.get())) {
-      remoteProxyClient.propagateMessage(requestParsed.get());
-      remoteProxyClient.propagateMessage(responseParsed.get());
+    remoteProxyClient.getLastMessageUuid().set(res.getUuid());
+
+    if (remoteProxyClient.messageMatchesFilterCriterion(req)
+        || remoteProxyClient.messageMatchesFilterCriterion(res)) {
+      remoteProxyClient.propagateMessage(req);
+      remoteProxyClient.propagateMessage(res);
     } else {
-      remoteProxyClient.removeMessage(requestParsed.get());
-      remoteProxyClient.removeMessage(responseParsed.get());
+      remoteProxyClient.removeMessage(req);
+      remoteProxyClient.removeMessage(res);
     }
+  }
+
+  private void tigerPostConversionListener(RbelElement req, RbelElement res) {
+    RbelFileWriter.DEFAULT_POST_CONVERSION_LISTENER.forEach(
+        listener -> {
+          listener.performMessagePostConversionProcessing(
+              req,
+              remoteProxyClient.getRbelLogger().getRbelConverter(),
+              new JSONObject(this.request.getAdditionalInformation()));
+          listener.performMessagePostConversionProcessing(
+              res,
+              remoteProxyClient.getRbelLogger().getRbelConverter(),
+              new JSONObject(this.response.getAdditionalInformation()));
+        });
   }
 }

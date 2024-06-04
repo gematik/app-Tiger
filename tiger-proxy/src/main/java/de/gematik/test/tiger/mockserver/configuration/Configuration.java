@@ -51,6 +51,7 @@ public class Configuration {
   private Boolean detailedMatchFailures = true;
   private Boolean launchUIForLogLevelDebug = false;
   private Boolean metricsEnabled = false;
+  private String mockServerName = null;
 
   // scalability
   private Integer nioEventLoopThreadCount = 5;

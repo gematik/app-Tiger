@@ -58,8 +58,8 @@ public class RbelJsonElementToNodeConverter implements RbelElementToContentTreeN
             .map(RbelContentType::seekValueFor)
             .orElse(RbelContentType.JSON));
     if (el.getFacet(RbelJsonFacet.class)
-      .map(facet -> facet.getJsonElement().isArray())
-      .orElse(false)) {
+        .map(facet -> facet.getJsonElement().isArray())
+        .orElse(false)) {
       result.attributes().put(JSON_ARRAY, "true");
     }
     return result;

@@ -22,13 +22,15 @@ public class TigerMockResponseDescription {
   private String bodyFile;
   @TigerSkipEvaluation @Builder.Default private Map<String, String> headers = new HashMap<>();
   @TigerSkipEvaluation @Builder.Default private String statusCode = "200";
+  @TigerSkipEvaluation @Builder.Default private String responseDelay = "";
 
   public TigerMockResponseDescription(
-      String body, String bodyFile, Map<String, String> headers, String statusCode) {
+      String body, String bodyFile, Map<String, String> headers, String statusCode, String responseDelay) {
     this.body = body;
     setBodyFile(bodyFile);
     this.headers = headers;
     this.statusCode = statusCode;
+    this.responseDelay = responseDelay;
   }
 
   public void setBodyFile(String bodyFile) {

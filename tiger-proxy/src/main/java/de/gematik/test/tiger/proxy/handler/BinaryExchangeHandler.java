@@ -22,11 +22,11 @@ import de.gematik.rbellogger.data.facet.RbelBinaryFacet;
 import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
+import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.mockserver.model.BinaryProxyListener;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.proxy.data.TigerNonPairedMessageFacet;
-import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
@@ -78,8 +78,8 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
                     final TracingMessagePairFacet pairFacet =
                         new TracingMessagePairFacet(
                             convertedResponse.get(), convertedRequest.get());
-                    convertedRequest.get().addFacet(pairFacet);
-                    convertedResponse.get().addFacet(pairFacet);
+                    convertedRequest.get().addOrReplaceFacet(pairFacet);
+                    convertedResponse.get().addOrReplaceFacet(pairFacet);
                     getTigerProxy().triggerListener(convertedRequest.get());
                     getTigerProxy().triggerListener(convertedResponse.get());
                   } else {
@@ -87,14 +87,14 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
                         .or(() -> convertedResponse)
                         .ifPresent(
                             msg -> {
-                              msg.addFacet(new TigerNonPairedMessageFacet());
+                              msg.addOrReplaceFacet(new TigerNonPairedMessageFacet());
                               getTigerProxy().triggerListener(msg);
                             });
                   }
                 } else {
                   convertedResponse.ifPresent(
                       msg -> {
-                        msg.addFacet(new TigerNonPairedMessageFacet());
+                        msg.addOrReplaceFacet(new TigerNonPairedMessageFacet());
                         getTigerProxy().triggerListener(msg);
                       });
                 }

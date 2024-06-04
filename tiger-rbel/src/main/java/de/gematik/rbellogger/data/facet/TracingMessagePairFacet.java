@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.proxy.data;
+package de.gematik.rbellogger.data.facet;
 
 import static de.gematik.rbellogger.file.RbelFileWriter.PAIRED_MESSAGE_UUID;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.data.facet.RbelFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.util.RbelMessagePostProcessor;
 import java.util.Optional;
 import lombok.AllArgsConstructor;

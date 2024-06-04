@@ -669,8 +669,7 @@ servers:
     HttpResponse<String> responseExisting =
         unirest
             .post("http://serverTestName/")
-            .body(
-                """
+            .body("""
               {"urn:telematik:claims:email": "test"}
               """)
             .asString();

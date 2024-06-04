@@ -16,6 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -77,6 +78,7 @@ public class CatchAllController implements WebMvcConfigurer {
       method = {GET, POST, HEAD, OPTIONS, PUT, PATCH, DELETE, TRACE}) // NOSONAR
   public ResponseEntity<byte[]> masterResponder(
       RequestEntity<byte[]> request, HttpServletRequest servletRequest) {
+    final LocalDateTime responseStartTime = LocalDateTime.now();
     log.info("Got new request {} {}", request.getMethod(), request.getUrl());
 
     byte[] rawMessage = buildRawMessageApproximate(request);
@@ -107,6 +109,7 @@ public class CatchAllController implements WebMvcConfigurer {
             .configuration(configuration)
             .backendRequestExecutor(backendRequestExecutor)
             .request(request)
+            .responseStartTime(responseStartTime)
             .build()
             .execute();
 

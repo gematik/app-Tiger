@@ -3,8 +3,10 @@ package de.gematik.rbellogger.testutil;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.data.facet.RbelValueFacet;
+import de.gematik.rbellogger.util.RbelPathAble;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.assertj.core.api.AbstractAssert;
 import org.assertj.core.api.ObjectAssert;
 import org.assertj.core.api.StringAssert;
@@ -36,10 +38,32 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
     }
     if (kids.size() > 1) {
       failWithMessage(
-          "Expected rbelPath %s to find one member, but did return %s in tree %s",
-          rbelPath, kids.size(), actual.printTreeStructureWithoutColors());
+          "Expected rbelPath %s to find one member, but did return %s \n(%s) \nin tree %s",
+          rbelPath,
+          kids.size(),
+          kids.stream().map(RbelPathAble::findNodePath).collect(Collectors.joining("\n")),
+          actual.printTreeStructureWithoutColors());
     }
     return new RbelElementAssertion(kids.get(0), this.actual);
+  }
+
+  public RbelElementAssertion extractChildWithPath(String rbelPath, int index) {
+    final List<RbelElement> kids = actual.findRbelPathMembers(rbelPath);
+    if (kids.isEmpty()) {
+      failWithMessage(
+          "Expected rbelPath %s to find member, but did not in tree %s",
+          rbelPath, actual.printTreeStructureWithoutColors());
+    }
+    if (kids.size() <= index) {
+      failWithMessage(
+          "Expected rbelPath %s to find %s member, but did return %s \n(%s) \nin tree %s",
+          rbelPath,
+          index,
+          kids.size(),
+          kids.stream().map(RbelPathAble::findNodePath).collect(Collectors.joining("\n")),
+          actual.printTreeStructureWithoutColors());
+    }
+    return new RbelElementAssertion(kids.get(index), this.actual);
   }
 
   public RbelElementAssertion hasChildWithPath(String rbelPath) {
@@ -125,5 +149,10 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
           facetClass.getSimpleName(), new ArrayList<>(actual.getFacets()));
     }
     return new ObjectAssert<>(actual.getFacetOrFail(facetClass));
+  }
+
+  public RbelElementAssertion andPrintTree() {
+    System.out.println(actual.printTreeStructure());
+    return this;
   }
 }

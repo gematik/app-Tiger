@@ -17,8 +17,9 @@
 package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
 import de.gematik.rbellogger.file.RbelFileWriter;
-import de.gematik.test.tiger.proxy.data.TigerNonPairedMessageFacet;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -38,7 +39,7 @@ public class TracingMessageIsolani implements TracingMessageFrame {
   @Override
   public void checkForCompletePairAndPropagateIfComplete() {
     if (message != null && message.isComplete()) {
-      remoteProxyClient.submitNewMessageTask(this::parseAndPropagate);
+      parseAndPropagate();
     }
   }
 
@@ -63,30 +64,73 @@ public class TracingMessageIsolani implements TracingMessageFrame {
       return;
     }
 
-    RbelFileWriter.DEFAULT_POST_CONVERSION_LISTENER.forEach(
-        listener ->
-            listener.performMessagePostConversionProcessing(
-                messageParsed.get(),
-                remoteProxyClient.getRbelLogger().getRbelConverter(),
-                new JSONObject(this.message.getAdditionalInformation())));
+    messageParsed
+        .get()
+        .thenAccept(
+            msg -> {
+              try {
+              doPostConversion(msg);
 
-    messageParsed.get().addFacet(new TigerNonPairedMessageFacet());
+              } catch (RuntimeException e){
+                log.error(
+                  "{} - Error while processing message with UUID {}",
+                  remoteProxyClient.proxyName(),
+                  message.getTracingDto().getRequestUuid(),
+                  e);
+                throw e;
+              }
+            })
+      .exceptionally(
+        e -> {
+          log.error(
+            "{} - Error while processing message with UUID {}",
+            remoteProxyClient.proxyName(),
+            message.getTracingDto().getRequestUuid(),
+            e);
+          return null;
+        });  }
+
+  private void doPostConversion(RbelElement msg) {
+    msg.addOrReplaceFacet(
+      msg.getFacetOrFail(RbelTcpIpMessageFacet.class).toBuilder()
+        .sequenceNumber(message.getTracingDto().getSequenceNumberRequest())
+        .receivedFromRemoteWithUrl(remoteProxyClient.getRemoteProxyUrl())
+        .build());
+
+    triggerPostConversionListener(msg);
+
+    msg.addFacet(new TigerNonPairedMessageFacet());
+
     if (log.isTraceEnabled()) {
       log.trace(
           "{}Received isolani message to {} (UUID {})",
           remoteProxyClient.proxyName(),
-          messageParsed
+          Optional.of(msg)
               .map(RbelElement::getRawStringContent)
-              .map(s -> Stream.of(s.split(" ")).skip(1).limit(1).collect(Collectors.joining(",")))
+              .map(
+                  s ->
+                      Stream.of(s.split(" "))
+                          .skip(1)
+                          .limit(1)
+                          .collect(Collectors.joining(",")))
               .orElse("<>"),
-          messageParsed.get().getUuid());
+          msg.getUuid());
     }
-    remoteProxyClient.getLastMessageUuid().set(messageParsed.get().getUuid());
+    remoteProxyClient.getLastMessageUuid().set(msg.getUuid());
 
-    if (remoteProxyClient.messageMatchesFilterCriterion(messageParsed.get())) {
-      remoteProxyClient.propagateMessage(messageParsed.get());
+    if (remoteProxyClient.messageMatchesFilterCriterion(msg)) {
+      remoteProxyClient.propagateMessage(msg);
     } else {
-      remoteProxyClient.removeMessage(messageParsed.get());
+      remoteProxyClient.removeMessage(msg);
     }
+  }
+
+  private void triggerPostConversionListener(RbelElement msg) {
+    RbelFileWriter.DEFAULT_POST_CONVERSION_LISTENER.forEach(
+        listener ->
+            listener.performMessagePostConversionProcessing(
+                msg,
+                remoteProxyClient.getRbelLogger().getRbelConverter(),
+                new JSONObject(this.message.getAdditionalInformation())));
   }
 }

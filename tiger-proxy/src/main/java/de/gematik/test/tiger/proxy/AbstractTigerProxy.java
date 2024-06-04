@@ -24,6 +24,7 @@ import de.gematik.rbellogger.converter.RbelErpVauDecrpytionConverter;
 import de.gematik.rbellogger.converter.RbelVauEpaConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
@@ -31,11 +32,11 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import de.gematik.test.tiger.proxy.client.ProxyFileReadingFilter;
-import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.vau.RbelVauSessionListener;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,8 +56,10 @@ import javax.annotation.Nullable;
 import kong.unirest.Unirest;
 import lombok.Data;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.LoggerFactory;
 
 @Data
@@ -91,7 +94,9 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
 
   protected AbstractTigerProxy(
       TigerProxyConfiguration configuration, @Nullable RbelLogger rbelLogger) {
-    log = LoggerFactory.getLogger(AbstractTigerProxy.class);
+    final String loggerName =
+        StringUtils.isNotBlank(configuration.getName()) ? "(" + configuration.getName() + ")" : "";
+    log = LoggerFactory.getLogger(this.getClass().getSimpleName() + loggerName);
     name = Optional.ofNullable(configuration.getName());
     if (configuration.getTls() == null) {
       throw new TigerProxyStartupException("no TLS-configuration found!");
@@ -261,7 +266,8 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   }
 
   public void triggerListener(RbelElement element) {
-    getRbelMessageListeners().forEach(listener -> listener.triggerNewReceivedMessage(element));
+    getRbelMessageListeners()
+        .forEach(listener -> listener.triggerNewReceivedMessage(element));
   }
 
   @Override
@@ -303,20 +309,22 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
     }
   }
 
+  @SneakyThrows
   private boolean isGivenTigerProxyHealthy(String url) {
     try {
       log.debug("Waiting for tiger-proxy at '{}' to be online...", url);
-      Unirest.get(url)
-          .connectTimeout(getTigerProxyConfiguration().getConnectionTimeoutInSeconds() * 1000)
-          .asEmpty();
-      return true;
+      final int status = Unirest.get(url + "/actuator/health")
+        .connectTimeout(getTigerProxyConfiguration().getConnectionTimeoutInSeconds() * 1000)
+        .asEmpty().getStatus();
+      log.trace("Tiger-proxy at '{}' is online! (status is {})", url, status);
+      return status == 200;
     } catch (RuntimeException e) {
       return false;
     }
   }
 
   public String proxyName() {
-    return name.map(s -> s + ": ").orElse("");
+    return name.orElse("");
   }
 
   public void clearAllMessages() {

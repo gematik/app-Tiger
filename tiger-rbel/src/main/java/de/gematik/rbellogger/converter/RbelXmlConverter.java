@@ -18,21 +18,20 @@ package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.data.facet.RbelRootFacet;
-import de.gematik.rbellogger.data.facet.RbelXmlAttributeFacet;
-import de.gematik.rbellogger.data.facet.RbelXmlFacet;
-import de.gematik.rbellogger.data.facet.RbelXmlNamespaceFacet;
+import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.util.RbelException;
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.dom4j.*;
 import org.dom4j.io.SAXReader;
 import org.dom4j.tree.AbstractBranch;
 import org.dom4j.tree.DefaultComment;
+import org.dom4j.tree.DefaultProcessingInstruction;
 import org.xml.sax.InputSource;
 
 @Slf4j
@@ -131,11 +130,34 @@ public class RbelXmlConverter implements RbelConverterPlugin {
         childElements.put(childXmlName, namespaceAttributeElement);
       } else if (child instanceof DefaultComment) {
         // do nothing
+      } else if (child instanceof DefaultProcessingInstruction instruction) {
+        final RbelElement element =
+            convertProcessingInstruction(parentElement, converter, instruction);
+        childElements.put(instruction.getTarget(), element);
       } else {
         throw new RbelException(
             "Could not convert XML element of type " + child.getClass().getSimpleName());
       }
     }
+  }
+
+  private static RbelElement convertProcessingInstruction(
+      RbelElement parentElement,
+      RbelConverter converter,
+      DefaultProcessingInstruction instruction) {
+    final RbelElement instructionElement =
+        new RbelElement(
+            instruction.asXML().getBytes(parentElement.getElementCharset()), parentElement);
+    final RbelMultiMap<RbelElement> childElements = new RbelMultiMap<>();
+    final RbelXmlProcessingInstructionFacet instructionFacet =
+        new RbelXmlProcessingInstructionFacet(instruction.getTarget());
+    instructionElement.addFacet(instructionFacet);
+    instructionElement.addFacet(new RbelMapFacet(childElements));
+    for (Entry<String, String> attribute : instruction.getValues().entrySet()) {
+      final RbelElement value = converter.convertElement(attribute.getValue(), parentElement);
+      childElements.put(attribute.getKey(), value);
+    }
+    return instructionElement;
   }
 
   private static void addAttributes(

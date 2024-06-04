@@ -21,12 +21,12 @@ import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
-import de.gematik.rbellogger.data.facet.RbelXmlAttributeFacet;
-import de.gematik.rbellogger.data.facet.RbelXmlFacet;
-import de.gematik.rbellogger.data.facet.RbelXmlNamespaceFacet;
+import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
 import java.io.IOException;
@@ -223,5 +223,30 @@ class XmlConverterTest {
         .hasStringContentEqualTo("urn:oasis:names:tc:ebxml-regrep:xsd:rim:3.0")
         .hasFacet(RbelXmlAttributeFacet.class)
         .hasFacet(RbelXmlNamespaceFacet.class);
+  }
+
+  @Test
+  void xmlProcessingInstructions() throws Exception {
+    var rbelLogger =
+        RbelLogger.build(
+            new RbelConfiguration()
+                .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+                .setActivateVauEpa3Parsing(true)
+                .addCapturer(
+                    RbelFileReaderCapturer.builder()
+                        .rbelFile("src/test/resources/xmlProcessingInstructions.tgr")
+                        .build()));
+    try (final var capturer = rbelLogger.getRbelCapturer()) {
+      capturer.initialize();
+    }
+
+    assertThat(rbelLogger.getMessageList().get(14).findRbelPathMembers("$..xml-stylesheet").get(0))
+        .hasStringContentEqualTo("<?xml-stylesheet type=\"text/xsl\" href=\"vhitg-cda-v3.xsl\"?>")
+        .hasFacet(RbelXmlProcessingInstructionFacet.class)
+        .extractChildWithPath("$.href")
+        .hasStringContentEqualTo("vhitg-cda-v3.xsl")
+        .andTheInitialElement()
+        .extractChildWithPath("$.type")
+        .hasStringContentEqualTo("text/xsl");
   }
 }

@@ -18,8 +18,9 @@ package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.test.tiger.proxy.data.TigerDownloadedMessageFacet;
-import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,38 +29,32 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
-import lombok.val;
+import lombok.*;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-// TODO make async compatible
-@AllArgsConstructor
-@Slf4j
+@RequiredArgsConstructor
 public class TigerRemoteTrafficDownloader {
 
   private final TigerRemoteProxyClient tigerRemoteProxyClient;
+  private Logger log = LoggerFactory.getLogger(TigerRemoteTrafficDownloader.class);
 
   public void execute() {
-    tigerRemoteProxyClient.switchToQueueMode();
+    log =
+        LoggerFactory.getLogger(
+            TigerRemoteTrafficDownloader.class.getName()
+                + "("
+                + tigerRemoteProxyClient.proxyName()
+                + ")");
 
     downloadAllTrafficFromRemote();
 
     log.info(
-        "{}Successfully downloaded missed traffic from '{}'.",
-        tigerRemoteProxyClient.proxyName(),
-        getRemoteProxyUrl());
-
-    log.info(
-        "{}Successfully downloaded & parsed missed traffic from '{}'. Now {} message(s)"
+        "Successfully downloaded & parsed missed traffic from '{}'. Now {} message(s)"
             + " in local history",
-        tigerRemoteProxyClient.proxyName(),
         getRemoteProxyUrl(),
         getRbelLogger().getMessageHistory().size());
-
-    tigerRemoteProxyClient.switchToExecutorMode();
   }
 
   private void parseTrafficChunk(String rawTraffic) {
@@ -71,20 +66,16 @@ public class TigerRemoteTrafficDownloader {
   }
 
   private void doMessageBatchPostProcessing(List<RbelElement> convertedMessages, long count) {
-    convertedMessages.forEach(msg -> msg.addFacet(new TigerDownloadedMessageFacet()));
-    for (int i = 0; i < convertedMessages.size(); i += 2) {
-      val pairFacet =
-          TracingMessagePairFacet.builder()
-              .response(convertedMessages.get(i + 1))
-              .request(convertedMessages.get(i))
-              .build();
-      convertedMessages.get(i + 1).addFacet(pairFacet);
-    }
+    convertedMessages.forEach(
+        msg -> {
+          msg.addFacet(new TigerDownloadedMessageFacet());
+          addRemoteUrlToTcpIpFacet(msg);
+        });
+    addSequenceNumbersForOlderTigerProxies(convertedMessages);
     if (log.isTraceEnabled()) {
       log.trace(
-          "{}Just parsed another traffic batch of {} lines, got {} messages, expected {} (rest was"
+          "Just parsed another traffic batch of {} lines, got {} messages, expected {} (rest was"
               + " filtered). Now standing at {} messages overall",
-          tigerRemoteProxyClient.proxyName(),
           count,
           convertedMessages.size(),
           (count + 2) / 3,
@@ -98,8 +89,7 @@ public class TigerRemoteTrafficDownloader {
     convertedMessages.forEach(tigerRemoteProxyClient::triggerListener);
     if (log.isTraceEnabled()) {
       log.trace(
-          "{}Parsed traffic, ending with {}",
-          tigerRemoteProxyClient.proxyName(),
+          "Parsed traffic, ending with {}",
           convertedMessages.stream()
               .map(RbelElement::getRawStringContent)
               .flatMap(content -> Stream.of(content.split(" ")).skip(1).limit(1))
@@ -108,12 +98,37 @@ public class TigerRemoteTrafficDownloader {
     }
   }
 
+  private static void addSequenceNumbersForOlderTigerProxies(List<RbelElement> convertedMessages) {
+    if (convertedMessages.isEmpty()) {
+      return;
+    }
+    if (convertedMessages.get(0).hasFacet(TracingMessagePairFacet.class)) {
+      return;
+    }
+    for (int i = 0; i < convertedMessages.size(); i += 2) {
+      val pairFacet =
+          TracingMessagePairFacet.builder()
+              .response(convertedMessages.get(i + 1))
+              .request(convertedMessages.get(i))
+              .build();
+      if (convertedMessages.size() >= i + 1) {
+        convertedMessages.get(i + 2).addFacet(pairFacet);
+      }
+    }
+  }
+
+  private void addRemoteUrlToTcpIpFacet(RbelElement element) {
+    element
+        .getFacet(RbelTcpIpMessageFacet.class)
+        .map(f -> f.toBuilder().receivedFromRemoteWithUrl(getRemoteProxyUrl()).build())
+        .ifPresent(element::addOrReplaceFacet);
+  }
+
   private void downloadAllTrafficFromRemote() {
     PaginationInfo paginationInfo;
     int pageNumber = 0;
     // we make a copy of the last uuid because the traffic parsing will be commenced in parallel,
-    // meaning
-    // the tigerRemoteProxyClient.getLastMessageUuid() can shift
+    // meaning the tigerRemoteProxyClient.getLastMessageUuid() can shift
     Optional<String> currentLastUuid =
         Optional.ofNullable(tigerRemoteProxyClient.getLastMessageUuid().get());
     final int pageSize =
@@ -137,9 +152,7 @@ public class TigerRemoteTrafficDownloader {
       int pageSize, Optional<String> currentLastUuid) {
     final String downloadUrl = getRemoteProxyUrl() + "/webui/trafficLog.tgr";
     log.debug(
-        "{}Downloading missed traffic from '{}', starting from {}. page-size {} (currently cached"
-            + " {} messages)",
-        tigerRemoteProxyClient.proxyName(),
+        "Downloading missed traffic from '{}', starting from {}. page-size {} (currently cached {} messages)",
         currentLastUuid,
         downloadUrl,
         pageSize,
@@ -185,7 +198,7 @@ public class TigerRemoteTrafficDownloader {
     }
 
     private static Integer convertHeaderFieldToInt(HttpResponse<String> response, String key) {
-      return Optional.ofNullable(response.getHeaders().getFirst(key))
+      return java.util.Optional.ofNullable(response.getHeaders().getFirst(key))
           .filter(StringUtils::isNotEmpty)
           .map(Integer::parseInt)
           .orElse(-1);

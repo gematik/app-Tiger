@@ -66,9 +66,7 @@ public class HttpBinServer extends AbstractExternalTigerServer {
 
     waitForServerUp();
     addServerToLocalProxyRouteMap(httpBinEndpoint.toURL());
-    addServerNameForPort(
-      getServerport(),
-      this.getServerId());
+    addServerNameForPort(getServerport(), this.getServerId());
   }
 
   private HttpBinConfiguration getHttbBinConfiguration() {

@@ -52,12 +52,10 @@ public class RbelHttpRequestFacet implements RbelFacet {
   }
 
   public static void updateResponseOfRequestFacet(RbelElement request, RbelElement response) {
-    request.addOrReplaceFacet(
-        request
-            .getFacet(RbelHttpRequestFacet.class)
-            .map(RbelHttpRequestFacet::toBuilder)
-            .orElse(RbelHttpRequestFacet.builder())
-            .response(response)
-            .build());
+    request
+        .getFacet(RbelHttpRequestFacet.class)
+        .map(RbelHttpRequestFacet::toBuilder)
+        .map(builder -> builder.response(response).build())
+        .ifPresent(request::addOrReplaceFacet);
   }
 }

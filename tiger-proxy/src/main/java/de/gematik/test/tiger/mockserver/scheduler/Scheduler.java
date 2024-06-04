@@ -188,8 +188,7 @@ public class Scheduler {
             .getHttpResponse()
             .whenCompleteAsync(
                 (httpResponse, throwable) -> {
-                  if (throwable != null
-                      && logException.test(throwable)) {
+                  if (throwable != null && logException.test(throwable)) {
                     log.info(throwable.getMessage(), throwable);
                   }
                   run(command, port);

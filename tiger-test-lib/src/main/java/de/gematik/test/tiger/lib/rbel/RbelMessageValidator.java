@@ -21,10 +21,8 @@ import static org.awaitility.Awaitility.await;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
-import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
-import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -35,13 +33,11 @@ import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.lib.json.JsonChecker;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.proxy.data.TracingMessagePairFacet;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -71,10 +67,6 @@ import org.xmlunit.diff.Difference;
 public class RbelMessageValidator {
 
   public static final String FOUND_IN_MESSAGES = "' found in messages";
-  RbelLogger rbelLogger;
-  RbelFileWriter rbelFileWriter;
-
-  private final AtomicBoolean fileParsedCompletely = new AtomicBoolean(false);
 
   public static final RbelMessageValidator instance = new RbelMessageValidator();
   private static final TigerTypedConfigurationKey<Integer> RBEL_REQUEST_TIMEOUT =
@@ -209,9 +201,9 @@ public class RbelMessageValidator {
   }
 
   protected Optional<RbelElement> filterRequests(
-      final RequestParameter requestParameter, Optional<RbelElement> startFromMessageExclusively) {
+      final RequestParameter requestParameter, Optional<RbelElement> startFromMessageInclusively) {
     List<RbelElement> msgs =
-        getRbelElementsOptionallyFromGivenMessageExclusively(startFromMessageExclusively);
+        getRbelElementsOptionallyFromGivenMessageInclusively(startFromMessageInclusively);
     final String hostFilter =
         TigerGlobalConfiguration.readString("tiger.rbel.request.filter.host", "");
     final String methodFilter =
@@ -247,7 +239,7 @@ public class RbelMessageValidator {
     return filterMatchingCandidateMessages(requestParameter, candidateMessages);
   }
 
-  private List<RbelElement> getRbelElementsOptionallyFromGivenMessageExclusively(
+  private List<RbelElement> getRbelElementsOptionallyFromGivenMessageInclusively(
       Optional<RbelElement> startFromMessageExclusively) {
     List<RbelElement> msgs = getRbelMessages();
     if (startFromMessageExclusively.isPresent()) {
@@ -259,7 +251,7 @@ public class RbelMessageValidator {
         }
       }
       if (idx > 0) {
-        msgs = new ArrayList<>(msgs.subList(idx + 1, msgs.size()));
+        msgs = new ArrayList<>(msgs.subList(idx, msgs.size()));
       }
     }
     return msgs;
@@ -404,19 +396,32 @@ public class RbelMessageValidator {
             .filter(Objects::nonNull)
             .map(String::trim)
             .collect(Collectors.joining());
-    if (shouldMatch) {
-      if (!text.equals(value)) {
+
+    final Optional<Pattern> compiledPattern =
+        Optional.ofNullable(value)
+            .filter(StringUtils::isNotBlank)
+            .map(
+                v -> {
+                  try {
+                    return Pattern.compile(v, Pattern.MULTILINE | Pattern.DOTALL);
+                  } catch (PatternSyntaxException e) {
+                    return null;
+                  }
+                });
+
+    if (compiledPattern.isPresent()) {
+      if (shouldMatch) {
+        if (!text.equals(value)) {
+          assertThat(text).as("Rbelpath '%s' matches", rbelPath).matches(compiledPattern.get());
+        }
+      } else {
+        if (text.equals(value)) {
+          Assertions.fail("Did not expect that node '" + rbelPath + "' is equal to '" + value);
+        }
         assertThat(text)
-            .as("Rbelpath '%s' matches", rbelPath)
-            .matches(Pattern.compile(value, Pattern.MULTILINE | Pattern.DOTALL));
+            .as("Rbelpath '%s' does not match", rbelPath)
+            .doesNotMatch(compiledPattern.get());
       }
-    } else {
-      if (text.equals(value)) {
-        Assertions.fail("Did not expect that node '" + rbelPath + "' is equal to '" + value);
-      }
-      assertThat(text)
-          .as("Rbelpath '%s' does not match", rbelPath)
-          .doesNotMatch(Pattern.compile(value, Pattern.MULTILINE | Pattern.DOTALL));
     }
   }
 

@@ -20,6 +20,7 @@ import de.gematik.test.tiger.proxy.handler.TigerExceptionUtils;
 import java.net.ConnectException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.stomp.*;
 
@@ -31,9 +32,10 @@ class TigerStompSessionHandler extends StompSessionHandlerAdapter {
   @Getter private TracingStompHandler tracingStompHandler;
   @Getter private DataStompHandler dataStompHandler;
   @Getter private ErrorsStompHandler errorStompHandler;
+  @Setter private Runnable onConnectedCallback;
 
   @Override
-  public void afterConnected(StompSession stompSession, StompHeaders stompHeaders) {
+  public void afterConnected(final StompSession stompSession, final StompHeaders stompHeaders) {
     log.info("Connecting to tracing point {}", remoteProxyClient.getRemoteProxyUrl());
 
     tracingStompHandler = new TracingStompHandler(remoteProxyClient);
@@ -42,15 +44,19 @@ class TigerStompSessionHandler extends StompSessionHandlerAdapter {
     stompSession.subscribe(TigerRemoteProxyClient.WS_DATA, dataStompHandler);
     errorStompHandler = new ErrorsStompHandler(remoteProxyClient);
     stompSession.subscribe(TigerRemoteProxyClient.WS_ERRORS, errorStompHandler);
+
+    if (onConnectedCallback != null) {
+      onConnectedCallback.run();
+    }
   }
 
   @Override
   public void handleException(
-      StompSession stompSession,
-      StompCommand stompCommand,
-      StompHeaders stompHeaders,
-      byte[] bytes,
-      Throwable throwable) {
+      final StompSession stompSession,
+      final StompCommand stompCommand,
+      final StompHeaders stompHeaders,
+      final byte[] bytes,
+      final Throwable throwable) {
     log.error(
         "handle exception with remote url '{}': {}, {}",
         remoteProxyClient.getRemoteProxyUrl(),
@@ -60,7 +66,7 @@ class TigerStompSessionHandler extends StompSessionHandlerAdapter {
   }
 
   @Override
-  public void handleTransportError(StompSession session, Throwable exception) {
+  public void handleTransportError(final StompSession session, final Throwable exception) {
     if (exception instanceof ConnectionLostException) {
       if (remoteProxyClient.isShuttingDown()) {
         log.warn(

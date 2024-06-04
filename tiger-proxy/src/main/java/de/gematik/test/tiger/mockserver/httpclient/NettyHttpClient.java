@@ -224,8 +224,7 @@ public class NettyHttpClient {
           .attr(
               ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE,
               !configuration.forwardBinaryRequestsWithoutWaitingForResponse())
-          .handler(
-              new HttpClientInitializer(proxyConfigurations, nettySslContextFactory, null))
+          .handler(new HttpClientInitializer(proxyConfigurations, nettySslContextFactory, null))
           .connect(remoteAddress)
           .addListener(
               (ChannelFutureListener)
