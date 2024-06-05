@@ -431,9 +431,8 @@ public class RbelMessageValidator {
     switch (mode) {
       case JSON -> new JsonChecker().compareJsonStrings(getAsJsonString(element), oracle, false);
       case XML -> compareXMLStructureOfRbelElement(element, oracle, "");
-      default ->
-          Assertions.fail(
-              "Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
+      default -> Assertions.fail(
+          "Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
     }
   }
 

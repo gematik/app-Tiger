@@ -47,8 +47,8 @@ public class RbelConverter {
   @Getter private final RbelValueShader rbelValueShader = new RbelValueShader();
   @Getter private final List<RbelConverterPlugin> postConversionListeners = new ArrayList<>();
   private final List<RbelConverterPlugin> converterPlugins =
-      new ArrayList<>(
-          List.of(
+      new LinkedList<>(
+          Arrays.asList(
               new RbelBase64JsonConverter(),
               new RbelUriConverter(),
               new RbelHttpResponseConverter(),
@@ -68,7 +68,8 @@ public class RbelConverter {
               new RbelCetpConverter(),
               new RbelCborConverter(),
               new RbelPop3CommandConverter(),
-              new RbelPop3ResponseConverter()));
+              new RbelPop3ResponseConverter(),
+              new RbelMimeConverter()));
   @Builder.Default private int rbelBufferSizeInMb = 1024;
   @Builder.Default private boolean manageBuffer = false;
   @Getter @Builder.Default private long currentBufferSize = 0;

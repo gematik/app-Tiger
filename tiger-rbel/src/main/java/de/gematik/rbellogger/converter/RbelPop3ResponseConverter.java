@@ -26,7 +26,11 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
-    buildPop3ResponseFacet(element, context).ifPresent(element::addFacet);
+    buildPop3ResponseFacet(element, context)
+        .ifPresent(facet -> {
+          element.addFacet(facet);
+          context.convertElement(facet.getBody());
+        });
   }
 
   private Optional<RbelPop3ResponseFacet> buildPop3ResponseFacet(
@@ -61,7 +65,7 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
                 RbelPop3ResponseFacet.builder()
                     .status(Pop3Utils.createChildElement(element, status))
                     .header(headerElement)
-                    .body(buildBodyElement(element, context, lines))
+                    .body(buildBodyElement(element, lines))
                     .build());
   }
 
@@ -98,10 +102,10 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
     return Optional.empty();
   }
 
-  private RbelElement buildBodyElement(RbelElement element, RbelConverter context, String[] lines) {
+  private RbelElement buildBodyElement(RbelElement element, String[] lines) {
     if (lines.length > 2) {
       var body = extractBodyAndRemoveStuffedDots(lines);
-      return context.convertElement(Pop3Utils.createChildElement(element, body));
+      return Pop3Utils.createChildElement(element, body);
     }
     return null;
   }
