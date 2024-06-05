@@ -22,6 +22,6 @@ public enum RbelPop3Command {
   UIDL;
 
   public static final int MAX_LENGTH =
-      Collections.min(
+      Collections.max(
           Arrays.stream(values()).map(RbelPop3Command::name).map(String::length).toList());
 }
