@@ -27,63 +27,92 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
     buildPop3ResponseFacet(element, context)
-        .ifPresent(facet -> {
-          element.addFacet(facet);
-          context.convertElement(facet.getBody());
-        });
+        .ifPresent(
+            facet -> {
+              element.addFacet(facet);
+              Optional.ofNullable(facet.getBody()).ifPresent(context::convertElement);
+            });
   }
 
   private Optional<RbelPop3ResponseFacet> buildPop3ResponseFacet(
       RbelElement element, final RbelConverter context) {
     return Optional.ofNullable(element.getRawContent())
-        .filter(c -> c.length > 5)
+        .filter(c -> c.length > 4)
         .filter(this::startsWithOkOrErr)
         .filter(Pop3Utils::endsWithCrLf)
         .map(c -> new String(c, StandardCharsets.UTF_8))
-        .filter(
-            s ->
-                s.endsWith(Pop3Utils.CRLF + "." + Pop3Utils.CRLF)
-                    || s.indexOf(Pop3Utils.CRLF) == s.length() - 2)
+        .filter(this::isCompleteResponse)
         .map(s -> s.split(Pop3Utils.CRLF, -1))
         .flatMap(lines -> parseLines(lines, element, context));
   }
 
   private boolean startsWithOkOrErr(byte[] c) {
-    return (c[0] == '+' && c[1] == 'O' && c[2] == 'K' && c[3] == ' ')
+    return (c[0] == '+'
+            && c[1] == 'O'
+            && c[2] == 'K'
+            && (c[3] == ' ' || (c[3] == '\r' && c[4] == '\n')))
         || (c[0] == '-' && c[1] == 'E' && c[2] == 'R' && c[3] == 'R' && c[4] == ' ');
+  }
+
+  private boolean isCompleteResponse(String response) {
+    return response.endsWith(Pop3Utils.CRLF + "." + Pop3Utils.CRLF)
+        || response.indexOf(Pop3Utils.CRLF) == response.length() - 2;
   }
 
   private Optional<RbelPop3ResponseFacet> parseLines(
       String[] lines, RbelElement element, RbelConverter context) {
-    int indexOfSpace = lines[0].indexOf(" ");
-    String status = lines[0].substring(0, indexOfSpace);
-    String header = lines[0].substring(indexOfSpace + 1);
+    String[] firstLineParts = lines[0].split(" ", 2);
+    String status = firstLineParts[0];
+    String header = firstLineParts.length > 1 ? firstLineParts[1] : null;
     context.waitForAllElementsBeforeGivenToBeParsed(element.findRootElement());
+    if (header == null) {
+      return findPop3Command(element)
+          .flatMap(
+              command ->
+                  switch (command) {
+                    case CAPA, RETR ->
+                        lines.length < 3
+                            ? Optional.empty()
+                            : Optional.of(buildResponseFacet(element, status, null, lines));
+                    case USER, PASS ->
+                        lines.length > 2
+                            ? Optional.empty()
+                            : Optional.of(buildResponseFacet(element, status, null, lines));
+                    default -> Optional.empty();
+                  });
+    }
     return buildHeaderElement(element, header)
-        .map(
-            headerElement ->
-                RbelPop3ResponseFacet.builder()
-                    .status(Pop3Utils.createChildElement(element, status))
-                    .header(headerElement)
-                    .body(buildBodyElement(element, lines))
-                    .build());
+        .map(headerElement -> buildResponseFacet(element, status, headerElement, lines));
+  }
+
+  private RbelPop3ResponseFacet buildResponseFacet(
+      RbelElement element, String status, RbelElement headerElement, String[] lines) {
+    return RbelPop3ResponseFacet.builder()
+        .status(Pop3Utils.createChildElement(element, status))
+        .header(headerElement)
+        .body(buildBodyElement(element, lines))
+        .build();
   }
 
   private Optional<RbelElement> buildHeaderElement(RbelElement element, String header) {
+    return findPop3Command(element)
+        .map(
+            command ->
+                switch (command) {
+                  case LIST, STAT -> buildStatOrListElement(element, header);
+                  default -> Optional.of(Pop3Utils.createChildElement(element, header));
+                })
+        .orElse(Optional.of(Pop3Utils.createChildElement(element, header)));
+  }
+
+  private static Optional<RbelPop3Command> findPop3Command(RbelElement element) {
     return element
         .findRootElement()
         .getFacet(TracingMessagePairFacet.class)
         .map(TracingMessagePairFacet::getRequest)
         .flatMap(request -> request.getFacet(RbelPop3CommandFacet.class))
         .map(RbelPop3CommandFacet::getCommand)
-        .flatMap(e -> e.seekValue(RbelPop3Command.class))
-        .map(
-            command ->
-                switch (command) {
-                  case LIST, STAT -> buildStatOrListElement(element, header);
-                  default -> Optional.<RbelElement>empty();
-                })
-        .orElse(Optional.of(Pop3Utils.createChildElement(element, header)));
+        .flatMap(e -> e.seekValue(RbelPop3Command.class));
   }
 
   private Optional<RbelElement> buildStatOrListElement(RbelElement element, String header) {

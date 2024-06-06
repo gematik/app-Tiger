@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 public enum RbelPop3Command {
+  CAPA,
   USER,
   PASS,
   QUIT,

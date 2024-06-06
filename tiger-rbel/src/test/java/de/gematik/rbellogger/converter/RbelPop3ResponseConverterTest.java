@@ -66,11 +66,68 @@ class RbelPop3ResponseConverterTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"LIST", "STAT"})
-  void shouldRejectMalformedListHeader(String command) {
+  void shouldRejectMalformedHeader(String command) {
     String request = command + "\r\n";
     String status = "+OK";
     String header = "foobar foobar";
     String response = status + " " + header + "\r\n";
+    RbelElement element = convertMessagePair(request, response);
+
+    RbelElementAssertion.assertThat(element).doesNotHaveFacet(RbelPop3ResponseFacet.class);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"CAPA", "RETR 1"})
+  void shouldAcceptMultilineWithoutHeader(String command) {
+    String request = command + "\r\n";
+    String status = "+OK";
+    String body = "foobar foobar";
+    String response = status + "\r\n" + body + "\r\n.\r\n";
+    RbelElement element = convertMessagePair(request, response);
+    RbelElementAssertion.assertThat(element)
+        .extractChildWithPath("$.status")
+        .hasStringContentEqualTo(status)
+        .andTheInitialElement()
+        .doesNotHaveChildWithPath("$.header")
+        .andTheInitialElement()
+        .extractChildWithPath("$.body")
+        .hasStringContentEqualTo(body);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"USER x@y.de", "PASS xzy"})
+  void shouldAcceptSingleLineWithoutHeader(String command) {
+    String request = command + "\r\n";
+    String status = "+OK";
+    String response = status + "\r\n";
+    RbelElement element = convertMessagePair(request, response);
+    RbelElementAssertion.assertThat(element)
+        .extractChildWithPath("$.status")
+        .hasStringContentEqualTo(status)
+        .andTheInitialElement()
+        .doesNotHaveChildWithPath("$.header")
+        .andTheInitialElement()
+        .doesNotHaveChildWithPath("$.body");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"USER x@y.de", "PASS xzy"})
+  void shouldRejectMultiline(String command) {
+    String request = command + "\r\n";
+    String status = "+OK";
+    String body = "foobar foobar";
+    String response = status + "\r\n" + body + "\r\n.\r\n";
+    RbelElement element = convertMessagePair(request, response);
+
+    RbelElementAssertion.assertThat(element).doesNotHaveFacet(RbelPop3ResponseFacet.class);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"CAPA", "RETR 1"})
+  void shouldRejectMissingBody(String command) {
+    String request = command + "\r\n";
+    String status = "+OK";
+    String response = status + "\r\n";
     RbelElement element = convertMessagePair(request, response);
 
     RbelElementAssertion.assertThat(element).doesNotHaveFacet(RbelPop3ResponseFacet.class);
