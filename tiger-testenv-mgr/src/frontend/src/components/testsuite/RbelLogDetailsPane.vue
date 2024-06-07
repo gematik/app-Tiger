@@ -12,7 +12,7 @@
   <div class="d-none position-fixed pl-3 pt-3" id="rbellog_details_pane">
     <h2>
       <img alt="RBel logo" src="/img/rbellog.png" class="rbel-logo" id="test-rbel-logo">
-      Rbel Log Details
+      Tiger Proxy Log
       <a v-if="localProxyWebUiUrl" :href="`${localProxyWebUiUrl}`" target="_blank" id="test-rbel-webui-url">
         <i class="fa-solid fa-up-right-from-square" title="pop out pane"></i>
       </a>

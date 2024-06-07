@@ -208,7 +208,7 @@ public class TigerTestEnvMgr
       proxyStatusMessage(
           "Local Tiger Proxy UI http://localhost:"
               + localTigerProxyApplicationContext.getWebServer().getPort()
-              + "/webui");
+              + "/");
       environmentVariables.put("PROXYHOST", "host.docker.internal");
       environmentVariables.put("PROXYPORT", localTigerProxy.getProxyPort());
       try {
@@ -235,7 +235,7 @@ public class TigerTestEnvMgr
             .baseUrl(
                 "http://localhost:"
                     + localTigerProxyApplicationContext.getWebServer().getPort()
-                    + "/webui")
+                    + "/")
             .build());
     if (localProxyLog.isInfoEnabled()) {
       localProxyLog.info(Ansi.colorize(statusMessage, RbelAnsiColors.BLUE_BOLD));

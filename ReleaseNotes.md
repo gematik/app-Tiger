@@ -22,6 +22,7 @@
 * TGR-1406: Added the already parsed information in an Epa 3 message to the Rbel-tree.
 * TGR-1408: Zion: Empty headers are no longer transmitted.
 * TGR-1407: Zion: Added the possibility to delay responses for a fixed amount of time.
+* TGR-1193: UX improvement in WebUi/TigerProxyLog
 * TGR-1376: RbelParser: Conversion of POP3 Messages to Rbel trees
 
 ## Bugfixes

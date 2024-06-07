@@ -267,17 +267,7 @@ public class RbelHtmlRenderingToolkit {
   public DomContent renderMenu() {
     return div()
         .withClass(" col is-one-fifth menu is-size-4 sidebar")
-        .with(
-            a(i().withClass("fas fa-angle-double-up"))
-                .withId("collapse-all")
-                .withHref("#")
-                .withClass("float-end me-3"),
-            a(i().withClass("fas fa-angle-double-down"))
-                .withId("expand-all")
-                .withHref("#")
-                .withClass("float-end me-3"),
-            h2("Flow").withClass("mb-3 ms-2"),
-            div().withClass("ms-1").withId("sidebar-menu"));
+        .with(h2("Flow").withClass("mb-3 ms-2"), div().withClass("ms-1").withId("sidebar-menu"));
   }
 
   public String menuTab(final RbelElement rbelElement) {
@@ -378,6 +368,7 @@ public class RbelHtmlRenderingToolkit {
                             new UnescapedText(
                                 IOUtils.resourceToString("/rbel.css", StandardCharsets.UTF_8)))),
                 body()
+                    .withStyle("overflow-x: hidden;")
                     .with(
                         div().withId("navbardiv"),
                         section()
