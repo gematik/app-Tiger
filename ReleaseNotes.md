@@ -2,6 +2,14 @@
 
 # Release 3.0.6
 
+* Serenity BDD 4.1.14
+* Cucumber 7.18.0
+* RestAssured 5.4.0
+* Selenium 4.18.1
+* Appium 9.0.0
+* Spring Boot 3.3.0
+* Logback 1.4.9
+
 ## Features
 
 * TGR-1196: Workflow UI improvements (sticky sidebar, quit test run message)

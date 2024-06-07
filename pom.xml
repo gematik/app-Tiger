@@ -4,8 +4,8 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.gematik.test</groupId>
@@ -23,7 +23,7 @@
         <encoding>UTF-8</encoding>
         <skipSurefire>false</skipSurefire>
 
-        <version.assertj>3.25.3</version.assertj>
+        <version.assertj>3.26.0</version.assertj>
         <version.awaitility>4.2.1</version.awaitility>
         <version.bouncycastle>1.78</version.bouncycastle>
         <version.commons-lang3>3.13.0</version.commons-lang3>
@@ -33,14 +33,14 @@
         <version.commons-jexl3>3.3</version.commons-jexl3>
         <version.commons-collections>3.2.2</version.commons-collections>
         <version.commons-collections4>4.4</version.commons-collections4>
-        <version.cucumber>7.17.0</version.cucumber>
-        <version.datatable>7.17.0</version.datatable>
-        <version.gson>2.10.1</version.gson>
+        <version.cucumber>7.18.0</version.cucumber>
+        <version.datatable>7.18.0</version.datatable>
+        <version.gson>2.11.0</version.gson>
         <version.hamcrest>2.2</version.hamcrest>
         <version.htmlunit>3.55.0</version.htmlunit>
         <version.jacoco-maven-plugin>0.8.12</version.jacoco-maven-plugin>
         <version.jackson>2.16.1</version.jackson>
-        <version.javaparser>3.25.10</version.javaparser>
+        <version.javaparser>3.26.0</version.javaparser>
         <version.jose4j>0.9.6</version.jose4j>
         <version.json>20230618</version.json>
         <version.json-unit>3.2.7</version.json-unit>
@@ -52,19 +52,19 @@
         <version.maven-deploy-plugin>3.1.2</version.maven-deploy-plugin>
         <version.maven.failsafe>3.2.5</version.maven.failsafe>
         <version.maven.surefire>3.2.5</version.maven.surefire>
-        <version.maven-plugin-tools>3.12.0</version.maven-plugin-tools>
-        <version.mockito>5.11.0</version.mockito>
+        <version.maven-plugin-tools>3.13.1</version.maven-plugin-tools>
+        <version.mockito>5.12.0</version.mockito>
         <version.mockserver>5.15.0</version.mockserver>
-        <version.serenity.core>4.1.10</version.serenity.core>
-        <version.serenity.maven.plugin>4.1.10</version.serenity.maven.plugin>
+        <version.serenity.core>4.1.14</version.serenity.core>
+        <version.serenity.maven.plugin>4.1.14</version.serenity.maven.plugin>
         <version.slf4j>2.0.13</version.slf4j>
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
-        <version.spring-boot>3.2.5</version.spring-boot>
+        <version.spring-boot>3.3.0</version.spring-boot>
         <version.spring>5.3.20</version.spring>
         <version.system-stubs>2.0.2</version.system-stubs>
         <version.unirest>3.14.5</version.unirest>
         <version.velocity>2.3</version.velocity>
-        <version.netty>4.1.89.Final</version.netty>
+        <version.netty>4.1.110.Final</version.netty>
         <version.xmlunit>2.9.0</version.xmlunit>
         <version.wiremock>3.3.1</version.wiremock>
         <spotless-maven-plugin.version>2.43.0</spotless-maven-plugin.version>
@@ -225,7 +225,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.13</version>
+                        <version>1.7.0</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>ossrh</serverId>
@@ -250,7 +250,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>3.5.0</version>
+                        <version>3.7.0</version>
                         <configuration>
                             <doclint>none</doclint>
                         </configuration>
@@ -622,7 +622,7 @@
                 <plugin>
                     <artifactId>sonar-maven-plugin</artifactId>
                     <groupId>org.sonarsource.scanner.maven</groupId>
-                    <version>3.11.0.3922</version>
+                    <version>4.0.0.4121</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -728,7 +728,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.5.0</version>
+                <version>3.7.0</version>
                 <reportSets>
                     <reportSet>
                         <id>default</id>
