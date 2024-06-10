@@ -24,7 +24,7 @@ public class ScenarioUpdate {
   private TestResult status;
   private List<String> exampleKeys;
   private Map<String, String> exampleList;
-  private int variantIndex = -1;
+  @Builder.Default private int variantIndex = -1;
   private URI uri;
   private Location location;
 }

@@ -211,6 +211,6 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
                 .getFacet(RbelMessageTimingFacet.class)
                 .get()
                 .getTransmissionTime())
-        .isBefore(requestLatestTimestamp.get());
+        .isBefore(responseLatestTimestamp.get());
   }
 }

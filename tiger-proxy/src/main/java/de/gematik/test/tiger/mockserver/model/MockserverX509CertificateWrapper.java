@@ -6,12 +6,14 @@ package de.gematik.test.tiger.mockserver.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 /*
  * @author jamesdbloom
  */
 @Data
+@EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true, fluent = true)
 public class MockserverX509CertificateWrapper extends ObjectWithJsonToString {
 

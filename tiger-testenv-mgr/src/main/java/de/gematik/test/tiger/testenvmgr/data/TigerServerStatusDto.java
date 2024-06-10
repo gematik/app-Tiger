@@ -21,5 +21,5 @@ public class TigerServerStatusDto {
   private String type;
   private TigerServerStatus status;
   private String statusMessage;
-  private List<String> statusUpdates = new ArrayList<>();
+  @Builder.Default private List<String> statusUpdates = new ArrayList<>();
 }

@@ -14,6 +14,10 @@
 
 * TGR-1196: Workflow UI improvements (sticky sidebar, quit test run message)
 
+## Bugfixes
+
+* TGR-1340: Maven: make build under Windows emit less warnings.
+
 # Release 3.0.5
 
 ## Features

@@ -24,9 +24,7 @@ import org.apache.http.client.utils.URIBuilder;
  * @author jamesdbloom
  */
 @SuppressWarnings("rawtypes")
-@EqualsAndHashCode(
-    exclude = {"created", "sortableExpectationId"},
-    callSuper = false)
+@EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 @Getter
 @Slf4j

@@ -29,7 +29,7 @@ public class TigerMockResponse {
   private Map<String, ZionBackendRequestDescription> backendRequests = new HashMap<>();
 
   @TigerSkipEvaluation @Builder.Default private Map<String, String> assignments = new HashMap<>();
-  private int importance = 0;
+  @Builder.Default private int importance = 0;
   private String name;
 
   @JsonIgnore

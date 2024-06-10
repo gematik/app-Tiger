@@ -4,8 +4,8 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tiger-test-lib</artifactId>
@@ -242,7 +242,6 @@
                             <goal>delombok</goal>
                         </goals>
                         <configuration>
-                            <encoding>UTF-8</encoding>
                             <addOutputDirectory>false</addOutputDirectory>
                             <sourceDirectory>src/main/java</sourceDirectory>
                             <outputDirectory>
@@ -472,11 +471,11 @@
                         <phase>generate-resources</phase>
                         <configuration>
                             <skip>${isWindows}</skip>
-                            <tasks>
+                            <target>
                                 <exec dir="../doc/user_manual" executable="/bin/bash">
                                     <arg value="extractCommentsFromInlineJexlToolbox.sh"/>
                                 </exec>
-                            </tasks>
+                            </target>
                         </configuration>
                         <goals>
                             <goal>run</goal>

@@ -614,7 +614,6 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             .build());
 
     final HttpResponse<String> response = proxyRest.get("http://backend/foobar").asString();
-
     assertThat(response.getStatus()).isEqualTo(555);
   }
 
@@ -642,9 +641,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             try {
               Socket socket = serverSocket.accept();
               OutputStream out = socket.getOutputStream();
-              out.write("HTTP/1.1 555\r\n".getBytes());
-              out.close();
-              socket.close();
+              out.write("HTTP/1.1 555\r\nContent-Length: 0\r\n\r\n".getBytes());
+              out.flush();
             } catch (IOException e) {
               // swallow
             }

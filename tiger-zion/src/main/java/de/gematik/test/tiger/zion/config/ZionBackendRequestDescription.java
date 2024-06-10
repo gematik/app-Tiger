@@ -20,6 +20,6 @@ public class ZionBackendRequestDescription {
   @TigerSkipEvaluation private Map<String, String> headers;
   @TigerSkipEvaluation private String body;
   @TigerSkipEvaluation private String method;
-  private boolean executeAfterSelection = false;
+  @Builder.Default private boolean executeAfterSelection = false;
   @TigerSkipEvaluation private Map<String, String> assignments;
 }

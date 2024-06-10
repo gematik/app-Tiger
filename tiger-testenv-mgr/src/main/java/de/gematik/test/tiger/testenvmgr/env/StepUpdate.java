@@ -20,6 +20,6 @@ public class StepUpdate {
 
   private String description;
   private TestResult status;
-  private int stepIndex = -1;
-  private List<MessageMetaDataDto> rbelMetaData = new ArrayList<>();
+  @Builder.Default private int stepIndex = -1;
+  @Builder.Default private List<MessageMetaDataDto> rbelMetaData = new ArrayList<>();
 }

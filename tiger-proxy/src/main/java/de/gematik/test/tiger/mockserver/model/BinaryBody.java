@@ -12,7 +12,7 @@ import lombok.EqualsAndHashCode;
 /*
  * @author jamesdbloom
  */
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = false)
 public class BinaryBody extends BodyWithContentType<byte[]> {
   private final byte[] bytes;
 
@@ -37,6 +37,7 @@ public class BinaryBody extends BodyWithContentType<byte[]> {
     return bytes;
   }
 
+  @Override
   @JsonIgnore
   public byte[] getRawBytes() {
     return bytes;
