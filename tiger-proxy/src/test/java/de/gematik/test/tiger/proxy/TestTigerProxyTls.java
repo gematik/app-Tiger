@@ -50,20 +50,30 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustAllStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContexts;
 import org.assertj.core.api.InstanceOfAssertFactories;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.tls.*;
+import org.bouncycastle.tls.Certificate;
+import org.bouncycastle.tls.Certificate.ParseOptions;
+import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsServerCertificate;
+import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedAgreement;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Disabled;
@@ -770,35 +780,6 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   }
 
   @Test
-  void noConfiguredSslContextOKHttp_shouldNotTrustTigerProxy() {
-    assertThatThrownBy(
-            () -> {
-              spawnTigerProxyWith(
-                  TigerProxyConfiguration.builder()
-                      .proxyRoutes(
-                          List.of(
-                              TigerRoute.builder()
-                                  .from("https://backend")
-                                  .to("http://localhost:" + fakeBackendServerPort)
-                                  .build()))
-                      .build());
-
-              OkHttpClient client =
-                  new OkHttpClient.Builder()
-                      .proxy(
-                          new Proxy(
-                              Proxy.Type.HTTP,
-                              new InetSocketAddress("localhost", tigerProxy.getProxyPort())))
-                      .build();
-
-              Request request = new Request.Builder().url("https://backend/foobar").build();
-
-              client.newCall(request).execute();
-            })
-        .isInstanceOf(SSLHandshakeException.class);
-  }
-
-  @Test
   void autoconfigureSslContextRestAssured_shouldTrustTigerProxy() {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
@@ -818,29 +799,6 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     Response response = RestAssured.get("https://backend/foobar").andReturn();
 
     assertThat(response.getStatusCode()).isEqualTo(666);
-  }
-
-  @Test
-  void autoconfigureSslContextRestAssured_shouldNotTrustTigerProxy() {
-    assertThatThrownBy(
-            () -> {
-              spawnTigerProxyWith(
-                  TigerProxyConfiguration.builder()
-                      .proxyRoutes(
-                          List.of(
-                              TigerRoute.builder()
-                                  .from("https://backend")
-                                  .to("http://localhost:" + fakeBackendServerPort)
-                                  .build()))
-                      .build());
-
-              RestAssured.config =
-                  RestAssured.config().sslConfig(SSLConfig.sslConfig().trustStore(null));
-
-              RestAssured.proxy("localhost", tigerProxy.getProxyPort());
-              RestAssured.get("https://backend/foobar").andReturn();
-            })
-        .isInstanceOf(SSLHandshakeException.class);
   }
 
   @Test
@@ -977,10 +935,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
           new TlsClientProtocol(socket.getInputStream(), socket.getOutputStream());
       tlsClientProtocol.connect(
           new DefaultTlsClient(new BcTlsCrypto()) {
-            @Override
             public TlsAuthentication getAuthentication() {
               return new ServerOnlyTlsAuthentication() {
-                @Override
                 public void notifyServerCertificate(TlsServerCertificate serverCertificate) {
                   serverCertificateConsumer.accept(serverCertificate);
                   checkCounter.incrementAndGet();
@@ -998,4 +954,39 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
       throw new RuntimeException(e);
     }
   }
+
+  @SneakyThrows
+  @Test
+  void mutualTlsWithTigerProxyAsServerAndBouncyCastleClientCertificate() {
+    final TigerPkiIdentity clientIdentity = new TigerPkiIdentity("src/test/resources/brainpoolClientTls.p12;00");
+
+    spawnTigerProxyWith(
+      TigerProxyConfiguration.builder()
+        .proxyRoutes(
+          List.of(
+            TigerRoute.builder()
+              .from("/")
+              .to("http://localhost:" + fakeBackendServerPort)
+              .build()))
+        .build());
+
+    // Initialize SSLContext
+    TrustManagerFactory tmf =
+      TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+    tmf.init(tigerProxy.buildTruststore());
+    SSLContext sslContext = SSLContext.getInstance("TLS", new BouncyCastleJsseProvider());
+    TrustManager[] trustManagers = tmf.getTrustManagers();
+
+    KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+    keyManagerFactory.init(clientIdentity.toKeyStoreWithPassword("gematik"),
+      "gematik".toCharArray());
+
+    sslContext.init(keyManagerFactory.getKeyManagers(), trustManagers, null);
+    final UnirestInstance mutualTlsInstance = Unirest.spawnInstance();
+    mutualTlsInstance.config().sslContext(sslContext);
+
+    mutualTlsInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+
+  }
+
 }

@@ -4,6 +4,7 @@
 
 package de.gematik.test.tiger.proxy.tls;
 
+import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
@@ -25,13 +26,16 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.bc.BcX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -40,11 +44,11 @@ import org.bouncycastle.util.IPAddress;
 @Slf4j
 public class DynamicTigerKeyAndCertificateFactory extends AbstractKeyAndCertificateFactory {
 
-  private static final Duration MAXIMUM_VALIDITY = Duration.ofDays(397);
-
   static {
-    Security.addProvider(new BouncyCastleProvider());
+    TigerSecurityProviderInitialiser.initialize();
   }
+
+  private static final Duration MAXIMUM_VALIDITY = Duration.ofDays(397);
 
   private final TigerPkiIdentity caIdentity;
   private final List<X509Certificate> certificateChain;

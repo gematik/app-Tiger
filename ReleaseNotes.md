@@ -17,6 +17,7 @@
 ## Bugfixes
 
 * TGR-1340: Maven: make build under Windows emit less warnings.
+* TGR-1426: TigerProxy: Enable BrainPool curves again (stabilized the order of security providers)
 
 # Release 3.0.5
 

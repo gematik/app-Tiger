@@ -12,8 +12,8 @@ import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.util.RbelMessagesDequeFacade;
+import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
 import java.nio.charset.StandardCharsets;
-import java.security.Security;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -26,8 +26,6 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(access = AccessLevel.PUBLIC)
@@ -35,8 +33,7 @@ import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 public class RbelConverter {
 
   static {
-    Security.addProvider(new BouncyCastleProvider());
-    Security.addProvider(new BouncyCastlePQCProvider());
+    TigerSecurityProviderInitialiser.initialize();
   }
 
   private final Deque<RbelElement> messageHistory = new ConcurrentLinkedDeque<>();
