@@ -8,17 +8,28 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelPop3ResponseFacet;
-import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
+
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class RbelPop3ResponseConverterTest {
+
+  private RbelConverter converter;
+
+  @BeforeEach
+  void init() {
+    converter = RbelLogger.build().getRbelConverter();
+  }
 
   @Test
   void shouldConvertListHeader() {
@@ -198,18 +209,22 @@ class RbelPop3ResponseConverterTest {
     assertThat(element.hasFacet(RbelPop3ResponseFacet.class)).isFalse();
   }
 
-  private static RbelElement convertMessagePair(String request, String response) {
-    var requestElement = convertToRbelElement(request);
-    var responseElement = new RbelElement(response.getBytes(StandardCharsets.UTF_8), null);
-    var pairFacet =
-        TracingMessagePairFacet.builder().request(requestElement).response(responseElement).build();
-    requestElement.addOrReplaceFacet(pairFacet);
-    responseElement.addOrReplaceFacet(pairFacet);
-    return RbelLogger.build().getRbelConverter().convertElement(responseElement);
+  private RbelElement convertMessagePair(String request, String response) {
+    var sender = new RbelHostname("host1", 1);
+    var receiver = new RbelHostname("host2", 2);
+    convertToRbelElement(request, sender, receiver);
+    return convertToRbelElement(response, receiver, sender);
   }
 
-  private static RbelElement convertToRbelElement(String input) {
-    return RbelLogger.build().getRbelConverter().convertElement(input, null);
+  private RbelElement convertToRbelElement(String request) {
+    var sender = new RbelHostname("host1", 1);
+    var receiver = new RbelHostname("host2", 2);
+    return convertToRbelElement(request, sender, receiver);
+  }
+
+  private RbelElement convertToRbelElement(String input, RbelHostname sender, RbelHostname recipient) {
+    return converter.parseMessage(
+        input.getBytes(StandardCharsets.UTF_8), sender, recipient, Optional.empty());
   }
 
   private static String duplicateDotsAtLineBegins(String input) {

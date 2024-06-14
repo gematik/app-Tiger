@@ -146,34 +146,23 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
 
   private Optional<RbelElement> tryToConvertMessageAndBufferUnusedBytes(
       BinaryMessage message, SocketAddress senderAddress, SocketAddress receiverAddress) {
+    var key = Pair.of(senderAddress, receiverAddress);
     final Optional<RbelElement> requestOptional =
-        tryToConvertMessage(message.getBytes(), senderAddress, receiverAddress)
-            .or(
-                () ->
-                    addBufferToMessage(message, senderAddress, receiverAddress)
-                        .flatMap(
-                            addedBufferBytes ->
-                                tryToConvertMessage(
-                                    addedBufferBytes, senderAddress, receiverAddress)));
-    if (requestOptional.isEmpty()) {
-      final Pair<SocketAddress, SocketAddress> key = Pair.of(senderAddress, receiverAddress);
-      byte[] previouslyBufferedBytes = bufferedParts.get(key);
-      if (previouslyBufferedBytes == null) {
-        bufferedParts.put(key, message.getBytes());
-      } else {
-        bufferedParts.put(key, Arrays.concatenate(previouslyBufferedBytes, message.getBytes()));
-      }
+        tryToConvertMessage(addBufferToMessage(message, key), senderAddress, receiverAddress);
+    if (requestOptional.isPresent()) {
+      bufferedParts.remove(key);
     }
     return requestOptional;
   }
 
-  private Optional<byte[]> addBufferToMessage(
-      BinaryMessage message, SocketAddress senderAddress, SocketAddress receiverAddress) {
-    byte[] bufferedBytes = bufferedParts.get(Pair.of(senderAddress, receiverAddress));
-    if (bufferedBytes == null) {
-      return Optional.empty();
+  private byte[] addBufferToMessage(BinaryMessage message, Pair<SocketAddress, SocketAddress> key) {
+    byte[] bufferedBytes = bufferedParts.get(key);
+    var resultMessage = message.getBytes();
+    if (bufferedBytes != null) {
+      resultMessage = Arrays.concatenate(bufferedBytes, resultMessage);
     }
-    return Optional.ofNullable(Arrays.concatenate(bufferedBytes, message.getBytes()));
+    bufferedParts.put(key, resultMessage);
+    return resultMessage;
   }
 
   private Optional<RbelElement> tryToConvertMessage(

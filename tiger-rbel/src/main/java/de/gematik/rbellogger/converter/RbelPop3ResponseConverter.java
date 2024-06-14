@@ -5,10 +5,7 @@
 package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelPop3CommandFacet;
-import de.gematik.rbellogger.data.facet.RbelPop3ResponseFacet;
-import de.gematik.rbellogger.data.facet.RbelPop3StatOrListHeaderFacet;
-import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
+import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.pop3.RbelPop3Command;
 import de.gematik.rbellogger.util.Pop3Utils;
 import java.nio.charset.StandardCharsets;
@@ -66,7 +63,7 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
     String header = firstLineParts.length > 1 ? firstLineParts[1] : null;
     context.waitForAllElementsBeforeGivenToBeParsed(element.findRootElement());
     if (header == null) {
-      return findPop3Command(element)
+      return findPop3Command(element, context)
           .flatMap(
               command ->
                   switch (command) {
@@ -81,7 +78,7 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
                     default -> Optional.empty();
                   });
     }
-    return buildHeaderElement(element, header)
+    return buildHeaderElement(element, header, context)
         .map(headerElement -> buildResponseFacet(element, status, headerElement, lines));
   }
 
@@ -94,8 +91,9 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
         .build();
   }
 
-  private Optional<RbelElement> buildHeaderElement(RbelElement element, String header) {
-    return findPop3Command(element)
+  private Optional<RbelElement> buildHeaderElement(
+      RbelElement element, String header, RbelConverter context) {
+    return findPop3Command(element, context)
         .map(
             command ->
                 switch (command) {
@@ -105,12 +103,51 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
         .orElse(Optional.of(Pop3Utils.createChildElement(element, header)));
   }
 
-  private static Optional<RbelPop3Command> findPop3Command(RbelElement element) {
+  private Optional<RbelPop3Command> findPop3Command(RbelElement element, RbelConverter context) {
+    return context
+        .messagesStreamLatestFirst()
+        .filter(e -> element != e)
+        .filter(e -> e.hasFacet(RbelPop3CommandFacet.class))
+        .filter(e -> matchesSenderAndReceiver(e, element))
+        .findFirst()
+        .flatMap(this::getPop3Command);
+  }
+
+  private boolean matchesSenderAndReceiver(RbelElement pop3Command, RbelElement pop3Response) {
+    return pop3Command
+        .getFacet(RbelTcpIpMessageFacet.class)
+        .filter(
+            request ->
+                pop3Response
+                    .getFacet(RbelTcpIpMessageFacet.class)
+                    .filter(
+                        response ->
+                            equalAddresses(request.getSender(), response.getReceiver())
+                                && equalAddresses(request.getReceiver(), response.getSender()))
+                    .isPresent())
+        .isPresent();
+  }
+
+  private static boolean equalAddresses(RbelElement a1, RbelElement a2) {
+    return a1.getFacet(RbelHostnameFacet.class)
+        .filter(
+            host1 ->
+                a2.getFacet(RbelHostnameFacet.class)
+                    .filter(host2 -> equalValues(host1.getDomain(), host2.getDomain()))
+                    .filter(host2 -> equalValues(host1.getPort(), host2.getPort()))
+                    .isPresent())
+        .isPresent();
+  }
+
+  private static boolean equalValues(RbelElement e1, RbelElement e2) {
+    return e1.seekValue()
+        .filter(v1 -> e2.seekValue().filter(v2 -> v1.equals(v2)).isPresent())
+        .isPresent();
+  }
+
+  private Optional<RbelPop3Command> getPop3Command(RbelElement element) {
     return element
-        .findRootElement()
-        .getFacet(TracingMessagePairFacet.class)
-        .map(TracingMessagePairFacet::getRequest)
-        .flatMap(request -> request.getFacet(RbelPop3CommandFacet.class))
+        .getFacet(RbelPop3CommandFacet.class)
         .map(RbelPop3CommandFacet::getCommand)
         .flatMap(e -> e.seekValue(RbelPop3Command.class));
   }
