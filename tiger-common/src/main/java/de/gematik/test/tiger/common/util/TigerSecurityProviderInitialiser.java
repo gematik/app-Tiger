@@ -10,6 +10,7 @@ public class TigerSecurityProviderInitialiser {
 
   public static synchronized void initialize() {
     if (!isInitialised) {
+      Security.setProperty("ssl.KeyManagerFactory.algorithm", "PKIX");
       Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
       Security.insertProviderAt(new BouncyCastleProvider(), 1);
       Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);

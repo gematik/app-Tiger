@@ -610,10 +610,10 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
       TrustManagerFactory tmf =
           TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
       tmf.init(buildTruststore());
-      SSLContext sslContext = SSLContext.getInstance("TLS");
       TrustManager[] trustManagers = tmf.getTrustManagers();
+
+      SSLContext sslContext = SSLContext.getInstance("TLS", new BouncyCastleJsseProvider());
       sslContext.init(null, trustManagers, null);
-      configureUnirestStaticInstance(sslContext);
       return sslContext;
     } catch (RuntimeException
         | NoSuchAlgorithmException

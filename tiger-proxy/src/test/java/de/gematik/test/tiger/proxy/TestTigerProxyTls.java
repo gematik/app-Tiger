@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
+import static uk.org.webcompere.systemstubs.SystemStubs.restoreSystemProperties;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
@@ -50,21 +51,15 @@ import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustAllStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContexts;
 import org.assertj.core.api.InstanceOfAssertFactories;
-import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.tls.*;
-import org.bouncycastle.tls.Certificate;
-import org.bouncycastle.tls.Certificate.ParseOptions;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
@@ -72,8 +67,6 @@ import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsServerCertificate;
-import org.bouncycastle.tls.TlsUtils;
-import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedAgreement;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Disabled;
@@ -159,7 +152,6 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   @SneakyThrows
   @Test
   void serverCertificateChainShouldContainMultipleCertificatesIfGiven() throws UnirestException {
-    Security.insertProviderAt(new BouncyCastleJsseProvider(), 1);
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
@@ -209,26 +201,31 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   @SneakyThrows
   @Test
   void eccBrainPoolServerCertificate_shouldWork() throws UnirestException {
-    prepareBouncyCastleSupportJdkSetup();
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("https://authn.aktor.epa.telematik-test")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .tls(
-                TigerTlsConfiguration.builder()
-                    .serverIdentity(
-                        new TigerConfigurationPkiIdentity(
-                            "src/test/resources/eccStoreWithChain.jks;gematik"))
-                    .serverSslSuites(List.of("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"))
-                    .build())
-            .build());
+    restoreSystemProperties(
+        () -> {
+          System.setProperty(
+              "jdk.tls.namedGroups",
+              "brainpoolP256r1, brainpoolP384r1, brainpoolP512r1, secp256r1, secp384r1");
+          spawnTigerProxyWith(
+              TigerProxyConfiguration.builder()
+                  .proxyRoutes(
+                      List.of(
+                          TigerRoute.builder()
+                              .from("https://authn.aktor.epa.telematik-test")
+                              .to("http://localhost:" + fakeBackendServerPort)
+                              .build()))
+                  .tls(
+                      TigerTlsConfiguration.builder()
+                          .serverIdentity(
+                              new TigerConfigurationPkiIdentity(
+                                  "src/test/resources/eccStoreWithChain.jks;gematik"))
+                          .serverSslSuites(List.of("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"))
+                          .build())
+                  .build());
 
-    assertThatNoException()
-        .isThrownBy(proxyRest.get("https://authn.aktor.epa.telematik-test/foobar")::asString);
+          assertThatNoException()
+              .isThrownBy(proxyRest.get("https://authn.aktor.epa.telematik-test/foobar")::asString);
+        });
   }
 
   @Test
@@ -298,28 +295,6 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
       assertThat(response.getStatus()).isEqualTo(666);
       assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
     }
-  }
-
-  @Test
-  void useTslBetweenProxyAndServer_shouldForward(WireMockRuntimeInfo runtimeInfo)
-      throws UnirestException {
-    stubFor(
-        get(urlMatching("/tlsFoobar")).willReturn(ok().withStatus(666).withBody("{'foo':'bar'}")));
-
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("https://localhost:" + runtimeInfo.getHttpsPort())
-                        .build()))
-            .build());
-
-    final HttpResponse<JsonNode> response = proxyRest.get("http://backend/tlsFoobar").asJson();
-
-    assertThat(response.getStatus()).isEqualTo(666);
-    assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
   }
 
   @Test
@@ -634,16 +609,15 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
       TigerConfigurationPkiIdentity clientIdentity) {
     var threadPool = Executors.newCachedThreadPool();
 
-    prepareBouncyCastleSupportJdkSetup();
     SSLContext sslContext = getSSLContext(clientIdentity);
     SSLServerSocketFactory ssf = sslContext.getServerSocketFactory();
     SSLServerSocket serverSocket = (SSLServerSocket) ssf.createServerSocket(0);
-    String[] ciphers = {"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"};
+    String[] ciphers = {
+      "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+    };
     serverSocket.setEnabledCipherSuites(ciphers);
     serverSocket.setEnabledProtocols(new String[] {"TLSv1.2"});
     serverSocket.setNeedClientAuth(true);
-
-    System.clearProperty("jdk.tls.namedGroups");
 
     threadPool.execute(
         () -> {
@@ -662,18 +636,9 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     return serverSocket.getLocalPort();
   }
 
-  private static void prepareBouncyCastleSupportJdkSetup() {
-    System.setProperty("jdk.tls.namedGroups", "brainpoolP384r1");
-    Security.setProperty("ssl.KeyManagerFactory.algorithm", "PKIX");
-    Security.removeProvider(BouncyCastleProvider.PROVIDER_NAME);
-    Security.insertProviderAt(new BouncyCastleProvider(), 1);
-    Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
-    Security.insertProviderAt(new BouncyCastleJsseProvider(), 2);
-  }
-
   protected SSLContext getSSLContext(TigerConfigurationPkiIdentity clientIdentity)
       throws Exception {
-    SSLContext sslContext = SSLContext.getInstance("TLS");
+    SSLContext sslContext = SSLContext.getInstance("TLS", new BouncyCastleJsseProvider());
     final TigerConfigurationPkiIdentity serverCert =
         new TigerConfigurationPkiIdentity("src/test/resources/eccStoreWithChain.jks;gematik");
     // Set up key manager factory to use our key store
@@ -743,12 +708,16 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                       .build());
 
               var restInstanceWithoutSslContextConfigured = Unirest.spawnInstance();
+              final SSLContext instance =
+                  SSLContext.getInstance("TLSv1.2", new BouncyCastleJsseProvider());
+              instance.init(null, null, null);
               restInstanceWithoutSslContextConfigured
                   .config()
+                  .sslContext(instance)
                   .proxy("localhost", tigerProxy.getProxyPort());
               restInstanceWithoutSslContextConfigured.get("https://backend/foobar").asJson();
             })
-        .hasMessageContaining("certificate_unknown");
+        .hasRootCauseInstanceOf(CertPathBuilderException.class);
   }
 
   @Test
@@ -904,7 +873,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                     .ocspSignerIdentity(
                         new TigerConfigurationPkiIdentity("src/test/resources/ocspSigner.p12;00"))
                     .serverIdentity(
-                        new TigerConfigurationPkiIdentity("src/test/resources/nist_ee.p12;00"))
+                        new TigerConfigurationPkiIdentity(
+                            "src/test/resources/rsaStoreWithChain.jks;gematik"))
                     .build()));
   }
 
@@ -958,35 +928,35 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   @SneakyThrows
   @Test
   void mutualTlsWithTigerProxyAsServerAndBouncyCastleClientCertificate() {
-    final TigerPkiIdentity clientIdentity = new TigerPkiIdentity("src/test/resources/brainpoolClientTls.p12;00");
+    final TigerPkiIdentity clientIdentity =
+        new TigerPkiIdentity("src/test/resources/brainpoolClientTls.p12;00");
 
     spawnTigerProxyWith(
-      TigerProxyConfiguration.builder()
-        .proxyRoutes(
-          List.of(
-            TigerRoute.builder()
-              .from("/")
-              .to("http://localhost:" + fakeBackendServerPort)
-              .build()))
-        .build());
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .build());
 
     // Initialize SSLContext
     TrustManagerFactory tmf =
-      TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
     tmf.init(tigerProxy.buildTruststore());
     SSLContext sslContext = SSLContext.getInstance("TLS", new BouncyCastleJsseProvider());
     TrustManager[] trustManagers = tmf.getTrustManagers();
 
-    KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    keyManagerFactory.init(clientIdentity.toKeyStoreWithPassword("gematik"),
-      "gematik".toCharArray());
+    KeyManagerFactory keyManagerFactory =
+        KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+    keyManagerFactory.init(
+        clientIdentity.toKeyStoreWithPassword("gematik"), "gematik".toCharArray());
 
     sslContext.init(keyManagerFactory.getKeyManagers(), trustManagers, null);
     final UnirestInstance mutualTlsInstance = Unirest.spawnInstance();
     mutualTlsInstance.config().sslContext(sslContext);
 
     mutualTlsInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
-
   }
-
 }

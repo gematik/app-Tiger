@@ -130,12 +130,10 @@ public abstract class AbstractTigerProxyTest {
     if (tigerProxy != null) {
       log.info("Closing tigerProxy from '{}'...", this.getClass().getSimpleName());
       tigerProxy.close();
-      System.gc();
     }
   }
 
   public void spawnTigerProxyWith(TigerProxyConfiguration configuration) {
-    System.setProperty("java.util.logging.config.file", "SKIP_MOCKSERVER_LOG_INIT!");
     configuration.setProxyLogLevel("ERROR");
     configuration.setName("Primary Tiger Proxy");
     tigerProxy = new TigerProxy(configuration);
