@@ -32,6 +32,8 @@ import org.apache.commons.lang3.RandomUtils;
 import org.jsoup.Jsoup;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class RbelHtmlRendererTest {
 
@@ -276,6 +278,55 @@ class RbelHtmlRendererTest {
     final String render =
         RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()));
     assertThat(render).contains("/png;base64,iVBORw0K");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"CAPA", "RETR 1"})
+  void shouldRenderPop3Messages(String command) throws IOException {
+    String pop3Message = command + "\r\n";
+    byte[] htmlBytes = pop3Message.getBytes(StandardCharsets.UTF_8);
+    final RbelElement convertedMessage =
+        RbelLogger.build()
+            .getRbelConverter()
+            .parseMessage(
+                htmlBytes,
+                new RbelHostname("sender", 13421),
+                new RbelHostname("receiver", 14512),
+                Optional.of(ZonedDateTime.now()));
+
+    final String convertedHtml = RENDERER.render(List.of(convertedMessage));
+    FileUtils.writeStringToFile(new File("target/directHtml.html"), convertedHtml);
+
+    String[] commandline = command.split(" ");
+    assertThat(convertedHtml)
+        .contains("POP3 Request")
+        .contains("Command: </b>" + commandline[0])
+        .contains("Arguments: </b>" + (commandline.length > 1 ? commandline[1] : ""));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"+OK foobar foobar", "-ERR barfoo"})
+  void shouldRenderPop3Responses(String response) throws IOException {
+    String pop3Message = response + "\r\nbody\r\n.\r\n";
+    byte[] htmlBytes = pop3Message.getBytes(StandardCharsets.UTF_8);
+    final RbelElement convertedMessage =
+        RbelLogger.build()
+            .getRbelConverter()
+            .parseMessage(
+                htmlBytes,
+                new RbelHostname("sender", 13421),
+                new RbelHostname("receiver", 14512),
+                Optional.of(ZonedDateTime.now()));
+
+    final String convertedHtml = RENDERER.render(List.of(convertedMessage));
+    FileUtils.writeStringToFile(new File("target/directHtml.html"), convertedHtml);
+
+    String firstline = response.split("\r\n")[0];
+    String[] responseLine = firstline.split(" ");
+    assertThat(convertedHtml)
+        .contains("POP3 Response")
+        .contains("Status: </b>" + responseLine[0])
+        .contains("Header: </b>" + (responseLine.length > 1 ? responseLine[1] : ""));
   }
 
   private List<RbelElement> wrapHttpMessage(
