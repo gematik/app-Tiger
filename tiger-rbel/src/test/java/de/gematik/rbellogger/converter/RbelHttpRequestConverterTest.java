@@ -13,7 +13,6 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelNoteFacet;
-import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.DisplayName;
@@ -79,15 +78,17 @@ class RbelHttpRequestConverterTest {
   }
 
   @Test
-  void defunctChunkedMessage_shouldParseCorrectlyAndAddNote() throws IOException {
+  void defunctChunkedMessage_shouldParseIncorrectlyAndAddErrorNote() throws IOException {
     final RbelElement rbelElement =
         readAndConvertCurlMessage("src/test/resources/sampleMessages/illegalChunkedMessage.curl");
 
     assertThat(rbelElement)
         .hasFacet(RbelNoteFacet.class)
         .extractFacet(RbelNoteFacet.class)
-        .matches(note -> note.getStyle() == NoteStyling.WARN)
-        .matches(note -> note.getValue().contains("chunked"));
+        .matches(note -> note.getStyle() == RbelNoteFacet.NoteStyling.ERROR, "note is error")
+        .matches(
+            note -> note.getValue().contains("Exception during conversion"),
+            "note value contains information about exception during conversion");
   }
 
   @Test

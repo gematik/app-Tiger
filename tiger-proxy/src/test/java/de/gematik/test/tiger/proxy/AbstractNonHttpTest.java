@@ -11,6 +11,7 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.test.tiger.ByteArrayToStringRepresentation;
 import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
@@ -21,9 +22,12 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.security.KeyStore;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -32,9 +36,9 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import lombok.Data;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -50,18 +54,17 @@ public abstract class AbstractNonHttpTest {
     OutputStream output = socket.getOutputStream();
     output.write(message);
     output.flush();
-    log("msg written");
+    log.info("msg written");
   }
 
   public static void readSingleResponseMessage(Socket socket, byte[] message) throws IOException {
     InputStream input = socket.getInputStream();
     final BufferedReader reader = new BufferedReader(new InputStreamReader(input));
     final String clientArrivedMessage = reader.readLine();
-    assertThat((clientArrivedMessage + "\n").getBytes()).isEqualTo(message);
-  }
-
-  private static void log(String s) {
-    log.info(s);
+    log.info("msg read");
+    assertThat((clientArrivedMessage + "\n").getBytes())
+        .withRepresentation(new ByteArrayToStringRepresentation())
+        .isEqualTo(message);
   }
 
   public void executeTestRun(
@@ -104,10 +107,10 @@ public abstract class AbstractNonHttpTest {
     try (GenericRespondingServer listenerServer = new GenericRespondingServer()) {
       AtomicInteger handlerCalledRequest = new AtomicInteger(0);
       AtomicInteger handlerCalledResponse = new AtomicInteger(0);
-      AtomicInteger serverCalled = new AtomicInteger(0);
+      AtomicInteger serverConnectionsOpenend = new AtomicInteger(0);
       listenerServer.setAcceptedConnectionConsumer(
           socket -> {
-            serverCalled.incrementAndGet();
+            serverConnectionsOpenend.incrementAndGet();
             serverAcceptedConnectionCallback.accept(socket);
           });
       tigerProxy = tigerProxyGenerator.apply(listenerServer.getLocalPort());
@@ -124,38 +127,40 @@ public abstract class AbstractNonHttpTest {
                 "ports are {} and {}",
                 ((InetSocketAddress) socketAddress).getPort(),
                 ((InetSocketAddress) socketAddress1).getPort());
-            handlerCalledRequest.incrementAndGet();
-            log.info(
-                "call received to the binary handler. req is '{}'",
-                StringUtils.abbreviate(new String(binaryMessage.getBytes()), 100));
-            completableFuture.thenApply(
-                msg -> {
-                  if (msg != null) {
-                    handlerCalledResponse.incrementAndGet();
-                    log.info(
-                        "call received to the binary handler. resp is '{}'",
-                        StringUtils.abbreviate(new String(msg.getBytes()), 100));
-                  } else {
-                    log.info("call received to the binary handler. resp is null");
-                  }
-                  return msg;
-                });
+            // with new direct connection to remote server, there is no longer
+            // pairing of request/response, so we identify it based on the direction the message
+            // is
+            // going
+            if (((InetSocketAddress) socketAddress).getPort() == listenerServer.getLocalPort()) {
+              handlerCalledRequest.incrementAndGet();
+            } else {
+              handlerCalledResponse.incrementAndGet();
+            }
             oldListener.onProxy(binaryMessage, completableFuture, socketAddress, socketAddress1);
           });
-      try (Socket clientSocket = newClientSocketTo(tigerProxy)) {
-        log("listenerServer on port: " + listenerServer.getLocalPort());
-        clientActionCallback.accept(clientSocket);
-      } catch (IOException e) {
-        log.error("Exception while accepting client socket", e);
-        throw new RuntimeException(e);
-      } catch (ConditionTimeoutException cte) {
-        tigerProxy.getRbelMessagesList().forEach(msg -> log.error(msg.printHttpDescription()));
-        throw cte;
-      }
+
+      CompletableFuture<Void> executionResult =
+          CompletableFuture.supplyAsync(
+              () -> {
+                try (Socket clientSocket = newClientSocketTo(tigerProxy)) {
+                  log.info("listenerServer on port: " + listenerServer.getLocalPort());
+                  clientActionCallback.accept(clientSocket);
+                } catch (IOException e) {
+                  log.error("Exception while accepting client socket", e);
+                  throw new RuntimeException(e);
+                } catch (ConditionTimeoutException cte) {
+                  tigerProxy
+                      .getRbelMessagesList()
+                      .forEach(msg -> log.error(msg.printHttpDescription()));
+                  throw cte;
+                }
+                return null;
+              });
 
       try {
         await()
             .atMost(10, TimeUnit.SECONDS)
+            .failFast(executionResult::isCompletedExceptionally)
             .pollDelay(
                 1000,
                 TimeUnit.MILLISECONDS) // to ensure the server would have had a chance to handle a
@@ -163,18 +168,18 @@ public abstract class AbstractNonHttpTest {
             .pollInterval(200, TimeUnit.MILLISECONDS)
             .untilAsserted(
                 () -> {
-                  log(
+                  log.info(
                       "Verifying interactions... (requests="
                           + handlerCalledRequest.get()
                           + ", response="
                           + handlerCalledResponse.get()
                           + ", serverCalled="
-                          + serverCalled.get()
+                          + serverConnectionsOpenend.get()
                           + ", rbelMsgs="
                           + getTigerProxy().getRbelMessages().size()
                           + ")");
                   interactionsVerificationCallback.acceptThrows(
-                      handlerCalledRequest, handlerCalledResponse, serverCalled);
+                      handlerCalledRequest, handlerCalledResponse, serverConnectionsOpenend);
                 });
       } catch (RuntimeException e) {
         log.error(
@@ -194,12 +199,16 @@ public abstract class AbstractNonHttpTest {
   public static class GenericRespondingServer implements AutoCloseable {
 
     private final ServerSocket listenerServer;
-    private ThrowingConsumer<Socket> acceptedConnectionConsumer;
+    @Setter private ThrowingConsumer<Socket> acceptedConnectionConsumer;
+    private final Thread serverThread;
+    private boolean shouldRun = true;
+    private final AtomicReference<Throwable> serverSidedException = new AtomicReference<>();
 
     public GenericRespondingServer() {
       listenerServer = newSslServerSocket();
-      AtomicBoolean isServerReady = new AtomicBoolean(false);
-      new Thread(
+      final AtomicBoolean isServerReady = new AtomicBoolean(false);
+      serverThread =
+          new Thread(
               () -> {
                 isServerReady.set(true);
                 log.info(
@@ -207,32 +216,45 @@ public abstract class AbstractNonHttpTest {
                     listenerServer.getLocalPort(),
                     listenerServer.getInetAddress(),
                     listenerServer.getLocalSocketAddress());
-                while (true) {
+                while (shouldRun) {
                   try {
                     final Socket serverSocket = listenerServer.accept();
-                    log.info(
-                        "listener server: got connection from port {}", serverSocket.getPort());
-                    acceptedConnectionConsumer.accept(serverSocket);
-                    log("listener server: after assert");
+                    Executors.newCachedThreadPool()
+                        .execute(
+                            () -> {
+                              log.info(
+                                  "listener server: got connection from port {}",
+                                  serverSocket.getPort());
+                              acceptedConnectionConsumer.accept(serverSocket);
+                            });
+                    log.info("listener server: after assert");
                   } catch (IOException e) {
                     // swallow socket close exceptions. makes for a less confusing test run output
                     if (!(e instanceof SocketException)) {
                       log.error("IGNORED!", e);
+                      serverSidedException.set(e);
                     }
+                  } catch (Throwable e) {
+                    serverSidedException.set(e);
                   }
                 }
-              })
-          .start();
+              },
+              "Asynch-server-thread");
+      serverThread.start();
       await().until(isServerReady::get);
     }
 
     @Override
     public void close() throws Exception {
+      shouldRun = false;
+      log.info("Closing server...");
       listenerServer.close();
-    }
-
-    public void setAcceptedConnectionConsumer(ThrowingConsumer<Socket> acceptedConnectionConsumer) {
-      this.acceptedConnectionConsumer = acceptedConnectionConsumer;
+      log.info("Joining server thread...");
+      serverThread.join(1000);
+      log.info("Shutdown complete! ({})", serverSidedException.get());
+      if (serverSidedException.get() != null) {
+        throw new RuntimeException("Server threw exception", serverSidedException.get());
+      }
     }
 
     public Integer getLocalPort() {
@@ -272,7 +294,8 @@ public abstract class AbstractNonHttpTest {
 
   public interface VerifyInteractionsConsumer {
 
-    void acceptThrows(AtomicInteger request, AtomicInteger responses, AtomicInteger serverCalls)
+    void acceptThrows(
+        AtomicInteger request, AtomicInteger responses, AtomicInteger serverConnectionsOpened)
         throws Exception;
   }
 

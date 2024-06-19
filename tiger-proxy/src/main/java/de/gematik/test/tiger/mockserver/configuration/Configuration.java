@@ -64,7 +64,6 @@ public class Configuration {
   private boolean assumeAllRequestsAreHttp = false;
 
   // non http proxying
-  private boolean forwardBinaryRequestsWithoutWaitingForResponse = false;
   private BinaryProxyListener binaryProxyListener = null;
 
   // CORS

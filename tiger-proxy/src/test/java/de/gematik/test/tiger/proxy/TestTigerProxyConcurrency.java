@@ -97,7 +97,7 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
     tigerProxy
         .getRbelLogger()
         .getRbelConverter()
-        .addPostConversionListener(blockConversionUntilCommunicationIsComplete);
+        .addLastPostConversionListener(blockConversionUntilCommunicationIsComplete);
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
@@ -136,7 +136,7 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
     tigerProxy
         .getRbelLogger()
         .getRbelConverter()
-        .addPostConversionListener(blockConversionUntilCommunicationIsComplete);
+        .addLastPostConversionListener(blockConversionUntilCommunicationIsComplete);
 
     final CompletableFuture<HttpResponse<String>> asyncMessage =
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asStringAsync();
@@ -184,7 +184,7 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
     tigerProxy
         .getRbelLogger()
         .getRbelConverter()
-        .addPostConversionListener(blockConversionUntilCommunicationIsComplete);
+        .addLastPostConversionListener(blockConversionUntilCommunicationIsComplete);
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 

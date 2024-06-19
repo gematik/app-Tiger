@@ -9,6 +9,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
+import de.gematik.rbellogger.data.RbelElementAssertion;
+import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
@@ -20,6 +22,7 @@ import java.net.Socket;
 import java.time.ZonedDateTime;
 import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -147,16 +150,36 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
 
     // no proxyRest, direct connection (assume reverseProxy behavior)
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
-    awaitMessagesInTiger(2);
+    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
-    assertThat(
-            tigerProxy
-                .getRbelMessagesList()
-                .get(1)
-                .findElement("$.responseCode")
-                .get()
-                .getRawStringContent())
-        .isEqualTo("666");
+    awaitMessagesInTiger(4);
+
+    val messages = tigerProxy.getRbelMessagesList();
+
+    val request = messages.get(0);
+    val response = messages.get(1);
+    val request2 = messages.get(2);
+    val response2 = messages.get(3);
+
+    RbelElementAssertion.assertThat(request)
+        .extractChildWithPath("$.path")
+        .hasStringContentEqualTo("/foobar");
+    RbelElementAssertion.assertThat(response)
+        .extractChildWithPath("$.responseCode")
+        .hasStringContentEqualTo("666");
+
+    RbelElementAssertion.assertThat(request2)
+        .extractChildWithPath("$.path")
+        .hasStringContentEqualTo("/foobar");
+    RbelElementAssertion.assertThat(response2)
+        .extractChildWithPath("$.responseCode")
+        .hasStringContentEqualTo("666");
+
+    val responseInRequestFacet = request.getFacet(RbelHttpRequestFacet.class).get().getResponse();
+    assertThat(responseInRequestFacet).isEqualTo(response);
+
+    val responseInRequest2Facet = request2.getFacet(RbelHttpRequestFacet.class).get().getResponse();
+    assertThat(responseInRequest2Facet).isEqualTo(response2);
   }
 
   @Test

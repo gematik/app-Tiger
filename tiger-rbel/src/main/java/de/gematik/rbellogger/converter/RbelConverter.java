@@ -236,8 +236,13 @@ public class RbelConverter {
     manageRbelBufferSize();
   }
 
-  public RbelConverter addPostConversionListener(RbelConverterPlugin postConversionListener) {
+  public RbelConverter addLastPostConversionListener(RbelConverterPlugin postConversionListener) {
     postConversionListeners.add(postConversionListener);
+    return this;
+  }
+
+  public RbelConverter addFirstPostConversionListener(RbelConverterPlugin postConversionListener) {
+    postConversionListeners.add(0, postConversionListener);
     return this;
   }
 

@@ -8,6 +8,7 @@ import static de.gematik.test.tiger.mockserver.model.HttpRequest.request;
 import static de.gematik.test.tiger.proxy.tls.OcspUtils.buildOcspResponse;
 import static de.gematik.test.tiger.proxy.tls.TlsCertificateGenerator.generateNewCaCertificate;
 
+import de.gematik.rbellogger.converter.HttpPairingInBinaryChannelConverter;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
@@ -237,7 +238,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
   private MockServer spawnDirectInverseTigerProxy(
       Configuration mockServerConfiguration, Optional<ProxyConfiguration> forwardProxyConfig) {
-    mockServerConfiguration.forwardBinaryRequestsWithoutWaitingForResponse(true);
     mockServerConfiguration.binaryProxyListener(new BinaryExchangeHandler(this));
     if (forwardProxyConfig.isPresent()) {
       throw new TigerProxyStartupException(
@@ -251,6 +251,11 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
             getTigerProxyConfiguration().getDirectReverseProxy().getHostname(),
             getTigerProxyConfiguration().getPortAsArray());
     addReverseProxyRouteIfNotPresent();
+
+    getRbelLogger()
+        .getRbelConverter()
+        .addFirstPostConversionListener(new HttpPairingInBinaryChannelConverter());
+
     return newMockServer;
   }
 

@@ -34,7 +34,7 @@ class IdpDecryptionTest {
       tigerProxy
           .getRbelLogger()
           .getRbelConverter()
-          .addPostConversionListener(RbelKeyManager.RBEL_IDP_TOKEN_KEY_LISTENER);
+          .addLastPostConversionListener(RbelKeyManager.RBEL_IDP_TOKEN_KEY_LISTENER);
       final RbelFileReaderCapturer fileReaderCapturer =
           RbelFileReaderCapturer.builder()
               .rbelFile("src/test/resources/idpDecryption.tgr")

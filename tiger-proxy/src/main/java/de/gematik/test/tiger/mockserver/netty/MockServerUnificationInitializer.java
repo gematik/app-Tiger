@@ -33,7 +33,6 @@ public class MockServerUnificationInitializer extends ChannelHandlerAdapter {
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) {
     ctx.pipeline()
-        .addFirst(new ConnectionCounterHandler(server))
         .replace(
             this,
             null,

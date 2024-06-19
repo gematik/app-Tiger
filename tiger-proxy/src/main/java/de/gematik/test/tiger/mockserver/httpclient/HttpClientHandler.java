@@ -33,6 +33,10 @@ public class HttpClientHandler extends SimpleChannelInboundHandler<Message> {
   @Override
   public void channelRead0(ChannelHandlerContext ctx, Message response) {
     ctx.channel().attr(RESPONSE_FUTURE).get().complete(response);
+  }
+
+  @Override
+  public void channelInactive(ChannelHandlerContext ctx) throws Exception {
     ctx.close();
   }
 
@@ -47,7 +51,8 @@ public class HttpClientHandler extends SimpleChannelInboundHandler<Message> {
 
   private boolean isNotSslException(Throwable cause) {
     return !(cause.getCause() instanceof SSLException
-        || cause instanceof DecoderException | cause instanceof NotSslRecordException);
+        || cause instanceof DecoderException
+        || cause instanceof NotSslRecordException);
   }
 
   private boolean isNotConnectionReset(Throwable cause) {

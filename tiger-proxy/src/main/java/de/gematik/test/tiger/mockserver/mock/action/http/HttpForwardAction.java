@@ -7,9 +7,11 @@ package de.gematik.test.tiger.mockserver.mock.action.http;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
 
 import de.gematik.test.tiger.mockserver.filters.HopByHopHeaderFilter;
+import de.gematik.test.tiger.mockserver.httpclient.HttpRequestInfo;
 import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
+import io.netty.channel.Channel;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -32,6 +34,7 @@ public abstract class HttpForwardAction {
 
   public HttpForwardActionResult sendRequest(
       HttpRequest request,
+      Channel incomingChannel,
       @Nullable InetSocketAddress remoteAddress,
       Function<HttpResponse, HttpResponse> overrideHttpResponse) {
     try {
@@ -39,7 +42,10 @@ public abstract class HttpForwardAction {
       return new HttpForwardActionResult(
           request,
           httpClient.sendRequest(
-              hopByHopHeaderFilter.onRequest(request).setProtocol(null), remoteAddress),
+              new HttpRequestInfo(
+                  incomingChannel,
+                  hopByHopHeaderFilter.onRequest(request).setProtocol(null),
+                  remoteAddress)),
           overrideHttpResponse,
           remoteAddress);
     } catch (Exception e) {

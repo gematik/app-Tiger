@@ -49,7 +49,7 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
     final RbelConverter upstreamRbelConverter =
         upstreamTigerProxy.getRbelLogger().getRbelConverter();
 
-    upstreamRbelConverter.addPostConversionListener(
+    upstreamRbelConverter.addLastPostConversionListener(
         (el, conv) -> upstreamTigerProxy.triggerListener(el));
     RbelFileReaderCapturer.builder()
         .rbelFile("src/test/resources/vauEpa2Flow.tgr")

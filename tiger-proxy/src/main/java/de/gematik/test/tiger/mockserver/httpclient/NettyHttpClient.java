@@ -6,26 +6,17 @@ package de.gematik.test.tiger.mockserver.httpclient;
 
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 
-import com.google.common.collect.ImmutableMap;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.filters.HopByHopHeaderFilter;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.mockserver.model.Protocol;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
-import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.WriteBufferWaterMark;
-import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.AttributeKey;
-import java.io.IOException;
-import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -33,12 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.annotation.Nullable;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -51,15 +39,16 @@ public class NettyHttpClient {
   static final AttributeKey<Boolean> SECURE = AttributeKey.valueOf("SECURE");
   static final AttributeKey<InetSocketAddress> REMOTE_SOCKET =
       AttributeKey.valueOf("REMOTE_SOCKET");
-  static final AttributeKey<CompletableFuture<Message>> RESPONSE_FUTURE =
+  public static final AttributeKey<CompletableFuture<Message>> RESPONSE_FUTURE =
       AttributeKey.valueOf("RESPONSE_FUTURE");
-  static final AttributeKey<Boolean> ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE =
+  public static final AttributeKey<Boolean> ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE =
       AttributeKey.valueOf("ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE");
-  private static final HopByHopHeaderFilter hopByHopHeaderFilter = new HopByHopHeaderFilter();
   private final Configuration configuration;
   private final EventLoopGroup eventLoopGroup;
   private final Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations;
   private final NettySslContextFactory nettySslContextFactory;
+
+  @Getter private final ClientBootstrapFactory clientBootstrapFactory;
 
   public NettyHttpClient(
       Configuration configuration,
@@ -74,88 +63,94 @@ public class NettyHttpClient {
                 .collect(
                     Collectors.toMap(
                         ProxyConfiguration::getType, proxyConfiguration -> proxyConfiguration))
-            : ImmutableMap.of();
+            : Map.of();
     this.nettySslContextFactory = nettySslContextFactory;
-  }
-
-  public CompletableFuture<HttpResponse> sendRequest(final HttpRequest httpRequest)
-      throws SocketConnectionException {
-    return sendRequest(httpRequest, httpRequest.socketAddressFromHostHeader());
+    this.clientBootstrapFactory = new ClientBootstrapFactory(configuration, eventLoopGroup);
   }
 
   public CompletableFuture<HttpResponse> sendRequest(
-      final HttpRequest httpRequest, @Nullable InetSocketAddress remoteAddress)
-      throws SocketConnectionException {
-    return sendRequest(httpRequest, remoteAddress, configuration.socketConnectionTimeoutInMillis());
-  }
-
-  public CompletableFuture<HttpResponse> sendRequest(
-      final HttpRequest httpRequest,
-      @Nullable InetSocketAddress remoteAddress,
-      Long connectionTimeoutMillis)
-      throws SocketConnectionException {
+      HttpRequestInfo requestInfo, Long customTimeout) {
+    if (requestInfo.getRemoteServerAddress() == null) {
+      requestInfo.setRemoteServerAddress(requestInfo.getDataToSend().socketAddressFromHostHeader());
+    }
     if (!eventLoopGroup.isShuttingDown()) {
       if (proxyConfigurations != null
-          && !Boolean.TRUE.equals(httpRequest.isSecure())
+          && !Boolean.TRUE.equals(requestInfo.getDataToSend().isSecure())
           && proxyConfigurations.containsKey(ProxyConfiguration.Type.HTTP)
-          && isHostNotOnNoProxyHostList(remoteAddress)) {
+          && isHostNotOnNoProxyHostList(requestInfo.getRemoteServerAddress())) {
         ProxyConfiguration proxyConfiguration =
             proxyConfigurations.get(ProxyConfiguration.Type.HTTP);
-        remoteAddress = proxyConfiguration.getProxyAddress();
-        proxyConfiguration.addProxyAuthenticationHeader(httpRequest);
-      } else if (remoteAddress == null) {
-        remoteAddress = httpRequest.socketAddressFromHostHeader();
+        requestInfo.setRemoteServerAddress(proxyConfiguration.getProxyAddress());
+        proxyConfiguration.addProxyAuthenticationHeader(requestInfo.getDataToSend());
+      } else if (requestInfo.getRemoteServerAddress() == null) {
+        requestInfo.setRemoteServerAddress(
+            requestInfo.getDataToSend().socketAddressFromHostHeader());
       }
-      if (Protocol.HTTP_2.equals(httpRequest.getProtocol())
-          && !Boolean.TRUE.equals(httpRequest.isSecure())) {
+      if (Protocol.HTTP_2.equals(requestInfo.getDataToSend().getProtocol())
+          && !Boolean.TRUE.equals(requestInfo.getDataToSend().isSecure())) {
         log.warn(
             "HTTP2 requires ALPN but request is not secure (i.e. TLS) so protocol changed"
                 + " to HTTP1");
-        httpRequest.setProtocol(Protocol.HTTP_1_1);
+        requestInfo.getDataToSend().setProtocol(Protocol.HTTP_1_1);
       }
 
       final CompletableFuture<HttpResponse> httpResponseFuture = new CompletableFuture<>();
       final CompletableFuture<Message> responseFuture = new CompletableFuture<>();
       final Protocol httpProtocol =
-          httpRequest.getProtocol() != null ? httpRequest.getProtocol() : Protocol.HTTP_1_1;
+          requestInfo.getDataToSend().getProtocol() != null
+              ? requestInfo.getDataToSend().getProtocol()
+              : Protocol.HTTP_1_1;
 
-      final HttpClientInitializer clientInitializer =
-          new HttpClientInitializer(proxyConfigurations, nettySslContextFactory, httpProtocol);
+      final HttpClientInitializer clientInitializer = createClientInitializer(httpProtocol);
 
-      new Bootstrap()
-          .group(eventLoopGroup)
-          .channel(NioSocketChannel.class)
-          .option(ChannelOption.AUTO_READ, true)
-          .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-          .option(
-              ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(8 * 1024, 32 * 1024))
-          .option(
-              ChannelOption.CONNECT_TIMEOUT_MILLIS,
-              connectionTimeoutMillis != null ? connectionTimeoutMillis.intValue() : null)
-          .attr(SECURE, httpRequest.isSecure() != null && httpRequest.isSecure())
-          .attr(REMOTE_SOCKET, remoteAddress)
-          .attr(RESPONSE_FUTURE, responseFuture)
-          .attr(ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE, true)
-          .handler(clientInitializer)
-          .connect(remoteAddress)
-          .addListener(
-              (ChannelFutureListener)
-                  future -> {
-                    if (future.isSuccess()) {
-                      // ensure if HTTP2 is used then settings have been received from server
-                      clientInitializer.whenComplete(
-                          (protocol, throwable) -> {
-                            if (throwable != null) {
-                              httpResponseFuture.completeExceptionally(throwable);
-                            } else {
-                              // send the HTTP request
-                              future.channel().writeAndFlush(httpRequest);
-                            }
-                          });
-                    } else {
-                      httpResponseFuture.completeExceptionally(future.cause());
-                    }
-                  });
+      var isSecure =
+          requestInfo.getDataToSend().isSecure() != null && requestInfo.getDataToSend().isSecure();
+
+      var onCreationListener =
+          (ChannelFutureListener)
+              future -> {
+                if (future.isSuccess()) {
+                  // ensure if HTTP2 is used then settings have been received from server
+
+                  clientInitializer.whenComplete(
+                      (protocol, throwable) -> {
+                        if (throwable != null) {
+                          httpResponseFuture.completeExceptionally(throwable);
+                        } else {
+                          // send the HTTP request
+                          log.trace("sending request: {}", requestInfo.getDataToSend());
+                          future.channel().writeAndFlush(requestInfo.getDataToSend());
+                        }
+                      });
+
+                } else {
+                  httpResponseFuture.completeExceptionally(future.cause());
+                }
+              };
+
+      var onReuseListener =
+          (ChannelFutureListener)
+              future -> {
+                if (future.isSuccess()) {
+                  // send the HTTP request
+                  log.trace("sending request: {}", requestInfo.getDataToSend());
+                  future.channel().writeAndFlush(requestInfo.getDataToSend());
+                } else {
+                  httpResponseFuture.completeExceptionally(future.cause());
+                }
+              };
+
+      clientBootstrapFactory
+          .configureChannel()
+          .isSecure(isSecure)
+          .requestInfo(requestInfo)
+          .clientInitializer(clientInitializer)
+          .errorIfChannelClosedWithoutResponse(true)
+          .responseFuture(responseFuture)
+          .timeoutInMilliseconds(customTimeout)
+          .onCreationListener(onCreationListener)
+          .onReuseListener(onReuseListener)
+          .connectToChannel();
 
       responseFuture.whenComplete(
           (message, throwable) -> {
@@ -178,60 +173,64 @@ public class NettyHttpClient {
     }
   }
 
+  public CompletableFuture<HttpResponse> sendRequest(final HttpRequestInfo requestInfo)
+      throws SocketConnectionException {
+    return sendRequest(requestInfo, configuration.socketConnectionTimeoutInMillis());
+  }
+
+  public HttpClientInitializer createClientInitializer(Protocol httpProtocol) {
+    return new HttpClientInitializer(
+        configuration, proxyConfigurations, nettySslContextFactory, httpProtocol);
+  }
+
   public CompletableFuture<BinaryMessage> sendRequest(
-      final BinaryMessage binaryRequest,
-      final boolean isSecure,
-      InetSocketAddress remoteAddress,
-      Long connectionTimeoutMillis)
+      BinaryRequestInfo binaryRequestInfo, final boolean isSecure)
       throws SocketConnectionException {
     if (!eventLoopGroup.isShuttingDown()) {
       if (proxyConfigurations != null
           && !isSecure
           && proxyConfigurations.containsKey(ProxyConfiguration.Type.HTTP)) {
-        remoteAddress = proxyConfigurations.get(ProxyConfiguration.Type.HTTP).getProxyAddress();
-      } else if (remoteAddress == null) {
+        binaryRequestInfo.setRemoteServerAddress(
+            proxyConfigurations.get(ProxyConfiguration.Type.HTTP).getProxyAddress());
+      } else if (binaryRequestInfo.getRemoteServerAddress() == null) {
         throw new IllegalArgumentException("Remote address cannot be null");
       }
 
       final CompletableFuture<BinaryMessage> binaryResponseFuture = new CompletableFuture<>();
       final CompletableFuture<Message> responseFuture = new CompletableFuture<>();
 
-      new Bootstrap()
-          .group(eventLoopGroup)
-          .channel(NioSocketChannel.class)
-          .option(ChannelOption.AUTO_READ, true)
-          .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
-          .option(
-              ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(8 * 1024, 32 * 1024))
-          .option(
-              ChannelOption.CONNECT_TIMEOUT_MILLIS,
-              connectionTimeoutMillis != null ? connectionTimeoutMillis.intValue() : null)
-          .attr(SECURE, isSecure)
-          .attr(REMOTE_SOCKET, remoteAddress)
-          .attr(RESPONSE_FUTURE, responseFuture)
-          .attr(
-              ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE,
-              !configuration.forwardBinaryRequestsWithoutWaitingForResponse())
-          .handler(new HttpClientInitializer(proxyConfigurations, nettySslContextFactory, null))
-          .connect(remoteAddress)
-          .addListener(
-              (ChannelFutureListener)
-                  future -> {
-                    if (future.isSuccess()) {
-                      if (log.isDebugEnabled()) {
-                        log.debug(
-                            "sending bytes hex {} to {}",
-                            ByteBufUtil.hexDump(binaryRequest.getBytes()),
-                            future.channel().attr(REMOTE_SOCKET).get());
-                      }
-                      // send the binary request
-                      future
-                          .channel()
-                          .writeAndFlush(Unpooled.copiedBuffer(binaryRequest.getBytes()));
-                    } else {
-                      binaryResponseFuture.completeExceptionally(future.cause());
-                    }
-                  });
+      var httpClientInitializer = createClientInitializer(null);
+
+      var onCreateAndReuseListener =
+          (ChannelFutureListener)
+              future -> {
+                if (future.isSuccess()) {
+                  if (log.isDebugEnabled()) {
+                    log.debug(
+                        "sending bytes hex {} to {}",
+                        ByteBufUtil.hexDump(binaryRequestInfo.getBytes()),
+                        future.channel().attr(REMOTE_SOCKET).get());
+                  }
+                  // send the binary request
+                  future
+                      .channel()
+                      .writeAndFlush(Unpooled.copiedBuffer(binaryRequestInfo.getBytes()));
+                } else {
+                  binaryResponseFuture.completeExceptionally(future.cause());
+                }
+              };
+
+      clientBootstrapFactory
+          .configureChannel()
+          .isSecure(isSecure)
+          .requestInfo(binaryRequestInfo)
+          .responseFuture(responseFuture)
+          .clientInitializer(httpClientInitializer)
+          .errorIfChannelClosedWithoutResponse(false)
+          .responseFuture(responseFuture)
+          .onReuseListener(onCreateAndReuseListener)
+          .onCreationListener(onCreateAndReuseListener)
+          .connectToChannel();
 
       responseFuture.whenComplete(
           (message, throwable) -> {
@@ -249,44 +248,6 @@ public class NettyHttpClient {
           "Request sent after client has been stopped - the event loop has been shutdown so it is"
               + " not possible to send a request");
     }
-  }
-
-  public HttpResponse sendRequest(
-      HttpRequest httpRequest, long timeout, TimeUnit unit, boolean ignoreErrors) {
-    HttpResponse httpResponse = null;
-    try {
-      httpResponse = sendRequest(httpRequest).get(timeout, unit);
-    } catch (TimeoutException e) {
-      if (!ignoreErrors) {
-        throw new SocketCommunicationException(
-            "Response was not received from MockServer after "
-                + configuration.maxSocketTimeoutInMillis()
-                + " milliseconds, to wait longer please use \"mockserver.maxSocketTimeout\" system"
-                + " property or ConfigurationProperties.maxSocketTimeout(long milliseconds)",
-            e.getCause());
-      }
-    } catch (InterruptedException | ExecutionException ex) {
-      if (!ignoreErrors) {
-        Throwable cause = ex.getCause();
-        if (cause instanceof SocketConnectionException) {
-          throw (SocketConnectionException) cause;
-        } else if (cause instanceof ConnectException) {
-          throw new SocketConnectionException(
-              "Unable to connect to socket " + httpRequest.socketAddressFromHostHeader(), cause);
-        } else if (cause instanceof UnknownHostException) {
-          throw new SocketConnectionException(
-              "Unable to resolve host " + httpRequest.socketAddressFromHostHeader(), cause);
-        } else if (cause instanceof IOException) {
-          throw new SocketConnectionException(cause.getMessage(), cause);
-        } else if (cause instanceof InterruptedException) {
-          Thread.currentThread().interrupt();
-          throw new RuntimeException("Exception while sending request - " + ex.getMessage(), ex);
-        } else {
-          throw new RuntimeException("Exception while sending request - " + ex.getMessage(), ex);
-        }
-      }
-    }
-    return httpResponse;
   }
 
   private boolean isHostNotOnNoProxyHostList(InetSocketAddress remoteAddress) {

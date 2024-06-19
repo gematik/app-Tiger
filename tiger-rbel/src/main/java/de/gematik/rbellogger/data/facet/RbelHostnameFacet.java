@@ -13,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 
 @Data
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -79,5 +80,23 @@ public class RbelHostnameFacet implements RbelFacet {
     public RbelHostnameStructureException(String s) {
       super(s);
     }
+  }
+
+  public static Optional<String> tryToExtractServerName(RbelElement element) {
+    final Optional<RbelHostnameFacet> hostnameFacet = element.getFacet(RbelHostnameFacet.class);
+    if (hostnameFacet.isEmpty()) {
+      return Optional.empty();
+    }
+    return hostnameFacet
+        .flatMap(RbelHostnameFacet::getBundledServerName)
+        .filter(e -> e.getRawStringContent() != null)
+        .flatMap(e -> Optional.of(e.getRawStringContent()))
+        .or(
+            () ->
+                hostnameFacet
+                    .map(RbelHostnameFacet::getDomain)
+                    .map(RbelElement::getRawStringContent)
+                    .filter(StringUtils::isNotEmpty)
+                    .filter(s -> !s.startsWith("localhost") && !s.startsWith("127.0.0.1")));
   }
 }
