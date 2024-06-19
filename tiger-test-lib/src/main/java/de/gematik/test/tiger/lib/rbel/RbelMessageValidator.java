@@ -20,6 +20,7 @@ import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.lib.json.JsonChecker;
+import de.gematik.test.tiger.lib.json.JsonSchemaChecker;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.net.URI;
@@ -431,8 +432,13 @@ public class RbelMessageValidator {
     switch (mode) {
       case JSON -> new JsonChecker().compareJsonStrings(getAsJsonString(element), oracle, false);
       case XML -> compareXMLStructureOfRbelElement(element, oracle, "");
-      default -> Assertions.fail(
-          "Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
+      case JSON_SCHEMA ->
+          new JsonSchemaChecker().compareJsonToSchema(getAsJsonString(element), oracle);
+      default ->
+          Assertions.fail(
+              "Type should either be JSON, JSON_SCHEMA, or XML, but you wrote '"
+                  + mode
+                  + "' instead.");
     }
   }
 

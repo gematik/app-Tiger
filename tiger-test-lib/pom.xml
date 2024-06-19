@@ -22,6 +22,7 @@
 
         <version.jsonassert>1.5.1</version.jsonassert>
         <version.xmlunit-core>2.10.0</version.xmlunit-core>
+        <version.json-schema-validator>1.4.0</version.json-schema-validator>
 
         <tiger.build.timestamp>${maven.build.timestamp}</tiger.build.timestamp>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
@@ -167,6 +168,12 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
+        </dependency>
+        <!-- validate json based on a schema -->
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>${version.json-schema-validator}</version>
         </dependency>
         <!-- to easily compare xml structures -->
         <dependency>

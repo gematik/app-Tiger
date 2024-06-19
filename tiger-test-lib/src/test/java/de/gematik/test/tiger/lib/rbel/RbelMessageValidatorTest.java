@@ -34,7 +34,6 @@ import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.ArrayDeque;
@@ -45,6 +44,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -580,6 +580,47 @@ class RbelMessageValidatorTest {
     glue.currentRequestMessageAtMatchesDocString("$.body", "{\"foo\":\"bar\"}");
     glue.currentRequestAtMatchesAsJsonOrXml("$.body", ModeType.JSON, oracleStr);
     glue.currentRequestMessageAttributeDoesNotMatch("$.body.foo", "foo");
+  }
+
+  @Test
+  void testCurrentRequestMatchesJsonSchemaWithPlaceholdersReplacement() {
+    val responseToCheck =
+        """
+      HTTP/1.1 200 OK
+
+      ["hello", "world"]
+      """;
+    val schema =
+        """
+      {
+       "type": "array",
+        "prefixItems": [
+          {
+            "type": "string",
+            "const": "${value.from.config1}"
+          },
+          {
+            "type": "string",
+            "const": "${value.from.config2}"
+          }
+        ],
+        "additionalItems": false
+      }
+      """;
+    TigerGlobalConfiguration.putValue("value.from.config1", "hello");
+    TigerGlobalConfiguration.putValue("value.from.config2", "world");
+
+    RbelMessageValidator validator = RbelMessageValidator.instance;
+
+    validator.currentRequest =
+        RbelLogger.build()
+            .getRbelConverter()
+            .parseMessage(responseToCheck.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+
+    RBelValidatorGlue glue = new RBelValidatorGlue();
+    glue.currentRequestAtMatchesAsJsonOrXml("$.body", ModeType.JSON_SCHEMA, schema);
+
+    TigerGlobalConfiguration.reset();
   }
 
   @Test

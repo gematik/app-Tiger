@@ -13,6 +13,37 @@
 ## Features
 
 * TGR-1196: Workflow UI improvements (sticky sidebar, quit test run message)
+* TGR-1429: Tiger-Test-Lib: it is now possible to assert if a given Json matches a specified JSON Schema. This allows
+  for easier validation of JSON structures.
+
+Example usage:
+
+```
+TGR current response at "$.body" matches as JSON_SCHEMA:
+"""
+{ "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "age": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "email": {
+        "type": "string",
+        "format": "email"
+      }
+    },
+    "required": ["name", "age"]
+  }
+"""
+```
+
+For more details on how to specify a json schema refer to the external
+resource https://jsoneditoronline.org/indepth/validate/json-schema-validator/ .
+In https://json-schema.org/implementations#validators-web-(online) you can find a list of online validators which you
+can use to prepare the schemas. In Tiger we use the **2020-12** version of the JSON Schema specification.
 
 ## Bugfixes
 

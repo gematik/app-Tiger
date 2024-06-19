@@ -244,6 +244,63 @@ The example above shows three main features of the JSONChecker.
 This applies also to objects and arrays as seen in the dummyarray2 entry.
 * if we match key dummyEntry2 to the value of $REMOVE, it will return true, because this key does not exist.
 
+=== JSON Schema Validation
+
+Using the validation step `TGR current response at \{string} matches as JSON_SCHEMA:` you are able to assert that the content of any RbelPath node complies with the JSON Schema given in the doc string beneath the step.
+
+We use the JSON Schema version 2020-12 for validation with the additional feature that we can have placeholders in the schema that will be replaced with values from the Tiger Global Configuration.
+
+For example:
+
+[source,gherkin]
+----
+TGR current response at "$.body" matches as JSON_SCHEMA:
+"""
+{
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "age": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "address": {
+      "type": "string",
+      "const": "${tiger.value.from.config}"
+    }
+  },
+  "required": [
+    "name",
+    "age"
+  ]
+}
+"""
+----
+
+would validate a message with a JSON body like:
+
+[source,json]
+----
+{
+  "name": "hello",
+  "age": 5,
+  "email": "hello@example.com",
+  "address": "Friedrichstraße"
+}
+----
+
+assuming that the value of `${tiger.value.from.config}` set in the Tiger Global Configuration is `Friedrichstraße`.
+
+For full details how to specify a JSON Schema, refer to the external resource: https://json-schema.org/understanding-json-schema/index.html[Understanding JSON Schema].
+In https://json-schema.org/implementations#validators-web-(online)[this list] you can find a list of online validators which you can use to test your schema.
+Remember to test under JSON Schema version 2020-12.
+
 ==== Regex matching
 
 When comparing values (e.g. in the `TGR current response body matches:`) generally the algorithms check for equality and only check for regex matches if they were not equal.
