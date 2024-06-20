@@ -32,7 +32,7 @@ class RbelHttpRequestConverterTest {
                     + "Host: localhost:8080\n"
                     + "Connection: Keep-Alive\n"
                     + "User-Agent: Apache-HttpClient/4.5.12 (Java/11.0.8)\n"
-                    + "Accept-Encoding: gzip,deflate\n")
+                    + "Accept-Encoding: gzip,deflate\n\n")
                 .getBytes(StandardCharsets.UTF_8),
             null);
 

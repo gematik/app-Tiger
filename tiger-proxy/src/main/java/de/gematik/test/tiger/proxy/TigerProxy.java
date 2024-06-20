@@ -35,7 +35,6 @@ import de.gematik.test.tiger.proxy.tls.DynamicTigerKeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.tls.StaticTigerKeyAndCertificateFactory;
 import io.netty.handler.ssl.SslProvider;
 import jakarta.annotation.PreDestroy;
-import java.io.IOException;
 import java.net.*;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -44,16 +43,10 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.net.ssl.*;
-import kong.unirest.Unirest;
-import kong.unirest.UnirestInstance;
-import kong.unirest.apache.ApacheClient;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.conn.ssl.DefaultHostnameVerifier;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.tomcat.util.buf.UriUtil;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
@@ -137,23 +130,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
       return new URL(tigerRoute.getFrom());
     } catch (MalformedURLException e) {
       throw new TigerProxyStartupException("Error while building route", e);
-    }
-  }
-
-  private static CloseableHttpClient getHttpClient(SSLContext sslContext) {
-    return HttpClients.custom()
-        .setSSLContext(sslContext)
-        .setSSLHostnameVerifier(new DefaultHostnameVerifier())
-        .build();
-  }
-
-  private static void configureUnirestStaticInstance(SSLContext sslContext) {
-    try (CloseableHttpClient httpClient = getHttpClient(sslContext);
-        UnirestInstance unirestInstance = Unirest.primaryInstance()) {
-      unirestInstance.config().httpClient(config -> ApacheClient.builder(httpClient).apply(config));
-    } catch (IOException e) {
-      throw new TigerProxyTrustManagerBuildingException(
-          "Error while building HTTP Client for Tiger Proxy", e);
     }
   }
 

@@ -65,6 +65,7 @@ can use to prepare the schemas. In Tiger we use the **2020-12** version of the J
 ## Bugfixes
 
 * TGR-1340: Maven: make build under Windows emit less warnings.
+* TGR-1435: TigerProxy: Added support for nested Content- and Transfer-Encodings.
 * TGR-1426: TigerProxy: Enable BrainPool curves again (stabilized the order of security providers)
 
 # Release 3.0.5
