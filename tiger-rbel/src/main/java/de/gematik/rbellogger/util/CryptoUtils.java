@@ -6,10 +6,8 @@ package de.gematik.rbellogger.util;
 
 import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.util.Arrays;
-import java.util.Optional;
-import javax.crypto.Cipher;
-import javax.crypto.KeyAgreement;
+import java.util.*;
+import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
