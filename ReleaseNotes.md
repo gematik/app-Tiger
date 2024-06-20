@@ -10,6 +10,21 @@
 * Spring Boot 3.3.0
 * Logback 1.4.9
 
+## Breaking changes
+
+* TGR-1425: Tiger-Test-Lib: the class LocalProxyRbelMessageListener is refactored to be easier to handle in tests. If
+  you are using it directly in your test suite, you need to get an instance
+  with `LocalProxyRbelMessageListener.getInstance()`. The previously existing static methods are now instance methods.
+  To use in unit tests you now have two options:
+
+1. Load the full TigerTestEnvironent in your test and get the instance
+   of
+   the LocalProxyRbelMessageListener.
+
+2. If you don't need a full TigerTestEnvironment you can set a test instance of the
+   LocalProxyRbelMessageListener with a custom messages supplier
+   with `LocalProxyRbelMessageListener.setTestInstance(new LocalProxyRbelMessageListener(new MyMessagesSupplier()))`.
+
 ## Features
 
 * TGR-1196: Workflow UI improvements (sticky sidebar, quit test run message)

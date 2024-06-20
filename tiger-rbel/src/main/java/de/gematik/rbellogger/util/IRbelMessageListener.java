@@ -2,7 +2,7 @@
  * ${GEMATIK_COPYRIGHT_STATEMENT}
  */
 
-package de.gematik.test.tiger.proxy;
+package de.gematik.rbellogger.util;
 
 import de.gematik.rbellogger.data.RbelElement;
 

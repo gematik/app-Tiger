@@ -7,8 +7,8 @@ package de.gematik.test.tiger.lib.proxy;
 import static org.awaitility.Awaitility.await;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.util.IRbelMessageListener;
 import de.gematik.test.tiger.lib.TigerLibraryException;
-import de.gematik.test.tiger.proxy.IRbelMessageListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -17,6 +17,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.core.ConditionTimeoutException;
 
+@Deprecated(since = "3.0.6", forRemoval = true)
 @Slf4j
 public class RbelMessageProvider implements IRbelMessageListener {
 

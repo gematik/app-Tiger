@@ -31,11 +31,11 @@ class RbelMessageValidatorReadFileTest {
     executeWithSecureShutdown(
         () -> {
           TigerDirector.start();
-          LocalProxyRbelMessageListener.clearValidatableRbelMessages();
-          RbelMessageValidator.instance.readTgrFile(
-              "src/test/resources/testdata/rezepsFiltered.tgr");
+          LocalProxyRbelMessageListener.getInstance().clearValidatableRbelMessages();
+          new RbelMessageValidator().readTgrFile("src/test/resources/testdata/rezepsFiltered.tgr");
 
-          assertThat(LocalProxyRbelMessageListener.getValidatableRbelMessages()).hasSize(96);
+          assertThat(LocalProxyRbelMessageListener.getInstance().getValidatableRbelMessages())
+              .hasSize(96);
         });
   }
 

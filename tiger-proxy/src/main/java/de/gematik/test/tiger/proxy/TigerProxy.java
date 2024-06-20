@@ -8,6 +8,7 @@ import static de.gematik.test.tiger.mockserver.model.HttpRequest.request;
 import static de.gematik.test.tiger.proxy.tls.OcspUtils.buildOcspResponse;
 import static de.gematik.test.tiger.proxy.tls.TlsCertificateGenerator.generateNewCaCertificate;
 
+import de.gematik.rbellogger.util.RbelMessagesSupplier;
 import de.gematik.rbellogger.converter.HttpPairingInBinaryChannelConverter;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
@@ -57,7 +58,7 @@ import org.apache.tomcat.util.buf.UriUtil;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 @EqualsAndHashCode(callSuper = true)
-public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
+public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, RbelMessagesSupplier {
 
   private static final String CA_CERT_ALIAS = "caCert";
   private final List<DynamicTigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();

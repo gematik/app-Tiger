@@ -8,12 +8,12 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelElementConvertionPair;
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.util.IRbelMessageListener;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
-import de.gematik.test.tiger.proxy.IRbelMessageListener;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.WebSocketContainer;
@@ -43,10 +43,10 @@ import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 /**
- * The TigerRemoteProxyClient is a client for a TigerProxy that is running on a remote machine. It is mostly used 
- * by the TigerProxy itself to establish and hold that connection. It can also be used to manipulate the setup on
- * a remote proxy (e.g. adding routes, modifications, etc.). The second scenario would be independently of a
- * master TigerProxy.
+ * The TigerRemoteProxyClient is a client for a TigerProxy that is running on a remote machine. It
+ * is mostly used by the TigerProxy itself to establish and hold that connection. It can also be
+ * used to manipulate the setup on a remote proxy (e.g. adding routes, modifications, etc.). The
+ * second scenario would be independently of a master TigerProxy.
  */
 public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCloseable {
 
@@ -433,7 +433,6 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
   }
 
-
   @Override
   public void removeRbelMessageListener(IRbelMessageListener listener) {
     if (masterTigerProxy != null) {
@@ -442,5 +441,4 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
       super.removeRbelMessageListener(listener);
     }
   }
-
 }
