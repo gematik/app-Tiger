@@ -53,6 +53,7 @@ pipeline {
             environment {
                 LATEST = nexusGetLatestVersionByGAVR(RELEASE_VERSION, ARTIFACT_ID, GROUP_ID, PACKAGING).trim()
                 TAG_NAME = 'Release/ReleaseBuild'
+                DOCKER_TARGET_REGISTRY = dockerGetGematikRegistry('EUWEST3')
             }
             stages {
                 stage('Create Release-Tag') {
@@ -84,7 +85,7 @@ pipeline {
                 }
                 stage('prepare external release') {
                     steps {
-                        dockerLoginGematikRegistry()
+                        dockerLoginGematikRegistry('', DOCKER_TARGET_REGISTRY)
                         mavenSetVersion("${RELEASE_VERSION}")
                         gitCommitAndTag("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
 
@@ -92,8 +93,8 @@ pipeline {
                         //GH Pages
 
                         sh '''
-                          docker pull eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest
-                          docker create --name tiger-gemdoc-''' + BUILD_NUMBER + ''' eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
+                          docker pull europe-west3-docker.pkg.dev/gematik-all-infra-prod/swf/tools/gematik-asciidoc-converter:latest
+                          docker create --name tiger-gemdoc-''' + BUILD_NUMBER + ''' europe-west3-docker.pkg.dev/gematik-all-infra-prod/swf/tools/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
                           docker cp ''' + pwd() + ''' tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata
                           docker start --attach tiger-gemdoc-''' + BUILD_NUMBER + '''
                           docker cp tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata/doc/user_manual/tiger_user_manual.pdf .
@@ -103,9 +104,9 @@ pipeline {
                           docker rm tiger-gemdoc-''' + BUILD_NUMBER + '''
                         '''
                         // to test local:
-                        // docker run --name tiger-gemdoc --rm -v $(pwd):/tmpdata eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
+                        // docker run --name tiger-gemdoc --rm -v $(pwd):/tmpdata europe-west3-docker.pkg.dev/gematik-all-infra-prod/swf/tools/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
                         // or for windows users:
-                        // docker run --name tiger-gemdoc --rm -v /$PWD://tmpdata eu.gcr.io/gematik-all-infra-prod/shared/gematik-asciidoc-converter:latest //tmpdata/doc/user_manual/tiger_user_manual.adoc
+                        // docker run --name tiger-gemdoc --rm -v /$PWD://tmpdata europe-west3-docker.pkg.dev/gematik-all-infra-prod/swf/tools/gematik-asciidoc-converter:latest //tmpdata/doc/user_manual/tiger_user_manual.adoc
                         stash includes: 'tiger_user_manual.pdf,tiger_user_manual.html,media/**/*,screenshots/*.png', name: 'manual'
 
                         sh label: 'checkoutGhPages', script: """
@@ -151,10 +152,10 @@ pipeline {
                 stages {
                     stage('Retag Docker Image') {
                         steps {
-                            dockerPull(IMAGE_NAME)
-                            dockerReTagImage(IMAGE_NAME, RELEASE_VERSION)
-                            dockerPushImage(IMAGE_NAME, RELEASE_VERSION)
-                            dockerRemoveLocalImage(IMAGE_NAME, RELEASE_VERSION)
+                            dockerPull(IMAGE_NAME, "latest", DOCKER_TARGET_REGISTRY)
+                            dockerReTagImage(IMAGE_NAME, RELEASE_VERSION, "latest", DOCKER_TARGET_REGISTRY)
+                            dockerPushImage(IMAGE_NAME, RELEASE_VERSION, 'tiger-gar-writer', DOCKER_TARGET_REGISTRY)
+                            dockerRemoveLocalImage(IMAGE_NAME, RELEASE_VERSION, DOCKER_TARGET_REGISTRY)
                         }
                     }
                 }

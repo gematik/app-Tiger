@@ -103,11 +103,12 @@ pipeline {
 					VERSION= 'latest'
                     PREFIX = "${APP}_"
                     BUILD_ARGS = "--build-arg APP=${APP}"
+                    DOCKER_TARGET_REGISTRY = dockerGetGematikRegistry('EUWEST3')
                 }
                 stages {
                     stage('Build Docker Image') {
 					       steps {
-                              dockerBuild(IMAGE_NAME, VERSION, IMAGE_VERSION, BUILD_ARGS)
+                              dockerBuild(IMAGE_NAME, VERSION, IMAGE_VERSION, BUILD_ARGS, 'Dockerfile', DOCKER_TARGET_REGISTRY)
 
                         }
                     }
@@ -117,13 +118,13 @@ pipeline {
                             branch BRANCH
                         }
                         steps {
-                            dockerPushImage(IMAGE_NAME, VERSION)
+                            dockerPushImage(IMAGE_NAME, VERSION, 'tiger-gar-writer', DOCKER_TARGET_REGISTRY)
                         }
                     }
 
                     stage('Cleanup Docker Image') {
                         steps {
-                            dockerRemoveLocalImage(IMAGE_NAME, VERSION)
+                            dockerRemoveLocalImage(IMAGE_NAME, VERSION, DOCKER_TARGET_REGISTRY)
                         }
                     }
                 }
