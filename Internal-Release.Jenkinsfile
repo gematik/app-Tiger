@@ -85,15 +85,14 @@ pipeline {
                 }
                 stage('prepare external release') {
                     steps {
-                        dockerLoginGematikRegistry('', DOCKER_TARGET_REGISTRY)
                         mavenSetVersion("${RELEASE_VERSION}")
                         gitCommitAndTag("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
 
                         sh 'git stash'
                         //GH Pages
 
+                        dockerPull("swf/tools/gematik-asciidoc-converter", "latest", DOCKER_TARGET_REGISTRY)
                         sh '''
-                          docker pull europe-west3-docker.pkg.dev/gematik-all-infra-prod/swf/tools/gematik-asciidoc-converter:latest
                           docker create --name tiger-gemdoc-''' + BUILD_NUMBER + ''' europe-west3-docker.pkg.dev/gematik-all-infra-prod/swf/tools/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
                           docker cp ''' + pwd() + ''' tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata
                           docker start --attach tiger-gemdoc-''' + BUILD_NUMBER + '''
