@@ -18,9 +18,6 @@
     <properties>
         <build.date>${maven.build.timestamp}</build.date>
         <maven.build.timestamp.format>dd-MM-yyyy HH:mm:ss</maven.build.timestamp.format>
-        <version.dss>6.0</version.dss>
-        <version.de.gematik.egk.g2sim.SimulationKernel>2.8.2-416</version.de.gematik.egk.g2sim.SimulationKernel>
-        <sonar.coverage.exclusions>src/main/java/de/gematik/rbellogger/util/email_crypto/*.java</sonar.coverage.exclusions>
     </properties>
 
     <dependencies>
@@ -124,103 +121,6 @@
             <version>0.8.11</version>
         </dependency>
 
-        <dependency>
-            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
-            <artifactId>dss-pades</artifactId>
-            <version>${version.dss}</version>
-        </dependency>
-        <dependency>
-            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
-            <artifactId>dss-xades</artifactId>
-            <version>${version.dss}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>xml-apis</groupId>
-                    <artifactId>xml-apis</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.santuario</groupId>
-                    <artifactId>xmlsec</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
-            <artifactId>dss-test</artifactId>
-            <version>${version.dss}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>jcl-over-slf4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.h2database</groupId>
-                    <artifactId>h2</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
-            <artifactId>specs-xades</artifactId>
-            <version>${version.dss}</version>
-        </dependency>
-        <dependency>
-            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
-            <artifactId>dss-spi</artifactId>
-            <version>6.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
-            <artifactId>dss-diagnostic-jaxb</artifactId>
-            <version>${version.dss}</version>
-        </dependency>
-        <dependency>
-            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
-            <artifactId>dss-pades-openpdf</artifactId>
-            <version>${version.dss}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>de.gematik</groupId>
-            <artifactId>de.gematik.egk.g2sim.SimulationKernel</artifactId>
-            <version>${version.de.gematik.egk.g2sim.SimulationKernel}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.bouncycastle</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.jdom</groupId>
-                    <artifactId>jdom2</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
 
         <dependency>
             <groupId>org.awaitility</groupId>
@@ -278,18 +178,6 @@
             <artifactId>json-unit-assertj</artifactId>
             <version>${version.json-unit}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.kafujo</groupId>
-            <artifactId>kafujo-core</artifactId>
-            <version>0.9.6</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-            <version>4.0.2</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 

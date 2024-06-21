@@ -4,20 +4,22 @@
 
 package de.gematik.rbellogger.data.facet;
 
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.ancestorTitle;
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.vertParentTitle;
-import static j2html.TagCreator.*;
-
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
+import javax.annotation.Nullable;
+
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
-import java.util.Optional;
-import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.Data;
+
+import java.util.Optional;
+
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.ancestorTitle;
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.vertParentTitle;
+import static j2html.TagCreator.*;
 
 @Data
 @Builder
@@ -44,13 +46,12 @@ public class RbelPop3ResponseFacet implements RbelFacet {
             return div(
                 h2().withClass("title").withText("POP3 Response"),
                 p().with(b().withText("Status: "))
-                    .withText(
-                        Optional.ofNullable(facet.getStatus().getRawStringContent()).orElse("")),
-                p().with(b().withText("Header: "))
-                    .withText(
-                        Optional.ofNullable(facet.getHeader())
-                            .map(RbelElement::getRawStringContent)
+                        .withText(Optional.ofNullable(facet.getStatus().getRawStringContent())
                             .orElse("")),
+                p().with(b().withText("Header: "))
+                    .withText(Optional.ofNullable(facet.getHeader())
+                        .map(RbelElement::getRawStringContent)
+                        .orElse("")),
                 br(),
                 ancestorTitle()
                     .with(vertParentTitle().with(renderingToolkit.convertNested(element))));
