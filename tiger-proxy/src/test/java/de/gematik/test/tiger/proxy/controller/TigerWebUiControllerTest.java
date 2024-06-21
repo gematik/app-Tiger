@@ -261,7 +261,7 @@ class TigerWebUiControllerTest {
 
     RestAssured.with()
         .body(downloadedTraffic)
-        .post(getWebUiUrl() + "/traffic")
+        .post(getWebUiUrl() + "/importTraffic")
         .then()
         .statusCode(200);
 
@@ -420,7 +420,7 @@ class TigerWebUiControllerTest {
 
     RestAssured.with()
         .body(trafficFileContent.asString())
-        .post(getWebUiUrl() + "/traffic")
+        .post(getWebUiUrl() + "/importTraffic")
         .then()
         .statusCode(200);
 

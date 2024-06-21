@@ -25,10 +25,12 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /*
  * @author jamesdbloom
  */
+@EqualsAndHashCode(callSuper = false)
 @Data
 public class HttpResponse extends Action<HttpResponse>
     implements HttpMessage<HttpResponse, BodyWithContentType> {

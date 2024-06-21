@@ -24,8 +24,8 @@ import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.util.RbelMessagesDequeFacade;
+import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
 import java.nio.charset.StandardCharsets;
-import java.security.Security;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -38,8 +38,6 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(access = AccessLevel.PUBLIC)
@@ -47,8 +45,7 @@ import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 public class RbelConverter {
 
   static {
-    Security.addProvider(new BouncyCastleProvider());
-    Security.addProvider(new BouncyCastlePQCProvider());
+    TigerSecurityProviderInitialiser.initialize();
   }
 
   private final Deque<RbelElement> messageHistory = new ConcurrentLinkedDeque<>();
@@ -59,8 +56,8 @@ public class RbelConverter {
   @Getter private final RbelValueShader rbelValueShader = new RbelValueShader();
   @Getter private final List<RbelConverterPlugin> postConversionListeners = new ArrayList<>();
   private final List<RbelConverterPlugin> converterPlugins =
-      new ArrayList<>(
-          List.of(
+      new LinkedList<>(
+          Arrays.asList(
               new RbelBase64JsonConverter(),
               new RbelUriConverter(),
               new RbelHttpResponseConverter(),
@@ -80,7 +77,9 @@ public class RbelConverter {
               new RbelCetpConverter(),
               new RbelCborConverter(),
               new RbelPop3CommandConverter(),
-              new RbelPop3ResponseConverter()));
+              new RbelPop3ResponseConverter(),
+              new RbelMimeConverter(),
+              new RbelEncryptedMailConverter()));
   @Builder.Default private int rbelBufferSizeInMb = 1024;
   @Builder.Default private boolean manageBuffer = false;
   @Getter @Builder.Default private long currentBufferSize = 0;
@@ -250,8 +249,13 @@ public class RbelConverter {
     manageRbelBufferSize();
   }
 
-  public RbelConverter addPostConversionListener(RbelConverterPlugin postConversionListener) {
+  public RbelConverter addLastPostConversionListener(RbelConverterPlugin postConversionListener) {
     postConversionListeners.add(postConversionListener);
+    return this;
+  }
+
+  public RbelConverter addFirstPostConversionListener(RbelConverterPlugin postConversionListener) {
+    postConversionListeners.add(0, postConversionListener);
     return this;
   }
 

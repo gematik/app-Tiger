@@ -28,6 +28,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.filters.HopByHopHeaderFilter;
+import de.gematik.test.tiger.mockserver.httpclient.HttpRequestInfo;
 import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
 import de.gematik.test.tiger.mockserver.httpclient.SocketCommunicationException;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
@@ -112,7 +113,8 @@ public class HttpActionHandler {
     if (expectation != null && expectation.getHttpAction() != null) {
       final HttpAction action = expectation.getHttpAction();
       scheduler.schedule(
-          () -> action.handle(request, this, responseWriter, synchronous), synchronous);
+          () -> action.handle(request, ctx.channel(), this, responseWriter, synchronous),
+          synchronous);
     } else if (proxyingRequest || potentiallyHttpProxy) {
       if (request.getHeaders() != null
           && request
@@ -170,8 +172,7 @@ public class HttpActionHandler {
               new HttpForwardActionResult(
                   clonedRequest,
                   httpClient.sendRequest(
-                      clonedRequest,
-                      remoteAddress,
+                      new HttpRequestInfo(ctx.channel(), clonedRequest, remoteAddress),
                       potentiallyHttpProxy
                           ? 1000
                           : configuration.socketConnectionTimeoutInMillis()),

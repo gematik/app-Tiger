@@ -18,10 +18,12 @@ package de.gematik.test.tiger.mockserver.model;
 
 import java.util.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /*
  * @author jamesdbloom
  */
+@EqualsAndHashCode(callSuper = false)
 @Data
 public class KeyToMultiValue extends ObjectWithJsonToString {
   private final String name;

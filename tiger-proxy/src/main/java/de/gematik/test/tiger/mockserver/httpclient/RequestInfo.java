@@ -14,11 +14,20 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.proxy;
+package de.gematik.test.tiger.mockserver.httpclient;
 
-import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.test.tiger.mockserver.model.Message;
+import io.netty.channel.Channel;
+import java.net.InetSocketAddress;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.experimental.SuperBuilder;
 
-public interface IRbelMessageListener {
-
-  void triggerNewReceivedMessage(RbelElement el);
+@Data
+@SuperBuilder
+@AllArgsConstructor
+public class RequestInfo<T extends Message> {
+  private final Channel incomingChannel;
+  private T dataToSend;
+  private InetSocketAddress remoteServerAddress;
 }

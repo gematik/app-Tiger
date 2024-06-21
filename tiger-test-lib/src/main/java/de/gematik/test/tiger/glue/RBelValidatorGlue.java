@@ -35,6 +35,7 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.xmlunit.builder.DiffBuilder;
@@ -42,10 +43,14 @@ import org.xmlunit.builder.DiffBuilder;
 @Slf4j
 public class RBelValidatorGlue {
 
-  static final RbelMessageValidator rbelValidator = RbelMessageValidator.instance;
+  @Getter private final RbelMessageValidator rbelValidator;
 
-  public static RbelMessageValidator getRbelValidator() {
-    return rbelValidator;
+  public RBelValidatorGlue(RbelMessageValidator rbelValidator) {
+    this.rbelValidator = rbelValidator;
+  }
+
+  public RBelValidatorGlue() {
+    this(new RbelMessageValidator());
   }
 
   // =================================================================================================================
@@ -626,7 +631,7 @@ public class RBelValidatorGlue {
   @Then("TGR print all messages as rbel-tree")
   @SuppressWarnings("java:S106")
   public void printAllMessages() {
-    RBelValidatorGlue.getRbelValidator()
+    getRbelValidator()
         .getRbelMessages()
         .forEach(
             message ->
@@ -639,8 +644,7 @@ public class RBelValidatorGlue {
   @Then("TGR print current response as rbel-tree")
   @SuppressWarnings("java:S106")
   public void printCurrentResponse() {
-    System.out.println(
-        RBelValidatorGlue.getRbelValidator().getCurrentResponse().printTreeStructure());
+    System.out.println(getRbelValidator().getCurrentResponse().printTreeStructure());
   }
 
   /** Prints the rbel-tree of the current request to the System-out */
@@ -648,8 +652,7 @@ public class RBelValidatorGlue {
   @Then("TGR print current request as rbel-tree")
   @SuppressWarnings("java:S106")
   public void printCurrentRequest() {
-    System.out.println(
-        RBelValidatorGlue.getRbelValidator().getCurrentRequest().printTreeStructure());
+    System.out.println(getRbelValidator().getCurrentRequest().printTreeStructure());
   }
 
   /** Read TGR file and sends messages to local Tiger proxy */

@@ -20,13 +20,13 @@ import static de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader.StoreType.
 
 import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.PrivateKey;
-import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -41,8 +41,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 public class TigerPkiIdentityLoader {
 
@@ -51,10 +49,7 @@ public class TigerPkiIdentityLoader {
       List.of("00", "123456", "gematik", "changeit");
 
   static {
-    BouncyCastleJsseProvider bcJsseProv = new BouncyCastleJsseProvider();
-    BouncyCastleProvider bcprov = new BouncyCastleProvider();
-    Security.addProvider(bcprov);
-    Security.addProvider(bcJsseProv);
+    TigerSecurityProviderInitialiser.initialize();
   }
 
   /**

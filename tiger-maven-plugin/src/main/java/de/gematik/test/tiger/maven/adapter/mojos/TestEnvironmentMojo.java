@@ -22,6 +22,7 @@ import de.gematik.test.tiger.lib.TigerDirector;
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -33,6 +34,7 @@ import org.awaitility.core.ConditionTimeoutException;
  * file in the pre-integration-test phase. To trigger use the "setup-testenv" goal. For more details
  * please refer to the README.adoc file in the project root.
  */
+@EqualsAndHashCode(callSuper = false)
 @Data
 @Mojo(name = "setup-testenv", defaultPhase = LifecyclePhase.INITIALIZE)
 public class TestEnvironmentMojo extends AbstractMojo {

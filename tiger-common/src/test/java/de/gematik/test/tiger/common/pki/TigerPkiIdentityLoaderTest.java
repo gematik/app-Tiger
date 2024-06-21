@@ -128,7 +128,7 @@ class TigerPkiIdentityLoaderTest {
   void loadChainFromSingleAliasP12(String heraP12) {
     final TigerPkiIdentity identity = TigerPkiIdentityLoader.loadRbelPkiIdentity(heraP12);
 
-    assertThat(identity.getCertificateChain()).hasSize(1);
+    assertThat(identity.getCertificateChain()).hasSize(2);
     assertThat(identity.getCertificateChain().get(0)).isNotEqualTo(identity.getCertificate());
     assertThat(identity.getCertificateChain().get(0).getSubjectX500Principal())
         .isEqualTo(identity.getCertificateChain().get(0).getIssuerX500Principal());

@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 public enum RbelPop3Command {
+  CAPA,
   USER,
   PASS,
   QUIT,
@@ -34,6 +35,6 @@ public enum RbelPop3Command {
   UIDL;
 
   public static final int MAX_LENGTH =
-      Collections.min(
+      Collections.max(
           Arrays.stream(values()).map(RbelPop3Command::name).map(String::length).toList());
 }

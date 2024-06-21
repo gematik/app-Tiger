@@ -20,13 +20,12 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 @Data
-@RequiredArgsConstructor(access = AccessLevel.PUBLIC)
+@RequiredArgsConstructor
 @Builder(toBuilder = true)
 public class RbelListFacet implements RbelFacet {
 

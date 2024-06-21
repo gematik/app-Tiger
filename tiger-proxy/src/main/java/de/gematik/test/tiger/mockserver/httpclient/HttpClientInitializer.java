@@ -22,6 +22,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.gematik.test.tiger.mockserver.codec.MockServerBinaryClientCodec;
 import de.gematik.test.tiger.mockserver.codec.MockServerHttpClientCodec;
+import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.model.Protocol;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
@@ -34,6 +35,7 @@ import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 import java.net.InetSocketAddress;
@@ -55,8 +57,10 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
   private final HttpClientHandler httpClientHandler;
   private final Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations;
   private final NettySslContextFactory nettySslContextFactory;
+  private final BinaryBridgeHandler binaryBridgeHandler;
 
   HttpClientInitializer(
+      Configuration configuration,
       Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations,
       NettySslContextFactory nettySslContextFactory,
       Protocol httpProtocol) {
@@ -65,6 +69,7 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
     this.protocolFuture = new CompletableFuture<>();
     this.httpClientHandler = new HttpClientHandler();
     this.httpClientConnectionHandler = new HttpClientConnectionErrorHandler();
+    this.binaryBridgeHandler = new BinaryBridgeHandler(configuration);
     this.nettySslContextFactory = nettySslContextFactory;
   }
 
@@ -80,6 +85,7 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
             && channel.attr(SECURE).get() != null
             && channel.attr(SECURE).get();
 
+    pipeline.addFirst(new LoggingHandler(LogLevel.DEBUG));
     if (proxyConfigurations != null) {
       if (secure && proxyConfigurations.containsKey(ProxyConfiguration.Type.HTTPS)) {
         ProxyConfiguration proxyConfiguration =
@@ -166,7 +172,7 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
 
   private void configureBinaryPipeline(ChannelPipeline pipeline) {
     pipeline.addLast(new MockServerBinaryClientCodec());
-    pipeline.addLast(httpClientHandler);
+    pipeline.addLast(binaryBridgeHandler);
     protocolFuture.complete(null);
   }
 }

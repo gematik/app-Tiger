@@ -18,7 +18,6 @@ package de.gematik.test.tiger.lib.httpclient;
 
 import de.gematik.test.tiger.glue.HttpGlueCode;
 import de.gematik.test.tiger.glue.RBelValidatorGlue;
-import de.gematik.test.tiger.glue.TigerGlue;
 import de.gematik.test.tiger.glue.TigerParameterTypeDefinitions;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -32,7 +31,6 @@ import org.junit.jupiter.api.Test;
 class FindLastRequestTest {
   private final HttpGlueCode httpGlueCode = new HttpGlueCode();
   private final RBelValidatorGlue rbelValidatorGlueCode = new RBelValidatorGlue();
-  private final TigerGlue tigerGlue = new TigerGlue();
 
   @BeforeAll
   public static void resetTiger() {

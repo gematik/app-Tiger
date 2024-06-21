@@ -19,7 +19,9 @@ package de.gematik.test.tiger.lib;
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.*;
 import static org.awaitility.Awaitility.await;
 
+import com.google.common.annotations.VisibleForTesting;
 import de.gematik.rbellogger.RbelOptions;
+import de.gematik.rbellogger.util.IRbelMessageListener;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.Ansi;
@@ -31,7 +33,6 @@ import de.gematik.test.tiger.common.web.TigerBrowserUtil;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
 import de.gematik.test.tiger.lib.serenityrest.SerenityRestUtils;
-import de.gematik.test.tiger.proxy.IRbelMessageListener;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
 import de.gematik.test.tiger.testenvmgr.controller.TestExecutionController;
@@ -111,14 +112,17 @@ public class TigerDirector {
       startTestEnvMgr();
       setupScenarioReplayer(runtime);
       startWorkflowUi();
-      setupTestEnvironment(Optional.of(LocalProxyRbelMessageListener.rbelMessageListener));
+      setupTestEnvironment(Optional.empty());
       setDefaultProxyToLocalTigerProxy();
+      initialized = true;
+      if (getTigerTestEnvMgr().isLocalTigerProxyActive()) {
+        LocalProxyRbelMessageListener.initialize();
+      }
     } catch (RuntimeException e) {
+      initialized = false;
       quit(true);
       throw e;
     }
-
-    initialized = true;
   }
 
   private static void setupScenarioReplayer(Runtime runtime) {
@@ -156,12 +160,16 @@ public class TigerDirector {
                 + " in config");
         tigerTestEnvMgr.getConfiguration().setLocalProxyActive(false);
       }
-      setupTestEnvironment(Optional.of(LocalProxyRbelMessageListener.rbelMessageListener));
+      setupTestEnvironment(Optional.empty());
+      initialized = true;
+      if (getTigerTestEnvMgr().isLocalTigerProxyActive()) {
+        LocalProxyRbelMessageListener.initialize();
+      }
     } catch (RuntimeException e) {
+      initialized = false;
       quit(true);
       throw e;
     }
-    initialized = true;
   }
 
   private static void applyLoggingLevels() {
@@ -437,10 +445,14 @@ public class TigerDirector {
     }
   }
 
-  public static void testUninitialize() {
+  @VisibleForTesting
+  public static synchronized void testUninitialize() {
     initialized = false;
     tigerTestEnvMgr = null;
     curlLoggingFilter = null;
+    LocalProxyRbelMessageListener
+        .clearTestingInstance(); // NOSONAR - the method testUninitialize should also only be used
+    // for testing
 
     System.clearProperty("TIGER_TESTENV_CFGFILE");
     System.clearProperty("http.proxyHost");

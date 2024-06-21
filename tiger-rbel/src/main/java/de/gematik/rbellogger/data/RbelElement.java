@@ -138,19 +138,17 @@ public class RbelElement extends RbelPathAble {
         .toList();
   }
 
-  // Yes, default-visibility (is called recursively)
-  List<RbelElement> traverseAndReturnNestedMembersInternal() {
-    log.trace(
-        "Traversing into {}: facets are {}",
-        findNodePath(),
-        getFacets().stream().map(Object::getClass).map(Class::getSimpleName).toList());
+  private List<RbelElement> traverseAndReturnNestedMembersInternal() {
+    if (log.isTraceEnabled()) {
+      log.trace(
+          "Traversing into {}: facets are {}",
+          findNodePath(),
+          getFacets().stream().map(Object::getClass).map(Class::getSimpleName).toList());
+    }
     if (hasFacet(RbelRootFacet.class)) {
       return List.of(this);
     } else {
-      return getChildNodes().stream()
-          .map(RbelElement::traverseAndReturnNestedMembersInternal)
-          .flatMap(List::stream)
-          .toList();
+      return traverseAndReturnNestedMembers();
     }
   }
 
@@ -200,7 +198,8 @@ public class RbelElement extends RbelPathAble {
   }
 
   public <T extends RbelFacet> T getFacetOrFail(Class<T> facetClass) {
-    return getFacet(facetClass).orElseThrow(() -> new RbelException("Facet not found: " + facetClass.getSimpleName()));
+    return getFacet(facetClass)
+        .orElseThrow(() -> new RbelException("Facet not found: " + facetClass.getSimpleName()));
   }
 
   @Override

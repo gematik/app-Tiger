@@ -26,7 +26,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.0.5</version>
+        <version>3.1.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -34,6 +34,7 @@
 
         <version.jsonassert>1.5.1</version.jsonassert>
         <version.xmlunit-core>2.10.0</version.xmlunit-core>
+        <version.json-schema-validator>1.4.0</version.json-schema-validator>
 
         <tiger.build.timestamp>${maven.build.timestamp}</tiger.build.timestamp>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
@@ -101,6 +102,18 @@
                 <exclusion>
                     <groupId>org.mockito</groupId>
                     <artifactId>mockito-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.activation</groupId>
+                    <artifactId>javax.activation-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.activation</groupId>
+                    <artifactId>activation</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.sun.activation</groupId>
+                    <artifactId>jakarta.activation</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -180,16 +193,28 @@
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
         </dependency>
+        <!-- validate json based on a schema -->
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>${version.json-schema-validator}</version>
+        </dependency>
         <!-- to easily compare xml structures -->
         <dependency>
             <groupId>org.xmlunit</groupId>
             <artifactId>xmlunit-core</artifactId>
             <version>${version.xmlunit-core}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>jakarta.activation</groupId>
+                    <artifactId>jakarta.activation-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
-            <version>2.3.32</version>
+            <version>2.3.33</version>
         </dependency>
         <!-- test -->
         <dependency>
@@ -231,8 +256,26 @@
                     <artifactId>netty-common</artifactId>
                     <groupId>io.netty</groupId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.sun.mail</groupId>
+                    <artifactId>mailapi</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.icegreen/greenmail-junit5 -->
+        <dependency>
+            <groupId>com.icegreen</groupId>
+            <artifactId>greenmail-junit5</artifactId>
+            <version>2.0.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
+            <version>2.0.1</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -254,7 +297,6 @@
                             <goal>delombok</goal>
                         </goals>
                         <configuration>
-                            <encoding>UTF-8</encoding>
                             <addOutputDirectory>false</addOutputDirectory>
                             <sourceDirectory>src/main/java</sourceDirectory>
                             <outputDirectory>
@@ -322,7 +364,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.5.0</version>
+                <version>3.7.0</version>
                 <configuration>
                     <doclint>none</doclint>
                     <sourcepath>${project.build.directory}/delombok</sourcepath>
@@ -484,11 +526,11 @@
                         <phase>generate-resources</phase>
                         <configuration>
                             <skip>${isWindows}</skip>
-                            <tasks>
+                            <target>
                                 <exec dir="../doc/user_manual" executable="/bin/bash">
                                     <arg value="extractCommentsFromInlineJexlToolbox.sh"/>
                                 </exec>
-                            </tasks>
+                            </target>
                         </configuration>
                         <goals>
                             <goal>run</goal>
@@ -499,7 +541,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>3.2.0</version>
+                <version>3.3.0</version>
                 <executions>
                     <execution>
                         <id>codegeneration</id>

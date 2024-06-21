@@ -35,23 +35,28 @@
         </h3>
         <!-- interaction buttons -->
         <div class="toolbar rounded bg-light m-2 p-2 engraved">
-          <button type="button"
+          <button type="button" title="Quit test run"
                   :class="`btn btn-sm btn-danger m-1 ${(quitTestrunOngoing ? 'disabled active' : 'enabled')}`"
                   v-on:click="quitTestrun">
             <i class="fa-lg fa-solid fa-power-off fa-fw" id="test-sidebar-quit-icon"></i>
           </button>
-          <button type="button"
+          <button type="button" title="Pause test run"
                   :class="`btn btn-sm m-1 ${(pauseTestrunOngoing && ! quitTestrunOngoing ? 'btn-success' : 'btn-warning')} ${(quitTestrunOngoing ? 'disabled' : '')}`"
                   v-on:click="pauseTestrun">
             <i :class="`fa-lg fa-solid ${(pauseTestrunOngoing && ! quitTestrunOngoing ? 'fa-play' : 'fa-pause')} fa-fw`"
                id="test-sidebar-pause-icon"></i>
           </button>
-          <button type="button"
+          <button type="button" title="Configuration Editor"
                   class="btn btn-sm m-1 btn-secondary " id="test-sidebar-tg-config-editor-icon"
                   v-on:click="() => configEditorSidePanelIsOpened = true"
           >
             <i class="fa-lg fa-solid fa-gears fa-fw"></i>
           </button>
+          <div v-if="hasTestRunFinished">
+            <div style="color: red;" class="finishedMessage" id="test-sidebar-stop-message">Test run finished, press
+              QUIT button
+            </div>
+          </div>
 
           <VueSidePanel v-model="configEditorSidePanelIsOpened"
                         side="left"
@@ -79,25 +84,25 @@
         </div>
         <!-- test run status -->
         <h4>
-          <i v-on:click="toggleLeftSideBar"
-             :class="`${currentOverallTestRunStatus(featureUpdateMap)} fa-xl fa-solid fa-square-poll-vertical left`"
-             id="test-sidebar-status-icon">
+          <i
+              :class="`${currentOverallTestRunStatus(featureUpdateMap)} fa-xl fa-solid fa-square-poll-vertical left`"
+              id="test-sidebar-status-icon">
           </i>
           <span id="test-sidebar-status">Status</span>
         </h4>
         <TestStatus :featureUpdateMap="featureUpdateMap" :started="started"/>
         <!-- feature list -->
         <h4>
-          <i v-on:click="toggleLeftSideBar" class="fa-lg fa-solid fa-address-card left"
+          <i class="fa-lg fa-solid fa-address-card left"
              id="test-sidebar-feature-icon"></i>
           <span id="test-sidebar-feature">Features</span>
         </h4>
         <FeatureList :featureUpdateMap="featureUpdateMap"/>
         <!-- server status -->
         <h4>
-          <i v-on:click="toggleLeftSideBar"
-             :class="`serverstatus-${currentOverallServerStatus(currentServerStatus)} fa-xl fa-solid fa-server left`"
-             id="test-sidebar-server-icon">
+          <i
+              :class="`serverstatus-${currentOverallServerStatus(currentServerStatus)} fa-xl fa-solid fa-server left`"
+              id="test-sidebar-server-icon">
           </i>
           <span id="test-sidebar-server">Servers</span>
         </h4>
@@ -275,6 +280,8 @@ provide("emitter", emitter);
 
 const configEditorSidePanelIsOpened: Ref<boolean> = ref(false);
 
+let hasTestRunFinished = false;
+
 async function loadFeaturesFlags() {
   features.value = Features.fromMap(await loadSubsetOfProperties("tiger.lib"));
 }
@@ -298,6 +305,10 @@ function debug(message: string) {
   if (DEBUG) {
     console.log(Date.now() + " " + message);
   }
+}
+
+function setTestRunFinished() {
+  hasTestRunFinished = true;
 }
 
 function showTab(tabid: string, event: MouseEvent) {
@@ -365,35 +376,44 @@ function connectToWebSocket() {
           debug("RECEIVED " + json.index + "\n" + tick.body);
 
           if (!json.servers) json.servers = {};
-          const pushedMessage: TestEnvStatusDto = new TestEnvStatusDto();
-          pushedMessage.index = json.index;
-          pushedMessage.bannerMessage = json.bannerMessage;
-          pushedMessage.bannerColor = json.bannerColor;
-          pushedMessage.bannerIsHtml = json.bannerIsHtml;
           if (json.bannerType) {
-            pushedMessage.bannerType = json.bannerType as BannerType;
-          }
-          if (json.featureMap) {
-            FeatureUpdate.addToMapFromJson(pushedMessage.featureMap, json.featureMap);
-          }
-          if (json.servers) {
-            TigerServerStatusUpdateDto.addToMapFromJson(pushedMessage.servers, json.servers);
-          }
+            if (json.bannerType === BannerType.TESTRUN_ENDED) {
+              setTestRunFinished();
+              if (sideBarCollapsed.value) {
+                toggleLeftSideBar();
+              }
+            } else {
+              const pushedMessage: TestEnvStatusDto = new TestEnvStatusDto();
+              pushedMessage.index = json.index;
+              pushedMessage.bannerMessage = json.bannerMessage;
+              pushedMessage.bannerColor = json.bannerColor;
+              pushedMessage.bannerIsHtml = json.bannerIsHtml;
+              if (json.bannerType) {
+                pushedMessage.bannerType = json.bannerType as BannerType;
+              }
+              if (json.featureMap) {
+                FeatureUpdate.addToMapFromJson(pushedMessage.featureMap, json.featureMap);
+              }
+              if (json.servers) {
+                TigerServerStatusUpdateDto.addToMapFromJson(pushedMessage.servers, json.servers);
+              }
 
-          // Deal with initial phase buffering all notifications till fetch returned data
-          if (!fetchedInitialStatus) {
-            debug("MESSAGE PREFETCH: " + pushedMessage.index);
-            preFetchMessageList.push(pushedMessage);
-            return;
-          }
+              // Deal with initial phase buffering all notifications till fetch returned data
+              if (!fetchedInitialStatus) {
+                debug("MESSAGE PREFETCH: " + pushedMessage.index);
+                preFetchMessageList.push(pushedMessage);
+                return;
+              }
 
-          if (reloadTimeoutHandle) {
-            clearTimeout(reloadTimeoutHandle);
-          }
-          replayingCachedMessages();
+              if (reloadTimeoutHandle) {
+                clearTimeout(reloadTimeoutHandle);
+              }
+              replayingCachedMessages();
 
-          debug("Check push message order " + pushedMessage.index + " ?== " + (currentMessageIndex + 1));
-          checkMessageOrderAndProcessAccordingly(pushedMessage);
+              debug("Check push message order " + pushedMessage.index + " ?== " + (currentMessageIndex + 1));
+              checkMessageOrderAndProcessAccordingly(pushedMessage);
+            }
+          }
         });
       },
       (error: Frame | CloseEvent) => {
@@ -464,78 +484,78 @@ function mergeMessage(map: Map<string, TigerServerStatusDto>, message: TestEnvSt
 
 function fetchInitialServerStatus() {
   fetch(baseURL + "status")
-      .then((response) => response.text())
-      .then((data) => {
-        debug("FETCH: " + data);
-        const json = JSON.parse(data);
+  .then((response) => response.text())
+  .then((data) => {
+    debug("FETCH: " + data);
+    const json = JSON.parse(data);
 
-        const fetchedServerStatus = new Map<string, TigerServerStatusDto>();
-        TigerServerStatusDto.addToMapFromJson(fetchedServerStatus, json.servers);
+    const fetchedServerStatus = new Map<string, TigerServerStatusDto>();
+    TigerServerStatusDto.addToMapFromJson(fetchedServerStatus, json.servers);
 
-        if (fetchedServerStatus.has("local_tiger_proxy")) {
-          const url = fetchedServerStatus.get("local_tiger_proxy")?.baseUrl;
-          if (url) {
-            localProxyWebUiUrl.value = url;
-          }
-        }
+    if (fetchedServerStatus.has("local_tiger_proxy")) {
+      const url = fetchedServerStatus.get("local_tiger_proxy")?.baseUrl;
+      if (url) {
+        localProxyWebUiUrl.value = url;
+      }
+    }
 
-        if (currentServerStatus.value.size !== 0) {
-          console.error("Fetching while currentServerStatus is set is not supported!")
-          return;
-        }
+    if (currentServerStatus.value.size !== 0) {
+      console.error("Fetching while currentServerStatus is set is not supported!")
+      return;
+    }
 
-        // sort prefetched Messages based on index;
-        TestEnvStatusDto.sortArray(preFetchMessageList);
+    // sort prefetched Messages based on index;
+    TestEnvStatusDto.sortArray(preFetchMessageList);
 
-        // if notification list is missing a message (index not increased by one) abort and fetch anew assuming we might get a more current state
-        const indexConsistent = TestEnvStatusDto.checkMessagesInArrayAreWellOrdered(preFetchMessageList);
-        if (!indexConsistent) {
-          debug("prefetched message list is not consistent \nwait 500ms and refetch!");
-          // TODO add them to the outOfOrderMessage list and return
-          window.setTimeout(fetchInitialServerStatus, 500);
-          return;
-        }
+    // if notification list is missing a message (index not increased by one) abort and fetch anew assuming we might get a more current state
+    const indexConsistent = TestEnvStatusDto.checkMessagesInArrayAreWellOrdered(preFetchMessageList);
+    if (!indexConsistent) {
+      debug("prefetched message list is not consistent \nwait 500ms and refetch!");
+      // TODO add them to the outOfOrderMessage list and return
+      window.setTimeout(fetchInitialServerStatus, 500);
+      return;
+    }
 
-        featureUpdateMap.value.clear();
-        FeatureUpdate.addToMapFromJson(featureUpdateMap.value, json.featureMap);
-        debug("FETCH FEATURE MERGE DONE");
+    featureUpdateMap.value.clear();
+    FeatureUpdate.addToMapFromJson(featureUpdateMap.value, json.featureMap);
+    debug("FETCH FEATURE MERGE DONE");
 
-        if (json.bannerMessage) {
-          bannerData.value.splice(0, bannerData.value.length);
-          bannerData.value.push(BannerMessage.fromJson(json));
-        }
+    if (json.bannerMessage) {
+      bannerData.value.splice(0, bannerData.value.length);
+      bannerData.value.push(BannerMessage.fromJson(json));
+    }
 
-        preFetchMessageList.forEach((testEnvStatusDtoMessage) => {
-          if (testEnvStatusDtoMessage.index > json.currentIndex) {
-            mergeMessage(fetchedServerStatus, testEnvStatusDtoMessage);
-          }
-        });
-        currentMessageIndex = json.currentIndex;
-        fetchedServerStatus.forEach((value, key) => currentServerStatus.value.set(key, value));
-        fetchedInitialStatus = true;
-        debug("FETCH DONE " + currentMessageIndex);
-        //TODO now check outOfOrder list if there is any new messages with higher index in list
-        debug("OOFList: " + JSON.stringify(outOfOrderMessageList));
-        outOfOrderMessageList = new Array<TestEnvStatusDto>();
-      });
+    preFetchMessageList.forEach((testEnvStatusDtoMessage) => {
+      if (testEnvStatusDtoMessage.index > json.currentIndex) {
+        mergeMessage(fetchedServerStatus, testEnvStatusDtoMessage);
+      }
+    });
+    currentMessageIndex = json.currentIndex;
+    fetchedServerStatus.forEach((value, key) => currentServerStatus.value.set(key, value));
+    fetchedInitialStatus = true;
+    debug("FETCH DONE " + currentMessageIndex);
+    //TODO now check outOfOrder list if there is any new messages with higher index in list
+    debug("OOFList: " + JSON.stringify(outOfOrderMessageList));
+    outOfOrderMessageList = new Array<TestEnvStatusDto>();
+  });
 }
 
 function fetchTigerVersion() {
   fetch(baseURL + "status/version")
-      .then((response) => response.text())
-      .then((data) => {
-        debug("FETCH Version: " + data);
-        version.value = data;
-      });
+  .then((response) => response.text())
+  .then((data) => {
+    debug("FETCH Version: " + data);
+    version.value = data;
+  });
 }
 
 function fetchTigerBuild() {
   fetch(baseURL + "status/build")
-      .then((response) => response.text())
-      .then((data) => {
-        debug("FETCH Build: " + data);
-        build.value = data;
-      });
+  .then((response) => response.text())
+  .then((data) => {
+    debug("FETCH Build: " + data);
+    build.value = data;
+  });
 }
 
 function updateServerStatus(serverStatus: Map<string, TigerServerStatusDto>, update: Map<string, TigerServerStatusUpdateDto>) {
@@ -587,21 +607,21 @@ function toggleLeftSideBar() {
 function quitTestrun(ev: MouseEvent) {
   ev.preventDefault();
   fetch(baseURL + "testExecution/quit", {method: 'PUT'})
-      .then(response => {
-            console.log("RES: " + JSON.stringify(response));
-            if (!response.ok) {
-              alert("Failed to abort test execution! " + response.statusText);
-              return false;
-            }
-            quitTestrunOngoing.value = true;
-            shutdownTestrunOngoing.value = false;
-          },
-          error => {
-            console.log("ERR: " + JSON.stringify(error))
-          })
-      .catch(error => {
-        console.log("CATCH: " + JSON.stringify(error))
-      });
+  .then(response => {
+        console.log("RES: " + JSON.stringify(response));
+        if (!response.ok) {
+          alert("Failed to abort test execution! " + response.statusText);
+          return false;
+        }
+        quitTestrunOngoing.value = true;
+        shutdownTestrunOngoing.value = false;
+      },
+      error => {
+        console.log("ERR: " + JSON.stringify(error))
+      })
+  .catch(error => {
+    console.log("CATCH: " + JSON.stringify(error))
+  });
   return false;
 }
 
@@ -609,22 +629,25 @@ function pauseTestrun(ev: MouseEvent) {
   pauseTestrunOngoing.value = !pauseTestrunOngoing.value;
   ev.preventDefault();
   fetch(baseURL + "testExecution/pause", {method: 'PUT'})
-      .then(response => {
-            console.log("RES: " + JSON.stringify(response));
-            if (!response.ok) {
-              alert("Failed to pause test execution! " + response.statusText);
-              return false;
-            }
-          },
-          error => {
-            console.log("ERR: " + JSON.stringify(error))
-          })
-      .catch(error => {
-        console.log("CATCH: " + JSON.stringify(error))
-      });
+  .then(response => {
+        console.log("RES: " + JSON.stringify(response));
+        if (!response.ok) {
+          alert("Failed to pause test execution! " + response.statusText);
+          return false;
+        }
+      },
+      error => {
+        console.log("ERR: " + JSON.stringify(error))
+      })
+  .catch(error => {
+    console.log("CATCH: " + JSON.stringify(error))
+  });
   return false;
 }
 
+function confirmShutdownPressed() {
+  emitter.emit('confirmShutdownPressed');
+}
 
 </script>
 <style>
@@ -643,6 +666,10 @@ function pauseTestrun(ev: MouseEvent) {
   color: var(--gem-primary-400);
   min-height: 100vh;
   box-shadow: 7px 0 3px -4px #888;
+  position: sticky;
+  overflow-y: auto;
+  top: 0;
+  max-height: 100vh;
 }
 
 #sidebar-left.sidebar-state-paused, .sidebar-title.sidebar-state-paused {
@@ -672,14 +699,13 @@ function pauseTestrun(ev: MouseEvent) {
 }
 
 .sidebar-collapsed .alert, .sidebar-collapsed h4 > span, .sidebar-collapsed h3 > span,
-.sidebar-collapsed button.resizer-left-icon, .sidebar-collapsed .container {
+.sidebar-collapsed button.resizer-left-icon, .sidebar-collapsed .container, .sidebar-collapsed .finishedMessage {
   display: none;
 }
 
 .sidebar-collapsed h4, .sidebar-collapsed h3 {
   text-align: center;
   padding-left: 0 !important;
-  cursor: pointer;
 }
 
 .sidebar-collapsed h3 img {

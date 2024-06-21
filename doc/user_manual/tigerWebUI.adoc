@@ -1,5 +1,5 @@
 [#_web_ui]
-=== Standalone Tiger Proxy UI (WebUI)
+=== Standalone Tiger Proxy Log
 
 To watch the recorded messages and to be able to analyze issues at test run time already you can visit the Tiger Proxy web user interface at:
 
@@ -18,7 +18,7 @@ The following screenshot shows the WebUI.
 On the left side the request/response pairs are displayed.
 The user can see the request type and the error code of the response as well as the timestamp of the request.
 
-image::screenshots/webui.png[title="Tiger Proxy UI / WebUI"]
+image::screenshots/webui.png[title="Tiger Proxy Log"]
 
 On the top right the tiger version and the build date are displayed.
 In the middle the full request and response messages are shown with detailed header and body.

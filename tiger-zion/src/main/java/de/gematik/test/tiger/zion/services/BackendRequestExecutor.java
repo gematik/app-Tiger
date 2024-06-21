@@ -146,6 +146,11 @@ public class BackendRequestExecutor {
 
   private String formatHeaderList(Headers headerList) {
     return headerList.all().stream()
+        .filter(
+            h ->
+                !h.getName()
+                    .equalsIgnoreCase(
+                        "Transfer-Encoding")) // chunks are already merged by the unirest client
         .map(h -> h.getName() + ": " + h.getValue())
         .collect(Collectors.joining("\r\n"));
   }

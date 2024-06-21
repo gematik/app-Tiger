@@ -18,7 +18,10 @@ package de.gematik.test.tiger.mockserver.netty.unification;
 
 import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.*;
+import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.INCOMING_CHANNEL;
+import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.OUTGOING_CHANNEL;
 import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.REMOTE_SOCKET;
+import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.getRemoteAddress;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 import static de.gematik.test.tiger.mockserver.netty.HttpRequestHandler.LOCAL_HOST_HEADERS;
 import static de.gematik.test.tiger.mockserver.netty.HttpRequestHandler.PROXYING;
@@ -53,6 +56,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
 /*
@@ -91,6 +95,42 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
     this.mockServerHttpResponseToFullHttpResponse = new MockServerHttpResponseToFullHttpResponse();
   }
 
+  private void performConnectionToRemote(ChannelHandlerContext ctx) {
+    var incomingChannel = ctx.channel();
+    if (incomingChannel.attr(OUTGOING_CHANNEL).get() != null
+        || configuration.binaryProxyListener() == null) {
+      log.trace("already connected to remote server or no binary proxy listener");
+      return;
+    }
+    log.trace("enabling connection to remote server");
+    var remoteAddress = getRemoteAddress(ctx);
+
+    val httpClient = actionHandler.getHttpClient();
+
+    var channelFuture =
+        httpClient
+            .getClientBootstrapFactory()
+            .configureChannel()
+            .isSecure(isSslEnabledUpstream(incomingChannel))
+            .incomingChannel(incomingChannel)
+            .remoteAddress(remoteAddress)
+            .clientInitializer(httpClient.createClientInitializer(null))
+            .eventLoopGroup(incomingChannel.eventLoop())
+            .errorIfChannelClosedWithoutResponse(false)
+            .connectToChannel();
+    channelFuture.addListener(
+        (ChannelFutureListener)
+            future -> {
+              // we set these attributes also when the channel did not open succesfully, so that
+              // we don't try again to open the outgoing channel
+              incomingChannel.attr(OUTGOING_CHANNEL).set(future.channel());
+              future.channel().attr(INCOMING_CHANNEL).set(incomingChannel);
+              if (!future.isSuccess()) {
+                log.error("Failed to connect to {}", remoteAddress, future.cause());
+              }
+            });
+  }
+
   public static NettySslContextFactory nettySslContextFactory(Channel channel) {
     if (channel.attr(NETTY_SSL_CONTEXT_FACTORY).get() != null) {
       return channel.attr(NETTY_SSL_CONTEXT_FACTORY).get();
@@ -127,15 +167,21 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
     if (isTls(msg)) {
       logStage(ctx, "adding TLS decoders");
       enableTls(ctx, msg);
-    } else if (isHttp(msg)) {
-      logStage(ctx, "adding HTTP decoders");
-      switchToHttp(ctx, msg);
-    } else if (isProxyConnected(msg)) {
-      logStage(ctx, "setting proxy connected");
-      switchToProxyConnected(ctx, msg);
+      performConnectionToRemote(ctx);
     } else {
-      logStage(ctx, "adding binary decoder");
-      switchToBinary(ctx, msg);
+      performConnectionToRemote(ctx);
+      if (configuration.binaryProxyListener() == null) {
+        if (isHttp(msg)) {
+          logStage(ctx, "adding HTTP decoders");
+          switchToHttp(ctx, msg);
+        } else if (isProxyConnected(msg)) {
+          logStage(ctx, "setting proxy connected");
+          switchToProxyConnected(ctx, msg);
+        }
+      } else {
+        logStage(ctx, "adding binary decoder");
+        switchToBinary(ctx, msg);
+      }
     }
   }
 
@@ -161,6 +207,10 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   }
 
   private boolean isHttp(ByteBuf msg) {
+    if (msg.writerIndex() < 8) {
+      return false;
+    }
+
     String method = msg.toString(msg.readerIndex(), 8, StandardCharsets.US_ASCII);
     return method.startsWith("GET ")
         || method.startsWith("POST ")
@@ -224,6 +274,9 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   }
 
   private boolean isProxyConnected(ByteBuf msg) {
+    if (msg.writerIndex() < 8) {
+      return false;
+    }
     return msg.toString(msg.readerIndex(), 8, StandardCharsets.US_ASCII).startsWith(PROXIED);
   }
 
@@ -254,8 +307,7 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
 
   private void switchToBinary(ChannelHandlerContext ctx, ByteBuf msg) {
     addLastIfNotPresent(
-        ctx.pipeline(),
-        new BinaryHandler(configuration, httpState.getScheduler(), actionHandler.getHttpClient()));
+        ctx.pipeline(), new BinaryHandler(configuration, actionHandler.getHttpClient()));
     // fire message back through pipeline
     ctx.fireChannelRead(msg.readBytes(actualReadableBytes()));
   }
@@ -263,8 +315,7 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   private Set<String> getLocalAddresses(ChannelHandlerContext ctx) {
     SocketAddress localAddress = ctx.channel().localAddress();
     Set<String> localAddresses = null;
-    if (localAddress instanceof InetSocketAddress) {
-      InetSocketAddress inetSocketAddress = (InetSocketAddress) localAddress;
+    if (localAddress instanceof InetSocketAddress inetSocketAddress) {
       String portExtension =
           calculatePortExtension(inetSocketAddress, isSslEnabledUpstream(ctx.channel()));
       PortBinding cacheKey = new PortBinding(inetSocketAddress, portExtension);

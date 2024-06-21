@@ -103,4 +103,22 @@ public class VauEpa3ConverterTest {
     }
     assertThat(logger.getMessageList().get(9)).extractChildWithPath("$.body.decrypted.path");
   }
+
+  @Test
+  void nestedTransferEncoding() throws Exception {
+    var logger =
+        RbelLogger.build(
+            new RbelConfiguration()
+                .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+                .setActivateVauEpa3Parsing(true)
+                .addCapturer(
+                    RbelFileReaderCapturer.builder()
+                        .rbelFile("src/test/resources/vau3WithInnerGzip.tgr")
+                        .build()));
+    try (final var capturer = logger.getRbelCapturer()) {
+      capturer.initialize();
+    }
+    assertThat(logger.getMessageList().get(1)).extractChildWithPath("$.body.decrypted.body.resourceType")
+      .hasStringContentEqualTo("Bundle");
+  }
 }

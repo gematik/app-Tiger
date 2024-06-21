@@ -50,7 +50,7 @@ public class TestsuiteUtils {
    */
   public static void addTwoRequestsToTigerTestHooks(Deque<RbelElement> validatableMessagesMock) {
     TigerGlobalConfiguration.putValue("tiger.rbel.request.timeout", 1);
-    LocalProxyRbelMessageListener.clearValidatableRbelMessages();
+    LocalProxyRbelMessageListener.getInstance().clearValidatableRbelMessages();
     RbelElement request = buildRequestFromCurlFile("getRequestLocalhost.curl");
     validatableMessagesMock.add(request);
     validatableMessagesMock.add(buildResponseFromCurlFile("htmlMessage.curl", request));

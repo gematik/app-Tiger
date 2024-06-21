@@ -17,19 +17,18 @@
 package de.gematik.test.tiger.proxy.tls;
 
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
 import de.gematik.test.tiger.mockserver.socket.tls.bouncycastle.AbstractKeyAndCertificateFactory;
 import java.security.PrivateKey;
-import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import lombok.Builder;
 import org.apache.commons.collections.ListUtils;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class StaticTigerKeyAndCertificateFactory extends AbstractKeyAndCertificateFactory {
 
   static {
-    Security.addProvider(new BouncyCastleProvider());
+    TigerSecurityProviderInitialiser.initialize();
   }
 
   private final TigerPkiIdentity identity;

@@ -1,0 +1,13 @@
+Content-Type: message/rfc822
+
+Date: Tue, 4 Jun 2024 09:32:01 +0200
+From: kimar-sender-21@gem.kim.telematik-test
+To: kimar-empfaenger-22@gem.kim.telematik-test
+Message-ID: <1363179420.0.1717486321399@kim-testsuite>
+Subject: Laborbericht vom 03-06-2024 09:31:53+0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+X-KIM-Dienstkennung: KIM-Mail;Default;V1.0
+Content-Disposition: x-kas
+
+{"link":"http://localhost:8080/attachments/v2.3/attachment/7e55a891-a646-49bc-8149-7f9b1fbea682","k":"yaG9sgJK0BCGX5+ljqA0ESOQw7z4Sy0rNv20+dd10q4=","hash":"m5bDitoS1NTuWC19R7hQtXfHlEz0s58tO2kddL6D1Es=","size":5070}

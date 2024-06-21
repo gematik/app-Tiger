@@ -17,10 +17,12 @@
 package de.gematik.test.tiger.mockserver.model;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /*
  * @author jamesdbloom
  */
+@EqualsAndHashCode(callSuper = false)
 @Data
 public class SocketAddress extends ObjectWithJsonToString {
   private String host;

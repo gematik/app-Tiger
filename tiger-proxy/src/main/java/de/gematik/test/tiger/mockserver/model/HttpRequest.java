@@ -39,7 +39,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 @Getter
 @Setter
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
 public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRequest, Body> {
   private String method = "";

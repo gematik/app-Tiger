@@ -25,7 +25,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.0.5</version>
+        <version>3.1.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -158,49 +158,6 @@
                 <configuration>
                     <mainClass>de.gematik.test.tiger.zion.ZionApplication</mainClass>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok-maven-plugin</artifactId>
-                <version>1.18.20.0</version>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>delombok</goal>
-                        </goals>
-                        <configuration>
-                            <encoding>UTF-8</encoding>
-                            <addOutputDirectory>false</addOutputDirectory>
-                            <sourceDirectory>src/main/java</sourceDirectory>
-                            <outputDirectory>
-                                ${project.build.directory}/delombok
-                            </outputDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.5.0</version>
-                <configuration>
-                    <doclint>none</doclint>
-                    <sourcepath>${project.build.directory}/delombok</sourcepath>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <groupId>org.jacoco</groupId>
-            </plugin>
-            <plugin>
-                <artifactId>sonar-maven-plugin</artifactId>
-                <groupId>org.sonarsource.scanner.maven</groupId>
-            </plugin>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${version.spring-boot}</version>
                 <executions>
                     <execution>
                         <id>repackage</id>
@@ -217,14 +174,7 @@
                             <goal>build-info</goal>
                         </goals>
                     </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <!-- create repackaged jar with docker classifier to be executed in docker container -->
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>3.2.5</version>
-                <executions>
+                    <!-- create repackaged jar with docker classifier to be executed in docker container -->
                     <execution>
                         <goals>
                             <goal>repackage</goal>
@@ -234,6 +184,43 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok-maven-plugin</artifactId>
+                <version>1.18.20.0</version>
+                <executions>
+                    <execution>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>delombok</goal>
+                        </goals>
+                        <configuration>
+                            <addOutputDirectory>false</addOutputDirectory>
+                            <sourceDirectory>src/main/java</sourceDirectory>
+                            <outputDirectory>
+                                ${project.build.directory}/delombok
+                            </outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.7.0</version>
+                <configuration>
+                    <doclint>none</doclint>
+                    <sourcepath>${project.build.directory}/delombok</sourcepath>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <groupId>org.jacoco</groupId>
+            </plugin>
+            <plugin>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <groupId>org.sonarsource.scanner.maven</groupId>
             </plugin>
         </plugins>
     </build>

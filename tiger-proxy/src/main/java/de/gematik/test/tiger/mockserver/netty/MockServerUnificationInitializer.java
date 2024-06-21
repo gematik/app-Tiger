@@ -25,11 +25,13 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 /*
  * @author jamesdbloom
  */
+@EqualsAndHashCode(callSuper = false)
 @ChannelHandler.Sharable
 @Data
 @Slf4j
@@ -43,7 +45,6 @@ public class MockServerUnificationInitializer extends ChannelHandlerAdapter {
   @Override
   public void handlerAdded(ChannelHandlerContext ctx) {
     ctx.pipeline()
-        .addFirst(new ConnectionCounterHandler(server))
         .replace(
             this,
             null,

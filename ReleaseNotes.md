@@ -1,11 +1,89 @@
 # Changelog Tiger Test platform
 
-# Release 3.0.5
+# Release 3.1.0
+
+* Serenity BDD 4.1.14
+* Cucumber 7.18.0
+* RestAssured 5.4.0
+* Selenium 4.18.1
+* Appium 9.0.0
+* Spring Boot 3.3.0
+* Logback 1.5.6
+
+## Breaking Changes
+
+* Because of the new Spring Boot version the following adjustments have to be done
+  add the following in your pom.xml
+  ```
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>1.5.6</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+  """
+
+* TGR-1425: Tiger-Test-Lib: the class LocalProxyRbelMessageListener is refactored to be easier to handle in tests. If
+  you are using it directly in your test suite, you need to get an instance
+  with `LocalProxyRbelMessageListener.getInstance()`. The previously existing static methods are now instance methods.
+  To use in unit tests you now have two options:
+
+1. Load the full TigerTestEnvironent in your test and get the instance
+   of
+   the LocalProxyRbelMessageListener.
+
+2. If you don't need a full TigerTestEnvironment you can set a test instance of the
+   LocalProxyRbelMessageListener with a custom messages supplier
+   with `LocalProxyRbelMessageListener.setTestInstance(new LocalProxyRbelMessageListener(new MyMessagesSupplier()))`.
+
+## Features
+
+* TGR-1195: UX improvements for Rbel Inspect
+* TGR-1196: Workflow UI improvements (sticky sidebar, quit test run message)
+* TGR-1429: Tiger-Test-Lib: it is now possible to assert if a given Json matches a specified JSON Schema. This allows
+  for easier validation of JSON structures.
+
+Example usage:
+
+```
+TGR current response at "$.body" matches as JSON_SCHEMA:
+"""
+{ "type": "object",
+    "properties": {
+      "name": {
+        "type": "string"
+      },
+      "age": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "email": {
+        "type": "string",
+        "format": "email"
+      }
+    },
+    "required": ["name", "age"]
+  }
+"""
+```
+
+For more details on how to specify a json schema refer to the external
+resource https://jsoneditoronline.org/indepth/validate/json-schema-validator/ .
+In https://json-schema.org/implementations#validators-web-(online) you can find a list of online validators which you
+can use to prepare the schemas. In Tiger we use the **2020-12** version of the JSON Schema specification.
+* TGR-1404: Tiger-Proxy: in direct reverse proxy mode the proxy opens immediately a connection to the remote target as
+  soon as an incoming connection is established.
 
 ## Bugfixes
 
-* TGR-1415: TigerProxy: Fixed a bug when multiple Tiger-Proxies would interfere with each other when selecting client-groups. Client-Groups can now be correctly selected, but not multiple settings in a single JVM. If that is desired you will have to boot the Tiger-Proxies through an external-JAR server.
-* ANFEPA-2559: Rbel-Logger: Fixed the handling of the request-counter for EPA3-messages.
+* TGR-1340: Maven: make build under Windows emit less warnings.
+* TGR-1435: TigerProxy: Added support for nested Content- and Transfer-Encodings.
+* TGR-1426: TigerProxy: Enable BrainPool curves again (stabilized the order of security providers)
+
+# Release 3.0.5
 
 ## Features
 
@@ -13,10 +91,15 @@
 * TGR-1406: Added the already parsed information in an Epa 3 message to the Rbel-tree.
 * TGR-1408: Zion: Empty headers are no longer transmitted.
 * TGR-1407: Zion: Added the possibility to delay responses for a fixed amount of time.
+* TGR-1193: UX improvement in WebUi/TigerProxyLog
 * TGR-1376: RbelParser: Conversion of POP3 Messages to Rbel trees
 
 ## Bugfixes
 
+* TGR-1415: TigerProxy: Fixed a bug when multiple Tiger-Proxies would interfere with each other when selecting
+  client-groups. Client-Groups can now be correctly selected, but not multiple settings in a single JVM. If that is
+  desired you will have to boot the Tiger-Proxies through an external-JAR server.
+* ANFEPA-2559: Rbel-Logger: Fixed the handling of the request-counter for EPA3-messages.
 * TGR-1405: TigerProxy: Proxies in directReverseProxy-mode now report correct health status.
 * TGR-1405: TigerProxy: More resilient re-connnect logic in mesh-setups.
 * TGR-1405: TigerProxy: Fixed an issue where in a mesh-setup the order of the messages would sometimes be mixed up.

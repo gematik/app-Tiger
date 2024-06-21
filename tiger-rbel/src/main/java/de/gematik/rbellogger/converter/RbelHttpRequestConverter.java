@@ -17,13 +17,10 @@
 package de.gematik.rbellogger.converter;
 
 import static com.google.common.primitives.Bytes.indexOf;
-import static java.nio.charset.StandardCharsets.US_ASCII;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
-import de.gematik.rbellogger.util.RbelArrayUtils;
-import java.util.Arrays;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -74,7 +71,7 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
 
     final byte[] bodyData =
         extractBodyData(
-            targetElement.getRawContent(),
+            targetElement,
             endOfHeadIndex + 2 * eol.length(),
             headerElement.getFacetOrFail(RbelHttpHeaderFacet.class),
             eol);
@@ -101,18 +98,5 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
       return "\r\n";
     }
     return "\n";
-  }
-
-  private byte[] extractBodyData(
-      byte[] inputData, int separator, RbelHttpHeaderFacet headerMap, String eol) {
-    if (headerMap.hasValueMatching("Transfer-Encoding", "chunked")) {
-      separator = new String(inputData).indexOf(eol, separator) + eol.length();
-      return Arrays.copyOfRange(
-          inputData,
-          separator,
-          RbelArrayUtils.indexOf(inputData, ("0" + eol).getBytes(US_ASCII), separator));
-    } else {
-      return Arrays.copyOfRange(inputData, Math.min(inputData.length, separator), inputData.length);
-    }
   }
 }

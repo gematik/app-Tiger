@@ -23,11 +23,11 @@ import static de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfigura
 import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import com.google.common.collect.ImmutableList;
 import de.gematik.test.tiger.mockserver.ExpectationBuilder;
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
+import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
@@ -35,9 +35,13 @@ import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.WriteBufferWaterMark;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Arrays;
@@ -48,6 +52,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /*
@@ -88,7 +93,7 @@ public class MockServer extends LifeCycle {
    * @param localPorts the local port(s) to use, use 0 or no vararg values to specify any free port
    */
   public MockServer(final ProxyConfiguration proxyConfiguration, final Integer... localPorts) {
-    this(null, ImmutableList.of(proxyConfiguration), localPorts);
+    this(null, List.of(proxyConfiguration), localPorts);
   }
 
   /**
@@ -154,7 +159,7 @@ public class MockServer extends LifeCycle {
       @Nullable String remoteHost,
       final Integer remotePort,
       final Integer... localPorts) {
-    this(configuration, ImmutableList.of(proxyConfiguration), remoteHost, remotePort, localPorts);
+    this(configuration, List.of(proxyConfiguration), remoteHost, remotePort, localPorts);
   }
 
   /**
@@ -218,19 +223,15 @@ public class MockServer extends LifeCycle {
             .group(bossGroup, workerGroup)
             .option(ChannelOption.SO_BACKLOG, 1024)
             .channel(NioServerSocketChannel.class)
+            .handler(new LoggingHandler(LogLevel.DEBUG))
             .childOption(ChannelOption.AUTO_READ, true)
             .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
             .option(
                 ChannelOption.WRITE_BUFFER_WATER_MARK,
                 new WriteBufferWaterMark(8 * 1024, 32 * 1024))
-            .childHandler(new ConnectionCounterHandler(this))
             .childHandler(
-                new MockServerUnificationInitializer(
-                    configuration,
-                    MockServer.this,
-                    httpState,
-                    actionHandler,
-                    nettyServerSslContextFactory))
+                new MockServerChannelInitializer(
+                    configuration, this, httpState, actionHandler, nettyServerSslContextFactory))
             .childAttr(REMOTE_SOCKET, remoteSocket)
             .childAttr(PROXYING, remoteSocket != null);
 
@@ -276,5 +277,29 @@ public class MockServer extends LifeCycle {
 
   public synchronized void removeRemoteAddress(SocketAddress socketAddress) {
     connectionStatusMap.remove(socketAddress);
+  }
+
+  @RequiredArgsConstructor
+  static class MockServerChannelInitializer extends ChannelInitializer<SocketChannel> {
+
+    private final Configuration configuration;
+    private final MockServer mockServer;
+    private final HttpState httpState;
+    private final HttpActionHandler actionHandler;
+    private final NettySslContextFactory nettyServerSslContextFactory;
+
+    @Override
+    public void initChannel(SocketChannel ch) {
+      ch.pipeline().addFirst(new ConnectionCounterHandler(mockServer));
+
+      ch.pipeline()
+          .addLast(
+              new MockServerUnificationInitializer(
+                  configuration,
+                  mockServer,
+                  httpState,
+                  actionHandler,
+                  nettyServerSslContextFactory));
+    }
   }
 }

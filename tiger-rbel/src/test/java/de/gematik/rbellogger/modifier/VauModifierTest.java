@@ -29,19 +29,13 @@ import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.security.Security;
 import java.util.Base64;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.io.FileUtils;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class VauModifierTest {
-
-  static {
-    Security.addProvider(new BouncyCastleProvider());
-  }
 
   private RbelLogger rbelLogger;
 

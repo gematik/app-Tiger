@@ -40,11 +40,6 @@
         {{ (bannerMessage as BannerMessage).text }}
       </div>
     </div>
-    <div v-if="isOfType(BannerType.TESTRUN_ENDED)"
-         v-on:click="confirmShutdownPressed"
-         class="btn btn-primary w-100 mt-3 mb-1">
-      Shutdown
-    </div>
     <div v-if="isOfType(BannerType.STEP_WAIT)"
          v-on:click="confirmContinue"
          class="btn btn-success w-100 mt-3 mb-1">
@@ -93,27 +88,27 @@ function confirmShutdownPressed() {
   emitter.emit('confirmShutdownPressed');
 
   fetch(import.meta.env.BASE_URL + "status/confirmShutdown")
-      .then((response) => response.text())
-      .then(() => {
-        closeWindow();
-        alert("Backend of Workflow UI has been shut down!\nRbelLog details pane has no more filtering / search support!");
-      });
+  .then((response) => response.text())
+  .then(() => {
+    closeWindow();
+    alert("Backend of Workflow UI has been shut down!\nRbelLog details pane has no more filtering / search support!");
+  });
 }
 
 function confirmContinue() {
   fetch(import.meta.env.BASE_URL + "status/continueExecution")
-      .then((response) => response.text())
-      .then(() => {
-        closeWindow();
-      });
+  .then((response) => response.text())
+  .then(() => {
+    closeWindow();
+  });
 }
 
 function confirmFail() {
   fetch(import.meta.env.BASE_URL + "status/failExecution")
-      .then((response) => response.text())
-      .then(() => {
-        // do nothing as the resume message will appear shortly after the click
-      });
+  .then((response) => response.text())
+  .then(() => {
+    // do nothing as the resume message will appear shortly after the click
+  });
 }
 </script>
 

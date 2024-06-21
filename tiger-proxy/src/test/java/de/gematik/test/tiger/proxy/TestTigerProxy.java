@@ -95,6 +95,59 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   }
 
   @Test
+  void forwardProxy_shouldUseSameTcpConnection() {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("http://backend")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .build());
+
+    final HttpResponse<JsonNode> response = proxyRest.get("http://backend/foobar").asJson();
+    final HttpResponse<JsonNode> response2 = proxyRest.get("http://backend/foobar").asJson();
+
+    awaitMessagesInTiger(4);
+
+    assertThat(response.getStatus()).isEqualTo(666);
+    assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
+    assertThat(
+            tigerProxy
+                .getRbelMessagesList()
+                .get(0)
+                .getFacetOrFail(RbelTcpIpMessageFacet.class)
+                .getReceiverHostname())
+        .isEqualTo(new RbelHostname("backend", 80));
+    assertThat(
+            tigerProxy
+                .getRbelMessagesList()
+                .get(1)
+                .getFacetOrFail(RbelTcpIpMessageFacet.class)
+                .getSenderHostname())
+        .isEqualTo(new RbelHostname("backend", 80));
+
+    assertThat(response2.getStatus()).isEqualTo(666);
+    assertThat(response2.getBody().getObject().get("foo")).hasToString("bar");
+    assertThat(
+            tigerProxy
+                .getRbelMessagesList()
+                .get(2)
+                .getFacetOrFail(RbelTcpIpMessageFacet.class)
+                .getReceiverHostname())
+        .isEqualTo(new RbelHostname("backend", 80));
+    assertThat(
+            tigerProxy
+                .getRbelMessagesList()
+                .get(3)
+                .getFacetOrFail(RbelTcpIpMessageFacet.class)
+                .getSenderHostname())
+        .isEqualTo(new RbelHostname("backend", 80));
+
+  }
+
+  @Test
   void useAsWebProxyServer_shouldForward() {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
@@ -464,7 +517,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   }
 
   @Test
-  void implicitReverseProxy_shouldForwardReqeust() {
+  void implicitReverseProxy_shouldForwardRequest() {
     final AtomicInteger callCounter = new AtomicInteger(0);
 
     spawnTigerProxyWith(
@@ -490,7 +543,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   }
 
   @Test
-  void blanketReverseProxy_shouldForwardReqeust() {
+  void blanketReverseProxy_shouldForwardRequest() {
     final AtomicInteger callCounter = new AtomicInteger(0);
 
     spawnTigerProxyWith(

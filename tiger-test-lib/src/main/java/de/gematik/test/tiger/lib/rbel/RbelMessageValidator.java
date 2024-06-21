@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
@@ -32,8 +33,9 @@ import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.lib.json.JsonChecker;
+import de.gematik.test.tiger.lib.json.JsonSchemaChecker;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -68,7 +70,6 @@ public class RbelMessageValidator {
 
   public static final String FOUND_IN_MESSAGES = "' found in messages";
 
-  public static final RbelMessageValidator instance = new RbelMessageValidator();
   private static final TigerTypedConfigurationKey<Integer> RBEL_REQUEST_TIMEOUT =
       new TigerTypedConfigurationKey<>("tiger.rbel.request.timeout", Integer.class);
 
@@ -82,25 +83,33 @@ public class RbelMessageValidator {
   }
 
   private static final List<String> emptyPath = List.of("", "/");
+  private final TigerTestEnvMgr tigerTestEnvMgr;
+  private final TigerProxy tigerProxy;
 
   @Getter protected RbelElement currentRequest;
   @Getter protected RbelElement currentResponse;
 
-  private RbelMessageValidator() {
+  public RbelMessageValidator() {
+    this(
+        TigerDirector.getTigerTestEnvMgr(),
+        TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail());
+  }
+
+  @VisibleForTesting
+  public RbelMessageValidator(TigerTestEnvMgr tigerTestEnvMgr, TigerProxy tigerProxy) {
     TigerJexlExecutor.registerAdditionalNamespace("rbel", new JexlToolbox());
+    this.tigerTestEnvMgr = tigerTestEnvMgr;
+    this.tigerProxy = tigerProxy;
   }
 
   public List<RbelElement> getRbelMessages() {
-    TigerDirector.getTigerTestEnvMgr()
-        .getLocalTigerProxyOptional()
-        .ifPresent(TigerProxy::waitForAllCurrentMessagesToBeParsed);
-
+    tigerProxy.waitForAllCurrentMessagesToBeParsed();
     return new UnmodifiableList<>(
-        new ArrayList<>(LocalProxyRbelMessageListener.getValidatableRbelMessages()));
+        new ArrayList<>(LocalProxyRbelMessageListener.getInstance().getValidatableRbelMessages()));
   }
 
   public void clearRbelMessages() {
-    LocalProxyRbelMessageListener.clearValidatableRbelMessages();
+    LocalProxyRbelMessageListener.getInstance().clearValidatableRbelMessages();
   }
 
   public void filterRequestsAndStoreInContext(final RequestParameter requestParameter) {
@@ -112,7 +121,7 @@ public class RbelMessageValidator {
           .pollInterval(500, TimeUnit.MILLISECONDS)
           .until(
               () ->
-                  TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()
+                  tigerTestEnvMgr.isShouldAbortTestExecution()
                       || getRbelMessages().stream()
                           .filter(e -> e.hasFacet(RbelHttpResponseFacet.class))
                           .filter(
@@ -122,7 +131,7 @@ public class RbelMessageValidator {
                           .map(rbelElement -> currentResponse = rbelElement)
                           .findAny()
                           .isPresent());
-      if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) {
+      if (tigerTestEnvMgr.isShouldAbortTestExecution()) {
         throw new AssertionError("User aborted test run");
       }
     } catch (final ConditionTimeoutException cte) {
@@ -150,7 +159,7 @@ public class RbelMessageValidator {
           .pollInterval(400, TimeUnit.MILLISECONDS)
           .until(
               () -> {
-                if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) {
+                if (tigerTestEnvMgr.isShouldAbortTestExecution()) {
                   return true;
                 }
                 final Optional<RbelElement> found =
@@ -158,7 +167,7 @@ public class RbelMessageValidator {
                 found.ifPresent(candidate::set);
                 return found.isPresent();
               });
-      if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) {
+      if (tigerTestEnvMgr.isShouldAbortTestExecution()) {
         throw new AssertionError("User aborted test run");
       }
     } catch (final ConditionTimeoutException cte) {
@@ -187,7 +196,8 @@ public class RbelMessageValidator {
   }
 
   private Optional<RbelElement> getInitialElement(RequestParameter requestParameter) {
-    var validatableRbelMessages = LocalProxyRbelMessageListener.getValidatableRbelMessages();
+    var validatableRbelMessages =
+        LocalProxyRbelMessageListener.getInstance().getValidatableRbelMessages();
     if (requestParameter.isStartFromLastRequest()) {
       return validatableRbelMessages.stream()
           .dropWhile(msg -> msg != currentRequest)
@@ -443,9 +453,13 @@ public class RbelMessageValidator {
     switch (mode) {
       case JSON -> new JsonChecker().compareJsonStrings(getAsJsonString(element), oracle, false);
       case XML -> compareXMLStructureOfRbelElement(element, oracle, "");
+      case JSON_SCHEMA ->
+          new JsonSchemaChecker().compareJsonToSchema(getAsJsonString(element), oracle);
       default ->
           Assertions.fail(
-              "Type should either be JSON or XML, but you wrote '" + mode + "' instead.");
+              "Type should either be JSON, JSON_SCHEMA, or XML, but you wrote '"
+                  + mode
+                  + "' instead.");
     }
   }
 
@@ -622,17 +636,8 @@ public class RbelMessageValidator {
   }
 
   public void readTgrFile(String filePath) {
-    if (TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOptional().isPresent()) {
-      List<RbelElement> readElements =
-          TigerDirector.getTigerTestEnvMgr()
-              .getLocalTigerProxyOrFail()
-              .readTrafficFromTgrFile(filePath);
-      readElements.forEach(
-          LocalProxyRbelMessageListener.rbelMessageListener::triggerNewReceivedMessage);
-    } else {
-      throw new TigerTestEnvException(
-          "No local proxy active, can't read from tgr file '" + filePath + "'");
-    }
+    List<RbelElement> readElements = tigerProxy.readTrafficFromTgrFile(filePath);
+    readElements.forEach(LocalProxyRbelMessageListener.getInstance()::triggerNewReceivedMessage);
   }
 
   public class JexlToolbox {
@@ -680,7 +685,9 @@ public class RbelMessageValidator {
 
     private RbelElement lastMessageMatching(Predicate<RbelElement> testMessage) {
       final Iterator<RbelElement> backwardsIterator =
-          LocalProxyRbelMessageListener.getValidatableRbelMessages().descendingIterator();
+          LocalProxyRbelMessageListener.getInstance()
+              .getValidatableRbelMessages()
+              .descendingIterator();
       while (backwardsIterator.hasNext()) {
         final RbelElement element = backwardsIterator.next();
         if (testMessage.test(element)) {

@@ -20,6 +20,8 @@ import static de.gematik.test.tiger.mockserver.model.HttpRequest.request;
 import static de.gematik.test.tiger.proxy.tls.OcspUtils.buildOcspResponse;
 import static de.gematik.test.tiger.proxy.tls.TlsCertificateGenerator.generateNewCaCertificate;
 
+import de.gematik.rbellogger.util.RbelMessagesSupplier;
+import de.gematik.rbellogger.converter.HttpPairingInBinaryChannelConverter;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
@@ -45,7 +47,6 @@ import de.gematik.test.tiger.proxy.tls.DynamicTigerKeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.tls.StaticTigerKeyAndCertificateFactory;
 import io.netty.handler.ssl.SslProvider;
 import jakarta.annotation.PreDestroy;
-import java.io.IOException;
 import java.net.*;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -54,21 +55,15 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.net.ssl.*;
-import kong.unirest.Unirest;
-import kong.unirest.UnirestInstance;
-import kong.unirest.apache.ApacheClient;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.conn.ssl.DefaultHostnameVerifier;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.apache.tomcat.util.buf.UriUtil;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 @EqualsAndHashCode(callSuper = true)
-public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
+public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, RbelMessagesSupplier {
 
   private static final String CA_CERT_ALIAS = "caCert";
   private final List<DynamicTigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();
@@ -147,23 +142,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
       return new URL(tigerRoute.getFrom());
     } catch (MalformedURLException e) {
       throw new TigerProxyStartupException("Error while building route", e);
-    }
-  }
-
-  private static CloseableHttpClient getHttpClient(SSLContext sslContext) {
-    return HttpClients.custom()
-        .setSSLContext(sslContext)
-        .setSSLHostnameVerifier(new DefaultHostnameVerifier())
-        .build();
-  }
-
-  private static void configureUnirestStaticInstance(SSLContext sslContext) {
-    try (CloseableHttpClient httpClient = getHttpClient(sslContext);
-        UnirestInstance unirestInstance = Unirest.primaryInstance()) {
-      unirestInstance.config().httpClient(config -> ApacheClient.builder(httpClient).apply(config));
-    } catch (IOException e) {
-      throw new TigerProxyTrustManagerBuildingException(
-          "Error while building HTTP Client for Tiger Proxy", e);
     }
   }
 
@@ -249,7 +227,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
 
   private MockServer spawnDirectInverseTigerProxy(
       Configuration mockServerConfiguration, Optional<ProxyConfiguration> forwardProxyConfig) {
-    mockServerConfiguration.forwardBinaryRequestsWithoutWaitingForResponse(true);
     mockServerConfiguration.binaryProxyListener(new BinaryExchangeHandler(this));
     if (forwardProxyConfig.isPresent()) {
       throw new TigerProxyStartupException(
@@ -263,6 +240,11 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
             getTigerProxyConfiguration().getDirectReverseProxy().getHostname(),
             getTigerProxyConfiguration().getPortAsArray());
     addReverseProxyRouteIfNotPresent();
+
+    getRbelLogger()
+        .getRbelConverter()
+        .addFirstPostConversionListener(new HttpPairingInBinaryChannelConverter());
+
     return newMockServer;
   }
 
@@ -622,10 +604,10 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable {
       TrustManagerFactory tmf =
           TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
       tmf.init(buildTruststore());
-      SSLContext sslContext = SSLContext.getInstance("TLS");
       TrustManager[] trustManagers = tmf.getTrustManagers();
+
+      SSLContext sslContext = SSLContext.getInstance("TLS", new BouncyCastleJsseProvider());
       sslContext.init(null, trustManagers, null);
-      configureUnirestStaticInstance(sslContext);
       return sslContext;
     } catch (RuntimeException
         | NoSuchAlgorithmException

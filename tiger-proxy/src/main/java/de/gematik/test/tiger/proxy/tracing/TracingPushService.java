@@ -159,9 +159,9 @@ public class TracingPushService {
     if (msg.hasFacet(TigerNonPairedMessageFacet.class)) {
       sendNonPairedMessage(msg);
     } else if (msg.hasFacet(RbelHttpResponseFacet.class)
-        || (msg.getFacet(TracingMessagePairFacet.class)
+        || msg.getFacet(TracingMessagePairFacet.class)
             .map(facet -> facet.isResponse(msg))
-            .orElse(false))) {
+            .orElse(false)) {
       sendPairedMessage(msg);
     } else {
       if (log.isTraceEnabled()) {

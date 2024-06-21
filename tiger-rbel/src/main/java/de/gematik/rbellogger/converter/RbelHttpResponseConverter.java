@@ -21,23 +21,64 @@ import static de.gematik.rbellogger.converter.RbelHttpRequestConverter.findEolIn
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.net.MediaType;
+import de.gematik.rbellogger.converter.http.RbelHttpCodingConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.*;
-import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
+import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.util.RbelArrayUtils;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.AbstractMap.SimpleImmutableEntry;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.InflaterInputStream;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class RbelHttpResponseConverter implements RbelConverterPlugin {
+
+  private Map<String, RbelHttpCodingConverter> httpCodingsMap = Map.of(
+    "chunked", RbelHttpResponseConverter::decodeChunked,
+    "deflate", RbelHttpResponseConverter::decodeDeflate,
+    "gzip", RbelHttpResponseConverter::decodeGzip
+  );
+
+  private static byte[] decodeGzip(byte[] bytes, String eol, Charset charset) {
+    try (final InputStream inputStream = new GZIPInputStream(new ByteArrayInputStream(bytes))) {
+      return inputStream.readAllBytes();
+    } catch (Exception e) {
+      throw new RbelConversionException("Error while decoding gzip content", e);
+    }
+  }
+
+  private static byte[] decodeDeflate(byte[] bytes, String eol, Charset charset) {
+    try (final InputStream inputStream = new InflaterInputStream(new ByteArrayInputStream(bytes))) {
+      return inputStream.readAllBytes();
+    } catch (Exception e) {
+      throw new RbelConversionException("Error while decoding gzip content", e);
+    }
+  }
+
+  private static byte[] decodeChunked(byte[] inputData, String eol, Charset charset) {
+    int chunkSeparator = new String(inputData, charset).indexOf(eol) + eol.length();
+
+    final int indexOfChunkTerminator =
+      RbelArrayUtils.indexOf(
+        inputData, (eol + "0" + eol).getBytes(charset), chunkSeparator);
+    if (indexOfChunkTerminator >= 0) {
+      return Arrays.copyOfRange(
+        inputData, Math.min(inputData.length, chunkSeparator), indexOfChunkTerminator);
+    } else {
+      throw new RbelConversionException(
+        "Detected incorrect use of chunked encoding: Chunked was given as"
+        + " transfer-encoding, but the chunk-separator could not be found in the"
+        + " content. Message will not be parsed.");
+    }
+  }
 
   @Override
   public boolean ignoreOversize() {
@@ -45,7 +86,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
   }
 
   @Override
-  public void consumeElement(final RbelElement targetElement, final RbelConverter converter) {
+  public void consumeElement(RbelElement targetElement, final RbelConverter converter) {
     final String content = targetElement.getRawStringContent();
     if (!content.startsWith("HTTP")) {
       return;
@@ -61,7 +102,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
     final RbelElement headerElement = extractHeaderFromMessage(targetElement, converter, eol);
 
-    final byte[] bodyData =
+    final byte[] rawBodyData =
         extractBodyData(
             targetElement,
             endOfHeadIndex,
@@ -69,7 +110,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
             eol);
     final RbelElement bodyElement =
         new RbelElement(
-            bodyData,
+            rawBodyData,
             targetElement,
             findCharsetInHeader(headerElement.getFacetOrFail(RbelHttpHeaderFacet.class)));
     final RbelElement responseCode = extractResponseCodeFromMessage(targetElement, content);
@@ -125,7 +166,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
     RbelElement headerElement =
         new RbelElement(
-            headerList.stream().collect(Collectors.joining(eol)).getBytes(rbel.getElementCharset()),
+            String.join(eol, headerList).getBytes(rbel.getElementCharset()),
             rbel);
     final RbelMultiMap<RbelElement> headerMap =
         headerList.stream()
@@ -169,34 +210,43 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
     }
   }
 
-  private byte[] extractBodyData(
+  public byte[] extractBodyData(
       final RbelElement rbel,
-      final int separator,
+      final int offset,
       final RbelHttpHeaderFacet headerMap,
       final String eol) {
-    byte[] inputData = rbel.getRawContent();
+    byte[] inputData = Arrays.copyOfRange(rbel.getRawContent(), offset, rbel.getRawContent().length);
 
-    if (headerMap.hasValueMatching("Transfer-Encoding", "chunked")) {
-      int chunkSeperator = rbel.getRawStringContent().indexOf(eol, separator) + eol.length();
+    return applyCodings(applyCodings(inputData, headerMap, eol, rbel.getElementCharset(), "Transfer-Encoding"),
+      headerMap, eol, rbel.getElementCharset(), "Content-Encoding");
+  }
 
-      final int indexOfChunkTerminator =
-          RbelArrayUtils.indexOf(
-              inputData, (eol + "0" + eol).getBytes(rbel.getElementCharset()), chunkSeperator);
-      if (indexOfChunkTerminator >= 0) {
-        return Arrays.copyOfRange(
-            inputData, Math.min(inputData.length, chunkSeperator), indexOfChunkTerminator);
-      } else {
-        rbel.addFacet(
-            RbelNoteFacet.builder()
-                .style(NoteStyling.WARN)
-                .value(
-                    "Detected incorrect use of chunked encoding: Chunked was given as"
-                        + " transfer-encoding, but the chunk-seperator could not be found in the"
-                        + " content. Displaying the message as-is.")
-                .build());
-      }
+  public byte[] applyCodings(
+      final byte[] inputData,
+      final RbelHttpHeaderFacet headerMap,
+      final String eol, Charset charset, String codingKey) {
+    final List<RbelHttpCodingConverter> codingConverters = headerMap.getCaseInsensitiveMatches(codingKey)
+      .map(RbelElement::getRawStringContent)
+      .filter(Objects::nonNull)
+      .map(s -> s.split(","))
+      .flatMap(Arrays::stream)
+      .map(String::toLowerCase)
+      .map(String::trim)
+      .map(encoding -> {
+        if (!httpCodingsMap.containsKey(encoding)) {
+          throw new RbelConversionException("Unsupported encoding found in HTTP header: " + encoding);
+        }
+        return httpCodingsMap.get(encoding);
+      })
+      .toList();
+
+    byte[] data = inputData;
+    
+    for (RbelHttpCodingConverter codingConverter : codingConverters) {
+      data = codingConverter.decode(data, eol, charset);
     }
-    return Arrays.copyOfRange(inputData, Math.min(inputData.length, separator), inputData.length);
+
+    return data;
   }
 
   protected SimpleImmutableEntry<String, RbelElement> parseStringToKeyValuePair(

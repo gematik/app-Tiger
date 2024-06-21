@@ -21,6 +21,7 @@ import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelBinaryFacet;
 import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
+import de.gematik.rbellogger.data.facet.RbelNoteFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
 import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
@@ -51,7 +52,7 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
   @Override
   public void onProxy(
       BinaryMessage binaryRequest,
-      CompletableFuture<BinaryMessage> binaryResponseFuture,
+      Optional<CompletableFuture<BinaryMessage>> binaryResponseFuture,
       SocketAddress serverAddress,
       SocketAddress clientAddress) {
     try {
@@ -67,48 +68,50 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
               getTigerProxy().triggerListener(msg);
             });
       }
-      binaryResponseFuture
-          .thenApply(
-              binaryResponse ->
-                  convertBinaryMessageOrPushToBuffer(binaryResponse, serverAddress, clientAddress))
-          .thenAccept(
-              convertedResponse -> {
-                if (shouldWaitForResponse) {
-                  if (convertedResponse.isPresent() && convertedRequest.isPresent()) {
-                    final TracingMessagePairFacet pairFacet =
-                        new TracingMessagePairFacet(
-                            convertedResponse.get(), convertedRequest.get());
-                    convertedRequest.get().addOrReplaceFacet(pairFacet);
-                    convertedResponse.get().addOrReplaceFacet(pairFacet);
-                    getTigerProxy().triggerListener(convertedRequest.get());
-                    getTigerProxy().triggerListener(convertedResponse.get());
-                  } else {
-                    convertedRequest
-                        .or(() -> convertedResponse)
-                        .ifPresent(
-                            msg -> {
-                              msg.addOrReplaceFacet(new TigerNonPairedMessageFacet());
-                              getTigerProxy().triggerListener(msg);
-                            });
-                  }
-                } else {
-                  convertedResponse.ifPresent(
-                      msg -> {
-                        msg.addOrReplaceFacet(new TigerNonPairedMessageFacet());
-                        getTigerProxy().triggerListener(msg);
-                      });
-                }
-              })
-          .exceptionally(
-              t -> {
-                if (isConnectionResetException(t)) {
-                  log.trace("Connection reset:", t);
-                } else {
-                  log.warn("Exception during Direct-Proxy handling:", t);
-                  propagateExceptionMessageSafe(t);
-                }
-                return null;
-              });
+      binaryResponseFuture.ifPresent(
+          f ->
+              f.thenApply(
+                      binaryResponse ->
+                          convertBinaryMessageOrPushToBuffer(
+                              binaryResponse, serverAddress, clientAddress))
+                  .thenAccept(
+                      convertedResponse -> {
+                        if (shouldWaitForResponse) {
+                          if (convertedResponse.isPresent() && convertedRequest.isPresent()) {
+                            final TracingMessagePairFacet pairFacet =
+                                new TracingMessagePairFacet(
+                                    convertedResponse.get(), convertedRequest.get());
+                            convertedRequest.get().addOrReplaceFacet(pairFacet);
+                            convertedResponse.get().addOrReplaceFacet(pairFacet);
+                            getTigerProxy().triggerListener(convertedRequest.get());
+                            getTigerProxy().triggerListener(convertedResponse.get());
+                          } else {
+                            convertedRequest
+                                .or(() -> convertedResponse)
+                                .ifPresent(
+                                    msg -> {
+                                      msg.addOrReplaceFacet(new TigerNonPairedMessageFacet());
+                                      getTigerProxy().triggerListener(msg);
+                                    });
+                          }
+                        } else {
+                          convertedResponse.ifPresent(
+                              msg -> {
+                                msg.addOrReplaceFacet(new TigerNonPairedMessageFacet());
+                                getTigerProxy().triggerListener(msg);
+                              });
+                        }
+                      })
+                  .exceptionally(
+                      t -> {
+                        if (isConnectionResetException(t)) {
+                          log.trace("Connection reset:", t);
+                        } else {
+                          log.warn("Exception during Direct-Proxy handling:", t);
+                          propagateExceptionMessageSafe(t);
+                        }
+                        return null;
+                      }));
       log.trace("Returning from BinaryExchangeHandler!");
     } catch (RuntimeException e) {
       log.warn("Uncaught exception during handling of request", e);
@@ -158,34 +161,23 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
 
   private Optional<RbelElement> tryToConvertMessageAndBufferUnusedBytes(
       BinaryMessage message, SocketAddress senderAddress, SocketAddress receiverAddress) {
+    var key = Pair.of(senderAddress, receiverAddress);
     final Optional<RbelElement> requestOptional =
-        tryToConvertMessage(message.getBytes(), senderAddress, receiverAddress)
-            .or(
-                () ->
-                    addBufferToMessage(message, senderAddress, receiverAddress)
-                        .flatMap(
-                            addedBufferBytes ->
-                                tryToConvertMessage(
-                                    addedBufferBytes, senderAddress, receiverAddress)));
-    if (requestOptional.isEmpty()) {
-      final Pair<SocketAddress, SocketAddress> key = Pair.of(senderAddress, receiverAddress);
-      byte[] previouslyBufferedBytes = bufferedParts.get(key);
-      if (previouslyBufferedBytes == null) {
-        bufferedParts.put(key, message.getBytes());
-      } else {
-        bufferedParts.put(key, Arrays.concatenate(previouslyBufferedBytes, message.getBytes()));
-      }
+        tryToConvertMessage(addBufferToMessage(message, key), senderAddress, receiverAddress);
+    if (requestOptional.isPresent()) {
+      bufferedParts.remove(key);
     }
     return requestOptional;
   }
 
-  private Optional<byte[]> addBufferToMessage(
-      BinaryMessage message, SocketAddress senderAddress, SocketAddress receiverAddress) {
-    byte[] bufferedBytes = bufferedParts.get(Pair.of(senderAddress, receiverAddress));
-    if (bufferedBytes == null) {
-      return Optional.empty();
+  private byte[] addBufferToMessage(BinaryMessage message, Pair<SocketAddress, SocketAddress> key) {
+    byte[] bufferedBytes = bufferedParts.get(key);
+    var resultMessage = message.getBytes();
+    if (bufferedBytes != null) {
+      resultMessage = Arrays.concatenate(bufferedBytes, resultMessage);
     }
-    return Optional.ofNullable(Arrays.concatenate(bufferedBytes, message.getBytes()));
+    bufferedParts.put(key, resultMessage);
+    return resultMessage;
   }
 
   private Optional<RbelElement> tryToConvertMessage(
@@ -199,7 +191,7 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
                 toRbelHostname(senderAddress),
                 toRbelHostname(receiverAddress),
                 Optional.empty());
-    if (result.getFacets().size() <= 1) {
+    if (result.getFacets().stream().filter(f -> !(f instanceof RbelNoteFacet)).count() <= 1) {
       getTigerProxy().getRbelLogger().getRbelConverter().removeMessage(result);
       return Optional.empty();
     }

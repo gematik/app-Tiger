@@ -46,6 +46,13 @@ class ZQuitTests extends AbstractTests {
   }
 
   @Test
+  void testQuitMessageOnSidebar() {
+    page.querySelector("#test-tiger-logo").click();
+    assertThat(page.querySelector("#test-sidebar-stop-message").isVisible()).isTrue();
+    PlaywrightAssertions.assertThat(page.locator("#test-sidebar-stop-message")).isVisible();
+  }
+
+  @Test
   void testClickOnLastRequestChangesPageNumberInRbelLogDetails() {
     page.querySelector("#test-execution-pane-tab").click();
     page.locator("#test-webui-slider").click();

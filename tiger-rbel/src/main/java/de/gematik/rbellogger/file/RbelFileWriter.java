@@ -75,23 +75,28 @@ public class RbelFileWriter {
   }
 
   private List<RbelElement> readRbelFileStream(Stream<String> rbelFileStream) {
-    final List<String> rawMessageStrings = rbelFileStream.filter(StringUtils::isNotEmpty).toList();
+    final List<String> rawMessageStrings = rbelFileStream.filter(StringUtils::isNotBlank).toList();
     log.info("Found {} messages in file, starting parsing...", rawMessageStrings.size());
     AtomicInteger numberOfParsedMessages = new AtomicInteger(0);
-    final List<RbelElement> list = rawMessageStrings.stream()
-      .peek( // NOSONAR
-        str -> {
-          if ((numberOfParsedMessages.getAndIncrement() % 500) == 0 && numberOfParsedMessages.get() > 0) {
-            log.info("Parsed {} messages, continuing...", numberOfParsedMessages);
-          }
-        })
-      .map(JSONObject::new)
-      .sorted(Comparator.comparing(json -> json.optInt(SEQUENCE_NUMBER, Integer.MAX_VALUE)))
-      .map(this::parseFileObject)
-      .filter(Optional::isPresent)
-      .map(Optional::get)
-      .toList();
-    log.info("Parsing complete, parsed {} messages of {} available", list.size(), rawMessageStrings.size());
+    final List<RbelElement> list =
+        rawMessageStrings.stream()
+            .peek( // NOSONAR
+                str -> {
+                  if ((numberOfParsedMessages.getAndIncrement() % 500) == 0
+                      && numberOfParsedMessages.get() > 0) {
+                    log.info("Parsed {} messages, continuing...", numberOfParsedMessages);
+                  }
+                })
+            .map(JSONObject::new)
+            .sorted(Comparator.comparing(json -> json.optInt(SEQUENCE_NUMBER, Integer.MAX_VALUE)))
+            .map(this::parseFileObject)
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .toList();
+    log.info(
+        "Parsing complete, parsed {} messages of {} available",
+        list.size(),
+        rawMessageStrings.size());
     return list;
   }
 

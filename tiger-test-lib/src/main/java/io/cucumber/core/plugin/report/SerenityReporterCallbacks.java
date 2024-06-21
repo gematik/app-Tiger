@@ -462,7 +462,7 @@ public class SerenityReporterCallbacks {
     String featureName =
         featureFrom(context.currentFeaturePath()).map(Feature::getName).orElse("?");
     List<MessageMetaDataDto> stepMessagesMetaDataList =
-        new ArrayList<>(LocalProxyRbelMessageListener.getStepRbelMessages())
+        new ArrayList<>(LocalProxyRbelMessageListener.getInstance().getStepRbelMessages())
             .stream().map(MessageMetaDataDto::createFrom).toList();
 
     Map<String, String> variantDataMap = getVariantDataMap(context);
@@ -509,7 +509,7 @@ public class SerenityReporterCallbacks {
                                                 .build())))
                                 .build())))
                 .build());
-    LocalProxyRbelMessageListener.getStepRbelMessages().clear();
+    LocalProxyRbelMessageListener.getInstance().getStepRbelMessages().clear();
   }
 
   // -------------------------------------------------------------------------------------------------------------------------------------
@@ -528,8 +528,9 @@ public class SerenityReporterCallbacks {
     switch (scenarioStatus) {
       case "PASSED" -> scPassed++;
       case "ERROR", "FAILED" -> scFailed++;
-      default -> throw new UnsupportedOperationException(
-          "Unsupported scenario: %s".formatted(scenarioStatus));
+      default ->
+          throw new UnsupportedOperationException(
+              "Unsupported scenario: %s".formatted(scenarioStatus));
     }
     log.info(
         "------------ STATUS: {} passed {}",
@@ -593,7 +594,8 @@ public class SerenityReporterCallbacks {
       }
       var rbelRenderer = getRbelHtmlRenderer(scenarioName, scenarioUri);
 
-      String html = rbelRenderer.doRender(LocalProxyRbelMessageListener.getMessages());
+      String html =
+          rbelRenderer.doRender(LocalProxyRbelMessageListener.getInstance().getMessages());
 
       String name = getFileNameFor("rbel", scenarioName, currentScenarioDataVariantIndex);
       final File logFile = Paths.get(TARGET_DIR, "rbellogs", name).toFile();
@@ -609,7 +611,7 @@ public class SerenityReporterCallbacks {
     } catch (final Exception e) {
       log.error("Unable to create/save rbel log for scenario " + scenarioName, e);
     } finally {
-      LocalProxyRbelMessageListener.clearMessages();
+      LocalProxyRbelMessageListener.getInstance().clearMessages();
     }
   }
 

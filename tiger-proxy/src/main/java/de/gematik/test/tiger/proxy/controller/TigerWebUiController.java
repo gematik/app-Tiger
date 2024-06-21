@@ -68,7 +68,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Data
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("webui")
+@RequestMapping({"webui", "/"})
 @Validated
 @Slf4j
 public class TigerWebUiController implements ApplicationContextAware {
@@ -695,7 +695,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     }
   }
 
-  @PostMapping(value = "/traffic")
+  @PostMapping(value = "/importTraffic")
   public void importTrafficFromFile(@RequestBody String rawTraffic) {
     tigerProxy.readTrafficFromString(rawTraffic);
   }

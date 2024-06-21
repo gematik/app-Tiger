@@ -59,9 +59,9 @@ import org.mockserver.junit.jupiter.MockServerExtension;
 @Slf4j
 public class TestHttpClientSteps {
 
-  private final HttpGlueCode httpGlueCode = new HttpGlueCode();
-  private final RBelValidatorGlue rbelValidatorGlueCode = new RBelValidatorGlue();
-  private final TigerGlue tigerGlue = new TigerGlue();
+  private HttpGlueCode httpGlueCode;
+  private RBelValidatorGlue rbelValidatorGlueCode;
+  private TigerGlue tigerGlue;
 
   @BeforeAll
   public static void resetTiger() {
@@ -75,6 +75,9 @@ public class TestHttpClientSteps {
       TigerDirector.start();
       TigerDirector.getLibConfig().getHttpClientConfig().setActivateRbelWriter(true);
     }
+    httpGlueCode = new HttpGlueCode();
+    rbelValidatorGlueCode = new RBelValidatorGlue();
+    tigerGlue = new TigerGlue();
     rbelValidatorGlueCode.tgrClearRecordedMessages();
   }
 
