@@ -140,6 +140,7 @@ pipeline {
             }
         }
         stage('Retag Docker Images') {
+
             matrix {
                 axes {
                     axis {
@@ -149,6 +150,7 @@ pipeline {
                 }
                 environment {
                     IMAGE_NAME = "tiger/${APP}"
+                    DOCKER_TARGET_REGISTRY = dockerGetGematikRegistry('EUWEST3')
                 }
                 stages {
                     stage('Retag Docker Image') {
