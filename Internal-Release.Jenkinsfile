@@ -55,6 +55,8 @@ pipeline {
                 TAG_NAME = 'Release/ReleaseBuild'
                 DOCKER_TARGET_REGISTRY = dockerGetGematikRegistry('EUWEST3')
             }
+        }
+        stage('Tiger Release Stages') {
             stages {
                 stage('Create Release-Tag') {
                     steps {
