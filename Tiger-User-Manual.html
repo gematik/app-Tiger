@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.22">
+<meta name="generator" content="Asciidoctor 2.0.23">
 <meta name="description" content="User Manual for Tiger">
 <meta name="author" content="TIGER@gematik.de">
 <title>Tiger User Manual</title>
@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 3.0.5-SNAPSHOT - 2024-06-04</span>
+<span id="revdate">Version 3.1.1-SNAPSHOT - 2024-06-21</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -286,8 +286,9 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_using_the_cucumber_tiger_validation_steps">5.3. Using the Cucumber Tiger validation steps</a></li>
 <li><a href="#_modifying_rbelobjects_rbelbuilder">5.4. Modifying RbelObjects (RbelBuilder)</a></li>
 <li><a href="#_using_the_http_client_steps">5.5. Using the HTTP client steps</a></li>
-<li><a href="#_using_tiger_test_lib_helper_classes">5.6. Using Tiger test lib helper classes</a></li>
-<li><a href="#_synchronizing_bdd_scenarios_with_polarion_test_cases_gematik_only">5.7. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</a></li>
+<li><a href="#_json_schema_validation">5.6. JSON Schema Validation</a></li>
+<li><a href="#_using_tiger_test_lib_helper_classes">5.7. Using Tiger test lib helper classes</a></li>
+<li><a href="#_synchronizing_bdd_scenarios_with_polarion_test_cases_gematik_only">5.8. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_configuration">6. Tiger Configuration</a>
@@ -308,7 +309,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <li><a href="#_tiger_user_interfaces">7. Tiger User interfaces</a>
 <ul class="sectlevel2">
 <li><a href="#_workflow_ui">7.1. Workflow UI</a></li>
-<li><a href="#_web_ui">7.2. Standalone Tiger Proxy UI (WebUI)</a></li>
+<li><a href="#_web_ui">7.2. Standalone Tiger Proxy Log</a></li>
 <li><a href="#_jexl_expression_detail">7.3. Explanation of JEXL Expressions</a></li>
 </ul>
 </li>
@@ -2627,7 +2628,7 @@ The test environment manager boots the main tiger proxy (local tiger proxy) and 
 <div class="paragraph">
 <p>Both types have a proxy-port (configurable via <code>tigerProxy.proxyPort</code>), which supports both http- and https-traffic, (so you do not have to differentiate between the two).<br>
 Additionally, they have an admin-port (configurable via <code>tigerProxy.adminPort</code>).<br>
-This provides a WebUI to monitor the traffic (described in detail <a href="#_web_ui">here</a>), a rest-interface to customize the behavior (add/delete route, add/delete modifications) and a web-socket interface to stream rbel-messages between multiple Tiger Proxies.</p>
+This provides the Tiger Proxy Log to monitor the traffic (described in detail <a href="#_web_ui">here</a>), a rest-interface to customize the behavior (add/delete route, add/delete modifications) and a web-socket interface to stream rbel-messages between multiple Tiger Proxies.</p>
 </div>
 </div>
 <div class="sect2">
@@ -3489,7 +3490,7 @@ These are:</p>
 <p>Traffic filter (trafficEndpointFilterString / readFilter, Determines which messages are accepted into the tiger proxy)</p>
 </li>
 <li>
-<p>WebUI filter (Which messages are displayed in the WebUI?)</p>
+<p>Tiger Proxy Log filter (Which messages are displayed in the Tiger Proxy Log?)</p>
 </li>
 <li>
 <p>Pagination (Look around in smaller pages of messages)</p>
@@ -3534,16 +3535,16 @@ They are however kept in memory since the partner, the response in that case, do
 </div>
 </div>
 <div class="sect3">
-<h4 id="_webui_filter"><a class="anchor" href="#_webui_filter"></a>4.10.2. WebUI filter</h4>
+<h4 id="_tiger_proxy_log_filter"><a class="anchor" href="#_tiger_proxy_log_filter"></a>4.10.2. Tiger Proxy Log filter</h4>
 <div class="paragraph">
-<p>When you display the messages on the WebUI you have the ability to filter out certain messages to be displayed exclusively.<br>
+<p>When you display the messages on the Tiger Proxy Log you have the ability to filter out certain messages to be displayed exclusively.<br>
 The messages, which are filtered out, do still remain stored in the Tiger Proxy.<br>
-Consequently, this has no effect if you store a TGR file (be it via the WebUI or the YAML).</p>
+Consequently, this has no effect if you store a TGR file (be it via the Tiger Proxy Log or the YAML).</p>
 </div>
 <div class="paragraph">
 <p>The menu on the right side will only show the messages being filtered out to avoid confusion.<br>
 However, the messages numbers do reference the order in the main Tiger Proxy store.<br>
-This way they are consistent across different WebUI filters (message #10 will always refer to the same message, regardless of the WebUI filter being applied).</p>
+This way they are consistent across different Tiger Proxy Log filters (message #10 will always refer to the same message, regardless of the Tiger Proxy Log filter being applied).</p>
 </div>
 <div class="paragraph">
 <p>Filter expressions are <a href="#_jexl_expressions">JEXL-expressions</a>.</p>
@@ -3552,9 +3553,9 @@ This way they are consistent across different WebUI filters (message #10 will al
 <div class="sect3">
 <h4 id="_pagination"><a class="anchor" href="#_pagination"></a>4.10.3. Pagination</h4>
 <div class="paragraph">
-<p>Finally, pagination is applied in the WebUI.<br>
-This comes after the WebUI-Filter has been applied.<br>
-So when would filter out every second message via a WebUI-Filter every page would still contain 20 (or whatever page size you have set) messages.</p>
+<p>Finally, pagination is applied in the Tiger Proxy Log.<br>
+This comes after the Tiger Proxy Log-Filter has been applied.<br>
+So when would filter out every second message via a Tiger Proxy Log-Filter every page would still contain 20 (or whatever page size you have set) messages.</p>
 </div>
 <div style="page-break-after: always;"></div>
 </div>
@@ -4288,14 +4289,78 @@ This applies also to objects and arrays as seen in the dummyarray2 entry.</p>
 </ul>
 </div>
 </div>
+</div>
+<div class="sect2">
+<h3 id="_json_schema_validation"><a class="anchor" href="#_json_schema_validation"></a>5.6. JSON Schema Validation</h3>
+<div class="paragraph">
+<p>Using the validation step <code>TGR current response at {string} matches as JSON_SCHEMA:</code> you are able to assert that the content of any RbelPath node complies with the JSON Schema given in the doc string beneath the step.</p>
+</div>
+<div class="paragraph">
+<p>We use the JSON Schema version 2020-12 for validation with the additional feature that we can have placeholders in the schema that will be replaced with values from the Tiger Global Configuration.</p>
+</div>
+<div class="paragraph">
+<p>For example:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="gherkin">TGR current response at &quot;$.body&quot; matches as JSON_SCHEMA:
+&quot;&quot;&quot;
+{
+  &quot;type&quot;: &quot;object&quot;,
+  &quot;properties&quot;: {
+    &quot;name&quot;: {
+      &quot;type&quot;: &quot;string&quot;
+    },
+    &quot;age&quot;: {
+      &quot;type&quot;: &quot;integer&quot;,
+      &quot;minimum&quot;: 0
+    },
+    &quot;email&quot;: {
+      &quot;type&quot;: &quot;string&quot;,
+      &quot;format&quot;: &quot;email&quot;
+    },
+    &quot;address&quot;: {
+      &quot;type&quot;: &quot;string&quot;,
+      &quot;const&quot;: &quot;${tiger.value.from.config}&quot;
+    }
+  },
+  &quot;required&quot;: [
+    &quot;name&quot;,
+    &quot;age&quot;
+  ]
+}
+&quot;&quot;&quot;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>would validate a message with a JSON body like:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="CodeRay highlight"><code data-lang="json">{
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">name</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">hello</span><span class="delimiter">&quot;</span></span>,
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">age</span><span class="delimiter">&quot;</span></span>: <span class="integer">5</span>,
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">email</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">hello@example.com</span><span class="delimiter">&quot;</span></span>,
+  <span class="key"><span class="delimiter">&quot;</span><span class="content">address</span><span class="delimiter">&quot;</span></span>: <span class="string"><span class="delimiter">&quot;</span><span class="content">Friedrichstraße</span><span class="delimiter">&quot;</span></span>
+}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>assuming that the value of <code>${tiger.value.from.config}</code> set in the Tiger Global Configuration is <code>Friedrichstraße</code>.</p>
+</div>
+<div class="paragraph">
+<p>For full details how to specify a JSON Schema, refer to the external resource: <a href="https://json-schema.org/understanding-json-schema/index.html">Understanding JSON Schema</a>.<br>
+In <a href="https://json-schema.org/implementations#validators-web-(online)">this list</a> you can find a list of online validators which you can use to test your schema.<br>
+Remember to test under JSON Schema version 2020-12.</p>
+</div>
 <div class="sect3">
-<h4 id="_regex_matching"><a class="anchor" href="#_regex_matching"></a>5.5.3. Regex matching</h4>
+<h4 id="_regex_matching"><a class="anchor" href="#_regex_matching"></a>5.6.1. Regex matching</h4>
 <div class="paragraph">
 <p>When comparing values (e.g. in the <code>TGR current response body matches:</code>) generally the algorithms check for equality and only check for regex matches if they were not equal.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_complete_set_of_steps_in_validation_glue_code"><a class="anchor" href="#_complete_set_of_steps_in_validation_glue_code"></a>5.5.4. Complete set of steps in validation glue code</h4>
+<h4 id="_complete_set_of_steps_in_validation_glue_code"><a class="anchor" href="#_complete_set_of_steps_in_validation_glue_code"></a>5.6.2. Complete set of steps in validation glue code</h4>
 <div class="sect4">
 <h5 id="_tgr_setze_anfrage_timeout_auf_int_sekunden"><a class="anchor" href="#_tgr_setze_anfrage_timeout_auf_int_sekunden"></a>TGR setze Anfrage Timeout auf {int} Sekunden</h5>
 
@@ -4742,7 +4807,7 @@ XML with given list of diff options.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_complete_set_of_steps_in_http_client_glue_code"><a class="anchor" href="#_complete_set_of_steps_in_http_client_glue_code"></a>5.5.5. Complete set of steps in HTTP client glue code</h4>
+<h4 id="_complete_set_of_steps_in_http_client_glue_code"><a class="anchor" href="#_complete_set_of_steps_in_http_client_glue_code"></a>5.6.3. Complete set of steps in HTTP client glue code</h4>
 <div class="sect4">
 <h5 id="_tgr_send_empty_requesttype_request_to_tigerresolvedurl"><a class="anchor" href="#_tgr_send_empty_requesttype_request_to_tigerresolvedurl"></a>TGR send empty {requestType} request to {tigerResolvedUrl}</h5>
 
@@ -5057,7 +5122,7 @@ following redirects.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_exemplaric_scenario_konnektorfarm_eau_validation"><a class="anchor" href="#_exemplaric_scenario_konnektorfarm_eau_validation"></a>5.5.6. Exemplaric scenario Konnektorfarm EAU validation</h4>
+<h4 id="_exemplaric_scenario_konnektorfarm_eau_validation"><a class="anchor" href="#_exemplaric_scenario_konnektorfarm_eau_validation"></a>5.6.4. Exemplaric scenario Konnektorfarm EAU validation</h4>
 <div class="paragraph">
 <p>The EAU Konnektorfarm scenario is a scenario where customers can use their Primärsystem to test signing and verifying documents via a set of Konnektoren and that this works interoperable.<br>
 For this purpose a phalanx of local Tiger Proxies is set up as reverse proxies for each Konnektor being hosted at the gematik location.<br>
@@ -5251,7 +5316,7 @@ This step subsequently terminates the test execution.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_using_tiger_test_lib_helper_classes"><a class="anchor" href="#_using_tiger_test_lib_helper_classes"></a>5.6. Using Tiger test lib helper classes</h3>
+<h3 id="_using_tiger_test_lib_helper_classes"><a class="anchor" href="#_using_tiger_test_lib_helper_classes"></a>5.7. Using Tiger test lib helper classes</h3>
 <div class="paragraph">
 <p>If you don&#8217;t want to use the Tiger test framework but only pick a few helper classes the following classes might be of interest to you:</p>
 </div>
@@ -5268,7 +5333,7 @@ All classes listed here are part of the tiger-common module
 </table>
 </div>
 <div class="sect3">
-<h4 id="_banner"><a class="anchor" href="#_banner"></a>5.6.1. Banner</h4>
+<h4 id="_banner"><a class="anchor" href="#_banner"></a>5.7.1. Banner</h4>
 <div class="paragraph">
 <p>If you want to use large ASCII art style log banners you may find this class very helpful.<br>
 Supports ANSI coloring and a set of different fonts.<br>
@@ -5276,21 +5341,21 @@ Furthermore, all banner messages are displayed and highlighted in the Workflow U
 </div>
 </div>
 <div class="sect3">
-<h4 id="_tigerserializationutil"><a class="anchor" href="#_tigerserializationutil"></a>5.6.2. TigerSerializationUtil</h4>
+<h4 id="_tigerserializationutil"><a class="anchor" href="#_tigerserializationutil"></a>5.7.2. TigerSerializationUtil</h4>
 <div class="paragraph">
 <p>This class supports you in converting String representation of YAML and JSON data to an Java JSONObject or extract that or other loaded data to Java Maps.<br>
 If you are planning to implement test data management or configuration sets, we propose to use the TigerGlobalConfiguration class described <a href="#_tiger_configuration">in detail here</a>.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_tigerpkiidentityloader_tigerpkiidentity"><a class="anchor" href="#_tigerpkiidentityloader_tigerpkiidentity"></a>5.6.3. TigerPkiIdentityLoader, TigerPkiIdentity</h4>
+<h4 id="_tigerpkiidentityloader_tigerpkiidentity"><a class="anchor" href="#_tigerpkiidentityloader_tigerpkiidentity"></a>5.7.3. TigerPkiIdentityLoader, TigerPkiIdentity</h4>
 <div class="paragraph">
 <p>The loader class allows to easily instantiate PKI identities from given files.<br>
 For more details on the format and the supported file types please check <a href="#_configuring_pki_identities_in_tiger_proxys_tls_section">this section in the test environment chapter</a>.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_performing_rest_calls_with_tiger"><a class="anchor" href="#_performing_rest_calls_with_tiger"></a>5.6.4. Performing REST calls with Tiger</h4>
+<h4 id="_performing_rest_calls_with_tiger"><a class="anchor" href="#_performing_rest_calls_with_tiger"></a>5.7.4. Performing REST calls with Tiger</h4>
 <div class="paragraph">
 <p>Tiger is closely integrated with SerenityBDD, which in turn has integrated the RestAssured library, so if you use the <code>SerenityRest</code> helper class, you will get detailed information about each call inside the test report.<br>
 The Tiger test library configuration also provides a flag to add curl command details to each of these calls, so that you can easily reproduce the REST call manually in case of test failure analysis.</p>
@@ -5311,7 +5376,7 @@ The Tiger test library configuration also provides a flag to add curl command de
 </div>
 </div>
 <div class="sect2">
-<h3 id="_synchronizing_bdd_scenarios_with_polarion_test_cases_gematik_only"><a class="anchor" href="#_synchronizing_bdd_scenarios_with_polarion_test_cases_gematik_only"></a>5.7. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</h3>
+<h3 id="_synchronizing_bdd_scenarios_with_polarion_test_cases_gematik_only"><a class="anchor" href="#_synchronizing_bdd_scenarios_with_polarion_test_cases_gematik_only"></a>5.8. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</h3>
 <div class="paragraph">
 <p>Within gematik we maintain test cases via feature files being committed to git repositories.<br>
 To keep traceability to the requirements maintained in Polarion we have a Tiger sub project that synchronizes test cases in Polarion with the scenarios in our feature files.<br>
@@ -6114,7 +6179,7 @@ Next to the headline there is a link to the <a href="#_web_ui">WebUI (aka Tiger 
 <div class="content">
 <img src="screenshots/maincontent_rbelpath_urllink_highlight.png" alt="maincontent rbelpath urllink highlight">
 </div>
-<div class="title">Figure 36. Link to open the WebUI</div>
+<div class="title">Figure 36. Link to open the Tiger Proxy Log</div>
 </div>
 <div class="paragraph">
 <p>The Rbel Log Details view is described in the <a href="#_web_ui">WebUI</a> section as it is a slimmed down version of the WebUI.<br>
@@ -6173,7 +6238,7 @@ For external jars this can be achieved by configuring the servers with the follo
 </div>
 </div>
 <div class="sect2">
-<h3 id="_web_ui"><a class="anchor" href="#_web_ui"></a>7.2. Standalone Tiger Proxy UI (WebUI)</h3>
+<h3 id="_web_ui"><a class="anchor" href="#_web_ui"></a>7.2. Standalone Tiger Proxy Log</h3>
 <div class="paragraph">
 <p>To watch the recorded messages and to be able to analyze issues at test run time already you can visit the Tiger Proxy web user interface at:</p>
 </div>
@@ -6199,7 +6264,7 @@ The user can see the request type and the error code of the response as well as 
 <div class="content">
 <img src="screenshots/webui.png" alt="webui">
 </div>
-<div class="title">Figure 38. Tiger Proxy UI / WebUI</div>
+<div class="title">Figure 38. Tiger Proxy Log</div>
 </div>
 <div class="paragraph">
 <p>On the top right the tiger version and the build date are displayed.<br>
@@ -7303,7 +7368,7 @@ This is an internal gematik extension and can be found on GitLab <a href="https:
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-06-04 07:18:37 UTC
+Last updated 2024-06-21 12:38:01 UTC
 </div>
 </div>
 </body>
