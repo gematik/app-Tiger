@@ -1,6 +1,6 @@
 # Changelog Tiger Test platform
 
-# Release 3.0.6
+# Release 3.1.0
 
 * Serenity BDD 4.1.14
 * Cucumber 7.18.0
@@ -8,9 +8,23 @@
 * Selenium 4.18.1
 * Appium 9.0.0
 * Spring Boot 3.3.0
-* Logback 1.4.9
+* Logback 1.5.6
 
-## Breaking changes
+## Breaking Changes
+
+* Because of the new Spring Boot version the following adjustments have to be done
+  add the following in your pom.xml
+  ```
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>1.5.6</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+  """
 
 * TGR-1425: Tiger-Test-Lib: the class LocalProxyRbelMessageListener is refactored to be easier to handle in tests. If
   you are using it directly in your test suite, you need to get an instance
@@ -27,6 +41,7 @@
 
 ## Features
 
+* TGR-1195: UX improvements for Rbel Inspect
 * TGR-1196: Workflow UI improvements (sticky sidebar, quit test run message)
 * TGR-1429: Tiger-Test-Lib: it is now possible to assert if a given Json matches a specified JSON Schema. This allows
   for easier validation of JSON structures.

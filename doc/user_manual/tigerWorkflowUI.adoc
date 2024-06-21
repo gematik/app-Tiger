@@ -116,7 +116,7 @@ image::screenshots/maincontent_rbelpath.png[title="Rbel Log Details"]
 In the Rbel Log Details view the RbelMessages are displayed that are also saved as HTML files as described in the xref:tigerTestLibrary.adoc#_cucumber_hooks[Cucumber and Hooks] section.
 Next to the headline there is a link to the xref:tigerWebUI.adoc#_web_ui[WebUI (aka Tiger Proxy UI)] which opens the WebUI in a new tab as shown in the picture below.
 
-image::screenshots/maincontent_rbelpath_urllink_highlight.png[title="Link to open the WebUI"]
+image::screenshots/maincontent_rbelpath_urllink_highlight.png[title="Link to open the Tiger Proxy Log"]
 
 The Rbel Log Details view is described in the xref:tigerWebUI.adoc#_web_ui[WebUI] section as it is a slimmed down version of the WebUI.
 In order to increase/decrease the width of the Rbel Log Details view the user can drag the border between the main window and the Rbel Log Details view.

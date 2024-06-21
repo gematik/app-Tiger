@@ -363,12 +363,12 @@ pre.json {
     box-shadow: 0 0 0 1px #ddd;
     color: #444;
     padding: 1.25rem;
-}
-
-.box:not(:last-child) {
     margin-bottom: 1.5rem;
 }
-
+#contextParent {
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+}
 .col.is-one-fifth {
     flex: none;
     width: 20%;

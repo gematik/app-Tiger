@@ -760,7 +760,7 @@ async function testRbelExpression() {
         formerResultValue = key;
       });
     } else {
-      rbelResultTree += "<div>None found</div>";
+      rbelResultTree += "<div>No matching elements for " + rbelPath +"</div>";
     }
     document.getElementById("rbelResult").innerHTML =
         rbelResultTree;
