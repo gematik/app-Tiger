@@ -23,10 +23,12 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelPop3ResponseFacet;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -232,8 +234,7 @@ class RbelPop3ResponseConverterTest {
     return convertToRbelElement(request, sender, receiver);
   }
 
-  private RbelElement convertToRbelElement(
-      String input, RbelHostname sender, RbelHostname recipient) {
+  private RbelElement convertToRbelElement(String input, RbelHostname sender, RbelHostname recipient) {
     return converter.parseMessage(
         input.getBytes(StandardCharsets.UTF_8), sender, recipient, Optional.empty());
   }

@@ -93,9 +93,6 @@ public class RbelHtmlRenderer {
 
   public static DomContent showContentButtonAndDialog(
       final RbelElement el, final RbelHtmlRenderingToolkit renderingToolkit) {
-    if (el.getRawContent() == null) {
-      return div();
-    }
     final String id = "dialog" + RandomStringUtils.randomAlphanumeric(20); // NOSONAR
     return span()
         .with(
