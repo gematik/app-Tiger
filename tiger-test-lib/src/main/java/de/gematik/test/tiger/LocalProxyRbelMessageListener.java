@@ -75,7 +75,11 @@ public class LocalProxyRbelMessageListener implements IRbelMessageListener {
   }
 
   public LocalProxyRbelMessageListener() {
-    this(TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail());
+    this(
+        TigerDirector.getTigerTestEnvMgr()
+            .getLocalTigerProxyOptional()
+            .map(RbelMessagesSupplier.class::cast)
+            .orElse(new DoNothingSupplier()));
   }
 
   @Override
@@ -115,5 +119,23 @@ public class LocalProxyRbelMessageListener implements IRbelMessageListener {
     return messagesSupplier.getRbelMessages().stream()
         .dropWhile(e -> lastDeletedElement != null && e != lastDeletedElement)
         .collect(Collectors.toCollection(ArrayDeque::new));
+  }
+}
+
+/**
+ * When starting the tiger test suite with the local tiger proxy active set to false, there are
+ * still code sections that attempt to access the LocalProxyRbelMessageListener. To prevent such
+ * access to throw exceptions, we fallback to this supplier
+ */
+class DoNothingSupplier implements RbelMessagesSupplier {
+
+  @Override
+  public void addRbelMessageListener(IRbelMessageListener listener) {
+    // NOOP
+  }
+
+  @Override
+  public Deque<RbelElement> getRbelMessages() {
+    return new ArrayDeque<>();
   }
 }

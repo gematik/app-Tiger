@@ -1,5 +1,12 @@
 # Changelog Tiger Test platform
 
+# Release 3.1.2
+
+## Bugfixes
+
+* TGR-1439: Tiger-Test-Lib: made usage of LocalProxyRbelMessageListener null safe also when the local tiger proxy is not
+  active.
+
 # Release 3.1.0
 
 * Serenity BDD 4.1.14
@@ -74,6 +81,7 @@ For more details on how to specify a json schema refer to the external
 resource https://jsoneditoronline.org/indepth/validate/json-schema-validator/ .
 In https://json-schema.org/implementations#validators-web-(online) you can find a list of online validators which you
 can use to prepare the schemas. In Tiger we use the **2020-12** version of the JSON Schema specification.
+
 * TGR-1404: Tiger-Proxy: in direct reverse proxy mode the proxy opens immediately a connection to the remote target as
   soon as an incoming connection is established.
 
