@@ -1,5 +1,14 @@
 # Changelog Tiger Test platform
 
+# Release 3.1.2
+
+## Bugfixes
+
+* TGR-1438: Tiger-Test-Lib: make currentResponse and currentRequest in RbelMessageValidator static so that they are
+  shared by multiple instances of RbelMessageValidator.
+* TGR-1439: Tiger-Test-Lib: made usage of LocalProxyRbelMessageListener null safe also when the local tiger proxy is not
+  active.
+
 # Release 3.1.0
 
 * Serenity BDD 4.1.14

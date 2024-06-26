@@ -22,7 +22,7 @@
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
         <relativePath>../pom.xml</relativePath>
-        <version>3.1.1</version>
+        <version>3.1.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -233,7 +233,7 @@
                     <plugin>
                         <groupId>de.gematik.test</groupId>
                         <artifactId>tiger-maven-plugin</artifactId>
-                        <version>3.1.1</version>
+                        <version>3.1.2</version>
                         <executions>
                             <execution>
                                 <configuration>

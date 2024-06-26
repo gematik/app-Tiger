@@ -94,8 +94,8 @@ class RbelMessageValidatorTest {
     when(tigerProxy.getRbelMessages()).thenReturn(validatableMessagesMock);
     rbelMessageValidator = new RbelMessageValidator(mock(TigerTestEnvMgr.class), tigerProxy);
 
-    rbelMessageValidator.currentRequest = null;
-    rbelMessageValidator.currentResponse = null;
+    RbelMessageValidator.currentRequest = null;
+    RbelMessageValidator.currentResponse = null;
     LocalProxyRbelMessageListener.getInstance().clearValidatableRbelMessages();
   }
 
@@ -342,7 +342,7 @@ class RbelMessageValidatorTest {
     addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = rbelMessageValidator;
     validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").build());
-    RbelElement request = validator.currentRequest;
+    RbelElement request = RbelMessageValidator.currentRequest;
     assertTrue(validator.doesHostMatch(request, "localhost:8080"));
   }
 
@@ -363,7 +363,7 @@ class RbelMessageValidatorTest {
 
     validator.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(".*").startFromLastRequest(true).build());
-    RbelElement request = validator.currentRequest;
+    RbelElement request = RbelMessageValidator.currentRequest;
 
     assertTrue(validator.doesHostMatch(request, "eitzen.at:80"));
   }
@@ -373,7 +373,7 @@ class RbelMessageValidatorTest {
     addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = rbelMessageValidator;
     validator.findLastRequest();
-    RbelElement request = validator.currentRequest;
+    RbelElement request = RbelMessageValidator.currentRequest;
     assertTrue(validator.doesHostMatch(request, "eitzen.at:80"));
   }
 
@@ -387,7 +387,7 @@ class RbelMessageValidatorTest {
             .rbelPath("$.header.User-Agent")
             .value("mypersonalagent")
             .build());
-    assertTrue(validator.doesHostMatch(validator.currentRequest, "eitzen.at:80"));
+    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "eitzen.at:80"));
   }
 
   @Test
@@ -416,7 +416,7 @@ class RbelMessageValidatorTest {
             .rbelPath("$.header.User-Agent")
             .value("mypersonal.*")
             .build());
-    assertTrue(validator.doesHostMatch(validator.currentRequest, "eitzen.at:80"));
+    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "eitzen.at:80"));
   }
 
   @Test
@@ -425,7 +425,7 @@ class RbelMessageValidatorTest {
     RbelMessageValidator validator = rbelMessageValidator;
     validator.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").build());
-    assertTrue(validator.doesHostMatch(validator.currentRequest, "localhost:8080"));
+    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "localhost:8080"));
   }
 
   @Test
@@ -434,7 +434,7 @@ class RbelMessageValidatorTest {
     RbelMessageValidator validator = rbelMessageValidator;
     validator.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(".*").rbelPath("$.header.Eitzen-Specific-header").build());
-    assertTrue(validator.doesHostMatch(validator.currentRequest, "eitzen.at:80"));
+    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "eitzen.at:80"));
   }
 
   @Test
@@ -455,10 +455,9 @@ class RbelMessageValidatorTest {
             .rbelPath("$.header.User-Agent")
             .value("mypersonal.*")
             .build());
-    assertTrue(validator.doesHostMatch(validator.currentRequest, "eitzen.at:80"));
+    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "eitzen.at:80"));
     assertThat(
-            validator
-                .currentResponse
+            RbelMessageValidator.currentResponse
                 .getFacet(RbelHttpResponseFacet.class)
                 .get()
                 .getResponseCode()
@@ -547,7 +546,7 @@ class RbelMessageValidatorTest {
     final RbelElement convertedMessage =
         rbelConverter.parseMessage(
             challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
-    validator.currentResponse = convertedMessage;
+    RbelMessageValidator.currentResponse = convertedMessage;
     validatableMessagesMock.add(convertedMessage);
 
     // validate
@@ -629,7 +628,7 @@ class RbelMessageValidatorTest {
     TigerGlobalConfiguration.putValue("value.from.config1", "hello");
     TigerGlobalConfiguration.putValue("value.from.config2", "world");
 
-    rbelMessageValidator.currentRequest =
+    RbelMessageValidator.currentRequest =
         RbelLogger.build()
             .getRbelConverter()
             .parseMessage(responseToCheck.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
@@ -649,7 +648,7 @@ class RbelMessageValidatorTest {
     final RbelElement convertedMessage =
         rbelConverter.parseMessage(
             challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
-    validator.currentRequest = convertedMessage;
+    RbelMessageValidator.currentRequest = convertedMessage;
     validatableMessagesMock.add(convertedMessage);
 
     validator.assertAttributeOfCurrentRequestMatches("$.body.foo", "blala", false);
@@ -664,7 +663,7 @@ class RbelMessageValidatorTest {
     final RbelElement convertedMessage =
         rbelConverter.parseMessage(
             challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
-    validator.currentRequest = convertedMessage;
+    RbelMessageValidator.currentRequest = convertedMessage;
     validatableMessagesMock.add(convertedMessage);
     assertThatThrownBy(
             () -> validator.assertAttributeOfCurrentRequestMatches("$.body.foo", "blabla", true))
@@ -741,7 +740,7 @@ class RbelMessageValidatorTest {
     await().until(() -> searchThread.getState() == Thread.State.WAITING);
     waitForParsing.complete(null);
 
-    assertThat(rbelMessageValidator.getCurrentResponse())
+    assertThat(RbelMessageValidator.getCurrentResponse())
         .extractChildWithPath("$.responseCode")
         .hasStringContentEqualTo("200");
   }
@@ -757,8 +756,8 @@ class RbelMessageValidatorTest {
     rbelMessageValidator.filterRequestsAndStoreInContext(
         RequestParameter.builder().rbelPath("$.path").value("/VAU").build());
 
-    log.info("current request: {} ", http(rbelMessageValidator.currentRequest));
-    log.info("current response: {} ", http(rbelMessageValidator.currentResponse));
+    log.info("current request: {} ", http(RbelMessageValidator.currentRequest));
+    log.info("current response: {} ", http(RbelMessageValidator.currentResponse));
 
     // next request, which comes immediately after the first one, no response in between
     rbelMessageValidator.filterRequestsAndStoreInContext(
@@ -768,10 +767,10 @@ class RbelMessageValidatorTest {
             .build()
             .resolvePlaceholders());
 
-    log.info("current request: {} ", http(rbelMessageValidator.currentRequest));
-    log.info("current response: {} ", http(rbelMessageValidator.currentResponse));
+    log.info("current request: {} ", http(RbelMessageValidator.currentRequest));
+    log.info("current response: {} ", http(RbelMessageValidator.currentResponse));
 
-    assertThat(rbelMessageValidator.getCurrentRequest())
+    assertThat(RbelMessageValidator.getCurrentRequest())
         .extractChildWithPath("$.path")
         .hasStringContentEqualTo("/1716066754997");
   }
@@ -800,7 +799,7 @@ class RbelMessageValidatorTest {
     final RbelElement convertedMessage =
         rbelConverter.parseMessage(
             challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
-    validator.currentResponse = convertedMessage;
+    RbelMessageValidator.currentResponse = convertedMessage;
     validatableMessagesMock.add(convertedMessage);
 
     return validator;

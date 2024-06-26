@@ -48,7 +48,9 @@ import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import javax.xml.transform.Source;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.iterators.ReverseListIterator;
@@ -86,8 +88,13 @@ public class RbelMessageValidator {
   private final TigerTestEnvMgr tigerTestEnvMgr;
   private final TigerProxy tigerProxy;
 
-  @Getter protected RbelElement currentRequest;
-  @Getter protected RbelElement currentResponse;
+  @Setter(AccessLevel.PROTECTED)
+  @Getter
+  protected static RbelElement currentRequest;
+
+  @Setter(AccessLevel.PROTECTED)
+  @Getter
+  protected static RbelElement currentResponse;
 
   public RbelMessageValidator() {
     this(
@@ -114,7 +121,7 @@ public class RbelMessageValidator {
 
   public void filterRequestsAndStoreInContext(final RequestParameter requestParameter) {
     final int waitsec = RBEL_REQUEST_TIMEOUT.getValue().orElse(5);
-    currentRequest = findMessageByDescription(requestParameter);
+    setCurrentRequest(findMessageByDescription(requestParameter));
     try {
       await("Waiting for matching response")
           .atMost(waitsec, TimeUnit.SECONDS)
@@ -128,7 +135,11 @@ public class RbelMessageValidator {
                               resp ->
                                   resp.getFacetOrFail(RbelHttpResponseFacet.class).getRequest()
                                       == currentRequest)
-                          .map(rbelElement -> currentResponse = rbelElement)
+                          .map(
+                              rbelElement -> {
+                                setCurrentResponse(rbelElement);
+                                return rbelElement;
+                              })
                           .findAny()
                           .isPresent());
       if (tigerTestEnvMgr.isShouldAbortTestExecution()) {
@@ -627,12 +638,12 @@ public class RbelMessageValidator {
             .filter(msg -> msg.hasFacet(RbelRequestFacet.class))
             .findFirst()
             .orElseThrow(() -> new TigerLibraryException("No Request found."));
-    this.currentRequest = lastRequest;
-    this.currentResponse =
+    setCurrentRequest(lastRequest);
+    setCurrentResponse(
         lastRequest
             .getFacet(TracingMessagePairFacet.class)
             .map(TracingMessagePairFacet::getResponse)
-            .orElse(null);
+            .orElse(null));
   }
 
   public void readTgrFile(String filePath) {
