@@ -632,7 +632,7 @@ public class RBelValidatorGlue {
   @Then("TGR print current response as rbel-tree")
   @SuppressWarnings("java:S106")
   public void printCurrentResponse() {
-    System.out.println(getRbelValidator().getCurrentResponse().printTreeStructure());
+    System.out.println(RbelMessageValidator.getCurrentResponse().printTreeStructure());
   }
 
   /** Prints the rbel-tree of the current request to the System-out */
@@ -640,7 +640,7 @@ public class RBelValidatorGlue {
   @Then("TGR print current request as rbel-tree")
   @SuppressWarnings("java:S106")
   public void printCurrentRequest() {
-    System.out.println(getRbelValidator().getCurrentRequest().printTreeStructure());
+    System.out.println(RbelMessageValidator.getCurrentRequest().printTreeStructure());
   }
 
   /** Read TGR file and sends messages to local Tiger proxy */
