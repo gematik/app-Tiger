@@ -235,7 +235,7 @@ table.CodeRay td.code{padding:0 0 0 .75em}
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 3.1.1-SNAPSHOT - 2024-06-24</span>
+<span id="revdate">Version 3.1.2-SNAPSHOT - 2024-06-26</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -699,8 +699,19 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
           or from gematik internal Nexus
           https://nexus.prod.ccs.gematik.solutions/#browse/search=keyword%3Dtiger-test-lib
         --&gt;</span>
-        <span class="tag">&lt;version.tiger&gt;</span>3.0.0<span class="tag">&lt;/version.tiger&gt;</span>
+        <span class="tag">&lt;version.tiger&gt;</span>3.1.1<span class="tag">&lt;/version.tiger&gt;</span>
+        <span class="tag">&lt;version.logback&gt;</span>1.5.6<span class="tag">&lt;/version.logback&gt;</span>
     <span class="tag">&lt;/properties&gt;</span>
+
+    <span class="tag">&lt;dependencyManagement&gt;</span>
+        <span class="tag">&lt;dependencies&gt;</span>
+            <span class="tag">&lt;dependency&gt;</span>
+                <span class="tag">&lt;groupId&gt;</span>ch.qos.logback<span class="tag">&lt;/groupId&gt;</span>
+                <span class="tag">&lt;artifactId&gt;</span>logback-classic<span class="tag">&lt;/artifactId&gt;</span>
+                <span class="tag">&lt;version&gt;</span>${version.logback}<span class="tag">&lt;/version&gt;</span>
+            <span class="tag">&lt;/dependency&gt;</span>
+        <span class="tag">&lt;/dependencies&gt;</span>
+    <span class="tag">&lt;/dependencyManagement&gt;</span>
 
     <span class="comment">&lt;!-- tag::dependencies[] --&gt;</span>
     <span class="tag">&lt;dependencies&gt;</span>
@@ -7368,7 +7379,7 @@ This is an internal gematik extension and can be found on GitLab <a href="https:
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-06-24 07:34:34 UTC
+Last updated 2024-06-26 09:54:47 UTC
 </div>
 </div>
 </body>
