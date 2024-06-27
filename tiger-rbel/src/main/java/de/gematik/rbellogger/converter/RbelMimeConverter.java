@@ -11,6 +11,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import lombok.SneakyThrows;
@@ -49,6 +50,7 @@ public class RbelMimeConverter implements RbelConverterPlugin {
     private RbelElement parseEntity(RbelElement element, Entity message) {
       RbelMimeMessageFacet messageFacet = buildMessageFacet(element, message);
       element.addFacet(messageFacet);
+      element.addFacet(new RbelRootFacet<>(messageFacet));
       messageFacet
           .header()
           .getFacet(RbelMimeHeaderFacet.class)
@@ -68,15 +70,17 @@ public class RbelMimeConverter implements RbelConverterPlugin {
 
     private RbelElement parseHeader(RbelElement element, Header messageHeader) {
       var headerFacet = new RbelMimeHeaderFacet();
+      RbelElement headerElement = RbelElement.wrap(element, messageHeader.toString());
       messageHeader
           .getFieldsAsMap()
           .forEach(
               (name, values) ->
                   values.stream()
                       .map(Field::getBody)
-                      .map(value -> RbelElement.wrap(element, value))
+                      .map(value -> RbelElement.wrap(headerElement, value))
                       .forEach(valueElement -> headerFacet.put(name, valueElement)));
-      return RbelElement.wrap(element, messageHeader.toString()).addFacet(headerFacet);
+
+      return headerElement.addFacet(headerFacet).addFacet(new RbelRootFacet<>(headerFacet));
     }
 
     @SneakyThrows
@@ -95,23 +99,33 @@ public class RbelMimeConverter implements RbelConverterPlugin {
 
     @SneakyThrows
     private RbelElement parseSingleBody(RbelElement element, SingleBody singleBody) {
+      RbelElement bodyElement;
+      RbelMimeBodyFacet bodyFacet;
       if (singleBody instanceof TextBody textBody) {
         try (var reader = textBody.getReader();
             var writer = new StringWriter()) {
           reader.transferTo(writer);
-          return RbelElement.wrap(element, writer);
+          var content = writer.toString();
+          bodyElement = new RbelElement(content.getBytes(), element);
+          bodyFacet = new RbelMimeBodyFacet(content);
+        }
+      } else {
+        try (var in = singleBody.getInputStream();
+            var out =
+                new ByteArrayOutputStream() {
+                  public byte[] getBytes() {
+                    return buf;
+                  }
+                }) {
+          in.transferTo(out);
+          var base64 = Base64.getEncoder().encodeToString(out.getBytes());
+          bodyElement = new RbelElement(out.getBytes(), element);
+          bodyFacet = new RbelMimeBodyFacet(base64);
         }
       }
-      try (var in = singleBody.getInputStream();
-          var out =
-              new ByteArrayOutputStream() {
-                public byte[] getBytes() {
-                  return buf;
-                }
-              }) {
-        in.transferTo(out);
-        return new RbelElement(out.getBytes(), element);
-      }
+      bodyElement.addFacet(bodyFacet);
+      bodyElement.addFacet(new RbelRootFacet<>(bodyFacet));
+      return bodyElement;
     }
 
     private RbelElement parseMultiPartBody(RbelElement parentElement, Multipart multipart) {
