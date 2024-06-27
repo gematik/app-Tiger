@@ -29,7 +29,7 @@ public class TigerPkiIdentity {
 
   private X509Certificate certificate;
   private PrivateKey privateKey;
-  @With private Optional<String> keyId;
+  @With private Optional<String> keyId = Optional.empty();
 
   private final List<X509Certificate> certificateChain = new ArrayList<>();
 

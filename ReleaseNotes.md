@@ -2,6 +2,10 @@
 
 # Release 3.1.2
 
+## Features
+
+* TGR-1395: Implement mail decryption 
+
 ## Bugfixes
 
 * TGR-1438: Tiger-Test-Lib: make currentResponse and currentRequest in RbelMessageValidator static so that they are
