@@ -4,14 +4,10 @@
 
 package de.gematik.test.tiger.glue;
 
-import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.rbellogger.writer.RbelSerializationResult;
-import de.gematik.rbellogger.writer.RbelWriter;
+import de.gematik.test.tiger.RbelUtil;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.lib.TigerDirector;
@@ -22,9 +18,7 @@ import io.restassured.http.Method;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Consumer;
+
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,8 +32,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class TigerParameterTypeDefinitions {
   private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
-  private static RbelLogger rbelLogger;
-  private static RbelWriter rbelWriter;
+  private static final RbelUtil RBEL_UTIL = new RbelUtil();
 
   protected TigerParameterTypeDefinitions() {}
 
@@ -108,42 +101,12 @@ public class TigerParameterTypeDefinitions {
     final String resolvedInput = TigerGlobalConfiguration.resolvePlaceholders(value);
     TigerLibConfig libConfig = TigerDirector.getLibConfig();
     if (libConfig != null && libConfig.getHttpClientConfig().isActivateRbelWriter()) {
-      final RbelElement input = getRbelConverter().convertElement(resolvedInput, null);
-      return getRbelWriter().serialize(input, new TigerJexlContext().withRootElement(input));
+      final RbelElement input = RBEL_UTIL.getRbelConverter().convertElement(resolvedInput, null);
+      return RBEL_UTIL.getRbelWriter().serialize(input, new TigerJexlContext().withRootElement(input));
     } else {
       return RbelSerializationResult.withUnknownType(resolvedInput.getBytes(DEFAULT_CHARSET));
     }
   }
 
-  private static RbelWriter getRbelWriter() {
-    assureRbelIsInitialized();
-    return rbelWriter;
-  }
 
-  private static RbelConverter getRbelConverter() {
-    assureRbelIsInitialized();
-    return rbelLogger.getRbelConverter();
-  }
-
-  private static synchronized void assureRbelIsInitialized() {
-    if (rbelWriter == null) {
-      rbelLogger =
-          RbelLogger.build(
-              RbelConfiguration.builder()
-                  .activateAsn1Parsing(true)
-                  .initializers(
-                      Optional.ofNullable(
-                              TigerDirector.getTigerTestEnvMgr()
-                                  .getConfiguration()
-                                  .getTigerProxy()
-                                  .getKeyFolders())
-                          .stream()
-                          .flatMap(List::stream)
-                          .map(RbelKeyFolderInitializer::new)
-                          .map(init -> (Consumer<RbelConverter>) init)
-                          .toList())
-                  .build());
-      rbelWriter = new RbelWriter(rbelLogger.getRbelConverter());
-    }
-  }
 }
