@@ -36,6 +36,10 @@ public class TigerHttpClient {
   private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
   public static final String KEY_DEFAULT_HEADER = "defaultHeader";
 
+  private TigerHttpClient() {
+    // hide constructor
+  }
+
   public static void executeCommandInBackground(SoftAssertionsProvider.ThrowingRunnable command) {
     TigerDirector.getTigerTestEnvMgr()
         .getCachedExecutor()
