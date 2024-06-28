@@ -23,6 +23,10 @@ import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.SoftAssertionsProvider;
 
+/**
+ * This class provides methods to send requests with RestAssured. It also provides methods to
+ * resolve placeholders in the request body and send the resolved body.
+ */
 public class TigerHttpClient {
 
   public static final String KEY_HTTP_CLIENT = "httpClient";
@@ -36,10 +40,19 @@ public class TigerHttpClient {
   private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
   public static final String KEY_DEFAULT_HEADER = "defaultHeader";
 
-  private TigerHttpClient() {
-    // hide constructor
-  }
-
+  /**
+   * Create a configurable RequestSpecification with default Tiger headers. Example:
+   *
+   * <pre>
+   *  givenDefaultSpec()
+   *    .formParams(resolveMap(dataAsMaps.get(0), true))
+   *    .headers(Map.of("header", "value"))
+   *    .contentType(ContentType.JSON)
+   *    .request(method, address));
+   * </pre>
+   *
+   * @return configurable RequestSpecification
+   */
   public static RequestSpecification givenDefaultSpec() {
     var encoderConfig =
         RestAssured.config()

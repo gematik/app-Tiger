@@ -5,6 +5,7 @@
 ## Features
 
 * TGR-1395: Implement mail decryption 
+* TGR-1443: REST requests are now fully configurable via TigerHttpClient
 
 ## Bugfixes
 
