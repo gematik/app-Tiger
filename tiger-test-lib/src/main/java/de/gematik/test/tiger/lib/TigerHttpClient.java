@@ -36,21 +36,8 @@ public class TigerHttpClient {
   private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
   public static final String KEY_DEFAULT_HEADER = "defaultHeader";
 
-    private TigerHttpClient() {
-        // hide constructor
-    }
-
-  public static void executeCommandInBackground(SoftAssertionsProvider.ThrowingRunnable command) {
-    TigerDirector.getTigerTestEnvMgr()
-        .getCachedExecutor()
-        .submit(
-            () -> {
-              try {
-                command.run();
-              } catch (Exception e) {
-                throw new TigerHttpGlueCodeException("Error during request execution", e);
-              }
-            });
+  private TigerHttpClient() {
+    // hide constructor
   }
 
   public static RequestSpecification givenDefaultSpec() {
