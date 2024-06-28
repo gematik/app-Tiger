@@ -4,6 +4,8 @@
 
 package de.gematik.test.tiger.glue;
 
+import static de.gematik.test.tiger.lib.TigerHttpClient.*;
+
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import io.cucumber.datatable.DataTable;
@@ -12,6 +14,7 @@ import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.When;
 import io.restassured.RestAssured;
 import io.restassured.config.RedirectConfig;
+import io.restassured.http.ContentType;
 import io.restassured.http.Method;
 import io.restassured.specification.RequestSpecification;
 import java.net.URI;
@@ -22,8 +25,6 @@ import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-
-import static de.gematik.test.tiger.lib.TigerHttpClient.*;
 
 @SuppressWarnings("unused") // glue code is used via reflection
 @Slf4j

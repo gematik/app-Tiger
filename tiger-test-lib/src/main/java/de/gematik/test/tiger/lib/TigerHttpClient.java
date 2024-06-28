@@ -36,6 +36,37 @@ public class TigerHttpClient {
   private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
   public static final String KEY_DEFAULT_HEADER = "defaultHeader";
 
+  /**
+   * Create a configurable RequestSpecification with default Tiger headers.
+   * Example:
+   * <pre>
+   *  givenDefaultSpec()
+   *    .formParams(resolveMap(dataAsMaps.get(0), true))
+   *    .headers(Map.of("header", "value"))
+   *    .contentType(ContentType.JSON)
+   *    .request(method, address));
+   * </pre>
+   * @return configurable RequestSpecification
+   */
+  public static RequestSpecification givenDefaultSpec() {
+    var encoderConfig =
+        RestAssured.config()
+            .getEncoderConfig()
+            .appendDefaultContentCharsetToContentTypeIfUndefined(true);
+
+    var requestSpecification =
+        RestAssured.given()
+            .urlEncodingEnabled(false)
+            .config(RestAssured.config().encoderConfig(encoderConfig));
+
+    requestSpecification.headers(
+        TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER));
+
+    Optional.ofNullable(((QueryableRequestSpecification) requestSpecification).getContentType())
+        .ifPresent(ct -> setExactContentTypeHeader(requestSpecification, ct));
+    return requestSpecification;
+  }
+
   public static void executeCommandInBackground(SoftAssertionsProvider.ThrowingRunnable command) {
     TigerDirector.getTigerTestEnvMgr()
         .getCachedExecutor()
@@ -49,40 +80,17 @@ public class TigerHttpClient {
             });
   }
 
-  public static RequestSpecification givenDefaultSpec() {
-
-    EncoderConfig encoderConfig =
-        RestAssured.config()
-            .getEncoderConfig()
-            .appendDefaultContentCharsetToContentTypeIfUndefined(true);
-
-    final RequestSpecification requestSpecification =
-        RestAssured.given()
-            .urlEncodingEnabled(false)
-            .config(RestAssured.config().encoderConfig(encoderConfig));
-
-    requestSpecification.headers(
-        TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER));
-
-    contentTypeFromRequestSpec(requestSpecification)
-        .ifPresent(ct -> setExactContentTypeHeader(requestSpecification, ct));
-    return requestSpecification;
-  }
-
-  private static Optional<String> contentTypeFromRequestSpec(
-      RequestSpecification requestSpecification) {
-    return Optional.ofNullable(
-        ((QueryableRequestSpecification) requestSpecification).getContentType());
-  }
-
-  private static void setExactContentTypeHeader(
-      RequestSpecification requestSpecification, String contentType) {
-    requestSpecification.config(
-        RestAssured.config()
-            .encoderConfig(
-                EncoderConfig.encoderConfig()
-                    .appendDefaultContentCharsetToContentTypeIfUndefined(false)));
-    requestSpecification.contentType(contentType);
+  public static void executeCommandWithContingentWait(
+      SoftAssertionsProvider.ThrowingRunnable command) {
+    if (Boolean.TRUE.equals(executeBlocking.getValueOrDefault())) {
+      try {
+        command.run();
+      } catch (Exception e) {
+        throw new TigerHttpGlueCodeException("Error during request execution", e);
+      }
+    } else {
+      executeCommandInBackground(command);
+    }
   }
 
   public static void applyRedirectConfig(RedirectConfig newRedirectConfig) {
@@ -109,19 +117,6 @@ public class TigerHttpClient {
     }
   }
 
-  public static void executeCommandWithContingentWait(
-      SoftAssertionsProvider.ThrowingRunnable command) {
-    if (Boolean.TRUE.equals(executeBlocking.getValueOrDefault())) {
-      try {
-        command.run();
-      } catch (Exception e) {
-        throw new TigerHttpGlueCodeException("Error during request execution", e);
-      }
-    } else {
-      executeCommandInBackground(command);
-    }
-  }
-
   public static void sendResolvedBody(Method method, URI address, String body) {
     sendResolvedBody(method, address, null, body);
   }
@@ -142,5 +137,15 @@ public class TigerHttpClient {
                     ((RequestSpecificationImpl) requestSpecification).getContentType()))
         .ifPresent(requestSpecification::contentType);
     requestSpecification.body(resolved.getContent()).request(method, address);
+  }
+
+  private static void setExactContentTypeHeader(
+      RequestSpecification requestSpecification, String contentType) {
+    requestSpecification.config(
+        RestAssured.config()
+            .encoderConfig(
+                EncoderConfig.encoderConfig()
+                    .appendDefaultContentCharsetToContentTypeIfUndefined(false)));
+    requestSpecification.contentType(contentType);
   }
 }
