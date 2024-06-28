@@ -36,18 +36,23 @@ public class TigerHttpClient {
   private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
   public static final String KEY_DEFAULT_HEADER = "defaultHeader";
 
-  /**
-   * Create a configurable RequestSpecification with default Tiger headers.
-   * Example:
-   * <pre>
-   *  givenDefaultSpec()
-   *    .formParams(resolveMap(dataAsMaps.get(0), true))
-   *    .headers(Map.of("header", "value"))
-   *    .contentType(ContentType.JSON)
-   *    .request(method, address));
-   * </pre>
-   * @return configurable RequestSpecification
-   */
+    private TigerHttpClient() {
+        // hide constructor
+    }
+
+  public static void executeCommandInBackground(SoftAssertionsProvider.ThrowingRunnable command) {
+    TigerDirector.getTigerTestEnvMgr()
+        .getCachedExecutor()
+        .submit(
+            () -> {
+              try {
+                command.run();
+              } catch (Exception e) {
+                throw new TigerHttpGlueCodeException("Error during request execution", e);
+              }
+            });
+  }
+
   public static RequestSpecification givenDefaultSpec() {
     var encoderConfig =
         RestAssured.config()
