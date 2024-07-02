@@ -7,7 +7,7 @@ package de.gematik.test.tiger.glue;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.rbellogger.writer.RbelSerializationResult;
-import de.gematik.test.tiger.RbelUtil;
+import de.gematik.test.tiger.RbelLoggerWriter;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.lib.TigerDirector;
@@ -32,7 +32,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class TigerParameterTypeDefinitions {
   private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
-  private static final RbelUtil RBEL_UTIL = new RbelUtil();
+  private static final RbelLoggerWriter RBEL_UTIL = new RbelLoggerWriter();
 
   protected TigerParameterTypeDefinitions() {}
 
@@ -102,11 +102,11 @@ public class TigerParameterTypeDefinitions {
     TigerLibConfig libConfig = TigerDirector.getLibConfig();
     if (libConfig != null && libConfig.getHttpClientConfig().isActivateRbelWriter()) {
       final RbelElement input = RBEL_UTIL.getRbelConverter().convertElement(resolvedInput, null);
-      return RBEL_UTIL.getRbelWriter().serialize(input, new TigerJexlContext().withRootElement(input));
+      return RBEL_UTIL
+          .getRbelWriter()
+          .serialize(input, new TigerJexlContext().withRootElement(input));
     } else {
       return RbelSerializationResult.withUnknownType(resolvedInput.getBytes(DEFAULT_CHARSET));
     }
   }
-
-
 }
