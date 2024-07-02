@@ -1,8 +1,0 @@
-GET /auth/realms/idp/.well-known/openid-configuration?with=parameter&foo=bar1&foo=bar2&noValueJustKey HTTP/1.1
-Accept: */*
-Host: eitzen.at:80
-Connection: Keep-Alive
-User-Agent: mypersonalagent
-Accept-Encoding: gzip,deflate
-Eitzen-Specific-header: itsMeMario
-

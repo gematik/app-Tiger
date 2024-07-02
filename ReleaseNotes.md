@@ -1,11 +1,32 @@
 # Changelog Tiger Test platform
 
-# Release 3.1.2
+# Release 3.1.3
+
+## Breaking Changes
+
+* TGR-1394: Tiger-Test-Lib: the glue code
+  step `TGR filter requests based on host {tigerResolvedString}` / `TGR filtere Anfragen nach Server {tigerResolvedString}`
+  no longer filters the messages based on the Host http
+  header.
+  Instead, it refers to the hostname or the server name as defined in the tiger.yaml. E.g.:
+
+```yaml
+servers:
+  anotherServer:
+    hostname: example.com # here the hostname is explicitly defined as 'example.com'
+    type: externalUrl
+  aServer: # here there is no explicit hostname, so the server name is defined as 'aServer'
+    type: externalUrl
+```
 
 ## Features
 
-* TGR-1395: Implement mail decryption 
+* TGR-1395: Implement mail decryption
 * TGR-1443: REST requests are now fully configurable via TigerHttpClient
+
+# Release 3.1.2
+
+
 
 ## Bugfixes
 
@@ -88,6 +109,7 @@ For more details on how to specify a json schema refer to the external
 resource https://jsoneditoronline.org/indepth/validate/json-schema-validator/ .
 In https://json-schema.org/implementations#validators-web-(online) you can find a list of online validators which you
 can use to prepare the schemas. In Tiger we use the **2020-12** version of the JSON Schema specification.
+
 * TGR-1404: Tiger-Proxy: in direct reverse proxy mode the proxy opens immediately a connection to the remote target as
   soon as an incoming connection is established.
 

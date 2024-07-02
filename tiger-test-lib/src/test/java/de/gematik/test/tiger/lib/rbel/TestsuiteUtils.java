@@ -9,13 +9,19 @@ import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Deque;
+import java.util.List;
+import lombok.SneakyThrows;
+import lombok.val;
 import org.apache.commons.io.FileUtils;
 
 public class TestsuiteUtils {
@@ -39,18 +45,23 @@ public class TestsuiteUtils {
   public static void addTwoRequestsToTigerTestHooks(Deque<RbelElement> validatableMessagesMock) {
     TigerGlobalConfiguration.putValue("tiger.rbel.request.timeout", 1);
     LocalProxyRbelMessageListener.getInstance().clearValidatableRbelMessages();
-    RbelElement request = buildRequestFromCurlFile("getRequestLocalhost.curl");
-    validatableMessagesMock.add(request);
-    validatableMessagesMock.add(buildResponseFromCurlFile("htmlMessage.curl", request));
-    request = buildRequestFromCurlFile("getRequestEitzenAt.curl");
-    validatableMessagesMock.add(request);
-    validatableMessagesMock.add(buildResponseFromCurlFile("htmlMessageEitzenAt.curl", request));
+    val requestsAndResponses = buildElementsFromTgrFile("simpleHttpRequests.tgr");
+    validatableMessagesMock.addAll(requestsAndResponses);
   }
 
   public static RbelElement buildRequestFromCurlFile(String curlFileName) {
     String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(curlFileName, StandardCharsets.UTF_8);
     return RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+  }
+
+  @SneakyThrows
+  public static List<RbelElement> buildElementsFromTgrFile(String fileName) {
+    val fileContent =
+        Files.readString(
+            Path.of("src", "test", "resources", "testdata", fileName), StandardCharsets.UTF_8);
+    return new RbelFileWriter(RbelLogger.build().getRbelConverter())
+        .convertFromRbelFile(fileContent);
   }
 
   public static RbelElement buildResponseFromCurlFile(String curlFileName, RbelElement request) {

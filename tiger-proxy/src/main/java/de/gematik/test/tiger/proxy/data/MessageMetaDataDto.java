@@ -57,11 +57,13 @@ public class MessageMetaDataDto {
                 el.getFacet(RbelTcpIpMessageFacet.class)
                     .map(RbelTcpIpMessageFacet::getSender)
                     .flatMap(RbelHostnameFacet::tryToExtractServerName)
+                    .filter(s -> !s.startsWith("localhost") && !s.startsWith("127.0.0.1"))
                     .orElse(""))
             .bundledServerNameReceiver(
                 el.getFacet(RbelTcpIpMessageFacet.class)
                     .map(RbelTcpIpMessageFacet::getReceiver)
                     .flatMap(RbelHostnameFacet::tryToExtractServerName)
+                    .filter(s -> !s.startsWith("localhost") && !s.startsWith("127.0.0.1"))
                     .orElse(""))
             .pairedUuid(
                 el.getFacet(TracingMessagePairFacet.class)
