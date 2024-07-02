@@ -40,7 +40,8 @@ public class RbelMimeConverter implements RbelConverterPlugin {
         .filter(
             parent ->
                 parent.hasFacet(RbelPop3ResponseFacet.class)
-                    || parent.hasFacet(RbelDecryptedEmailFacet.class))
+                    || parent.hasFacet(RbelDecryptedEmailFacet.class)
+                    || parent.hasFacet(RbelSmtpCommandFacet.class))
         .map(facet -> element.getRawContent())
         .ifPresent(content -> new Parser(context).parseEntity(element, parseMimeMessage(content)));
   }

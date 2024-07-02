@@ -4,15 +4,16 @@
 
 package de.gematik.rbellogger.converter;
 
+import static de.gematik.rbellogger.util.EmailConversionUtils.CRLF;
+import static de.gematik.rbellogger.util.EmailConversionUtils.CRLF_DOT_CRLF;
+
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.pop3.RbelPop3Command;
-import de.gematik.rbellogger.util.Pop3Utils;
+import de.gematik.rbellogger.util.EmailConversionUtils;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -36,10 +37,10 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
     return Optional.ofNullable(element.getRawContent())
         .filter(c -> c.length > 4)
         .filter(this::startsWithOkOrErr)
-        .filter(Pop3Utils::endsWithCrLf)
+        .filter(EmailConversionUtils::endsWithCrLf)
         .map(c -> new String(c, StandardCharsets.UTF_8))
         .filter(this::isCompleteResponse)
-        .map(s -> s.split(Pop3Utils.CRLF, -1))
+        .map(s -> s.split(CRLF, -1))
         .flatMap(lines -> parseLines(lines, element, context));
   }
 
@@ -52,8 +53,7 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
   }
 
   private boolean isCompleteResponse(String response) {
-    return response.endsWith(Pop3Utils.CRLF + "." + Pop3Utils.CRLF)
-        || response.indexOf(Pop3Utils.CRLF) == response.length() - 2;
+    return response.endsWith(CRLF_DOT_CRLF) || response.indexOf(CRLF) == response.length() - 2;
   }
 
   private Optional<RbelPop3ResponseFacet> parseLines(
@@ -83,9 +83,9 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
   private RbelPop3ResponseFacet buildResponseFacet(
       RbelElement element, String status, RbelElement headerElement, String[] lines) {
     return RbelPop3ResponseFacet.builder()
-        .status(Pop3Utils.createChildElement(element, status))
+        .status(EmailConversionUtils.createChildElement(element, status))
         .header(headerElement)
-        .body(buildBodyElement(element, lines))
+        .body(EmailConversionUtils.parseMailBody(element, lines))
         .build();
   }
 
@@ -96,9 +96,9 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
             command ->
                 switch (command) {
                   case LIST, STAT -> buildStatOrListElement(element, header);
-                  default -> Optional.of(Pop3Utils.createChildElement(element, header));
+                  default -> Optional.of(EmailConversionUtils.createChildElement(element, header));
                 })
-        .orElse(Optional.of(Pop3Utils.createChildElement(element, header)));
+        .orElse(Optional.of(EmailConversionUtils.createChildElement(element, header)));
   }
 
   private Optional<RbelPop3Command> findPop3Command(RbelElement element, RbelConverter context) {
@@ -164,19 +164,5 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
                       .build()));
     }
     return Optional.empty();
-  }
-
-  private RbelElement buildBodyElement(RbelElement element, String[] lines) {
-    if (lines.length > 2) {
-      var body = extractBodyAndRemoveStuffedDots(lines);
-      return Pop3Utils.createChildElement(element, body);
-    }
-    return null;
-  }
-
-  private String extractBodyAndRemoveStuffedDots(String[] lines) {
-    return Arrays.asList(lines).subList(1, lines.length - 2).stream()
-        .map(Pop3Utils::removeStuffedDot)
-        .collect(Collectors.joining(Pop3Utils.CRLF));
   }
 }

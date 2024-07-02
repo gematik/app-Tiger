@@ -45,7 +45,7 @@ public class RbelConverter {
   @Getter private final List<RbelConverterPlugin> postConversionListeners = new ArrayList<>();
   private final List<RbelConverterPlugin> converterPlugins =
       new LinkedList<>(
-          Arrays.asList(
+          List.of(
               new RbelBase64JsonConverter(),
               new RbelUriConverter(),
               new RbelHttpResponseConverter(),
@@ -67,7 +67,8 @@ public class RbelConverter {
               new RbelPop3CommandConverter(),
               new RbelPop3ResponseConverter(),
               new RbelMimeConverter(),
-              new RbelEncryptedMailConverter()));
+              new RbelEncryptedMailConverter(),
+              new RbelSmtpCommandConverter()));
   @Builder.Default private int rbelBufferSizeInMb = 1024;
   @Builder.Default private boolean manageBuffer = false;
   @Getter @Builder.Default private long currentBufferSize = 0;
