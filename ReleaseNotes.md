@@ -19,6 +19,10 @@ servers:
     type: externalUrl
 ```
 
+## Bugfixes
+
+* TGR-1446: External-Jar: Solved race condition that could lead to a NPE when starting the server.
+
 ## Features
 
 * TGR-1411: Tiger-Proxy: Content- and Transfer-Encodings are no longer deleted on retransmission.
