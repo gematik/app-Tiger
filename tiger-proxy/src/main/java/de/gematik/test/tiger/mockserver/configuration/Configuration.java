@@ -5,7 +5,6 @@
 package de.gematik.test.tiger.mockserver.configuration;
 
 import de.gematik.test.tiger.mockserver.model.BinaryProxyListener;
-import de.gematik.test.tiger.mockserver.socket.tls.ForwardProxyTLSX509CertificatesTrustManager;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactorySupplier;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import io.netty.handler.ssl.SslContext;
@@ -19,7 +18,6 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import lombok.Data;
 import lombok.experimental.Accessors;
-import org.slf4j.event.Level;
 
 /*
  * @author jamesdbloom
@@ -32,13 +30,7 @@ public class Configuration {
     return new Configuration();
   }
 
-  // logging
-  private Level logLevel = Level.INFO;
-  private Boolean disableSystemOut = false;
-  private Boolean disableLogging = false;
-  private Boolean detailedMatchFailures = true;
-  private Boolean launchUIForLogLevelDebug = false;
-  private Boolean metricsEnabled = false;
+  // general
   private String mockServerName = null;
 
   // scalability
@@ -48,35 +40,21 @@ public class Configuration {
   private Integer clientNioEventLoopThreadCount = 5;
   private Integer webSocketClientEventLoopThreadCount = 5;
   private Long maxFutureTimeoutInMillis = TimeUnit.SECONDS.toMillis(90);
-  private boolean matchersFailFast = true;
 
   // socket
   private Long maxSocketTimeoutInMillis = TimeUnit.SECONDS.toMillis(20);
   private Long socketConnectionTimeoutInMillis = TimeUnit.SECONDS.toMillis(20);
   private boolean alwaysCloseSocketConnections = false;
-  private String localBoundIP = "";
 
   // http request parsing
   private Integer maxInitialLineLength = Integer.MAX_VALUE;
   private Integer maxHeaderSize = Integer.MAX_VALUE;
   private Integer maxChunkSize = Integer.MAX_VALUE;
-  private boolean useSemicolonAsQueryParameterSeparator = true;
-  private boolean assumeAllRequestsAreHttp = false;
 
   // non http proxying
   private BinaryProxyListener binaryProxyListener = null;
 
-  // CORS
-  private boolean enableCORSForAPI = false;
-  private boolean enableCORSForAllResponses = false;
-  private String corsAllowOrigin = "";
-  private String corsAllowMethods = "";
-  private String corsAllowHeaders = "";
-  private boolean corsAllowCredentials = false;
-  private Integer corsMaxAgeInSeconds = 0;
-
   // proxy
-  private boolean attemptToProxyIfNoMatchingExpectation = false;
   private InetSocketAddress forwardHttpProxy = null;
   private InetSocketAddress forwardHttpsProxy = null;
   private InetSocketAddress forwardSocksProxy = null;
@@ -87,12 +65,7 @@ public class Configuration {
   private String proxyAuthenticationPassword = "";
   private String noProxyHosts = "";
 
-  // liveness
-  private String livenessHttpGetPath = "";
-
   // TLS
-  private boolean proactivelyInitialiseTLS = false;
-  private boolean rebuildTLSContext = false;
   private boolean rebuildServerTlsContext = false;
   private String tlsProtocols = "TLSv1,TLSv1.1,TLSv1.2";
   private KeyAndCertificateFactorySupplier customKeyAndCertificateFactorySupplier = null;
@@ -105,32 +78,9 @@ public class Configuration {
   private Function<java.security.cert.X509Certificate, byte[]> ocspResponseSupplier = null;
 
   // inbound - dynamic private key & x509
-  private boolean preventCertificateDynamicUpdate = false;
   private String sslCertificateDomainName = "localhost";
   private Set<String> sslSubjectAlternativeNameDomains = new HashSet<>(Set.of("localhost"));
   private Set<String> sslSubjectAlternativeNameIps = new HashSet<>(Set.of("127.0.0.1", "0.0.0.0"));
-
-  // inbound - fixed CA
-  private String certificateAuthorityPrivateKey =
-      "org/mockserver/socket/PKCS8CertificateAuthorityPrivateKey.pem";
-  private String certificateAuthorityCertificate =
-      "org/mockserver/socket/CertificateAuthorityCertificate.pem";
-
-  // inbound - mTLS
-  private Boolean tlsMutualAuthenticationRequired = false;
-  private String tlsMutualAuthenticationCertificateChain = "";
-
-  // outbound - CA
-  private ForwardProxyTLSX509CertificatesTrustManager
-      forwardProxyTLSX509CertificatesTrustManagerType =
-          ForwardProxyTLSX509CertificatesTrustManager.ANY;
-
-  // outbound - fixed CA
-  private String forwardProxyTLSCustomTrustX509Certificates = "";
-
-  // outbound - fixed private key & x509
-  private String forwardProxyPrivateKey = "";
-  private String forwardProxyCertificateChain = "";
 
   public void addSubjectAlternativeName(String newSubjectAlternativeName) {
     sslSubjectAlternativeNameDomains.add(newSubjectAlternativeName);

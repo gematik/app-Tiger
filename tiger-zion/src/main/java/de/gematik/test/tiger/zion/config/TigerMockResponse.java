@@ -12,12 +12,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 
 @Data
 @AllArgsConstructor(onConstructor_ = @JsonIgnore)
 @NoArgsConstructor
 @Builder
 @JsonInclude(Include.NON_NULL)
+@Validated
 public class TigerMockResponse {
 
   @TigerSkipEvaluation @Builder.Default private List<String> requestCriterions = new ArrayList<>();

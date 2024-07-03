@@ -18,6 +18,8 @@ import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.zion.ZionException;
 import de.gematik.test.tiger.zion.config.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
@@ -27,6 +29,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import java.util.zip.GZIPOutputStream;
 import kong.unirest.HttpRequestWithBody;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
@@ -165,7 +168,34 @@ public class ZionRequestExecutor {
     }
 
     return responseBuilder.body(
-        serializationResult.map(RbelSerializationResult::getContent).orElse(null));
+        serializationResult
+            .map(RbelSerializationResult::getContent)
+            .map(content -> applyEncodingIfAny(content, response.getResponse().getEncoding(), responseBuilder))
+            .orElse(null));
+  }
+
+  private byte[] applyEncodingIfAny(byte[] content, String encoding, BodyBuilder responseBuilder) {
+    if (StringUtils.isEmpty(encoding)) {
+      return content;
+    } else if (encoding.equals("gzip")) {
+      responseBuilder.header("Content-Encoding", "gzip");
+      return gzip(content);
+    } else {
+      throw new ZionException("Unknown encoding: " + encoding);
+    }
+  }
+
+  private byte[] gzip(byte[] input) {
+    try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+
+      try (GZIPOutputStream gzipInputStream = new GZIPOutputStream(byteArrayOutputStream)) {
+        gzipInputStream.write(input);
+      }
+
+      return byteArrayOutputStream.toByteArray();
+    } catch (IOException e) {
+      throw new ZionException("Fatal error during compression", e);
+    }
   }
 
   private Optional<Pair<TigerMockResponse, TigerJexlContext>> findMatchingResponse(
@@ -367,7 +397,7 @@ public class ZionRequestExecutor {
 
   private Optional<RbelSerializationResult> renderResponseBody(
       TigerMockResponse response, TigerJexlContext context) {
-    return Optional.ofNullable(response.getResponse().getBody())
+    return Optional.ofNullable(response.getResponse().retrieveBodyData())
         .map(
             s ->
                 rbelWriter.serialize(

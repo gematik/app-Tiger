@@ -19,7 +19,6 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.codec.http.HttpClientCodec;
-import io.netty.handler.codec.http.HttpContentDecompressor;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.logging.LogLevel;
@@ -115,19 +114,20 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
 
     if (httpProtocol == null) {
       configureBinaryPipeline(pipeline);
-    } else if (secure) {
-      // use ALPN to determine http1 or http2
-      pipeline.addLast(
-          new HttpOrHttp2Initializer(this::configureHttp1Pipeline, this::configureHttp2Pipeline));
     } else {
-      // default to http1 without TLS
-      configureHttp1Pipeline(pipeline);
+      if (secure) {
+        // use ALPN to determine http1 or http2
+        pipeline.addLast(
+            new HttpOrHttp2Initializer(this::configureHttp1Pipeline, this::configureHttp2Pipeline));
+      } else {
+        // default to http1 without TLS
+        configureHttp1Pipeline(pipeline);
+      }
     }
   }
 
   private void configureHttp1Pipeline(ChannelPipeline pipeline) {
     pipeline.addLast(new HttpClientCodec());
-    pipeline.addLast(new HttpContentDecompressor());
     pipeline.addLast(new HttpObjectAggregator(Integer.MAX_VALUE));
     pipeline.addLast(new MockServerHttpClientCodec(proxyConfigurations));
     pipeline.addLast(httpClientHandler);

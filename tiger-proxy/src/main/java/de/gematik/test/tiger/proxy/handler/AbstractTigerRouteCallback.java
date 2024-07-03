@@ -136,9 +136,10 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
       return;
     }
     response.withBody(extractSafe(modifiedResponse, "$.body").getRawContent());
+    response.getHeaderMultimap().clear();
     for (RbelElement modifiedHeader : modifiedResponse.findRbelPathMembers("$.header.*")) {
       response =
-          response.replaceHeader(
+          response.withHeader(
               header(modifiedHeader.getKey().orElseThrow(), modifiedHeader.getRawStringContent()));
     }
     response.withStatusCode(

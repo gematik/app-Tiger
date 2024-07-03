@@ -15,7 +15,6 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
-import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.zion.config.*;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -31,6 +30,7 @@ import lombok.SneakyThrows;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.ConfigurationPropertiesBindException;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.TestPropertySource;
@@ -564,7 +564,7 @@ class TestTigerProxyMockResponses {
       skipEnvironmentSetup = true)
   void bodyFileWithNonExistentFile_shouldThrowException(TigerTestEnvMgr testEnvMgr) {
     assertThatThrownBy(testEnvMgr::setUpEnvironment)
-        .isInstanceOf(TigerEnvironmentStartupException.class)
+        .isInstanceOf(ConfigurationPropertiesBindException.class)
         .hasRootCauseInstanceOf(NoSuchFileException.class)
         .hasRootCauseMessage(Paths.get("this", "is", "not", "a", "real", "file.yaml").toString());
   }

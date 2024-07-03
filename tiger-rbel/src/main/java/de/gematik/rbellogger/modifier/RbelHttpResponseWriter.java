@@ -10,10 +10,7 @@ import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Locale;
-import java.util.Optional;
-import java.util.StringJoiner;
+import java.util.*;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.ArrayUtils;
@@ -82,10 +79,15 @@ public class RbelHttpResponseWriter implements RbelElementWriter {
             headerLine -> {
               if (headerLine.toLowerCase(Locale.ROOT).startsWith("content-length")) {
                 return "Content-Length: " + length;
+              } else if (headerLine.toLowerCase(Locale.ROOT).startsWith("content-encoding")) {
+                return null;
+              } else if (headerLine.toLowerCase(Locale.ROOT).startsWith("transfer-encoding")) {
+                return null;
               } else {
                 return headerLine;
               }
             })
+        .filter(Objects::nonNull)
         .collect(Collectors.joining("\r\n"));
   }
 

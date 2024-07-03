@@ -21,6 +21,7 @@ servers:
 
 ## Features
 
+* TGR-1411: Tiger-Proxy: Content- and Transfer-Encodings are no longer deleted on retransmission.
 * TGR-1375: Rbel Parsen von SMTP Requests
 * TGR-1395: Implement mail decryption
 * TGR-1443: REST requests are now fully configurable via TigerHttpClient

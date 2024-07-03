@@ -19,7 +19,6 @@ import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.netty.MockServer;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
-import de.gematik.test.tiger.mockserver.socket.tls.ForwardProxyTLSX509CertificatesTrustManager;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactorySupplier;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
@@ -175,8 +174,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     Configuration mockServerConfiguration = Configuration.configuration();
     mockServerConfiguration.mockServerName(getName().orElse("MockServer"));
     mockServerConfiguration.customKeyAndCertificateFactorySupplier(buildKeyAndCertificateFactory());
-    mockServerConfiguration.forwardProxyTLSX509CertificatesTrustManagerType(
-        ForwardProxyTLSX509CertificatesTrustManager.ANY);
 
     customizeSslSuitesIfApplicable(mockServerConfiguration);
 

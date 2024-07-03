@@ -5,56 +5,15 @@
 package de.gematik.test.tiger.mockserver.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+import lombok.Data;
 
 /*
  * @author jamesdbloom
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
+@Data
 public abstract class Action<T extends Action> extends ObjectWithJsonToString {
-  private int hashCode;
-  private Delay delay;
   private String expectationId;
-
-  /**
-   * The delay before responding with this request as a Delay object, for example new
-   * Delay(TimeUnit.SECONDS, 3)
-   *
-   * @param delay a Delay object, for example new Delay(TimeUnit.SECONDS, 3)
-   */
-  public T withDelay(Delay delay) {
-    this.delay = delay;
-    this.hashCode = 0;
-    return (T) this;
-  }
-
-  /**
-   * The delay before responding with this request as a Delay object, for example new
-   * Delay(TimeUnit.SECONDS, 3)
-   *
-   * @param timeUnit the time unit, for example TimeUnit.SECONDS
-   * @param value the number of time units to delay the response
-   */
-  public T withDelay(TimeUnit timeUnit, long value) {
-    this.delay = new Delay(timeUnit, value);
-    return (T) this;
-  }
-
-  public Delay getDelay() {
-    return delay;
-  }
-
-  @JsonIgnore
-  public String getExpectationId() {
-    return expectationId;
-  }
-
-  @JsonIgnore
-  public Action setExpectationId(String expectationId) {
-    this.expectationId = expectationId;
-    return this;
-  }
 
   @JsonIgnore
   public abstract Type getType();
@@ -81,28 +40,5 @@ public abstract class Action<T extends Action> extends ObjectWithJsonToString {
   public enum Direction {
     FORWARD,
     RESPONSE
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    if (hashCode() != o.hashCode()) {
-      return false;
-    }
-    Action<?> action = (Action<?>) o;
-    return Objects.equals(delay, action.delay);
-  }
-
-  @Override
-  public int hashCode() {
-    if (hashCode == 0) {
-      hashCode = Objects.hash(delay);
-    }
-    return hashCode;
   }
 }

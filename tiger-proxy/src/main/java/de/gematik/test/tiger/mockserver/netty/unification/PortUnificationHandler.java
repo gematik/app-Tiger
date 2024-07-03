@@ -10,7 +10,6 @@ import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.IN
 import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.OUTGOING_CHANNEL;
 import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.REMOTE_SOCKET;
 import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.getRemoteAddress;
-import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 import static de.gematik.test.tiger.mockserver.netty.HttpRequestHandler.LOCAL_HOST_HEADERS;
 import static de.gematik.test.tiger.mockserver.netty.HttpRequestHandler.PROXYING;
 import static de.gematik.test.tiger.mockserver.netty.proxy.relay.RelayConnectHandler.*;
@@ -21,7 +20,6 @@ import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.mappers.MockServerHttpResponseToFullHttpResponse;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
-import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import de.gematik.test.tiger.mockserver.netty.HttpRequestHandler;
 import de.gematik.test.tiger.mockserver.netty.MockServer;
 import de.gematik.test.tiger.mockserver.netty.proxy.BinaryHandler;
@@ -223,42 +221,21 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
     addLastIfNotPresent(pipeline, new HttpContentDecompressor());
     addLastIfNotPresent(pipeline, httpContentLengthRemover);
     addLastIfNotPresent(pipeline, new HttpObjectAggregator(Integer.MAX_VALUE));
-    if (configuration.tlsMutualAuthenticationRequired() && !isSslEnabledUpstream(ctx.channel())) {
-      HttpResponse httpResponse =
-          response()
-              .withStatusCode(426)
-              .withHeader("Upgrade", "TLS/1.2, HTTP/1.1")
-              .withHeader("Connection", "Upgrade");
-      log.info(
-          "no tls for connection:{}returning response:{}",
-          ctx.channel().localAddress(),
-          httpResponse);
-      ctx.channel()
-          .writeAndFlush(
-              mockServerHttpResponseToFullHttpResponse
-                  .mapMockServerResponseToNettyResponse(
-                      // Upgrade Required
-                      httpResponse)
-                  .get(0))
-          .addListener(
-              (ChannelFuture future) -> future.channel().disconnect().awaitUninterruptibly());
-    } else {
-      addLastIfNotPresent(
-          pipeline,
-          new MockServerHttpServerCodec(
-              configuration,
-              isSslEnabledUpstream(ctx.channel()),
-              SniHandler.retrieveClientCertificates(ctx),
-              ctx.channel().localAddress()));
-      addLastIfNotPresent(
-          pipeline, new HttpRequestHandler(configuration, server, httpState, actionHandler));
-      pipeline.remove(this);
+    addLastIfNotPresent(
+        pipeline,
+        new MockServerHttpServerCodec(
+            configuration,
+            isSslEnabledUpstream(ctx.channel()),
+            SniHandler.retrieveClientCertificates(ctx),
+            ctx.channel().localAddress()));
+    addLastIfNotPresent(
+        pipeline, new HttpRequestHandler(configuration, server, httpState, actionHandler));
+    pipeline.remove(this);
 
-      ctx.channel().attr(LOCAL_HOST_HEADERS).set(getLocalAddresses(ctx));
+    ctx.channel().attr(LOCAL_HOST_HEADERS).set(getLocalAddresses(ctx));
 
-      // fire message back through pipeline
-      ctx.fireChannelRead(msg.readBytes(actualReadableBytes()));
-    }
+    // fire message back through pipeline
+    ctx.fireChannelRead(msg.readBytes(actualReadableBytes()));
   }
 
   private boolean isProxyConnected(ByteBuf msg) {

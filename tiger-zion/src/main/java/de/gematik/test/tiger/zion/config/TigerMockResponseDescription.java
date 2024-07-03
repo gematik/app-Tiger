@@ -8,14 +8,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
 @JsonInclude(Include.NON_NULL)
+@ValidateMockResponse
 public class TigerMockResponseDescription {
 
   @TigerSkipEvaluation private String body;
@@ -23,26 +27,19 @@ public class TigerMockResponseDescription {
   @TigerSkipEvaluation @Builder.Default private Map<String, String> headers = new HashMap<>();
   @TigerSkipEvaluation @Builder.Default private String statusCode = "200";
   @TigerSkipEvaluation @Builder.Default private String responseDelay = "";
+  private String encoding;
 
-  public TigerMockResponseDescription(
-      String body, String bodyFile, Map<String, String> headers, String statusCode, String responseDelay) {
-    this.body = body;
-    setBodyFile(bodyFile);
-    this.headers = headers;
-    this.statusCode = statusCode;
-    this.responseDelay = responseDelay;
-  }
-
-  public void setBodyFile(String bodyFile) {
-    if (bodyFile == null) {
-      this.bodyFile = null;
-      return;
-    }
-    this.bodyFile = bodyFile;
-    try {
-      setBody(Files.readString(Path.of(bodyFile)));
-    } catch (IOException e) {
-      throw new ZionException("Could not read body file '" + bodyFile + "'", e);
+  public byte[] retrieveBodyData() {
+    if (StringUtils.isNotEmpty(body)) {
+      return body.getBytes();
+    } else if (StringUtils.isNotEmpty(bodyFile)) {
+      try {
+        return Files.readAllBytes(Path.of(bodyFile));
+      } catch (IOException e) {
+        throw new ZionException("Could not read body file '" + bodyFile + "'", e);
+      }
+    } else {
+      return new byte[0];
     }
   }
 }

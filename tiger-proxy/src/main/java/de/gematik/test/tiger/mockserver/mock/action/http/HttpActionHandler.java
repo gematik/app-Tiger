@@ -9,9 +9,7 @@ import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.*;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
-import static io.netty.handler.codec.http.HttpResponseStatus.PROXY_AUTHENTICATION_REQUIRED;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
@@ -27,13 +25,10 @@ import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.scheduler.Scheduler;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoopGroup;
-import io.netty.handler.codec.base64.Base64;
 import io.netty.util.AttributeKey;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -41,7 +36,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.text.StringEscapeUtils;
 
 /*
  * @author jamesdbloom
@@ -92,18 +86,13 @@ public class HttpActionHandler {
       log.debug("received request:{}", request);
     }
     final Expectation expectation = httpStateHandler.firstMatchingExpectation(request);
-    final boolean potentiallyHttpProxy =
-        !proxyingRequest
-            && configuration.attemptToProxyIfNoMatchingExpectation()
-            && !isEmpty(request.getFirstHeader(HOST.toString()))
-            && !localAddresses.contains(request.getFirstHeader(HOST.toString()));
 
     if (expectation != null && expectation.getHttpAction() != null) {
       final HttpAction action = expectation.getHttpAction();
       scheduler.schedule(
           () -> action.handle(request, ctx.channel(), this, responseWriter, synchronous),
           synchronous);
-    } else if (proxyingRequest || potentiallyHttpProxy) {
+    } else if (proxyingRequest) {
       if (request.getHeaders() != null
           && request
               .getHeaders()
@@ -117,128 +106,84 @@ public class HttpActionHandler {
             request);
         returnNotFound(responseWriter, request, null);
       } else {
-        String username = configuration.proxyAuthenticationUsername();
-        String password = configuration.proxyAuthenticationPassword();
-        // only authenticate potentiallyHttpProxy because other proxied requests should have already
-        // been authenticated (i.e. in CONNECT request)
-        if (potentiallyHttpProxy
-            && isNotBlank(username)
-            && isNotBlank(password)
-            && !request.containsHeader(
-                PROXY_AUTHORIZATION.toString(),
-                "Basic "
-                    + Base64.encode(
-                            Unpooled.copiedBuffer(
-                                username + ':' + password, StandardCharsets.UTF_8),
-                            false)
-                        .toString(StandardCharsets.US_ASCII))) {
-
-          HttpResponse response =
-              response()
-                  .withStatusCode(PROXY_AUTHENTICATION_REQUIRED.code())
-                  .withHeader(
-                      PROXY_AUTHENTICATE.toString(),
-                      "Basic realm=\""
-                          + StringEscapeUtils.escapeJava(configuration.proxyAuthenticationRealm())
-                          + "\", charset=\"UTF-8\"");
-          responseWriter.writeResponse(request, response);
-          log.debug(
-              "proxy authentication failed so returning response:{}for forwarded" + " request:{}",
-              response,
-              request);
-
-        } else {
-
-          final InetSocketAddress remoteAddress = getRemoteAddress(ctx);
-          final HttpRequest clonedRequest =
-              hopByHopHeaderFilter
-                  .onRequest(request)
-                  .withHeader(
-                      httpStateHandler.getUniqueLoopPreventionHeaderName(),
-                      httpStateHandler.getUniqueLoopPreventionHeaderValue());
-          final HttpForwardActionResult responseFuture =
-              new HttpForwardActionResult(
-                  clonedRequest,
-                  httpClient.sendRequest(
-                      new HttpRequestInfo(ctx.channel(), clonedRequest, remoteAddress),
-                      potentiallyHttpProxy
-                          ? 1000
-                          : configuration.socketConnectionTimeoutInMillis()),
-                  null,
-                  remoteAddress);
-          scheduler.submit(
-              responseFuture,
-              () -> {
-                try {
-                  HttpResponse response =
-                      responseFuture
-                          .getHttpResponse()
-                          .get(configuration.maxFutureTimeoutInMillis(), MILLISECONDS);
-                  if (response == null) {
-                    response = notFoundResponse();
-                  }
-                  if (response.containsHeader(
-                      httpStateHandler.getUniqueLoopPreventionHeaderName(),
-                      httpStateHandler.getUniqueLoopPreventionHeaderValue())) {
-                    response.removeHeader(httpStateHandler.getUniqueLoopPreventionHeaderName());
-                    log.debug("no expectation for:{}returning response:{}", request, response);
-                  } else {
-                    log.debug(
-                        "returning response:{}\nfor forwarded request"
-                            + NEW_LINE
-                            + NEW_LINE
-                            + " in json:{}",
-                        request,
-                        response);
-                  }
-                  responseWriter.writeResponse(request, response);
-                } catch (SocketCommunicationException sce) {
-                  log.warn("Exception while writing response", sce);
-                  returnNotFound(responseWriter, request, sce.getMessage());
-                } catch (InterruptedException | ExecutionException | TimeoutException throwable) {
-                  if (throwable instanceof TimeoutException) {
-                    Thread.currentThread().interrupt();
-                  }
-                  if (potentiallyHttpProxy && connectionException(throwable)) {
-                    log.error(
-                        "failed to connect to proxied socket due to exploratory HTTP proxy for:{}"
-                            + " due to:{} falling back to no proxy",
-                        request,
-                        throwable.getCause());
-                    returnNotFound(responseWriter, request, null);
-                  } else if (sslHandshakeException(throwable)) {
-                    log.error(
-                        "TLS handshake exception while proxying request {} to remote address {}"
-                            + " with channel {}",
-                        (ctx != null ? String.valueOf(ctx.channel()) : ""),
-                        request,
-                        remoteAddress);
-                    returnNotFound(
-                        responseWriter,
-                        request,
-                        "TLS handshake exception while proxying request to remote address"
-                            + remoteAddress);
-                  } else if (!connectionClosedException(throwable)) {
-                    log.error(
-                        "connection closed while proxying request to remote address {}",
-                        remoteAddress,
-                        throwable);
-                    returnNotFound(
-                        responseWriter,
-                        request,
-                        "connection closed while proxying request to remote address"
-                            + remoteAddress);
-                  } else {
-                    log.error("Exception while proxying request", throwable);
-                    returnNotFound(responseWriter, request, throwable.getMessage());
-                  }
+        final InetSocketAddress remoteAddress = getRemoteAddress(ctx);
+        final HttpRequest clonedRequest =
+            hopByHopHeaderFilter
+                .onRequest(request)
+                .withHeader(
+                    httpStateHandler.getUniqueLoopPreventionHeaderName(),
+                    httpStateHandler.getUniqueLoopPreventionHeaderValue());
+        final HttpForwardActionResult responseFuture =
+            new HttpForwardActionResult(
+                clonedRequest,
+                httpClient.sendRequest(
+                    new HttpRequestInfo(ctx.channel(), clonedRequest, remoteAddress),
+                  configuration.socketConnectionTimeoutInMillis()),
+                null,
+                remoteAddress);
+        scheduler.submit(
+            responseFuture,
+            () -> {
+              try {
+                HttpResponse response =
+                    responseFuture
+                        .getHttpResponse()
+                        .get(configuration.maxFutureTimeoutInMillis(), MILLISECONDS);
+                if (response == null) {
+                  response = notFoundResponse();
                 }
-              },
-              synchronous,
-              throwable ->
-                  !(potentiallyHttpProxy && isNotBlank(throwable.getMessage())
-                      || !throwable.getMessage().contains("Connection refused")));
-        }
+                if (response.containsHeader(
+                    httpStateHandler.getUniqueLoopPreventionHeaderName(),
+                    httpStateHandler.getUniqueLoopPreventionHeaderValue())) {
+                  response.removeHeader(httpStateHandler.getUniqueLoopPreventionHeaderName());
+                  log.debug("no expectation for:{}returning response:{}", request, response);
+                } else {
+                  log.debug(
+                      "returning response:{}\nfor forwarded request"
+                          + NEW_LINE
+                          + NEW_LINE
+                          + " in json:{}",
+                      request,
+                      response);
+                }
+                responseWriter.writeResponse(request, response);
+              } catch (SocketCommunicationException sce) {
+                log.warn("Exception while writing response", sce);
+                returnNotFound(responseWriter, request, sce.getMessage());
+              } catch (InterruptedException | ExecutionException | TimeoutException throwable) {
+                if (throwable instanceof TimeoutException) {
+                  Thread.currentThread().interrupt();
+                }
+                if (sslHandshakeException(throwable)) {
+                  log.error(
+                      "TLS handshake exception while proxying request {} to remote address {}"
+                          + " with channel {}",
+                      (ctx != null ? String.valueOf(ctx.channel()) : ""),
+                      request,
+                      remoteAddress);
+                  returnNotFound(
+                      responseWriter,
+                      request,
+                      "TLS handshake exception while proxying request to remote address"
+                          + remoteAddress);
+                } else if (!connectionClosedException(throwable)) {
+                  log.error(
+                      "connection closed while proxying request to remote address {}",
+                      remoteAddress,
+                      throwable);
+                  returnNotFound(
+                      responseWriter,
+                      request,
+                      "connection closed while proxying request to remote address"
+                          + remoteAddress);
+                } else {
+                  log.error("Exception while proxying request", throwable);
+                  returnNotFound(responseWriter, request, throwable.getMessage());
+                }
+              }
+            },
+            synchronous,
+            throwable -> throwable.getMessage().contains("Connection refused"));
       }
 
     } else {
