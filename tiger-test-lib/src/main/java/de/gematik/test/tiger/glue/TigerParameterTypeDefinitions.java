@@ -18,7 +18,6 @@ import io.restassured.http.Method;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,11 +27,11 @@ import org.jetbrains.annotations.NotNull;
  * using Regex. All parameter types do support resolution using the TigerGlobalConfiguration.
  *
  * @see TigerGlobalConfiguration#resolvePlaceholders(String)
- * @see https://github.com/cucumber/cucumber-expressions
+ * @see <a href="https://github.com/cucumber/cucumber-expressions">Cucumber expressions</a>
  */
 public class TigerParameterTypeDefinitions {
   private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
-  private static final RbelLoggerWriter RBEL_UTIL = new RbelLoggerWriter();
+  private static RbelLoggerWriter rbelLoggerWriter;
 
   protected TigerParameterTypeDefinitions() {}
 
@@ -98,11 +97,17 @@ public class TigerParameterTypeDefinitions {
   }
 
   private static RbelSerializationResult resolve(String value) {
+    synchronized (TigerParameterTypeDefinitions.class) {
+      if (rbelLoggerWriter == null) {
+        rbelLoggerWriter = new RbelLoggerWriter();
+      }
+    }
     final String resolvedInput = TigerGlobalConfiguration.resolvePlaceholders(value);
     TigerLibConfig libConfig = TigerDirector.getLibConfig();
     if (libConfig != null && libConfig.getHttpClientConfig().isActivateRbelWriter()) {
-      final RbelElement input = RBEL_UTIL.getRbelConverter().convertElement(resolvedInput, null);
-      return RBEL_UTIL
+      final RbelElement input =
+          rbelLoggerWriter.getRbelConverter().convertElement(resolvedInput, null);
+      return rbelLoggerWriter
           .getRbelWriter()
           .serialize(input, new TigerJexlContext().withRootElement(input));
     } else {

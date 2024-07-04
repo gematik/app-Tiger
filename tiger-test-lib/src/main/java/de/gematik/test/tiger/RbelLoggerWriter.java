@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.test.tiger;
 
 import de.gematik.rbellogger.RbelLogger;
@@ -26,17 +30,19 @@ public class RbelLoggerWriter {
 
   private synchronized void assureRbelIsInitialized() {
     if (rbelWriter == null) {
+      final List<String> keyFolders;
+      if (TigerDirector.isInitialized()) {
+        keyFolders =
+            TigerDirector.getTigerTestEnvMgr().getConfiguration().getTigerProxy().getKeyFolders();
+      } else {
+        keyFolders = null;
+      }
       rbelLogger =
           RbelLogger.build(
               RbelConfiguration.builder()
                   .activateAsn1Parsing(true)
                   .initializers(
-                      Optional.ofNullable(
-                              TigerDirector.getTigerTestEnvMgr()
-                                  .getConfiguration()
-                                  .getTigerProxy()
-                                  .getKeyFolders())
-                          .stream()
+                      Optional.ofNullable(keyFolders).stream()
                           .flatMap(List::stream)
                           .map(RbelKeyFolderInitializer::new)
                           .map(init -> (Consumer<RbelConverter>) init)
