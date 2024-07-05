@@ -1,3 +1,7 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
 package de.gematik.rbellogger.data.facet;
 
 import static j2html.TagCreator.*;

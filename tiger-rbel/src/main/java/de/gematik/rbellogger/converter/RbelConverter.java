@@ -68,7 +68,8 @@ public class RbelConverter {
               new RbelPop3ResponseConverter(),
               new RbelMimeConverter(),
               new RbelEncryptedMailConverter(),
-              new RbelSmtpCommandConverter()));
+              new RbelSmtpCommandConverter(),
+              new RbelSmtpResponseConverter()));
   @Builder.Default private int rbelBufferSizeInMb = 1024;
   @Builder.Default private boolean manageBuffer = false;
   @Getter @Builder.Default private long currentBufferSize = 0;
