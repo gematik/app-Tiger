@@ -21,6 +21,7 @@ servers:
 
 ## Bugfixes
 
+* TGR-1444: Bugfix for relaying multiline TCP messages to downstream tiger proxy
 * TGR-1446: External-Jar: Solved race condition that could lead to a NPE when starting the server.
 
 ## Features
