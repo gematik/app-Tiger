@@ -30,7 +30,7 @@ public class TracingMessagePair implements TracingMessageFrame {
     }
   }
 
-  private void parseAndPropagate() {
+  private synchronized void parseAndPropagate() {
     if (remoteProxyClient.messageUuidKnown(request.getTracingDto().getRequestUuid())
         || remoteProxyClient.messageUuidKnown(request.getTracingDto().getResponseUuid())) {
       log.trace(
@@ -68,26 +68,27 @@ public class TracingMessagePair implements TracingMessageFrame {
               try {
                 performPostConversion(req, res);
                 return null;
-              } catch (RuntimeException e){
+              } catch (RuntimeException e) {
                 log.info(
+                    "{} - Error while processing pair with UUIDs {} and {}",
+                    remoteProxyClient.proxyName(),
+                    request.getTracingDto().getRequestUuid(),
+                    request.getTracingDto().getResponseUuid(),
+                    e);
+                throw e;
+              }
+            })
+        .exceptionally(
+            e -> {
+              log.error(
                   "{} - Error while processing pair with UUIDs {} and {}",
                   remoteProxyClient.proxyName(),
                   request.getTracingDto().getRequestUuid(),
                   request.getTracingDto().getResponseUuid(),
                   e);
-                throw e;
-              }
+              return null;
             })
-      .exceptionally(
-          e -> {
-            log.error(
-                "{} - Error while processing pair with UUIDs {} and {}",
-                remoteProxyClient.proxyName(),
-                request.getTracingDto().getRequestUuid(),
-                request.getTracingDto().getResponseUuid(),
-                e);
-            return null;
-          });
+        .join();
   }
 
   private void performPostConversion(RbelElement req, RbelElement res) {

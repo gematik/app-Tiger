@@ -31,7 +31,7 @@ public class TracingMessageIsolani implements TracingMessageFrame {
     }
   }
 
-  private void parseAndPropagate() {
+  private synchronized void parseAndPropagate() {
     if (remoteProxyClient.messageUuidKnown(message.getTracingDto().getRequestUuid())) {
       log.trace(
           "{}Skipping parsing of pair with UUIDs ({} and {}) (received from PUSH): UUID already"
@@ -57,33 +57,35 @@ public class TracingMessageIsolani implements TracingMessageFrame {
         .thenAccept(
             msg -> {
               try {
-              doPostConversion(msg);
+                doPostConversion(msg);
 
-              } catch (RuntimeException e){
+              } catch (RuntimeException e) {
                 log.error(
+                    "{} - Error while processing message with UUID {}",
+                    remoteProxyClient.proxyName(),
+                    message.getTracingDto().getRequestUuid(),
+                    e);
+                throw e;
+              }
+            })
+        .exceptionally(
+            e -> {
+              log.error(
                   "{} - Error while processing message with UUID {}",
                   remoteProxyClient.proxyName(),
                   message.getTracingDto().getRequestUuid(),
                   e);
-                throw e;
-              }
+              return null;
             })
-      .exceptionally(
-        e -> {
-          log.error(
-            "{} - Error while processing message with UUID {}",
-            remoteProxyClient.proxyName(),
-            message.getTracingDto().getRequestUuid(),
-            e);
-          return null;
-        });  }
+        .join();
+  }
 
   private void doPostConversion(RbelElement msg) {
     msg.addOrReplaceFacet(
-      msg.getFacetOrFail(RbelTcpIpMessageFacet.class).toBuilder()
-        .sequenceNumber(message.getTracingDto().getSequenceNumberRequest())
-        .receivedFromRemoteWithUrl(remoteProxyClient.getRemoteProxyUrl())
-        .build());
+        msg.getFacetOrFail(RbelTcpIpMessageFacet.class).toBuilder()
+            .sequenceNumber(message.getTracingDto().getSequenceNumberRequest())
+            .receivedFromRemoteWithUrl(remoteProxyClient.getRemoteProxyUrl())
+            .build());
 
     triggerPostConversionListener(msg);
 
@@ -95,12 +97,7 @@ public class TracingMessageIsolani implements TracingMessageFrame {
           remoteProxyClient.proxyName(),
           Optional.of(msg)
               .map(RbelElement::getRawStringContent)
-              .map(
-                  s ->
-                      Stream.of(s.split(" "))
-                          .skip(1)
-                          .limit(1)
-                          .collect(Collectors.joining(",")))
+              .map(s -> Stream.of(s.split(" ")).skip(1).limit(1).collect(Collectors.joining(",")))
               .orElse("<>"),
           msg.getUuid());
     }

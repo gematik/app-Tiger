@@ -68,16 +68,12 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
         .atMost(5, TimeUnit.SECONDS)
         .ignoreExceptions()
         .until(
-            () ->
-                envMgr
-                    .getLocalTigerProxyOrFail()
-                    .getRbelLogger()
-                    .getMessageHistory()
-                    .getFirst()
-                    .findElement("$.body.recordId")
-                    .get()
-                    .getFacetOrFail(RbelValueFacet.class)
-                    .getValue()
-                    .equals("X114428539"));
+            () -> envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().stream()
+                      .anyMatch(
+                          e ->
+                              e.findElement("$.body.recordId")
+                                  .flatMap(RbelElement::seekValue)
+                                  .filter(v -> v.equals("X114428539"))
+                                  .isPresent()));
   }
 }

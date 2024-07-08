@@ -5,6 +5,7 @@
 package de.gematik.test.tiger.lib.email;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.GreenMailUtil;
@@ -17,13 +18,45 @@ import jakarta.mail.Message;
 import jakarta.mail.Session;
 import jakarta.mail.Store;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
 class EmailParsingTest {
+
+  ServerSetup smtpsAddress;
+  ServerSetup pop3Address;
+  GreenMail greenMail;
+
+  void startGreenMail() {
+    val smtpsPort =
+        Integer.parseInt(
+            TigerGlobalConfiguration.resolvePlaceholders(
+                "${tiger.config_ports.smtps.greenmailServerPort}"));
+    val pop3sPort =
+        Integer.parseInt(
+            TigerGlobalConfiguration.resolvePlaceholders(
+                "${tiger.config_ports.pop3s.greenmailServerPort}"));
+
+    val tigerGreenmailSetup = createGreenMailServerSetup(smtpsPort, pop3sPort);
+    smtpsAddress = tigerGreenmailSetup[0];
+    pop3Address = tigerGreenmailSetup[1];
+
+    greenMail = new GreenMail(ServerSetup.verbose(tigerGreenmailSetup));
+    greenMail.start();
+  }
+
+  @AfterEach
+  void stopGreenMail() {
+    if (greenMail != null) {
+      greenMail.stop();
+    }
+  }
 
   @SneakyThrows
   @TigerTest(
@@ -45,43 +78,171 @@ class EmailParsingTest {
          # should the cleartext http-traffic be logged to a file?
          writeToFile: true
          # configure the file name
-         filename: "mail_test_local_proxy.tgr"
+         filename: "mail_test_local_proxy_pop3.tgr"
          # default false
          clearFileOnBoot: true
    """)
   @Test
-  void testSendEmailOverTigerProxy(TigerTestEnvMgr tigerTestEnvMgr) {
-    val smtpsPort =
-        Integer.parseInt(
-            TigerGlobalConfiguration.resolvePlaceholders(
-                "${tiger.config_ports.smtps.greenmailServerPort}"));
-    val pop3sPort =
-        Integer.parseInt(
-            TigerGlobalConfiguration.resolvePlaceholders(
-                "${tiger.config_ports.pop3s.greenmailServerPort}"));
-
-    val tigerGreenmailSetup = createGreenMailServerSetup(smtpsPort, pop3sPort);
-
-    var greenMail = new GreenMail(ServerSetup.verbose(tigerGreenmailSetup));
-    greenMail.start();
+  void testReceiveEmailOverTigerProxy(TigerTestEnvMgr tigerTestEnvMgr) {
+    startGreenMail();
     GreenMailUtil.sendTextEmail(
         "to@localhost",
         "from@localhost",
         "test subject",
         "here the body of the email\r\n",
-        tigerGreenmailSetup[0]);
+        smtpsAddress);
 
     // retrieve directly
-    retrieveByPopSecure(tigerGreenmailSetup[1].getPort());
+    retrieveByPopSecure(pop3Address.getPort());
     // retrieve over the proxy
     retrieveByPopSecure(
         Integer.parseInt(
             TigerGlobalConfiguration.resolvePlaceholders("${tiger.config_ports.pop3s.proxy}")));
 
-    log.error(
-        "Here be the rbel messages {}",
-        tigerTestEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList());
-    greenMail.stop();
+    expectReceivedMessages(tigerTestEnvMgr, 15);
+  }
+
+  @SneakyThrows
+  @TigerTest(
+      tigerYaml =
+          """
+   config_ports:
+     pop3s:
+       admin: ${free.port.0}
+       proxy: ${free.port.1}
+       greenmailServerPort: ${free.port.2}
+     smtps:
+       admin: ${free.port.4}
+       proxy: ${free.port.5}
+       greenmailServerPort: ${free.port.3}
+   tigerProxy:
+     proxyPort: ${tiger.config_ports.smtps.proxy}
+     directReverseProxy:
+           hostname: 127.0.0.1
+           port: ${tiger.config_ports.smtps.greenmailServerPort}
+     fileSaveInfo:
+         # should the cleartext http-traffic be logged to a file?
+         writeToFile: true
+         # configure the file name
+         filename: "mail_test_local_proxy_smtp.tgr"
+         # default false
+         clearFileOnBoot: true
+   """)
+  @Test
+  void testSendEmailOverTigerProxy(TigerTestEnvMgr tigerTestEnvMgr) {
+    startGreenMail();
+    ServerSetup smtpProxy = getSmtpProxy();
+    GreenMailUtil.sendTextEmail(
+        "to@localhost",
+        "from@localhost",
+        "test subject",
+        "here the body of the email\r\n",
+        smtpProxy);
+
+    // retrieve directly
+    retrieveByPopSecure(pop3Address.getPort());
+
+    expectReceivedMessages(tigerTestEnvMgr, 12);
+  }
+
+  @SneakyThrows
+  @TigerTest(
+      tigerYaml =
+          """
+   config_ports:
+     pop3s:
+       admin: ${free.port.0}
+       proxy: ${free.port.1}
+       greenmailServerPort: ${free.port.2}
+     smtps:
+       admin: ${free.port.4}
+       proxy: ${free.port.5}
+       greenmailServerPort: ${free.port.3}
+   tigerProxy:
+     trafficEndpoints:
+        - http://localhost:${tiger.config_ports.pop3s.admin}
+        - http://localhost:${tiger.config_ports.smtps.admin}
+     fileSaveInfo:
+         # should the cleartext http-traffic be logged to a file?
+         writeToFile: true
+         # configure the file name
+         filename: "mail_test_local_proxy_mesh.tgr"
+         # default false
+         clearFileOnBoot: true
+   servers:
+     smtpsProxy:
+      type: tigerProxy
+      tigerProxyConfiguration:
+        adminPort: ${tiger.config_ports.smtps.admin}
+        proxyPort: ${tiger.config_ports.smtps.proxy}
+        directReverseProxy:
+           hostname: 127.0.0.1
+           port: ${tiger.config_ports.smtps.greenmailServerPort}
+        fileSaveInfo:
+          # should the cleartext http-traffic be logged to a file?
+          writeToFile: true
+          # configure the file name
+          filename: "mail_test_local_proxy_mesh_smtp.tgr"
+          # default false
+          clearFileOnBoot: true
+     pop3sProxy:
+      type: tigerProxy
+      tigerProxyConfiguration:
+        adminPort: ${tiger.config_ports.pop3s.admin}
+        proxyPort: ${tiger.config_ports.pop3s.proxy}
+        directReverseProxy:
+           hostname: 127.0.0.1
+           port: ${tiger.config_ports.pop3s.greenmailServerPort}
+        fileSaveInfo:
+          # should the cleartext http-traffic be logged to a file?
+          writeToFile: true
+          # configure the file name
+          filename: "mail_test_local_proxy_mesh_pop3.tgr"
+          # default false
+          clearFileOnBoot: true
+   """)
+  @Test
+  void testSendAndReceiveEmailOverMeshTigerProxy(TigerTestEnvMgr tigerTestEnvMgr) {
+    startGreenMail();
+    ServerSetup smtpProxy = getSmtpProxy();
+
+    GreenMailUtil.sendTextEmail(
+        "to@localhost",
+        "from@localhost",
+        "test subject",
+        "here the body of the email\r\n",
+        smtpProxy);
+
+    // retrieve directly
+    retrieveByPopSecure(pop3Address.getPort());
+    // retrieve over the proxy
+    retrieveByPopSecure(
+        Integer.parseInt(
+            TigerGlobalConfiguration.resolvePlaceholders("${tiger.config_ports.pop3s.proxy}")));
+
+    expectReceivedMessages(tigerTestEnvMgr, 27);
+  }
+
+  private static void expectReceivedMessages(
+      TigerTestEnvMgr tigerTestEnvMgr, int expectedMessages) {
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .until(
+            () ->
+                tigerTestEnvMgr
+                        .getLocalTigerProxyOrFail()
+                        .getRbelLogger()
+                        .getMessageHistory()
+                        .size()
+                    == expectedMessages);
+  }
+
+  private static @NotNull ServerSetup getSmtpProxy() {
+    val smtpsProxyPort =
+        Integer.parseInt(
+            TigerGlobalConfiguration.resolvePlaceholders("${tiger.config_ports.smtps.proxy}"));
+
+    return new ServerSetup(smtpsProxyPort, null, ServerSetup.PROTOCOL_SMTPS);
   }
 
   private ServerSetup[] createGreenMailServerSetup(int smtpsPort, int pop3sPort) {

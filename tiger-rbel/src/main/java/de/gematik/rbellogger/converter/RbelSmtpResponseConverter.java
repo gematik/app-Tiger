@@ -12,7 +12,6 @@ import de.gematik.rbellogger.data.facet.RbelSmtpResponseFacet;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.util.EmailConversionUtils;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
@@ -78,11 +77,17 @@ public class RbelSmtpResponseConverter implements RbelConverterPlugin {
   }
 
   private static Optional<String> parseMultilineResponse(String response, String status) {
+    // multiline responses look like this:
+    // <status>-<text><CRLF>
+    // ...
+    // <status>-<text><CRLF>
+    // <status> <text><CRLF>
     StringBuilder body = new StringBuilder();
     var lines = response.split(CRLF);
     var multilinePrefix = status + "-";
     var prefixLength = multilinePrefix.length();
-    for (String line : Arrays.asList(lines).subList(0, lines.length - 1)) {
+    for (int i = 0; i < lines.length - 1; i++) {
+      String line = lines[i];
       if (!line.startsWith(multilinePrefix)) {
         return Optional.empty();
       } else {
@@ -91,11 +96,10 @@ public class RbelSmtpResponseConverter implements RbelConverterPlugin {
       }
     }
     var lastLine = lines[lines.length - 1].split(" ", 2);
-    if (!lastLine[0].equals(status)) {
+    if (!lastLine[0].equals(status) || lastLine.length != 2) {
       return Optional.empty();
-    } else if (lastLine.length > 1) {
-      body.append(lastLine[1]);
     }
+    body.append(lastLine[1]);
     body.append(CRLF);
     return Optional.of(body.toString());
   }

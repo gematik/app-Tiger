@@ -62,7 +62,8 @@ class RbelSmtpResponseConverterTest {
 
   @Test
   void shouldConvertMultilineSmtpResponse() {
-    String body = """
+    String body =
+        """
         line1\r
         line2\r
         line3\r
@@ -106,7 +107,8 @@ class RbelSmtpResponseConverterTest {
         "2000\r\n",
         "20 foobar\r\n",
         "2000 foobar\r\n",
-        "200-foobar\r\n201 barfoo\r\n"
+        "200-foobar\r\n201 barfoo\r\n",
+        "200-foobar\r\n200\r\n"
       })
   void shouldRejectMalformedResponse(String input) {
     RbelElement element = convertToRbelElement(input);
