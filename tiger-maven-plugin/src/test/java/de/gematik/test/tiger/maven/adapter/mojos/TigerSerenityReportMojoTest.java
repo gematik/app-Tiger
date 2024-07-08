@@ -97,7 +97,7 @@ class TigerSerenityReportMojoTest {
         () -> assertTrue(Files.exists(reportDir.resolve("index.html")), "index.html exists"));
   }
 
-  @Tag("de.gematik.test.tiger.common.LongrunnerTest")
+  @Tag("de.gematik.test.tiger.common.LongRunnerTest")
   @Test
   @DisplayName(
       "If the property openSerenityReportInBrowser is set, the browser should open with the"

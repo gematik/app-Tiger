@@ -43,7 +43,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 
 @Slf4j
-@Tag("de.gematik.test.tiger.common.LongrunnerTest")
+@Tag("de.gematik.test.tiger.common.LongRunnerTest")
 class TracingResilienceTest {
 
   private static final int MASTER_ROUNDS = 1000;
