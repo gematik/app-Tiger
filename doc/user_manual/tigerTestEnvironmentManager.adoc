@@ -758,6 +758,8 @@ tigerProxy:
     filename: "foobar.tgr"
     # default false
     clearFileOnBoot: true
+    # read traffic from a file at startup
+    sourceFile: "sourceFile.tgr"
     # filter messages read from file (JEXL expression)
     readFilter: "message.statusCode == '200'"
   # a list of routing entries the proxy should apply to traffic
@@ -903,7 +905,6 @@ tigerProxy:
     # the name for the traffic Endpoint. can be any string, which will be
     # displayed at /tracingpoints
     name: "tigerProxy Tracing Point"
-
 ----
 
 === Standalone mode vs. implicit startup with test suite
