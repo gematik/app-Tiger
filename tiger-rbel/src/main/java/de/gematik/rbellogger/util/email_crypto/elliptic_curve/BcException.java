@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.mockserver.socket.tls;
+package de.gematik.rbellogger.util.email_crypto.elliptic_curve;
 
-/*
- * @author jamesdbloom
+/**
+ * Die Klasse behandelt Fehler, die während der Arbeit mit BouncyCastle auftreten können.
+ *
+ * @author hve
  */
-public enum ForwardProxyTLSX509CertificatesTrustManager {
-  ANY,
-  JVM,
-  CUSTOM
+public class BcException extends Exception {
+
+  private static final long serialVersionUID = 2L;
+
+  /**
+   * Der Konstruktor
+   *
+   * @param msg - Die Fehlernachricht
+   */
+  public BcException(final String msg) {
+    super(msg);
+  }
 }

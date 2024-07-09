@@ -26,7 +26,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.lib.TigerDirector;
@@ -53,6 +53,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.collections4.iterators.ReverseListIterator;
 import org.apache.commons.collections4.list.UnmodifiableList;
 import org.apache.commons.lang3.StringUtils;
@@ -225,10 +226,8 @@ public class RbelMessageValidator {
       final RequestParameter requestParameter, Optional<RbelElement> startFromMessageInclusively) {
     List<RbelElement> msgs =
         getRbelElementsOptionallyFromGivenMessageInclusively(startFromMessageInclusively);
-    final String hostFilter =
-        TigerGlobalConfiguration.readString("tiger.rbel.request.filter.host", "");
-    final String methodFilter =
-        TigerGlobalConfiguration.readString("tiger.rbel.request.filter.method", "");
+    final String hostFilter = TigerConfigurationKeys.REQUEST_FILTER_HOST.getValueOrDefault();
+    final String methodFilter = TigerConfigurationKeys.REQUEST_FILTER_METHOD.getValueOrDefault();
 
     List<RbelElement> candidateMessages =
         getCandidateMessages(requestParameter, msgs, hostFilter, methodFilter);
@@ -353,45 +352,39 @@ public class RbelMessageValidator {
                   .map(RbelHttpRequestFacet::getPath)
                   .map(this::getValueOrContentString)
                   .orElse(""));
-      boolean match = uri.getPath().equals(path) || uri.getPath().matches(path);
+      boolean match = doesItMatch(uri.getPath(), path);
       if (!match && emptyPath.contains(path) && emptyPath.contains(uri.getPath())) {
         match = true;
       }
       return match;
     } catch (final URISyntaxException e) {
       return false;
-    } catch (final PatternSyntaxException rte) {
-      log.error("Error while parsing regex!", rte);
-      return false;
     }
   }
 
   public boolean doesHostMatch(final RbelElement req, final String hostFilter) {
-    try {
-      final String host =
-          req.getFacet(RbelHttpMessageFacet.class)
-              .map(RbelHttpMessageFacet::getHeader)
-              .flatMap(el -> el.getFacet(RbelHttpHeaderFacet.class))
-              .map(el -> el.get("Host"))
-              .map(RbelElement::getRawStringContent)
-              .orElse("");
-      return StringUtils.equals(host, hostFilter) || host.matches(hostFilter);
-    } catch (final RuntimeException rte) {
-      log.error("Probable error while parsing regex!", rte);
-      return false;
-    }
+    val host =
+        req.getFacet(RbelTcpIpMessageFacet.class)
+            .flatMap(e -> RbelHostnameFacet.tryToExtractServerName(e.getReceiver()))
+            .orElse("");
+
+    return doesItMatch(host, hostFilter);
   }
 
   public boolean doesMethodMatch(final RbelElement req, final String method) {
+    final String reqMethod =
+        req.getFacet(RbelHttpRequestFacet.class)
+            .map(RbelHttpRequestFacet::getMethod)
+            .map(RbelElement::getRawStringContent)
+            .map(String::toUpperCase)
+            .orElse("");
+    return doesItMatch(reqMethod, method);
+  }
+
+  private boolean doesItMatch(final String toTest, String matchingString) {
     try {
-      final String reqMethod =
-          req.getFacet(RbelHttpRequestFacet.class)
-              .map(RbelHttpRequestFacet::getMethod)
-              .map(RbelElement::getRawStringContent)
-              .map(String::toUpperCase)
-              .orElse("");
-      return method.equals(reqMethod) || method.matches(reqMethod);
-    } catch (final RuntimeException rte) {
+      return StringUtils.equals(toTest, matchingString) || toTest.matches(matchingString);
+    } catch (PatternSyntaxException rte) {
       log.error("Probable error while parsing regex!", rte);
       return false;
     }

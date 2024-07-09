@@ -88,7 +88,7 @@ public class RbelHostnameFacet implements RbelFacet {
         .build();
   }
 
-  private class RbelHostnameStructureException extends RuntimeException {
+  private static class RbelHostnameStructureException extends RuntimeException {
     public RbelHostnameStructureException(String s) {
       super(s);
     }
@@ -108,7 +108,6 @@ public class RbelHostnameFacet implements RbelFacet {
                 hostnameFacet
                     .map(RbelHostnameFacet::getDomain)
                     .map(RbelElement::getRawStringContent)
-                    .filter(StringUtils::isNotEmpty)
-                    .filter(s -> !s.startsWith("localhost") && !s.startsWith("127.0.0.1")));
+                    .filter(StringUtils::isNotEmpty));
   }
 }

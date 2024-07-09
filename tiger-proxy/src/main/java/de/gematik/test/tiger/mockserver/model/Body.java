@@ -20,31 +20,21 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.nio.charset.Charset;
-import java.util.Objects;
+import lombok.EqualsAndHashCode;
 
 /*
  * @author jamesdbloom
  */
-public abstract class Body<T> extends Not {
-  private int hashCode;
+@EqualsAndHashCode(callSuper = false)
+public abstract class Body<T> extends ObjectWithJsonToString {
   private final Type type;
-  private Boolean optional;
 
-  public Body(Type type) {
+  Body(Type type) {
     this.type = type;
   }
 
   public Type getType() {
     return type;
-  }
-
-  public Boolean getOptional() {
-    return optional;
-  }
-
-  public Body<T> withOptional(Boolean optional) {
-    this.optional = optional;
-    return this;
   }
 
   public abstract T getValue();
@@ -81,31 +71,5 @@ public abstract class Body<T> extends Not {
     XML_SCHEMA,
     XPATH,
     LOG_EVENT,
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    if (hashCode() != o.hashCode()) {
-      return false;
-    }
-    if (!super.equals(o)) {
-      return false;
-    }
-    Body<?> body = (Body<?>) o;
-    return type == body.type && Objects.equals(optional, body.optional);
-  }
-
-  @Override
-  public int hashCode() {
-    if (hashCode == 0) {
-      hashCode = Objects.hash(super.hashCode(), type, optional);
-    }
-    return hashCode;
   }
 }

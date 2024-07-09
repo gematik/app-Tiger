@@ -138,8 +138,7 @@ public class RbelElement extends RbelPathAble {
         .toList();
   }
 
-  // Yes, default-visibility (is called recursively)
-  List<RbelElement> traverseAndReturnNestedMembersInternal() {
+  private List<RbelElement> traverseAndReturnNestedMembersInternal() {
     if (log.isTraceEnabled()) {
       log.trace(
           "Traversing into {}: facets are {}",
@@ -149,10 +148,7 @@ public class RbelElement extends RbelPathAble {
     if (hasFacet(RbelRootFacet.class)) {
       return List.of(this);
     } else {
-      return getChildNodes().stream()
-          .map(RbelElement::traverseAndReturnNestedMembersInternal)
-          .flatMap(List::stream)
-          .toList();
+      return traverseAndReturnNestedMembers();
     }
   }
 

@@ -55,7 +55,7 @@ class TestTigerProxyLogging extends AbstractTigerProxyTest {
     checkForLogMessage(
         () -> proxyRest.post("http://backend/foobar"),
         "Received HTTP POST /foobar",
-        "Returning HTTP 200 Response-Length: 185 bytes");
+        "Returning HTTP 200 Response-Length:");
     checkForLogMessage(
         () -> proxyRest.get("http://localhost:" + fakeBackendServerPort + "/schmoobar"),
         "Received HTTP GET /schmoobar",

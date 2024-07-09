@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.proxy.handler;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelElementConvertionPair;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelBinaryFacet;
 import de.gematik.rbellogger.data.facet.RbelFacet;
@@ -25,6 +26,7 @@ import de.gematik.rbellogger.data.facet.RbelNoteFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
 import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
+import de.gematik.rbellogger.util.RbelException;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.mockserver.model.BinaryProxyListener;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -34,6 +36,7 @@ import java.net.SocketException;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +50,10 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
 
   private final BundledServerNamesAdder bundledServerNamesAdder = new BundledServerNamesAdder();
   private final TigerProxy tigerProxy;
-  private final Map<Pair<SocketAddress, SocketAddress>, byte[]> bufferedParts = new HashMap<>();
+  private final Map<Pair<SocketAddress, SocketAddress>, byte[]> bufferedParts =
+      new ConcurrentHashMap<>();
+  private final Map<Pair<SocketAddress, SocketAddress>, Long> currentSequenceNumber =
+      new ConcurrentHashMap<>();
 
   @Override
   public void onProxy(
@@ -163,9 +169,10 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
       BinaryMessage message, SocketAddress senderAddress, SocketAddress receiverAddress) {
     var key = Pair.of(senderAddress, receiverAddress);
     final Optional<RbelElement> requestOptional =
-        tryToConvertMessage(addBufferToMessage(message, key), senderAddress, receiverAddress);
+        tryToConvertMessage(addBufferToMessage(message, key), senderAddress, receiverAddress, key);
     if (requestOptional.isPresent()) {
       bufferedParts.remove(key);
+      currentSequenceNumber.remove(key);
     }
     return requestOptional;
   }
@@ -181,17 +188,28 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
   }
 
   private Optional<RbelElement> tryToConvertMessage(
-      byte[] messageContent, SocketAddress senderAddress, SocketAddress receiverAddress) {
+      byte[] messageContent,
+      SocketAddress senderAddress,
+      SocketAddress receiverAddress,
+      Pair<SocketAddress, SocketAddress> connectionKey) {
+    var messageElement = new RbelElement(messageContent, null);
     final RbelElement result =
         getTigerProxy()
             .getRbelLogger()
             .getRbelConverter()
             .parseMessage(
-                messageContent,
+                new RbelElementConvertionPair(messageElement),
                 toRbelHostname(senderAddress),
                 toRbelHostname(receiverAddress),
-                Optional.empty());
+                Optional.empty(),
+                Optional.ofNullable(currentSequenceNumber.get(connectionKey)));
     if (result.getFacets().stream().filter(f -> !(f instanceof RbelNoteFacet)).count() <= 1) {
+      var sequenceNumber =
+          result
+              .getFacet(RbelTcpIpMessageFacet.class)
+              .orElseThrow(() -> new RbelException("cannot retrieve sequence number"))
+              .getSequenceNumber();
+      currentSequenceNumber.put(connectionKey, sequenceNumber);
       getTigerProxy().getRbelLogger().getRbelConverter().removeMessage(result);
       return Optional.empty();
     }

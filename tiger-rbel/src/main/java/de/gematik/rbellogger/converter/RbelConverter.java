@@ -57,7 +57,7 @@ public class RbelConverter {
   @Getter private final List<RbelConverterPlugin> postConversionListeners = new ArrayList<>();
   private final List<RbelConverterPlugin> converterPlugins =
       new LinkedList<>(
-          Arrays.asList(
+          List.of(
               new RbelBase64JsonConverter(),
               new RbelUriConverter(),
               new RbelHttpResponseConverter(),
@@ -78,7 +78,10 @@ public class RbelConverter {
               new RbelCborConverter(),
               new RbelPop3CommandConverter(),
               new RbelPop3ResponseConverter(),
-              new RbelMimeConverter()));
+              new RbelMimeConverter(),
+              new RbelEncryptedMailConverter(),
+              new RbelSmtpCommandConverter(),
+              new RbelSmtpResponseConverter()));
   @Builder.Default private int rbelBufferSizeInMb = 1024;
   @Builder.Default private boolean manageBuffer = false;
   @Getter @Builder.Default private long currentBufferSize = 0;
@@ -166,8 +169,19 @@ public class RbelConverter {
       final RbelHostname sender,
       final RbelHostname receiver,
       final Optional<ZonedDateTime> transmissionTime) {
+    return parseMessage(messagePair, sender, receiver, transmissionTime, Optional.empty());
+  }
+
+  // TODO Remove sequenceNumber parameter after TGR-1447 is solved
+  public RbelElement parseMessage(
+      @NonNull final RbelElementConvertionPair messagePair,
+      final RbelHostname sender,
+      final RbelHostname receiver,
+      final Optional<ZonedDateTime> transmissionTime,
+      final Optional<Long> sequenceNumber) {
     try {
-      return parseMessageAsync(messagePair, sender, receiver, transmissionTime).get();
+      return parseMessageAsync(messagePair, sender, receiver, transmissionTime, sequenceNumber)
+          .get();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new RbelConversionException(e);
@@ -181,6 +195,16 @@ public class RbelConverter {
       final RbelHostname sender,
       final RbelHostname receiver,
       final Optional<ZonedDateTime> transmissionTime) {
+    return parseMessageAsync(messagePair, sender, receiver, transmissionTime, Optional.empty());
+  }
+
+  // TODO Remove sequenceNumber parameter after TGR-1447 is solved
+  public CompletableFuture<RbelElement> parseMessageAsync(
+      @NonNull final RbelElementConvertionPair messagePair,
+      final RbelHostname sender,
+      final RbelHostname receiver,
+      final Optional<ZonedDateTime> transmissionTime,
+      final Optional<Long> sequenceNumber) {
     final var messageElement = messagePair.getMessage();
     addMessageToHistory(messageElement);
 
@@ -188,7 +212,7 @@ public class RbelConverter {
         RbelTcpIpMessageFacet.builder()
             .receiver(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, receiver))
             .sender(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, sender))
-            .sequenceNumber(messageSequenceNumber++)
+            .sequenceNumber(sequenceNumber.orElseGet(() -> messageSequenceNumber++))
             .build());
 
     messageElement.addFacet(new RbelParsingNotCompleteFacet(this));

@@ -42,4 +42,9 @@ public class TigerConfigurationKeys {
           "tiger.internal.externalServer.connectionTimeout", Integer.class, 1000);
   public static final TigerTypedConfigurationKey<Boolean> TRAFFIC_VISUALIZATION_ACTIVE =
       new TigerTypedConfigurationKey<>("tiger.lib.trafficVisualization", Boolean.class, false);
+
+  public static final TigerTypedConfigurationKey<String> REQUEST_FILTER_HOST =
+      new TigerTypedConfigurationKey<>("tiger.rbel.request.filter.host", String.class, "");
+  public static final TigerTypedConfigurationKey<String> REQUEST_FILTER_METHOD =
+      new TigerTypedConfigurationKey<>("tiger.rbel.request.filter.method", String.class, "");
 }

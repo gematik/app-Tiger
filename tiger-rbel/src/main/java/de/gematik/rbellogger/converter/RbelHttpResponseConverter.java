@@ -41,13 +41,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
-  private Map<String, RbelHttpCodingConverter> httpCodingsMap = Map.of(
-    "chunked", RbelHttpResponseConverter::decodeChunked,
-    "deflate", RbelHttpResponseConverter::decodeDeflate,
-    "gzip", RbelHttpResponseConverter::decodeGzip
-  );
+  private Map<String, RbelHttpCodingConverter> httpCodingsMap =
+      Map.of(
+          "chunked", RbelHttpResponseConverter::decodeChunked,
+          "deflate", RbelHttpResponseConverter::decodeDeflate,
+          "gzip", RbelHttpResponseConverter::decodeGzip);
 
   private static byte[] decodeGzip(byte[] bytes, String eol, Charset charset) {
+    log.atInfo()
+        .addArgument(() -> new String(bytes, charset))
+        .log(() -> "Decoding data {} with gzip");
     try (final InputStream inputStream = new GZIPInputStream(new ByteArrayInputStream(bytes))) {
       return inputStream.readAllBytes();
     } catch (Exception e) {
@@ -56,6 +59,9 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
   }
 
   private static byte[] decodeDeflate(byte[] bytes, String eol, Charset charset) {
+    log.atTrace()
+        .addArgument(() -> new String(bytes, charset))
+        .log(() -> "Decoding data {} with deflate");
     try (final InputStream inputStream = new InflaterInputStream(new ByteArrayInputStream(bytes))) {
       return inputStream.readAllBytes();
     } catch (Exception e) {
@@ -64,19 +70,21 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
   }
 
   private static byte[] decodeChunked(byte[] inputData, String eol, Charset charset) {
+    log.atTrace()
+      .addArgument(() -> new String(inputData, charset))
+      .log(() -> "Decoding data {} with chunked encoding");
     int chunkSeparator = new String(inputData, charset).indexOf(eol) + eol.length();
 
     final int indexOfChunkTerminator =
-      RbelArrayUtils.indexOf(
-        inputData, (eol + "0" + eol).getBytes(charset), chunkSeparator);
+        RbelArrayUtils.indexOf(inputData, (eol + "0" + eol).getBytes(charset), chunkSeparator);
     if (indexOfChunkTerminator >= 0) {
       return Arrays.copyOfRange(
-        inputData, Math.min(inputData.length, chunkSeparator), indexOfChunkTerminator);
+          inputData, Math.min(inputData.length, chunkSeparator), indexOfChunkTerminator);
     } else {
       throw new RbelConversionException(
-        "Detected incorrect use of chunked encoding: Chunked was given as"
-        + " transfer-encoding, but the chunk-separator could not be found in the"
-        + " content. Message will not be parsed.");
+          "Detected incorrect use of chunked encoding: Chunked was given as"
+              + " transfer-encoding, but the chunk-separator could not be found in the"
+              + " content. Message will not be parsed.");
     }
   }
 
@@ -88,7 +96,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
   @Override
   public void consumeElement(RbelElement targetElement, final RbelConverter converter) {
     final String content = targetElement.getRawStringContent();
-    if (!content.startsWith("HTTP")) {
+    if (content == null || !content.startsWith("HTTP")) {
       return;
     }
 
@@ -165,9 +173,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
             .toList();
 
     RbelElement headerElement =
-        new RbelElement(
-            String.join(eol, headerList).getBytes(rbel.getElementCharset()),
-            rbel);
+        new RbelElement(String.join(eol, headerList).getBytes(rbel.getElementCharset()), rbel);
     final RbelMultiMap<RbelElement> headerMap =
         headerList.stream()
             .map(line -> parseStringToKeyValuePair(line, converter, headerElement))
@@ -215,33 +221,45 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
       final int offset,
       final RbelHttpHeaderFacet headerMap,
       final String eol) {
-    byte[] inputData = Arrays.copyOfRange(rbel.getRawContent(), offset, rbel.getRawContent().length);
+    byte[] inputData =
+        Arrays.copyOfRange(rbel.getRawContent(), offset, rbel.getRawContent().length);
 
-    return applyCodings(applyCodings(inputData, headerMap, eol, rbel.getElementCharset(), "Transfer-Encoding"),
-      headerMap, eol, rbel.getElementCharset(), "Content-Encoding");
+    return applyCodings(
+        applyCodings(inputData, headerMap, eol, rbel.getElementCharset(), "Content-Encoding"),
+        headerMap,
+        eol,
+        rbel.getElementCharset(),
+        "Transfer-Encoding");
   }
 
   public byte[] applyCodings(
       final byte[] inputData,
       final RbelHttpHeaderFacet headerMap,
-      final String eol, Charset charset, String codingKey) {
-    final List<RbelHttpCodingConverter> codingConverters = headerMap.getCaseInsensitiveMatches(codingKey)
-      .map(RbelElement::getRawStringContent)
-      .filter(Objects::nonNull)
-      .map(s -> s.split(","))
-      .flatMap(Arrays::stream)
-      .map(String::toLowerCase)
-      .map(String::trim)
-      .map(encoding -> {
-        if (!httpCodingsMap.containsKey(encoding)) {
-          throw new RbelConversionException("Unsupported encoding found in HTTP header: " + encoding);
-        }
-        return httpCodingsMap.get(encoding);
-      })
-      .toList();
+      final String eol,
+      Charset charset,
+      String codingKey) {
+    final List<RbelHttpCodingConverter> codingConverters =
+        headerMap
+            .getCaseInsensitiveMatches(codingKey)
+            .map(RbelElement::getRawStringContent)
+            .filter(Objects::nonNull)
+            .map(s -> s.split(","))
+            .flatMap(Arrays::stream)
+            .map(String::toLowerCase)
+            .map(String::trim)
+            .map(
+                encoding -> {
+                  if (!httpCodingsMap.containsKey(encoding)) {
+                    throw new RbelConversionException(
+                        "Unsupported encoding found in HTTP header: " + encoding);
+                  }
+                  log.info("Adding decoder for encoding: {}", encoding);
+                  return httpCodingsMap.get(encoding);
+                })
+            .toList();
 
     byte[] data = inputData;
-    
+
     for (RbelHttpCodingConverter codingConverter : codingConverters) {
       data = codingConverter.decode(data, eol, charset);
     }

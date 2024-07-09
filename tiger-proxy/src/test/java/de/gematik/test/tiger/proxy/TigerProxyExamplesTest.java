@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.proxy;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -95,8 +96,9 @@ class TigerProxyExamplesTest {
           .asString();
       TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
 
-      assertThat(tigerProxy.getRbelMessagesList().get(1).getRawStringContent())
-          .contains("barschmoolildu");
+      assertThat(tigerProxy.getRbelMessagesList().get(1))
+        .extractChildWithPath("$.body")
+        .hasStringContentEqualTo("barschmoolildu");
     }
   }
 

@@ -38,15 +38,10 @@ import lombok.extern.slf4j.Slf4j;
 public class HttpAction {
 
   private final Action<?> action;
-  private final Delay delay;
   private ExpectationForwardAndResponseCallback expectationForwardAndResponseCallback;
 
   public static HttpAction of(Action<?> actionToTake) {
-    return new HttpAction(actionToTake, Delay.NONE);
-  }
-
-  public static HttpAction of(Action<?> actionToTake, Delay delay) {
-    return new HttpAction(actionToTake, delay);
+    return new HttpAction(actionToTake);
   }
 
   public void handle(

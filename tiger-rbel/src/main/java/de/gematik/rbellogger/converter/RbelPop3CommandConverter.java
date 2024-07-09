@@ -19,7 +19,7 @@ package de.gematik.rbellogger.converter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.pop3.RbelPop3Command;
-import de.gematik.rbellogger.util.Pop3Utils;
+import de.gematik.rbellogger.util.EmailConversionUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.StringTokenizer;
@@ -37,7 +37,7 @@ public class RbelPop3CommandConverter implements RbelConverterPlugin {
   private Optional<RbelPop3CommandFacet> buildPop3CommandFacet(RbelElement element) {
     return Optional.ofNullable(element.getRawContent())
         .filter(c -> c.length > 4)
-        .filter(Pop3Utils::endsWithCrLf)
+        .filter(EmailConversionUtils::endsWithCrLf)
         .flatMap(this::parseCommand)
         .map(command -> getRbelPop3CommandFacet(element, command));
   }

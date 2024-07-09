@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.SourceType;
-import de.gematik.test.tiger.common.config.TigerConfigurationKey;
+import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.enums.ModeType;
@@ -89,8 +89,7 @@ public class RBelValidatorGlue {
   @Wenn("TGR filtere Anfragen nach Server {tigerResolvedString}")
   @When("TGR filter requests based on host {tigerResolvedString}")
   public void tgrFilterBasedOnHost(final String hostname) {
-    TigerGlobalConfiguration.putValue(
-        "tiger.rbel.request.filter.host", hostname, SourceType.TEST_CONTEXT);
+    TigerConfigurationKeys.REQUEST_FILTER_HOST.putValue(hostname, SourceType.TEST_CONTEXT);
   }
 
   /**
@@ -101,8 +100,8 @@ public class RBelValidatorGlue {
   @Wenn("TGR filtere Anfragen nach HTTP Methode {tigerResolvedString}")
   @When("TGR filter requests based on method {tigerResolvedString}")
   public void tgrFilterBasedOnMethod(final String method) {
-    TigerGlobalConfiguration.putValue(
-        "tiger.rbel.request.filter.method", method.toUpperCase(), SourceType.TEST_CONTEXT);
+    TigerConfigurationKeys.REQUEST_FILTER_METHOD.putValue(
+        method.toUpperCase(), SourceType.TEST_CONTEXT);
   }
 
   /** reset filter for method for subsequent findRequest steps. */
@@ -110,7 +109,7 @@ public class RBelValidatorGlue {
   @When("TGR reset request method filter")
   public void tgrResetRequestMethodFilter() {
     TigerGlobalConfiguration.deleteFromAllSources(
-        new TigerConfigurationKey("tiger.rbel.request.filter.method"));
+        TigerConfigurationKeys.REQUEST_FILTER_METHOD.getKey());
   }
 
   /**

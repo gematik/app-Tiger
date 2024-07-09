@@ -197,21 +197,27 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
 
   @Override
   public TigerServerStatus updateStatus(boolean quiet) {
-    if (!processReference.get().isAlive()) {
-      log.warn("Process {} for {} is stopped!", processReference.get().pid(), getServerId());
-      setStatus(
-          TigerServerStatus.STOPPED, "Jar process for " + getServerId() + " stopped unexpectedly");
-      if (now().isBefore(processStartTime.plusSeconds(3))) {
-        log.warn(
-            "{}: Unusually short process run time ({})! Suspecting defunct jar! (Exitcode={})",
-            getServerId(),
-            Duration.between(now(), processStartTime),
-            processReference.get().exitValue());
-        cleanupDefunctJar();
-      }
+    if (processReference.get() == null) {
+      setStatus(TigerServerStatus.NEW, "No Jar process found. Waiting...");
       return getStatus();
     } else {
-      return super.updateStatus(false);
+      if (!processReference.get().isAlive()) {
+        log.warn("Process {} for {} is stopped!", processReference.get().pid(), getServerId());
+        setStatus(
+            TigerServerStatus.STOPPED,
+            "Jar process for " + getServerId() + " stopped unexpectedly");
+        if (now().isBefore(processStartTime.plusSeconds(3))) {
+          log.warn(
+              "{}: Unusually short process run time ({})! Suspecting defunct jar! (Exitcode={})",
+              getServerId(),
+              Duration.between(now(), processStartTime),
+              processReference.get().exitValue());
+          cleanupDefunctJar();
+        }
+        return getStatus();
+      } else {
+        return super.updateStatus(false);
+      }
     }
   }
 

@@ -18,7 +18,7 @@ package de.gematik.test.tiger.lib.rbel;
 
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static de.gematik.test.tiger.lib.rbel.TestsuiteUtils.addTwoRequestsToTigerTestHooks;
-import static de.gematik.test.tiger.lib.rbel.TestsuiteUtils.buildRequestFromCurlFile;
+import static de.gematik.test.tiger.lib.rbel.TestsuiteUtils.buildElementsFromTgrFile;
 import static de.gematik.test.tiger.lib.rbel.TestsuiteUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -178,7 +178,7 @@ class RbelMessageValidatorTest {
   void testHostMatching_OK() {
     assertThat(
             rbelMessageValidator.doesHostMatch(
-                buildRequestFromCurlFile("getRequestLocalhost.curl"), "localhost:8080"))
+                buildElementsFromTgrFile("simpleHttpRequests.tgr").get(0), "localhost"))
         .isTrue();
   }
 
@@ -186,7 +186,7 @@ class RbelMessageValidatorTest {
   void testHostMatchingRegex_OK() {
     assertThat(
             rbelMessageValidator.doesHostMatch(
-                buildRequestFromCurlFile("getRequestLocalhost.curl"), "local.*:8080"))
+                buildElementsFromTgrFile("simpleHttpRequests.tgr").get(0), "local.*"))
         .isTrue();
   }
 
@@ -194,7 +194,7 @@ class RbelMessageValidatorTest {
   void testHostMatchingRegexNotMatching_OK() {
     assertThat(
             rbelMessageValidator.doesHostMatch(
-                buildRequestFromCurlFile("getRequestLocalhost.curl"), "eitzen.*"))
+                buildElementsFromTgrFile("simpleHttpRequests.tgr").get(0), "eitzen.*"))
         .isFalse();
   }
 
@@ -202,7 +202,7 @@ class RbelMessageValidatorTest {
   void testHostMatchingInvalidRegex_NOK() {
     assertThat(
             rbelMessageValidator.doesHostMatch(
-                buildRequestFromCurlFile("getRequestLocalhost.curl"), "["))
+                buildElementsFromTgrFile("simpleHttpRequests.tgr").get(0), "["))
         .isFalse();
   }
 
@@ -210,7 +210,7 @@ class RbelMessageValidatorTest {
   void testMethodMatching_OK() {
     assertThat(
             rbelMessageValidator.doesMethodMatch(
-                buildRequestFromCurlFile("getRequestLocalhost.curl"), "GET"))
+                buildElementsFromTgrFile("simpleHttpRequests.tgr").get(0), "GET"))
         .isTrue();
   }
 
@@ -218,7 +218,7 @@ class RbelMessageValidatorTest {
   void testMethodMatchingNotMatching_OK() {
     assertThat(
             rbelMessageValidator.doesMethodMatch(
-                buildRequestFromCurlFile("getRequestLocalhost.curl"), "POST"))
+                buildElementsFromTgrFile("simpleHttpRequests.tgr").get(0), "POST"))
         .isFalse();
   }
 
@@ -343,7 +343,7 @@ class RbelMessageValidatorTest {
     RbelMessageValidator validator = rbelMessageValidator;
     validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").build());
     RbelElement request = RbelMessageValidator.currentRequest;
-    assertTrue(validator.doesHostMatch(request, "localhost:8080"));
+    assertTrue(validator.doesHostMatch(request, "localhost"));
   }
 
   @Test
@@ -365,7 +365,7 @@ class RbelMessageValidatorTest {
         RequestParameter.builder().path(".*").startFromLastRequest(true).build());
     RbelElement request = RbelMessageValidator.currentRequest;
 
-    assertTrue(validator.doesHostMatch(request, "eitzen.at:80"));
+    assertTrue(validator.doesHostMatch(request, "eitzen.at"));
   }
 
   @Test
@@ -374,7 +374,7 @@ class RbelMessageValidatorTest {
     RbelMessageValidator validator = rbelMessageValidator;
     validator.findLastRequest();
     RbelElement request = RbelMessageValidator.currentRequest;
-    assertTrue(validator.doesHostMatch(request, "eitzen.at:80"));
+    assertTrue(validator.doesHostMatch(request, "eitzen.at"));
   }
 
   @Test
@@ -387,7 +387,7 @@ class RbelMessageValidatorTest {
             .rbelPath("$.header.User-Agent")
             .value("mypersonalagent")
             .build());
-    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "eitzen.at:80"));
+    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "eitzen.at"));
   }
 
   @Test
@@ -416,7 +416,7 @@ class RbelMessageValidatorTest {
             .rbelPath("$.header.User-Agent")
             .value("mypersonal.*")
             .build());
-    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "eitzen.at:80"));
+    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "eitzen.at"));
   }
 
   @Test
@@ -425,7 +425,7 @@ class RbelMessageValidatorTest {
     RbelMessageValidator validator = rbelMessageValidator;
     validator.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").build());
-    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "localhost:8080"));
+    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "localhost"));
   }
 
   @Test
@@ -434,7 +434,7 @@ class RbelMessageValidatorTest {
     RbelMessageValidator validator = rbelMessageValidator;
     validator.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(".*").rbelPath("$.header.Eitzen-Specific-header").build());
-    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "eitzen.at:80"));
+    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "eitzen.at"));
   }
 
   @Test
@@ -455,7 +455,7 @@ class RbelMessageValidatorTest {
             .rbelPath("$.header.User-Agent")
             .value("mypersonal.*")
             .build());
-    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "eitzen.at:80"));
+    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "eitzen.at"));
     assertThat(
             RbelMessageValidator.currentResponse
                 .getFacet(RbelHttpResponseFacet.class)

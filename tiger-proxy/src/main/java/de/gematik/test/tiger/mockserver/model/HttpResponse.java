@@ -295,14 +295,6 @@ public class HttpResponse extends Action<HttpResponse>
     }
   }
 
-  private Cookies getOrCreateCookies() {
-    if (this.cookies == null) {
-      this.cookies = new Cookies();
-      this.hashCode = 0;
-    }
-    return this.cookies;
-  }
-
   public HttpResponse withCookies(Cookies cookies) {
     if (cookies == null || cookies.isEmpty()) {
       this.cookies = null;
@@ -341,7 +333,6 @@ public class HttpResponse extends Action<HttpResponse>
         .withBody(body)
         .withHeaders(headers != null ? headers.clone() : null)
         .withCookies(cookies != null ? cookies.clone() : null)
-        .withDelay(getDelay())
         .withStreamId(streamId);
   }
 

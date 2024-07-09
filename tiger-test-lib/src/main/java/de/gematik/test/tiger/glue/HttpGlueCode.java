@@ -16,156 +16,30 @@
 
 package de.gematik.test.tiger.glue;
 
-import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
-import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.writer.RbelContentType;
-import de.gematik.rbellogger.writer.RbelSerializationResult;
-import de.gematik.rbellogger.writer.RbelWriter;
+import static de.gematik.test.tiger.lib.TigerHttpClient.*;
+
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
-import de.gematik.test.tiger.common.jexl.TigerJexlContext;
-import de.gematik.test.tiger.lib.TigerDirector;
-import de.gematik.test.tiger.lib.exception.TigerHttpGlueCodeException;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.When;
 import io.restassured.RestAssured;
-import io.restassured.config.EncoderConfig;
 import io.restassured.config.RedirectConfig;
 import io.restassured.http.Method;
-import io.restassured.internal.RequestSpecificationImpl;
-import io.restassured.specification.QueryableRequestSpecification;
 import io.restassured.specification.RequestSpecification;
 import java.net.URI;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.assertj.core.api.SoftAssertionsProvider.ThrowingRunnable;
 
+@SuppressWarnings("unused") // glue code is used via reflection
 @Slf4j
 public class HttpGlueCode {
-
-  public static final String KEY_HTTP_CLIENT = "httpClient";
-  public static final String KEY_TIGER = "tiger";
-  private static final TigerTypedConfigurationKey<Boolean> executeBlocking =
-      new TigerTypedConfigurationKey<>(
-          new TigerConfigurationKey(KEY_TIGER, KEY_HTTP_CLIENT, "executeBlocking"),
-          Boolean.class,
-          true);
-  private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
-  public static final String KEY_DEFAULT_HEADER = "defaultHeader";
-  private static RbelLogger rbelLogger;
-  private static RbelWriter rbelWriter;
-
-  private static RequestSpecification givenDefaultSpec() {
-
-    EncoderConfig encoderConfig =
-        RestAssured.config()
-            .getEncoderConfig()
-            .appendDefaultContentCharsetToContentTypeIfUndefined(true);
-
-    final RequestSpecification requestSpecification =
-        RestAssured.given()
-            .urlEncodingEnabled(false)
-            .config(RestAssured.config().encoderConfig(encoderConfig));
-
-    requestSpecification.headers(
-        TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER));
-
-    contentTypeFromRequestSpec(requestSpecification)
-        .ifPresent(ct -> setExactContentTypeHeader(requestSpecification, ct));
-    return requestSpecification;
-  }
-
-  private static void applyRedirectConfig(RedirectConfig newRedirectConfig) {
-    RestAssured.config = RestAssured.config.redirect(newRedirectConfig);
-  }
-
-  private static void resetRedirectConfig() {
-    applyRedirectConfig(new RedirectConfig());
-  }
-
-  private static String resolveToString(String value) {
-    return resolve(value).getContentAsString();
-  }
-
-  private static RbelSerializationResult resolve(String value) {
-    final String resolvedInput = TigerGlobalConfiguration.resolvePlaceholders(value);
-    if (TigerDirector.getLibConfig().getHttpClientConfig().isActivateRbelWriter()) {
-      final RbelElement input = getRbelConverter().convertElement(resolvedInput, null);
-      return getRbelWriter().serialize(input, new TigerJexlContext().withRootElement(input));
-    } else {
-      return RbelSerializationResult.withUnknownType(resolvedInput.getBytes(DEFAULT_CHARSET));
-    }
-  }
-
-  private static void executeCommandWithContingentWait(ThrowingRunnable command) {
-    if (Boolean.TRUE.equals(executeBlocking.getValueOrDefault())) {
-      try {
-        command.run();
-      } catch (Exception e) {
-        throw new TigerHttpGlueCodeException("Error during request execution", e);
-      }
-    } else {
-      executeCommandInBackground(command);
-    }
-  }
-
-  private static void executeCommandInBackground(ThrowingRunnable command) {
-    TigerDirector.getTigerTestEnvMgr()
-        .getCachedExecutor()
-        .submit(
-            () -> {
-              try {
-                command.run();
-              } catch (Exception e) {
-                throw new TigerHttpGlueCodeException("Error during request execution", e);
-              }
-            });
-  }
-
-  private static RbelWriter getRbelWriter() {
-    assureRbelIsInitialized();
-    return rbelWriter;
-  }
-
-  private static RbelConverter getRbelConverter() {
-    assureRbelIsInitialized();
-    return rbelLogger.getRbelConverter();
-  }
-
-  private static void assureRbelIsInitialized() {
-    if (rbelWriter == null) {
-      rbelLogger =
-          RbelLogger.build(
-              RbelConfiguration.builder()
-                  .activateAsn1Parsing(true)
-                  .initializers(
-                      Optional.ofNullable(
-                              TigerDirector.getTigerTestEnvMgr()
-                                  .getConfiguration()
-                                  .getTigerProxy()
-                                  .getKeyFolders())
-                          .stream()
-                          .flatMap(List::stream)
-                          .map(RbelKeyFolderInitializer::new)
-                          .map(init -> (Consumer<RbelConverter>) init)
-                          .toList())
-                  .build());
-      rbelWriter = new RbelWriter(rbelLogger.getRbelConverter());
-    }
-  }
 
   /**
    * Sends an empty request via the selected method. Placeholders in address will be resolved.
@@ -199,7 +73,7 @@ public class HttpGlueCode {
   @Dann(
       "TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten")
   public void sendEmptyRequestNonBlocking(Method method, URI address) {
-    log.info("Sending empty {} request to {}", method, address);
+    log.info("Sending empty non-blocking {} request to {}", method, address);
     executeCommandInBackground(() -> givenDefaultSpec().request(method, address));
   }
 
@@ -258,7 +132,7 @@ public class HttpGlueCode {
           + " mit folgenden Headern:")
   public void sendEmptyRequestWithHeadersNonBlocking(
       Method method, URI address, DataTable customHeaders) {
-    log.info("Sending empty {} request with headers to {}", method, address);
+    log.info("Sending empty {} non-blocking request with headers to {}", method, address);
     Map<String, String> defaultHeaders =
         TigerGlobalConfiguration.readMap(KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER);
     defaultHeaders.putAll(resolveMap(customHeaders.asMap(), false));
@@ -306,47 +180,8 @@ public class HttpGlueCode {
       "TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit Body {string} ohne auf"
           + " Antwort zu warten")
   public void sendRequestWithBodyNonBlocking(Method method, URI address, String body) {
-    log.info("Sending {} request with body to {}", method, address);
+    log.info("Sending {} non-blocking request with body to {}", method, address);
     executeCommandInBackground(() -> sendResolvedBody(method, address, body));
-  }
-
-  private static void sendResolvedBody(Method method, URI address, String body) {
-    sendResolvedBody(method, address, null, body);
-  }
-
-  private static void sendResolvedBody(
-      Method method, URI address, String contentType, String body) {
-    final RbelSerializationResult resolved = resolve(body);
-    final RequestSpecification requestSpecification = givenDefaultSpec();
-
-    if (contentType != null) {
-      setExactContentTypeHeader(requestSpecification, contentType);
-    }
-    resolved
-        .getContentType()
-        .map(RbelContentType::getContentTypeString)
-        .filter(
-            o ->
-                StringUtils.isEmpty(
-                    ((RequestSpecificationImpl) requestSpecification).getContentType()))
-        .ifPresent(requestSpecification::contentType);
-    requestSpecification.body(resolved.getContent()).request(method, address);
-  }
-
-  private static Optional<String> contentTypeFromRequestSpec(
-      RequestSpecification requestSpecification) {
-    return Optional.ofNullable(
-        ((QueryableRequestSpecification) requestSpecification).getContentType());
-  }
-
-  private static void setExactContentTypeHeader(
-      RequestSpecification requestSpecification, String contentType) {
-    requestSpecification.config(
-        RestAssured.config()
-            .encoderConfig(
-                EncoderConfig.encoderConfig()
-                    .appendDefaultContentCharsetToContentTypeIfUndefined(false)));
-    requestSpecification.contentType(contentType);
   }
 
   /**
@@ -426,7 +261,6 @@ public class HttpGlueCode {
     executeCommandWithContingentWait(() -> sendResolvedBody(method, address, body));
   }
 
-  @SuppressWarnings("JavadocLinkAsPlainText")
   @SneakyThrows
   @When(
       "TGR send {requestType} request to {tigerResolvedUrl} with contentType {string} and multiline"
@@ -541,18 +375,6 @@ public class HttpGlueCode {
                                     KEY_TIGER, KEY_HTTP_CLIENT, KEY_DEFAULT_HEADER, key))));
   }
 
-  private Map<String, String> resolveMap(Map<String, String> map, boolean encoded) {
-    return map.entrySet().stream()
-        .collect(
-            Collectors.toMap(
-                entry -> resolveToString(entry.getKey()),
-                entry ->
-                    encoded
-                        ? URLEncoder.encode(
-                            resolveToString(entry.getValue()), StandardCharsets.UTF_8)
-                        : resolveToString(entry.getValue())));
-  }
-
   /**
    * Modifies the global configuration of the HttpClient to not automatically follow redirects. All
    * following requests will use the modified configuration.
@@ -574,5 +396,17 @@ public class HttpGlueCode {
   @Wenn("TGR HttpClient followRedirects Konfiguration zurücksetzt")
   public void resetHttpClientRedirectConfiguration() {
     resetRedirectConfig();
+  }
+
+  private Map<String, String> resolveMap(Map<String, String> map, boolean encoded) {
+    return map.entrySet().stream()
+            .collect(
+                    Collectors.toMap(
+                            entry -> resolveToString(entry.getKey()),
+                            entry ->
+                                    encoded
+                                            ? URLEncoder.encode(
+                                            resolveToString(entry.getValue()), StandardCharsets.UTF_8)
+                                            : resolveToString(entry.getValue())));
   }
 }

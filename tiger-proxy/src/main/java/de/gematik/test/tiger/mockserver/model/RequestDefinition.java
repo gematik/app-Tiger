@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 /*
  * @author jamesdbloom
  */
-public abstract class RequestDefinition extends Not {
+public abstract class RequestDefinition extends ObjectWithJsonToString {
 
   private String logCorrelationId;
 
@@ -36,10 +36,6 @@ public abstract class RequestDefinition extends Not {
   }
 
   public abstract RequestDefinition shallowClone();
-
-  public RequestDefinition cloneWithLogCorrelationId() {
-    return shallowClone().withLogCorrelationId(getLogCorrelationId());
-  }
 
   @Override
   public boolean equals(Object o) {

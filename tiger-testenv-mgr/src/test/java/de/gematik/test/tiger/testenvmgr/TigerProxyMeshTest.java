@@ -321,14 +321,14 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
             "127.0.0.1",
             Integer.parseInt(TigerGlobalConfiguration.resolvePlaceholders("${free.port.35}")))) {
       clientSocket.setSoTimeout(1);
-      clientSocket.getOutputStream().write("{\"foo\":\"bar\"}".getBytes());
+      clientSocket.getOutputStream().write(("{\"foo\":\"" + "bar".repeat(1000) + "\"}").getBytes());
       clientSocket.getOutputStream().flush();
-      await()
-          .atMost(10, TimeUnit.SECONDS)
-          .until(
-              () ->
-                  !envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().isEmpty());
     }
+
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .until(
+            () -> !envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().isEmpty());
     waitShortTime();
   }
 
@@ -383,7 +383,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
           .andTheInitialElement()
           .extractChildWithPath("$.sender")
           .asString()
-          .isIn("localhost:" + senderPort, "127.0.0.1:" + senderPort);
+          .matches("((view-|)localhost|127\\.0\\.0\\.1):" + senderPort);
 
       assertThat(message)
           .extractChildWithPath("$.receiver.bundledServerName")
@@ -424,10 +424,11 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
     waitShortTime();
     val numberOfMessages = 200;
     final Random random = new Random();
-    final RbelConverter reverseProxyConverter = ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
-      .getTigerProxy()
-      .getRbelLogger()
-      .getRbelConverter();
+    final RbelConverter reverseProxyConverter =
+        ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
+            .getTigerProxy()
+            .getRbelLogger()
+            .getRbelConverter();
     reverseProxyConverter.addConverter(
         (e, c) -> {
           try {

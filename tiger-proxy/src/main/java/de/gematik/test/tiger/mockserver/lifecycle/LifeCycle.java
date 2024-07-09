@@ -21,7 +21,7 @@ import static de.gematik.test.tiger.mockserver.mock.HttpState.clearPort;
 import static de.gematik.test.tiger.mockserver.mock.HttpState.setPort;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.slf4j.event.Level.*;
 
 import de.gematik.test.tiger.mockserver.configuration.Configuration;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
@@ -218,7 +218,6 @@ public abstract class LifeCycle {
       List<Integer> requestedPortBindings,
       List<Future<Channel>> channelFutures) {
     List<Integer> actualPortBindings = new ArrayList<>();
-    final String localBoundIP = configuration.localBoundIP();
     for (final Integer portToBind : requestedPortBindings) {
       try {
         final CompletableFuture<Channel> channelOpened = new CompletableFuture<>();
@@ -227,12 +226,7 @@ public abstract class LifeCycle {
             .newThread(
                 () -> {
                   try {
-                    InetSocketAddress inetSocketAddress;
-                    if (isBlank(localBoundIP)) {
-                      inetSocketAddress = new InetSocketAddress(portToBind);
-                    } else {
-                      inetSocketAddress = new InetSocketAddress(localBoundIP, portToBind);
-                    }
+                    InetSocketAddress inetSocketAddress = new InetSocketAddress(portToBind);
                     serverBootstrap
                         .bind(inetSocketAddress)
                         .addListener(

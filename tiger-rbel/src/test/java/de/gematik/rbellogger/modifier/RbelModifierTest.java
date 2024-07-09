@@ -16,6 +16,7 @@
 
 package de.gematik.rbellogger.modifier;
 
+import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
@@ -49,10 +50,10 @@ class RbelModifierTest extends AbstractModifierTest {
 
     final RbelElement modifiedMessage = modifyMessageAndParseResponse(message);
 
-    assertThat(message.findElement("$.header.Version").map(RbelElement::getRawStringContent))
-        .contains("9.0.0");
-    assertThat(
-            modifiedMessage.findElement("$.header.Version").map(RbelElement::getRawStringContent))
+    assertThat(message).extractChildWithPath("$.header.Version").asString().contains("9.0.0");
+    assertThat(modifiedMessage)
+        .extractChildWithPath("$.header.Version")
+        .asString()
         .contains("foobar");
   }
 
@@ -124,8 +125,7 @@ class RbelModifierTest extends AbstractModifierTest {
                 .getRawStringContent())
         .isNull();
 
-    assertThat(modifiedMessage.getRawStringContent())
-        .contains("HTTP/1.1 200\r\nCache-Control: max-age=300");
+    assertThat(modifiedMessage).asString().startsWith("HTTP/1.1 200\r\nCache-Control: max-age=300");
   }
 
   @Test
@@ -225,9 +225,12 @@ class RbelModifierTest extends AbstractModifierTest {
 
     final RbelElement modifiedMessage = modifyMessageAndParseResponse(message);
 
-    assertThat(modifiedMessage.findElement("$.body.keys.0.kid").get().getRawStringContent())
-        .isEqualTo("anotherKeyId");
-    assertThat(modifiedMessage.findElement("$.body").get().getRawStringContent())
+    assertThat(modifiedMessage)
+        .extractChildWithPath("$.body.keys.0.kid")
+        .hasStringContentEqualTo("anotherKeyId");
+    assertThat(modifiedMessage)
+        .extractChildWithPath("$.body")
+        .asString()
         .contains("\"keys\"")
         .contains("\"kid\"")
         .contains("\"y\"");

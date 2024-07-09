@@ -26,8 +26,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import javax.net.ssl.SSLException;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 import lombok.extern.slf4j.Slf4j;
 
 /*
@@ -48,9 +46,6 @@ public class NettySslContextFactory {
     keyAndCertificateFactory = createKeyAndCertificateFactory();
     System.setProperty("https.protocols", configuration.tlsProtocols());
     configuration.nettySslContextFactoryCustomizer().accept(this);
-    if (configuration.proactivelyInitialiseTLS()) {
-      createServerSslContext();
-    }
   }
 
   public KeyAndCertificateFactory createKeyAndCertificateFactory() {
@@ -66,7 +61,7 @@ public class NettySslContextFactory {
   public synchronized SslContext createClientSslContext(boolean enableHttp2) {
     String key = "enableHttp2=" + enableHttp2;
     SslContext clientSslContext = clientSslContexts.get(key);
-    if (clientSslContext != null && !configuration.rebuildTLSContext()) {
+    if (clientSslContext != null) {
       return clientSslContext;
     } else {
       return buildFreshClientSslContext(enableHttp2);
@@ -86,26 +81,11 @@ public class NettySslContextFactory {
       if (enableHttp2) {
         configureALPN(sslContextBuilder);
       }
-      switch (configuration.forwardProxyTLSX509CertificatesTrustManagerType()) {
-        case ANY:
-          sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
-          break;
-        case JVM:
-          List<X509Certificate> mockServerX509Certificates = new ArrayList<>();
-          mockServerX509Certificates.add(keyAndCertificateFactory.x509Certificate());
-          mockServerX509Certificates.add(
-              keyAndCertificateFactory.certificateAuthorityX509Certificate());
-          sslContextBuilder.trustManager(jvmCAX509TrustCertificates(mockServerX509Certificates));
-          break;
-        case CUSTOM:
-          sslContextBuilder.trustManager(customCAX509TrustCertificates());
-          break;
-      }
+      sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
       var clientSslContext =
           buildClientSslContext(
               configuration.sslClientContextBuilderCustomizer().apply(sslContextBuilder));
       clientSslContexts.put("enableHttp2=" + enableHttp2, clientSslContext);
-      configuration.rebuildTLSContext(false);
       return clientSslContext;
     } catch (Exception e) {
       throw new RuntimeException("Exception creating SSL context for client", e);
@@ -128,35 +108,13 @@ public class NettySslContextFactory {
     return keyAndCertificateFactory.certificateChain().toArray(new X509Certificate[0]);
   }
 
-  private X509Certificate[] jvmCAX509TrustCertificates(
-      List<X509Certificate> additionalX509Certificates)
-      throws NoSuchAlgorithmException, KeyStoreException {
-    TrustManagerFactory trustManagerFactory =
-        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-    trustManagerFactory.init((KeyStore) null);
-    return Arrays.stream(trustManagerFactory.getTrustManagers())
-        .filter(X509TrustManager.class::isInstance)
-        .flatMap(
-            trustManager -> Arrays.stream(((X509TrustManager) trustManager).getAcceptedIssuers()))
-        .collect(() -> additionalX509Certificates, List::add, List::addAll)
-        .toArray(new X509Certificate[0]);
-  }
-
-  private X509Certificate[] customCAX509TrustCertificates() {
-    ArrayList<X509Certificate> x509Certificates = new ArrayList<>();
-    x509Certificates.add(keyAndCertificateFactory.x509Certificate());
-    x509Certificates.add(keyAndCertificateFactory.certificateAuthorityX509Certificate());
-    return x509Certificates.toArray(new X509Certificate[0]);
-  }
-
   public synchronized SslContext createServerSslContext() {
     if (serverSslContext != null
         // create x509 and private key if none exist yet
         && !keyAndCertificateFactory.certificateNotYetCreated()
         // re-create x509 and private key if SAN list has been updated and dynamic update has not
         // been disabled
-        && (!configuration.rebuildServerTlsContext()
-            || configuration.preventCertificateDynamicUpdate())) {
+        && (!configuration.rebuildServerTlsContext())) {
       return serverSslContext;
     }
     try {
@@ -175,17 +133,14 @@ public class NettySslContextFactory {
                   keyAndCertificateFactory.privateKey(),
                   keyAndCertificateFactory.certificateChain())
               .protocols(configuration.tlsProtocols().split(","))
-              .clientAuth(
-                  configuration.tlsMutualAuthenticationRequired()
-                      ? ClientAuth.REQUIRE
-                      : ClientAuth.OPTIONAL);
+              .clientAuth(ClientAuth.OPTIONAL);
       configureALPN(sslContextBuilder);
       sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
       serverSslContext =
           configuration.sslServerContextBuilderCustomizer().apply(sslContextBuilder).build();
       configuration.rebuildServerTlsContext(false);
       return serverSslContext;
-    } catch (Exception e) {
+    } catch (RuntimeException | SSLException e) {
       log.error("Exception creating SSL context for server", e);
       throw new RuntimeException("exception creating SSL context for server", e);
     }
