@@ -9,7 +9,6 @@ import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelValueFacet;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
@@ -68,12 +67,13 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
         .atMost(5, TimeUnit.SECONDS)
         .ignoreExceptions()
         .until(
-            () -> envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().stream()
-                      .anyMatch(
-                          e ->
-                              e.findElement("$.body.recordId")
-                                  .flatMap(RbelElement::seekValue)
-                                  .filter(v -> v.equals("X114428539"))
-                                  .isPresent()));
+            () ->
+                envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().stream()
+                    .allMatch(
+                        e ->
+                            e.findElement("$.body.recordId")
+                                .flatMap(RbelElement::seekValue)
+                                .filter(v -> v.equals("X114428539"))
+                                .isPresent()));
   }
 }

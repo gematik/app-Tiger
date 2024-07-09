@@ -72,13 +72,14 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
                       convertedResponse -> {
                         if (shouldWaitForResponse) {
                           if (convertedResponse.isPresent() && convertedRequest.isPresent()) {
+                            var request = convertedRequest.get();
+                            var response = convertedResponse.get();
                             final TracingMessagePairFacet pairFacet =
-                                new TracingMessagePairFacet(
-                                    convertedResponse.get(), convertedRequest.get());
-                            convertedRequest.get().addOrReplaceFacet(pairFacet);
-                            convertedResponse.get().addOrReplaceFacet(pairFacet);
-                            getTigerProxy().triggerListener(convertedRequest.get());
-                            getTigerProxy().triggerListener(convertedResponse.get());
+                                new TracingMessagePairFacet(response, request);
+                            request.addOrReplaceFacet(pairFacet);
+                            response.addOrReplaceFacet(pairFacet);
+                            getTigerProxy().triggerListener(request);
+                            getTigerProxy().triggerListener(response);
                           } else {
                             convertedRequest
                                 .or(() -> convertedResponse)

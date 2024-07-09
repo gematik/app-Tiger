@@ -101,7 +101,7 @@ public class TracingMessagePair implements TracingMessageFrame {
               .build());
       res.addOrReplaceFacet(
           res.getFacetOrFail(RbelTcpIpMessageFacet.class).toBuilder()
-              .sequenceNumber(request.getTracingDto().getSequenceNumberResponse())
+              .sequenceNumber(response.getTracingDto().getSequenceNumberResponse())
               .receivedFromRemoteWithUrl(remoteProxyClient.getRemoteProxyUrl())
               .build());
     }

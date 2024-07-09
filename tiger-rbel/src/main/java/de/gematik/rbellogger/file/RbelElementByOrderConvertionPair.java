@@ -7,6 +7,7 @@ package de.gematik.rbellogger.file;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelElementConvertionPair;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
+import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -36,7 +37,11 @@ public class RbelElementByOrderConvertionPair extends RbelElementConvertionPair 
     var reverseIterator = new ReverseListIterator<>(parsedMessagesSoFar);
     while (reverseIterator.hasNext()) {
       var element = reverseIterator.next();
-      if (element.hasFacet(RbelHttpRequestFacet.class)) {
+      if (element.hasFacet(RbelHttpRequestFacet.class)
+          && element
+              .getFacet(TracingMessagePairFacet.class)
+              .map(pair -> pair.getResponse() == getMessage())
+              .orElse(true)) {
         return Optional.of(CompletableFuture.completedFuture(element));
       }
     }

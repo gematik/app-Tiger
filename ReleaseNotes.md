@@ -1,5 +1,11 @@
 # Changelog Tiger Test platform
 
+# Release 3.1.4
+
+## Bugfixes
+
+* TGR-1436: Fix HTTP message pairing for old tgr-files
+
 # Release 3.1.3
 
 ## Breaking Changes
