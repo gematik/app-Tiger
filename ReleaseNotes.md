@@ -1,4 +1,9 @@
 # Changelog Tiger Test platform
+# Release 3.1.4
+
+# Bugfixes
+
+* TGR-1455: implement conversion of POP3 AUTH command
 
 # Release 3.1.4
 
