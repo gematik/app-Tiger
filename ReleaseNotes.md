@@ -10,6 +10,7 @@
 ## Bugfixes
 
 * TGR-1436: Fix HTTP message pairing for old tgr-files
+* TGR-1456: Only interpret POP3 RETR response as MIME
 
 # Release 3.1.3
 

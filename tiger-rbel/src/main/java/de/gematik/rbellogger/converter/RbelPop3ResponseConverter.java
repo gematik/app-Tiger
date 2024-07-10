@@ -28,7 +28,13 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
         .ifPresent(
             facet -> {
               element.addFacet(facet);
-              Optional.ofNullable(facet.getBody()).ifPresent(context::convertElement);
+              Optional.ofNullable(facet.getBody())
+                  .filter(
+                      body ->
+                          findPop3Command(element, context)
+                              .filter(RbelPop3Command.RETR::equals)
+                              .isPresent())
+                  .ifPresent(context::convertElement);
             });
   }
 

@@ -19,9 +19,22 @@ import java.util.List;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class RbelMimeConverterTest {
+class RbelMimeConverterTest extends AbstractResponseConverterTest {
+
+  @BeforeEach
+  void init() {
+    RbelConfiguration configuration =
+        RbelConfiguration.builder().skipParsingWhenMessageLargerThanKb(-1).build();
+    configuration.setActivateAsn1Parsing(false);
+    for (String user : List.of("user1", "user2")) {
+      configuration.addInitializer(
+          new RbelKeyFolderInitializer("src/test/resources/example_mail/" + user));
+    }
+    converter = RbelLogger.build(configuration).getRbelConverter();
+  }
 
   @SneakyThrows
   private static byte[] readMimeMessage(String path) {
@@ -30,9 +43,9 @@ class RbelMimeConverterTest {
 
   @Test
   void shouldConvertMimeMessage() {
-    byte[] mimeMessage = readMimeMessage("sampleMessages/sampleMail.txt");
-    String pop3Response = getPop3Response(mimeMessage);
-    var element = convertToRbelElement(pop3Response.getBytes());
+    final byte[] mimeMessage = readMimeMessage("sampleMessages/sampleMail.txt");
+    final String pop3Response = getPop3Response(mimeMessage);
+    final var element = convertPop3RetrResponse(pop3Response);
     RbelElementAssertion.assertThat(element)
         .extractChildWithPath("$.body")
         .hasChildWithPath("$.header")
@@ -46,20 +59,25 @@ class RbelMimeConverterTest {
         .doesNotHaveChildWithPath("$.body.epilogue");
   }
 
+  private RbelElement convertPop3RetrResponse(String pop3Response) {
+    return convertMessagePair("RETR 1\r\n", pop3Response);
+  }
+
   private static String getPop3Response(byte[] mimeMessage) {
     return "+OK message follows\r\n" + new String(mimeMessage) + "\r\n.\r\n";
   }
 
   @Test
   void shouldDecryptMessageBody() {
-    byte[] encryptedMessage = readMimeMessage("example_mail/05_msgReceived-00.eml");
-    String encryptedPop3Response = getPop3Response(encryptedMessage);
-    byte[] origMessage = readMimeMessage("example_mail/01_origMessage_VERIFY.eml");
-    String origPop3Response = getPop3Response(origMessage);
-    var origElement = convertToRbelElement(origPop3Response.getBytes()).findElement("$.body").get();
+    final byte[] encryptedMessage = readMimeMessage("example_mail/05_msgReceived-00.eml");
+    final String encryptedPop3Response = getPop3Response(encryptedMessage);
+    final byte[] origMessage = readMimeMessage("example_mail/01_origMessage_VERIFY.eml");
+    final String origPop3Response = getPop3Response(origMessage);
+    var origElement =
+        convertMessagePair("RETR 1\r\n", origPop3Response).findElement("$.body").get();
 
-    RbelElement decryptedElement =
-        convertToRbelElement(encryptedPop3Response.getBytes())
+    final RbelElement decryptedElement =
+        convertMessagePair("RETR 1\r\n", encryptedPop3Response)
             .findElement("$.body.body.decrypted.body")
             .get();
 
@@ -72,10 +90,9 @@ class RbelMimeConverterTest {
 
   @Test
   void shouldRenderMimeContent() throws IOException {
-    byte[] mimeMessage = readMimeMessage("sampleMessages/sampleMail.txt");
-    String pop3Message = getPop3Response(mimeMessage);
-    final RbelElement convertedMessage =
-        convertToRbelElement(pop3Message.getBytes(StandardCharsets.UTF_8));
+    final byte[] mimeMessage = readMimeMessage("sampleMessages/sampleMail.txt");
+    final String pop3Message = getPop3Response(mimeMessage);
+    final RbelElement convertedMessage = convertPop3RetrResponse(pop3Message);
 
     final String convertedHtml = RbelHtmlRenderer.render(List.of(convertedMessage));
     FileUtils.writeStringToFile(
@@ -89,10 +106,9 @@ class RbelMimeConverterTest {
 
   @Test
   void shouldRenderEncryptedMimeContent() throws IOException {
-    byte[] mimeMessage = readMimeMessage("example_mail/05_msgReceived-00.eml");
-    String pop3Message = getPop3Response(mimeMessage);
-    final RbelElement convertedMessage =
-        convertToRbelElement(pop3Message.getBytes(StandardCharsets.UTF_8));
+    final byte[] mimeMessage = readMimeMessage("example_mail/05_msgReceived-00.eml");
+    final String pop3Message = getPop3Response(mimeMessage);
+    final RbelElement convertedMessage = convertPop3RetrResponse(pop3Message);
 
     final String convertedHtml = RbelHtmlRenderer.render(List.of(convertedMessage));
     FileUtils.writeStringToFile(
@@ -103,16 +119,5 @@ class RbelMimeConverterTest {
         .contains("Mime Headers:")
         .contains("Mime Body:")
         .contains("Decrypted Message:");
-  }
-
-  private static RbelElement convertToRbelElement(byte[] input) {
-    RbelConfiguration configuration =
-        RbelConfiguration.builder().skipParsingWhenMessageLargerThanKb(-1).build();
-    configuration.setActivateAsn1Parsing(false);
-    for (String user : List.of("user1", "user2")) {
-      configuration.addInitializer(
-          new RbelKeyFolderInitializer("src/test/resources/example_mail/" + user));
-    }
-    return RbelLogger.build(configuration).getRbelConverter().convertElement(input, null);
   }
 }

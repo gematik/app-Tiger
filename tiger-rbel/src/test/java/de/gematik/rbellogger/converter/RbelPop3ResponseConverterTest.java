@@ -20,14 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-class RbelPop3ResponseConverterTest {
-
-  private RbelConverter converter;
-
-  @BeforeEach
-  void init() {
-    converter = RbelLogger.build().getRbelConverter();
-  }
+class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
 
   @Test
   void shouldConvertListHeader() {
@@ -205,25 +198,6 @@ class RbelPop3ResponseConverterTest {
   void shouldRejectMalformedPop3Response(String input) {
     RbelElement element = convertToRbelElement(input);
     assertThat(element.hasFacet(RbelPop3ResponseFacet.class)).isFalse();
-  }
-
-  private RbelElement convertMessagePair(String request, String response) {
-    var sender = new RbelHostname("host1", 1);
-    var receiver = new RbelHostname("host2", 2);
-    convertToRbelElement(request, sender, receiver);
-    return convertToRbelElement(response, receiver, sender);
-  }
-
-  private RbelElement convertToRbelElement(String request) {
-    var sender = new RbelHostname("host1", 1);
-    var receiver = new RbelHostname("host2", 2);
-    return convertToRbelElement(request, sender, receiver);
-  }
-
-  private RbelElement convertToRbelElement(
-      String input, RbelHostname sender, RbelHostname recipient) {
-    return converter.parseMessage(
-        input.getBytes(StandardCharsets.UTF_8), sender, recipient, Optional.empty());
   }
 
   private static String duplicateDotsAtLineBegins(String input) {
