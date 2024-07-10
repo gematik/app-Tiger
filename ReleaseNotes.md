@@ -34,6 +34,7 @@ servers:
 
 * TGR-1411: Tiger-Proxy: Content- and Transfer-Encodings are no longer deleted on retransmission.
 * TGR-1375: Rbel Parsing of SMTP messages
+* TGR-1448: Tiger-Proxy: Added an option to deactivate TLS-Termination for a directReverseProxy.
 * TGR-1395: Implement mail decryption
 * TGR-1443: REST requests are now fully configurable via TigerHttpClient
 

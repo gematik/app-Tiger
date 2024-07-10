@@ -72,10 +72,11 @@ public class TigerPkiIdentity {
       for (int i = 0; i < certificateChain.size(); i++) {
         keystoreEntryChain[i + 1] = certificateChain.get(i);
       }
+      final char[] passwordCharArray = password == null ? null : password.toCharArray();
       keyStore.setEntry(
           "entry",
           new PrivateKeyEntry(getPrivateKey(), keystoreEntryChain),
-          new PasswordProtection(password.toCharArray()));
+          new PasswordProtection(passwordCharArray));
       return keyStore;
     } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException e) {
       throw new TigerPkiIdentityLoaderException("Error while creating keystore", e);

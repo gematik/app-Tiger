@@ -13,7 +13,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyType;
 import de.gematik.test.tiger.common.exceptions.TigerProxyToForwardProxyException;
 import de.gematik.test.tiger.common.exceptions.TigerUnknownProtocolException;
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import java.net.URI;
 import java.util.Optional;
@@ -29,8 +29,8 @@ public class ProxyConfigurationConverter {
         .flatMap(ProxyConfigurationConverter::createMockServerProxyConfiguration);
   }
 
-  public static Configuration convertToMockServerConfiguration(TigerProxyConfiguration tpConfig) {
-    Configuration config = Configuration.configuration();
+  public static MockServerConfiguration convertToMockServerConfiguration(TigerProxyConfiguration tpConfig) {
+    MockServerConfiguration config = MockServerConfiguration.configuration();
     convertForwardProxyConfigurationToMockServerConfiguration(tpConfig)
         .ifPresent(
             proxyCfg -> {

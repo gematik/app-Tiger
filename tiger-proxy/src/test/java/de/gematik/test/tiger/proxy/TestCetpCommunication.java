@@ -41,7 +41,7 @@ class TestCetpCommunication extends AbstractNonHttpTest {
   @Test
   @DisplayName("Client sends two non-http request, no reply from server, connection stays open")
   void sendNonHttpTrafficWithoutResponseFromServer() throws Exception {
-    executeTestRun(
+    executeTestRunWithDirectReverseProxy(
         socket -> {
           writeSingleRequestMessage(socket);
           TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(getTigerProxy(), 1);
@@ -64,7 +64,7 @@ class TestCetpCommunication extends AbstractNonHttpTest {
           + " client message")
   void sendNonHttpTrafficWithoutResponseAndWithSocketCloseBetweenEachMessage() throws Exception {
     log.info("RUNNING sendNonHttpTrafficWithoutResponseAndWithSocketCloseBetweenEachMessage");
-    executeTestRun(
+    executeTestRunWithDirectReverseProxy(
         socket -> {
           socket.close();
           try (Socket clientSocket = newClientSocketTo(getTigerProxy())) {
@@ -92,11 +92,11 @@ class TestCetpCommunication extends AbstractNonHttpTest {
     writeSingleRequestMessage(socket, message);
   }
 
-  public void executeTestRun(
+  public void executeTestRunWithDirectReverseProxy(
       ThrowingConsumer<Socket> clientActionCallback,
       VerifyInteractionsConsumer interactionsVerificationCallback)
       throws Exception {
-    executeTestRun(
+    executeTestRunWithDirectReverseProxy(
         clientActionCallback,
         interactionsVerificationCallback,
         serverSocket -> {

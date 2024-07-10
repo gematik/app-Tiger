@@ -15,6 +15,7 @@ import de.gematik.test.tiger.ByteArrayToStringRepresentation;
 import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -67,7 +68,7 @@ public abstract class AbstractNonHttpTest {
         .isEqualTo(message);
   }
 
-  public void executeTestRun(
+  public void executeTestRunWithDirectReverseProxy(
       ThrowingConsumer<Socket> clientActionCallback,
       VerifyInteractionsConsumer interactionsVerificationCallback,
       ThrowingConsumer<Socket> serverAcceptedConnectionCallback,
@@ -115,8 +116,8 @@ public abstract class AbstractNonHttpTest {
           });
       tigerProxy = tigerProxyGenerator.apply(listenerServer.getLocalPort());
 
-      final de.gematik.test.tiger.mockserver.configuration.Configuration configuration =
-          (de.gematik.test.tiger.mockserver.configuration.Configuration)
+      final MockServerConfiguration configuration =
+          (MockServerConfiguration)
               ReflectionTestUtils.getField(
                   ReflectionTestUtils.getField(tigerProxy, "mockServer"), "configuration");
       final de.gematik.test.tiger.mockserver.model.BinaryProxyListener oldListener =
@@ -161,10 +162,8 @@ public abstract class AbstractNonHttpTest {
         await()
             .atMost(10, TimeUnit.SECONDS)
             .failFast(executionResult::isCompletedExceptionally)
-            .pollDelay(
-                1000,
-                TimeUnit.MILLISECONDS) // to ensure the server would have had a chance to handle a
             // response
+            .ignoreExceptions()
             .pollInterval(200, TimeUnit.MILLISECONDS)
             .untilAsserted(
                 () -> {
@@ -182,6 +181,7 @@ public abstract class AbstractNonHttpTest {
                       handlerCalledRequest, handlerCalledResponse, serverConnectionsOpenend);
                 });
       } catch (RuntimeException e) {
+        log.error("Exception while executing test", e);
         log.error(
             "Found messages: \n\n{}",
             getTigerProxy().getRbelMessages().stream()

@@ -13,7 +13,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
@@ -42,12 +42,12 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
   public static final AttributeKey<Set<String>> LOCAL_HOST_HEADERS =
       AttributeKey.valueOf("LOCAL_HOST_HEADERS");
   private HttpState httpState;
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private MockServer server;
   private HttpActionHandler httpActionHandler;
 
   public HttpRequestHandler(
-      Configuration configuration,
+      MockServerConfiguration configuration,
       MockServer server,
       HttpState httpState,
       HttpActionHandler httpActionHandler) {

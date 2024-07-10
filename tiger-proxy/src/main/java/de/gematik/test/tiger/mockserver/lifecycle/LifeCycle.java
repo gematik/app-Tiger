@@ -4,14 +4,13 @@
 
 package de.gematik.test.tiger.mockserver.lifecycle;
 
-import static de.gematik.test.tiger.mockserver.configuration.Configuration.configuration;
+import static de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration.configuration;
 import static de.gematik.test.tiger.mockserver.mock.HttpState.clearPort;
 import static de.gematik.test.tiger.mockserver.mock.HttpState.setPort;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.slf4j.event.Level.*;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.scheduler.Scheduler;
 import io.netty.bootstrap.ServerBootstrap;
@@ -36,14 +35,14 @@ public abstract class LifeCycle {
   protected final EventLoopGroup bossGroup;
   protected final EventLoopGroup workerGroup;
   protected final HttpState httpState;
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   protected ServerBootstrap serverServerBootstrap;
   private final List<Future<Channel>> serverChannelFutures = new ArrayList<>();
   private final CompletableFuture<String> stopFuture = new CompletableFuture<>();
   private final AtomicBoolean stopping = new AtomicBoolean(false);
   private final Scheduler scheduler;
 
-  protected LifeCycle(Configuration configuration) {
+  protected LifeCycle(MockServerConfiguration configuration) {
     clearPort();
     this.configuration = configuration != null ? configuration : configuration();
     this.bossGroup =

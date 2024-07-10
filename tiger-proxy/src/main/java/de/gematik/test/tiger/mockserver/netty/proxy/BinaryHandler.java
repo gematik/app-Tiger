@@ -10,7 +10,7 @@ import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandle
 import static de.gematik.test.tiger.mockserver.model.BinaryMessage.bytes;
 import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.isSslEnabledUpstream;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.httpclient.BinaryRequestInfo;
 import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
@@ -37,7 +37,7 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
   private final NettyHttpClient httpClient;
   private final BinaryProxyListener binaryExchangeCallback;
 
-  public BinaryHandler(final Configuration configuration, final NettyHttpClient httpClient) {
+  public BinaryHandler(final MockServerConfiguration configuration, final NettyHttpClient httpClient) {
     super(true);
     this.httpClient = httpClient;
     this.binaryExchangeCallback = configuration.binaryProxyListener();
@@ -46,7 +46,6 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
   @Override
   protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
     BinaryMessage binaryRequest = bytes(ByteBufUtil.getBytes(byteBuf));
-    log.info("received binary request: {}", ByteBufUtil.hexDump(binaryRequest.getBytes()));
     final InetSocketAddress remoteAddress = getRemoteAddress(ctx);
     if (remoteAddress
         != null) { // binary protocol is only supported for proxies request and not mocking

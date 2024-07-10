@@ -10,7 +10,7 @@ import static de.gematik.test.tiger.mockserver.model.Protocol.HTTP_2;
 import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.*;
 import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.getALPNProtocol;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -39,12 +39,12 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
   public static final String PROXIED = "PROXIED_";
   public static final String PROXIED_SECURE = PROXIED + "SECURE_";
   public static final String PROXIED_RESPONSE = "PROXIED_RESPONSE_";
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private final LifeCycle server;
   protected final String host;
   protected final int port;
 
-  public RelayConnectHandler(Configuration configuration, LifeCycle server, String host, int port) {
+  public RelayConnectHandler(MockServerConfiguration configuration, LifeCycle server, String host, int port) {
     this.configuration = configuration;
     this.server = server;
     this.host = host;

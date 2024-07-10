@@ -15,7 +15,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.netty.MockServer;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
@@ -88,7 +88,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   }
 
   private static void customizeServerBuilderCustomizer(
-      Configuration mockServerConfiguration, TigerTlsConfiguration tlsConfiguration) {
+      MockServerConfiguration mockServerConfiguration, TigerTlsConfiguration tlsConfiguration) {
     mockServerConfiguration.sslServerContextBuilderCustomizer(
         builder -> {
           if (tlsConfiguration.getServerSslSuites() != null) {
@@ -113,7 +113,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   }
 
   private static void customizeClientBuilderCustomizer(
-      Configuration mockServerConfiguration, TigerTlsConfiguration tlsConfiguration) {
+      MockServerConfiguration mockServerConfiguration, TigerTlsConfiguration tlsConfiguration) {
     mockServerConfiguration.sslClientContextBuilderCustomizer(
         builder -> {
           if (tlsConfiguration.getClientSslSuites() != null) {
@@ -171,11 +171,12 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   }
 
   private void createNewMockServer() {
-    Configuration mockServerConfiguration = Configuration.configuration();
+    MockServerConfiguration mockServerConfiguration = MockServerConfiguration.configuration();
     mockServerConfiguration.mockServerName(getName().orElse("MockServer"));
     mockServerConfiguration.customKeyAndCertificateFactorySupplier(buildKeyAndCertificateFactory());
 
-    customizeSslSuitesIfApplicable(mockServerConfiguration);
+    customizeSslIfApplicable(mockServerConfiguration);
+    mockServerConfiguration.enableTlsTermination(getTigerProxyConfiguration().isActivateTlsTermination());
 
     final Optional<ProxyConfiguration> forwardProxyConfig =
         ProxyConfigurationConverter.convertForwardProxyConfigurationToMockServerConfiguration(
@@ -211,7 +212,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   }
 
   private MockServer spawnDirectInverseTigerProxy(
-      Configuration mockServerConfiguration, Optional<ProxyConfiguration> forwardProxyConfig) {
+      MockServerConfiguration mockServerConfiguration, Optional<ProxyConfiguration> forwardProxyConfig) {
     mockServerConfiguration.binaryProxyListener(new BinaryExchangeHandler(this));
     if (forwardProxyConfig.isPresent()) {
       throw new TigerProxyStartupException(
@@ -250,7 +251,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
                 .build());
   }
 
-  private void customizeSslSuitesIfApplicable(Configuration mockServerConfiguration) {
+  private void customizeSslIfApplicable(MockServerConfiguration mockServerConfiguration) {
     final TigerTlsConfiguration tlsConfiguration = getTigerProxyConfiguration().getTls();
 
     customizeServerBuilderCustomizer(mockServerConfiguration, tlsConfiguration);
@@ -261,7 +262,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   }
 
   private void customizeClientBuilderFunction(
-      Configuration mockServerConfiguration, TigerTlsConfiguration tlsConfiguration) {
+      MockServerConfiguration mockServerConfiguration, TigerTlsConfiguration tlsConfiguration) {
     if (tlsConfiguration.getClientSupportedGroups() != null
         && !tlsConfiguration.getClientSupportedGroups().isEmpty()) {
       mockServerConfiguration.clientSslContextBuilderFunction(

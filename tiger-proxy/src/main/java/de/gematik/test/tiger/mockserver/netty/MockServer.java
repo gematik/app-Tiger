@@ -4,7 +4,7 @@
 
 package de.gematik.test.tiger.mockserver.netty;
 
-import static de.gematik.test.tiger.mockserver.configuration.Configuration.configuration;
+import static de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration.configuration;
 import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.REMOTE_SOCKET;
 import static de.gematik.test.tiger.mockserver.netty.HttpRequestHandler.PROXYING;
 import static de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration.proxyConfiguration;
@@ -12,7 +12,7 @@ import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import de.gematik.test.tiger.mockserver.ExpectationBuilder;
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
@@ -68,7 +68,7 @@ public class MockServer extends LifeCycle {
    *
    * @param localPorts the local port(s) to use, use 0 or no vararg values to specify any free port
    */
-  public MockServer(final Configuration configuration, final Integer... localPorts) {
+  public MockServer(final MockServerConfiguration configuration, final Integer... localPorts) {
     this(configuration, proxyConfiguration(configuration), localPorts);
   }
 
@@ -93,7 +93,7 @@ public class MockServer extends LifeCycle {
    * @param localPorts the local port(s) to use, use 0 or no vararg values to specify any free port
    */
   public MockServer(
-      final Configuration configuration,
+      final MockServerConfiguration configuration,
       final List<ProxyConfiguration> proxyConfigurations,
       final Integer... localPorts) {
     super(configuration);
@@ -125,7 +125,7 @@ public class MockServer extends LifeCycle {
    * @param localPorts the local port(s) to use
    */
   public MockServer(
-      final Configuration configuration,
+      final MockServerConfiguration configuration,
       final Integer remotePort,
       @Nullable final String remoteHost,
       final Integer... localPorts) {
@@ -142,7 +142,7 @@ public class MockServer extends LifeCycle {
    * @param remotePort the port of the remote server to connect to
    */
   public MockServer(
-      final Configuration configuration,
+      final MockServerConfiguration configuration,
       final ProxyConfiguration proxyConfiguration,
       @Nullable String remoteHost,
       final Integer remotePort,
@@ -160,7 +160,7 @@ public class MockServer extends LifeCycle {
    * @param remotePort the port of the remote server to connect to
    */
   public MockServer(
-      final Configuration configuration,
+      final MockServerConfiguration configuration,
       final List<ProxyConfiguration> proxyConfigurations,
       @Nullable String remoteHost,
       final Integer remotePort,
@@ -182,7 +182,7 @@ public class MockServer extends LifeCycle {
   }
 
   private void createServerBootstrap(
-      Configuration configuration,
+      MockServerConfiguration configuration,
       final List<ProxyConfiguration> proxyConfigurations,
       final Integer... localPorts) {
     if (configuration == null) {
@@ -270,7 +270,7 @@ public class MockServer extends LifeCycle {
   @RequiredArgsConstructor
   static class MockServerChannelInitializer extends ChannelInitializer<SocketChannel> {
 
-    private final Configuration configuration;
+    private final MockServerConfiguration configuration;
     private final MockServer mockServer;
     private final HttpState httpState;
     private final HttpActionHandler actionHandler;

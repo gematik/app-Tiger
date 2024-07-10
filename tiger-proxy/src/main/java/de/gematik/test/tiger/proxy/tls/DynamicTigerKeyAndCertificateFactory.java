@@ -7,7 +7,7 @@ package de.gematik.test.tiger.proxy.tls;
 import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.bouncycastle.AbstractKeyAndCertificateFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -56,13 +56,13 @@ public class DynamicTigerKeyAndCertificateFactory extends AbstractKeyAndCertific
   private final List<String> serverAlternativeNames;
   private TigerPkiIdentity eeIdentity;
   private List<String> hostsCoveredByGeneratedIdentity = List.of();
-  private final Configuration mockServerConfiguration;
+  private final MockServerConfiguration mockServerConfiguration;
 
   @Builder
   public DynamicTigerKeyAndCertificateFactory(
       TigerProxyConfiguration tigerProxyConfiguration,
       TigerPkiIdentity caIdentity,
-      Configuration mockServerConfiguration) {
+      MockServerConfiguration mockServerConfiguration) {
     this.certificateChain = new ArrayList<>();
     this.caIdentity = caIdentity;
     this.eeIdentity = null;

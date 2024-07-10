@@ -6,7 +6,7 @@ package de.gematik.test.tiger.mockserver.codec;
 
 import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.getALPNProtocol;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.mappers.FullHttpRequestToMockServerHttpRequest;
 import de.gematik.test.tiger.mockserver.model.Header;
 import de.gematik.test.tiger.mockserver.socket.tls.SniHandler;
@@ -27,7 +27,7 @@ public class NettyHttpToMockServerHttpRequestDecoder
   private final FullHttpRequestToMockServerHttpRequest fullHttpRequestToMockServerRequest;
 
   public NettyHttpToMockServerHttpRequestDecoder(
-      Configuration configuration,
+      MockServerConfiguration configuration,
       boolean isSecure,
       Certificate[] clientCertificates,
       Integer port) {

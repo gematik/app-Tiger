@@ -10,7 +10,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.gematik.test.tiger.mockserver.codec.MockServerBinaryClientCodec;
 import de.gematik.test.tiger.mockserver.codec.MockServerHttpClientCodec;
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.Protocol;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
@@ -47,7 +47,7 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
   private final BinaryBridgeHandler binaryBridgeHandler;
 
   HttpClientInitializer(
-      Configuration configuration,
+      MockServerConfiguration configuration,
       Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations,
       NettySslContextFactory nettySslContextFactory,
       Protocol httpProtocol) {

@@ -24,10 +24,10 @@ import lombok.experimental.Accessors;
  */
 @Data
 @Accessors(fluent = true)
-public class Configuration {
+public class MockServerConfiguration {
 
-  public static Configuration configuration() {
-    return new Configuration();
+  public static MockServerConfiguration configuration() {
+    return new MockServerConfiguration();
   }
 
   // general
@@ -53,6 +53,7 @@ public class Configuration {
 
   // non http proxying
   private BinaryProxyListener binaryProxyListener = null;
+  private boolean enableTlsTermination = true;
 
   // proxy
   private InetSocketAddress forwardHttpProxy = null;

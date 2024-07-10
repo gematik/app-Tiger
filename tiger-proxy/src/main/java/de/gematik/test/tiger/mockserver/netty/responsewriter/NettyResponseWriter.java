@@ -11,7 +11,7 @@ import static io.netty.handler.codec.http.HttpHeaderValues.CLOSE;
 import static io.netty.handler.codec.http.HttpHeaderValues.KEEP_ALIVE;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.Header;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
@@ -28,9 +28,9 @@ import lombok.extern.slf4j.Slf4j;
 public class NettyResponseWriter {
 
   private final ChannelHandlerContext ctx;
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
 
-  public NettyResponseWriter(Configuration configuration, ChannelHandlerContext ctx) {
+  public NettyResponseWriter(MockServerConfiguration configuration, ChannelHandlerContext ctx) {
     this.configuration = configuration;
     this.ctx = ctx;
   }

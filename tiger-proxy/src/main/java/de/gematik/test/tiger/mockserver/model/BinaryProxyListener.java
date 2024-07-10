@@ -13,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface BinaryProxyListener {
 
-  public void onProxy(
+  void onProxy(
       BinaryMessage binaryRequest,
       Optional<CompletableFuture<BinaryMessage>> binaryResponse,
       SocketAddress serverAddress,

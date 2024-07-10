@@ -8,11 +8,10 @@ import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.*;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
-import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.filters.HopByHopHeaderFilter;
 import de.gematik.test.tiger.mockserver.httpclient.HttpRequestInfo;
 import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
@@ -47,7 +46,7 @@ public class HttpActionHandler {
   public static final AttributeKey<InetSocketAddress> REMOTE_SOCKET =
       AttributeKey.valueOf("REMOTE_SOCKET");
 
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private final HttpState httpStateHandler;
   private final Scheduler scheduler;
   private HttpForwardActionHandler httpForwardActionHandler;
@@ -57,7 +56,7 @@ public class HttpActionHandler {
   private HopByHopHeaderFilter hopByHopHeaderFilter = new HopByHopHeaderFilter();
 
   public HttpActionHandler(
-      Configuration configuration,
+      MockServerConfiguration configuration,
       EventLoopGroup eventLoopGroup,
       HttpState httpStateHandler,
       List<ProxyConfiguration> proxyConfigurations,

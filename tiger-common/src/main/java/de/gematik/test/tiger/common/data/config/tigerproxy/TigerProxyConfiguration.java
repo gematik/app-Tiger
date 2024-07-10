@@ -30,6 +30,7 @@ public class TigerProxyConfiguration {
   private List<String> keyFolders;
   @Builder.Default private boolean activateAsn1Parsing = false;
   @Builder.Default private boolean activateForwardAllLogging = true;
+  @Builder.Default private boolean activateTlsTermination = true;
   private TigerFileSaveInfo fileSaveInfo;
   private Integer proxyPort;
   @Builder.Default private boolean skipTrafficEndpointsSubscription = false;

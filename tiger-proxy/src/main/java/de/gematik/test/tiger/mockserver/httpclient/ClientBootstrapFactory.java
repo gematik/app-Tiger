@@ -12,7 +12,7 @@ import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.SECURE
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.Message;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ClientBootstrapFactory {
 
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private final EventLoopGroup eventLoop;
   @Getter private final ReusableChannelMap channelMap = new ReusableChannelMap();
 

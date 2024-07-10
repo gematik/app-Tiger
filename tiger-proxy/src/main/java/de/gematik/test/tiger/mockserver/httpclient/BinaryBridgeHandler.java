@@ -7,7 +7,7 @@ package de.gematik.test.tiger.mockserver.httpclient;
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.closeOnFlush;
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.connectionClosedException;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.mockserver.model.BinaryProxyListener;
 import io.netty.buffer.Unpooled;
@@ -30,12 +30,12 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
       AttributeKey.valueOf("INCOMING_CHANNEL");
   private final BinaryProxyListener binaryProxyListener;
 
-  public BinaryBridgeHandler(Configuration configuration) {
+  public BinaryBridgeHandler(MockServerConfiguration configuration) {
     this.binaryProxyListener = configuration.binaryProxyListener();
   }
 
   @Override
-  protected void channelRead0(ChannelHandlerContext ctx, BinaryMessage msg) throws Exception {
+  protected void channelRead0(ChannelHandlerContext ctx, BinaryMessage msg) {
     Optional.ofNullable(ctx.channel().attr(INCOMING_CHANNEL).get())
         .orElseThrow(() -> new IllegalStateException("Incoming channel is not set."))
         .writeAndFlush(Unpooled.copiedBuffer(msg.getBytes()));
@@ -47,12 +47,12 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
   }
 
   @Override
-  public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+  public void channelInactive(ChannelHandlerContext ctx) {
     ctx.close();
   }
 
   @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     if (connectionClosedException(cause)) {
       log.error(
           "exception caught by {} handler -> closing pipeline {}",

@@ -12,18 +12,24 @@ import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
-import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
-import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.*;
+import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.ZonedDateTime;
+import java.util.Optional;
+import javax.net.ssl.SSLContext;
 import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -196,5 +202,41 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
 
     assertThatThrownBy(() -> spawnTigerProxyWith(proxyConfiguration))
         .isInstanceOf(RuntimeException.class);
+  }
+
+  @Test
+  void forwardWithoutTlsTermination_shouldNotTerminateTls() throws Exception {
+    int serverPort = startKonnektorAlikeServerReturningAlways555(Optional.empty());
+
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .directReverseProxy(
+                DirectReverseProxyInfo.builder().hostname("localhost").port(serverPort).build())
+            .activateTlsTermination(false)
+            .build());
+
+    try (val noProxyInstance = Unirest.spawnInstance()) {
+      final TigerConfigurationPkiIdentity serverCert =
+          new TigerConfigurationPkiIdentity("src/test/resources/eccStoreWithChain.jks;gematik");
+
+      SSLContext sslContext =
+          SSLContextBuilder.create()
+              .loadTrustMaterial(
+                  serverCert.toKeyStoreWithPassword("00"), new TrustSelfSignedStrategy())
+              .build();
+
+      noProxyInstance
+          .config()
+          .httpClient(
+              HttpClients.custom()
+                  .setSSLSocketFactory(
+                      new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE))
+                  .build());
+
+      val response =
+          noProxyInstance.get("https://localhost:" + tigerProxy.getProxyPort()).asString();
+
+      assertThat(response.getStatus()).isEqualTo(555);
+    }
   }
 }

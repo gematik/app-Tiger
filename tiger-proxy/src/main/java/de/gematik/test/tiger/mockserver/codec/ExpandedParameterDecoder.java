@@ -6,7 +6,7 @@ package de.gematik.test.tiger.mockserver.codec;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.Parameters;
 import io.netty.handler.codec.http.HttpConstants;
 import io.netty.handler.codec.http.QueryStringDecoder;
@@ -22,9 +22,9 @@ import org.apache.commons.lang3.StringUtils;
 @Slf4j
 public class ExpandedParameterDecoder {
 
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
 
-  public ExpandedParameterDecoder(Configuration configuration) {
+  public ExpandedParameterDecoder(MockServerConfiguration configuration) {
     this.configuration = configuration;
   }
 

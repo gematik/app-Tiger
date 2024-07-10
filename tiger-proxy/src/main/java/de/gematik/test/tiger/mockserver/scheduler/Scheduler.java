@@ -9,7 +9,7 @@ import static de.gematik.test.tiger.mockserver.mock.HttpState.setPort;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.common.annotations.VisibleForTesting;
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.httpclient.SocketCommunicationException;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpForwardActionResult;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Scheduler {
 
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private final ScheduledExecutorService scheduler;
 
   private final boolean synchronous;
@@ -55,12 +55,12 @@ public class Scheduler {
     }
   }
 
-  public Scheduler(Configuration configuration) {
+  public Scheduler(MockServerConfiguration configuration) {
     this(configuration, false);
   }
 
   @VisibleForTesting
-  public Scheduler(Configuration configuration, boolean synchronous) {
+  public Scheduler(MockServerConfiguration configuration, boolean synchronous) {
     this.configuration = configuration;
     this.synchronous = synchronous;
     if (!this.synchronous) {

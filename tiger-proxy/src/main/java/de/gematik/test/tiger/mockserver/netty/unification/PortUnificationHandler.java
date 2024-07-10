@@ -16,7 +16,7 @@ import static de.gematik.test.tiger.mockserver.netty.proxy.relay.RelayConnectHan
 import static java.util.Collections.unmodifiableSet;
 
 import de.gematik.test.tiger.mockserver.codec.MockServerHttpServerCodec;
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.mappers.MockServerHttpResponseToFullHttpResponse;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
@@ -60,7 +60,7 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   private static final Map<PortBinding, Set<String>> localAddressesCache =
       new ConcurrentHashMap<>();
   private final HttpContentLengthRemover httpContentLengthRemover = new HttpContentLengthRemover();
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private final MockServer server;
   private final HttpState httpState;
   private final HttpActionHandler actionHandler;
@@ -68,7 +68,7 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   private final MockServerHttpResponseToFullHttpResponse mockServerHttpResponseToFullHttpResponse;
 
   public PortUnificationHandler(
-      Configuration configuration,
+      MockServerConfiguration configuration,
       MockServer server,
       HttpState httpState,
       HttpActionHandler actionHandler,
@@ -150,7 +150,7 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   @Override
   protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) {
     ctx.channel().attr(NETTY_SSL_CONTEXT_FACTORY).set(nettySslContextFactory);
-    if (isTls(msg)) {
+    if (isTls(msg) && configuration.enableTlsTermination()) {
       logStage(ctx, "adding TLS decoders");
       enableTls(ctx, msg);
       performConnectionToRemote(ctx);

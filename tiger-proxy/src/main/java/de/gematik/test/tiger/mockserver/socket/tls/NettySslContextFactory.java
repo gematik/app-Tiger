@@ -4,7 +4,7 @@
 
 package de.gematik.test.tiger.mockserver.socket.tls;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import io.netty.handler.codec.http2.Http2SecurityUtil;
 import io.netty.handler.ssl.*;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
@@ -22,13 +22,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class NettySslContextFactory {
 
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private final KeyAndCertificateFactory keyAndCertificateFactory;
   private final Map<String, SslContext> clientSslContexts = new ConcurrentHashMap<>();
   private SslContext serverSslContext = null;
   private final boolean forServer;
 
-  public NettySslContextFactory(Configuration configuration, boolean forServer) {
+  public NettySslContextFactory(MockServerConfiguration configuration, boolean forServer) {
     this.configuration = configuration;
     this.forServer = forServer;
     keyAndCertificateFactory = createKeyAndCertificateFactory();

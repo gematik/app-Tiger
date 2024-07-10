@@ -190,7 +190,7 @@ class AsynchronousNonHttpCommunicationTest extends AbstractNonHttpTest {
       VerifyInteractionsConsumer interactionsVerificationCallback,
       RbelConverterPlugin... postConversionListener)
       throws Exception {
-    executeTestRun(
+    executeTestRunWithDirectReverseProxy(
         clientActionCallback,
         interactionsVerificationCallback,
         serverSocket -> {

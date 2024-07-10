@@ -6,7 +6,7 @@ package de.gematik.test.tiger.mockserver.httpclient;
 
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.mockserver.model.Protocol;
@@ -43,7 +43,7 @@ public class NettyHttpClient {
       AttributeKey.valueOf("RESPONSE_FUTURE");
   public static final AttributeKey<Boolean> ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE =
       AttributeKey.valueOf("ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE");
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private final EventLoopGroup eventLoopGroup;
   private final Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations;
   private final NettySslContextFactory nettySslContextFactory;
@@ -51,7 +51,7 @@ public class NettyHttpClient {
   @Getter private final ClientBootstrapFactory clientBootstrapFactory;
 
   public NettyHttpClient(
-      Configuration configuration,
+      MockServerConfiguration configuration,
       EventLoopGroup eventLoopGroup,
       List<ProxyConfiguration> proxyConfigurations,
       NettySslContextFactory nettySslContextFactory) {

@@ -36,9 +36,8 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
           "gzip", RbelHttpResponseConverter::decodeGzip);
 
   private static byte[] decodeGzip(byte[] bytes, String eol, Charset charset) {
-    log.atInfo()
-        .addArgument(() -> new String(bytes, charset))
-        .log(() -> "Decoding data {} with gzip");
+    log.atTrace()
+        .log(() -> "Decoding data with gzip");
     try (final InputStream inputStream = new GZIPInputStream(new ByteArrayInputStream(bytes))) {
       return inputStream.readAllBytes();
     } catch (Exception e) {
@@ -48,8 +47,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
   private static byte[] decodeDeflate(byte[] bytes, String eol, Charset charset) {
     log.atTrace()
-        .addArgument(() -> new String(bytes, charset))
-        .log(() -> "Decoding data {} with deflate");
+        .log(() -> "Decoding data with deflate");
     try (final InputStream inputStream = new InflaterInputStream(new ByteArrayInputStream(bytes))) {
       return inputStream.readAllBytes();
     } catch (Exception e) {
@@ -59,8 +57,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
   private static byte[] decodeChunked(byte[] inputData, String eol, Charset charset) {
     log.atTrace()
-      .addArgument(() -> new String(inputData, charset))
-      .log(() -> "Decoding data {} with chunked encoding");
+      .log(() -> "Decoding data with chunked encoding");
     int chunkSeparator = new String(inputData, charset).indexOf(eol) + eol.length();
 
     final int indexOfChunkTerminator =

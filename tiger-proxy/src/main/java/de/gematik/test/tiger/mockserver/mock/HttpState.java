@@ -7,7 +7,7 @@ package de.gematik.test.tiger.mockserver.mock;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static org.apache.commons.lang3.StringUtils.*;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.scheduler.Scheduler;
 import de.gematik.test.tiger.mockserver.uuid.UUIDService;
@@ -28,7 +28,7 @@ public class HttpState {
   private final String uniqueLoopPreventionHeaderValue = "MockServer_" + UUIDService.getUUID();
   private final Scheduler scheduler;
   // mockserver
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private List<Expectation> expectations = new ArrayList<>();
 
   public static void setPort(final HttpRequest request) {
@@ -62,7 +62,7 @@ public class HttpState {
     return LOCAL_PORT.get();
   }
 
-  public HttpState(Configuration configuration, Scheduler scheduler) {
+  public HttpState(MockServerConfiguration configuration, Scheduler scheduler) {
     this.configuration = configuration;
     this.scheduler = scheduler;
   }

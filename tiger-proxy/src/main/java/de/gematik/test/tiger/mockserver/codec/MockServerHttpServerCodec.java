@@ -4,7 +4,7 @@
 
 package de.gematik.test.tiger.mockserver.codec;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import io.netty.channel.CombinedChannelDuplexHandler;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -18,7 +18,7 @@ public class MockServerHttpServerCodec
         NettyHttpToMockServerHttpRequestDecoder, MockServerHttpToNettyHttpResponseEncoder> {
 
   public MockServerHttpServerCodec(
-      Configuration configuration,
+      MockServerConfiguration configuration,
       boolean isSecure,
       Certificate[] clientCertificates,
       SocketAddress socketAddress) {
@@ -32,7 +32,7 @@ public class MockServerHttpServerCodec
   }
 
   public MockServerHttpServerCodec(
-      Configuration configuration,
+      MockServerConfiguration configuration,
       boolean isSecure,
       Certificate[] clientCertificates,
       Integer port) {

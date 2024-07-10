@@ -10,7 +10,7 @@ import static io.netty.handler.codec.http.HttpUtil.isKeepAlive;
 
 import de.gematik.test.tiger.mockserver.codec.BodyDecoderEncoder;
 import de.gematik.test.tiger.mockserver.codec.ExpandedParameterDecoder;
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.model.Cookies;
 import de.gematik.test.tiger.mockserver.model.Protocol;
@@ -43,7 +43,7 @@ public class FullHttpRequestToMockServerHttpRequest {
   private final JDKCertificateToMockServerX509Certificate jdkCertificateToMockServerX509Certificate;
 
   public FullHttpRequestToMockServerHttpRequest(
-      Configuration configuration,
+      MockServerConfiguration configuration,
       boolean isSecure,
       Certificate[] clientCertificates,
       Integer port) {

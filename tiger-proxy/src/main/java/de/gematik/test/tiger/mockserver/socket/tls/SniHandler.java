@@ -6,7 +6,7 @@ package de.gematik.test.tiger.mockserver.socket.tls;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.Protocol;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderException;
@@ -37,10 +37,10 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
   public static final AttributeKey<Protocol> NEGOTIATED_APPLICATION_PROTOCOL =
       AttributeKey.valueOf("NEGOTIATED_APPLICATION_PROTOCOL");
 
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private final NettySslContextFactory nettySslContextFactory;
 
-  public SniHandler(Configuration configuration, NettySslContextFactory nettySslContextFactory) {
+  public SniHandler(MockServerConfiguration configuration, NettySslContextFactory nettySslContextFactory) {
     this.configuration = configuration;
     this.nettySslContextFactory = nettySslContextFactory;
   }

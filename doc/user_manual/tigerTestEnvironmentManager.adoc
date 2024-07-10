@@ -830,6 +830,9 @@ tigerProxy:
   localResources: true
   # When active the host-headers are rewritten even for a reverse-proxy-route
   rewriteHostHeader: true
+  # This option can be used to deactivate TLS-Termination. Only deactivate this in
+  # conjunction with a directReverseProxy
+  activateTlsTermination: true
 
   tls:
     # Can be used to define a CA-Identity to be used with TLS. The Tiger Proxy will

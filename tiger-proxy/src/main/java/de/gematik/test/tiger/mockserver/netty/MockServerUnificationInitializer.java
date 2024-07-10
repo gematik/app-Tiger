@@ -4,7 +4,7 @@
 
 package de.gematik.test.tiger.mockserver.netty;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler;
@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Data
 @Slf4j
 public class MockServerUnificationInitializer extends ChannelHandlerAdapter {
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private final MockServer server;
   private final HttpState httpState;
   private final HttpActionHandler actionHandler;
