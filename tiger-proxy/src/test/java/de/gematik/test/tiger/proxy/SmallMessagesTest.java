@@ -1,0 +1,55 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
+package de.gematik.test.tiger.proxy;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import lombok.val;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+/**
+ * The port unification handler checks the first bytes of a message to determine if it is a TLS
+ * message. If the message is smaller than 5 Bytes a Signal is thrown and the handler would
+ * previously wait for more that that may never come if we are handling some exotic protocols.
+ *
+ * <p>This test checks that small messages are still forwarded with and without TLS on.
+ */
+class SmallMessagesTest extends AbstractNonHttpTest {
+
+  private static final String MESSAGE_SMALLER_AS_5_BYTES = "{}";
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void testSendSmallNonTlsMessageShouldBeForwarded(boolean withTls) throws Exception {
+    executeTestRun(
+        withTls,
+        socket -> {
+          writeSingleRequestMessage(socket, MESSAGE_SMALLER_AS_5_BYTES.getBytes());
+        },
+        (requestCalls, responseCalls, serverConnectionsOpened) -> {
+          assertThat(requestCalls.get()).isEqualTo(1);
+          assertThat(responseCalls.get()).isZero();
+          assertThat(serverConnectionsOpened.get()).isEqualTo(1);
+        },
+        serverSocket -> {
+          val reader = new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
+          reader.readLine();
+        },
+        serverPort ->
+            new TigerProxy(
+                TigerProxyConfiguration.builder()
+                    .directReverseProxy(
+                        DirectReverseProxyInfo.builder()
+                            .port(serverPort)
+                            .hostname("localhost")
+                            .build())
+                    .build()));
+  }
+}

@@ -67,12 +67,12 @@ class TestCetpCommunication extends AbstractNonHttpTest {
     executeTestRunWithDirectReverseProxy(
         socket -> {
           socket.close();
-          try (Socket clientSocket = newClientSocketTo(getTigerProxy())) {
+          try (Socket clientSocket = newClientSocketTo(getTigerProxy(), true)) {
             writeSingleRequestMessage(clientSocket);
           }
           TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
               getTigerProxy(), 1, 10);
-          try (Socket clientSocket = newClientSocketTo(getTigerProxy())) {
+          try (Socket clientSocket = newClientSocketTo(getTigerProxy(), true)) {
             writeSingleRequestMessage(clientSocket);
             TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
                 getTigerProxy(), 2, 10);

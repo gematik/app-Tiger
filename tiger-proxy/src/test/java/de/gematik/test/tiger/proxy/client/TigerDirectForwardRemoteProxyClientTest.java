@@ -16,6 +16,7 @@ import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -72,6 +73,30 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
   }
 
   @Test
+  void sendSplitNonHttpMessageWithoutResponse() throws Exception {
+    executeRemoteProxyTestWithMessagesAndVerification(
+        socket -> {
+          writeSingleRequestMessage(socket, "USER XYZ".getBytes());
+          writeSingleRequestMessage(socket, "\r\n".getBytes());
+          writeSingleRequestMessage(socket, "QUIT".getBytes());
+          writeSingleRequestMessage(socket, "\r\n".getBytes());
+        },
+        serverSocket -> {
+          final BufferedReader reader =
+              new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
+          reader.readLine();
+        },
+        (requestCalls, responseCalls, serverCalled) -> {
+          assertThat(serverCalled.get()).isEqualTo(1);
+          var messages = new ArrayList<>(tigerRemoteProxyClient.get().getRbelMessages());
+          assertThat(messages).hasSize(2);
+          assertThat(messages.get(0).getRawStringContent()).isEqualTo("USER XYZ\r\n");
+          assertThat(messages.get(1).getRawStringContent()).isEqualTo("QUIT\r\n");
+        },
+        Object::toString);
+  }
+
+  @Test
   void sendNonHttpMessageWithResponse() throws Exception {
     executeRemoteProxyTestWithMessagesAndVerification(
         socket -> writeSingleRequestMessage(socket, request),
@@ -111,7 +136,7 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
     AtomicReference<ConfigurableApplicationContext> tigerProxyApplication = new AtomicReference<>();
 
     try {
-      executeTestRun(
+      executeTestRunWithTls(
           clientActionCallback,
           verifyInteractionsConsumer,
           serverAcceptedConnectionCallback,

@@ -205,12 +205,13 @@ public class NettyHttpClient {
           (ChannelFutureListener)
               future -> {
                 if (future.isSuccess()) {
-                  if (log.isDebugEnabled()) {
-                    log.debug(
-                        "sending bytes hex {} to {}",
-                        ByteBufUtil.hexDump(binaryRequestInfo.getBytes()),
-                        future.channel().attr(REMOTE_SOCKET).get());
-                  }
+                  log.atDebug().log(
+                      () ->
+                          "sending bytes hex %s to %s"
+                              .formatted(
+                                  ByteBufUtil.hexDump(binaryRequestInfo.getBytes()),
+                                  future.channel().attr(REMOTE_SOCKET).get()));
+
                   // send the binary request
                   future
                       .channel()

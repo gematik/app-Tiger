@@ -18,6 +18,7 @@ import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
+import de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
@@ -278,11 +279,12 @@ public class MockServer extends LifeCycle {
 
     @Override
     public void initChannel(SocketChannel ch) {
-      ch.pipeline().addFirst(new ConnectionCounterHandler(mockServer));
+      ch.pipeline().addFirst(new LoggingHandler(LogLevel.DEBUG));
+      ch.pipeline().addLast(new ConnectionCounterHandler(mockServer));
 
       ch.pipeline()
           .addLast(
-              new MockServerUnificationInitializer(
+              new PortUnificationHandler(
                   configuration,
                   mockServer,
                   httpState,

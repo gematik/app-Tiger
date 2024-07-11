@@ -1,14 +1,11 @@
 # Changelog Tiger Test platform
+
 # Release 3.1.4
 
 # Bugfixes
 
 * TGR-1455: implement conversion of POP3 AUTH command
-
-# Release 3.1.4
-
-## Bugfixes
-
+* TGR-1454: Tiger-Proxy: fix issue where small messages were not being forwarded.
 * TGR-1436: Fix HTTP message pairing for old tgr-files
 * TGR-1456: Only interpret POP3 RETR response as MIME
 
@@ -45,8 +42,6 @@ servers:
 * TGR-1443: REST requests are now fully configurable via TigerHttpClient
 
 # Release 3.1.2
-
-
 
 ## Bugfixes
 

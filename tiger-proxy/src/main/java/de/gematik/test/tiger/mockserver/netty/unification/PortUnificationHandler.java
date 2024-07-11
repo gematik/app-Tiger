@@ -17,7 +17,6 @@ import static java.util.Collections.unmodifiableSet;
 
 import de.gematik.test.tiger.mockserver.codec.MockServerHttpServerCodec;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
-import de.gematik.test.tiger.mockserver.mappers.MockServerHttpResponseToFullHttpResponse;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.netty.HttpRequestHandler;
@@ -35,6 +34,7 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AttributeKey;
+import io.netty.util.Signal;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -65,7 +65,6 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   private final HttpState httpState;
   private final HttpActionHandler actionHandler;
   private final NettySslContextFactory nettySslContextFactory;
-  private final MockServerHttpResponseToFullHttpResponse mockServerHttpResponseToFullHttpResponse;
 
   public PortUnificationHandler(
       MockServerConfiguration configuration,
@@ -78,7 +77,6 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
     this.httpState = httpState;
     this.actionHandler = actionHandler;
     this.nettySslContextFactory = nettySslContextFactory;
-    this.mockServerHttpResponseToFullHttpResponse = new MockServerHttpResponseToFullHttpResponse();
   }
 
   private void performConnectionToRemote(ChannelHandlerContext ctx) {
@@ -179,7 +177,11 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   }
 
   private boolean isTls(ByteBuf buf) {
-    return SslHandler.isEncrypted(buf);
+    try {
+      return SslHandler.isEncrypted(buf);
+    } catch (Signal signal) {
+      return false;
+    }
   }
 
   private void enableTls(ChannelHandlerContext ctx, ByteBuf msg) {
@@ -273,6 +275,9 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   private void switchToBinary(ChannelHandlerContext ctx, ByteBuf msg) {
     addLastIfNotPresent(
         ctx.pipeline(), new BinaryHandler(configuration, actionHandler.getHttpClient()));
+    // after switching to binary there is no coming back, and we can remove the port unification
+    // handler
+    ctx.pipeline().remove(this);
     // fire message back through pipeline
     ctx.fireChannelRead(msg.readBytes(actualReadableBytes()));
   }

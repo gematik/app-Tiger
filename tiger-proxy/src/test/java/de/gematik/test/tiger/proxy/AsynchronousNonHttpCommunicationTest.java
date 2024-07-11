@@ -72,7 +72,7 @@ class AsynchronousNonHttpCommunicationTest extends AbstractNonHttpTest {
         socket -> {
           writeSingleRequestMessage(socket);
           socket.close();
-          try (Socket clientSocket = newClientSocketTo(getTigerProxy())) {
+          try (Socket clientSocket = newClientSocketTo(getTigerProxy(), true)) {
             writeSingleRequestMessage(clientSocket);
           }
         },
