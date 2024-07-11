@@ -436,6 +436,10 @@ You can also use wildcards to retrieve all members of a certain level:
 
  $.body.[*].nbf
 
+or
+
+ $.body.*.nbf
+
 Alternatively you can recursively descend and retrieve all members:
 
  $..nbf
@@ -452,6 +456,28 @@ To use keys containing spaces, escape them via `['foo bar']`, like so:
 
 Please note that the keys in the bracket are URL unescaped.
 So to use special characters please URL encode them (Space is a special case since + and ' ' are allowed, depending on the exact position).
+
+==== Arrays
+
+To make things easy and consistent, the entries of an array are simply stored as a map with the index as key. So the following expression will return the first element of the array:
+
+`$.body.array.0`
+
+==== Differentiating between multiple elements
+
+When a key is present multiple times, all elements are returned. To differentiate between them, you can use the index:
+
+`$.body.entry[0]`
+
+would give the first element in the following XML:
+
+[source,xml]
+----
+<body>
+    <entry>first</entry>
+    <entry>second</entry>
+</body>
+----
 
 ==== Alternate keys
 
