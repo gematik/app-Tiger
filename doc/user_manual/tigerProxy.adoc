@@ -100,6 +100,21 @@ tigerProxy:
 
 and you execute GET http://my.domain/deep/deeper, you will get the result of GET http://orf.at/blub/deeper (the /deep in between has been eliminated along with my.domain).
 
+==== hosts
+
+In some instances you might be pressed to "hosts" multiple servers on one tiger-proxy. This can happen when you can influence DNS-Resolvement, but neither the path nor the port used. In this case you can use the hosts-property to define which hosts should be routed to which target.
+
+[source,yaml]
+----
+tigerProxy:
+    proxyRoutes:
+      hosts:
+        - "www.google.com"
+        - ".*.bing.com"
+----
+
+The entries are matched as regular expressions.
+
 ==== criterions
 
 As an additional measure for a more fine-grained matching you can use criterions. These are JEXL-expressions which have to be fulfilled for the route to be used. This can be leveraged to make the routing decision dependent on the content of the message.

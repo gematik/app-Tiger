@@ -36,10 +36,10 @@ USER $USERID:$GROUPID
 
 ENV MANAGEMENT_SERVER_PORT=8081
 
-HEALTHCHECK --interval=15s \
-            --timeout=5s \
-            --start-period=15s \
-            --retries=3 \
+HEALTHCHECK --interval=1s \
+            --timeout=1s \
+            --start-period=1s \
+            --retries=100 \
             CMD wget -T5 -qO- -Y off http://localhost:8081/actuator/health | grep UP || exit 1
 
 # Copy the resource to the destination folder and assign permissions

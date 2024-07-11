@@ -237,12 +237,12 @@ public class MockServer extends LifeCycle {
     return remoteSocket;
   }
 
-  public ExpectationBuilder when(HttpRequest httpRequest, Integer priority) {
-    return new ExpectationBuilder(new Expectation(httpRequest, priority), this);
+  public ExpectationBuilder when(HttpRequest httpRequest, Integer priority, List<String> hostRegexes) {
+    return new ExpectationBuilder(new Expectation(httpRequest, priority, hostRegexes), this);
   }
 
-  public ExpectationBuilder when(HttpRequest requestDefinition) {
-    return new ExpectationBuilder(new Expectation(requestDefinition, 0), this);
+  public ExpectationBuilder when(HttpRequest requestDefinition, List<String> hostRegexes) {
+    return new ExpectationBuilder(new Expectation(requestDefinition, 0, hostRegexes), this);
   }
 
   public void removeExpectation(String expectationId) {

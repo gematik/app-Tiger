@@ -47,8 +47,8 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
   protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
     BinaryMessage binaryRequest = bytes(ByteBufUtil.getBytes(byteBuf));
     final InetSocketAddress remoteAddress = getRemoteAddress(ctx);
-    if (remoteAddress
-        != null) { // binary protocol is only supported for proxies request and not mocking
+    if (remoteAddress != null) {
+      // binary protocol is only supported for proxies request and not mocking
       sendMessage(new BinaryRequestInfo(ctx.channel(), binaryRequest, remoteAddress));
     } else {
       log.info(

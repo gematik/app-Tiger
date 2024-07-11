@@ -307,17 +307,6 @@ public class RbelElement extends RbelPathAble {
     return position;
   }
 
-  public Optional<RbelElement> findAncestorWithFacet(Class<? extends RbelFacet> rbelFacetClass) {
-    RbelElement position = getParentNode();
-    while (position != null) {
-      if (position.hasFacet(rbelFacetClass)) {
-        return Optional.of(position);
-      }
-      position = position.getParentNode();
-    }
-    return Optional.empty();
-  }
-
   @Override
   public List<RbelPathAble> descendToContentNodeIfAdvised() {
     if ((hasFacet(RbelJsonFacet.class) || hasFacet(RbelCborFacet.class))

@@ -502,11 +502,11 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
             criterion -> {
               final boolean matches =
                   TigerJexlExecutor.matchesAsJexlExpression(convertedRequest, criterion);
-              log.trace(
-                  "Matching {} for {}: {}",
-                  criterion,
-                  convertedRequest.printHttpDescription(),
-                  matches);
+              log.atTrace()
+                .addArgument(criterion)
+                .addArgument(convertedRequest::printHttpDescription)
+                .addArgument(() -> matches)
+                .log("Matching {} for {}: {}");
               return matches;
             });
   }

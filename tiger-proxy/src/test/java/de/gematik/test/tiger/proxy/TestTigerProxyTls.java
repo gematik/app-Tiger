@@ -458,11 +458,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   private CloseableHttpClient loadSslContextForClientCert() throws Exception {
     KeyStore trustStore = KeyStore.getInstance("PKCS12");
 
-    FileInputStream instream = new FileInputStream("src/test/resources/mailuser-rsa1.p12");
-    try {
+    try (FileInputStream instream = new FileInputStream("src/test/resources/mailuser-rsa1.p12")) {
       trustStore.load(instream, "00".toCharArray());
-    } finally {
-      instream.close();
     }
 
     final SSLContext sslContext =

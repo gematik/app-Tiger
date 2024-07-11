@@ -773,6 +773,10 @@ tigerProxy:
       to: "https://another.de/server"
       # the traffic for this route will NOT be logged (default is false)
       disableRbelLogging: true
+      hosts:
+        - "www.google.com"
+        - "www.bing.com"
+      # For reverse proxy-routes this allows to differentiate requests based on the host-header. This is useful when the DNS-resolvement of the client can be influenced, but not the ports used.
 
   # a list of modifications that will be applied to every proxied request and response
   modifications:

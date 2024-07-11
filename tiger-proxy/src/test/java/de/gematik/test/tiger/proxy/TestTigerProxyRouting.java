@@ -193,4 +193,34 @@ class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
     assertThat(proxyRest.get("http://localhost:" + tigerProxy.getProxyPort()).asJson().getStatus())
         .isEqualTo(666);
   }
+
+  @Test
+  void routingDecisionViaHostHeader() {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort + "/foobar")
+                        .criterions(List.of("$.header.host =~ '.*.google.de'"))
+                        .build(),
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar")
+                        .hosts(List.of(".*.google.at"))
+                        .build()))
+            .build());
+
+    assertThat(
+            proxyRest
+                .get("http://localhost:" + tigerProxy.getProxyPort() + "/")
+                .header("host", "www.google.de")
+                .asJson()
+                .getStatus())
+        .isEqualTo(666); // /foobar.*
+    assertThat(proxyRest.get("http://localhost:" + tigerProxy.getProxyPort())
+      .header("host", "www.google.at").asJson().getStatus())
+        .isEqualTo(777); // /deep/foobar.*
+  }
 }
