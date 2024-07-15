@@ -11,12 +11,18 @@ import de.gematik.test.tiger.common.config.DuplicateMapKeysForbiddenConstructor;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
+import lombok.val;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.representer.Representer;
 
 @SuppressWarnings("unused")
 public class TigerSerializationUtil {
@@ -96,5 +102,41 @@ public class TigerSerializationUtil {
       index++;
     }
     return result;
+  }
+
+  public static String toNestedYaml(Map<String, String> flatMap) {
+    var dumperOptions = new DumperOptions();
+    dumperOptions.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+
+    var yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor(), new Representer(dumperOptions));
+    return yaml.dump(convertFlatToNestedMap(flatMap));
+  }
+
+  public static Map<String, Object> convertFlatToNestedMap(Map<String, String> flatMap) {
+    SortedMap<String, String> withSortedKeys = new TreeMap<>(flatMap);
+    SortedMap<String, Object> nestedMap = new TreeMap<>();
+
+    for (val entry : withSortedKeys.entrySet()) {
+      addToNestedMap(nestedMap, entry);
+    }
+    return nestedMap;
+  }
+
+  private static void addToNestedMap(
+      Map<String, Object> nestedMap, Map.Entry<String, String> entry) {
+    String[] keys = entry.getKey().split("\\.");
+    Map<String, Object> currentMap = nestedMap;
+    for (int i = 0; i < keys.length - 1; i++) {
+      String key = keys[i];
+      var currentValue = currentMap.computeIfAbsent(key, k1 -> new TreeMap<>());
+      if (currentValue instanceof Map<?, ?>) {
+        currentMap = (Map<String, Object>) currentValue;
+      } else {
+        var remainingKey = String.join(".", Arrays.copyOfRange(keys, i, keys.length));
+        currentMap.put(remainingKey, entry.getValue());
+        return;
+      }
+    }
+    currentMap.put(keys[keys.length - 1], entry.getValue());
   }
 }

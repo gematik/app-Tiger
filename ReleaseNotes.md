@@ -2,6 +2,18 @@
 
 # Release 3.1.4
 
+# Features
+
+* TGR-1237: Configuration Editor: it is now possible to export and import the tiger global configuration as a yaml file
+  from the Workflow UI. Two new glue code steps also allow to trigger the import and export from a test scenario:
+
+```gherkin
+TGR save TigerGlobalConfiguration to file {tigerResolvedString}
+TGR speichere TigerGlobalConfiguration in Datei {tigerResolvedString}
+TGR load TigerGlobalConfiguration from file {tigerResolvedString}
+TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
+```
+
 # Bugfixes
 
 * TGR-1455: implement conversion of POP3 AUTH command

@@ -17,16 +17,20 @@ import {useConfigurationLoader} from "@/components/global_configuration/Configur
 import {CellClickedEvent, ColDef, GridApi} from "ag-grid-community";
 import {AgGridVue} from "ag-grid-vue3";
 
-const {loadConfigurationProperties} = useConfigurationLoader();
-
-
-const CONFIGURATION_EDITOR_URL = 'global_configuration';
+const {
+  loadConfigurationProperties,
+  deleteConfigurationProperty,
+  saveConfigurationProperty,
+  importConfig
+} = useConfigurationLoader();
 
 const emitter: Emitter<any> = inject('emitter') as Emitter<any>;
 const configurationProperties = ref(new Array<TigerConfigurationPropertyDto>());
 
 const editorGrid: Ref<typeof AgGridVue | null> = ref(null);
 const gridApi: Ref<GridApi | null | undefined> = ref(undefined);
+const importFileStatus = ref('');
+
 
 onMounted(async () => {
   configurationProperties.value = await loadConfigurationProperties();
@@ -41,21 +45,9 @@ onUnmounted(() => {
 })
 
 async function onCellValueSaved(data: TigerConfigurationPropertyDto) {
-  try {
-    const response = await fetch(import.meta.env.BASE_URL + CONFIGURATION_EDITOR_URL,
-        {
-          method: "PUT",
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(data)
-        }
-    )
-    if (response.ok) {
-      configurationProperties.value = await loadConfigurationProperties();
-    }
-  } catch (error) {
-    console.error("Error updating configuration entry " + error)
+  const response = await saveConfigurationProperty(data)
+  if (response.ok) {
+    configurationProperties.value = await loadConfigurationProperties();
   }
 }
 
@@ -63,7 +55,7 @@ function onCellClicked(params: CellClickedEvent) {
   if (isClickInActionsColumn(params)) {
     const action = (params.event?.target as HTMLElement).dataset.action
     if (action === 'delete') {
-      deleteRow(params);
+      deleteRow(params.data);
     } else if (action === 'edit') {
       startEdit(params);
     }
@@ -78,22 +70,36 @@ function onClearFilters() {
   gridApi.value?.setFilterModel(null);
 }
 
-async function deleteRow(params: CellClickedEvent) {
-  try {
-    const response = await fetch(import.meta.env.BASE_URL + "global_configuration",
-        {
-          method: "DELETE",
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(params.data)
+
+function onClickImport() {
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = '.yaml';
+  fileInput.onchange = async () => {
+    if (fileInput.files && fileInput.files.length > 0) {
+      try {
+        const response = await importConfig(fileInput.files[0]);
+        if (response.ok) {
+          configurationProperties.value = await loadConfigurationProperties();
+          importFileStatus.value = '';
+        } else {
+          const errorJson = await response.json();
+          importFileStatus.value = `Something went wrong with the import: ${errorJson.error}`;
         }
-    )
-    if (response.ok) {
-      configurationProperties.value = await loadConfigurationProperties();
+      } catch (error) {
+        const message = (error instanceof Error) ? error.message : 'An unknown error occurred';
+        importFileStatus.value = `Something went wrong with the import: ${message}`;
+      }
+      fileInput.remove()
     }
-  } catch (error) {
-    console.error("Error deleting configuration entry " + error)
+  };
+  fileInput.click();
+}
+
+async function deleteRow(data: TigerConfigurationPropertyDto) {
+  const response = await deleteConfigurationProperty(data);
+  if (response.ok) {
+    configurationProperties.value = await loadConfigurationProperties();
   }
 }
 
@@ -157,10 +163,24 @@ const columnDefs: ColDef[] = [
 </script>
 
 <template>
-  <div class="container flex items-center">
+  <div class="config-editor container flex items-center">
     <div class="text-start py-1">
-      <button type="button" id="test-tg-config-editor-btn-clear-filters" @click.prevent="onClearFilters">Clear filters
+      <button class="btn btn-outline-secondary btn-sm me-1" type="button" id="test-tg-config-editor-btn-clear-filters"
+              @click.prevent="onClearFilters" title="clear the filters applied to the table">Clear filters
       </button>
+      <a class="btn btn-outline-secondary btn-sm me-1" type="button" id="test-tg-config-editor-btn-export"
+         href="/global_configuration/file"
+         download="global_configuration.json"
+         title="export the configuration as a file"
+      >Export
+      </a>
+
+      <button class="btn btn-outline-secondary btn-sm me-1" type="button" id="test-tg-config-editor-btn-import"
+              @click.prevent="onClickImport" title="import a configuration file">Import
+      </button>
+    </div>
+    <div v-if="importFileStatus" class="alert alert-danger" role="alert">
+      <i class="fas fa-exclamation-triangle"></i> {{ importFileStatus }}
     </div>
     <ag-grid-vue
         class="ag-theme-alpine editor-table"

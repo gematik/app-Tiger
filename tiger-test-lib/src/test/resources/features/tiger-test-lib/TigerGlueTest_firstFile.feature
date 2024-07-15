@@ -11,3 +11,5 @@ Feature: TigerGlue Test feature - First File
     Then TGR assert variable "tiger.tigerGlue.helloTestLocal" matches "global value for helloTestLocal"
     Then TGR assert variable "tiger.tigerGlue.helloTestFeature1" matches "local value feature 1st file"
     Then TGR assert variable "tiger.tigerGlue.helloTestFeature2" matches "global value for helloTestFeature2"
+
+

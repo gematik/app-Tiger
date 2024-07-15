@@ -23,6 +23,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 @TigerTest
 class TigerGlueStartStopTest {
 
+  private static TigerGlue tigerGlue = new TigerGlue();
+
   @BeforeAll
   public static void setUp(TigerTestEnvMgr testEnvMgr) {
     ReflectionTestUtils.setField(TigerDirector.class, "tigerTestEnvMgr", testEnvMgr);
@@ -31,8 +33,8 @@ class TigerGlueStartStopTest {
 
   public static Stream<Arguments> startStopRunnables() {
     return Stream.of(
-        Arguments.of((Consumer<String>) TigerGlue::tgrStartServer),
-        Arguments.of((Consumer<String>) TigerGlue::tgrStopServer));
+        Arguments.of((Consumer<String>) tigerGlue::tgrStartServer),
+        Arguments.of((Consumer<String>) tigerGlue::tgrStopServer));
   }
 
   @ParameterizedTest
@@ -45,14 +47,14 @@ class TigerGlueStartStopTest {
 
   @Test
   void startStopServerInWrongConfiguration_shouldGiveException() {
-    assertThatThrownBy(() -> TigerGlue.tgrStartServer("remoteTigerProxy"))
+    assertThatThrownBy(() -> tigerGlue.tgrStartServer("remoteTigerProxy"))
         .isInstanceOf(TigerLibraryException.class)
         .hasMessageContaining(
             "Server with name remoteTigerProxy is not stopped! Current status is RUNNING");
 
-    TigerGlue.tgrStopServer("remoteTigerProxy");
+    tigerGlue.tgrStopServer("remoteTigerProxy");
 
-    assertThatThrownBy(() -> TigerGlue.tgrStopServer("remoteTigerProxy"))
+    assertThatThrownBy(() -> tigerGlue.tgrStopServer("remoteTigerProxy"))
         .isInstanceOf(TigerLibraryException.class)
         .hasMessageContaining(
             "Server with name remoteTigerProxy is not running! Current status is STOPPED");

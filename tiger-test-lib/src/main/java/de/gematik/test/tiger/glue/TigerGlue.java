@@ -12,6 +12,7 @@ import de.gematik.test.tiger.common.config.SourceType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
+import de.gematik.test.tiger.testenvmgr.controller.TigerGlobalConfigurationController;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
@@ -21,6 +22,11 @@ import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
@@ -29,6 +35,16 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class TigerGlue {
+
+  private TigerGlobalConfigurationController tigerGlobalConfigurationController;
+
+  public TigerGlue() {
+    this(new TigerGlobalConfigurationController());
+  }
+
+  public TigerGlue(TigerGlobalConfigurationController tigerGlobalConfigurationController) {
+    this.tigerGlobalConfigurationController = tigerGlobalConfigurationController;
+  }
 
   /**
    * Sets the given key to the given value in the global configuration store. Variable substitution
@@ -206,7 +222,8 @@ public class TigerGlue {
    * @param servername The server to be stopped.
    */
   @Given("TGR stop server {tigerResolvedString}")
-  public static void tgrStopServer(String servername) {
+  @Gegebensei("TGR stoppe Server {tigerResolvedString}")
+  public void tgrStopServer(String servername) {
     final var server = TigerDirector.getTigerTestEnvMgr().getServers().get(servername);
     if (server == null) {
       throw new TigerServerNotFoundException(servername);
@@ -230,7 +247,8 @@ public class TigerGlue {
    * @param servername The server to be started.
    */
   @Given("TGR start server {tigerResolvedString}")
-  public static void tgrStartServer(String servername) {
+  @Gegebensei("TGR starte Server {tigerResolvedString}")
+  public void tgrStartServer(String servername) {
     final var server = TigerDirector.getTigerTestEnvMgr().getServers().get(servername);
     if (server == null) {
       throw new TigerServerNotFoundException(servername);
@@ -243,6 +261,41 @@ public class TigerGlue {
               + server.getStatus());
     }
     server.start(TigerDirector.getTigerTestEnvMgr());
+  }
+
+  /**
+   * Saves all the values of the Tiger Global Configuration in the given file formatted as yaml.
+   *
+   * <p>ATTENTION: If the file already exists it will be overwritten!
+   *
+   * @param filename the file to save the configuration to
+   * @throws IOException if an I/ O error occurs writing to or creating the file
+   */
+  @Given("TGR save TigerGlobalConfiguration to file {tigerResolvedString}")
+  @Gegebensei("TGR speichere TigerGlobalConfiguration in Datei {tigerResolvedString}")
+  public void tgrSaveTigerGlobalConfigurationToFile(String filename) throws IOException {
+    var configAsYaml = tigerGlobalConfigurationController.getGlobalConfigurationAsYaml();
+    Files.writeString(
+        Path.of(filename),
+        configAsYaml,
+        StandardCharsets.UTF_8,
+        StandardOpenOption.CREATE,
+        StandardOpenOption.TRUNCATE_EXISTING);
+  }
+
+  /**
+   * Loads the Tiger Global Configuration from the given file. The file must be formatted as yaml.
+   * All previous values in the configuration will be cleared and only the values from the file will
+   * end up in the configuration.
+   *
+   * @param filename the file to load the configuration from
+   * @throws IOException if an I/O error occurs reading the file
+   */
+  @Given("TGR load TigerGlobalConfiguration from file {tigerResolvedString}")
+  @Gegebensei("TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}")
+  public void tgrLoadTigerGlobalConfigurationFromFile(String filename) throws IOException {
+    var configAsYaml = Files.readString(Path.of(filename), StandardCharsets.UTF_8);
+    tigerGlobalConfigurationController.importConfiguration(configAsYaml);
   }
 
   public static class TigerServerNotFoundException extends TigerLibraryException {

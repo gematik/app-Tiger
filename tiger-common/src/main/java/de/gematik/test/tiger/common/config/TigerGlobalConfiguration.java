@@ -437,6 +437,10 @@ public class TigerGlobalConfiguration {
     globalConfigurationLoader.listSources().forEach(source -> source.removeValue(configurationKey));
   }
 
+  public static void dangerouslyDeleteAllProperties() {
+    globalConfigurationLoader.reset();
+  }
+
   public static Map<String, Pair<SourceType, String>> exportConfiguration() {
     var sources =
         globalConfigurationLoader.listSources().stream()
