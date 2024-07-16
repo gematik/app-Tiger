@@ -21,7 +21,8 @@ public enum RbelPop3Command {
   APOP,
   TOP,
   UIDL,
-  AUTH;
+  AUTH,
+  SASL;
 
   public static final int MAX_LENGTH =
       Collections.max(

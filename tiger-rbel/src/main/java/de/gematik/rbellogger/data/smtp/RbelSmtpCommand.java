@@ -15,5 +15,6 @@ public enum RbelSmtpCommand {
   HELP,
   RSET,
   NOOP,
-  QUIT;
+  AUTH,
+  QUIT
 }

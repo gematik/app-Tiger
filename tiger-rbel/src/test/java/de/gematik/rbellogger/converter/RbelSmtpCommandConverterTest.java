@@ -46,7 +46,8 @@ class RbelSmtpCommandConverterTest {
         "VRFY <@a,@b:user@d>",
         "EXPN <@a,@b:user@d>",
         "HELP HELP",
-        "NOOP no op"
+        "NOOP no op",
+        "AUTH PLAIN dGVzdAB0ZXN0ADEyMzQ="
       })
   void shouldConvertSingleLineSmtpCommand(String commandLine) {
     String[] parts = commandLine.split(" ", 2);

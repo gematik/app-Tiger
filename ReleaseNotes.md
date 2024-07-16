@@ -49,6 +49,7 @@ servers:
 
 * TGR-1444: Bugfix for relaying multiline TCP messages to downstream tiger proxy
 * TGR-1446: External-Jar: Solved race condition that could lead to a NPE when starting the server.
+* TGR-1472: add misssing POP3/SMTP commands SASL,AUTH
 
 ## Features
 
