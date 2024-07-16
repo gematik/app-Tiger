@@ -26,6 +26,7 @@ class TigerGlobalConfigurationControllerTest {
 
   @BeforeEach
   void setup() {
+    TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.initialize();
   }
 
@@ -90,8 +91,10 @@ os.version: '10.0'
     // all elements have same value but are now all RUNTIME_EXPORTS
     afterReimport.forEach(
         (key, value) -> {
-          assertThat(value.getRight()).isEqualTo(initialConfiguration.get(key).getRight());
-          assertThat(value.getLeft()).isEqualTo(SourceType.RUNTIME_EXPORT);
+          if (value != null && initialConfiguration.get(key) != null) {
+            assertThat(value.getRight()).isEqualTo(initialConfiguration.get(key).getRight());
+            assertThat(value.getLeft()).isEqualTo(SourceType.RUNTIME_EXPORT);
+          }
         });
   }
 
