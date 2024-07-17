@@ -309,7 +309,20 @@ lib:
 The docker container node allows to instantiate a local docker container from the configured image.
 The exposed port of the docker container is available as a special token in the substitution process of the exports entries (`${PORT:xxxx}` where xxxx is the port being exposed inside the container).
 
-To customize the docker container you may alter the entry point command line and add the Tiger Proxy certificate to the container's operating system list of trusted certificates.
+To customize the docker container you may alter the entry point command line.
+Additionally, Tiger will automatically add the Tiger Proxy certificate to the container's operating system list of trusted certificates.
+This modification can be disabled by setting the property `dockerOptions.proxied` to false.
+E.g.:
+
+[source,yaml]
+----
+servers:
+  exampleDockerServer:
+    type: docker
+    dockerOptions:
+        proxied: false # default is true
+----
+
 For containers that should exit after a single command you may enable the oneShot property.
 
 You can also copy files to the container by configuring the source and destinations paths of files or folder to be copied.
