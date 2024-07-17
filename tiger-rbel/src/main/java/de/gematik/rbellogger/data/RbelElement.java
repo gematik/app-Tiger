@@ -359,4 +359,16 @@ public class RbelElement extends RbelPathAble {
       super(s);
     }
   }
+
+  public static List<RbelElement>  findAllNestedElementsWithFacet(RbelElement el,
+      Class<? extends RbelFacet> rbelFacetClass) {
+    List<RbelElement> result = new ArrayList<>();
+    if (el.hasFacet(rbelFacetClass)) {
+      result.add(el);
+    }
+    el.getChildNodes()
+        .forEach(child -> result.addAll(findAllNestedElementsWithFacet(child, rbelFacetClass)));
+
+    return result;
+  }
 }

@@ -7,6 +7,8 @@ package de.gematik.test.tiger.proxy.data;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,6 +25,8 @@ public class MessageMetaDataDto {
 
   private String uuid;
   private String path;
+  private List<String> additionalInformation = new ArrayList<>();
+  private Integer decryptedResponseCode;
   private String method;
   private Integer responseCode;
   private String recipient;
@@ -73,18 +77,43 @@ public class MessageMetaDataDto {
 
     if (el.hasFacet(RbelHttpRequestFacet.class)) {
       RbelHttpRequestFacet req = el.getFacetOrFail(RbelHttpRequestFacet.class);
-      builder =
-          builder
-              .path(req.getPath().getRawStringContent())
+        builder.path(req.getPath().getRawStringContent())
               .method(req.getMethod().getRawStringContent())
               .responseCode(null);
+
+      List<Optional<RbelRequestFacet>> requestFacets = new ArrayList<>();
+      el.getChildNodes().forEach(child -> {
+        List<RbelElement> nestedElements = RbelElement.findAllNestedElementsWithFacet(child, RbelRequestFacet.class);
+        requestFacets.addAll(nestedElements.stream()
+            .map(e -> e.getFacet(RbelRequestFacet.class))
+            .filter(Optional::isPresent)
+            .toList());
+      });
+      builder.additionalInformation(requestFacets.stream()
+          .flatMap(Optional::stream)
+          .map(a -> a.getMenuInfoString()).toList());
+
     } else if (el.hasFacet(RbelHttpResponseFacet.class)) {
       builder.responseCode(
           Integer.parseInt(
               el.getFacetOrFail(RbelHttpResponseFacet.class)
                   .getResponseCode()
                   .getRawStringContent()));
+
+      List<Optional<RbelResponseFacet>> responseFacets = new ArrayList<>();
+      el.getChildNodes().forEach(child -> {
+        List<RbelElement> nestedElements = RbelElement.findAllNestedElementsWithFacet(child, RbelResponseFacet.class);
+        responseFacets.addAll(nestedElements.stream()
+            .map(e -> e.getFacet(RbelResponseFacet.class))
+            .filter(Optional::isPresent)
+            .toList());
+      });
+
+      builder.additionalInformation(responseFacets.stream()
+          .flatMap(Optional::stream)
+          .map(a -> a.getMenuInfoString()).toList());
     }
+
     builder.isRequest(el.hasFacet(RbelRequestFacet.class));
     builder.timestamp(
         el.getFacet(RbelMessageTimingFacet.class)

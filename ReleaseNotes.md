@@ -21,6 +21,10 @@ TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
 * TGR-1436: Fix HTTP message pairing for old tgr-files
 * TGR-1456: Only interpret POP3 RETR response as MIME
 
+## Features
+
+* TGR-1385: in the WebUi sidebar the inner (crypted) requests and response codes will be displayed when available 
+
 # Release 3.1.3
 
 ## Breaking Changes

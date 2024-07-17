@@ -86,6 +86,11 @@ const menuHtmlTemplateRequest =
     + "        title=\"${menuInfoString}\">${menuInfoString}"
     + "      </span>\n"
     + "    </div>\n"
+    + "    <div class=\"ms-4 has-text-link d-flex align-items-center\">\n"
+    + "      <span class=\"ms-3 text-ellipsis\""
+    + "        title=\"${additionalInformation}\">${additionalInformation}"
+    + "      </span>\n"
+    + "    </div>\n"
     + "  </a></div>";
 const menuHtmlTemplateResponse =
     "<div class=\"ms-1 mb-4 is-size-7\">"
@@ -99,7 +104,16 @@ const menuHtmlTemplateResponse =
     + "      </span>\n"
     + "      <span class=\"has-text-dark text-ellipsis ms-auto\">${timestamp}</span>\n"
     + "    </div>\n"
+    + "    <div class=\"ms-5 mb-4 text-success d-flex align-items-center\">${additionalInformation}\n"
+    + "    </div>\n"
     + "  </a></div>";
+
+const menuHtmlTemplateSubResponse =
+  "      <i class=\"fas fa-reply\"></i>\n"
++ "      <span class=\"ms-1\">RES</span>\n"
++ "      <span class=\"mx-1\" \n"
++ "         title=\"${additionalInformation}\">${additionalInformation}"
++ "      </span>\n";
 
 function createDownloadOptionsQueryString() {
   if (!includeFilterInDownload) {
@@ -873,6 +887,7 @@ function updateHidingForMessageElement(messageElement) {
 function addMessageToMainView(msgHtmlData) {
   const listDiv = getAll('.msglist')[0];
   const message = htmlToElement(msgHtmlData.html);
+  console.log(msgHtmlData.html)
   let span = getAll(".msg-sequence", message)[0];
   if (span != null) {
     span.classList.add("tag", "is-info", "is-light", "me-3", "is-size-3");
@@ -911,6 +926,24 @@ function addMessageToMenu(msgMetaData, index) {
   } else {
     menuItem = menuItem
     .replaceAll("${menuInfoString}", " ");
+  }
+  if (msgMetaData.additionalInformation != null &&
+      msgMetaData.additionalInformation.length > 0) {
+    if (isRequest) {
+      menuItem = menuItem
+      .replaceAll("${additionalInformation}",
+          msgMetaData.additionalInformation[0]);
+    } else {
+      let subMenu = menuHtmlTemplateSubResponse
+      .replaceAll("${additionalInformation}",
+          msgMetaData.additionalInformation[0]);
+      menuItem = menuItem
+      .replaceAll("${additionalInformation}",
+          subMenu);
+    }
+  } else {
+      menuItem = menuItem
+      .replaceAll("${additionalInformation}", " ");
   }
   if (msgMetaData.timestamp != null) {
     menuItem = menuItem
