@@ -1,6 +1,6 @@
 @Library('gematik-jenkins-shared-library') _
 
-def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
+def CREDENTIAL_ID_GEMATIK_GIT = 'svc_gitlab_prod_credentials'
 def REPO_URL = createGitUrl('git/Testtools/tiger/tiger-konnektor-management-extensions')
 def BRANCH = 'master'
 def POM_PATH = 'pom.xml'

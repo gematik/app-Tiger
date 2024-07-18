@@ -7,7 +7,7 @@ String GCLOUD_CLUSTER_NAME = 'shared-k8s-dev'
 String GCLOUD_CLUSTER_REGION = 'europe-west3-a'
 String GEMATIK_NEXUS_CREDENTIALS = 'Nexus'
 
-def CREDENTIAL_ID_GEMATIK_GIT = 'GITLAB.tst_tt_build.Username_Password'
+def CREDENTIAL_ID_GEMATIK_GIT = 'svc_gitlab_prod_credentials'
 def REPO_URL = createGitUrl('git/Testtools/tiger/tiger-cloud-extension')
 def BRANCH = 'master'
 def POM_PATH = 'pom.xml'
