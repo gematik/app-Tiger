@@ -131,7 +131,7 @@ class RbelPathExecutorTest {
 
   @Test
   void findAllMembers() {
-    assertThat(jwtMessage.findRbelPathMembers("$..*")).hasSize(223);
+    assertThat(jwtMessage.findRbelPathMembers("$..*")).hasSize(224);
   }
 
   @Test

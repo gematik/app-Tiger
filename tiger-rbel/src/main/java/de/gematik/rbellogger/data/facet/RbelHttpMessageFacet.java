@@ -16,15 +16,20 @@ public class RbelHttpMessageFacet implements RbelFacet {
 
   private final RbelElement header;
   private final RbelElement body;
+  private final RbelElement httpVersion;
 
   @Builder(toBuilder = true)
-  public RbelHttpMessageFacet(RbelElement header, RbelElement body) {
+  public RbelHttpMessageFacet(RbelElement header, RbelElement body, RbelElement httpVersion) {
     this.header = header;
     this.body = body;
+    this.httpVersion = httpVersion;
   }
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>().with("body", body).with("header", header);
+    return new RbelMultiMap<RbelElement>()
+        .with("body", body)
+        .with("header", header)
+        .with("httpVersion", httpVersion);
   }
 }

@@ -115,8 +115,9 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
     targetElement.addFacet(rbelHttpResponse);
     targetElement.addFacet(new RbelResponseFacet(responseCode.getRawStringContent()));
+    final var httpVersion = new RbelElement(content.substring(0, content.indexOf(" ")).getBytes(), targetElement);
     targetElement.addFacet(
-        RbelHttpMessageFacet.builder().header(headerElement).body(bodyElement).build());
+        RbelHttpMessageFacet.builder().header(headerElement).body(bodyElement).httpVersion(httpVersion).build());
 
     converter.convertElement(bodyElement);
   }

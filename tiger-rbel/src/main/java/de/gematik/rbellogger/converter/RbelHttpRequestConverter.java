@@ -31,24 +31,31 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
       return;
     }
     String firstLine = content.split(eol)[0].trim();
-    if (!((firstLine.startsWith("GET ")
-            || firstLine.startsWith("POST ")
-            || firstLine.startsWith("PUT ")
-            || firstLine.startsWith("DELETE "))
-        && (firstLine.endsWith("HTTP/1.0")
-            || firstLine.endsWith("HTTP/1.1")
-            || firstLine.endsWith("HTTP/2.0")))) {
+    final String[] firstLineParts = firstLine.split(" ");
+
+    if (firstLineParts.length != 3) {
       return;
     }
+    final String method = firstLineParts[0];
+    if (!(method.equals("GET")
+            || method.equals("POST")
+            || method.equals("PUT")
+            || method.equals("DELETE")
+            || method.equals("PATCH")
+            || method.equals("HEAD")
+            || method.equals("OPTIONS")
+            || method.equals("TRACE")
+            || method.equals("CONNECT"))
+        || !(firstLineParts[2].startsWith("HTTP/"))) {
+      return;
+    }
+    final String path = firstLineParts[1];
+    final var httpVersion = new RbelElement(firstLineParts[2].getBytes(), targetElement);
+
     int endOfHeadIndex = indexOf(targetElement.getRawContent(), (eol + eol).getBytes());
     if (endOfHeadIndex < 0) {
       endOfHeadIndex = content.length();
     }
-    String messageHeader = content.substring(0, endOfHeadIndex);
-    final int space = messageHeader.indexOf(" ");
-    final int space2 = messageHeader.indexOf(" ", space + 1);
-    final String method = messageHeader.substring(0, space);
-    final String path = messageHeader.substring(space + 1, space2);
 
     final RbelElement headerElement = extractHeaderFromMessage(targetElement, converter, eol);
 
@@ -77,7 +84,11 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
     targetElement.addFacet(httpRequest);
     targetElement.addFacet(new RbelRequestFacet(method + " " + path));
     targetElement.addFacet(
-        RbelHttpMessageFacet.builder().header(headerElement).body(bodyElement).build());
+        RbelHttpMessageFacet.builder()
+            .header(headerElement)
+            .body(bodyElement)
+            .httpVersion(httpVersion)
+            .build());
     converter.convertElement(bodyElement);
   }
 

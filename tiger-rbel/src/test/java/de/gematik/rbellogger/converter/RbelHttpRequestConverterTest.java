@@ -100,4 +100,19 @@ class RbelHttpRequestConverterTest {
 
     assertThat(rbelElement).doesNotHaveFacet(RbelHttpRequestFacet.class);
   }
+
+  @Test
+  void httpVersionShouldBeParsed() {
+    assertThat(rbelConverter.convertElement("HTTP/1.0 200\r\n" + "Some-Header: Value\r\n\r\n", null))
+      .extractChildWithPath("$.httpVersion")
+      .hasStringContentEqualTo("HTTP/1.0");
+
+    assertThat(rbelConverter.convertElement("HTTP/1.1 200\r\n" + "Some-Header: Value\r\n\r\n", null))
+      .extractChildWithPath("$.httpVersion")
+      .hasStringContentEqualTo("HTTP/1.1");
+
+    assertThat(rbelConverter.convertElement("GET /foo/bar HTTP/1.0\r\n" + "Some-Header: Value\r\n\r\n", null))
+      .extractChildWithPath("$.httpVersion")
+      .hasStringContentEqualTo("HTTP/1.0");
+  }
 }

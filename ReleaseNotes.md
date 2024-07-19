@@ -13,6 +13,7 @@ TGR speichere TigerGlobalConfiguration in Datei {tigerResolvedString}
 TGR load TigerGlobalConfiguration from file {tigerResolvedString}
 TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
 ```
+* TGR-1474: Rbel: Http-version is now parsed and stored in the Rbel tree
 
 # Bugfixes
 
