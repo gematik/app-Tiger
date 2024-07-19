@@ -75,7 +75,7 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
           .flatMap(
               command ->
                   switch (command) {
-                    case CAPA, RETR -> lines.length < 3
+                    case CAPA, RETR, LIST -> lines.length < 3
                         ? Optional.empty()
                         : Optional.of(buildResponseFacet(element, status, null, lines));
                     case USER, PASS -> lines.length > 2
