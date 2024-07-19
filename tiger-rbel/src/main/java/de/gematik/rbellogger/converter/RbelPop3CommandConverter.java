@@ -20,7 +20,12 @@ public class RbelPop3CommandConverter implements RbelConverterPlugin {
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
-    buildPop3CommandFacet(element).ifPresent(element::addFacet);
+    buildPop3CommandFacet(element)
+        .ifPresent(
+            facet -> {
+              element.addFacet(facet);
+              element.addFacet(new RbelRequestFacet(facet.getCommand().getRawStringContent()));
+            });
   }
 
   private Optional<RbelPop3CommandFacet> buildPop3CommandFacet(RbelElement element) {

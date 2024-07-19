@@ -7,6 +7,7 @@ package de.gematik.rbellogger.converter;
 import static de.gematik.rbellogger.util.EmailConversionUtils.CRLF;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.data.facet.RbelSmtpResponseFacet;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
@@ -34,6 +35,7 @@ public class RbelSmtpResponseConverter implements RbelConverterPlugin {
             facet -> {
               element.addFacet(facet);
               element.addFacet(new RbelRootFacet<>(facet));
+              element.addFacet(new RbelResponseFacet(facet.getStatus().getRawStringContent()));
             });
   }
 
