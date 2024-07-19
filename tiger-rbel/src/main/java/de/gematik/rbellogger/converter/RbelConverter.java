@@ -43,33 +43,7 @@ public class RbelConverter {
   @Getter private final RbelKeyManager rbelKeyManager;
   @Getter private final RbelValueShader rbelValueShader = new RbelValueShader();
   @Getter private final List<RbelConverterPlugin> postConversionListeners = new ArrayList<>();
-  private final List<RbelConverterPlugin> converterPlugins =
-      new LinkedList<>(
-          List.of(
-              new RbelBase64JsonConverter(),
-              new RbelUriConverter(),
-              new RbelHttpResponseConverter(),
-              new RbelHttpRequestConverter(),
-              new RbelJwtConverter(),
-              new RbelHttpFormDataConverter(),
-              new RbelJweConverter(),
-              new RbelBearerTokenConverter(),
-              new RbelXmlConverter(),
-              new RbelJsonConverter(),
-              new RbelVauEpaKeyDeriver(),
-              new RbelMtomConverter(),
-              new RbelX509Converter(),
-              new RbelX500Converter(),
-              new RbelSicctEnvelopeConverter(),
-              new RbelSicctCommandConverter(),
-              new RbelCetpConverter(),
-              new RbelCborConverter(),
-              new RbelPop3CommandConverter(),
-              new RbelPop3ResponseConverter(),
-              new RbelMimeConverter(),
-              new RbelEncryptedMailConverter(),
-              new RbelSmtpCommandConverter(),
-              new RbelSmtpResponseConverter()));
+  private final List<RbelConverterPlugin> converterPlugins = new ArrayList<>();
   @Builder.Default private int rbelBufferSizeInMb = 1024;
   @Builder.Default private boolean manageBuffer = false;
   @Getter @Builder.Default private long currentBufferSize = 0;

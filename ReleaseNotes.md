@@ -2,6 +2,24 @@
 
 # Release 3.1.4
 
+## Breaking Changes
+
+* TGR-1471: Activation and deactivation of various RbelConverters is now different. By default, all RbelConverters in the 
+classpath are added, except those that define key-phrases for activation (This is done by adding `@ConverterInfo(onlyActivateFor = "pop3")`
+to the class). Currently, these optional converters are:
+
+** `pop3` for RbelPop3CommandConverter and RbelPop3ResponseConverter
+** `smtp` for RbelSmtpCommandConverter and RbelSmtpResponseConverter
+** `mime` for RbelMimeConverter and RbelEncryptedMailConverter
+** `asn1` for RbelAsn1Converter
+** `epa-vau` for RbelVauEpaConverter and RbelVauEpaKeyDeriver
+** `erp-vau` for RbelErpVauDecryptionConverter
+** `epa3-vau` for RbelVauEpa3Converter
+** `sicct` for RbelSicctCommandConverter and RbelSicctEnvelopeConverter
+
++
+These options superseed the `activateEpaVauAnalysis` etc configuration keys. All these conversions are deactivated by default!
+
 # Features
 
 * TGR-1237: Configuration Editor: it is now possible to export and import the tiger global configuration as a yaml file
@@ -26,6 +44,14 @@ TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
 ## Features
 
 * TGR-1385: in the WebUi sidebar the inner (crypted) requests and response codes will be displayed when available
+* TGR-1471: Allow conversion only for specific protocols via configuration
+```yaml
+tigerProxy:
+  activateRbelParsingOnlyForProtocols:
+    - pop3
+    - smtp
+    - mime
+```
 
 # Release 3.1.3
 

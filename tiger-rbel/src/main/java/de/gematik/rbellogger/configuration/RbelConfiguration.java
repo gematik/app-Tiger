@@ -29,13 +29,10 @@ import lombok.experimental.Accessors;
 public class RbelConfiguration {
 
   @Builder.Default private List<RbelConverterPlugin> postConversionListener = new ArrayList<>();
-  @Builder.Default private List<RbelConverterPlugin> additionalConverters = new ArrayList<>();
-
+  @Builder.Default private List<String> activateRbelParsingFor = new ArrayList<>();
   @Builder.Default private List<Consumer<RbelConverter>> initializers = new ArrayList<>();
   @Builder.Default private Map<String, RbelKey> keys = new HashMap<>();
   private RbelCapturer capturer;
-  @Builder.Default private boolean activateAsn1Parsing = true;
-  @Builder.Default private boolean activateVauEpa3Parsing = false;
   @Builder.Default private int rbelBufferSizeInMb = 1024;
   @Builder.Default private int skipParsingWhenMessageLargerThanKb = 16_000;
   @Builder.Default private boolean manageBuffer = false;
@@ -60,13 +57,8 @@ public class RbelConfiguration {
     return this;
   }
 
-  public RbelConfiguration setActivateAsn1Parsing(boolean activateAsn1Parsing) {
-    this.activateAsn1Parsing = activateAsn1Parsing;
-    return this;
-  }
-
-  public RbelConfiguration addAdditionalConverter(RbelConverterPlugin converter) {
-    additionalConverters.add(converter);
+  public RbelConfiguration activateConversionFor(String key) {
+    this.activateRbelParsingFor.add(key);
     return this;
   }
 

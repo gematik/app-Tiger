@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.dom4j.*;
 
+@ConverterInfo(dependsOn={RbelXmlConverter.class})
 @Slf4j
 public class RbelMtomConverter implements RbelConverterPlugin {
 

@@ -17,6 +17,7 @@ import org.jose4j.jwa.AlgorithmConstraints;
 import org.jose4j.jwe.JsonWebEncryption;
 import org.jose4j.lang.JoseException;
 
+@ConverterInfo(dependsOn={RbelBase64JsonConverter.class})
 public class RbelJweConverter implements RbelConverterPlugin {
 
   static {

@@ -26,6 +26,7 @@ import org.apache.james.mime4j.dom.TextBody;
 import org.apache.james.mime4j.message.DefaultMessageBuilder;
 import org.apache.james.mime4j.stream.Field;
 
+@ConverterInfo(onlyActivateFor = "mime")
 @Slf4j
 public class RbelMimeConverter implements RbelConverterPlugin {
 

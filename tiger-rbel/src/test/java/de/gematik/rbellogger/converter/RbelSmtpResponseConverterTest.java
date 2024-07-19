@@ -7,6 +7,7 @@ package de.gematik.rbellogger.converter;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
@@ -29,7 +30,7 @@ class RbelSmtpResponseConverterTest {
 
   @BeforeEach
   void init() {
-    converter = RbelLogger.build().getRbelConverter();
+    converter = RbelLogger.build(new RbelConfiguration().activateConversionFor("smtp")).getRbelConverter();
   }
 
   @Test

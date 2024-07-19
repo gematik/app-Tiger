@@ -14,6 +14,7 @@ import java.util.StringTokenizer;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 
+@ConverterInfo(onlyActivateFor = "pop3")
 @Slf4j
 public class RbelPop3CommandConverter implements RbelConverterPlugin {
 

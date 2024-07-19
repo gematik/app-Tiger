@@ -28,6 +28,7 @@ import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.util.encoders.Hex;
 
+@ConverterInfo(onlyActivateFor = "epa-vau")
 @Slf4j
 public class RbelVauEpaKeyDeriver implements RbelConverterPlugin {
 

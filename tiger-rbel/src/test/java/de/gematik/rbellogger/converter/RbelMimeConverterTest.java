@@ -27,8 +27,11 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
   @BeforeEach
   void init() {
     RbelConfiguration configuration =
-        RbelConfiguration.builder().skipParsingWhenMessageLargerThanKb(-1).build();
-    configuration.setActivateAsn1Parsing(false);
+        RbelConfiguration.builder()
+            .skipParsingWhenMessageLargerThanKb(-1)
+            .build()
+            .activateConversionFor("mime")
+            .activateConversionFor("pop3");
     for (String user : List.of("user1", "user2")) {
       configuration.addInitializer(
           new RbelKeyFolderInitializer("src/test/resources/example_mail/" + user));

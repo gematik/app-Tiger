@@ -22,6 +22,7 @@ import org.jose4j.jca.ProviderContext;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.lang.JoseException;
 
+@ConverterInfo(dependsOn={RbelBase64JsonConverter.class})
 @Slf4j
 public class RbelJwtConverter implements RbelConverterPlugin {
 

@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@ConverterInfo(onlyActivateFor = "smtp")
 public class RbelSmtpResponseConverter implements RbelConverterPlugin {
 
   public static final Pattern SMTP_RESPONSE =

@@ -219,7 +219,7 @@ class XmlConverterTest {
         RbelLogger.build(
             new RbelConfiguration()
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-                .setActivateVauEpa3Parsing(true)
+                .activateConversionFor("epa3-vau")
                 .addCapturer(
                     RbelFileReaderCapturer.builder()
                         .rbelFile("src/test/resources/xmlProcessingInstructions.tgr")

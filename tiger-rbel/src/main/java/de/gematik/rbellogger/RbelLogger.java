@@ -6,29 +6,27 @@ package de.gematik.rbellogger;
 
 import de.gematik.rbellogger.captures.RbelCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.RbelAsn1Converter;
-import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.converter.RbelValueShader;
-import de.gematik.rbellogger.converter.RbelVauEpa3Converter;
+import de.gematik.rbellogger.converter.*;
 import de.gematik.rbellogger.converter.listener.RbelJwkReader;
 import de.gematik.rbellogger.converter.listener.RbelX5cKeyReader;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.modifier.RbelModifier;
-import java.util.Deque;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Consumer;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Data
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(access = AccessLevel.PRIVATE)
 public class RbelLogger {
 
+  private static final Logger log = LoggerFactory.getLogger(RbelLogger.class);
   private final RbelConverter rbelConverter;
   private final RbelCapturer rbelCapturer;
   private final RbelValueShader valueShader;
@@ -51,7 +49,8 @@ public class RbelLogger {
                 configuration.getSkipParsingWhenMessageLargerThanKb())
             .build();
 
-    configuration.getAdditionalConverters().forEach(rbelConverter::addConverter);
+    new RbelConverterInitializer(rbelConverter, configuration.getActivateRbelParsingFor())
+      .addConverters();
     rbelConverter.registerListener(new RbelX5cKeyReader());
     rbelConverter.registerListener(new RbelJwkReader());
     rbelConverter.getPostConversionListeners().addAll(configuration.getPostConversionListener());
@@ -62,12 +61,6 @@ public class RbelLogger {
     }
 
     rbelConverter.getRbelKeyManager().addAll(configuration.getKeys());
-    if (configuration.isActivateAsn1Parsing()) {
-      rbelConverter.addConverter(new RbelAsn1Converter());
-    }
-    if (configuration.isActivateVauEpa3Parsing()) {
-      rbelConverter.addConverter(new RbelVauEpa3Converter());
-    }
 
     if (configuration.getCapturer() != null) {
       configuration.getCapturer().setRbelConverter(rbelConverter);

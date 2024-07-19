@@ -5,6 +5,7 @@
 package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,7 +18,10 @@ public class AbstractResponseConverterTest {
 
   @BeforeEach
   void init() {
-    converter = RbelLogger.build().getRbelConverter();
+    converter =
+        RbelLogger.build(
+                new RbelConfiguration().activateConversionFor("pop3").activateConversionFor("mime"))
+            .getRbelConverter();
   }
 
   RbelElement convertMessagePair(String request, String response) {

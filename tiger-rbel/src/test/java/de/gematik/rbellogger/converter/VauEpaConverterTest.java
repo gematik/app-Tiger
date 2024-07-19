@@ -72,7 +72,7 @@ public class VauEpaConverterTest {
                         rbelElement.addFacet(new TestFacet());
                       }
                     })
-                .addAdditionalConverter(new RbelVauEpaConverter())
+                .activateConversionFor("epa-vau")
                 .addCapturer(
                     RbelFileReaderCapturer.builder()
                         .rbelFile("src/test/resources/vauFlow.tgr")
@@ -95,7 +95,6 @@ public class VauEpaConverterTest {
       final RbelLogger epa2Logger =
           RbelLogger.build(
               new RbelConfiguration()
-                  .setActivateAsn1Parsing(false)
                   .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
                   .addCapturer(rbelFileReaderCapturer));
 
@@ -124,9 +123,8 @@ public class VauEpaConverterTest {
     final RbelLogger epa2Logger =
         RbelLogger.build(
             new RbelConfiguration()
-                .setActivateAsn1Parsing(false)
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-                .addAdditionalConverter(new RbelVauEpaConverter())
+                .activateConversionFor("epa-vau")
                 .addCapturer(
                     RbelFileReaderCapturer.builder()
                         .rbelFile("src/test/resources/trafficLog.tgr")
@@ -147,9 +145,8 @@ public class VauEpaConverterTest {
     final RbelLogger epa2Logger =
         RbelLogger.build(
             new RbelConfiguration()
-                .setActivateAsn1Parsing(false)
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-                .addAdditionalConverter(new RbelVauEpaConverter())
+                .activateConversionFor("epa-vau")
                 .addCapturer(
                     RbelFileReaderCapturer.builder()
                         .rbelFile("src/test/resources/mtomVauTraffic.tgr")

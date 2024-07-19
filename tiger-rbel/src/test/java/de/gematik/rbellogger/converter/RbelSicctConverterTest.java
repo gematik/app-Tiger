@@ -27,7 +27,9 @@ class RbelSicctConverterTest {
   public void setUp() throws Exception {
     final RbelFileReaderCapturer fileReaderCapturer =
         RbelFileReaderCapturer.builder().rbelFile("src/test/resources/sicctTraffic.tgr").build();
-    rbelLogger = RbelLogger.build(new RbelConfiguration().addCapturer(fileReaderCapturer));
+    rbelLogger =
+        RbelLogger.build(
+            new RbelConfiguration().addCapturer(fileReaderCapturer).activateConversionFor("sicct"));
     fileReaderCapturer.initialize();
     fileReaderCapturer.close();
   }

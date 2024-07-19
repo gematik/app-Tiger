@@ -32,7 +32,7 @@ public class VauErpConverterTest {
     rbelLogger =
         RbelLogger.build(
             new RbelConfiguration()
-                .addAdditionalConverter(new RbelErpVauDecrpytionConverter())
+                .activateConversionFor("erp-vau")
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
                 .addCapturer(fileReaderCapturer));
     log.info("cont init...");

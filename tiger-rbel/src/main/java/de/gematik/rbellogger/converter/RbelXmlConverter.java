@@ -22,6 +22,7 @@ import org.dom4j.tree.DefaultComment;
 import org.dom4j.tree.DefaultProcessingInstruction;
 import org.xml.sax.InputSource;
 
+@ConverterInfo(dependsOn={RbelHttpRequestConverter.class, RbelHttpResponseConverter.class})
 @Slf4j
 public class RbelXmlConverter implements RbelConverterPlugin {
 

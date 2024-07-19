@@ -639,10 +639,10 @@ Below some properties along with their respective default values:
 ----
 tigerProxy:
     activateRbelParsing: true
-    activateAsn1Parsing: false
-    activateEpaVauAnalysis: false
     parsingShouldBlockCommunication: false
     activateTrafficLogging: true
+    activateRbelParsingFor:
+      - epa-vau
 ----
 
 ===== activateRbelParsing
@@ -650,19 +650,18 @@ tigerProxy:
 Deactivating this flag turns off all Rbel-Analysis of the incoming traffic.
 This is a huge deal in terms of memory- and CPU-consumption but you will loose all benefit of performing Rbel-Analysis.
 
-===== activateAsn1Parsing
+===== activateRbelParsingFor
 
-This is off by default.
-ASN.1 objects are very common in crypto applications.
-While parsing them will enable you to directly have a look inside certificates it comes with a penalty in performance and also clutters the object-tree.
-Often it's enough to know that there is a certificate, only in some scenarios is the content of interest.
-If the latter is of interest to you activate ASN.1 parsing.
+This option can activate various optional Rbel-Converters. Currently supported are:
 
-===== activateEpaVauAnalysis/activateErpVauAnalysis
-
-VAU-Analysis adds information about the current session to every single VAU-message.
-If you are not trying to analyze ePA-VAU messages leave this option turned off.
-If you do, enabling it will give you additional information about the messages.
+* `pop3` for RbelPop3CommandConverter and RbelPop3ResponseConverter
+* `smtp` for RbelSmtpCommandConverter and RbelSmtpResponseConverter
+* `mime` for RbelMimeConverter and RbelEncryptedMailConverter
+* `asn1` for RbelAsn1Converter
+* `epa-vau` for RbelVauEpaConverter and RbelVauEpaKeyDeriver
+* `erp-vau` for RbelErpVauDecryptionConverter
+* `epa3-vau` for RbelVauEpa3Converter
+* `sicct` for RbelSicctCommandConverter and RbelSicctEnvelopeConverter
 
 ===== parsingShouldBlockCommunication
 

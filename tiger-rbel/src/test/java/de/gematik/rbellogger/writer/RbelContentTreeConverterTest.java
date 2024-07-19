@@ -8,6 +8,7 @@ import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineB
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -29,7 +30,7 @@ import org.xmlunit.assertj.XmlAssert;
 
 class RbelContentTreeConverterTest {
 
-  private final RbelConverter rbelConverter = RbelConverter.builder().build();
+  private final RbelConverter rbelConverter = RbelLogger.build().getRbelConverter();
 
   @SneakyThrows
   @Test

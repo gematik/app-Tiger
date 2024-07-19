@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 
 @Slf4j
+@ConverterInfo(onlyActivateFor = "smtp")
 public class RbelSmtpCommandConverter implements RbelConverterPlugin {
 
   public static final int MIN_SMTP_COMMAND_LINE_LENGTH = 6;

@@ -74,13 +74,8 @@ class EmailParsingTest {
      directReverseProxy:
            hostname: 127.0.0.1
            port: ${tiger.config_ports.pop3s.greenmailServerPort}
-     fileSaveInfo:
-         # should the cleartext http-traffic be logged to a file?
-         writeToFile: true
-         # configure the file name
-         filename: "mail_test_local_proxy_pop3.tgr"
-         # default false
-         clearFileOnBoot: true
+     activateRbelParsingFor:
+        - pop3
    """)
   @Test
   void testReceiveEmailOverTigerProxy(TigerTestEnvMgr tigerTestEnvMgr) {
@@ -120,13 +115,8 @@ class EmailParsingTest {
      directReverseProxy:
            hostname: 127.0.0.1
            port: ${tiger.config_ports.smtps.greenmailServerPort}
-     fileSaveInfo:
-         # should the cleartext http-traffic be logged to a file?
-         writeToFile: true
-         # configure the file name
-         filename: "mail_test_local_proxy_smtp.tgr"
-         # default false
-         clearFileOnBoot: true
+     activateRbelParsingFor:
+        - smtp
    """)
   @Test
   void testSendEmailOverTigerProxy(TigerTestEnvMgr tigerTestEnvMgr) {
@@ -162,13 +152,6 @@ class EmailParsingTest {
      trafficEndpoints:
         - http://localhost:${tiger.config_ports.pop3s.admin}
         - http://localhost:${tiger.config_ports.smtps.admin}
-     fileSaveInfo:
-         # should the cleartext http-traffic be logged to a file?
-         writeToFile: true
-         # configure the file name
-         filename: "mail_test_local_proxy_mesh.tgr"
-         # default false
-         clearFileOnBoot: true
    servers:
      smtpsProxy:
       type: tigerProxy
@@ -178,13 +161,9 @@ class EmailParsingTest {
         directReverseProxy:
            hostname: 127.0.0.1
            port: ${tiger.config_ports.smtps.greenmailServerPort}
-        fileSaveInfo:
-          # should the cleartext http-traffic be logged to a file?
-          writeToFile: true
-          # configure the file name
-          filename: "mail_test_local_proxy_mesh_smtp.tgr"
-          # default false
-          clearFileOnBoot: true
+        activateRbelParsingFor:
+          - smtp
+          - mime
      pop3sProxy:
       type: tigerProxy
       tigerProxyConfiguration:
@@ -193,13 +172,9 @@ class EmailParsingTest {
         directReverseProxy:
            hostname: 127.0.0.1
            port: ${tiger.config_ports.pop3s.greenmailServerPort}
-        fileSaveInfo:
-          # should the cleartext http-traffic be logged to a file?
-          writeToFile: true
-          # configure the file name
-          filename: "mail_test_local_proxy_mesh_pop3.tgr"
-          # default false
-          clearFileOnBoot: true
+        activateRbelParsingFor:
+          - pop3
+          - mime
    """)
   @Test
   void testSendAndReceiveEmailOverMeshTigerProxy(TigerTestEnvMgr tigerTestEnvMgr) {
@@ -282,7 +257,6 @@ class EmailParsingTest {
     Message[] messages = folder.getMessages();
 
     // Print each message
-
     assertThat(messages).hasSize(1);
     val theMessage = messages[0];
     assertThat(theMessage.getSubject()).isEqualTo("test subject");

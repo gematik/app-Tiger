@@ -46,7 +46,7 @@ class TigerStompSessionHandler extends StompSessionHandlerAdapter {
       final byte[] bytes,
       final Throwable throwable) {
     log.error(
-        "handle exception with remote url '{}': {}, {}",
+        "handle exception with remote url '{}': {}",
         remoteProxyClient.getRemoteProxyUrl(),
         new String(bytes),
         throwable);
@@ -87,7 +87,7 @@ class TigerStompSessionHandler extends StompSessionHandlerAdapter {
       }
     } else {
       log.error(
-          "handle transport error from url '{}': {}",
+          "handle transport error from url '{}'",
           remoteProxyClient.getRemoteProxyUrl(),
           exception);
       throw new TigerRemoteProxyClientException(exception);

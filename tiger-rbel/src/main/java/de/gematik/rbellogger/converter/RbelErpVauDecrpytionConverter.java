@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.encoders.DecoderException;
 import org.bouncycastle.util.encoders.Hex;
 
+@ConverterInfo(onlyActivateFor = "erp-vau")
 @Slf4j
 public class RbelErpVauDecrpytionConverter implements RbelConverterPlugin {
 

@@ -40,14 +40,14 @@ public class RbelLoggerWriter {
       rbelLogger =
           RbelLogger.build(
               RbelConfiguration.builder()
-                  .activateAsn1Parsing(true)
                   .initializers(
                       Optional.ofNullable(keyFolders).stream()
                           .flatMap(List::stream)
                           .map(RbelKeyFolderInitializer::new)
                           .map(init -> (Consumer<RbelConverter>) init)
                           .toList())
-                  .build());
+                  .build()
+                  .activateConversionFor("asn1"));
       rbelWriter = new RbelWriter(rbelLogger.getRbelConverter());
     }
   }

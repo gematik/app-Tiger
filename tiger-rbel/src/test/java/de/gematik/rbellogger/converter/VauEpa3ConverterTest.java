@@ -29,7 +29,7 @@ public class VauEpa3ConverterTest {
         RbelLogger.build(
             new RbelConfiguration()
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-                .setActivateVauEpa3Parsing(true)
+                .activateConversionFor("epa3-vau")
                 .addCapturer(
                     RbelFileReaderCapturer.builder()
                         .rbelFile("src/test/resources/vau3traffic.tgr")
@@ -72,7 +72,8 @@ public class VauEpa3ConverterTest {
         .andTheInitialElement()
         .extractChildWithPath("$.body.header.keyId")
         .hasValueEqualTo(
-            new BigInteger("49117871460386101168058772883563639427765135898532450228055942387686676034354"));
+            new BigInteger(
+                "49117871460386101168058772883563639427765135898532450228055942387686676034354"));
   }
 
   @Test
@@ -81,7 +82,7 @@ public class VauEpa3ConverterTest {
         RbelLogger.build(
             new RbelConfiguration()
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-                .setActivateVauEpa3Parsing(true)
+                .activateConversionFor("epa3-vau")
                 .addCapturer(
                     RbelFileReaderCapturer.builder()
                         .rbelFile("src/test/resources/nestedPathProblems.tgr")
@@ -98,7 +99,7 @@ public class VauEpa3ConverterTest {
         RbelLogger.build(
             new RbelConfiguration()
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-                .setActivateVauEpa3Parsing(true)
+                .activateConversionFor("epa3-vau")
                 .addCapturer(
                     RbelFileReaderCapturer.builder()
                         .rbelFile("src/test/resources/vau3WithInnerGzip.tgr")
@@ -106,7 +107,8 @@ public class VauEpa3ConverterTest {
     try (final var capturer = logger.getRbelCapturer()) {
       capturer.initialize();
     }
-    assertThat(logger.getMessageList().get(1)).extractChildWithPath("$.body.decrypted.body.resourceType")
-      .hasStringContentEqualTo("Bundle");
+    assertThat(logger.getMessageList().get(1))
+        .extractChildWithPath("$.body.decrypted.body.resourceType")
+        .hasStringContentEqualTo("Bundle");
   }
 }

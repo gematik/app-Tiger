@@ -148,6 +148,8 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
                         Map.of(
                             "tigerProxy.name",
                             "tigerProxyApplication",
+                            "tigerProxy.activateRbelParsingFor",
+                            "pop3",
                             "tigerProxy.directReverseProxy.hostname",
                             "127.0.0.1",
                             "tigerProxy.directReverseProxy.port",

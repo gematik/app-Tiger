@@ -7,6 +7,7 @@ package de.gematik.rbellogger.converter;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelPop3ResponseFacet;
 import de.gematik.rbellogger.data.pop3.RbelPop3Command;
@@ -57,6 +58,8 @@ class RbelPop3CommandConverterTest {
   }
 
   private static RbelElement convertToRbelElement(String input) {
-    return RbelLogger.build().getRbelConverter().convertElement(input, null);
+    return RbelLogger.build(RbelConfiguration.builder().build().activateConversionFor("pop3"))
+        .getRbelConverter()
+        .convertElement(input, null);
   }
 }

@@ -46,17 +46,37 @@ public final class DeprecatedKeysForbiddenUsageChecker {
           DeprecatedKeyDescriptor.builder()
               .compareKey("tiger.tigerproxyconfiguration.activateVauAnalysis")
               .deprecatedKey("activateVauAnalysis")
-              .newKey("activateEpaVauAnalysis")
+              .newKey("activateRbelParsingFor")
               .build(),
           DeprecatedKeyDescriptor.builder()
               .compareKey("tiger.servers.*.tigerproxyconfiguration.proxycfg.activateVauAnalysis")
               .deprecatedKey("activateVauAnalysis")
-              .newKey("activateEpaVauAnalysis")
+              .newKey("activateRbelParsingFor")
               .build(),
           DeprecatedKeyDescriptor.builder()
               .compareKey("tiger.servers.*.tigerproxyconfiguration")
               .deprecatedKey("tigerProxyCfg")
               .newKey("tigerProxyConfiguration")
+              .build(),
+          DeprecatedKeyDescriptor.builder()
+              .compareKey("tiger.tigerproxyconfiguration.activateEpaVauAnalysis")
+              .deprecatedKey("activateEpaVauAnalysis")
+              .newKey("activateRbelParsingFor")
+              .build(),
+          DeprecatedKeyDescriptor.builder()
+              .compareKey("tiger.tigerproxyconfiguration.activateEpaVauAnalysis")
+              .deprecatedKey("activateAsn1Parsing")
+              .newKey("activateRbelParsingFor")
+              .build(),
+          DeprecatedKeyDescriptor.builder()
+              .compareKey("tiger.tigerproxyconfiguration.activateEpaVauAnalysis")
+              .deprecatedKey("activateAsn1Parsing")
+              .newKey("activateRbelParsingFor")
+              .build(),
+          DeprecatedKeyDescriptor.builder()
+              .compareKey("tiger.tigerproxyconfiguration.activateEpaVauAnalysis")
+              .deprecatedKey("activateErpVauAnalysis")
+              .newKey("activateRbelParsingFor")
               .build());
 
   private DeprecatedKeysForbiddenUsageChecker() {}

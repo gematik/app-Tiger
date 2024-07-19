@@ -29,7 +29,8 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
           """
             tigerProxy:
               skipTrafficEndpointsSubscription: true
-              activateEpaVauAnalysis: true
+              activateRbelParsingFor:
+                - epa-vau
               trafficEndpointFilterString: "$.body.recordId == 'X114428539'"
               keyFolders:
                 - '../tiger-proxy/src/test/resources'

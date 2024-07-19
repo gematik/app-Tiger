@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 
+@ConverterInfo(onlyActivateFor = "pop3")
 @Slf4j
 public class RbelPop3ResponseConverter implements RbelConverterPlugin {
 

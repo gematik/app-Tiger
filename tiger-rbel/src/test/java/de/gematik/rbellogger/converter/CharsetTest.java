@@ -78,7 +78,7 @@ class CharsetTest {
             "src/test/resources/sampleMessages/certificate.curl");
 
     final RbelConfiguration configuration = new RbelConfiguration();
-    configuration.setActivateAsn1Parsing(true);
+    configuration.activateConversionFor("asn1");
     final RbelElement convertedMessage =
         RbelLogger.build(configuration)
             .getRbelConverter()

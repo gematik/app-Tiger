@@ -16,6 +16,7 @@ import lombok.SneakyThrows;
 import org.apache.james.mime4j.dom.SingleBody;
 import org.bouncycastle.cms.CMSException;
 
+@ConverterInfo(onlyActivateFor = "mime")
 public class RbelEncryptedMailConverter implements RbelConverterPlugin {
 
   private static class EmailDecryptionFailedException extends Exception {}

@@ -44,7 +44,7 @@ public class RbelKeyFolderInitializer implements Consumer<RbelConverter> {
     } catch (IOException e) {
       throw new RbelPkiException(
           "Error while initializing keys, failed at file '"
-              + currentFile.get().toAbsolutePath().toString()
+              + currentFile.get().toAbsolutePath()
               + "'",
           e);
     }

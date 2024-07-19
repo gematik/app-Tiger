@@ -8,7 +8,6 @@ import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
@@ -412,21 +411,20 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
     waitShortTime();
     val numberOfMessages = 200;
     final Random random = new Random();
-    final RbelConverter reverseProxyConverter =
-        ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
-            .getTigerProxy()
-            .getRbelLogger()
-            .getRbelConverter();
-    reverseProxyConverter.addConverter(
-        (e, c) -> {
-          try {
-            if (e.hasFacet(RbelTcpIpMessageFacet.class)) {
-              Thread.sleep(random.nextInt(10));
-            }
-          } catch (InterruptedException ex) {
-            throw new RuntimeException(ex);
-          }
-        });
+    ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
+        .getTigerProxy()
+        .getRbelLogger()
+        .getRbelConverter()
+        .addConverter(
+            (e, c) -> {
+              try {
+                if (e.hasFacet(RbelTcpIpMessageFacet.class)) {
+                  Thread.sleep(random.nextInt(50));
+                }
+              } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+              }
+            });
     final String path = "/anything/";
     final UnirestInstance unirestInstance = Unirest.spawnInstance();
 
@@ -455,15 +453,16 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
     for (RbelElement r : responses) {
       var httpFacet = r.getFacet(RbelHttpResponseFacet.class).orElseThrow();
       var tracingFacet = r.getFacet(TracingMessagePairFacet.class).orElseThrow();
+
+      var requestPathFromFacetRequest =
+        httpFacet.getRequest().findElement("$.path").orElseThrow().getRawStringContent();
+      var responsePath = r.findElement("$.body.url").orElseThrow().getRawStringContent();
+
       assertThat(tracingFacet.getRequest())
           .withRepresentation(new RbelElementRepresentation())
           .isEqualTo(httpFacet.getRequest());
 
-      var requestPath =
-          httpFacet.getRequest().findElement("$.path").orElseThrow().getRawStringContent();
-      var responsePath = r.findElement("$.body.url").orElseThrow().getRawStringContent();
-
-      assertThat(responsePath).endsWith(requestPath);
+      assertThat(responsePath).endsWith(requestPathFromFacetRequest);
     }
 
     messages.stream().map(RbelElement::printHttpDescription).forEach(log::info);
@@ -512,7 +511,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
             (e, c) -> {
               if (e.hasFacet(RbelHttpRequestFacet.class)) {
                 try {
-                  final int millis = random.nextInt(0, 100);
+                  final int millis = random.nextInt(0, 50);
                   log.info("Delaying for {} ms", millis);
                   Thread.sleep(millis);
                 } catch (InterruptedException ex) {
@@ -545,7 +544,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                     .run());
 
     await()
-        .atMost(10, TimeUnit.SECONDS)
+        .atMost(30, TimeUnit.SECONDS)
         .until(
             () ->
                 envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size()

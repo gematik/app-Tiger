@@ -28,7 +28,7 @@ class IdpDecryptionTest {
         new TigerProxy(
             TigerProxyConfiguration.builder()
                 .keyFolders(List.of("src/test/resources"))
-                .activateEpaVauAnalysis(true)
+                .activateRbelParsingFor(List.of("epa-vau"))
                 .build())) {
 
       tigerProxy

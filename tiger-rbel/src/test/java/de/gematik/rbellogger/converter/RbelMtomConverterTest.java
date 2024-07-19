@@ -36,9 +36,8 @@ class RbelMtomConverterTest {
       rbelLogger =
           RbelLogger.build(
               new RbelConfiguration()
-                  .setActivateAsn1Parsing(false)
                   .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-                  .addAdditionalConverter(new RbelVauEpaConverter())
+                  .activateConversionFor("epa-vau")
                   .addCapturer(rbelFileReaderCapturer));
       rbelFileReaderCapturer.initialize();
     }

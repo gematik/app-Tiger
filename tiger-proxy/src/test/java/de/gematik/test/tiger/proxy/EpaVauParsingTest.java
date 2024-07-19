@@ -32,7 +32,7 @@ class EpaVauParsingTest {
                         .sourceFile("src/test/resources/vauEpa2Flow.tgr")
                         .build())
                 .keyFolders(List.of("src/test/resources"))
-                .activateEpaVauAnalysis(true)
+                .activateRbelParsingFor(List.of("epa-vau", "epa3-vau"))
                 .build())) {
 
       TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
@@ -86,7 +86,7 @@ class EpaVauParsingTest {
                     TigerFileSaveInfo.builder()
                         .sourceFile("src/test/resources/rise-vau-log.tgr")
                         .build())
-                .activateEpaVauAnalysis(true)
+                .activateRbelParsingFor(List.of("epa-vau"))
                 .build())) {
       TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
           tigerProxy, 16, 30);

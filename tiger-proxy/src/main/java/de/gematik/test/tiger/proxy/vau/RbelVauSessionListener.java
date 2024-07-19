@@ -4,8 +4,7 @@
 
 package de.gematik.test.tiger.proxy.vau;
 
-import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.converter.RbelConverterPlugin;
+import de.gematik.rbellogger.converter.*;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import java.util.HashMap;
@@ -14,6 +13,9 @@ import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
+@ConverterInfo(
+    onlyActivateFor = {"epa-vau"},
+    addAsPostConversionListener = true)
 @Slf4j
 public class RbelVauSessionListener implements RbelConverterPlugin {
 
@@ -104,7 +106,6 @@ public class RbelVauSessionListener implements RbelConverterPlugin {
           .findElement("$.VAUClientHelloDataHash")
           .map(RbelElement::getRawStringContent)
           .map(clientHelloHashToSessionMap::get)
-          .filter(Objects::nonNull)
           .ifPresent(
               vauSessionFacet -> {
                 rbelElement.addFacet(vauSessionFacet.toBuilder().build());
@@ -152,8 +153,10 @@ public class RbelVauSessionListener implements RbelConverterPlugin {
     try {
       function.run();
     } catch (RuntimeException e) {
-      log.trace(
-          "Swallowed exception during safe execution in {}: {}", getClass().getSimpleName(), e);
+      log.atTrace()
+          .addArgument(RbelVauSessionListener.class::getSimpleName)
+          .addArgument(e)
+          .log("Swallowed exception during safe execution in {}: {}");
     }
   }
 }

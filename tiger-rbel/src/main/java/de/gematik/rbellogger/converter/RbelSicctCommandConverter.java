@@ -12,6 +12,7 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 
+@ConverterInfo(onlyActivateFor = "sicct")
 @Slf4j
 public class RbelSicctCommandConverter implements RbelConverterPlugin {
 

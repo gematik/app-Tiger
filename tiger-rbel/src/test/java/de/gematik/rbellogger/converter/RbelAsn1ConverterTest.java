@@ -33,7 +33,8 @@ public class RbelAsn1ConverterTest {
     rbelLogger =
         RbelLogger.build(
             new RbelConfiguration()
-                .addInitializer(new RbelKeyFolderInitializer("src/test/resources")));
+                .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+                .activateConversionFor("asn1"));
   }
 
   public void parseRezepsCapture() {
@@ -44,7 +45,8 @@ public class RbelAsn1ConverterTest {
                 .addCapturer(
                     RbelFileReaderCapturer.builder()
                         .rbelFile("src/test/resources/rezepsFiltered.tgr")
-                        .build()));
+                        .build())
+                .activateConversionFor("asn1"));
     rbelLogger.getRbelCapturer().initialize();
   }
 

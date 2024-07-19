@@ -33,6 +33,7 @@ import org.bouncycastle.pqc.crypto.crystals.kyber.KyberParameters;
 import org.bouncycastle.pqc.crypto.crystals.kyber.KyberPublicKeyParameters;
 import org.bouncycastle.pqc.jcajce.provider.kyber.BCKyberPublicKey;
 
+@ConverterInfo(onlyActivateFor = "epa3-vau")
 @Slf4j
 public class RbelVauEpa3Converter implements RbelConverterPlugin {
 

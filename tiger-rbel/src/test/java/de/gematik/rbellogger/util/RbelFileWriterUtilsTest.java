@@ -18,7 +18,7 @@ class RbelFileWriterUtilsTest {
 
   @Test
   void readFileTwice_shouldOnlyReadMsgsOnceBasedOnUuid() throws IOException {
-    RbelLogger rbelLogger = RbelLogger.build(new RbelConfiguration().setActivateAsn1Parsing(false));
+    RbelLogger rbelLogger = RbelLogger.build(new RbelConfiguration());
     var rbelFileWriter = new RbelFileWriter(rbelLogger.getRbelConverter());
 
     String rawSavedVauMessages =

@@ -31,7 +31,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 class RbelPathExecutorTest {
 
   private static final RbelConverter RBEL_CONVERTER =
-      RbelLogger.build(RbelConfiguration.builder().activateAsn1Parsing(true).build())
+      RbelLogger.build(new RbelConfiguration().activateConversionFor("asn1"))
           .getRbelConverter();
   private static RbelElement jwtMessage;
   private static RbelElement xmlMessage;

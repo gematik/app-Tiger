@@ -8,7 +8,14 @@ import static de.gematik.rbellogger.file.RbelFileWriter.PAIRED_MESSAGE_UUID;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.converter.RbelEncryptedMailConverter;
 import de.gematik.rbellogger.converter.RbelErpVauDecrpytionConverter;
+import de.gematik.rbellogger.converter.RbelMimeConverter;
+import de.gematik.rbellogger.converter.RbelPop3CommandConverter;
+import de.gematik.rbellogger.converter.RbelPop3ResponseConverter;
+import de.gematik.rbellogger.converter.RbelSmtpCommandConverter;
+import de.gematik.rbellogger.converter.RbelSmtpResponseConverter;
 import de.gematik.rbellogger.converter.RbelVauEpaConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
@@ -22,7 +29,6 @@ import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import de.gematik.test.tiger.proxy.client.ProxyFileReadingFilter;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
-import de.gematik.test.tiger.proxy.vau.RbelVauSessionListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -32,10 +38,7 @@ import java.security.Key;
 import java.security.KeyPair;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -192,16 +195,11 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
           .forEach(
               folder -> rbelConfiguration.addInitializer(new RbelKeyFolderInitializer(folder)));
     }
-    if (configuration.isActivateEpaVauAnalysis()) {
-      rbelConfiguration.addPostConversionListener(new RbelVauSessionListener());
-      rbelConfiguration.addAdditionalConverter(new RbelVauEpaConverter());
+
+    if (configuration.getActivateRbelParsingFor() != null) {
+      configuration.getActivateRbelParsingFor().forEach(rbelConfiguration::activateConversionFor);
     }
-    if (configuration.isActivateErpVauAnalysis()) {
-      rbelConfiguration.addAdditionalConverter(new RbelErpVauDecrpytionConverter());
-    }
-    rbelConfiguration.setActivateVauEpa3Parsing(configuration.isActivateEpa3VauAnalysis());
     initializeFileSaver(configuration);
-    rbelConfiguration.setActivateAsn1Parsing(configuration.isActivateAsn1Parsing());
     rbelConfiguration.setRbelBufferSizeInMb(configuration.getRbelBufferSizeInMb());
     rbelConfiguration.setSkipParsingWhenMessageLargerThanKb(
         configuration.getSkipParsingWhenMessageLargerThanKb());

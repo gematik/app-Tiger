@@ -9,8 +9,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.RbelErpVauDecrpytionConverter;
-import de.gematik.rbellogger.converter.RbelVauEpaConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
@@ -33,8 +31,8 @@ class VauModifierTest {
       rbelLogger =
           RbelLogger.build(
               new RbelConfiguration()
-                  .addAdditionalConverter(new RbelVauEpaConverter())
-                  .addAdditionalConverter(new RbelErpVauDecrpytionConverter())
+                  .activateConversionFor("epa-vau")
+                  .activateConversionFor("erp-vau")
                   .addInitializer(new RbelKeyFolderInitializer("src/test/resources")));
     }
     rbelLogger.getRbelModifier().deleteAllModifications();
@@ -93,7 +91,7 @@ class VauModifierTest {
         RbelLogger.build(
             new RbelConfiguration()
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-                .addAdditionalConverter(new RbelVauEpaConverter())
+                .activateConversionFor("epa-vau")
                 .addCapturer(
                     RbelFileReaderCapturer.builder()
                         .rbelFile("src/test/resources/vauFlow.tgr")
