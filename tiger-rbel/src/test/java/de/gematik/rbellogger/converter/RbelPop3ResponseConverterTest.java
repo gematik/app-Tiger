@@ -97,6 +97,25 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
   }
 
   @ParameterizedTest
+  @ValueSource(strings = {"CAPA", "RETR 1"})
+  void shouldAcceptMultilineWithEmptyHeader(String command) {
+    String request = command + "\r\n";
+    String status = "+OK";
+    String body = "foobar foobar";
+    String header = " ";
+    String response = status + " " + header + "\r\n" + body + "\r\n.\r\n";
+    RbelElement element = convertMessagePair(request, response);
+    RbelElementAssertion.assertThat(element)
+        .extractChildWithPath("$.status")
+        .hasStringContentEqualTo(status)
+        .andTheInitialElement()
+        .doesNotHaveChildWithPath("$.header")
+        .andTheInitialElement()
+        .extractChildWithPath("$.body")
+        .hasStringContentEqualTo(body);
+  }
+
+  @ParameterizedTest
   @ValueSource(strings = {"USER x@y.de", "PASS xzy"})
   void shouldAcceptSingleLineWithoutHeader(String command) {
     String request = command + "\r\n";

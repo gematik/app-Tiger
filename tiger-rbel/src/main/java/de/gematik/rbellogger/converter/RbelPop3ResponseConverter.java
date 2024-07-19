@@ -70,7 +70,7 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
     String status = firstLineParts[0];
     String header = firstLineParts.length > 1 ? firstLineParts[1] : null;
     context.waitForAllElementsBeforeGivenToBeParsed(element.findRootElement());
-    if (header == null) {
+    if (header == null || header.isBlank()) {
       return findPop3Command(element, context)
           .flatMap(
               command ->
