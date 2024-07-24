@@ -45,6 +45,7 @@ TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
 * TGR-1436: Fix HTTP message pairing for old tgr-files
 * TGR-1456: Only interpret POP3 RETR response as MIME
 * TCLE-14: User Manual: improvements in Docker server type documentation.
+* TGR-1480: Fix handling of SMTP AUTH command
 
 ## Features
 
