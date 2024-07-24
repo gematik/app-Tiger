@@ -8,8 +8,9 @@ import static de.gematik.test.tiger.mockserver.model.HttpRequest.request;
 import static de.gematik.test.tiger.proxy.tls.OcspUtils.buildOcspResponse;
 import static de.gematik.test.tiger.proxy.tls.TlsCertificateGenerator.generateNewCaCertificate;
 
-import de.gematik.rbellogger.util.RbelMessagesSupplier;
 import de.gematik.rbellogger.converter.HttpPairingInBinaryChannelConverter;
+import de.gematik.rbellogger.util.RbelMessagesSupplier;
+import de.gematik.test.tiger.TigerAgent;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
@@ -176,7 +177,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     mockServerConfiguration.customKeyAndCertificateFactorySupplier(buildKeyAndCertificateFactory());
 
     customizeSslIfApplicable(mockServerConfiguration);
-    mockServerConfiguration.enableTlsTermination(getTigerProxyConfiguration().isActivateTlsTermination());
+    mockServerConfiguration.enableTlsTermination(
+        getTigerProxyConfiguration().isActivateTlsTermination());
 
     final Optional<ProxyConfiguration> forwardProxyConfig =
         ProxyConfigurationConverter.convertForwardProxyConfigurationToMockServerConfiguration(
@@ -212,7 +214,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   }
 
   private MockServer spawnDirectInverseTigerProxy(
-      MockServerConfiguration mockServerConfiguration, Optional<ProxyConfiguration> forwardProxyConfig) {
+      MockServerConfiguration mockServerConfiguration,
+      Optional<ProxyConfiguration> forwardProxyConfig) {
     mockServerConfiguration.binaryProxyListener(new BinaryExchangeHandler(this));
     if (forwardProxyConfig.isPresent()) {
       throw new TigerProxyStartupException(
@@ -259,6 +262,11 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     customizeClientBuilderCustomizer(mockServerConfiguration, tlsConfiguration);
 
     customizeClientBuilderFunction(mockServerConfiguration, tlsConfiguration);
+
+    if (getTigerProxyConfiguration().getTls() != null
+        && getTigerProxyConfiguration().getTls().getMasterSecretsFile() != null) {
+      TigerAgent.addListener(new TigerProxyMasterSecretListener(getTigerProxyConfiguration().getTls().getMasterSecretsFile()));
+    }
   }
 
   private void customizeClientBuilderFunction(
@@ -441,7 +449,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
                 .withHeader("Host", url.getAuthority())
                 .setSecure(url.getProtocol().equals("https"))
                 .setPath(extractPath(tigerRoute.getFrom()) + ".*"),
-          tigerRoute.getHosts())
+            tigerRoute.getHosts())
         .id(tigerRoute.getId())
         .forward(new ForwardProxyCallback(this, tigerRoute));
   }

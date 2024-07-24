@@ -82,7 +82,7 @@
                 <executions>
                     <execution>
                         <configuration>
-                            <!-- mandatory -->
+                            <!-- optional -->
                             <glues>
                                 <glue>de.gematik.test.tiger.glue</glue>
                                 <!-- add your packages here -->
@@ -115,7 +115,12 @@
                         <phase>generate-test-sources</phase>
                         <id>generate-tiger-drivers</id>
                         <goals>
+                            <!-- mandatory -->
                             <goal>generate-drivers</goal>
+                            <!-- optional. This will attach the Tiger-Agent to the VM running the
+                            tests. This, in turn, enables tiger to access and store masterSecrets of TLS
+                            connections. This can be used to decipher TLS-traffic in wireshark. -->
+                            <goal>attach-tiger-agent</goal>
                         </goals>
                     </execution>
                     <execution>

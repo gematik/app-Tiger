@@ -132,6 +132,12 @@
             <version>${version.cucumber}</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-java-agent</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

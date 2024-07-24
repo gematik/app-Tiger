@@ -32,6 +32,8 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Proxy.Type;
 import java.net.Socket;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.*;
 import java.security.cert.*;
 import java.time.ZonedDateTime;
@@ -69,6 +71,7 @@ import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -852,6 +855,37 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @SneakyThrows
+  @Test
+  void masterSecretFileDefined_shouldDumpSecretInCorrectForm() throws UnirestException {
+    final Path masterSecretsFile = Paths.get("target/masterSecrets.txt");
+    FileUtils.deleteQuietly(masterSecretsFile.toFile());
+
+    spawnTigerProxyWith(
+      TigerProxyConfiguration.builder()
+        .proxyRoutes(
+          List.of(
+            TigerRoute.builder()
+              .from("https://blub")
+              .to("http://localhost:" + fakeBackendServerPort)
+              .build()))
+        .tls(
+          TigerTlsConfiguration.builder()
+            .masterSecretsFile(masterSecretsFile.toString())
+            .build())
+        .build());
+
+    proxyRest.get("https://blub/foobar").asString();
+
+    final String tls1_2sharedSecret = "(CLIENT_RANDOM [0-9a-fA-F]{64} [0-9a-fA-F]{96}\\n)*";
+    // "CLIENT_RANDOM" followed by client-random followed by master secret
+    // The exact length of the secret might differ in other TLS versions
+    assertThat(masterSecretsFile)
+        .exists()
+        .content()
+        .matches(tls1_2sharedSecret);
   }
 
   @SneakyThrows

@@ -32,6 +32,11 @@ TGR load TigerGlobalConfiguration from file {tigerResolvedString}
 TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
 ```
 * TGR-1474: Rbel: Http-version is now parsed and stored in the Rbel tree
+* TGR-1317: Tiger-Proxy: The masterSecrets can now be stored to file. Please set the configuration key
+  `tiger.tigerProxy.tls.masterSecretsFile` to the desired location. The written files are compatible with Wireshark. To enable this feature the
+  tiger-java-agent has to be attached to the JVM. For a standard 
+  maven-run this can be done by <goal>attach-tiger-agent</goal> to the 
+  tiger-maven-plugin. For a more detailed explanation please refer to the user manual, section "Tiger-Proxy > TLS > TLS Decryption in wireshark".
 
 # Bugfixes
 

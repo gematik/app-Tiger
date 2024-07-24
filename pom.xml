@@ -158,6 +158,7 @@
         <module>tiger-common</module>
         <module>tiger-rbel</module>
         <module>tiger-test-utils</module>
+        <module>tiger-java-agent</module>
         <module>tiger-proxy</module>
         <module>tiger-standalone-proxy</module>
         <module>tiger-testenv-mgr</module>
@@ -672,9 +673,6 @@
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
-                        <configuration>
-                            <argLine>${failsafeJacocoAgent}</argLine>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

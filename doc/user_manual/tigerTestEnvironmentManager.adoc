@@ -905,6 +905,11 @@ tigerProxy:
       - localhost
       - 63.54.54.43
       - foo.bar.server.com
+    # the file into which the master-secrets are written. For this to work
+    # the tiger-java-agent has to be attached to the JVM
+    # (eg. -javaagent:tiger-java-agent-3.1.4.jar). This can be done by
+    # executing the goal 'attach-tiger-agent' to the tiger-maven-plugin.
+    masterSecretsFile: "masterSecretsFile.txt"
 
   # the given folders are loaded into RBel for analysis. This is only necessary to decrypt
   # traffic when analyzing it. It has no effect on the proxy-functions themselves.

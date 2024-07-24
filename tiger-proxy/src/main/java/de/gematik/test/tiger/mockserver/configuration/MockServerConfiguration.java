@@ -77,6 +77,7 @@ public class MockServerConfiguration {
   private UnaryOperator<SslContextBuilder> sslClientContextBuilderCustomizer =
       UnaryOperator.identity();
   private Function<java.security.cert.X509Certificate, byte[]> ocspResponseSupplier = null;
+  private String masterSecretFile = null;
 
   // inbound - dynamic private key & x509
   private String sslCertificateDomainName = "localhost";

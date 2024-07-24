@@ -122,7 +122,6 @@ public class NettyHttpClient {
                           future.channel().writeAndFlush(requestInfo.getDataToSend());
                         }
                       });
-
                 } else {
                   httpResponseFuture.completeExceptionally(future.cause());
                 }

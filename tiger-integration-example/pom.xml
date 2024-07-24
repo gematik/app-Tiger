@@ -24,6 +24,7 @@
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-test-lib</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -107,6 +108,7 @@
                         -->
                         <goals>
                             <goal>generate-drivers</goal>
+                            <goal>attach-tiger-agent</goal>
                         </goals>
                     </execution>
                     <execution>
@@ -188,10 +190,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <groupId>org.jacoco</groupId>
             </plugin>
             <plugin>
                 <artifactId>sonar-maven-plugin</artifactId>

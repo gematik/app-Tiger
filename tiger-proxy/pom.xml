@@ -157,6 +157,11 @@
             <artifactId>tiger-rbel</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-java-agent</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- commons -->
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -354,6 +359,7 @@
                     <reuseForks>true</reuseForks>
                     <parallel>classes</parallel>
                     <rerunFailingTestsCount>2</rerunFailingTestsCount>
+                    <argLine>-javaagent:${project.parent.basedir}/tiger-java-agent/target/tiger-java-agent-${project.version}.jar</argLine>
                 </configuration>
             </plugin>
         </plugins>

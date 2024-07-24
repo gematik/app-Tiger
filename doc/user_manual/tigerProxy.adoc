@@ -269,6 +269,45 @@ tigerProxy:
 
 The server will then use this OCSP-Signer to create a fake OCSP-Response during the TLS-handshake.
 
+==== TLS Decryption in wireshark
+
+Sometimes you might want to look at decrypted TLS-traffic in wireshark. To achieve this we need to extract the masterSecrets of every connection from the Tiger Proxy and provide them to wireshark. This is actually pretty straight forward, with one big caveat: It is very insecure to access the masterSecrets of a TLS-connection, so we need to attach a Java-Agent to the VM.
+
+When you are using the Tiger Proxy in a normal tiger-testsuite you can simply add the                             `<goal>attach-tiger-agent</goal>` goal to the tiger-maven-plugin:
+
+[source,xml]
+----
+            <plugin>
+                <groupId>de.gematik.test</groupId>
+                <artifactId>tiger-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>generate-drivers</goal>
+                            <goal>attach-tiger-agent</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+----
+
+This will modify the `argLine` property used by failsafe to start the testsuite and attach the TigerAgent to the VM. Next we need to set the filename where to write the masterSecrets to:
+
+[source,yaml]
+----
+tigerProxy:
+    tls:
+      masterSecretsFile: "myMasterSecrets.txt"
+----
+
+The Tiger Proxy will write the secrets to the given file.
+
+The final step is to import the masterSecrets into wireshark:
+
+Go to Edit -> Preferences. Open the Protocols tree and select TLS. Alternatively, select a TLS packet in the packet list, right-click on the TLS layer in the packet details view and open the Protocol preferences menu. Set the `(Pre)-Master-Secret log filename` to the file containing the master secrets. Now wireshark should decrypt TLS traffic routed through the Tiger Proxy on-the-fly.
+
 === Modifications
 
 Modifications are a powerful tool to alter messages before forwarding them.
