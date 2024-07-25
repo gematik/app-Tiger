@@ -23,16 +23,6 @@ import org.junit.jupiter.api.*;
 @Slf4j
 @TestMethodOrder(MethodOrderer.MethodName.class)
 class ZQuitTests extends AbstractTests {
-  @BeforeEach
-  void printInfoStarted(TestInfo testInfo) {
-    System.out.println("started = " + testInfo.getDisplayName());
-  }
-
-  @AfterEach
-  void printInfoFinished(TestInfo testInfo) {
-    System.out.println("finished = " + testInfo.getDisplayName());
-  }
-
   @Test
   void testQuitMessageOnSidebar() {
     page.querySelector("#test-tiger-logo").click();

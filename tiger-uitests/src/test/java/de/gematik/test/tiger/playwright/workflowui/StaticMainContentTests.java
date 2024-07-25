@@ -8,6 +8,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
@@ -32,16 +33,28 @@ class StaticMainContentTests extends AbstractTests {
         .until(() -> page.locator("#test-server-log-pane-server-httpbin").isVisible());
     assertAll(
         () ->
-            assertThat(page.locator("#test-server-log-pane-server-localTigerProxy").isVisible())
-                .isTrue(),
+            PlaywrightAssertions.assertThat(
+                    page.locator("#test-server-log-pane-server-localTigerProxy"))
+                .isVisible(),
         () ->
-            assertThat(page.locator("#test-server-log-pane-server-remoteTigerProxy").isVisible())
-                .isTrue(),
-        () -> assertThat(page.locator("#test-server-log-pane-server-httpbin").isVisible()).isTrue(),
-        () -> assertThat(page.locator(".test-server-log-pane-log-row").count()).isPositive(),
-        () -> assertThat(page.locator(".test-server-log-pane-log-1").count()).isPositive(),
-        () -> assertThat(page.locator(".test-server-log-pane-log-2").count()).isPositive(),
-        () -> assertThat(page.locator(".test-server-log-pane-log-3").count()).isPositive(),
+            PlaywrightAssertions.assertThat(
+                    page.locator("#test-server-log-pane-server-remoteTigerProxy"))
+                .isVisible(),
+        () ->
+            PlaywrightAssertions.assertThat(page.locator("#test-server-log-pane-server-httpbin"))
+                .isVisible(),
+        () ->
+            PlaywrightAssertions.assertThat(page.locator(".test-server-log-pane-log-row").first())
+                .isAttached(),
+        () ->
+            PlaywrightAssertions.assertThat(page.locator(".test-server-log-pane-log-1").first())
+                .isAttached(),
+        () ->
+            PlaywrightAssertions.assertThat(page.locator(".test-server-log-pane-log-2").first())
+                .isAttached(),
+        () ->
+            PlaywrightAssertions.assertThat(page.locator(".test-server-log-pane-log-3").first())
+                .isAttached(),
         () ->
             assertThat(
                     page.evaluate(

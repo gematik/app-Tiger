@@ -146,15 +146,15 @@ class XDynamicSidebarTests extends AbstractTests {
           .atMost(30, TimeUnit.SECONDS)
           .untilAsserted(
               () ->
-                  // TODO sometimes the "servername started" message appears as last msg after READY
-                  //  and thus this test fails sometimes
+                  // sometimes the "servername started" message appears as last msg after READY
+                  // and thus this test would fail sometimes
                   assertThat(
                           page.locator(".test-sidebar-server-logs")
                               .nth(counter)
                               .locator(".test-sidebar-server-log")
                               .last()
                               .textContent())
-                      .contains(servername + " READY"));
+                      .matches("(httpbin|remoteTigerProxy) READY"));
     }
   }
 

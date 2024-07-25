@@ -23,16 +23,6 @@ import org.junit.jupiter.api.*;
 @TestMethodOrder(MethodOrderer.MethodName.class)
 class XYDynamicRbelLogTests extends AbstractTests {
 
-  @BeforeEach
-  void printInfoStarted(TestInfo testInfo) {
-    System.out.println("started = " + testInfo.getDisplayName());
-  }
-
-  @AfterEach
-  void printInfoFinished(TestInfo testInfo) {
-    System.out.println("finished = " + testInfo.getDisplayName());
-  }
-
   @Test
   void testHExecutionPaneRbelWebUiURLExists() {
     page.querySelector("#test-execution-pane-tab").click();

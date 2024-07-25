@@ -10,7 +10,7 @@ String GCLOUD_CLUSTER_REGION = 'europe-west3-a'
 String GEMATIK_NEXUS_CREDENTIALS = 'Nexus'
 
 def CREDENTIAL_ID_GEMATIK_GIT = 'svc_gitlab_prod_credentials'
-def BRANCH = 'master'
+def BRANCH = 'the/TGR-1483'
 def JIRA_PROJECT_ID = 'TGR'
 def GITLAB_PROJECT_ID = '644'
 def TAG_NAME = "ci/build"
@@ -130,6 +130,7 @@ pipeline {
     }
     post {
         always {
+            archiveArtifacts artifacts: 'tiger-uitests/target/playwright-artifacts/*', fingerprint: true
             sendEMailNotification(getTigerEMailList())
             showJUnitAsXUnitResult("**/target/*-reports/TEST-*.xml")
         }
