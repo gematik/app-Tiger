@@ -32,7 +32,12 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
         .ifPresent(
             facet -> {
               element.addFacet(facet);
-              Optional.ofNullable(facet.getBody()).ifPresent(context::convertElement);
+              facet
+                  .getCommand()
+                  .seekValue(RbelSmtpCommand.class)
+                  .filter(RbelSmtpCommand.DATA::equals)
+                  .flatMap(command -> Optional.ofNullable(facet.getBody()))
+                  .ifPresent(context::convertElement);
               element.addFacet(new RbelRootFacet<>(facet));
               element.addFacet(new RbelRequestFacet(facet.getCommand().getRawStringContent()));
             });

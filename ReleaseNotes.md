@@ -47,6 +47,7 @@ TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
 * TCLE-14: User Manual: improvements in Docker server type documentation.
 * TGR-1480: Fix handling of SMTP AUTH command
 * TGR-1490: Fix handling of POP3 LIST/UIDL responses
+* TGR-1491: Only convert body of SMTP data command as MIME
 
 ## Features
 
