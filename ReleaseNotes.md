@@ -46,6 +46,7 @@ TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
 * TGR-1456: Only interpret POP3 RETR response as MIME
 * TCLE-14: User Manual: improvements in Docker server type documentation.
 * TGR-1480: Fix handling of SMTP AUTH command
+* TGR-1490: Fix handling of POP3 LIST/UIDL responses
 
 ## Features
 
@@ -53,7 +54,7 @@ TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
 * TGR-1471: Allow conversion only for specific protocols via configuration
 ```yaml
 tigerProxy:
-  activateRbelParsingOnlyForProtocols:
+  activateRbelParsingFor:
     - pop3
     - smtp
     - mime

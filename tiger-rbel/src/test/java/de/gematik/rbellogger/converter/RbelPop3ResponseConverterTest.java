@@ -36,6 +36,29 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
   }
 
   @Test
+  void shouldConvertListHeaderWithoutSize() {
+    String request = "LIST\r\n";
+    String status = "+OK";
+    String count = "2";
+    String header = count + " messages:";
+    String response = status + " " + header + "\r\n";
+    RbelElement element = convertMessagePair(request, response);
+    RbelElementAssertion.assertThat(element)
+        .extractChildWithPath("$.status")
+        .hasStringContentEqualTo(status)
+        .andTheInitialElement()
+        .extractChildWithPath("$.header")
+        .hasStringContentEqualTo(header)
+        .andTheInitialElement()
+        .extractChildWithPath("$.header.count")
+        .hasStringContentEqualTo(count)
+        .andTheInitialElement()
+        .doesNotHaveChildWithPath("$.header.size")
+        .andTheInitialElement()
+        .doesNotHaveChildWithPath("$.body");
+  }
+
+  @Test
   void shouldConvertStatHeader() {
     String request = "STAT\r\n";
     String status = "+OK";
@@ -79,7 +102,7 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"CAPA", "RETR 1"})
+  @ValueSource(strings = {"CAPA", "RETR 1", "UIDL"})
   void shouldAcceptMultilineWithoutHeader(String command) {
     String request = command + "\r\n";
     String status = "+OK";

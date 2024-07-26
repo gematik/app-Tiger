@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 public class RbelPop3ResponseConverter implements RbelConverterPlugin {
 
   private static final Pattern STAT_OR_LIST_HEADER =
-      Pattern.compile("(?<count>\\d+) ((?<size>\\d+)|messages \\((?<size2>\\d+) octets\\))");
+      Pattern.compile("(?<count>\\d+) ((?<size>\\d+)|messages(:| \\((?<size2>\\d+) octets\\)))");
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
@@ -75,7 +75,7 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
           .flatMap(
               command ->
                   switch (command) {
-                    case CAPA, RETR, LIST -> lines.length < 3
+                    case CAPA, RETR, LIST, UIDL -> lines.length < 3
                         ? Optional.empty()
                         : Optional.of(buildResponseFacet(element, status, null, lines));
                     case USER, PASS -> lines.length > 2
@@ -168,7 +168,7 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
               .addFacet(
                   RbelPop3StatOrListHeaderFacet.builder()
                       .count(RbelElement.wrap(element, count))
-                      .size(RbelElement.wrap(element, size))
+                      .size(Optional.ofNullable(size).map(s -> RbelElement.wrap(element, s)).orElse(null))
                       .build()));
     }
     return Optional.empty();
