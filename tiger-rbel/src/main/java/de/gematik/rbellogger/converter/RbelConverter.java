@@ -28,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+import javax.annotation.PostConstruct;
+
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(access = AccessLevel.PUBLIC)
 @Slf4j
@@ -52,12 +54,9 @@ public class RbelConverter {
   @Builder.Default private int skipParsingWhenMessageLargerThanKb = -1;
   @Builder.Default private List<String> activateRbelParsingFor = List.of();
 
+  @PostConstruct
   private void initializeConverters() {
-    synchronized (converterPlugins) {
-      if (converterPlugins.isEmpty()) {
-        new RbelConverterInitializer(this, activateRbelParsingFor).addConverters();
-      }
-    }
+    new RbelConverterInitializer(this, activateRbelParsingFor).addConverters();
   }
 
   public RbelElement convertElement(final byte[] input, RbelElement parentNode) {
@@ -77,7 +76,6 @@ public class RbelConverter {
   }
 
   public RbelElement convertElement(final RbelElement convertedInput) {
-    initializeConverters();
     log.trace("Converting {}...", convertedInput);
     boolean elementIsOversized =
         skipParsingWhenMessageLargerThanKb > -1
