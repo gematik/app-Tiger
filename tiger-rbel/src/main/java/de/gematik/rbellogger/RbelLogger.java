@@ -47,10 +47,9 @@ public class RbelLogger {
             .rbelBufferSizeInMb(configuration.getRbelBufferSizeInMb())
             .skipParsingWhenMessageLargerThanKb(
                 configuration.getSkipParsingWhenMessageLargerThanKb())
+            .activateRbelParsingFor(configuration.getActivateRbelParsingFor())
             .build();
 
-    new RbelConverterInitializer(rbelConverter, configuration.getActivateRbelParsingFor())
-      .addConverters();
     rbelConverter.registerListener(new RbelX5cKeyReader());
     rbelConverter.registerListener(new RbelJwkReader());
     rbelConverter.getPostConversionListeners().addAll(configuration.getPostConversionListener());

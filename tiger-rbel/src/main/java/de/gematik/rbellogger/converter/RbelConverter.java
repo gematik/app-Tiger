@@ -4,6 +4,7 @@
 
 package de.gematik.rbellogger.converter;
 
+import de.gematik.rbellogger.RbelConverterInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelElementConvertionPair;
 import de.gematik.rbellogger.data.RbelHostname;
@@ -49,6 +50,15 @@ public class RbelConverter {
   @Getter @Builder.Default private long currentBufferSize = 0;
   @Builder.Default private long messageSequenceNumber = 0;
   @Builder.Default private int skipParsingWhenMessageLargerThanKb = -1;
+  @Builder.Default private List<String> activateRbelParsingFor = List.of();
+
+  private void initializeConverters() {
+    synchronized (converterPlugins) {
+      if (converterPlugins.isEmpty()) {
+        new RbelConverterInitializer(this, activateRbelParsingFor).addConverters();
+      }
+    }
+  }
 
   public RbelElement convertElement(final byte[] input, RbelElement parentNode) {
     return convertElement(RbelElement.builder().parentNode(parentNode).rawContent(input).build());
@@ -67,6 +77,7 @@ public class RbelConverter {
   }
 
   public RbelElement convertElement(final RbelElement convertedInput) {
+    initializeConverters();
     log.trace("Converting {}...", convertedInput);
     boolean elementIsOversized =
         skipParsingWhenMessageLargerThanKb > -1
