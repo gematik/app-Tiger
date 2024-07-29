@@ -24,6 +24,7 @@ These options superseed the `activateEpaVauAnalysis` etc configuration keys. All
 
 * TGR-1237: Configuration Editor: it is now possible to export and import the tiger global configuration as a yaml file
   from the Workflow UI. Two new glue code steps also allow to trigger the import and export from a test scenario:
+* TGR-1486: For CBOR decoded binary content, add binary facet and HTML note to distinguish from CBOR strings.
 
 ```gherkin
 TGR save TigerGlobalConfiguration to file {tigerResolvedString}
