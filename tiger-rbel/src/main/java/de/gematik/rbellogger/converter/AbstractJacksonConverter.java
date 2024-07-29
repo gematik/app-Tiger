@@ -89,6 +89,8 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet> implements R
       addFacetAndConvertNestedElement(parentElement, node.booleanValue(), context);
     } else if (node.isBinary()) {
       final RbelElement nestedElement = new RbelElement(node.binaryValue(), parentElement);
+      nestedElement.addFacet(new RbelBinaryFacet());
+      nestedElement.addFacet(new RbelNoteFacet("base64 encoded binary content"));
       context.convertElement(nestedElement);
       parentElement.addFacet(new RbelNestedFacet(nestedElement));
     }

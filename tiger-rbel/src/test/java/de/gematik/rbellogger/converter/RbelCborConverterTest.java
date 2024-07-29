@@ -5,7 +5,6 @@
 package de.gematik.rbellogger.converter;
 
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -15,14 +14,19 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelBinaryFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.assertj.core.api.Assertions;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -57,6 +61,31 @@ public class RbelCborConverterTest {
         .andTheInitialElement()
         .extractChildWithPath("$.Fun")
         .hasValueEqualTo(true);
+  }
+
+  @Test
+  @SneakyThrows
+  void parseBasicCborMessageWithBinary() {
+    final RbelElement convertMessage =
+        rbelLogger
+            .getRbelConverter()
+            .convertElement(
+                HexFormat.of()
+                    .parseHex("a266626173653634684151494442413d3d6662696e6172794401020304"),
+                null);
+
+    var renderedHtml = RbelHtmlRenderer.render(List.of(convertMessage));
+
+    Assertions.assertThat(renderedHtml).contains("base64 encoded binary content");
+
+    assertThat(convertMessage)
+        .extractChildWithPath("$.base64")
+        .hasStringContentEqualTo("AQIDBA==")
+        .doesNotHaveFacet(RbelBinaryFacet.class)
+        .andTheInitialElement()
+        .extractChildWithPath("$.binary")
+        .hasFacet(RbelBinaryFacet.class)
+        .hasStringContentEqualTo(new String(new byte[] {1, 2, 3, 4}));
   }
 
   @Test
