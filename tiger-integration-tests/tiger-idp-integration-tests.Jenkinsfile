@@ -23,7 +23,7 @@ pipeline {
     stages {
         stage('Initialise') {
             steps {
-                useJdk("OPENJDK17")
+                useJdk("OPENJDK21")
             }
         }
 
