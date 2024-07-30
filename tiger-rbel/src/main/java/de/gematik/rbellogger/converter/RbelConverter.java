@@ -52,12 +52,15 @@ public class RbelConverter {
   @Builder.Default private int skipParsingWhenMessageLargerThanKb = -1;
   @Builder.Default private List<String> activateRbelParsingFor = List.of();
 
-  private void initializeConverters() {
-    if (converterPlugins.isEmpty()) {
+  @Builder.Default private volatile boolean shallInitializeConverters = true;
+
+  public void initializeConverters() {
+    if (shallInitializeConverters) {
       // the outside check is done to avoid the synchronized overhead for most calls
       synchronized (converterPlugins) {
-        if (converterPlugins.isEmpty()) {
+        if (shallInitializeConverters) {
           new RbelConverterInitializer(this, activateRbelParsingFor).addConverters();
+          shallInitializeConverters = false;
         }
       }
     }
@@ -127,7 +130,9 @@ public class RbelConverter {
   }
 
   public void addConverter(RbelConverterPlugin converter) {
-    converterPlugins.add(converter);
+    synchronized (converterPlugins) {
+      converterPlugins.add(converter);
+    }
   }
 
   public RbelElement parseMessage(

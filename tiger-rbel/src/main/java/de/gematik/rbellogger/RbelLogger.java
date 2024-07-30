@@ -50,6 +50,8 @@ public class RbelLogger {
             .activateRbelParsingFor(configuration.getActivateRbelParsingFor())
             .build();
 
+    rbelConverter.initializeConverters();
+
     rbelConverter.registerListener(new RbelX5cKeyReader());
     rbelConverter.registerListener(new RbelJwkReader());
     rbelConverter.getPostConversionListeners().addAll(configuration.getPostConversionListener());
