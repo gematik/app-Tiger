@@ -53,9 +53,12 @@ public class RbelConverter {
   @Builder.Default private List<String> activateRbelParsingFor = List.of();
 
   private void initializeConverters() {
-    synchronized (converterPlugins) {
-      if (converterPlugins.isEmpty()) {
-        new RbelConverterInitializer(this, activateRbelParsingFor).addConverters();
+    if (converterPlugins.isEmpty()) {
+      // the outside check is done to avoid the synchronized overhead for most calls
+      synchronized (converterPlugins) {
+        if (converterPlugins.isEmpty()) {
+          new RbelConverterInitializer(this, activateRbelParsingFor).addConverters();
+        }
       }
     }
   }
