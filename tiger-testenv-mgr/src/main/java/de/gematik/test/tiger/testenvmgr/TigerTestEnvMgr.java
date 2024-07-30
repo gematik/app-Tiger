@@ -26,6 +26,7 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
+import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import de.gematik.test.tiger.testenvmgr.env.*;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerLogListener;
@@ -449,55 +450,70 @@ public class TigerTestEnvMgr
   }
 
   public void setUpEnvironment(Optional<IRbelMessageListener> localTigerProxyMessageListener) {
-    assertNoCyclesInGraph();
-    assertNoUnknownServersInDependencies();
+    try {
+      assertNoCyclesInGraph();
+      assertNoUnknownServersInDependencies();
 
-    startLocalTigerProxyIfActivated();
-    localTigerProxyMessageListener.ifPresent(
-        provider ->
-            getLocalTigerProxyOptional()
-                .ifPresent(proxy -> proxy.addRbelMessageListener(provider)));
+      startLocalTigerProxyIfActivated();
+      localTigerProxyMessageListener.ifPresent(
+          provider ->
+              getLocalTigerProxyOptional()
+                  .ifPresent(proxy -> proxy.addRbelMessageListener(provider)));
 
-    Map<String, TigerServerStatusUpdate> activeServers =
-        servers.values().stream()
-            .filter(server -> server.getConfiguration().isActive())
-            .collect(
-                Collectors.toMap(
-                    AbstractTigerServer::getServerId,
-                    server ->
-                        TigerServerStatusUpdate.builder()
-                            .type(server.getConfiguration().getType())
-                            .status(TigerServerStatus.NEW)
-                            .build()));
+      Map<String, TigerServerStatusUpdate> activeServers =
+          servers.values().stream()
+              .filter(server -> server.getConfiguration().isActive())
+              .collect(
+                  Collectors.toMap(
+                      AbstractTigerServer::getServerId,
+                      server ->
+                          TigerServerStatusUpdate.builder()
+                              .type(server.getConfiguration().getType())
+                              .status(TigerServerStatus.NEW)
+                              .build()));
 
-    getFixedPoolExecutor()
-        .submit(
-            () ->
-                listeners.parallelStream()
-                    .forEach(
-                        listener ->
-                            listener.receiveTestEnvUpdate(
-                                TigerStatusUpdate.builder()
-                                    .serverUpdate(new LinkedHashMap<>(activeServers))
-                                    .build())));
+      getFixedPoolExecutor()
+          .submit(
+              () ->
+                  listeners.parallelStream()
+                      .forEach(
+                          listener ->
+                              listener.receiveTestEnvUpdate(
+                                  TigerStatusUpdate.builder()
+                                      .serverUpdate(new LinkedHashMap<>(activeServers))
+                                      .build())));
 
-    final List<AbstractTigerServer> initialServersToBoot =
-        servers.values().parallelStream()
-            .filter(server -> server.getDependUponList().isEmpty())
-            .toList();
+      final List<AbstractTigerServer> initialServersToBoot =
+          servers.values().parallelStream()
+              .filter(server -> server.getDependUponList().isEmpty())
+              .toList();
 
-    log.info(
-        "Booting following server(s): {}",
-        initialServersToBoot.stream().map(AbstractTigerServer::getHostname).toList());
+      log.info(
+          "Booting following server(s): {}",
+          initialServersToBoot.stream().map(AbstractTigerServer::getHostname).toList());
 
-    initialServersToBoot.parallelStream().forEach(this::startServer);
+      initialServersToBoot.parallelStream().forEach(this::startServer);
 
-    if (isLocalTigerProxyActive()) {
-      log.info("Subscribing to traffic endpoints with local tiger proxy...");
-      localTigerProxy.subscribeToTrafficEndpoints();
+      if (isLocalTigerProxyActive()) {
+        log.info("Subscribing to traffic endpoints with local tiger proxy...");
+        localTigerProxy.subscribeToTrafficEndpoints();
+      }
+
+      log.info(Ansi.colorize("Finished set up test environment OK", RbelAnsiColors.GREEN_BOLD));
+    } catch (RuntimeException rte) {
+      receiveTestEnvUpdate(
+          TigerStatusUpdate.builder()
+              .bannerMessage(
+                  "<p class=\"failed\">Start up of Test environment failed!</p>"
+                      + "<p class=\"smallcode\">"
+                      + rte.getMessage()
+                      + "</p>")
+              .bannerColor("red")
+              .bannerType(BannerType.MESSAGE)
+              .bannerIsHtml(true)
+              .build());
+      throw rte;
     }
-
-    log.info(Ansi.colorize("Finished set up test environment OK", RbelAnsiColors.GREEN_BOLD));
   }
 
   public void setDefaultProxyToLocalTigerProxy() {

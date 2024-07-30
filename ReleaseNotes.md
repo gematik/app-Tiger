@@ -4,9 +4,11 @@
 
 ## Breaking Changes
 
-* TGR-1471: Activation and deactivation of various RbelConverters is now different. By default, all RbelConverters in the 
-classpath are added, except those that define key-phrases for activation (This is done by adding `@ConverterInfo(onlyActivateFor = "pop3")`
-to the class). Currently, these optional converters are:
+* TGR-1471: Activation and deactivation of various RbelConverters is now different. By default, all RbelConverters in
+  the
+  classpath are added, except those that define key-phrases for activation (This is done by
+  adding `@ConverterInfo(onlyActivateFor = "pop3")`
+  to the class). Currently, these optional converters are:
 
 ** `pop3` for RbelPop3CommandConverter and RbelPop3ResponseConverter
 ** `smtp` for RbelSmtpCommandConverter and RbelSmtpResponseConverter
@@ -18,10 +20,13 @@ to the class). Currently, these optional converters are:
 ** `sicct` for RbelSicctCommandConverter and RbelSicctEnvelopeConverter
 
 +
-These options superseed the `activateEpaVauAnalysis` etc configuration keys. All these conversions are deactivated by default!
+
+These options superseed the `activateEpaVauAnalysis` etc configuration keys. All these conversions are deactivated by
+default!
 
 # Features
 
+* TGR-1423: Failure on setup of the test environment fails is now shown on the Workflow UI with a large bottom banner
 * TGR-1237: Configuration Editor: it is now possible to export and import the tiger global configuration as a yaml file
   from the Workflow UI. Two new glue code steps also allow to trigger the import and export from a test scenario:
 * TGR-1486: For CBOR decoded binary content, add binary facet and HTML note to distinguish from CBOR strings.
@@ -32,12 +37,15 @@ TGR speichere TigerGlobalConfiguration in Datei {tigerResolvedString}
 TGR load TigerGlobalConfiguration from file {tigerResolvedString}
 TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
 ```
+
 * TGR-1474: Rbel: Http-version is now parsed and stored in the Rbel tree
 * TGR-1317: Tiger-Proxy: The masterSecrets can now be stored to file. Please set the configuration key
-  `tiger.tigerProxy.tls.masterSecretsFile` to the desired location. The written files are compatible with Wireshark. To enable this feature the
-  tiger-java-agent has to be attached to the JVM. For a standard 
-  maven-run this can be done by <goal>attach-tiger-agent</goal> to the 
-  tiger-maven-plugin. For a more detailed explanation please refer to the user manual, section "Tiger-Proxy > TLS > TLS Decryption in wireshark".
+  `tiger.tigerProxy.tls.masterSecretsFile` to the desired location. The written files are compatible with Wireshark. To
+  enable this feature the
+  tiger-java-agent has to be attached to the JVM. For a standard
+  maven-run this can be done by <goal>attach-tiger-agent</goal> to the
+  tiger-maven-plugin. For a more detailed explanation please refer to the user manual, section "Tiger-Proxy > TLS > TLS
+  Decryption in wireshark".
 
 # Bugfixes
 
@@ -54,6 +62,7 @@ TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
 
 * TGR-1385: in the WebUi sidebar the inner (crypted) requests and response codes will be displayed when available
 * TGR-1471: Allow conversion only for specific protocols via configuration
+
 ```yaml
 tigerProxy:
   activateRbelParsingFor:

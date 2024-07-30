@@ -1,3 +1,7 @@
+<!--
+  - ${GEMATIK_COPYRIGHT_STATEMENT}
+  -->
+
 <template>
   <TestProject/>
 </template>
@@ -74,5 +78,11 @@ export default defineComponent({
 
 .bg-failed {
   background: var(--gem-error-100) !important;
+}
+
+.smallcode {
+  font-size: 60%;
+  font-family: courier, monospace;
+  color: darkgray;
 }
 </style>
