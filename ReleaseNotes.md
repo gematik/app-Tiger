@@ -26,7 +26,7 @@ default!
 
 # Features
 
-* TGR-1423: Failure on setup of the test environment fails is now shown on the Workflow UI with a large bottom banner
+* TGR-1423: Failure on setup of the test environment is shown on the Workflow UI with a large bottom banner
 * TGR-1237: Configuration Editor: it is now possible to export and import the tiger global configuration as a yaml file
   from the Workflow UI. Two new glue code steps also allow to trigger the import and export from a test scenario:
 * TGR-1486: For CBOR decoded binary content, add binary facet and HTML note to distinguish from CBOR strings.
