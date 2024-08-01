@@ -85,8 +85,14 @@ class RbelSmtpCommandConverterTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"RSET", "RSET\r\nxyz\r\n.\r\n", "DATA\r\n",
-      "AUTH PLAIN dGVzdAB0ZXN0ADEyMzQ="})
+  @ValueSource(
+      strings = {
+        "RSET",
+        "RSET\r\nxyz\r\n.\r\n",
+        "DATA\r\n",
+        "AUTH PLAIN dGVzdAB0ZXN0ADEyMzQ=",
+        "AUTH PLAIN dGVzdAB0ZXN0ADEyMzQ=\r\nfoo\r\nbar\r\n"
+      })
   void shouldRejectMalformedCommand(String input) {
     RbelElement element = convertToRbelElement(input);
 
@@ -121,10 +127,9 @@ class RbelSmtpCommandConverterTest {
   @Test
   void shouldConvertAuthCommand() {
     String command = "AUTH";
-    String arguments = "PLAIN";
+    String arguments = "SASL";
     String body = "dGVzdAB0ZXN0ADEyMzQ=\r\ndGVzdAB0ZXN0ADEyMzQ=";
-    String input =
-        command + " " + arguments + "\r\n" + body + "\r\n";
+    String input = command + " " + arguments + "\r\n" + body + "\r\n";
 
     RbelElement element = convertToRbelElement(input);
     RbelElementAssertion.assertThat(element)
@@ -136,6 +141,23 @@ class RbelSmtpCommandConverterTest {
         .andTheInitialElement()
         .extractChildWithPath("$.smtpBody")
         .hasStringContentEqualTo(body);
+  }
+
+  @Test
+  void shouldConvertAuthPlainCommand() {
+    String command = "AUTH";
+    String arguments = "PLAIN dGVzdAB0ZXN0ADEyMzQdGVzdAB0ZXN0ADEyMzQ=";
+    String input = command + " " + arguments + "\r\n";
+
+    RbelElement element = convertToRbelElement(input);
+    RbelElementAssertion.assertThat(element)
+        .extractChildWithPath("$.smtpCommand")
+        .hasStringContentEqualTo(command)
+        .andTheInitialElement()
+        .extractChildWithPath("$.smtpArguments")
+        .hasStringContentEqualTo(arguments)
+        .andTheInitialElement()
+        .doesNotHaveChildWithPath("$.smtpBody");
   }
 
   @ParameterizedTest

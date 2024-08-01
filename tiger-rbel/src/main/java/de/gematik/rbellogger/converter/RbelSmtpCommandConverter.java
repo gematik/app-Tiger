@@ -59,8 +59,8 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
   private boolean isCompleteCommand(String command) {
     if (command.startsWith("DATA\r\n")) {
       return command.endsWith(CRLF_DOT_CRLF);
-    } else if (command.startsWith("AUTH ")) {
-      // AUTH needs another 2 lines with the credentials
+    } else if (command.startsWith("AUTH ") && !command.startsWith("AUTH PLAIN")) {
+      // AUTH (without PLAIN) needs another 2 lines with the credentials
       return command.split(CRLF).length == 3;
     } else {
       return command.indexOf(CRLF) == command.length() - CRLF.length();
@@ -94,12 +94,14 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
   private RbelElement buildSmtpBody(RbelSmtpCommand command, RbelElement element, String[] lines) {
     return switch (command) {
       case AUTH ->
-          EmailConversionUtils.createChildElement(
-              element,
-              Arrays.stream(lines)
-                  .skip(1)
-                  .limit(lines.length - 2L)
-                  .collect(Collectors.joining(CRLF)));
+          lines.length > 2
+              ? EmailConversionUtils.createChildElement(
+                  element,
+                  Arrays.stream(lines)
+                      .skip(1)
+                      .limit(lines.length - 2L)
+                      .collect(Collectors.joining(CRLF)))
+              : null;
       case DATA -> EmailConversionUtils.parseMailBody(element, lines);
       default -> null;
     };

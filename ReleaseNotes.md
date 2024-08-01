@@ -58,6 +58,7 @@ TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
 * TGR-1490: Fix handling of POP3 LIST/UIDL responses
 * TGR-1491: Only convert body of SMTP data command as MIME
 * TGR-1492: Avoid missing converters inside RbelConverter in test code
+* TGR-1493: Distinguish between different SMTP AUTH command handling
 
 ## Features
 
