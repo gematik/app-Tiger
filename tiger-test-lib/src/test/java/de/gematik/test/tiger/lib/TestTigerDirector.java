@@ -10,6 +10,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
 
+import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.util.IRbelMessageListener;
+import de.gematik.rbellogger.util.RbelMessagesSupplier;
+import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
@@ -23,7 +27,11 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import kong.unirest.Unirest;
 import lombok.SneakyThrows;
 import net.serenitybdd.rest.SerenityRest;
@@ -31,6 +39,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.test.util.TestSocketUtils;
@@ -48,6 +58,8 @@ class TestTigerDirector {
   @AfterEach
   void clearProperties() {
     System.clearProperty("TIGER_TESTENV_CFGFILE");
+    System.clearProperty("TIGER_LIB_CLEARENVIRONMENTSTARTUPTRAFFIC");
+
     TigerDirector.testUninitialize();
   }
 
@@ -59,6 +71,65 @@ class TestTigerDirector {
     assertThatThrownBy(TigerDirector::getTigerTestEnvMgr).isInstanceOf(TigerStartupException.class);
     assertThatThrownBy(TigerDirector::getLocalTigerProxyUrl)
         .isInstanceOf(TigerStartupException.class);
+  }
+
+  @SneakyThrows
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void testDirectorClearsMessagesAfterStartup(boolean clearEnvironmentStartupTraffic) {
+    System.setProperty(
+        "TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyAndWinstone.yaml");
+    System.setProperty(
+        "TIGER_LIB_CLEARENVIRONMENTSTARTUPTRAFFIC", String.valueOf(clearEnvironmentStartupTraffic));
+    executeWithSecureShutdown(
+        () -> {
+          AtomicInteger listenerClearCalled = addLocalProxyRbelMessageListenerMock();
+
+          TigerDirector.start();
+
+          assertThat(listenerClearCalled.get()).isEqualTo(clearEnvironmentStartupTraffic ? 1 : 0);
+        });
+  }
+
+  @SneakyThrows
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void testDirector_ClearMessagesNoLocalProxy(boolean clearEnvironmentStartupTraffic) {
+    System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/proxyDisabled.yaml");
+    System.setProperty(
+        "TIGER_LIB_CLEARENVIRONMENTSTARTUPTRAFFIC", String.valueOf(clearEnvironmentStartupTraffic));
+    executeWithSecureShutdown(
+        () -> {
+          AtomicInteger listenerClearCalled = addLocalProxyRbelMessageListenerMock();
+
+          TigerDirector.start();
+
+          assertThat(listenerClearCalled.get()).isEqualTo(0);
+
+          assertThat(TigerDirector.getTigerTestEnvMgr().getServers()).hasSize(1);
+        });
+  }
+
+  private static AtomicInteger addLocalProxyRbelMessageListenerMock() {
+    AtomicInteger listenerClearCalled = new AtomicInteger();
+    LocalProxyRbelMessageListener.setTestingInstance(
+        new LocalProxyRbelMessageListener(
+            new RbelMessagesSupplier() {
+              @Override
+              public void addRbelMessageListener(IRbelMessageListener listener) {}
+
+              @Override
+              public Deque<RbelElement> getRbelMessages() {
+                return new ArrayDeque<>();
+              }
+            }) {
+          @Override
+          public void clearAllMessages() {
+            listenerClearCalled.incrementAndGet();
+            super.clearAllMessages();
+          }
+        });
+    return listenerClearCalled;
   }
 
   @Test

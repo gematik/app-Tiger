@@ -105,6 +105,9 @@ public class TigerDirector {
       initialized = true;
       if (getTigerTestEnvMgr().isLocalTigerProxyActive()) {
         LocalProxyRbelMessageListener.initialize();
+        if (libConfig.clearEnvironmentStartupTraffic) {
+          LocalProxyRbelMessageListener.getInstance().clearAllMessages();
+        }
       }
     } catch (RuntimeException e) {
       initialized = false;
@@ -150,9 +153,6 @@ public class TigerDirector {
       }
       setupTestEnvironment(Optional.empty());
       initialized = true;
-      if (getTigerTestEnvMgr().isLocalTigerProxyActive()) {
-        LocalProxyRbelMessageListener.initialize();
-      }
     } catch (RuntimeException e) {
       initialized = false;
       quit(true);

@@ -92,6 +92,12 @@ public class LocalProxyRbelMessageListener implements IRbelMessageListener {
     rbelMessages.clear();
   }
 
+  public synchronized void clearAllMessages() {
+    clearValidatableRbelMessages();
+    clearMessages();
+    stepRbelMessages.clear();
+  }
+
   public List<RbelElement> getMessages() {
     return Collections.unmodifiableList(rbelMessages);
   }

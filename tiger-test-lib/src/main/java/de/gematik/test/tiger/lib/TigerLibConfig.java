@@ -27,4 +27,5 @@ public class TigerLibConfig {
   @Builder.Default public long pauseExecutionTimeoutSeconds = 18000L;
   @Builder.Default public TigerHttpClientConfig httpClientConfig = new TigerHttpClientConfig();
   @Builder.Default private boolean trafficVisualization = false;
+  @Builder.Default public boolean clearEnvironmentStartupTraffic = true;
 }

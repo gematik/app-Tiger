@@ -22,6 +22,9 @@
 These options superseed the `activateEpaVauAnalysis` etc. configuration keys. All these conversions are deactivated by
 default!
 
+* TGR-1215: You can clear the traffic observed by the tiger proxy during test setup phase by using the configuration
+  key `tiger.lib.clearEnvironmentStartupTraffic`. This is active by default.
+
 # Features
 
 * TGR-1423: Failure on setup of the test environment is shown on the Workflow UI with a large bottom banner
