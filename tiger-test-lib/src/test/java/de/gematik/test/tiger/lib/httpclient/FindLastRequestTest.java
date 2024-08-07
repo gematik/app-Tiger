@@ -34,6 +34,7 @@ class FindLastRequestTest {
       return;
     }
     tigerTestEnvMgr.shutDown();
+    TigerDirector.testUninitialize();
   }
 
   /**

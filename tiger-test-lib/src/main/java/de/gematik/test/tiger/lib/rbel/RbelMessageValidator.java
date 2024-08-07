@@ -13,9 +13,12 @@ import com.google.common.collect.Lists;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.util.RbelPathExecutor;
+import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
+import de.gematik.test.tiger.RbelLoggerWriter;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
+import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
@@ -705,6 +708,25 @@ public class RbelMessageValidator {
               () ->
                   new NoSuchElementException(
                       "Unable to find a matching element for '" + rbelPath + "'"));
+    }
+
+    /**
+     * Encodes the string explicitly in the given content type.
+     *
+     * @param valueToEncode the string to encode
+     * @param contentType a string matching one of the {@link RbelContentType}s enum values
+     * @return the encoded string.
+     */
+    public String encodeAs(String valueToEncode, String contentType) {
+      val encodeAs = RbelContentType.seekValueFor(contentType);
+      RbelLoggerWriter rbelLoggerWriter = new RbelLoggerWriter();
+      RbelElement toEncode =
+          rbelLoggerWriter.getRbelConverter().convertElement(valueToEncode, null);
+
+      return rbelLoggerWriter
+          .getRbelWriter()
+          .serializeWithEnforcedContentType(toEncode, encodeAs, new TigerJexlContext())
+          .getContentAsString();
     }
   }
 }

@@ -8,6 +8,7 @@ import de.gematik.test.tiger.common.config.TigerConfigurationKey;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
+import de.gematik.test.tiger.common.util.ResetableLazyInitializer;
 import de.gematik.test.tiger.lib.exception.TigerHttpGlueCodeException;
 import io.restassured.RestAssured;
 import io.restassured.config.EncoderConfig;
@@ -32,7 +33,10 @@ public class TigerHttpClient {
   public static final String KEY_HTTP_CLIENT = "httpClient";
   public static final String KEY_TIGER = "tiger";
   public static final String KEY_DEFAULT_HEADER = "defaultHeader";
-  private static final RbelLoggerWriter RBEL_UTIL = new RbelLoggerWriter();
+
+  private static final ResetableLazyInitializer<RbelLoggerWriter> RBEL_LOGGER_WRITER =
+      new ResetableLazyInitializer<>(RbelLoggerWriter::new);
+
   private static final TigerTypedConfigurationKey<Boolean> executeBlocking =
       new TigerTypedConfigurationKey<>(
           new TigerConfigurationKey(KEY_TIGER, KEY_HTTP_CLIENT, "executeBlocking"),
@@ -42,6 +46,13 @@ public class TigerHttpClient {
 
   private TigerHttpClient() {
     // do not instantiate
+  }
+
+  public static void reset() {
+    // creating a new instance of the RbelLoggerWriter loads configuration from the
+    // TigerGlobalConfiguration
+    // If we use different configuration in different unit tests we need to reset this instance.
+    RBEL_LOGGER_WRITER.reset();
   }
 
   /**
@@ -148,8 +159,10 @@ public class TigerHttpClient {
   public static RbelSerializationResult resolve(String value) {
     final String resolvedInput = TigerGlobalConfiguration.resolvePlaceholders(value);
     if (TigerDirector.getLibConfig().getHttpClientConfig().isActivateRbelWriter()) {
-      final RbelElement input = RBEL_UTIL.getRbelConverter().convertElement(resolvedInput, null);
-      return RBEL_UTIL
+      final RbelElement input =
+          RBEL_LOGGER_WRITER.get().getRbelConverter().convertElement(resolvedInput, null);
+      return RBEL_LOGGER_WRITER
+          .get()
           .getRbelWriter()
           .serialize(input, new TigerJexlContext().withRootElement(input));
     } else {

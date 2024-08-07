@@ -138,6 +138,10 @@ public class RbelContentTreeNode extends RbelPathAble {
     return parentNode;
   }
 
+  public boolean isRootNode() {
+    return parentNode == null;
+  }
+
   @Override
   public Optional<RbelPathAble> getFirst(String key) {
     return getChildNodesWithKey().stream()

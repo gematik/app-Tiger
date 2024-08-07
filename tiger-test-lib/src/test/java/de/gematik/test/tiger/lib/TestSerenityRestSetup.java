@@ -6,7 +6,6 @@ package de.gematik.test.tiger.lib;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.core.Serenity;
 import net.serenitybdd.rest.SerenityRest;
@@ -25,7 +24,7 @@ class TestSerenityRestSetup {
   @AfterEach
   void clearProperties() {
     System.clearProperty("TIGER_TESTENV_CFGFILE");
-    TigerGlobalConfiguration.reset();
+    TigerDirector.testUninitialize();
   }
 
   @Test

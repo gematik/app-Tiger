@@ -139,7 +139,7 @@ public class InlineJexlTest {
     "\"JWT\", JWT",
     "JWT, JWT"
   })
-  void placeholdersStartingWithParenthesesRebelContentType(String resolve, String shouldMatch) {
+  void placeholdersStartingWithParenthesesRbelContentType(String resolve, String shouldMatch) {
     assertThat(TigerParameterTypeDefinitions.rbelContentType(resolve))
         .isEqualTo(RbelContentType.valueOf(shouldMatch));
   }

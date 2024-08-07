@@ -44,6 +44,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.assertj.core.api.Assertions;
@@ -51,7 +52,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 @Slf4j
 class RbelMessageValidatorTest {
@@ -569,14 +572,14 @@ class RbelMessageValidatorTest {
     final RbelElement convertedMessage =
         rbelConverter.parseMessage(
             challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
-    validator.currentRequest = convertedMessage;
+    RbelMessageValidator.currentRequest = convertedMessage;
     validatableMessagesMock.add(convertedMessage);
     validator.findElementsInCurrentRequest("$.body.foo");
     validator.assertAttributeOfCurrentRequestMatches("$.body.foo", "bar", true);
     String oracleStr = "{'foo': '${json-unit.ignore}'}";
     validator.assertAttributeOfCurrentRequestMatchesAs("$.body", ModeType.JSON, oracleStr);
 
-    log.info("Current Request: {}", validator.currentRequest);
+    log.info("Current Request: {}", RbelMessageValidator.currentRequest);
     log.info("converted message: {}", convertedMessage);
 
     RBelValidatorGlue glue = new RBelValidatorGlue(rbelMessageValidator);
@@ -761,6 +764,90 @@ class RbelMessageValidatorTest {
     assertThat(RbelMessageValidator.getCurrentRequest())
         .extractChildWithPath("$.path")
         .hasStringContentEqualTo("/1716066754997");
+  }
+
+  @ParameterizedTest
+  @MethodSource(value = "encodeAsTestParameters")
+  void testRbelWriteEncodeAs_shouldEncodeStringAsGivenContentType(
+      String toEncode, String contentType, String expectedResult) {
+
+    TigerGlobalConfiguration.putValue("toEncode", toEncode);
+    final String input = "!{rbel:encodeAs(getValue('toEncode'), '" + contentType + "')}";
+    String output = TigerGlobalConfiguration.resolvePlaceholders(input);
+    assertThat(output).isEqualTo(expectedResult);
+  }
+
+  @ParameterizedTest
+  @MethodSource(value = "encodeAsSignedTokensTestParameters")
+  void testRbelWriteEncodeAsSignedTokens_ShouldEncodeStringWithCorrectFormat(
+      String toEncode, String contentType, String expectedPattern) {
+
+    TigerGlobalConfiguration.putValue("toEncode", toEncode);
+    final String input = "!{rbel:encodeAs(getValue('toEncode'), '" + contentType + "')}";
+    String output = TigerGlobalConfiguration.resolvePlaceholders(input);
+    // Not checking the exact output, just that it matches the expected pattern
+    assertThat(output).matches(expectedPattern);
+  }
+
+  public static Stream<Arguments> encodeAsSignedTokensTestParameters() {
+    return Stream.of(
+        Arguments.of(
+            """
+{
+  "header": {
+    "alg": "BP256R1",
+    "typ": "JWT"
+  },
+  "body": {
+    "name": "Max Power",
+    "iat": 123456,
+    "exp": 123456
+  },
+  "signature": {
+    "verifiedUsing": "idpSig"
+  }
+}""",
+            "JWT",
+            "^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]*$"),
+        Arguments.of(
+            """
+            {
+              "header": {
+                "alg": "ECDH-ES",
+                "enc": "A256GCM"
+              },
+              "body": {
+                "some_claim": "foobar",
+                "other_claim": "code"
+              },
+              "encryptionInfo": {
+                "decryptedUsingKeyWithId": "idpSig"
+              }
+            }""",
+            "JWE",
+            "^[A-Za-z0-9-_]+\\.\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+$"));
+  }
+
+  public static Stream<Arguments> encodeAsTestParameters() {
+    return Stream.of(
+        Arguments.of(
+            "<hello something='world1'>world2</hello>",
+            "XML",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n<hello something=\"world1\">world2</hello>\n"),
+        Arguments.of("{\"hello\":\"world\"}", "JSON", "{\"hello\": \"world\"}"),
+        Arguments.of(
+            """
+            {
+              "tgrEncodeAs": "url",
+              "basicPath": "http://bluzb/fdsa",
+              "parameters": {
+                "foo": "bar"
+              }
+            }
+            """,
+            "URL",
+            "http://bluzb/fdsa?foo=bar"),
+        Arguments.of("{\"BearerToken\":\"blub\"}", "BEARER_TOKEN", "Bearer blub"));
   }
 
   private String http(RbelElement currentRequest) {

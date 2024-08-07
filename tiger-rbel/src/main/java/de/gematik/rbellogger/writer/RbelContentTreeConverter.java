@@ -34,7 +34,6 @@ public class RbelContentTreeConverter {
           new RbelBearerTokenElementToNodeConverter());
   private final RbelElement input;
   @Getter private final TigerJexlContext jexlContext;
-  private Set<String> transitiveTypes = Set.of("xml", "json");
 
   public RbelContentTreeConverter(RbelElement input, TigerJexlContext jexlContext) {
     this.input = input;
@@ -96,7 +95,7 @@ public class RbelContentTreeConverter {
   }
 
   private boolean isTransitiveType(String encodingType) {
-    return transitiveTypes.contains(encodingType);
+    return RbelContentType.seekValueFor(encodingType).isTransitive();
   }
 
   private Optional<String> extractEncodingType(

@@ -101,7 +101,9 @@ public class RbelWriter {
     }
 
     private RbelContentType determineContentType(RbelContentTreeNode treeRootNode) {
-      return fixedContentType.orElseGet(treeRootNode::getType);
+      return fixedContentType
+          .filter(f -> treeRootNode.isRootNode() || f.isTransitive())
+          .orElseGet(treeRootNode::getType);
     }
   }
 }

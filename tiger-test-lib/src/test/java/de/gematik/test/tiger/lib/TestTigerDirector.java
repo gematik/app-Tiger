@@ -48,7 +48,7 @@ class TestTigerDirector {
   @AfterEach
   void clearProperties() {
     System.clearProperty("TIGER_TESTENV_CFGFILE");
-    TigerGlobalConfiguration.reset();
+    TigerDirector.testUninitialize();
   }
 
   @Test

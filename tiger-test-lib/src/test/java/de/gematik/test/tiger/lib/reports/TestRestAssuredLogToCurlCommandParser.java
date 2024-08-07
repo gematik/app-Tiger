@@ -17,6 +17,7 @@ import io.restassured.filter.log.RequestLoggingFilter;
 import io.restassured.specification.RequestSpecification;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,11 @@ class TestRestAssuredLogToCurlCommandParser {
     TigerDirector.start();
     TigerDirector.getLibConfig().setAddCurlCommandsForRaCallsToReport(true);
     TigerDirector.registerRestAssuredFilter();
+  }
+
+  @AfterAll
+  public static void tearDown(){
+    TigerDirector.testUninitialize();
   }
 
   @BeforeEach

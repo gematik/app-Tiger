@@ -6,14 +6,15 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public enum RbelContentType {
-  XML("application/xml"),
-  JSON("application/json"),
-  JWT("application/jwt"),
-  JWE("application/octet-stream"),
-  URL("text/plain"),
-  BEARER_TOKEN("text/plain");
+  XML("application/xml", true),
+  JSON("application/json", true),
+  JWT("application/jwt", false),
+  JWE("application/octet-stream", false),
+  URL("text/plain", false),
+  BEARER_TOKEN("text/plain", false);
 
   @Getter final String contentTypeString;
+  @Getter final boolean isTransitive;
 
   public static RbelContentType seekValueFor(String rawValue) {
     String compareValue = rawValue.trim().toUpperCase();

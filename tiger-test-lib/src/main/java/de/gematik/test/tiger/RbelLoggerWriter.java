@@ -9,46 +9,41 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.writer.RbelWriter;
-import de.gematik.test.tiger.lib.TigerDirector;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 import lombok.Getter;
 
 @Getter
 public class RbelLoggerWriter {
-  private RbelLogger rbelLogger;
-  private RbelWriter rbelWriter;
+  private final RbelLogger rbelLogger;
+  private final RbelWriter rbelWriter;
 
   public RbelLoggerWriter() {
-    assureRbelIsInitialized();
+    this.rbelLogger = buildRbelLogger();
+    this.rbelWriter = new RbelWriter(rbelLogger.getRbelConverter());
   }
 
   public RbelConverter getRbelConverter() {
     return rbelLogger.getRbelConverter();
   }
 
-  private synchronized void assureRbelIsInitialized() {
-    if (rbelWriter == null) {
-      final List<String> keyFolders;
-      if (TigerDirector.isInitialized()) {
-        keyFolders =
-            TigerDirector.getTigerTestEnvMgr().getConfiguration().getTigerProxy().getKeyFolders();
-      } else {
-        keyFolders = null;
-      }
-      rbelLogger =
-          RbelLogger.build(
-              RbelConfiguration.builder()
-                  .initializers(
-                      Optional.ofNullable(keyFolders).stream()
-                          .flatMap(List::stream)
-                          .map(RbelKeyFolderInitializer::new)
-                          .map(init -> (Consumer<RbelConverter>) init)
-                          .toList())
-                  .build()
-                  .activateConversionFor("asn1"));
-      rbelWriter = new RbelWriter(rbelLogger.getRbelConverter());
-    }
+  private RbelLogger buildRbelLogger() {
+    return RbelLogger.build(
+        RbelConfiguration.builder()
+            .initializers(
+                listKeyFolders().stream()
+                    .map(RbelKeyFolderInitializer::new)
+                    .map(init -> (Consumer<RbelConverter>) init)
+                    .toList())
+            .build()
+            .activateConversionFor("asn1"));
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<String> listKeyFolders() {
+    return TigerGlobalConfiguration.instantiateConfigurationBean(
+            List.class, "tiger.tigerProxy.keyFolders")
+        .orElse(List.of());
   }
 }

@@ -10,18 +10,16 @@
   adding `@ConverterInfo(onlyActivateFor = "pop3")`
   to the class). Currently, these optional converters are:
 
-** `pop3` for RbelPop3CommandConverter and RbelPop3ResponseConverter
-** `smtp` for RbelSmtpCommandConverter and RbelSmtpResponseConverter
-** `mime` for RbelMimeConverter and RbelEncryptedMailConverter
-** `asn1` for RbelAsn1Converter
-** `epa-vau` for RbelVauEpaConverter and RbelVauEpaKeyDeriver
-** `erp-vau` for RbelErpVauDecryptionConverter
-** `epa3-vau` for RbelVauEpa3Converter
-** `sicct` for RbelSicctCommandConverter and RbelSicctEnvelopeConverter
+    * `pop3` for RbelPop3CommandConverter and RbelPop3ResponseConverter
+    * `smtp` for RbelSmtpCommandConverter and RbelSmtpResponseConverter
+    * `mime` for RbelMimeConverter and RbelEncryptedMailConverter
+    * `asn1` for RbelAsn1Converter
+    * `epa-vau` for RbelVauEpaConverter and RbelVauEpaKeyDeriver
+    * `erp-vau` for RbelErpVauDecryptionConverter
+    * `epa3-vau` for RbelVauEpa3Converter
+    * `sicct` for RbelSicctCommandConverter and RbelSicctEnvelopeConverter
 
-+
-
-These options superseed the `activateEpaVauAnalysis` etc configuration keys. All these conversions are deactivated by
+These options superseed the `activateEpaVauAnalysis` etc. configuration keys. All these conversions are deactivated by
 default!
 
 # Features
@@ -46,6 +44,16 @@ TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
   maven-run this can be done by <goal>attach-tiger-agent</goal> to the
   tiger-maven-plugin. For a more detailed explanation please refer to the user manual, section "Tiger-Proxy > TLS > TLS
   Decryption in wireshark".
+
+* TGR-1198: Tiger-Test-Lib: a new inline method `rbel:encodeAs` can be used to explicitly encode a value as one of the
+  RbelContentTypes: XML, JSON, JWT, JWE, URL, BEARER_TOKEN.
+  Due to limitations on how the escaping of multiline strings in the bdd steps work, the value to encode must come from
+  a configuration value. Example of usage:
+
+```gherkin
+Given TGR set global variable "exampleJWT" to "!{file('exampleJWT.json')}"
+Then TGR set global variable "encodedJWT" to "!{rbel:encodeAs(getValue('exampleJWT'), 'JWT')}"
+```
 
 # Bugfixes
 

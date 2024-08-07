@@ -10,11 +10,13 @@ import static org.awaitility.Awaitility.await;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.glue.HttpGlueCode;
 import de.gematik.test.tiger.glue.RBelValidatorGlue;
 import de.gematik.test.tiger.glue.TigerGlue;
 import de.gematik.test.tiger.glue.TigerParameterTypeDefinitions;
 import de.gematik.test.tiger.lib.TigerDirector;
+import de.gematik.test.tiger.lib.TigerHttpClient;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import io.cucumber.datatable.DataTable;
@@ -53,6 +55,7 @@ public class TestHttpClientSteps {
 
   @BeforeAll
   public static void resetTiger() {
+    TigerHttpClient.reset();
     TigerDirector.testUninitialize();
   }
 
@@ -82,6 +85,8 @@ public class TestHttpClientSteps {
     }
     tigerTestEnvMgr.shutDown();
     System.clearProperty("tiger.testenv.cfgfile");
+    TigerGlobalConfiguration.reset();
+    TigerHttpClient.reset();
   }
 
   @Test
