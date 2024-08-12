@@ -108,6 +108,22 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
   }
 
   @Test
+  void shouldRenderTopMimeContent() throws IOException {
+    final byte[] mimeMessage = readMimeMessage("sampleMessages/sampleMail.txt");
+    final String pop3Message = "+OK\r\n" + new String(mimeMessage) + "\r\n.\r\n";
+    final RbelElement convertedMessage = convertMessagePair("TOP 1 10\r\n", pop3Message);
+
+    final String convertedHtml = RbelHtmlRenderer.render(List.of(convertedMessage));
+    FileUtils.writeStringToFile(
+        new File("target/directHtml.html"), convertedHtml, StandardCharsets.UTF_8);
+
+    Assertions.assertThat(convertedHtml)
+        .contains("Mime Message:")
+        .contains("Mime Headers:")
+        .contains("Mime Body:");
+  }
+
+  @Test
   void shouldRenderEncryptedMimeContent() throws IOException {
     final byte[] mimeMessage = readMimeMessage("example_mail/05_msgReceived-00.eml");
     final String pop3Message = getPop3Response(mimeMessage);

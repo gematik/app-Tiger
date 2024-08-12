@@ -6,16 +6,13 @@ package de.gematik.rbellogger.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelPop3ResponseFacet;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
-import java.nio.charset.StandardCharsets;
-import java.util.Optional;
+
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.BeforeEach;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -71,9 +68,9 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
     checkListOrStatResponseWithoutBody(element, status, header, count, size);
   }
 
-  private static RbelElementAssertion checkListOrStatResponseWithoutBody(
+  private static void checkListOrStatResponseWithoutBody(
       RbelElement element, String status, String header, String count, String size) {
-    return RbelElementAssertion.assertThat(element)
+    RbelElementAssertion.assertThat(element)
         .extractChildWithPath("$.status")
         .hasStringContentEqualTo(status)
         .andTheInitialElement()
@@ -102,7 +99,7 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"CAPA", "RETR 1", "UIDL"})
+  @ValueSource(strings = {"CAPA", "RETR 1", "UIDL", "TOP 2 20"})
   void shouldAcceptMultilineWithoutHeader(String command) {
     String request = command + "\r\n";
     String status = "+OK";
@@ -120,7 +117,7 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"CAPA", "RETR 1"})
+  @ValueSource(strings = {"CAPA", "RETR 1", "TOP 5 10"})
   void shouldAcceptMultilineWithEmptyHeader(String command) {
     String request = command + "\r\n";
     String status = "+OK";
@@ -167,7 +164,7 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"CAPA", "RETR 1"})
+  @ValueSource(strings = {"CAPA", "RETR 1", "TOP 2 10"})
   void shouldRejectMissingBody(String command) {
     String request = command + "\r\n";
     String status = "+OK";

@@ -13,6 +13,7 @@ import de.gematik.rbellogger.data.pop3.RbelPop3Command;
 import de.gematik.rbellogger.util.EmailConversionUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,6 +23,9 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
 
   private static final Pattern STAT_OR_LIST_HEADER =
       Pattern.compile("(?<count>\\d+) ((?<size>\\d+)|messages(:| \\((?<size2>\\d+) octets\\)))");
+
+  private static final Set<RbelPop3Command> MIME_BODY_RESPONSE_COMMANDS =
+      Set.of(RbelPop3Command.RETR, RbelPop3Command.TOP);
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
@@ -34,7 +38,7 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
                   .filter(
                       body ->
                           findPop3Command(element, context)
-                              .filter(RbelPop3Command.RETR::equals)
+                              .filter(MIME_BODY_RESPONSE_COMMANDS::contains)
                               .isPresent())
                   .ifPresent(context::convertElement);
             });
@@ -75,12 +79,14 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
           .flatMap(
               command ->
                   switch (command) {
-                    case CAPA, RETR, LIST, UIDL -> lines.length < 3
-                        ? Optional.empty()
-                        : Optional.of(buildResponseFacet(element, status, null, lines));
-                    case USER, PASS -> lines.length > 2
-                        ? Optional.empty()
-                        : Optional.of(buildResponseFacet(element, status, null, lines));
+                    case CAPA, RETR, TOP, LIST, UIDL ->
+                        lines.length < 3
+                            ? Optional.empty()
+                            : Optional.of(buildResponseFacet(element, status, null, lines));
+                    case USER, PASS ->
+                        lines.length > 2
+                            ? Optional.empty()
+                            : Optional.of(buildResponseFacet(element, status, null, lines));
                     default -> Optional.empty();
                   });
     }
@@ -168,7 +174,10 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
               .addFacet(
                   RbelPop3StatOrListHeaderFacet.builder()
                       .count(RbelElement.wrap(element, count))
-                      .size(Optional.ofNullable(size).map(s -> RbelElement.wrap(element, s)).orElse(null))
+                      .size(
+                          Optional.ofNullable(size)
+                              .map(s -> RbelElement.wrap(element, s))
+                              .orElse(null))
                       .build()));
     }
     return Optional.empty();
