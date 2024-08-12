@@ -67,6 +67,8 @@
         <version.netty>4.1.110.Final</version.netty>
         <version.xmlunit>2.9.0</version.xmlunit>
         <version.wiremock>3.3.1</version.wiremock>
+        <version.jakarta.xml.bind>3.0.1</version.jakarta.xml.bind>
+        <version.org.glassfish.jaxb>3.0.2</version.org.glassfish.jaxb>
         <spotless-maven-plugin.version>2.43.0</spotless-maven-plugin.version>
         <spotless.google-java-format.version>1.18.1</spotless.google-java-format.version>
 
@@ -489,6 +491,31 @@
                 <groupId>com.konghq</groupId>
                 <artifactId>unirest-java</artifactId>
                 <version>${version.unirest}</version>
+            </dependency>
+
+            <!-- make sure that only one version of jakarta.xml.bind
+                 with a compatible version of the org.glassfish.jaxb
+                 implementation is available to all modules
+                 to avoid conflicts -->
+            <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>${version.jakarta.xml.bind}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>${version.org.glassfish.jaxb}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-core</artifactId>
+                <version>${version.org.glassfish.jaxb}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>txw2</artifactId>
+                <version>${version.org.glassfish.jaxb}</version>
             </dependency>
 
             <!-- Only needed to run tests in a version of IntelliJ IDEA that bundles older versions -->
