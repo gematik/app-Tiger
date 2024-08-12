@@ -35,4 +35,7 @@ public class TigerConfigurationKeys {
       new TigerTypedConfigurationKey<>("tiger.rbel.request.filter.host", String.class, "");
   public static final TigerTypedConfigurationKey<String> REQUEST_FILTER_METHOD =
       new TigerTypedConfigurationKey<>("tiger.rbel.request.filter.method", String.class, "");
+
+  public static final TigerTypedConfigurationKey<String> CUSTOM_FAILURE_MESSAGE =
+      new TigerTypedConfigurationKey<>("tiger.rbel.customFailureMessage", String.class, "");
 }

@@ -4,11 +4,11 @@
 
 package io.cucumber.core.plugin;
 
+import de.gematik.test.tiger.exceptions.FailMessageOverrider;
 import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
 import io.cucumber.plugin.event.*;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.thucydides.model.webdriver.Configuration;
 
 /** will be replacing teh TigerCucumberListener once Serenity PR is released */
 @Slf4j
@@ -18,10 +18,6 @@ public class TigerSerenityReporterPlugin extends SerenityReporter {
 
   public TigerSerenityReporterPlugin() {
     super();
-  }
-
-  public TigerSerenityReporterPlugin(Configuration systemConfiguration) {
-    super(systemConfiguration);
   }
 
   public ScenarioContextDelegate getScenarioContextDelegate() {
@@ -67,6 +63,7 @@ public class TigerSerenityReporterPlugin extends SerenityReporter {
 
   @Override
   protected void handleTestStepFinished(TestStepFinished event) {
+    FailMessageOverrider.overrideFailureMessage(event);
     reporterCallbacks.handleTestStepFinished(event, getScenarioContextDelegate());
     super.handleTestStepFinished(event);
   }

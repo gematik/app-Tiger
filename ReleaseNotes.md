@@ -30,7 +30,6 @@ default!
 * TGR-1423: Failure on setup of the test environment is shown on the Workflow UI with a large bottom banner
 * TGR-1237: Configuration Editor: it is now possible to export and import the tiger global configuration as a yaml file
   from the Workflow UI. Two new glue code steps also allow to trigger the import and export from a test scenario:
-* TGR-1486: For CBOR decoded binary content, add binary facet and HTML note to distinguish from CBOR strings.
 
 ```gherkin
 TGR save TigerGlobalConfiguration to file {tigerResolvedString}
@@ -38,6 +37,9 @@ TGR speichere TigerGlobalConfiguration in Datei {tigerResolvedString}
 TGR load TigerGlobalConfiguration from file {tigerResolvedString}
 TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
 ```
+
+* TGR-1486: For CBOR decoded binary content, add binary facet and HTML note to distinguish from CBOR strings.
+
 
 * TGR-1474: Rbel: Http-version is now parsed and stored in the Rbel tree
 * TGR-1317: Tiger-Proxy: The masterSecrets can now be stored to file. Please set the configuration key
@@ -47,6 +49,16 @@ TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
   maven-run this can be done by <goal>attach-tiger-agent</goal> to the
   tiger-maven-plugin. For a more detailed explanation please refer to the user manual, section "Tiger-Proxy > TLS > TLS
   Decryption in wireshark".
+* TGR-1371: Tiger-Test-Lib: it is now possible to set a custom failure message that will be displayed when an assertion
+  fails. This is achieved with the following steps:
+
+```gherkin
+Given TGR the custom failure message is set to {tigerResolvedString}
+Gegebensei TGR die benutzerdefinierte Fehlermeldung ist auf {tigerResolvedString} gesetzt
+[...]
+Then TGR clear the custom failure message
+Dann TGR lösche die benutzerdefinierte Fehlermeldung 
+```
 
 * TGR-1198: Tiger-Test-Lib: a new inline method `rbel:encodeAs` can be used to explicitly encode a value as one of the
   RbelContentTypes: XML, JSON, JWT, JWE, URL, BEARER_TOKEN.

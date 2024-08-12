@@ -71,4 +71,8 @@ public class TigerTypedConfigurationKey<T> {
   public void putValue(T value, SourceType sourceType) {
     TigerGlobalConfiguration.putValue(key.downsampleKey(), value, sourceType);
   }
+
+  public void clearValue(){
+    TigerGlobalConfiguration.deleteFromAllSources(this.key);
+  }
 }

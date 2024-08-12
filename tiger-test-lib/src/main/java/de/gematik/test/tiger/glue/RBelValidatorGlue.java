@@ -648,4 +648,23 @@ public class RBelValidatorGlue {
   public void readTgrFile(String filePath) {
     rbelValidator.readTgrFile(filePath);
   }
+
+  /**
+   * Sets a custom failure message that will be displayed in the logs if a following step in the
+   * test fails.
+   *
+   * @param customFailureMessage the custom failure message
+   */
+  @Given("TGR the custom failure message is set to {tigerResolvedString}")
+  @Gegebensei("TGR die benutzerdefinierte Fehlermeldung ist auf {tigerResolvedString} gesetzt")
+  public void setCustomFailureMessage(String customFailureMessage) {
+    TigerConfigurationKeys.CUSTOM_FAILURE_MESSAGE.putValue(customFailureMessage);
+  }
+
+  /** Clears the custom failure message */
+  @Then("TGR clear the custom failure message")
+  @Dann("TGR lösche die benutzerdefinierte Fehlermeldung")
+  public void resetCustomFailureMessage() {
+    TigerConfigurationKeys.CUSTOM_FAILURE_MESSAGE.clearValue();
+  }
 }

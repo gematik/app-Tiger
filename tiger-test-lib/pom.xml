@@ -420,6 +420,10 @@
                     <includes>
                         <include>**/integrationtest/Test*.java</include>
                     </includes>
+                    <excludes>
+                        <!-- to be executed only by tiger-integration-tests/tiger-custom-fail-message-tests.Jenkinsfile -->
+                        <exclude>**/integrationtest/TestCustomFailMessage.java</exclude>
+                    </excludes>
                     <skipITs>false</skipITs>
                     <threadCount>16</threadCount>
                     <!-- serenity plugin will check and fail after integration test -->
