@@ -18,6 +18,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
+import org.assertj.core.api.AbstractStringAssert;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,16 +51,16 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
     final String pop3Response = getPop3Response(mimeMessage);
     final var element = convertPop3RetrResponse(pop3Response);
     RbelElementAssertion.assertThat(element)
-        .extractChildWithPath("$.body")
-        .hasChildWithPath("$.header")
-        .hasChildWithPath("$.body")
-        .hasChildWithPath("$.body.preamble")
-        .hasChildWithPath("$.body.parts")
-        .hasChildWithPath("$.body.parts.0.header")
-        .hasChildWithPath("$.body.parts.0.body")
-        .hasChildWithPath("$.body.parts.1.header")
-        .hasChildWithPath("$.body.parts.1.body")
-        .doesNotHaveChildWithPath("$.body.epilogue");
+        .extractChildWithPath("$.pop3Body")
+        .hasChildWithPath("$.mimeHeader")
+        .hasChildWithPath("$.mimeBody")
+        .hasChildWithPath("$.mimeBody.preamble")
+        .hasChildWithPath("$.mimeBody.parts")
+        .hasChildWithPath("$.mimeBody.parts.0.mimeHeader")
+        .hasChildWithPath("$.mimeBody.parts.0.mimeBody")
+        .hasChildWithPath("$.mimeBody.parts.1.mimeHeader")
+        .hasChildWithPath("$.mimeBody.parts.1.mimeBody")
+        .doesNotHaveChildWithPath("$.mimeBody.epilogue");
   }
 
   private RbelElement convertPop3RetrResponse(String pop3Response) {
@@ -77,17 +78,17 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
     final byte[] origMessage = readMimeMessage("example_mail/01_origMessage_VERIFY.eml");
     final String origPop3Response = getPop3Response(origMessage);
     var origElement =
-        convertMessagePair("RETR 1\r\n", origPop3Response).findElement("$.body").get();
+        convertMessagePair("RETR 1\r\n", origPop3Response).findElement("$.pop3Body").get();
 
     final RbelElement decryptedElement =
         convertMessagePair("RETR 1\r\n", encryptedPop3Response)
-            .findElement("$.body.body.decrypted.body")
+            .findElement("$.pop3Body.mimeBody.decrypted.mimeBody")
             .get();
 
-    var originalBodyContent = origElement.findElement("$body").get().getRawStringContent();
+    var originalBodyContent = origElement.findElement("$.mimeBody").get().getRawStringContent();
 
     RbelElementAssertion.assertThat(decryptedElement)
-        .extractChildWithPath("$.body")
+        .extractChildWithPath("$.mimeBody")
         .hasStringContentEqualTo(originalBodyContent);
   }
 
@@ -97,11 +98,16 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
     final String pop3Message = getPop3Response(mimeMessage);
     final RbelElement convertedMessage = convertPop3RetrResponse(pop3Message);
 
+    assertHtmlRendering(convertedMessage);
+  }
+
+  private static AbstractStringAssert<?> assertHtmlRendering(RbelElement convertedMessage) throws IOException {
     final String convertedHtml = RbelHtmlRenderer.render(List.of(convertedMessage));
     FileUtils.writeStringToFile(
         new File("target/directHtml.html"), convertedHtml, StandardCharsets.UTF_8);
 
-    Assertions.assertThat(convertedHtml)
+    return
+        Assertions.assertThat(convertedHtml)
         .contains("Mime Message:")
         .contains("Mime Headers:")
         .contains("Mime Body:");
@@ -113,14 +119,7 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
     final String pop3Message = "+OK\r\n" + new String(mimeMessage) + "\r\n.\r\n";
     final RbelElement convertedMessage = convertMessagePair("TOP 1 10\r\n", pop3Message);
 
-    final String convertedHtml = RbelHtmlRenderer.render(List.of(convertedMessage));
-    FileUtils.writeStringToFile(
-        new File("target/directHtml.html"), convertedHtml, StandardCharsets.UTF_8);
-
-    Assertions.assertThat(convertedHtml)
-        .contains("Mime Message:")
-        .contains("Mime Headers:")
-        .contains("Mime Body:");
+    assertHtmlRendering(convertedMessage);
   }
 
   @Test
@@ -129,14 +128,7 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
     final String pop3Message = getPop3Response(mimeMessage);
     final RbelElement convertedMessage = convertPop3RetrResponse(pop3Message);
 
-    final String convertedHtml = RbelHtmlRenderer.render(List.of(convertedMessage));
-    FileUtils.writeStringToFile(
-        new File("target/directHtml.html"), convertedHtml, StandardCharsets.UTF_8);
-
-    Assertions.assertThat(convertedHtml)
-        .contains("Mime Message:")
-        .contains("Mime Headers:")
-        .contains("Mime Body:")
+    assertHtmlRendering(convertedMessage)
         .contains("Decrypted Message:");
   }
 }

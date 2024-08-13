@@ -44,6 +44,6 @@ public record RbelMimeMessageFacet(RbelElement header, RbelElement body) impleme
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>().with("header", header).with("body", body);
+    return new RbelMultiMap<RbelElement>().with("mimeHeader", header).with("mimeBody", body);
   }
 }

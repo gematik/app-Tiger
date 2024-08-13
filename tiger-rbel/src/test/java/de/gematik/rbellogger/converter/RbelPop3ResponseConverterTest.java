@@ -41,18 +41,18 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
     String response = status + " " + header + "\r\n";
     RbelElement element = convertMessagePair(request, response);
     RbelElementAssertion.assertThat(element)
-        .extractChildWithPath("$.status")
+        .extractChildWithPath("$.pop3Status")
         .hasStringContentEqualTo(status)
         .andTheInitialElement()
-        .extractChildWithPath("$.header")
+        .extractChildWithPath("$.pop3Header")
         .hasStringContentEqualTo(header)
         .andTheInitialElement()
-        .extractChildWithPath("$.header.count")
+        .extractChildWithPath("$.pop3Header.count")
         .hasStringContentEqualTo(count)
         .andTheInitialElement()
-        .doesNotHaveChildWithPath("$.header.size")
+        .doesNotHaveChildWithPath("$.pop3Header.size")
         .andTheInitialElement()
-        .doesNotHaveChildWithPath("$.body");
+        .doesNotHaveChildWithPath("$.pop3Body");
   }
 
   @Test
@@ -71,19 +71,19 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
   private static void checkListOrStatResponseWithoutBody(
       RbelElement element, String status, String header, String count, String size) {
     RbelElementAssertion.assertThat(element)
-        .extractChildWithPath("$.status")
+        .extractChildWithPath("$.pop3Status")
         .hasStringContentEqualTo(status)
         .andTheInitialElement()
-        .extractChildWithPath("$.header")
+        .extractChildWithPath("$.pop3Header")
         .hasStringContentEqualTo(header)
         .andTheInitialElement()
-        .extractChildWithPath("$.header.count")
+        .extractChildWithPath("$.pop3Header.count")
         .hasStringContentEqualTo(count)
         .andTheInitialElement()
-        .extractChildWithPath("$.header.size")
+        .extractChildWithPath("$.pop3Header.size")
         .hasStringContentEqualTo(size)
         .andTheInitialElement()
-        .doesNotHaveChildWithPath("$.body");
+        .doesNotHaveChildWithPath("$.pop3Body");
   }
 
   @ParameterizedTest
@@ -107,12 +107,12 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
     String response = status + "\r\n" + body + "\r\n.\r\n";
     RbelElement element = convertMessagePair(request, response);
     RbelElementAssertion.assertThat(element)
-        .extractChildWithPath("$.status")
+        .extractChildWithPath("$.pop3Status")
         .hasStringContentEqualTo(status)
         .andTheInitialElement()
-        .doesNotHaveChildWithPath("$.header")
+        .doesNotHaveChildWithPath("$.pop3Header")
         .andTheInitialElement()
-        .extractChildWithPath("$.body")
+        .extractChildWithPath("$.pop3Body")
         .hasStringContentEqualTo(body);
   }
 
@@ -126,12 +126,12 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
     String response = status + " " + header + "\r\n" + body + "\r\n.\r\n";
     RbelElement element = convertMessagePair(request, response);
     RbelElementAssertion.assertThat(element)
-        .extractChildWithPath("$.status")
+        .extractChildWithPath("$.pop3Status")
         .hasStringContentEqualTo(status)
         .andTheInitialElement()
-        .doesNotHaveChildWithPath("$.header")
+        .doesNotHaveChildWithPath("$.pop3Header")
         .andTheInitialElement()
-        .extractChildWithPath("$.body")
+        .extractChildWithPath("$.pop3Body")
         .hasStringContentEqualTo(body);
   }
 
@@ -143,12 +143,12 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
     String response = status + "\r\n";
     RbelElement element = convertMessagePair(request, response);
     RbelElementAssertion.assertThat(element)
-        .extractChildWithPath("$.status")
+        .extractChildWithPath("$.pop3Status")
         .hasStringContentEqualTo(status)
         .andTheInitialElement()
-        .doesNotHaveChildWithPath("$.header")
+        .doesNotHaveChildWithPath("$.pop3Header")
         .andTheInitialElement()
-        .doesNotHaveChildWithPath("$.body");
+        .doesNotHaveChildWithPath("$.pop3Body");
   }
 
   @ParameterizedTest
@@ -182,13 +182,13 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
     RbelElement element = convertToRbelElement(input);
 
     RbelElementAssertion.assertThat(element)
-        .extractChildWithPath("$.status")
+        .extractChildWithPath("$.pop3Status")
         .hasStringContentEqualTo(status)
         .andTheInitialElement()
-        .extractChildWithPath("$.header")
+        .extractChildWithPath("$.pop3Header")
         .hasStringContentEqualTo(header)
         .andTheInitialElement()
-        .doesNotHaveChildWithPath("$.body");
+        .doesNotHaveChildWithPath("$.pop3Body");
   }
 
   @Test
@@ -213,13 +213,13 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
 
     RbelElement element = convertToRbelElement(input);
     RbelElementAssertion.assertThat(element)
-        .extractChildWithPath("$.status")
+        .extractChildWithPath("$.pop3Status")
         .hasStringContentEqualTo(status)
         .andTheInitialElement()
-        .extractChildWithPath("$.header")
+        .extractChildWithPath("$.pop3Header")
         .hasStringContentEqualTo(header)
         .andTheInitialElement()
-        .extractChildWithPath("$.body")
+        .extractChildWithPath("$.pop3Body")
         .hasStringContentEqualTo(body);
   }
 

@@ -61,8 +61,8 @@ public class RbelPop3ResponseFacet implements RbelFacet {
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
     return new RbelMultiMap<RbelElement>()
-        .with("status", status)
-        .withSkipIfNull("header", header)
-        .withSkipIfNull("body", body);
+        .with("pop3Status", status)
+        .withSkipIfNull("pop3Header", header)
+        .withSkipIfNull("pop3Body", body);
   }
 }

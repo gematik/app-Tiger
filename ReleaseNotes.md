@@ -19,11 +19,14 @@
     * `epa3-vau` for RbelVauEpa3Converter
     * `sicct` for RbelSicctCommandConverter and RbelSicctEnvelopeConverter
 
-These options superseed the `activateEpaVauAnalysis` etc. configuration keys. All these conversions are deactivated by
+These options supersede the `activateEpaVauAnalysis` etc. configuration keys. All these conversions are deactivated by
 default!
 
 * TGR-1215: You can clear the traffic observed by the tiger proxy during test setup phase by using the configuration
-  key `tiger.lib.clearEnvironmentStartupTraffic`. This is active by default.
+  key `tiger.lib.clearEnvironmentStartupTraffic`. This is active by default. 
+* TGR-1502: add POP3/MIME specific prefix to facet fields
+    * for POP3, the fields status, header, body are now named pop3Status, pop3Header, pop3Body
+    * for MIME, the fields header, body are now named mimeHeader, mimeBody
 
 # Features
 
