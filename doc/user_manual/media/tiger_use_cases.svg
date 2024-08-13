@@ -1,5 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?><!--
-  - ${GEMATIK_COPYRIGHT_STATEMENT}
+  - Copyright 2024 gematik GmbH
+  -
+  - Licensed under the Apache License, Version 2.0 (the "License");
+  - you may not use this file except in compliance with the License.
+  - You may obtain a copy of the License at
+  -
+  -     http://www.apache.org/licenses/LICENSE-2.0
+  -
+  - Unless required by applicable law or agreed to in writing, software
+  - distributed under the License is distributed on an "AS IS" BASIS,
+  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  - See the License for the specific language governing permissions and
+  - limitations under the License.
   -->
 
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="1430px" preserveAspectRatio="none" style="width:1658px;height:1430px;background:#FFFFF0;" version="1.1" viewBox="0 0 1658 1430" width="1658px" zoomAndPan="magnify"><defs><filter height="300%" id="f16dpl5yexsfvi" width="300%" x="-1" y="-1"><feGaussianBlur result="blurOut" stdDeviation="2.0"/><feColorMatrix in="blurOut" result="blurOut2" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"/><feOffset dx="4.0" dy="4.0" in="blurOut2" result="blurOut3"/><feBlend in="SourceGraphic" in2="blurOut3" mode="normal"/></filter></defs><g><rect fill="#FFFFFF" height="54.9219" rx="10" ry="10" style="stroke:#808080;stroke-width:1.0;" width="459" x="595" y="30"/><text fill="#333333" font-family="sans-serif" font-size="30" font-weight="bold" lengthAdjust="spacing" textLength="259" x="695" y="67.8467">Tiger use cases</text><!--MD5=[5d5c91861b2691118b7ceba66fed8ef3]

@@ -1,5 +1,4 @@
 @Library('gematik-jenkins-shared-library') _
-
 // details about this integration test and how it is composed / working can be found in the java file
 // tiger-maven-plugin/src/test/java/de/gematik/test/tiger/maven/adapter/mojos/EnvironmentMojoIT.java
 

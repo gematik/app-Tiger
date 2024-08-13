@@ -56,13 +56,33 @@ Special values can be used:
 Prints the value of the given variable to the System-out
 
 ##### TGR stop server {tigerResolvedString}
+##### TGR stoppe Server {tigerResolvedString}
 Stops the given server. If the server is not running or the server is not found, an exception
 is thrown.
 
 *param* servername The server to be stopped.
 
 ##### TGR start server {tigerResolvedString}
+##### TGR starte Server {tigerResolvedString}
 Starts the given server. If the server is already running or the server is not found, an
 exception is thrown.
 
 *param* servername The server to be started.
+
+##### TGR save TigerGlobalConfiguration to file {tigerResolvedString}
+##### TGR speichere TigerGlobalConfiguration in Datei {tigerResolvedString}
+Saves all the values of the Tiger Global Configuration in the given file formatted as yaml.
+
+ATTENTION: If the file already exists it will be overwritten!
+
+*param* filename the file to save the configuration to
+*throws* IOException if an I/ O error occurs writing to or creating the file
+
+##### TGR load TigerGlobalConfiguration from file {tigerResolvedString}
+##### TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
+Loads the Tiger Global Configuration from the given file. The file must be formatted as yaml.
+All previous values in the configuration will be cleared and only the values from the file will
+end up in the configuration.
+
+*param* filename the file to load the configuration from
+*throws* IOException if an I/O error occurs reading the file

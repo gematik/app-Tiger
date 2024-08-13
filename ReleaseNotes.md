@@ -42,8 +42,6 @@ TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
 ```
 
 * TGR-1486: For CBOR decoded binary content, add binary facet and HTML note to distinguish from CBOR strings.
-
-
 * TGR-1474: Rbel: Http-version is now parsed and stored in the Rbel tree
 * TGR-1317: Tiger-Proxy: The masterSecrets can now be stored to file. Please set the configuration key
   `tiger.tigerProxy.tls.masterSecretsFile` to the desired location. The written files are compatible with Wireshark. To
@@ -73,6 +71,8 @@ Given TGR set global variable "exampleJWT" to "!{file('exampleJWT.json')}"
 Then TGR set global variable "encodedJWT" to "!{rbel:encodeAs(getValue('exampleJWT'), 'JWT')}"
 ```
 
+* TGR-1451: replace deprecated Jenkins commands
+
 # Bugfixes
 
 * TGR-1455: implement conversion of POP3 AUTH command
@@ -85,7 +85,6 @@ Then TGR set global variable "encodedJWT" to "!{rbel:encodeAs(getValue('exampleJ
 * TGR-1491: Only convert body of SMTP data command as MIME
 * TGR-1492: Avoid missing converters inside RbelConverter in test code
 * TGR-1493: Distinguish between different SMTP AUTH command handling
-* TGR-1499: Treat POP3 TOP response similar to POP3 RETR response
 
 ## Features
 

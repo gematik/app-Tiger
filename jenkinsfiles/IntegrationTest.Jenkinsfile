@@ -1,6 +1,7 @@
 @Library('gematik-jenkins-shared-library') _
 
 def JIRA_PROJECT_ID = 'TGR'
+
 // using tiger as artefact id fails as the metadata xml fo tiger is purged randomly on nexus (SWF-247)
 def ARTIFACT_ID = 'tiger-testenv-mgr'
 def GROUP_ID = "de.gematik.test"

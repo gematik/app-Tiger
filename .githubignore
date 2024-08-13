@@ -1,11 +1,6 @@
-GitHub-Release.Jenkinsfile
-Internal-Release.Jenkinsfile
-Jenkinsfile
-Maven-Central-Release.Jenkinsfile
-Nightly.Jenkinsfile
-Release.Jenkinsfile
-Dependabot.Jenkinsfile
-IntegrationTest.Jenkinsfile
+/.idea/
+/.vscode/
+jenkinsfiles
 tiger-proxy/DockerHub-Release.Jenkinsfile
 tiger-zion/DockerHub-Release.Jenkinsfile
 Dockerfile

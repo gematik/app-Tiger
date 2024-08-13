@@ -1,3 +1,19 @@
+/*
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 @Library('gematik-jenkins-shared-library') _
 
 def TEAMS_URL = 'https://gematikde.webhook.office.com/webhookb2/9c4c4366-476c-465d-8188-940f661574c3@30092c62-4dbf-43bf-a33f-10d21b5b660a/JenkinsCI/f7fb184ffab6425cae8e254ea3818449/0151c74f-c7f1-4fe1-834a-6aa680ab023f'
