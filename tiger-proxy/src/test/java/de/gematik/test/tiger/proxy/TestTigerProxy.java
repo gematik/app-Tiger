@@ -55,6 +55,7 @@ import javax.net.ssl.X509TrustManager;
 import kong.unirest.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.http.NoHttpResponseException;
 import org.assertj.core.data.TemporalUnitWithinOffset;
@@ -144,7 +145,6 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getSenderHostname())
         .isEqualTo(new RbelHostname("backend", 80));
-
   }
 
   @Test
@@ -1235,5 +1235,23 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     assertThat(tigerProxy.getRbelMessagesList().get(1))
         .extractChildWithPath("$.sender")
         .hasStringContentEqualTo("backend:80");
+  }
+
+  @SneakyThrows
+  @Test
+  void noRoutes_unkownHost_shouldCloseConnection() {
+    spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
+
+    val request = proxyRest.get("http://foobar/");
+    assertThatThrownBy(request::asEmpty).hasRootCauseInstanceOf(NoHttpResponseException.class);
+  }
+
+  @SneakyThrows
+  @Test
+  void noRoutes_reverseProxyRequest_shouldCloseConnection() {
+    spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
+
+    val request = Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/");
+    assertThatThrownBy(request::asEmpty).hasRootCauseInstanceOf(NoHttpResponseException.class);
   }
 }

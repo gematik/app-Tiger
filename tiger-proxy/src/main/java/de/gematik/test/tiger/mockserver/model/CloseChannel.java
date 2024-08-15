@@ -16,11 +16,21 @@
 
 package de.gematik.test.tiger.mockserver.model;
 
+import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
+import lombok.extern.slf4j.Slf4j;
+
 /** Signifies a graceful channel close. */
+@Slf4j
 public class CloseChannel extends Action {
 
   @Override
   public Type getType() {
     return null;
+  }
+
+  @Override
+  public void write(NettyResponseWriter nettyResponseWriter, HttpRequest request) {
+    log.debug("closing channel due to close action");
+    nettyResponseWriter.closeChannel();
   }
 }

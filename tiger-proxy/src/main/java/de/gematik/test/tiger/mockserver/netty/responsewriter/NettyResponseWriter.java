@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.mockserver.netty.responsewriter;
 
-import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderValues.CLOSE;
@@ -24,9 +23,7 @@ import static io.netty.handler.codec.http.HttpHeaderValues.KEEP_ALIVE;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
-import de.gematik.test.tiger.mockserver.model.Header;
-import de.gematik.test.tiger.mockserver.model.HttpRequest;
-import de.gematik.test.tiger.mockserver.model.HttpResponse;
+import de.gematik.test.tiger.mockserver.model.*;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -47,10 +44,14 @@ public class NettyResponseWriter {
     this.ctx = ctx;
   }
 
-  public void writeResponse(final HttpRequest request, HttpResponse response) {
+  public void writeResponse(final HttpRequest request, Action<?> response) {
     if (response == null) {
-      response = notFoundResponse();
+      response = new CloseChannel();
     }
+    response.write(this, request);
+  }
+
+  public void writeHttpResponse(final HttpRequest request, HttpResponse response) {
     String contentLengthHeader = response.getFirstHeader(CONTENT_LENGTH.toString());
     if (isNotBlank(contentLengthHeader)) {
       try {

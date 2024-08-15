@@ -79,6 +79,7 @@ Then TGR set global variable "encodedJWT" to "!{rbel:encodeAs(getValue('exampleJ
 * TGR-1454: Tiger-Proxy: fix issue where small messages were not being forwarded.
 * TGR-1436: Fix HTTP message pairing for old tgr-files
 * TGR-1456: Only interpret POP3 RETR response as MIME
+* TGR-1500: Tiger-Proxy: Fixed infinite-loop when no matching route found
 * TCLE-14: User Manual: improvements in Docker server type documentation.
 * TGR-1480: Fix handling of SMTP AUTH command
 * TGR-1490: Fix handling of POP3 LIST/UIDL responses

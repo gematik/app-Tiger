@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.mockserver.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
 import lombok.Data;
 
 /*
@@ -29,6 +30,8 @@ public abstract class Action<T extends Action> extends ObjectWithJsonToString {
 
   @JsonIgnore
   public abstract Type getType();
+
+  public abstract void write(NettyResponseWriter nettyResponseWriter, HttpRequest request);
 
   public enum Type {
     FORWARD(Direction.FORWARD),

@@ -21,6 +21,7 @@ import static de.gematik.test.tiger.mockserver.model.HttpStatusCode.OK_200;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Multimap;
+import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
@@ -323,6 +324,11 @@ public class HttpResponse extends Action<HttpResponse>
   @JsonIgnore
   public Type getType() {
     return Type.RESPONSE;
+  }
+
+  @Override
+  public void write(NettyResponseWriter nettyResponseWriter, HttpRequest request) {
+    nettyResponseWriter.writeHttpResponse(request, this);
   }
 
   @SuppressWarnings("MethodDoesntCallSuperMethod")

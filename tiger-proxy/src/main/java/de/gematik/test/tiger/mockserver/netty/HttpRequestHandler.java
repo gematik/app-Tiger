@@ -38,7 +38,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.AttributeKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.StringEscapeUtils;
@@ -77,18 +76,8 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
     return false;
   }
 
-  private static Set<String> getLocalAddresses(ChannelHandlerContext ctx) {
-    if (ctx != null
-        && ctx.channel().attr(LOCAL_HOST_HEADERS) != null
-        && ctx.channel().attr(LOCAL_HOST_HEADERS).get() != null) {
-      return ctx.channel().attr(LOCAL_HOST_HEADERS).get();
-    }
-    return new HashSet<>();
-  }
-
   @Override
   protected void channelRead0(final ChannelHandlerContext ctx, final HttpRequest request) {
-
     NettyResponseWriter responseWriter = new NettyResponseWriter(configuration, ctx);
     try {
       configuration.addSubjectAlternativeName(request.getFirstHeader(HOST.toString()));
@@ -143,7 +132,6 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
                 request,
                 responseWriter,
                 ctx,
-                getLocalAddresses(ctx),
                 isProxyingRequest(ctx),
                 false);
           } catch (RuntimeException e) {

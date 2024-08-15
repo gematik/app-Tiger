@@ -41,7 +41,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.util.AttributeKey;
 import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
@@ -85,7 +84,6 @@ public class HttpActionHandler {
       final HttpRequest request,
       final NettyResponseWriter responseWriter,
       final ChannelHandlerContext ctx,
-      Set<String> localAddresses,
       boolean proxyingRequest,
       final boolean synchronous) {
     if (request.getHeaders() == null

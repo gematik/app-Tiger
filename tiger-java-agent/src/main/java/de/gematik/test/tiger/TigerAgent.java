@@ -31,7 +31,7 @@ public class TigerAgent {
   }
 
   public static void premain(String args, Instrumentation inst) {
-    System.out.println("TigerAgent premain method invoked! 🐯");
+    System.out.println("Tiger Agent loaded! TLS master secrets can now be stored to file 🐯");
 
     new AgentBuilder.Default()
       .ignore(ElementMatchers.none())

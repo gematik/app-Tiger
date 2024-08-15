@@ -18,6 +18,7 @@ package de.gematik.test.tiger.mockserver.model;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
@@ -84,5 +85,10 @@ public class HttpOverrideForwardedRequest extends Action<HttpOverrideForwardedRe
   @JsonIgnore
   public Type getType() {
     return Type.FORWARD_REPLACE;
+  }
+
+  @Override
+  public void write(NettyResponseWriter nettyResponseWriter, HttpRequest request) {
+    nettyResponseWriter.writeHttpResponse(request, responseOverride);
   }
 }

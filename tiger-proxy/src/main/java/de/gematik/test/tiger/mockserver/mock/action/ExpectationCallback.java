@@ -16,8 +16,10 @@
 
 package de.gematik.test.tiger.mockserver.mock.action;
 
+import de.gematik.test.tiger.mockserver.model.Action;
 import de.gematik.test.tiger.mockserver.model.HttpMessage;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
+import java.util.Optional;
 
 /*
  * @author jamesdbloom
@@ -37,5 +39,9 @@ public interface ExpectationCallback<T extends HttpMessage> {
 
   default boolean matches(HttpRequest httpRequest) {
     return true;
+  }
+
+  default Optional<Action> cannedResponse(HttpRequest httpRequest) {
+    return Optional.empty();
   }
 }

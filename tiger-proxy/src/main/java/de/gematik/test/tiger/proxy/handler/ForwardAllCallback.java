@@ -18,9 +18,13 @@ package de.gematik.test.tiger.proxy.handler;
 
 import static de.gematik.test.tiger.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 
+import de.gematik.test.tiger.mockserver.model.Action;
+import de.gematik.test.tiger.mockserver.model.CloseChannel;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 /**
  * Callback used for as a forward-all route in the TigerProxy. The messages received here are simply
@@ -67,5 +71,22 @@ public class ForwardAllCallback extends AbstractTigerRouteCallback {
   @Override
   boolean shouldLogTraffic() {
     return true;
+  }
+
+  @Override
+  public Optional<Action> cannedResponse(HttpRequest httpRequest) {
+    if (targetsSelf(httpRequest)) {
+      return Optional.of(new CloseChannel());
+    } else {
+      return Optional.empty();
+    }
+  }
+
+  private boolean targetsSelf(HttpRequest req) {
+    val requestPort = req.socketAddressFromHostHeader().getPort();
+    val requestHostName = req.socketAddressFromHostHeader().getHostName();
+    return requestPort == getTigerProxy().getProxyPort()
+        && (requestHostName.equalsIgnoreCase("127.0.0.1")
+            || requestHostName.equalsIgnoreCase("localhost"));
   }
 }

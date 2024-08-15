@@ -24,6 +24,7 @@ import de.gematik.test.tiger.mockserver.mock.action.http.HttpForwardActionResult
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
 import io.netty.channel.Channel;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -50,6 +51,20 @@ public class HttpAction {
       HttpActionHandler actionHandler,
       NettyResponseWriter responseWriter,
       boolean synchronous) {
+    final Optional<Action> cannedResponse = expectationForwardAndResponseCallback.cannedResponse(request);
+    if (cannedResponse.isPresent()) {
+      cannedResponse.get().write(responseWriter, request);
+    } else {
+      performActualRequestAndWriteResponse(request, incomingChannel, actionHandler, responseWriter, synchronous);
+    }
+  }
+
+  public void performActualRequestAndWriteResponse(
+      HttpRequest request,
+      Channel incomingChannel,
+      HttpActionHandler actionHandler,
+      NettyResponseWriter responseWriter,
+    boolean synchronous) {
     final HttpRequest overriddenRequest = getOverridenRequest(request);
 
     if (action instanceof HttpOverrideForwardedRequest) {
