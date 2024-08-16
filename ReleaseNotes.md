@@ -2,6 +2,15 @@
 
 # Release 3.1.4
 
+* Serenity BDD 4.1.14
+* Cucumber 7.18.1
+* RestAssured 5.4.0
+* Selenium 4.18.1
+* Appium 9.0.0
+* Spring Boot 3.3.2
+* Logback 1.5.6
+*
+
 ## Breaking Changes
 
 * TGR-1471: Activation and deactivation of various RbelConverters is now different. By default, all RbelConverters in
@@ -23,7 +32,7 @@ These options supersede the `activateEpaVauAnalysis` etc. configuration keys. Al
 default!
 
 * TGR-1215: You can clear the traffic observed by the tiger proxy during test setup phase by using the configuration
-  key `tiger.lib.clearEnvironmentStartupTraffic`. This is active by default. 
+  key `tiger.lib.clearEnvironmentStartupTraffic`. This is active by default.
 * TGR-1502: add POP3/MIME specific prefix to facet fields
     * for POP3, the fields status, header, body are now named pop3Status, pop3Header, pop3Body
     * for MIME, the fields header, body are now named mimeHeader, mimeBody

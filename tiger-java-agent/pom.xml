@@ -33,7 +33,7 @@
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
-            <version>1.14.16</version>
+            <version>1.14.18</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>
@@ -63,7 +63,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>${version.maven.javadoc}</version>
                 <configuration>
                     <doclint>none</doclint>
                     <sourcepath>${project.build.directory}/delombok</sourcepath>
@@ -80,7 +80,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.4</version>
+                <version>3.6.0</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -100,7 +100,8 @@
                                 </filter>
                             </filters>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>de.gematik.test.tiger.TigerAgent</mainClass>
                                     <manifestEntries>
                                         <Premain-Class>de.gematik.test.tiger.TigerAgent</Premain-Class>

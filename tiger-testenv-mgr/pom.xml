@@ -16,7 +16,7 @@
     </parent>
 
     <properties>
-        <version.frontend-maven-plugin>1.12.1</version.frontend-maven-plugin>
+        <version.frontend-maven-plugin>1.15.0</version.frontend-maven-plugin>
         <version.node>v20.11.1</version.node>
         <version.npm>10.2.4</version.npm>
         <version.httpbin>1.4.0</version.httpbin>
@@ -171,7 +171,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>13.0</version>
+            <version>24.1.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -207,7 +207,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.6.0</version>
+                <version>3.7.1</version>
                 <executions>
                     <execution>
                         <id>copy</id>
@@ -222,7 +222,7 @@
                         <artifactItem>
                             <groupId>org.jenkins-ci</groupId>
                             <artifactId>winstone</artifactId>
-                            <version>4.1</version>
+                            <version>${version.winstone}</version>
                             <type>jar</type>
                             <overWrite>false</overWrite>
                             <outputDirectory>${project.build.directory}</outputDirectory>

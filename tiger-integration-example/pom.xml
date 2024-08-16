@@ -35,7 +35,7 @@
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-suite</artifactId>
-            <version>1.10.2</version>
+            <version>1.10.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -121,7 +121,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.6.0</version>
+                <version>3.7.1</version>
                 <executions>
                     <execution>
                         <id>copy</id>
@@ -134,7 +134,7 @@
                                 <artifactItem>
                                     <groupId>org.jenkins-ci</groupId>
                                     <artifactId>winstone</artifactId>
-                                    <version>5.24</version>
+                                    <version>${version.winstone}</version>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
@@ -176,7 +176,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.4.1</version>
+                <version>3.4.2</version>
                 <executions>
                     <execution>
                         <id>empty-javadoc-jar</id>

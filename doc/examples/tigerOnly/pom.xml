@@ -16,8 +16,8 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
 
-        <version.junit5>5.9.3</version.junit5>
-        <version.maven.failsafe>3.2.5</version.maven.failsafe>
+        <version.junit5>5.10.3</version.junit5>
+        <version.maven.failsafe>3.3.1</version.maven.failsafe>
         <!-- please adapt Tiger version property to the most current one obtained from -->
         <!-- maven central:
           https://mvnrepository.com/artifact/de.gematik.test/tiger-test-lib
@@ -50,7 +50,7 @@
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-suite</artifactId>
-            <version>1.10.2</version>
+            <version>1.10.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>

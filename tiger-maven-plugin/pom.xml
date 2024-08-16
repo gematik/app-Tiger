@@ -4,8 +4,8 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
@@ -145,7 +145,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.6.0</version>
+                <version>3.7.1</version>
                 <executions>
                     <execution>
                         <id>copy</id>
@@ -160,7 +160,7 @@
                         <artifactItem>
                             <groupId>org.jenkins-ci</groupId>
                             <artifactId>winstone</artifactId>
-                            <version>4.1</version>
+                            <version>${version.winstone}</version>
                             <type>jar</type>
                             <overWrite>false</overWrite>
                             <outputDirectory>${project.build.directory}</outputDirectory>
@@ -186,7 +186,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>${version.maven.javadoc}</version>
                 <configuration>
                     <show>private</show>
                 </configuration>
@@ -261,7 +261,7 @@
                     </plugin>
                     <plugin>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${version.maven.failsafe}</version>
+                        <version>${version.maven.surefire}</version>
                         <configuration>
                             <skip>true</skip>
                         </configuration>

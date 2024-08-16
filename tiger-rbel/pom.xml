@@ -19,7 +19,8 @@
         <build.date>${maven.build.timestamp}</build.date>
         <maven.build.timestamp.format>dd-MM-yyyy HH:mm:ss</maven.build.timestamp.format>
         <version.dss>6.0</version.dss>
-        <sonar.coverage.exclusions>src/main/java/de/gematik/rbellogger/util/email_crypto/**/*.java</sonar.coverage.exclusions>
+        <sonar.coverage.exclusions>src/main/java/de/gematik/rbellogger/util/email_crypto/**/*.java
+        </sonar.coverage.exclusions>
     </properties>
 
     <dependencies>
@@ -46,7 +47,7 @@
         <dependency>
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
-            <version>0.9.12</version>
+            <version>0.10.2</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
@@ -115,7 +116,7 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.17.2</version>
+            <version>1.18.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.james</groupId>
@@ -252,7 +253,7 @@
         <dependency>
             <groupId>org.skyscreamer</groupId>
             <artifactId>jsonassert</artifactId>
-            <version>1.5.1</version>
+            <version>1.5.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -323,7 +324,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>${version.maven.javadoc}</version>
                 <configuration>
                     <doclint>none</doclint>
                     <sourcepath>${project.build.directory}/delombok</sourcepath>

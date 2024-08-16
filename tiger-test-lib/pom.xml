@@ -20,9 +20,9 @@
 
     <properties>
 
-        <version.jsonassert>1.5.1</version.jsonassert>
+        <version.jsonassert>1.5.3</version.jsonassert>
         <version.xmlunit-core>2.10.0</version.xmlunit-core>
-        <version.json-schema-validator>1.4.0</version.json-schema-validator>
+        <version.json-schema-validator>1.5.1</version.json-schema-validator>
 
         <tiger.build.timestamp>${maven.build.timestamp}</tiger.build.timestamp>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
@@ -260,7 +260,7 @@
         <dependency>
             <groupId>jakarta.activation</groupId>
             <artifactId>jakarta.activation-api</artifactId>
-            <version>2.0.1</version>
+            <version>2.1.3</version>
             <scope>test</scope>
         </dependency>
 
@@ -352,7 +352,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>${version.maven.javadoc}</version>
                 <configuration>
                     <doclint>none</doclint>
                     <sourcepath>${project.build.directory}/delombok</sourcepath>
@@ -379,7 +379,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.6.0</version>
+                <version>3.7.1</version>
                 <executions>
                     <execution>
                         <id>copy</id>
@@ -392,7 +392,7 @@
                                 <artifactItem>
                                     <groupId>org.jenkins-ci</groupId>
                                     <artifactId>winstone</artifactId>
-                                    <version>5.24</version>
+                                    <version>${version.winstone}</version>
                                     <type>jar</type>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
@@ -493,7 +493,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
-                <version>1.8</version>
+                <version>3.1.0</version>
                 <executions>
                     <execution>
                         <id>detect os</id>
@@ -533,7 +533,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.4.1</version>
                 <executions>
                     <execution>
                         <id>codegeneration</id>

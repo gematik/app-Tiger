@@ -19,7 +19,6 @@
 
     <properties>
         <version.groovy>4.0.17</version.groovy>
-        <version.io.rest-assur2ed>5.3.1</version.io.rest-assur2ed>
         <version.jcommander>1.82</version.jcommander>
         <version.okhttp>4.10.0</version.okhttp>
     </properties>
@@ -196,7 +195,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>${version.maven.javadoc}</version>
                 <configuration>
                     <doclint>none</doclint>
                     <sourcepath>${project.build.directory}/delombok</sourcepath>

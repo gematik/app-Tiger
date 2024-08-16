@@ -30,9 +30,8 @@
     </dependencyManagement>
 
     <properties>
-        <version.io.rest-assured>5.4.0</version.io.rest-assured>
         <version.jcommander>1.82</version.jcommander>
-        <version.okhttp>4.11.0</version.okhttp>
+        <version.okhttp>4.12.0</version.okhttp>
         <build.date>${maven.build.timestamp}</build.date>
         <maven.build.timestamp.format>dd-MM-yyyy HH:mm:ss</maven.build.timestamp.format>
     </properties>
@@ -82,7 +81,7 @@
         <dependency>
             <groupId>org.webjars.npm</groupId>
             <artifactId>dayjs</artifactId>
-            <version>1.11.10</version>
+            <version>1.11.12</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -334,7 +333,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>${version.maven.javadoc}</version>
                 <configuration>
                     <doclint>none</doclint>
                     <sourcepath>${project.build.directory}/delombok</sourcepath>
@@ -359,7 +358,9 @@
                     <reuseForks>true</reuseForks>
                     <parallel>classes</parallel>
                     <rerunFailingTestsCount>2</rerunFailingTestsCount>
-                    <argLine>-javaagent:${project.parent.basedir}/tiger-java-agent/target/tiger-java-agent-${project.version}.jar</argLine>
+                    <argLine>
+                        -javaagent:${project.parent.basedir}/tiger-java-agent/target/tiger-java-agent-${project.version}.jar
+                    </argLine>
                 </configuration>
             </plugin>
         </plugins>
