@@ -54,7 +54,7 @@ function parseFeatureMap(featureUpdateMap: Map<string, FeatureUpdate>): RbelMeta
     for (const [, scenario] of feature.scenarios) {
       for (const [, step] of scenario.steps) {
         for (const rbelMeta of step.rbelMetaData) {
-          const rbelMetaSequenceNumber = rbelMeta.sequenceNumber + 1;
+          const rbelMetaSequenceNumber = rbelMeta.sequenceNumber;
           stepRbelMetaDataList.push({
             ...rbelMeta,
             sequenceNumber: rbelMetaSequenceNumber
@@ -76,7 +76,7 @@ watchEffect(() => {
 
 function convertToDiagramStepString(metadata: RbelMetaData) {
   const arrow = isResponse(metadata) ? "-->>" : "->>";
-  return `${metadata.bundledServerNameSender || "no symbolic name"}${arrow}${metadata.bundledServerNameReceiver || "no symbolic name"}: #35;${metadata.sequenceNumber}: ${metadata.menuInfoString}`
+  return `${metadata.bundledServerNameSender || "no symbolic name"}${arrow}${metadata.bundledServerNameReceiver || "no symbolic name"}: #35;${metadata.sequenceNumber + 1}: ${metadata.menuInfoString}`
 }
 
 function isResponse(metadata: RbelMetaData) {

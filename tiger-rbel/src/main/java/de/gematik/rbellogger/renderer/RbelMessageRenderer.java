@@ -256,9 +256,9 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
             bodyTitleElements.add(
                 RbelHtmlRenderer.showContentButtonAndDialog(facet.getBody(), renderingToolkit)));
 
-    bodyTitleElements.add(
-        div(httpRequestFacet.map(f -> t2("REQ Body")).orElseGet(() -> t2("RES Body")))
-            .withClass("text-info"));
+    String bodyTitleString = httpRequestFacet.map(f -> "REQ Body").orElse("RES Body");
+
+    bodyTitleElements.add(div(t2(bodyTitleString)).withClass("text-info"));
 
     List<DomContent> messageBodyElements = new ArrayList<>();
     messageBodyElements.add(
@@ -286,8 +286,10 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                             .map(
                                 s ->
                                     StringUtils.isBlank(s)
-                                        ? div("Empty body")
-                                            .withClass(CLS_BODY + " notification tile is-child")
+                                        ? div()
+                                            .withClass(
+                                                CLS_BODY + " notification container is-child")
+                                            .with(t2(bodyTitleString + " Empty"))
                                         : div()
                                             .with(
                                                 collapsibleCard(

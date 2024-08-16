@@ -304,8 +304,8 @@ public class RbelHtmlRenderingToolkit {
             .getFacet(RbelMessageTimingFacet.class)
             .map(RbelMessageTimingFacet::getTransmissionTime)
             .orElse(null));
-    metaData.put("isRequest", rbelElement.hasFacet(RbelRequestFacet.class));
-    return "createMenuEntry(" + metaData.toString() + ")";
+    metaData.put("request", rbelElement.hasFacet(RbelRequestFacet.class));
+    return "createMenuEntry(" + metaData + ")";
   }
 
   private String getElementSequenceNumber(RbelElement rbelElement) {
@@ -376,6 +376,7 @@ public class RbelHtmlRenderingToolkit {
                             : "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"),
                     link().withRel("icon").withType("image/png").withHref(getLogoBase64Str()),
                     tag("style")
+                        .withId("rbel_css")
                         .with(
                             new UnescapedText(
                                 IOUtils.resourceToString("/rbel.css", StandardCharsets.UTF_8)))),

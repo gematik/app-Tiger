@@ -38,7 +38,7 @@ function clickOnMessage(m: Node) {
 function extractSequenceNumber(messageText: string): number {
   const match = messageText.match(/^#(\d+):/);
   if (match) {
-    return Number(match[1])
+    return Number(match[1]) - 1;
   }
   throw Error("failed to find a sequence number in the message text.")
 }

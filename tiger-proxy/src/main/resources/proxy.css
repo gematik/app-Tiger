@@ -1,0 +1,339 @@
+/*
+ * ${GEMATIK_COPYRIGHT_STATEMENT}
+ */
+
+.hidden {
+    display: none !important;
+}
+
+.radio-item {
+    display: inline-block;
+    position: relative;
+    padding: 0 10px;
+}
+
+.radio-item input[type='radio'] {
+    display: none;
+}
+
+.radio-item label {
+    color: #aaa;
+    font-weight: normal;
+}
+
+.radio-item label:before {
+    content: " ";
+    display: inline-block;
+    position: relative;
+    top: 5px;
+    margin: 0 5px 0 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 11px;
+    border: 2px solid #666;
+    background-color: transparent;
+}
+
+.radio-item input[type=radio]:checked + label:after {
+    border-radius: 11px;
+    border: 2px solid #469408;
+    width: 12px;
+    height: 12px;
+    position: absolute;
+    top: 9px;
+    left: 14px;
+    color: #469408;
+    content: " ";
+    display: block;
+    background: #469408;
+}
+
+.led {
+    width: 10px;
+    height: 10px;
+    background: #666;
+    margin-right: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.led-active {
+    background: #469408;
+}
+
+.led-error {
+    background: #c04608;
+}
+
+.modal-background {
+    background-color: rgba(10, 10, 10, .36);
+}
+
+.box.routeentry {
+    padding: 1rem;
+}
+
+.routeListDiv button {
+    height: 100%;
+    width: 100%;
+}
+
+#scrollLockBtn,
+#collapsibleMessageHeaderBtn,
+#collapsibleMessageDetailsBtn,
+.dropdown-toggle {
+    color: #aaa;
+}
+
+#scrollLockBtn,
+#collapsibleMessageHeaderBtn,
+#collapsibleMessageDetailsBtn {
+    display: inline-flex;
+}
+
+@media screen and (max-width: 1023px) {
+    .navbar-menu {
+        display: flex;
+    }
+}
+
+.navbar {
+    margin-top: -0.75rem;
+}
+
+.navbar-item, .navbar-link {
+    display: inline-flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    line-height: 1.5;
+    padding: 0.5rem 0.75rem;
+    color: rgba(255, 255, 255, .7);
+}
+
+.navbar-end .navbar-item {
+    align-items: center;
+}
+
+.msglist {
+    max-width: 80%;
+}
+
+.msglist.embeddedlist {
+    max-width: 100% !important;
+}
+
+.nested.dropdown > .dropdown-menu {
+    display: none;
+}
+
+.nested.dropdown:hover > .dropdown-menu {
+    display: block;
+}
+
+.nested.dropdown .dropdown-menu {
+    top: -15px;
+    margin-left: 100%;
+}
+
+.nested.dropdown .dropdown-trigger button::after {
+    content: '  ⦠';
+    margin-left: 0.5rem;
+}
+
+.nested.dropdown .dropdown-trigger button {
+    padding: 0;
+    border: 0;
+    font-size: 14px;
+    font-weight: 400;
+    height: 2em;
+}
+
+.dropdown-content-black {
+    background-color: #373a3c;
+}
+
+.dropdown-content {
+    max-height: 100vh;
+    overflow: auto;
+}
+
+.box {
+    background-color: #fff;
+    border-radius: 6px;
+    box-shadow: 0 0 0 1px #ddd;
+    color: #444;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+#contextParent {
+    padding-left: 0.8rem;
+    padding-right: 0.8rem;
+}
+
+
+.has-text-dark {
+    color: #373a3c !important
+}
+
+a.has-text-dark:focus,
+a.has-text-dark:hover {
+    color: #1f2021 !important
+}
+
+.has-text-weight-bold {
+    font-weight: 700 !important
+}
+
+.has-text-weight-light {
+    font-weight: 300 !important
+}
+
+.has-text-warning {
+    color: #9b479f !important;
+}
+
+a {
+    cursor: pointer;
+    color: #029acf;
+    text-decoration: none;
+}
+
+a.mt-3.is-block {
+    text-decoration: none;
+}
+
+.button .icon:last-child:not(:first-child) {
+    margin-left: 0.25em;
+    margin-right: calc(-0.5em - 1px);
+}
+
+.tile.is-ancestor:last-child {
+    margin-bottom: -0.75rem;
+}
+
+.tile.is-ancestor {
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+    margin-top: -0.75rem;
+}
+
+/*noinspection CssInvalidPropertyValue*/
+.tile {
+    align-items: stretch;
+    display: block;
+    flex-basis: 0;
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-height: -webkit-min-content;
+    min-height: -moz-min-content;
+    min-height: min-content;
+}
+
+.tile.is-child {
+    margin: 0 !important;
+}
+
+.tile.is-parent {
+    padding: 0 0 0.75rem 1rem;
+}
+
+.card-header {
+    padding: 0 0;
+}
+
+.tag:not(body).is-info.is-light {
+    background-color: #ecfcfe;
+    color: #0a8694;
+}
+
+.btn-dark {
+    border: 1px solid #27292b;
+    background-image: linear-gradient(180deg, #3e4244 0%, #373a3c 60%, #303234 100%);
+    -webkit-filter: none;
+    filter: none;
+}
+
+.message-body {
+    color: #444;
+    padding: 0.25rem;
+}
+
+.filteredMessage {
+    margin-top: 15px;
+    margin-left: 1.5em;
+    margin-bottom: 1em;
+}
+
+#jexlModal,
+#filterModal {
+    max-width: 75%;
+}
+
+.tab {
+    text-decoration: none;
+    font-size: 1.5rem;
+    margin-right: 1rem;
+}
+
+.tabs {
+    align-items: stretch;
+    display: flex;
+    font-size: 1.5rem;
+    justify-content: center;
+    overflow: hidden;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.tabs > .icon {
+    margin-right: 0.5rem;
+}
+
+.field {
+    display: flex;
+}
+
+.field-label {
+    margin-right: 1.5rem;
+    text-align: right;
+}
+
+.buttons.is-right {
+    justify-content: flex-end;
+    display: flex;
+}
+
+#executeJexlQuery {
+    margin-right: 0.5rem;
+}
+
+.jexlstyle {
+    display: flex;
+    list-style-type: none;
+    justify-content: center;
+}
+
+.btn-success {
+    color: #fff;
+    background-color: #469408 !important;
+    border-color: #469408 !important;
+}
+
+.btn-outline-success {
+    border-color: #469408 !important;
+    color: #469408;
+}
+
+.btn-outline-success:hover {
+    background-color: #469408;
+    border-color: #469408;
+    color: #fff;
+}
+
+.text-success {
+    color: #469408 !important;
+}
+
+.bg-success {
+    background-color: #469408 !important;
+}

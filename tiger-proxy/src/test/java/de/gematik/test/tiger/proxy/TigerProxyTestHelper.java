@@ -20,6 +20,7 @@ import static org.awaitility.Awaitility.await;
 
 import de.gematik.rbellogger.data.facet.RbelParsingNotCompleteFacet;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
+import java.text.MessageFormat;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.awaitility.core.ConditionTimeoutException;
@@ -74,8 +75,7 @@ public class TigerProxyTestHelper {
       await()
           .atMost(timeoutSec, TimeUnit.SECONDS)
           .pollDelay(200, TimeUnit.MILLISECONDS)
-          .until(
-              () -> tigerRemoteProxyClient.getRbelMessages().size() == expectedMessagesCount);
+          .until(() -> tigerRemoteProxyClient.getRbelMessages().size() == expectedMessagesCount);
     } catch (ConditionTimeoutException cte) {
       log.error(
           "Expected {} message(s) in rbel message list but found {}",
@@ -84,7 +84,11 @@ public class TigerProxyTestHelper {
       tigerRemoteProxyClient
           .getRbelMessagesList()
           .forEach(msg -> log.error(msg.printHttpDescription()));
-      throw cte;
+      throw new RuntimeException(
+          MessageFormat.format(
+              "Expected {0} message(s) in rbel message list but found {1}",
+              expectedMessagesCount, tigerRemoteProxyClient.getRbelMessagesList().size()),
+          cte);
     }
   }
 }

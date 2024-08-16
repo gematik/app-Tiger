@@ -28,6 +28,11 @@ const menuHtmlTemplateRequest =
     + "        title=\"${menuInfoString}\">${menuInfoString}"
     + "      </span>\n"
     + "    </div>\n"
+    + "    <div class=\"ms-4 has-text-link d-flex align-items-center\">\n"
+    + "      <span class=\"ms-3 text-ellipsis\""
+    + "        title=\"${additionalInformation}\">${additionalInformation}"
+    + "      </span>\n"
+    + "    </div>\n"
     + "  </a></div>";
 const menuHtmlTemplateResponse =
     "<div class=\"ms-1 mb-4 is-size-7\">"
@@ -41,136 +46,175 @@ const menuHtmlTemplateResponse =
     + "      </span>\n"
     + "      <span class=\"has-text-dark text-ellipsis ms-auto\">${timestamp}</span>\n"
     + "    </div>\n"
+    + "    <div class=\"ms-5 mb-4 text-success d-flex align-items-center\">${additionalInformation}\n"
+    + "    </div>\n"
     + "  </a></div>";
+
+const menuHtmlTemplateSubResponse =
+    "      <i class=\"fas fa-reply\"></i>\n"
+    + "      <span class=\"ms-1\">RES</span>\n"
+    + "      <span class=\"mx-1\" \n"
+    + "         title=\"${additionalInformation}\">${additionalInformation}"
+    + "      </span>\n";
 
 let msgIndex = 1;
 
+// called implicitly by the HTML code created by the server at
+// de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.renderDocument (end of method)
 function createMenuEntry(msgMetaData) {
-  let menuItem;
-  if (msgMetaData.isRequest) {
-    menuItem = menuHtmlTemplateRequest;
-  } else {
-    menuItem = menuHtmlTemplateResponse;
-  }
-  menuItem = menuItem
-  .replace("${uuid}", msgMetaData.uuid)
-  .replace("${sequence}", msgMetaData.sequenceNumber + 1)
-  .replace("${sequenceNumber}", msgIndex++);
-  if (msgMetaData.menuInfoString != null) {
+    let isRequest = msgMetaData.request;
+
+    let menuItem;
+    if (isRequest) {
+        menuItem = menuHtmlTemplateRequest;
+    } else {
+        menuItem = menuHtmlTemplateResponse;
+    }
     menuItem = menuItem
-    .replaceAll("${menuInfoString}", msgMetaData.menuInfoString);
-  } else {
-    menuItem = menuItem
-    .replaceAll("${menuInfoString}", " ");
-  }
-  if (msgMetaData.timestamp != null) {
-    menuItem = menuItem
-    .replace("${timestamp}",
-        dayjs(msgMetaData.timestamp).format("HH:mm:ss.SSS"))
-  } else {
-    menuItem = menuItem
-    .replace("${timestamp}", " ");
-  }
-  document.getElementById("sidebar-menu")
-  .appendChild(htmlToElement(menuItem));
+        .replace("${uuid}", msgMetaData.uuid)
+        .replace("${sequence}", msgMetaData.sequenceNumber + 1)
+        .replace("${sequenceNumber}", msgMetaData.sequenceNumber);
+    if (msgMetaData.menuInfoString != null) {
+        menuItem = menuItem
+            .replaceAll("${menuInfoString}", msgMetaData.menuInfoString);
+    } else {
+        menuItem = menuItem
+            .replaceAll("${menuInfoString}", " ");
+    }
+    if (msgMetaData.additionalInformation != null &&
+        msgMetaData.additionalInformation.length > 0) {
+        if (isRequest) {
+            menuItem = menuItem
+                .replaceAll("${additionalInformation}",
+                    msgMetaData.additionalInformation[0]);
+        } else {
+            let subMenu = menuHtmlTemplateSubResponse
+                .replaceAll("${additionalInformation}",
+                    msgMetaData.additionalInformation[0]);
+            menuItem = menuItem
+                .replaceAll("${additionalInformation}",
+                    subMenu);
+        }
+    } else {
+        menuItem = menuItem
+            .replaceAll("${additionalInformation}", " ");
+    }
+    if (msgMetaData.timestamp != null) {
+        menuItem = menuItem
+            .replace("${timestamp}",
+                formatTimeStamp(msgMetaData.timestamp));
+    } else {
+        menuItem = menuItem
+            .replace("${timestamp}", " ");
+    }
+    document.getElementById("sidebar-menu")
+        .appendChild(htmlToElement(menuItem));
 }
+
+function formatTimeStamp(timestampIsoString) {
+    const containsZoneId = timestampIsoString.includes('[');
+    let stringToConvert = timestampIsoString;
+    if (containsZoneId) {
+        stringToConvert = timestampIsoString.substring(0,
+            timestampIsoString.indexOf('['));
+    }
+    return dayjs(stringToConvert).format("HH:mm:ss.SSS");
+}
+
 
 function htmlToElement(html) {
-  const template = document.createElement('template');
-  html = html.trim(); // Never return a text node of whitespace as the result
-  template.innerHTML = html;
-  return template.content.firstChild;
+    const template = document.createElement('template');
+    html = html.trim(); // Never return a text node of whitespace as the result
+    template.innerHTML = html;
+    return template.content.firstChild;
 }
 
+
+// noinspection JSUnusedLocalSymbols the sequence number is only used in the tigerProxy context
 function scrollToMessage(uuid, sequenceNumber) {
-  scrollMessageIntoView(uuid);
+    scrollMessageIntoView(uuid);
 }
 
 function scrollMessageIntoView(uuid) {
-  if (!uuid) {
-    uuid = tobeScrolledToUUID;
-  }
-  let elements = document.getElementsByName(uuid);
-  if (elements.length > 0) {
-    elements[0].scrollIntoView({behaviour: "smooth", alignToTop: true});
-  }
+    let elements = document.getElementsByName(uuid);
+    if (elements.length > 0) {
+        elements[0].scrollIntoView(true);
+    }
+
+}
+
+function getAll(selector, baseEl) {
+    if (!baseEl) {
+        baseEl = document;
+    }
+    return Array.prototype.slice.call(baseEl.querySelectorAll(selector), 0);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  // Modals
-  var $modalButtons = getAll('.modal-button');
-  var $copyButtons = getAll('.copyToClipboard-button');
+    // Modals
+    const $modalButtons = getAll('.modal-button');
+    const $copyButtons = getAll('.copyToClipboard-button');
 
-  if ($modalButtons.length > 0) {
-    $modalButtons.forEach(function ($el) {
-      $el.addEventListener('click', function (e) {
-        e.preventDefault();
-        return false;
-      });
-    });
-  }
+    if ($modalButtons.length > 0) {
+        $modalButtons.forEach(function ($el) {
+            $el.addEventListener('click', function (e) {
+                e.preventDefault();
+                return false;
+            });
+        });
+    }
 
-  if ($copyButtons.length > 0) {
-    $copyButtons.forEach(function ($el) {
-      $el.addEventListener('click', function (e) {
-        let target = $el.dataset.target;
-        let $target = document.getElementById(target);
-        navigator.clipboard.writeText($target.textContent);
-        e.preventDefault();
-        return false;
-      });
-    });
-  }
-
-  // Functions
-  function getAll(selector) {
-    return Array.prototype.slice.call(document.querySelectorAll(selector), 0);
-  }
+    if ($copyButtons.length > 0) {
+        $copyButtons.forEach(function ($el) {
+            $el.addEventListener('click', function (e) {
+                let target = $el.dataset.target;
+                let $target = document.getElementById(target);
+                navigator.clipboard.writeText($target.textContent);
+                e.preventDefault();
+                return false;
+            });
+        });
+    }
 });
 
 function toggleCollapsableIcon(target) {
-  const classList = target.classList;
-  if (classList.contains("fa-toggle-on")) {
-    classList.remove("fa-toggle-on");
-    classList.add("fa-toggle-off");
-  } else {
-    classList.add("fa-toggle-on");
-    classList.remove("fa-toggle-off");
-  }
-
+    const classList = target.classList;
+    const flag = classList.contains("fa-toggle-on");
+    classList.toggle("fa-toggle-on", !flag);
+    classList.toggle("fa-toggle-off", flag);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-  let msgCards = document.getElementsByClassName('msg-card');
-  for (let i = 0; i < msgCards.length; i++) {
-    msgCards[i].children[0].children[0].children[0].children[1].addEventListener(
-        'click', e => {
-          e.currentTarget
-              .parentElement.parentElement.parentElement.parentElement
-              .childNodes[1].classList.toggle('d-none');
-          toggleCollapsableIcon(e.currentTarget);
-          e.preventDefault();
-          return false;
-        });
+    let msgCards = document.getElementsByClassName('msg-card');
+    for (let i = 0; i < msgCards.length; i++) {
+        msgCards[i].children[0].children[0].children[0].children[1].addEventListener(
+            'click', e => {
+                e.currentTarget
+                    .parentElement.parentElement.parentElement.parentElement
+                    .childNodes[1].classList.toggle('d-none');
+                toggleCollapsableIcon(e.currentTarget);
+                e.preventDefault();
+                return false;
+            });
 
-    document.querySelectorAll('pre.json').forEach(el => {
-      if (el.getAttribute("data-hljs-highlighted") !== "true") {
-        hljs.highlightElement(el);
-        el.setAttribute("data-hljs-highlighted", "true");
-      }
-    });
-  }
-
-  let notification = document.getElementsByClassName('card notification');
-  for (let i = 0; i < notification.length; i++) {
-    notification[i].children[0].children[0].children[0].children[0].addEventListener(
-        'click', e => {
-          e.currentTarget
-              .parentElement.parentElement.parentElement.parentElement
-              .childNodes[1].classList.toggle('d-none');
-          toggleCollapsableIcon(e.currentTarget);
-          e.preventDefault();
-          return false;
+        document.querySelectorAll('pre.json').forEach(el => {
+            if (el.getAttribute("data-hljs-highlighted") !== "true") {
+                hljs.highlightElement(el);
+                el.setAttribute("data-hljs-highlighted", "true");
+            }
         });
-  }
+    }
+
+    let notification = document.getElementsByClassName('card notification');
+    for (let i = 0; i < notification.length; i++) {
+        notification[i].children[0].children[0].children[0].children[0].addEventListener(
+            'click', e => {
+                e.currentTarget
+                    .parentElement.parentElement.parentElement.parentElement
+                    .childNodes[1].classList.toggle('d-none');
+                toggleCollapsableIcon(e.currentTarget);
+                e.preventDefault();
+                return false;
+            });
+    }
 });

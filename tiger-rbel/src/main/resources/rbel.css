@@ -20,39 +20,41 @@ hex-viewer {
     display: inline !important;
 }
 
-h1.title{
+h1.title {
     font-size: 2rem;
 }
-h2.title{
-    font-size: 1.5rem;
-}
+
 .title {
     font-size: 1.25rem;
     margin-bottom: .5rem;
+    color: #373a3c;
 }
 
-.paddingLeft{
+.paddingLeft {
     padding-left: 5rem;
 }
-article.message{
+
+article.message {
     margin: .5rem !important;
 }
-.notification .tile .message-body{
+
+.notification .tile .message-body {
     padding: .25rem;
 }
-.is-size-4 {
-    font-size: 1.3rem !important;
-}
+
 td {
     padding: .3rem !important;
+    border-style: unset;
 }
-.card-content{
+
+.card-content {
     padding: .5rem;
 }
 
 .copyToClipboard-button {
     filter: invert(100%);
-    margin-left: 1em;
+    margin-left: 2em;
+    margin-top: 0.5em;
 }
 
 .sidebar {
@@ -119,6 +121,7 @@ td {
 pre.json {
     color: greenyellow !important;
 }
+
 pre.binary {
     max-width: 800px;
     padding: 0.7rem 1.5rem;
@@ -197,26 +200,38 @@ pre.json {
     width: 20%;
 }
 
-
-.is-size-6 {
-    font-size: 1rem!important;
-}
-.is-size-1 {
-    font-size: 3rem!important;
-}
 p {
     margin: 0;
     padding: 0;
 }
-.is-size-3 {
-    font-size: 2rem!important;
+
+
+.is-size-1 {
+    font-size: 3rem !important;
 }
+
+.is-size-2 {
+    font-size: 2.5rem !important;
+}
+
+.is-size-3 {
+    font-size: 2rem !important;
+}
+
 .is-size-4 {
     font-size: 1.3rem !important;
 }
 
+.is-size-5 {
+    font-size: 1.2rem !important
+}
+
+.is-size-6 {
+    font-size: 1rem !important;
+}
+
 .is-size-7 {
-    font-size:.75rem!important
+    font-size: .75rem !important
 }
 
 .sidebar {
@@ -235,6 +250,10 @@ p {
     padding-bottom: 10rem;
 }
 
+.container .container {
+    margin-left: 1rem;
+}
+
 .container.page-break {
     padding-left: 0;
     padding-right: 0;
@@ -249,9 +268,7 @@ p {
     margin-right: -0.75rem;
     margin-top: -0.75rem;
 }
-.tile.is-ancestor:first-child {
-    margin-top: 1rem;
-}
+
 .tile {
     align-items: stretch;
     display: block;
@@ -262,6 +279,7 @@ p {
     min-height: -moz-min-content;
     min-height: min-content;
 }
+
 .tile.is-parent {
     padding: 0.75rem;
 }
@@ -270,26 +288,8 @@ p {
     flex-direction: column;
 }
 
-.tile.is-vertical>.tile.is-child {
-    margin-top: 1.5rem!important;
-}
-
-.notification.is-info {
-    background-color: #f5fdfe;
-    color: #0fc5d9;
-    border: 1px solid #8aecf7;
-}
-.notification.is-success {
-    background-color: #f9fef5;
-    color: #469408;
-    border: 1px solid #90f540;
-}
-.notification .title {
-    color: currentColor;
-}
-
-.tile.is-child:not(:first-child) {
-    margin: 0!important;
+.tile.is-vertical > .tile.is-child {
+    margin-top: 1.5rem !important;
 }
 
 .notification.is-primary {
@@ -297,24 +297,54 @@ p {
     color: #d9230f;
     border: 1px solid #f7958a;
 }
+
+.notification.is-info {
+    background-color: #f5fdfe;
+    color: #0fc5d9;
+    border: 1px solid #8aecf7;
+}
+
+.notification.is-success {
+    background-color: #f9fef5;
+    color: #469408;
+    border: 1px solid #90f540;
+}
+
+.notification.is-warning {
+    background-color: #fcf8fc;
+    color: #9b479f;
+    border: 1px solid #d6a7d8;
+}
+
+.notification .title {
+    color: currentColor;
+}
+
+.tile.is-child:not(:first-child) {
+    margin: 0 !important;
+}
+
 .notification {
     background-color: #f5f5f5;
     border-radius: 4px;
     padding: 1rem 1rem 1rem 1rem;
     position: relative;
 }
+
 .card {
     background: #ddd;
 }
+
 .table, .card {
     max-width: 100%;
 }
+
 .has-text-link {
-    color: #029acf!important;
+    color: #029acf !important;
 }
 
 .has-text-link {
-    color: #3273dc!important;
+    color: #3273dc !important;
 }
 
 a.mt-3.is-block {
@@ -322,12 +352,14 @@ a.mt-3.is-block {
 }
 
 .has-text-success {
-    color: #469408!important;
+    color: #469408 !important;
     text-decoration: none;
 }
+
 .has-text-danger {
-    color: #d9831f!important;
+    color: #d9831f !important;
 }
+
 .icon {
     align-items: center;
     display: inline-flex;
@@ -335,29 +367,36 @@ a.mt-3.is-block {
     height: 1.5rem;
     width: 1.5rem;
 }
+
 .modal-button {
     background-color: #fff;
 }
+
 .message.is-warning .message-header {
     background-color: #9b479f;
     color: #fff;
     display: flex;
     justify-content: space-between;
 }
+
 .notification.is-warning {
     background-color: #fcf8fc;
     color: #9b479f;
     border: 1px solid #d6a7d8;
 }
+
 article.message {
     margin: 0.5rem !important;
 }
+
 div.message-header {
     padding: 0.4rem;
 }
+
 td {
     padding: 0.3rem !important;
 }
+
 .tag:not(body).is-info.is-light {
     background-color: #ecfcfe;
     color: #0a8694;
@@ -377,15 +416,11 @@ td {
     padding-right: 0.75em;
     white-space: nowrap;
 }
+
 .msg-sequence {
     height: 2.5rem !important;
 }
-.is-size-3 {
-    font-size: 2rem!important;
-}
-.is-size-2 {
-    font-size: 2.5rem!important;
-}
+
 pre {
     color: #fa4 !important;
     background-color: #444 !important;
@@ -407,6 +442,8 @@ prekey {
 pre.json {
     color: greenyellow !important;
     margin-top: 0.75rem;
+    word-break: break-all;
+    white-space: break-spaces;
 }
 
 pre.binary {
@@ -420,11 +457,25 @@ pre.value, pre.json, pre.value div, pre.json div {
 }
 
 .has-text-link {
-    color: #029acf!important;
+    color: #029acf !important;
 }
+
 a.has-text-link:focus,
-a.has-text-link:hover{
-    color:#205bbc!important
+a.has-text-link:hover {
+    color: #205bbc !important
+}
+
+.has-background-dark {
+    background-color: #373a3c !important
+}
+
+.has-text-danger {
+    color: #d9831f !important
+}
+
+.has-text-success {
+    color: #469408 !important;
+    text-decoration: none;
 }
 
 h2.title {
@@ -434,23 +485,27 @@ h2.title {
 }
 
 .has-text-weight-bold {
-    font-weight: 700!important;
+    font-weight: 700 !important;
 }
+
 .has-text-weight-light {
-    font-weight: 300!important;
+    font-weight: 300 !important;
 }
+
 a {
     color: #029acf;
     cursor: pointer;
     text-decoration: none;
 }
+
 .has-text-danger {
-    color: #d9831f!important;
+    color: #d9831f !important;
 }
 
 .has-text-warning {
-    color: #9b479f!important;
+    color: #9b479f !important;
 }
+
 .has-text-info {
-    color: #0fc5d9!important;
+    color: #0fc5d9 !important;
 }
