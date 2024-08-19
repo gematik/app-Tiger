@@ -46,11 +46,15 @@ public class RbelJsonFacet implements RbelFacet {
         new RbelHtmlFacetRenderer() {
           @Override
           public boolean checkForRendering(RbelElement element) {
-            return element.hasFacet(RbelJsonFacet.class)
-                && element
-                    .getFacet(RbelRootFacet.class)
-                    .filter(root -> root.getRootFacet() instanceof RbelJsonFacet)
-                    .isPresent();
+            return element.getFacet(RbelJsonFacet.class)
+                .filter(
+                    jsonFacet ->
+                        element.getFacets().stream()
+                            .filter(RbelRootFacet.class::isInstance)
+                            .map(RbelRootFacet.class::cast)
+                            .map(RbelRootFacet::getRootFacet)
+                            .anyMatch(jsonFacet::equals))
+                .isPresent();
           }
 
           @SneakyThrows

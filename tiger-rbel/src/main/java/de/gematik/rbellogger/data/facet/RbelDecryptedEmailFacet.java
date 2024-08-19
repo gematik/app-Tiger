@@ -48,9 +48,7 @@ public class RbelDecryptedEmailFacet implements RbelFacet {
               Optional<String> key,
               RbelHtmlRenderingToolkit renderingToolkit) {
             return div(
-                br(),
                 h2().withClass("title").withText("Decrypted Message: "),
-                br(),
                 ancestorTitle()
                     .with(vertParentTitle().with(renderingToolkit.convertNested(element))));
           }

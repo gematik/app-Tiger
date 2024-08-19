@@ -21,13 +21,17 @@ import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.james.mime4j.dom.Body;
 import org.apache.james.mime4j.dom.Entity;
 import org.apache.james.mime4j.dom.Header;
@@ -46,6 +50,9 @@ public class RbelMimeConverter implements RbelConverterPlugin {
       Pattern.compile(
           "application/pkcs7-mime\\s*;\\s*smime-type=authenticated-enveloped-data.*",
           Pattern.DOTALL);
+
+  private static final String TRANSFER_ENCODING_7_BIT = "7bit";
+  public static final String CONTENT_TRANSFER_ENCODING = "content-transfer-encoding";
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
@@ -70,8 +77,9 @@ public class RbelMimeConverter implements RbelConverterPlugin {
           .getFacet(RbelMimeHeaderFacet.class)
           .map(header -> header.get("content-type"))
           .map(RbelElement::getRawStringContent)
-          .filter(content -> AUTHENTICATED_ENVELOPED_DATA.matcher(content).matches())
-          .ifPresent(content -> context.convertElement(messageFacet.body()));
+          .map(AUTHENTICATED_ENVELOPED_DATA::matcher)
+          .filter(Matcher::matches)
+          .ifPresent(m -> context.convertElement(messageFacet.body()));
       return element;
     }
 
@@ -113,15 +121,29 @@ public class RbelMimeConverter implements RbelConverterPlugin {
 
     @SneakyThrows
     private RbelElement parseSingleBody(RbelElement element, SingleBody singleBody) {
-      RbelElement bodyElement;
-      RbelMimeBodyFacet bodyFacet;
+      var bytesAndContent = extractContent(singleBody);
+      var bytes = bytesAndContent.getLeft();
+      var content = bytesAndContent.getRight();
+
+      return context.convertElement(createBodyElementAndFacet(element, bytes, content));
+    }
+
+    private RbelElement createBodyElementAndFacet(
+        RbelElement element, byte[] bytes, String content) {
+      var bodyFacet = new RbelMimeBodyFacet(content);
+
+      return new RbelElement(bytes, element)
+          .addFacet(bodyFacet)
+          .addFacet(new RbelRootFacet<>(bodyFacet));
+    }
+
+    private Pair<byte[], String> extractContent(SingleBody singleBody) throws IOException {
       if (singleBody instanceof TextBody textBody) {
         try (var reader = textBody.getReader();
             var writer = new StringWriter()) {
           reader.transferTo(writer);
           var content = writer.toString();
-          bodyElement = new RbelElement(content.getBytes(), element);
-          bodyFacet = new RbelMimeBodyFacet(content);
+          return Pair.of(content.getBytes(), content);
         }
       } else {
         try (var in = singleBody.getInputStream();
@@ -132,14 +154,17 @@ public class RbelMimeConverter implements RbelConverterPlugin {
                   }
                 }) {
           in.transferTo(out);
-          var base64 = Base64.getEncoder().encodeToString(out.getBytes());
-          bodyElement = new RbelElement(out.getBytes(), element);
-          bodyFacet = new RbelMimeBodyFacet(base64);
+          var bytes = out.getBytes();
+          String content =
+              Optional.ofNullable(
+                      singleBody.getParent().getHeader().getField(CONTENT_TRANSFER_ENCODING))
+                  .map(Field::getBody)
+                  .filter(TRANSFER_ENCODING_7_BIT::equals)
+                  .map(encoding -> new String(bytes))
+                  .orElseGet(() -> Base64.getEncoder().encodeToString(bytes));
+          return Pair.of(bytes, content);
         }
       }
-      bodyElement.addFacet(bodyFacet);
-      bodyElement.addFacet(new RbelRootFacet<>(bodyFacet));
-      return bodyElement;
     }
 
     private RbelElement parseMultiPartBody(RbelElement parentElement, Multipart multipart) {

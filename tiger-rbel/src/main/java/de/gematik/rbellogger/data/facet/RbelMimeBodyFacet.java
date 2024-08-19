@@ -23,6 +23,8 @@ import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
+import j2html.tags.specialized.H2Tag;
+
 import java.util.Optional;
 
 public class RbelMimeBodyFacet extends RbelValueFacet<String> {
@@ -40,8 +42,20 @@ public class RbelMimeBodyFacet extends RbelValueFacet<String> {
               RbelElement element,
               Optional<String> key,
               RbelHtmlRenderingToolkit renderingToolkit) {
-            var value = element.getFacetOrFail(RbelValueFacet.class).getValue().toString();
-            return div(h2().withClass("title").withText("Mime Body: "), br(), div(value));
+            H2Tag title = h2().withClass("title").withText("Mime Body: ");
+            if (allRootFacetsAreMimeBody(element)) {
+              return div(title, renderingToolkit.renderMimeBodyContent(element));
+            } else {
+              return title;
+            }
+          }
+
+          private static boolean allRootFacetsAreMimeBody(RbelElement element) {
+            return element.getFacets().stream()
+                .filter(RbelRootFacet.class::isInstance)
+                .map(RbelRootFacet.class::cast)
+                .map(RbelRootFacet::getRootFacet)
+                .allMatch(RbelMimeBodyFacet.class::isInstance);
           }
         });
   }

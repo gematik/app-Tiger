@@ -47,7 +47,6 @@ public record RbelMimeMessageFacet(RbelElement header, RbelElement body) impleme
               RbelHtmlRenderingToolkit renderingToolkit) {
             return div(
                 h2().withClass("title").withText("Mime Message: "),
-                br(),
                 ancestorTitle()
                     .with(vertParentTitle().with(renderingToolkit.convertNested(element))));
           }

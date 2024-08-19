@@ -5,6 +5,7 @@
 package de.gematik.rbellogger.renderer;
 
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
+import static de.gematik.rbellogger.util.EmailConversionUtils.CRLF;
 import static j2html.TagCreator.*;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -36,6 +37,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -64,6 +66,10 @@ public class RbelHtmlRenderingToolkit {
   private static final String HEX_STYLE =
       "display: inline-flex;padding-bottom: 0.2rem;padding-top: 0.2rem;white-space: revert;";
   public static final String JSON_NOTE = "json-note";
+
+  private static String isSize(int n) {
+    return "is-size-" + n;
+  }
 
   @Getter
   private final ObjectMapper objectMapper =
@@ -145,12 +151,34 @@ public class RbelHtmlRenderingToolkit {
     return h2(text).withClass("title");
   }
 
+  public DomContent renderMimeBodyContent(RbelElement body) {
+    return Optional.ofNullable(body)
+        .flatMap(b -> b.seekValue(String.class))
+        .filter(s -> shouldRenderEntitiesWithSize(s.length()))
+        .map(s -> s.split(CRLF))
+        .map(Arrays::stream)
+        .map(lines -> lines.map(line -> text(line + CRLF)).toList())
+        .map(textarea().withClass("full-width")::with)
+        .map(DomContent.class::cast)
+        .orElseGet(() -> computeReplacementString(body));
+  }
+
+  private static DomContent computeReplacementString(RbelElement bodyElement) {
+    return Optional.ofNullable(bodyElement)
+        .map(
+            body ->
+                (DomContent)
+                    span(RbelHtmlRenderer.buildOversizeReplacementString(body))
+                        .withClass(isSize(7)))
+        .orElseGet(TagCreator::pre);
+  }
+
   public DomContent constructMessageId(final RbelElement message) {
     if (message.getParentNode() != null) {
       return span();
     }
     return span(getElementSequenceNumber(message))
-        .withClass("msg-sequence tag is-info is-light me-3 is-size-4 test-message-number");
+        .withClass("msg-sequence tag is-info is-light me-3 " + isSize(4) + " test-message-number");
   }
 
   @SuppressWarnings({"rawtypes", "java:S3740"})
@@ -175,7 +203,7 @@ public class RbelHtmlRenderingToolkit {
         && !shouldRenderEntitiesWithSize(element.getRawContent().length)) {
       return addNotes(
           element,
-          span(RbelHtmlRenderer.buildOversizeReplacementString(element)).withClass("is-size-7"));
+          span(RbelHtmlRenderer.buildOversizeReplacementString(element)).withClass(isSize(7)));
     }
 
     return convertUnforced(element, key)
@@ -185,7 +213,7 @@ public class RbelHtmlRenderingToolkit {
                 return addNotes(element, printAsBinary(element));
               } else {
                 return addNotes(
-                    element, span(performElementToTextConversion(element)).withClass("is-size-7"));
+                    element, span(performElementToTextConversion(element)).withClass(isSize(7)));
               }
             });
   }
@@ -266,7 +294,7 @@ public class RbelHtmlRenderingToolkit {
 
   public DomContent renderMenu() {
     return div()
-        .withClass(" col is-one-fifth menu is-size-4 sidebar")
+        .withClass(" col is-one-fifth menu " + isSize(4) + " sidebar")
         .with(h2("Flow").withClass("mb-3 ms-2"), div().withClass("ms-1").withId("sidebar-menu"));
   }
 
@@ -385,18 +413,22 @@ public class RbelHtmlRenderingToolkit {
                                                     .withSrc(getLogoBase64Str())
                                                     .withId("test-tiger-logo")),
                                         div()
-                                            .withClass("col is-size-6")
+                                            .withClass("col " + isSize(6))
                                             .with(
                                                 div()
                                                     .withClass("row my-auto")
                                                     .with(
                                                         div(rbelHtmlRenderer.getTitle())
                                                             .withClass(
-                                                                "col navbar-title is-size-3 h-100"
+                                                                "col navbar-title "
+                                                                    + isSize(3)
+                                                                    + " h-100"
                                                                     + " my-auto"),
                                                         span(rbelHtmlRenderer.getVersionInfo())
                                                             .withClass(
-                                                                "col-2 is-size-7 navbar-version")),
+                                                                "col-2 "
+                                                                    + isSize(7)
+                                                                    + " navbar-version")),
                                                 div(
                                                     new UnescapedText(
                                                         rbelHtmlRenderer.getSubTitle()))))),
@@ -412,7 +444,9 @@ public class RbelHtmlRenderingToolkit {
                                                 + DateTimeFormatter.RFC_1123_DATE_TIME.format(
                                                     ZonedDateTime.now()))
                                             .withClass(
-                                                "created fst-italic is-size-6 float-end me-6"),
+                                                "created fst-italic "
+                                                    + isSize(6)
+                                                    + " float-end me-6"),
                                         div()
                                             .with(
                                                 elements.stream()
@@ -425,7 +459,9 @@ public class RbelHtmlRenderingToolkit {
                                                 + DateTimeFormatter.RFC_1123_DATE_TIME.format(
                                                     ZonedDateTime.now()))
                                             .withClass(
-                                                "created fst-italic is-size-6 float-end me-6")))))
+                                                "created fst-italic "
+                                                    + isSize(6)
+                                                    + " float-end me-6")))))
             .with(
                 script()
                     .with(

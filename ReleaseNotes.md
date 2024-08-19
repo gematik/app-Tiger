@@ -93,6 +93,10 @@ Then TGR set global variable "encodedJWT" to "!{rbel:encodeAs(getValue('exampleJ
 ```
 
 * TGR-1451: replace deprecated Jenkins commands
+* TGR-1498:
+  * Enhanced MIME body rendering for better presentation of lengthy content, including truncation and contextual titles.
+  * Enhanced MIME body rendering for with rendering of contained elements.
+  * Improved conversion logic for MIME data processing, ensuring proper handling of body elements.
 
 # Bugfixes
 
@@ -107,6 +111,7 @@ Then TGR set global variable "encodedJWT" to "!{rbel:encodeAs(getValue('exampleJ
 * TGR-1491: Only convert body of SMTP data command as MIME
 * TGR-1492: Avoid missing converters inside RbelConverter in test code
 * TGR-1493: Distinguish between different SMTP AUTH command handling
+* TGR-1499: Treat POP3 TOP response similar to POP3 RETR response
 
 ## Features
 
