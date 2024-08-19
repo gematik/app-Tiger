@@ -45,6 +45,7 @@ public class TigerProxyConfiguration {
   private TigerFileSaveInfo fileSaveInfo;
   private Integer proxyPort;
   @Builder.Default private boolean skipTrafficEndpointsSubscription = false;
+  @Builder.Default private boolean failOnOfflineTrafficEndpoints = false;
   private List<String> trafficEndpoints;
   @Builder.Default private boolean downloadInitialTrafficFromEndpoints = false;
   @Builder.Default private String trafficEndpointFilterString = "";

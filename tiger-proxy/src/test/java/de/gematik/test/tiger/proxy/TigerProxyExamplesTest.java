@@ -97,8 +97,8 @@ class TigerProxyExamplesTest {
       TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(tigerProxy, 2);
 
       assertThat(tigerProxy.getRbelMessagesList().get(1))
-        .extractChildWithPath("$.body")
-        .hasStringContentEqualTo("barschmoolildu");
+          .extractChildWithPath("$.body")
+          .hasStringContentEqualTo("barschmoolildu");
     }
   }
 

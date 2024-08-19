@@ -27,6 +27,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.WebSocketContainer;
 import java.time.Duration;
@@ -119,10 +120,18 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   }
 
   public void connect() {
-    connectToRemoteUrl(
-        tigerStompSessionHandler,
-        connectionTimeoutInSeconds,
-        getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints());
+    try {
+      connectToRemoteUrl(
+          tigerStompSessionHandler,
+          connectionTimeoutInSeconds,
+          getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints());
+    } catch (TigerProxyStartupException e) {
+      if (getTigerProxyConfiguration().isFailOnOfflineTrafficEndpoints()) {
+        log.warn("Ignoring offline traffic endpoint {}", remoteProxyUrl);
+      } else {
+        throw e;
+      }
+    }
   }
 
   private String getTracingWebSocketUrl(String remoteProxyUrl) {

@@ -59,6 +59,11 @@ TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
   maven-run this can be done by <goal>attach-tiger-agent</goal> to the
   tiger-maven-plugin. For a more detailed explanation please refer to the user manual, section "Tiger-Proxy > TLS > TLS
   Decryption in wireshark".
+* TGR-1507: Tiger-Proxy: Added option to ignore offline traffic endpoints:
+```yaml
+tigerProxy:
+  failOnOfflineTrafficEndpoints: false
+```
 * TGR-1371: Tiger-Test-Lib: it is now possible to set a custom failure message that will be displayed when an assertion
   fails. This is achieved with the following steps:
 

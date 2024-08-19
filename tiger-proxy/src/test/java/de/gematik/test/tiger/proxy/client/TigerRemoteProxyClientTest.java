@@ -19,6 +19,7 @@ package de.gematik.test.tiger.proxy.client;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
@@ -510,15 +511,13 @@ class TigerRemoteProxyClientTest {
       await()
           .atMost(numberOfInteractions * 20, TimeUnit.MILLISECONDS)
           .pollDelay(20, TimeUnit.MILLISECONDS)
-          .until(
-              () ->
-                  newlyConnectedRemoteClient.getRbelMessagesList().size() == expectedMessages);
+          .until(() -> newlyConnectedRemoteClient.getRbelMessagesList().size() == expectedMessages);
     }
 
     Mockito.verify(tigerWebUiController, Mockito.times(1))
         .downloadTraffic(
             Mockito.isNull(), Mockito.any(), Mockito.eq(Optional.of(pageSize)), Mockito.any());
-    Mockito.verify(tigerWebUiController, Mockito.times(expectedMessages/pageSize - 1))
+    Mockito.verify(tigerWebUiController, Mockito.times(expectedMessages / pageSize - 1))
         .downloadTraffic(
             Mockito.matches(".*"), Mockito.any(), Mockito.eq(Optional.of(pageSize)), Mockito.any());
   }
@@ -612,6 +611,18 @@ class TigerRemoteProxyClientTest {
     tigerRemoteProxyClient.triggerPartialMessageCleanup();
 
     assertThat(tigerRemoteProxyClient.getPartiallyReceivedMessageMap()).isEmpty();
+  }
+
+  @Test
+  void nonExistentRemoteProxy_shouldStartWhenIgnored() {
+    try (final var tigerProxy =
+        new TigerProxy(
+            TigerProxyConfiguration.builder()
+                .trafficEndpoints(List.of("http://localhost:1234"))
+                .failOnOfflineTrafficEndpoints(true)
+                .build())) {
+      assertThatNoException().isThrownBy(tigerProxy::subscribeToTrafficEndpoints);
+    }
   }
 
   @SneakyThrows

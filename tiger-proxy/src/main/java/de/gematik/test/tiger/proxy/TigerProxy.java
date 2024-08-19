@@ -373,6 +373,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
                         .trafficEndpointFilterString(
                             getTigerProxyConfiguration().getTrafficEndpointFilterString())
                         .name(getTigerProxyConfiguration().getName())
+                        .failOnOfflineTrafficEndpoints(
+                            getTigerProxyConfiguration().isFailOnOfflineTrafficEndpoints())
                         .connectionTimeoutInSeconds(
                             getTigerProxyConfiguration().getConnectionTimeoutInSeconds())
                         .build(),

@@ -383,6 +383,10 @@ tigerProxy:
     # default of skipTrafficEndpointsSubscription is false
     downloadInitialTrafficFromEndpoints: true
     # Should the traffic currently available (cached) in the remote be download upon initial connection?
+    # default of downloadInitialTrafficFromEndpoints is true
+    failOnOfflineTrafficEndpoints: false
+    # Should the Tiger Proxy fail on startup, when a traffic endpoint is offline? Default is true.
+    # Ignoring this error might lead to an unexpected testing environment!
 ----
 
 Please be advised to use the server-port (`server.port`) here, not the proxy-port (`tigerProxy.proxyPort`).
