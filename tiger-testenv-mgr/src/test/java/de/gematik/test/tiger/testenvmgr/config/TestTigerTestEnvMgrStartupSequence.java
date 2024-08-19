@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.gematik.test.tiger.common.config.SourceType;
+import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
@@ -166,7 +166,7 @@ class TestTigerTestEnvMgrStartupSequence {
     final AbstractTigerServer server = new MockTigerServer(name, configuration, envMgr);
     TigerGlobalConfiguration.readFromYaml(
         new ObjectMapper().writeValueAsString(configuration),
-        SourceType.TEST_CONTEXT,
+        ConfigurationValuePrecedence.TEST_CONTEXT,
         "tiger",
         "servers",
         name);
@@ -185,7 +185,7 @@ class TestTigerTestEnvMgrStartupSequence {
         new MockTigerServer(name, configuration, envMgr, delayStartupUntilThisServerIsRunning);
     TigerGlobalConfiguration.readFromYaml(
         new ObjectMapper().writeValueAsString(configuration),
-        SourceType.TEST_CONTEXT,
+        ConfigurationValuePrecedence.TEST_CONTEXT,
         "tiger",
         "servers",
         name);

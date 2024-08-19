@@ -367,7 +367,7 @@ public class HttpGlueCode {
         .forEach(
             (key, value) ->
                 TigerGlobalConfiguration.listSources().stream()
-                    .sorted(Comparator.comparing(source -> source.getSourceType().getPrecedence()))
+                    .sorted(Comparator.comparing(source -> source.getPrecedence().getValue()))
                     .forEach(
                         source ->
                             source.removeValue(

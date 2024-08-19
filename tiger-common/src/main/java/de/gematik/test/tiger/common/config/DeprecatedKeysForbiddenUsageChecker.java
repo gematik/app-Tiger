@@ -89,6 +89,11 @@ public final class DeprecatedKeysForbiddenUsageChecker {
               .compareKey("tiger.tigerproxyconfiguration.activateEpaVauAnalysis")
               .deprecatedKey("activateErpVauAnalysis")
               .newKey("activateRbelParsingFor")
+              .build(),
+          DeprecatedKeyDescriptor.builder()
+              .compareKey("tiger.additionalYamls")
+              .deprecatedKey("additionalYamls")
+              .newKey(TigerGlobalConfiguration.ADDITIONAL_CONFIGURATION_FILES)
               .build());
 
   private DeprecatedKeysForbiddenUsageChecker() {}

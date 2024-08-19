@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.testenvmgr.controller;
 
-import de.gematik.test.tiger.common.config.SourceType;
+import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
@@ -109,13 +109,13 @@ public class TigerGlobalConfigurationController {
     var oldConfiguration = getGlobalConfiguration();
     try {
       TigerGlobalConfiguration.dangerouslyDeleteAllProperties();
-      TigerGlobalConfiguration.readFromYaml(configurationAsYaml, SourceType.RUNTIME_EXPORT, "");
+      TigerGlobalConfiguration.readFromYaml(configurationAsYaml, ConfigurationValuePrecedence.RUNTIME_EXPORT, "");
     } catch (Exception e) {
       TigerGlobalConfiguration.dangerouslyDeleteAllProperties();
       oldConfiguration.forEach(
           p ->
               TigerGlobalConfiguration.putValue(
-                  p.getKey(), p.getValue(), SourceType.valueOf(p.getSource())));
+                  p.getKey(), p.getValue(), ConfigurationValuePrecedence.valueOf(p.getSource())));
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage(), e);
     }
   }

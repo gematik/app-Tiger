@@ -36,10 +36,17 @@ default!
 * TGR-1502: add POP3/MIME specific prefix to facet fields
     * for POP3, the fields status, header, body are now named pop3Status, pop3Header, pop3Body
     * for MIME, the fields header, body are now named mimeHeader, mimeBody
+* TGR-1508: Additional YAML files are now configured under `additionalConfigurationFiles` instead of `additionalYamls`. This is necessary for consistency, since now you can also read other types (namely `ENV` files, done via `type: ENV`). Default for type is `YAML`, so you can omit it for YAML files.
 
 # Features
 
 * TGR-1423: Failure on setup of the test environment is shown on the Workflow UI with a large bottom banner
+* TGR-1508: Configuration: Added support for additional non-yaml files. This is useful when trying to import values from a properties or .env file:
+```yaml
+additionalYamls:
+  - filename: myProperties.env
+    type: ENV
+```
 * TGR-1237: Configuration Editor: it is now possible to export and import the tiger global configuration as a yaml file
   from the Workflow UI. Two new glue code steps also allow to trigger the import and export from a test scenario:
 

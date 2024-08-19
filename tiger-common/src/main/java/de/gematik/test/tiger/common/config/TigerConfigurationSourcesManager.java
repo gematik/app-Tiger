@@ -52,7 +52,7 @@ public class TigerConfigurationSourcesManager {
     if (!success) {
       final AbstractTigerConfigurationSource exisitingSource =
           loadedSources.stream()
-              .filter(src -> src.getSourceType() == source.getSourceType())
+              .filter(src -> src.getPrecedence() == source.getPrecedence())
               .findFirst()
               .orElseThrow();
       exisitingSource.putAll(source);

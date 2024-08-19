@@ -28,7 +28,7 @@ import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.rbellogger.util.RbelJexlExecutor;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
-import de.gematik.test.tiger.common.config.SourceType;
+import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
@@ -202,7 +202,7 @@ public class TigerTestEnvMgr
 
   private static void addDefaults() {
     TigerGlobalConfiguration.putValue(
-        "tiger.tigerProxy.parsingShouldBlockCommunication", "true", SourceType.DEFAULTS);
+        "tiger.tigerProxy.parsingShouldBlockCommunication", "true", ConfigurationValuePrecedence.DEFAULTS);
   }
 
   public void startLocalTigerProxyIfActivated() {

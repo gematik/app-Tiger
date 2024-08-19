@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import de.gematik.test.tiger.common.banner.Banner;
-import de.gematik.test.tiger.common.config.SourceType;
+import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
@@ -84,14 +84,14 @@ public class TigerGlue {
   @When("TGR set local variable {tigerResolvedString} to {tigerResolvedString}")
   public void ctxtISetLocalVariableTo(final String key, final String value) {
     log.debug("Setting local variable {} to '{}'", key, value);
-    TigerGlobalConfiguration.putValue(key, value, SourceType.LOCAL_TEST_CASE_CONTEXT);
+    TigerGlobalConfiguration.putValue(key, value, ConfigurationValuePrecedence.LOCAL_TEST_CASE_CONTEXT);
   }
 
   @Wenn("TGR setze lokale Feature Variable {tigerResolvedString} auf {tigerResolvedString}")
   @When("TGR set local feature variable {tigerResolvedString} to {tigerResolvedString}")
   public void setFeatureVariable(final String key, final String value) {
     log.debug("Setting feature variable {} to '{}'", key, value);
-    TigerGlobalConfiguration.putValue(key, value, SourceType.TEST_CONTEXT);
+    TigerGlobalConfiguration.putValue(key, value, ConfigurationValuePrecedence.TEST_CONTEXT);
   }
 
   /**

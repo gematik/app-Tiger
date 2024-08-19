@@ -18,7 +18,7 @@ package de.gematik.test.tiger.testenvmgr.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.gematik.test.tiger.common.config.SourceType;
+import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import kong.unirest.HttpResponse;
@@ -105,7 +105,7 @@ os.version: '10.0'
         (key, value) -> {
           if (value != null && initialConfiguration.get(key) != null) {
             assertThat(value.getRight()).isEqualTo(initialConfiguration.get(key).getRight());
-            assertThat(value.getLeft()).isEqualTo(SourceType.RUNTIME_EXPORT);
+            assertThat(value.getLeft()).isEqualTo(ConfigurationValuePrecedence.RUNTIME_EXPORT);
           }
         });
   }
@@ -157,15 +157,15 @@ os.version: '10.0'
 
   void prefillTigerGlobalConfiguration() {
     TigerGlobalConfiguration.dangerouslyDeleteAllProperties();
-    TigerGlobalConfiguration.putValue("java.version", 11, SourceType.DEFAULTS);
-    TigerGlobalConfiguration.putValue("java.version.date", "2021-04-20", SourceType.MAIN_YAML);
-    TigerGlobalConfiguration.putValue("os", "Windows NT", SourceType.HOST_YAML);
-    TigerGlobalConfiguration.putValue("os.arch", "amd64", SourceType.ADDITIONAL_YAML);
-    TigerGlobalConfiguration.putValue("os.version", "10.0", SourceType.TEST_YAML);
+    TigerGlobalConfiguration.putValue("java.version", 11, ConfigurationValuePrecedence.DEFAULTS);
+    TigerGlobalConfiguration.putValue("java.version.date", "2021-04-20", ConfigurationValuePrecedence.MAIN_YAML);
+    TigerGlobalConfiguration.putValue("os", "Windows NT", ConfigurationValuePrecedence.HOST_YAML);
+    TigerGlobalConfiguration.putValue("os.arch", "amd64", ConfigurationValuePrecedence.ADDITIONAL_YAML);
+    TigerGlobalConfiguration.putValue("os.version", "10.0", ConfigurationValuePrecedence.TEST_YAML);
 
-    TigerGlobalConfiguration.putValue("dummy.string", "stringValue", SourceType.ENV);
-    TigerGlobalConfiguration.putValue("dummy.nestedbean.foo", "nestedFoo", SourceType.PROPERTIES);
+    TigerGlobalConfiguration.putValue("dummy.string", "stringValue", ConfigurationValuePrecedence.ENV);
+    TigerGlobalConfiguration.putValue("dummy.nestedbean.foo", "nestedFoo", ConfigurationValuePrecedence.PROPERTIES);
     TigerGlobalConfiguration.putValue(
-        "dummy.nestedbean.inner.foo", "nestedInnerFoo", SourceType.CLI);
+        "dummy.nestedbean.inner.foo", "nestedInnerFoo", ConfigurationValuePrecedence.CLI);
   }
 }

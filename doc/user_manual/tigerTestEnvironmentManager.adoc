@@ -749,7 +749,7 @@ For more information about what the Tiger Proxy is and how it works see the chap
 localProxyActive: true
 
 # Specifiy additional yaml-files to read in during startup
-additionalYamls:
+additionalConfigurationFiles:
   -
     # the path to the file to read
     filename: specialEnvironment.yaml

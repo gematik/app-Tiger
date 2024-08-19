@@ -19,7 +19,7 @@ package de.gematik.test.tiger.glue;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.test.tiger.common.config.SourceType;
+import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerLibraryException;
@@ -67,7 +67,7 @@ public class RBelValidatorGlue {
   @Given("TGR set request wait timeout to {int} seconds")
   public void tgrSetRequestWaitTimeout(final int waitsec) {
     TigerGlobalConfiguration.putValue(
-        "tiger.rbel.request.timeout", waitsec, SourceType.TEST_CONTEXT);
+        "tiger.rbel.request.timeout", waitsec, ConfigurationValuePrecedence.TEST_CONTEXT);
   }
 
   /**
@@ -89,7 +89,7 @@ public class RBelValidatorGlue {
   @Wenn("TGR filtere Anfragen nach Server {tigerResolvedString}")
   @When("TGR filter requests based on host {tigerResolvedString}")
   public void tgrFilterBasedOnHost(final String hostname) {
-    TigerConfigurationKeys.REQUEST_FILTER_HOST.putValue(hostname, SourceType.TEST_CONTEXT);
+    TigerConfigurationKeys.REQUEST_FILTER_HOST.putValue(hostname, ConfigurationValuePrecedence.TEST_CONTEXT);
   }
 
   /**
@@ -101,7 +101,7 @@ public class RBelValidatorGlue {
   @When("TGR filter requests based on method {tigerResolvedString}")
   public void tgrFilterBasedOnMethod(final String method) {
     TigerConfigurationKeys.REQUEST_FILTER_METHOD.putValue(
-        method.toUpperCase(), SourceType.TEST_CONTEXT);
+        method.toUpperCase(), ConfigurationValuePrecedence.TEST_CONTEXT);
   }
 
   /** reset filter for method for subsequent findRequest steps. */
@@ -448,7 +448,7 @@ public class RBelValidatorGlue {
             .filter(Objects::nonNull)
             .map(String::trim)
             .collect(Collectors.joining());
-    TigerGlobalConfiguration.putValue(varName, text, SourceType.TEST_CONTEXT);
+    TigerGlobalConfiguration.putValue(varName, text, ConfigurationValuePrecedence.TEST_CONTEXT);
     log.info(String.format("Storing '%s' in variable '%s'", text, varName));
   }
 
@@ -479,7 +479,7 @@ public class RBelValidatorGlue {
                 () ->
                     new TigerLibraryException("No configuration property '" + varName + "' found!"))
             .replaceAll(regexPattern, replace);
-    TigerGlobalConfiguration.putValue(varName, newContent, SourceType.TEST_CONTEXT);
+    TigerGlobalConfiguration.putValue(varName, newContent, ConfigurationValuePrecedence.TEST_CONTEXT);
     log.info(String.format("Modified content in variable '%s' to '%s'", varName, newContent));
   }
 

@@ -640,7 +640,7 @@ public class TigerConfigurationTest { // NOSONAR
     TigerGlobalConfiguration.putValue(
         "foo.value",
         TigerConfigurationTest.NestedBean.builder().bar(42).build(),
-        SourceType.RUNTIME_EXPORT);
+        ConfigurationValuePrecedence.RUNTIME_EXPORT);
     assertThat(TigerGlobalConfiguration.readString("foo.value.bar")).isEqualTo("42");
   }
 
@@ -651,8 +651,8 @@ public class TigerConfigurationTest { // NOSONAR
     TigerGlobalConfiguration.putValue(
         "foo.value",
         TigerConfigurationTest.NestedBean.builder().bar(42).build(),
-        SourceType.RUNTIME_EXPORT);
-    TigerGlobalConfiguration.putValue("foo.value.bar", "schmoo", SourceType.RUNTIME_EXPORT);
+        ConfigurationValuePrecedence.RUNTIME_EXPORT);
+    TigerGlobalConfiguration.putValue("foo.value.bar", "schmoo", ConfigurationValuePrecedence.RUNTIME_EXPORT);
     assertThat(TigerGlobalConfiguration.readString("foo.value.bar")).isEqualTo("schmoo");
   }
 

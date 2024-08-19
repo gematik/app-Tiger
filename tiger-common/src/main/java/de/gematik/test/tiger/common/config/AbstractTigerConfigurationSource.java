@@ -27,10 +27,10 @@ import lombok.Getter;
 public abstract class AbstractTigerConfigurationSource
     implements Comparable<AbstractTigerConfigurationSource> {
 
-  protected final SourceType sourceType;
+  protected final ConfigurationValuePrecedence precedence;
 
-  AbstractTigerConfigurationSource(SourceType sourceType) {
-    this.sourceType = sourceType;
+  AbstractTigerConfigurationSource(ConfigurationValuePrecedence precedence) {
+    this.precedence = precedence;
   }
 
   public abstract AbstractTigerConfigurationSource copy();
@@ -54,7 +54,7 @@ public abstract class AbstractTigerConfigurationSource
     if (other == null) {
       throw new NullPointerException();
     }
-    return Integer.compare(sourceType.getPrecedence(), other.getSourceType().getPrecedence());
+    return Integer.compare(precedence.getValue(), other.getPrecedence().getValue());
   }
 
   public abstract void putAll(AbstractTigerConfigurationSource other);

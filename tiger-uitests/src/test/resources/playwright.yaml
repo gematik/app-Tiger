@@ -25,7 +25,7 @@ lib:
   activateWorkflowUi: true
   startBrowser: false
 
-additionalYamls:
+additionalConfigurationFiles:
   - filename: additionalYaml.yaml
     baseKey: tgrTestAdditionalYaml
 

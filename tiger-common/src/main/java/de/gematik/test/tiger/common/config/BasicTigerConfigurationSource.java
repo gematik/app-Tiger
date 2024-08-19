@@ -31,20 +31,20 @@ public class BasicTigerConfigurationSource extends AbstractTigerConfigurationSou
 
   @Builder
   public BasicTigerConfigurationSource(
-      SourceType sourceType, Map<TigerConfigurationKey, String> values) {
-    super(sourceType);
+      ConfigurationValuePrecedence precedence, Map<TigerConfigurationKey, String> values) {
+    super(precedence);
     this.values = new HashMap<>(values);
   }
 
-  public BasicTigerConfigurationSource(SourceType sourceType) {
-    super(sourceType);
+  public BasicTigerConfigurationSource(ConfigurationValuePrecedence precedence) {
+    super(precedence);
     this.values = new HashMap<>();
   }
 
   @Override
   public AbstractTigerConfigurationSource copy() {
     return BasicTigerConfigurationSource.builder()
-        .sourceType(sourceType)
+        .precedence(precedence)
         .values(new HashMap<>(values))
         .build();
   }

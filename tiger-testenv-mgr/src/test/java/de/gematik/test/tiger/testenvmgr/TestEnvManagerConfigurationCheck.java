@@ -353,7 +353,7 @@ class TestEnvManagerConfigurationCheck {
   @TigerTest(
       tigerYaml =
           """
-                      additionalYamls:
+                      additionalConfigurationFiles:
                         - filename: src/test/resources/externalConfiguration.yaml
                           baseKey: foobar
                       localProxyActive: false""")
@@ -365,7 +365,7 @@ class TestEnvManagerConfigurationCheck {
   @TigerTest(
       tigerYaml =
           """
-                      additionalYamls:
+                      additionalConfigurationFiles:
                         - filename: src/test/resources/defineFooAsBar.yaml
                         - filename: src/test/resources/${foo}.yaml
                           baseKey: baseKey
@@ -379,7 +379,7 @@ class TestEnvManagerConfigurationCheck {
     TigerGlobalConfiguration.initializeWithCliProperties(
         Map.of(
             "TIGER_TESTENV_CFGFILE",
-            "src/test/resources/additionalAndTigerYamlCurrentDir/tiger.yaml"));
+            "src/test/resources/additionalYamlsNotCurrentDir/tiger.yaml"));
 
     AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(
         envMgr -> {
@@ -394,7 +394,7 @@ class TestEnvManagerConfigurationCheck {
     TigerGlobalConfiguration.initializeWithCliProperties(
         Map.of(
             "TIGER_TESTENV_CFGFILE",
-            "src/test/resources/additionalAndTigerYamlCurrentDir/tiger.yaml"));
+            "src/test/resources/additionalYamlsNotCurrentDir/tiger.yaml"));
 
     AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(
         envMgr -> {
@@ -471,6 +471,18 @@ class TestEnvManagerConfigurationCheck {
                       "rootFolderNested.someNotNested.notNestedKey"))
               .isEqualTo("andValueToKey");
         });
+  }
+
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+                  additionalConfigurationFiles:
+                    - filename: src/test/resources/envFile.env
+                      type: ENV
+                  localProxyActive: false""")
+  void readAdditionalYamlAsEnvFile() {
+    assertThat(TigerGlobalConfiguration.readString("my.happy.key")).isEqualTo("someValue");
   }
 
   @Test

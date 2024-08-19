@@ -85,7 +85,7 @@ public class RbelContentTreeConverter {
                 s -> {
                   var source =
                       new BasicTigerConfigurationSource(
-                          SourceType.RUNTIME_EXPORT, Map.of(ENCODE_AS, s));
+                          ConfigurationValuePrecedence.RUNTIME_EXPORT, Map.of(ENCODE_AS, s));
                   conversionContext.addConfigurationSource(source);
                   return source;
                 });
@@ -148,8 +148,8 @@ public class RbelContentTreeConverter {
     for (Object iterate : ((Collection) context.get("t"))) {
       BasicTigerConfigurationSource localSource =
           new BasicTigerConfigurationSource(
-              SourceType.RUNTIME_EXPORT,
-              TigerConfigurationLoader.addYamlToMap(
+              ConfigurationValuePrecedence.RUNTIME_EXPORT,
+              TigerConfigurationLoader.addConfigurationFileToMap(
                   iterate,
                   new TigerConfigurationKey(loopStatement.split(":")[0].trim()),
                   new HashMap<>()));

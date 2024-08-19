@@ -80,8 +80,8 @@ public class TigerTypedConfigurationKey<T> {
     TigerGlobalConfiguration.putValue(key.downsampleKey(), value);
   }
 
-  public void putValue(T value, SourceType sourceType) {
-    TigerGlobalConfiguration.putValue(key.downsampleKey(), value, sourceType);
+  public void putValue(T value, ConfigurationValuePrecedence precedence) {
+    TigerGlobalConfiguration.putValue(key.downsampleKey(), value, precedence);
   }
 
   public void clearValue(){

@@ -22,7 +22,7 @@ import lombok.Getter;
 // TODO explain types and how precedence is used to obtain the value to a property
 @AllArgsConstructor
 @Getter
-public enum SourceType {
+public enum ConfigurationValuePrecedence {
   DEFAULTS(110),
   MAIN_YAML(105),
   HOST_YAML(100),
@@ -35,5 +35,5 @@ public enum SourceType {
   TEST_CONTEXT(40),
   LOCAL_TEST_CASE_CONTEXT(20);
 
-  private final int precedence;
+  private final int value;
 }

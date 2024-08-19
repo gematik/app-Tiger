@@ -28,6 +28,6 @@ lib:
   rbelPathDebugging: false
   activateWorkflowUi: false
 
-additionalYamls:
+additionalConfigurationFiles:
   - filename: src/test/resources/testdata/specialEnvironment.yaml
     baseKey: external

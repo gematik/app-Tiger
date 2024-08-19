@@ -18,7 +18,7 @@ package de.gematik.test.tiger.testenvmgr.servers;
 
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.config.SourceType;
+import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.PkiType;
@@ -276,7 +276,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
               kvp[1] = kvp[1].replace("${NAME}", getHostname());
 
               log.info("Setting global property {}={}", kvp[0], kvp[1]);
-              TigerGlobalConfiguration.putValue(kvp[0], kvp[1], SourceType.RUNTIME_EXPORT);
+              TigerGlobalConfiguration.putValue(kvp[0], kvp[1], ConfigurationValuePrecedence.RUNTIME_EXPORT);
             });
   }
 

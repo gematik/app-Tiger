@@ -18,7 +18,7 @@ package de.gematik.test.tiger.glue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.gematik.test.tiger.common.config.SourceType;
+import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import org.junit.jupiter.api.Test;
@@ -31,7 +31,7 @@ class TigerGlueTest {
   @Test
   void settingLocalTestVariable_shouldBeAvailableInsteadOfGlobal() {
     // we pretend the variable is read from an yaml.
-    TigerGlobalConfiguration.putValue("test.hello", "global", SourceType.MAIN_YAML);
+    TigerGlobalConfiguration.putValue("test.hello", "global", ConfigurationValuePrecedence.MAIN_YAML);
     assertThat(TigerGlobalConfiguration.readString("test.hello")).isEqualTo("global");
     // We set a local variable
     tigerGlue.ctxtISetLocalVariableTo("test.hello", "local");
@@ -45,7 +45,7 @@ class TigerGlueTest {
   @Test
   void settingLocalVariable_shouldBeAvailableInsteadOfGlobal() {
     // we pretend the variable is read from an yaml.
-    TigerGlobalConfiguration.putValue("test.hello", "global", SourceType.MAIN_YAML);
+    TigerGlobalConfiguration.putValue("test.hello", "global", ConfigurationValuePrecedence.MAIN_YAML);
     assertThat(TigerGlobalConfiguration.readString("test.hello")).isEqualTo("global");
     // We set a local variable
     tigerGlue.setFeatureVariable("test.hello", "local feature");

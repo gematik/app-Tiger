@@ -238,7 +238,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
   @Test
   @TigerTest(
       tigerYaml =
-          "additionalYamls:\n"
+          "additionalConfigurationFiles:\n"
               + "  - filename:"
               + " src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalJar.yaml\n"
               + "    baseKey: tiger\n")
@@ -249,7 +249,7 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
   @Test
   @TigerTest(
       tigerYaml =
-          "additionalYamls:\n"
+          "additionalConfigurationFiles:\n"
               + "  - filename:"
               + " src/test/resources/de/gematik/test/tiger/testenvmgr/externalJarWithAdditionalTigerKey.yaml\n")
   void readAdditionalYamlFilesWithoutBaseKey(UnirestInstance unirestInstance) {
