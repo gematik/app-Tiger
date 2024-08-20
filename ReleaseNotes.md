@@ -36,17 +36,22 @@ default!
 * TGR-1502: add POP3/MIME specific prefix to facet fields
     * for POP3, the fields status, header, body are now named pop3Status, pop3Header, pop3Body
     * for MIME, the fields header, body are now named mimeHeader, mimeBody
-* TGR-1508: Additional YAML files are now configured under `additionalConfigurationFiles` instead of `additionalYamls`. This is necessary for consistency, since now you can also read other types (namely `ENV` files, done via `type: ENV`). Default for type is `YAML`, so you can omit it for YAML files.
+* TGR-1508: Additional YAML files are now configured under `additionalConfigurationFiles` instead of `additionalYamls`.
+  This is necessary for consistency, since now you can also read other types (namely `ENV` files, done via `type: ENV`).
+  Default for type is `YAML`, so you can omit it for YAML files.
 
 # Features
 
 * TGR-1423: Failure on setup of the test environment is shown on the Workflow UI with a large bottom banner
-* TGR-1508: Configuration: Added support for additional non-yaml files. This is useful when trying to import values from a properties or .env file:
+* TGR-1508: Configuration: Added support for additional non-yaml files. This is useful when trying to import values from
+  a properties or .env file:
+
 ```yaml
 additionalConfigurationFiles:
   - filename: myProperties.env
     type: ENV
 ```
+
 * TGR-1237: Configuration Editor: it is now possible to export and import the tiger global configuration as a yaml file
   from the Workflow UI. Two new glue code steps also allow to trigger the import and export from a test scenario:
 
@@ -67,10 +72,12 @@ TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
   tiger-maven-plugin. For a more detailed explanation please refer to the user manual, section "Tiger-Proxy > TLS > TLS
   Decryption in wireshark".
 * TGR-1507: Tiger-Proxy: Added option to ignore offline traffic endpoints:
+
 ```yaml
 tigerProxy:
   failOnOfflineTrafficEndpoints: false
 ```
+
 * TGR-1371: Tiger-Test-Lib: it is now possible to set a custom failure message that will be displayed when an assertion
   fails. This is achieved with the following steps:
 
@@ -85,18 +92,26 @@ Dann TGR lösche die benutzerdefinierte Fehlermeldung
 * TGR-1198: Tiger-Test-Lib: a new inline method `rbel:encodeAs` can be used to explicitly encode a value as one of the
   RbelContentTypes: XML, JSON, JWT, JWE, URL, BEARER_TOKEN.
   Due to limitations on how the escaping of multiline strings in the bdd steps work, the value to encode must come from
-  a configuration value. Example of usage:
+  a configuration value or read directly from a file. Directly writing the string to be encoded in the BDD step does not
+  work.
 
 ```gherkin
-Given TGR set global variable "exampleJWT" to "!{file('exampleJWT.json')}"
-Then TGR set global variable "encodedJWT" to "!{rbel:encodeAs(getValue('exampleJWT'), 'JWT')}"
+Feature: Example usage
+
+  Scenario: save first to a variable
+    Given TGR set global variable "exampleJWT" to "!{file('exampleJWT.json')}"
+    Then TGR set global variable "encodedJWTFromGetValue" to "!{rbel:encodeAs(getValue('exampleJWT'), 'JWT')}"
+
+  Scenario:
+    Then TGR set global variable "encodedJWTFromFile" to "!{rbel:encodeAs(file('exampleJWT.json'), 'JWT')}"
 ```
 
 * TGR-1451: replace deprecated Jenkins commands
 * TGR-1498:
-  * Enhanced MIME body rendering for better presentation of lengthy content, including truncation and contextual titles.
-  * Enhanced MIME body rendering for with rendering of contained elements.
-  * Improved conversion logic for MIME data processing, ensuring proper handling of body elements.
+    * Enhanced MIME body rendering for better presentation of lengthy content, including truncation and contextual
+      titles.
+    * Enhanced MIME body rendering for with rendering of contained elements.
+    * Improved conversion logic for MIME data processing, ensuring proper handling of body elements.
 
 # Bugfixes
 
@@ -131,7 +146,8 @@ tigerProxy:
 ## Breaking Changes
 
 * TGR-1394: Tiger-Test-Lib: the glue code
-  step `TGR filter requests based on host {tigerResolvedString}` / `TGR filtere Anfragen nach Server {tigerResolvedString}`
+  step `TGR filter requests based on host {tigerResolvedString}` /
+  `TGR filtere Anfragen nach Server {tigerResolvedString}`
   no longer filters the messages based on the Host http
   header.
   Instead, it refers to the hostname or the server name as defined in the tiger.yaml. E.g.:

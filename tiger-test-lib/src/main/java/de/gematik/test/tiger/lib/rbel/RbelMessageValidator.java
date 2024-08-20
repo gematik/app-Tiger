@@ -725,6 +725,9 @@ public class RbelMessageValidator {
     /**
      * Encodes the string explicitly in the given content type.
      *
+     * <p>When used inline in a JEXL expression, the valueToEncode must be the raw string output
+     * from either `getValue()` or read directly from `file()`.
+     *
      * @param valueToEncode the string to encode
      * @param contentType a string matching one of the {@link RbelContentType}s enum values
      * @return the encoded string.
