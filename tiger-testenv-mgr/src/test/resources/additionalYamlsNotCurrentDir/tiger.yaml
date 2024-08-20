@@ -1,5 +1,3 @@
-
-
 additionalConfigurationFiles:
   - filename: additionalYaml.yaml
     baseKey: external

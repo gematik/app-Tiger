@@ -197,7 +197,7 @@ class TigerRemoteProxyClientTest {
         .post("http://myserv.er/binary")
         .body(DigestUtils.sha256("helloRequest"))
         .asString()
-        .ifFailure(response -> fail(""));
+        .ifFailure(r -> fail(""));
 
     TigerProxyTestHelper.waitUntilMessageListInRemoteProxyClientContainsCountMessagesWithTimeout(
         tigerRemoteProxyClient, 2, 10);

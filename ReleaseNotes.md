@@ -43,7 +43,7 @@ default!
 * TGR-1423: Failure on setup of the test environment is shown on the Workflow UI with a large bottom banner
 * TGR-1508: Configuration: Added support for additional non-yaml files. This is useful when trying to import values from a properties or .env file:
 ```yaml
-additionalYamls:
+additionalConfigurationFiles:
   - filename: myProperties.env
     type: ENV
 ```
