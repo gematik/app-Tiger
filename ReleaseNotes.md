@@ -42,6 +42,8 @@ default!
 
 # Features
 
+* TGR-1385: in the WebUi sidebar the inner (crypted) requests and response codes will be displayed when available
+* TGR-1449: Enable Host-Header Routing for reverse-proxies
 * TGR-1423: Failure on setup of the test environment is shown on the Workflow UI with a large bottom banner
 * TGR-1508: Configuration: Added support for additional non-yaml files. This is useful when trying to import values from
   a properties or .env file:
@@ -127,19 +129,6 @@ Feature: Example usage
 * TGR-1492: Avoid missing converters inside RbelConverter in test code
 * TGR-1493: Distinguish between different SMTP AUTH command handling
 * TGR-1499: Treat POP3 TOP response similar to POP3 RETR response
-
-## Features
-
-* TGR-1385: in the WebUi sidebar the inner (crypted) requests and response codes will be displayed when available
-* TGR-1471: Allow conversion only for specific protocols via configuration
-
-```yaml
-tigerProxy:
-  activateRbelParsingFor:
-    - pop3
-    - smtp
-    - mime
-```
 
 # Release 3.1.3
 
