@@ -48,6 +48,9 @@ For more details please check out more Plantuml diagrammes at [specification fol
 
 [For a standalone example see here in our examples section](doc/examples/tigerOnly)
 
+# How to use tiger in a testsuite
+[Here](https://gematik.github.io/app-Tiger/Tiger-User-Manual.html#_requirements) are the requirements for using the tiger.
+
 ## Using other libraries / source code
 
 The package "de.gematik.test.tiger.mockserver" of the module tiger-proxy is based upon
@@ -56,7 +59,6 @@ mockserver (https://github.com/mock-server/mockserver), licensed under Apache Li
 Files under the tiger-proxy/src/main/resources/css and webfonts folders were taken from the projects with listed
 licenses:
 
-* bulma css [MIT](http://opensource.org/licenses/MIT)
-* bulma swatch css [MIT](http://opensource.org/licenses/MIT)
+* bootstrap css [MIT](http://opensource.org/licenses/MIT)
 * Font Awesome by Dave Gandy - [Website](http://fontawesome.io) [License](https://fontawesome.com/license/free) (Icons:
   CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
