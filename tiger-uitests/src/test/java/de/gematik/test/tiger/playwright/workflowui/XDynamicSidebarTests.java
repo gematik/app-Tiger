@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.playwright.workflowui;
@@ -101,12 +102,10 @@ class XDynamicSidebarTests extends AbstractTests {
         page.locator("#test-sidebar-server-status .test-sidebar-server-name").all()) {
       assertThat(server.textContent())
           .satisfies(
-              s -> {
-                assertThat(s)
-                    .isEqualTo("local_tiger_proxy")
-                    .isEqualTo("httpbin")
-                    .isEqualTo("remoteTigerProxy");
-              });
+              s -> assertThat(s)
+                  .isEqualTo("local_tiger_proxy")
+                  .isEqualTo("httpbin")
+                  .isEqualTo("remoteTigerProxy"));
     }
   }
 
@@ -158,15 +157,15 @@ class XDynamicSidebarTests extends AbstractTests {
           .atMost(30, TimeUnit.SECONDS)
           .untilAsserted(
               () ->
-                  // sometimes the "servername started" message appears as last msg after READY
-                  // and thus this test would fail sometimes
                   assertThat(
                           page.locator(".test-sidebar-server-logs")
                               .nth(counter)
                               .locator(".test-sidebar-server-log")
                               .last()
                               .textContent())
-                      .matches("(httpbin|remoteTigerProxy) READY"));
+                      // sometimes the "servername started" message appears as last msg after READY
+                      // and thus this test would fail sometimes
+                      .matches("remoteTigerProxy (READY|started)"));
     }
   }
 
