@@ -138,6 +138,22 @@ class TestEnvManagerConfigurationCheck {
   void testCheckDeprecatedKey_proxyCfg_NOK() {
     Map<String, String> yamlMap =
         Map.of(
+            "TIGER_YAML",
+            """
+additionalYamls:
+  - filename: src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml
+    baseKey: tiger
+""");
+    assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
+        .isInstanceOf(TigerConfigurationException.class)
+        .hasMessageContaining(
+          "The key ('additionalYamls') in yaml file should not be used anymore, use 'additionalConfigurationFiles' instead!");
+  }
+
+  @Test
+  void testAdditionalYamlKey() {
+    Map<String, String> yamlMap =
+        Map.of(
             "TIGER_TESTENV_CFGFILE",
             "src/test/resources/de/gematik/test/tiger/testenvmgr/testDeprecatedKey.yaml");
     assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
@@ -378,8 +394,7 @@ class TestEnvManagerConfigurationCheck {
   void readAdditionalYamlFileFromParentFolder() {
     TigerGlobalConfiguration.initializeWithCliProperties(
         Map.of(
-            "TIGER_TESTENV_CFGFILE",
-            "src/test/resources/additionalYamlsNotCurrentDir/tiger.yaml"));
+            "TIGER_TESTENV_CFGFILE", "src/test/resources/additionalYamlsNotCurrentDir/tiger.yaml"));
 
     AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(
         envMgr -> {
@@ -393,8 +408,7 @@ class TestEnvManagerConfigurationCheck {
   void readAdditionalYamlFileFromParentNestedFolder() {
     TigerGlobalConfiguration.initializeWithCliProperties(
         Map.of(
-            "TIGER_TESTENV_CFGFILE",
-            "src/test/resources/additionalYamlsNotCurrentDir/tiger.yaml"));
+            "TIGER_TESTENV_CFGFILE", "src/test/resources/additionalYamlsNotCurrentDir/tiger.yaml"));
 
     AbstractTestTigerTestEnvMgr.createTestEnvMgrSafelyAndExecute(
         envMgr -> {

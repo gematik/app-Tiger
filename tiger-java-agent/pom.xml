@@ -17,24 +17,18 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <properties>
-        <build.date>${maven.build.timestamp}</build.date>
-        <maven.build.timestamp.format>dd-MM-yyyy HH:mm:ss</maven.build.timestamp.format>
-    </properties>
-
     <dependencies>
+        <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+            <version>1.14.18</version>
+        </dependency>
         <!-- test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <version>${version.spring-boot}</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.bytebuddy</groupId>
-            <artifactId>byte-buddy</artifactId>
-            <version>1.14.18</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 

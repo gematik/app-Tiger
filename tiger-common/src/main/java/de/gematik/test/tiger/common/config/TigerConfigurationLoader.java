@@ -294,7 +294,7 @@ public class TigerConfigurationLoader {
     val values = configurationFileType.loadFromString(yamlSource);
     final HashMap<TigerConfigurationKey, String> valueMap = new HashMap<>();
     addConfigurationFileToMap(values, new TigerConfigurationKey(baseKeys), valueMap);
-    DeprecatedKeysForbiddenUsageChecker.checkForDeprecatedKeys(valueMap);
+    DeprecatedKeysUsageChecker.checkForDeprecatedKeys(valueMap);
 
     sourcesManager.addNewSource(
         BasicTigerConfigurationSource.builder().values(valueMap).precedence(precedence).build());

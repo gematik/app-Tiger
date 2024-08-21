@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.StringJoiner;
 
 /** A specialized class that checks for old/deprecated keys. */
-public final class DeprecatedKeysForbiddenUsageChecker {
+public final class DeprecatedKeysUsageChecker {
 
   private static final List<DeprecatedKeyDescriptor> deprecatedKeysMap =
       List.of(
@@ -96,7 +96,7 @@ public final class DeprecatedKeysForbiddenUsageChecker {
               .newKey(TigerGlobalConfiguration.ADDITIONAL_CONFIGURATION_FILES)
               .build());
 
-  private DeprecatedKeysForbiddenUsageChecker() {}
+  private DeprecatedKeysUsageChecker() {}
 
   public static void checkForDeprecatedKeys(Map<TigerConfigurationKey, String> valueMap)
       throws TigerConfigurationException {
@@ -106,7 +106,8 @@ public final class DeprecatedKeysForbiddenUsageChecker {
     StringJoiner joiner = new StringJoiner("\n");
     for (DeprecatedKeyDescriptor deprecatedKey : deprecatedKeysMap) {
       valueMap.keySet().stream()
-          .filter(key -> key.containsKey(deprecatedKey.getCompareKey()))
+          .filter(key -> key.containsKey(deprecatedKey.getCompareKey())
+                         || key.isBelow(new TigerConfigurationKey(deprecatedKey.getCompareKey())))
           .findFirst()
           .ifPresent(
               a -> {
