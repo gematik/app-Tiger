@@ -70,10 +70,11 @@ pipeline {
             steps {
                 build job: 'Tiger-TIGER-GitHub-Release',
                         parameters: [
-                                string(name: 'TAGNAME', value: String.valueOf("R${RELEASE_VERSION}")),
-                                string(name: 'RELEASE_VERSION', value: String.valueOf("${RELEASE_VERSION}")),
+                                string(name: 'GITLAB_TAG', value: String.valueOf("R${RELEASE_VERSION}")),
                                 text(name: 'COMMIT_MESSAGE', value: String.valueOf("Release ${RELEASE_VERSION}")),
-                                string(name: 'DRY_RUN', value: String.valueOf(params.DRY_RUN)),
+                                string(name: 'REMOTE_BRANCH', value: String.valueOf("master")),
+                                string(name: 'AUTOMATIC_MERGE', value: String.valueOf("YES")),
+                                string(name: 'GITHUB_TAG', value: String.valueOf("${RELEASE_VERSION}")),
                         ]
             }
         }
