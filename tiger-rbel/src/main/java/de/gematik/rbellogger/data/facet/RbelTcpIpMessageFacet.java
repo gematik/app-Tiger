@@ -16,6 +16,7 @@
 
 package de.gematik.rbellogger.data.facet;
 
+import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMultiMap;
@@ -24,6 +25,9 @@ import de.gematik.rbellogger.renderer.RbelMessageRenderer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Data
 @Builder(toBuilder = true)
@@ -45,10 +49,67 @@ public class RbelTcpIpMessageFacet implements RbelFacet {
   }
 
   public RbelHostname getSenderHostname() {
-    return sender.getFacetOrFail(RbelHostnameFacet.class).toRbelHostname();
+    return hostname(sender).toRbelHostname();
   }
 
   public RbelHostname getReceiverHostname() {
-    return receiver.getFacetOrFail(RbelHostnameFacet.class).toRbelHostname();
+    return hostname(receiver).toRbelHostname();
+  }
+
+  private static RbelHostnameFacet hostname(RbelElement element) {
+    return element.getFacetOrFail(RbelHostnameFacet.class);
+  }
+
+  public static Optional<RbelElement> findAndPairMatchingRequest(
+      RbelElement response, RbelConverter context, Class<? extends RbelFacet> requestFacetClass) {
+    context.waitForAllElementsBeforeGivenToBeParsed(response.findRootElement());
+    return response
+        .getFacet(TracingMessagePairFacet.class)
+        .map(TracingMessagePairFacet::getRequest)
+        .or(
+            () -> {
+              AtomicBoolean beforeElement = new AtomicBoolean(false);
+              return context
+                  .messagesStreamLatestFirst()
+                  .filter(
+                      e -> {
+                        if (e == response) beforeElement.set(true);
+                        return true;
+                      })
+                  .filter(e -> response != e && beforeElement.get())
+                  .filter(e -> e.hasFacet(requestFacetClass))
+                  .filter(e -> !e.hasFacet(TracingMessagePairFacet.class))
+                  .filter(request -> haveOppositeTcpIpEndpoints(request, response))
+                  .filter(
+                      request -> {
+                        var pair =
+                            TracingMessagePairFacet.builder()
+                                .request(request)
+                                .response(response)
+                                .build();
+                        response.addFacet(pair);
+                        request.addFacet(pair);
+                        return true;
+                      })
+                  .findFirst();
+            });
+  }
+
+  private static boolean haveOppositeTcpIpEndpoints(
+      RbelElement requestElement, RbelElement responseElement) {
+    return requestElement
+        .getFacet(RbelTcpIpMessageFacet.class)
+        .filter(
+            request ->
+                responseElement
+                    .getFacet(RbelTcpIpMessageFacet.class)
+                    .filter(request::hasOppositeEndpointsOf)
+                    .isPresent())
+        .isPresent();
+  }
+
+  private boolean hasOppositeEndpointsOf(RbelTcpIpMessageFacet other) {
+    return hostname(sender).domainAndPortEquals(hostname(other.receiver))
+        && hostname(receiver).domainAndPortEquals(hostname(other.sender));
   }
 }

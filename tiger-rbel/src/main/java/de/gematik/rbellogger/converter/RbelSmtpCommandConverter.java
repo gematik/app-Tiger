@@ -51,7 +51,11 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
                   .map(command -> facet.getBody())
                   .ifPresent(context::convertElement);
               element.addFacet(new RbelRootFacet<>(facet));
-              element.addFacet(new RbelRequestFacet(facet.getCommand().getRawStringContent()));
+              element.addFacet(
+                  RbelRequestFacet.builder()
+                      .responseRequired(true)
+                      .menuInfoString(facet.getCommand().getRawStringContent())
+                      .build());
             });
   }
 

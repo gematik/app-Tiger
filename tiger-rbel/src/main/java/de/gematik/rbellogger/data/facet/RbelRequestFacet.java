@@ -18,6 +18,7 @@ package de.gematik.rbellogger.data.facet;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
+import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -30,6 +31,9 @@ public class RbelRequestFacet implements RbelFacet {
 
   /** Short info string describing this request. Will primarily be displayed in the menu. */
   private final String menuInfoString;
+
+  /** Mark this element for the message validation as requiring a matching response */
+  @Builder.Default private final boolean responseRequired = false; // NOSONAR
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {

@@ -28,10 +28,10 @@ public class RequestParameter {
   private String path;
   private String rbelPath;
   private String value;
-  private final boolean startFromLastRequest;
+  private final boolean startFromLastMessage;
   private final boolean filterPreviousRequest;
   private final boolean requireNewMessage;
-  @Builder.Default private final boolean requireHttpMessage = true;
+  @Builder.Default private final boolean requireRequestMessage = true;
 
   public RequestParameter resolvePlaceholders() {
     if (StringUtils.isNotEmpty(path)) {

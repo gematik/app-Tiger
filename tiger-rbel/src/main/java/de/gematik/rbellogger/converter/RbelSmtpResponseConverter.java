@@ -17,11 +17,14 @@
 package de.gematik.rbellogger.converter;
 
 import static de.gematik.rbellogger.util.EmailConversionUtils.CRLF;
+import static de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet.findAndPairMatchingRequest;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelRootFacet;
+import de.gematik.rbellogger.data.facet.RbelSmtpCommandFacet;
 import de.gematik.rbellogger.data.facet.RbelSmtpResponseFacet;
+import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.util.EmailConversionUtils;
 import java.nio.charset.StandardCharsets;
@@ -39,6 +42,7 @@ public class RbelSmtpResponseConverter implements RbelConverterPlugin {
       Pattern.compile("(?<status>\\d{3})-.+", Pattern.DOTALL);
   private static final Pattern SMTP_SINGLE_LINE_RESPONSE =
       Pattern.compile("(?<status>\\d{3})( (?<body>.+)|)\r\n");
+  public static final int MIN_SMTP_RESPONSE_LENGTH = 4;
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
@@ -48,12 +52,23 @@ public class RbelSmtpResponseConverter implements RbelConverterPlugin {
               element.addFacet(facet);
               element.addFacet(new RbelRootFacet<>(facet));
               element.addFacet(new RbelResponseFacet(facet.getStatus().getRawStringContent()));
+              findMatchingSmtpRequest(element, context)
+                  .ifPresent(
+                      request -> {
+                        request.removeFacetsOfType(TigerNonPairedMessageFacet.class);
+                        element.removeFacetsOfType(TigerNonPairedMessageFacet.class);
+                      });
             });
+  }
+
+  private Optional<RbelElement> findMatchingSmtpRequest(
+      RbelElement element, RbelConverter context) {
+    return findAndPairMatchingRequest(element, context, RbelSmtpCommandFacet.class);
   }
 
   private Optional<RbelSmtpResponseFacet> buildSmtpResponseFacet(RbelElement element) {
     return Optional.ofNullable(element.getRawContent())
-        .filter(c -> c.length > 4)
+        .filter(c -> c.length > MIN_SMTP_RESPONSE_LENGTH)
         .filter(EmailConversionUtils::endsWithCrLf)
         .map(c -> new String(c, StandardCharsets.UTF_8))
         .filter(s -> SMTP_RESPONSE.matcher(s).matches())

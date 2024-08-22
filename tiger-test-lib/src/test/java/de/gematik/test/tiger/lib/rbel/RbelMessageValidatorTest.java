@@ -24,33 +24,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
-import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelCetpFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
-import de.gematik.rbellogger.util.IRbelMessageListener;
-import de.gematik.rbellogger.util.RbelMessagesSupplier;
-import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.glue.RBelValidatorGlue;
 import de.gematik.test.tiger.lib.enums.ModeType;
-import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -69,42 +56,16 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @Slf4j
-class RbelMessageValidatorTest {
-
-  private final TigerProxy tigerProxy = mock(TigerProxy.class);
-
-  private static final Deque<RbelElement> validatableMessagesMock = new ArrayDeque<>();
-  private static RbelMessageValidator rbelMessageValidator;
+class RbelMessageValidatorTest extends AbstractRbelMessageValidatorTest {
 
   @BeforeEach
-  public void clearConfig() {
-    TigerGlobalConfiguration.reset();
-    validatableMessagesMock.clear();
-    LocalProxyRbelMessageListener.setTestingInstance(
-        new LocalProxyRbelMessageListener(
-            new RbelMessagesSupplier() {
-              @Override
-              public void addRbelMessageListener(IRbelMessageListener listener) {
-                // do nothing
-              }
-
-              @Override
-              public Deque<RbelElement> getRbelMessages() {
-                return validatableMessagesMock;
-              }
-            }));
-
-    when(tigerProxy.getRbelMessages()).thenReturn(validatableMessagesMock);
-    rbelMessageValidator = new RbelMessageValidator(mock(TigerTestEnvMgr.class), tigerProxy);
-
-    RbelMessageValidator.currentRequest = null;
-    RbelMessageValidator.currentResponse = null;
-    LocalProxyRbelMessageListener.getInstance().clearValidatableRbelMessages();
+  public void setUp() {
+    super.setUp();
   }
 
   @AfterEach
   public void cleanUp() {
-    LocalProxyRbelMessageListener.clearTestingInstance();
+    AbstractRbelMessageValidatorTest.tearDown();
   }
 
   @Test
@@ -249,24 +210,22 @@ class RbelMessageValidatorTest {
   void testSourceNoComment_OK() {
     assertThatNoException()
         .isThrownBy(
-            () -> {
-              rbelMessageValidator.compareXMLStructure(
-                  "<root><header></header><body><!-- test comment --></body></root>",
-                  "<root><header></header><body></body></root>",
-                  "nocomment");
-            });
+            () ->
+                rbelMessageValidator.compareXMLStructure(
+                    "<root><header></header><body><!-- test comment --></body></root>",
+                    "<root><header></header><body></body></root>",
+                    "nocomment"));
   }
 
   @Test
   void testSourceNoCommetTxtTrim_OK() {
     assertThatNoException()
         .isThrownBy(
-            () -> {
-              rbelMessageValidator.compareXMLStructure(
-                  "<root><header></header><body>test     <!-- test comment --></body></root>",
-                  "<root><header></header><body>test</body></root>",
-                  "nocomment,txttrim");
-            });
+            () ->
+                rbelMessageValidator.compareXMLStructure(
+                    "<root><header></header><body>test     <!-- test comment --></body></root>",
+                    "<root><header></header><body>test</body></root>",
+                    "nocomment,txttrim"));
   }
 
   @Test
@@ -345,7 +304,7 @@ class RbelMessageValidatorTest {
     addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = rbelMessageValidator;
     validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").build());
-    RbelElement request = RbelMessageValidator.currentRequest;
+    RbelElement request = rbelMessageValidator.currentRequest;
     assertTrue(validator.doesHostMatch(request, "localhost"));
   }
 
@@ -365,8 +324,8 @@ class RbelMessageValidatorTest {
     validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").build());
 
     validator.filterRequestsAndStoreInContext(
-        RequestParameter.builder().path(".*").startFromLastRequest(true).build());
-    RbelElement request = RbelMessageValidator.currentRequest;
+        RequestParameter.builder().path(".*").startFromLastMessage(true).build());
+    RbelElement request = rbelMessageValidator.currentRequest;
 
     assertTrue(validator.doesHostMatch(request, "eitzen.at"));
   }
@@ -376,7 +335,7 @@ class RbelMessageValidatorTest {
     addTwoRequestsToTigerTestHooks(validatableMessagesMock);
     RbelMessageValidator validator = rbelMessageValidator;
     validator.findLastRequest();
-    RbelElement request = RbelMessageValidator.currentRequest;
+    RbelElement request = rbelMessageValidator.currentRequest;
     assertTrue(validator.doesHostMatch(request, "eitzen.at"));
   }
 
@@ -390,7 +349,7 @@ class RbelMessageValidatorTest {
             .rbelPath("$.header.User-Agent")
             .value("mypersonalagent")
             .build());
-    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "eitzen.at"));
+    assertTrue(validator.doesHostMatch(rbelMessageValidator.currentRequest, "eitzen.at"));
   }
 
   @Test
@@ -402,10 +361,7 @@ class RbelMessageValidatorTest {
             .rbelPath("$.header.User-Agent")
             .value("mypersonalagentXXXX")
             .build();
-    assertThatThrownBy(
-            () -> {
-              rbelMessageValidator.filterRequestsAndStoreInContext(reuqest);
-            })
+    assertThatThrownBy(() -> rbelMessageValidator.filterRequestsAndStoreInContext(reuqest))
         .isInstanceOf(AssertionError.class);
   }
 
@@ -419,7 +375,7 @@ class RbelMessageValidatorTest {
             .rbelPath("$.header.User-Agent")
             .value("mypersonal.*")
             .build());
-    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "eitzen.at"));
+    assertTrue(validator.doesHostMatch(rbelMessageValidator.currentRequest, "eitzen.at"));
   }
 
   @Test
@@ -428,7 +384,7 @@ class RbelMessageValidatorTest {
     RbelMessageValidator validator = rbelMessageValidator;
     validator.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(".*").rbelPath("$.header.User-Agent").build());
-    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "localhost"));
+    assertTrue(validator.doesHostMatch(rbelMessageValidator.currentRequest, "localhost"));
   }
 
   @Test
@@ -437,7 +393,7 @@ class RbelMessageValidatorTest {
     RbelMessageValidator validator = rbelMessageValidator;
     validator.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(".*").rbelPath("$.header.Eitzen-Specific-header").build());
-    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "eitzen.at"));
+    assertTrue(validator.doesHostMatch(rbelMessageValidator.currentRequest, "eitzen.at"));
   }
 
   @Test
@@ -458,11 +414,11 @@ class RbelMessageValidatorTest {
             .rbelPath("$.header.User-Agent")
             .value("mypersonal.*")
             .build());
-    assertTrue(validator.doesHostMatch(RbelMessageValidator.currentRequest, "eitzen.at"));
+    assertTrue(validator.doesHostMatch(rbelMessageValidator.currentRequest, "eitzen.at"));
     assertThat(
-            RbelMessageValidator.currentResponse
-                .getFacet(RbelHttpResponseFacet.class)
-                .get()
+            rbelMessageValidator
+                .currentResponse
+                .getFacetOrFail(RbelHttpResponseFacet.class)
                 .getResponseCode()
                 .getRawStringContent())
         .isEqualTo("500");
@@ -520,22 +476,19 @@ class RbelMessageValidatorTest {
         "$.body.challenge.content.signature.isValid", "false", false);
     validator.findAnyMessageMatchingAtNode("$.body.challenge.content.signature.isValid", "true");
     assertThatThrownBy(
-            () -> {
-              validator.assertAttributeOfCurrentResponseMatches(
-                  "$.body.challenge.content.signature.isValid", "true", false);
-            })
+            () ->
+                validator.assertAttributeOfCurrentResponseMatches(
+                    "$.body.challenge.content.signature.isValid", "true", false))
         .isInstanceOf(AssertionError.class);
     assertThatThrownBy(
-            () -> {
-              validator.assertAttributeOfCurrentResponseMatches(
-                  "$.body.challenge.content.signature.isValid", "false", true);
-            })
+            () ->
+                validator.assertAttributeOfCurrentResponseMatches(
+                    "$.body.challenge.content.signature.isValid", "false", true))
         .isInstanceOf(AssertionError.class);
     assertThatThrownBy(
-            () -> {
-              validator.findAnyMessageMatchingAtNode(
-                  "$.body.challenge.content.signature.isValid", "false");
-            })
+            () ->
+                validator.findAnyMessageMatchingAtNode(
+                    "$.body.challenge.content.signature.isValid", "false"))
         .isInstanceOf(AssertionError.class);
   }
 
@@ -549,7 +502,7 @@ class RbelMessageValidatorTest {
     final RbelElement convertedMessage =
         rbelConverter.parseMessage(
             challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
-    RbelMessageValidator.currentResponse = convertedMessage;
+    rbelMessageValidator.currentResponse = convertedMessage;
     validatableMessagesMock.add(convertedMessage);
 
     // validate
@@ -584,17 +537,16 @@ class RbelMessageValidatorTest {
     final RbelElement convertedMessage =
         rbelConverter.parseMessage(
             challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
-    RbelMessageValidator.currentRequest = convertedMessage;
+    rbelMessageValidator.currentRequest = convertedMessage;
     validatableMessagesMock.add(convertedMessage);
     validator.findElementsInCurrentRequest("$.body.foo");
     validator.assertAttributeOfCurrentRequestMatches("$.body.foo", "bar", true);
     String oracleStr = "{'foo': '${json-unit.ignore}'}";
     validator.assertAttributeOfCurrentRequestMatchesAs("$.body", ModeType.JSON, oracleStr);
 
-    log.info("Current Request: {}", RbelMessageValidator.currentRequest);
+    log.info("Current Request: {}", rbelMessageValidator.currentRequest);
     log.info("converted message: {}", convertedMessage);
 
-    RBelValidatorGlue glue = new RBelValidatorGlue(rbelMessageValidator);
     glue.currentRequestBodyMatches("!{rbel:currentRequestAsString('$.body')}");
     glue.currentRequestMessageAttributeMatches("$.body.foo", "bar");
     glue.currentRequestMessageContainsNode("$.body.foo");
@@ -605,8 +557,7 @@ class RbelMessageValidatorTest {
 
   @Test
   void testCurrentRequestMatchesJsonSchemaWithPlaceholdersReplacement() {
-    val responseToCheck =
-        """
+    val responseToCheck = """
       HTTP/1.1 200 OK
 
       ["hello", "world"]
@@ -631,12 +582,11 @@ class RbelMessageValidatorTest {
     TigerGlobalConfiguration.putValue("value.from.config1", "hello");
     TigerGlobalConfiguration.putValue("value.from.config2", "world");
 
-    RbelMessageValidator.currentRequest =
+    rbelMessageValidator.currentRequest =
         RbelLogger.build()
             .getRbelConverter()
             .parseMessage(responseToCheck.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
 
-    RBelValidatorGlue glue = new RBelValidatorGlue(rbelMessageValidator);
     glue.currentRequestAtMatchesAsJsonOrXml("$.body", ModeType.JSON_SCHEMA, schema);
 
     TigerGlobalConfiguration.reset();
@@ -651,7 +601,7 @@ class RbelMessageValidatorTest {
     final RbelElement convertedMessage =
         rbelConverter.parseMessage(
             challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
-    RbelMessageValidator.currentRequest = convertedMessage;
+    rbelMessageValidator.currentRequest = convertedMessage;
     validatableMessagesMock.add(convertedMessage);
 
     validator.assertAttributeOfCurrentRequestMatches("$.body.foo", "blala", false);
@@ -666,11 +616,51 @@ class RbelMessageValidatorTest {
     final RbelElement convertedMessage =
         rbelConverter.parseMessage(
             challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
-    RbelMessageValidator.currentRequest = convertedMessage;
+    rbelMessageValidator.currentRequest = convertedMessage;
     validatableMessagesMock.add(convertedMessage);
     assertThatThrownBy(
             () -> validator.assertAttributeOfCurrentRequestMatches("$.body.foo", "blabla", true))
         .isInstanceOf(AssertionError.class);
+  }
+
+  @Test
+  void testCurrentMessagesNotFound() {
+    readTgrFileAndStoreForRbelMessageValidator(
+        "src/test/resources/testdata/interleavedRequests.tgr");
+    RbelMessageValidator validator = rbelMessageValidator;
+
+    RequestParameter rootElementRequest = RequestParameter.builder().rbelPath("$").build();
+    assertDoesNotThrow(() -> validator.filterRequestsAndStoreInContext(rootElementRequest));
+    assertDoesNotThrow(() -> validator.findElementInCurrentRequest("$"));
+    assertDoesNotThrow(() -> validator.findElementInCurrentResponse("$"));
+
+    RequestParameter nonExistingElementRequest =
+        RequestParameter.builder().rbelPath("$.x.y").build();
+    assertThatThrownBy(() -> validator.filterRequestsAndStoreInContext(nonExistingElementRequest))
+        .isInstanceOf(AssertionError.class);
+
+    var assertionError =
+        assertThrows(AssertionError.class, () -> validator.findElementInCurrentRequest("$"));
+    assertThat(assertionError.getMessage()).isEqualTo("No current request message found!");
+
+    var assertionError2 =
+        assertThrows(AssertionError.class, () -> validator.findElementInCurrentResponse("$"));
+    assertThat(assertionError2.getMessage()).isEqualTo("No current response message found!");
+  }
+
+  @Test
+  void testUnpairedRequest() {
+    readTgrFileAndStoreForRbelMessageValidator("src/test/resources/testdata/cetpExampleFlow.tgr");
+
+    rbelMessageValidator.filterRequestsAndStoreInContext(
+        RequestParameter.builder().rbelPath("$.body.Event.Topic.text").build());
+
+    assertDoesNotThrow(() -> rbelMessageValidator.findElementInCurrentRequest("$..Topic.text"));
+
+    var assertionError =
+        assertThrows(
+            AssertionError.class, () -> rbelMessageValidator.findElementInCurrentResponse("$"));
+    assertThat(assertionError.getMessage()).isEqualTo("No current response message found!");
   }
 
   @Test
@@ -697,7 +687,7 @@ class RbelMessageValidatorTest {
             .rbelPath("$.body.Event.Topic.text")
             .value("CT/CONNECTED")
             .requireNewMessage(true)
-            .requireHttpMessage(false)
+            .requireRequestMessage(false)
             .build();
     CompletableFuture<RbelElement> waitForMessageFuture =
         CompletableFuture.supplyAsync(
@@ -743,7 +733,7 @@ class RbelMessageValidatorTest {
     await().until(() -> searchThread.getState() == Thread.State.WAITING);
     waitForParsing.complete(null);
 
-    assertThat(RbelMessageValidator.getCurrentResponse())
+    assertThat(rbelMessageValidator.currentResponse)
         .extractChildWithPath("$.responseCode")
         .hasStringContentEqualTo("200");
   }
@@ -759,23 +749,30 @@ class RbelMessageValidatorTest {
     rbelMessageValidator.filterRequestsAndStoreInContext(
         RequestParameter.builder().rbelPath("$.path").value("/VAU").build());
 
-    log.info("current request: {} ", http(RbelMessageValidator.currentRequest));
-    log.info("current response: {} ", http(RbelMessageValidator.currentResponse));
+    logCurrentRequestAndResponse();
 
     // next request, which comes immediately after the first one, no response in between
     rbelMessageValidator.filterRequestsAndStoreInContext(
         RequestParameter.builder()
             .path(".*")
-            .startFromLastRequest(true)
+            .startFromLastMessage(true)
             .build()
             .resolvePlaceholders());
 
-    log.info("current request: {} ", http(RbelMessageValidator.currentRequest));
-    log.info("current response: {} ", http(RbelMessageValidator.currentResponse));
+    logCurrentRequestAndResponse();
 
-    assertThat(RbelMessageValidator.getCurrentRequest())
+    assertThat(rbelMessageValidator.currentRequest)
         .extractChildWithPath("$.path")
         .hasStringContentEqualTo("/1716066754997");
+  }
+
+  private void logCurrentRequestAndResponse() {
+    log.atInfo()
+        .addArgument(() -> http(rbelMessageValidator.currentRequest))
+        .log("current request: {} ");
+    log.atInfo()
+        .addArgument(() -> http(rbelMessageValidator.currentResponse))
+        .log("current response: {} ");
   }
 
   @ParameterizedTest
@@ -845,7 +842,8 @@ class RbelMessageValidatorTest {
         Arguments.of(
             "<hello something='world1'>world2</hello>",
             "XML",
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n<hello something=\"world1\">world2</hello>\n"),
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n"
+                + "<hello something=\"world1\">world2</hello>\n"),
         Arguments.of("{\"hello\":\"world\"}", "JSON", "{\"hello\": \"world\"}"),
         Arguments.of(
             """
@@ -870,7 +868,7 @@ class RbelMessageValidatorTest {
     }
   }
 
-  private static RbelMessageValidator addMessagePair() {
+  private RbelMessageValidator addMessagePair() {
     // parse in signature cert
     final String keyMessage =
         readCurlFromFileWithCorrectedLineBreaks("idpSigMessage.curl", StandardCharsets.UTF_8);
@@ -886,19 +884,9 @@ class RbelMessageValidatorTest {
     final RbelElement convertedMessage =
         rbelConverter.parseMessage(
             challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
-    RbelMessageValidator.currentResponse = convertedMessage;
+    rbelMessageValidator.currentResponse = convertedMessage;
     validatableMessagesMock.add(convertedMessage);
 
     return validator;
-  }
-
-  private static void readTgrFileAndStoreForRbelMessageValidator(String rbelFile) {
-    var rbelLogger =
-        RbelLogger.build(
-            new RbelConfiguration()
-                .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-                .addCapturer(RbelFileReaderCapturer.builder().rbelFile(rbelFile).build()));
-    rbelLogger.getRbelCapturer().initialize();
-    validatableMessagesMock.addAll(rbelLogger.getMessageHistory());
   }
 }

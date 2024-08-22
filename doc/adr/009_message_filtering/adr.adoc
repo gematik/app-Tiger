@@ -1,0 +1,33 @@
+= ADR 009: Message filtering
+
+== Kontext
+
+Bis vor TGR-1458 wurden Requests automatisch nach HTTP-Requests gefiltert, um sie in
+currentRequest/currentResponse im RbelMessageValidator einzusortieren und danach
+weitere matches durchzuführen.
+
+Es war zwar möglich, auf Antworten zu warten und zu matchen, aber nicht, diese abzuspeichern.
+
+== Status
+
+Der Stand vor TGR-1458 ist nicht ausreichend für das, was bei KIM für POP3 benötigit wird,
+da man in den Anfragen nur sehr wenig Inhalt zum Matchen hat.
+
+== Entscheidungen
+
+Mit TGR-1458 wurde dieses Filtern von "requireHttpMessage" auf "requireRequestMessage" umgestellt,
+so dass per Default von den findFirst/Next/Last Schritten mit Path im RbelValidatorGlueCode auf alle
+Anfrage-Nachrichten gefiltert wird, nicht nur die von HTTP (z.B. POP3/SMTP).
+
+Dies ist ein potentieller Breaking Change.
+
+Zudem wurden neue findFirst/Next/LastMessageWithNodeMessage Gluecode-Steps eingeführt, mit denen
+implizit auch nach Antworten gesucht wird.
+
+Wenn eine Anfrage gefunden wird, wird deren Antwort ebenfalls gesucht und beide in currentRequest sowie currentResponse
+abgespeichert.
+
+Wenn eine Antwort gefunden wird, wird deren Anfrage gesucht und dieses Paar ebenfalls in currentRequest/currentResponse gespeichert.
+
+Wenn keine passende Anfrage zur gefundenen Antwort gefunden wird, wird die Antwort ebenfalls in currentRequest abgespeichert,
+also wie eine Anfrage behandelt.

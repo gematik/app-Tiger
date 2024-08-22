@@ -46,6 +46,11 @@ public class RbelElementByOrderConvertionPair extends RbelElementConvertionPair 
 
   @Override
   public Optional<CompletableFuture<RbelElement>> getPairedRequest() {
+    if (Optional.ofNullable(getMessage().getRawStringContent())
+        .filter(content -> content.startsWith("HTTP/"))
+        .isEmpty()) {
+      return Optional.empty();
+    }
     var reverseIterator = new ReverseListIterator<>(parsedMessagesSoFar);
     while (reverseIterator.hasNext()) {
       var element = reverseIterator.next();

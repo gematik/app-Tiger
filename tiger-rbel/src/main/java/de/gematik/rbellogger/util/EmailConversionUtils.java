@@ -17,6 +17,7 @@
 package de.gematik.rbellogger.util;
 
 import de.gematik.rbellogger.data.RbelElement;
+
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -60,4 +61,5 @@ public class EmailConversionUtils {
         .map(line -> line.startsWith(".") ? "." + line : line)
         .collect(Collectors.joining("\r\n"));
   }
+
 }

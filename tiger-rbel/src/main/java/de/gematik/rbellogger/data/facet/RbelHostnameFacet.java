@@ -20,6 +20,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -109,5 +110,10 @@ public class RbelHostnameFacet implements RbelFacet {
                     .map(RbelHostnameFacet::getDomain)
                     .map(RbelElement::getRawStringContent)
                     .filter(StringUtils::isNotEmpty));
+  }
+
+  public boolean domainAndPortEquals(RbelHostnameFacet other) {
+    return Objects.equals(this.getDomain().seekValue(), other.getDomain().seekValue())
+        && Objects.equals(this.getPort().seekValue(), other.getPort().seekValue());
   }
 }

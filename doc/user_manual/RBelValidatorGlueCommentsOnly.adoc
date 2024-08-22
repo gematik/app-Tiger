@@ -123,6 +123,57 @@ instance.
 *param* value value to match at given node/attribute
 *deprecated*
 
+##### TGR finde die erste Nachricht mit Knoten {string} der mit {string} übereinstimmt
+##### TGR find message with {string} matching {string}
+find the first message where node value equal or match as regex and memorize it in the {*link*
+#rbelValidator} instance.
+
+*param* rbelPath rbel path to node/attribute
+*param* value value to match at given node/attribute
+
+##### TGR finde die erste Nachricht mit Knoten {string}
+##### TGR find message with {string}
+find the first message containing given node and memorize it in the {*link*
+#rbelValidator} instance.
+
+*param* rbelPath rbel path to node/attribute
+
+##### TGR finde die nächste Nachricht mit Knoten {string} der mit {string} übereinstimmt
+##### TGR find next message with {string} matching {string}
+find the next message where node value equal or match as regex and memorize it in the {*link*
+#rbelValidator} instance.
+If the previous search using the 'find*message' steps found a response message,
+then this search starts after that response, otherwise, it starts after the
+current request message.
+
+*param* rbelPath rbel path to node/attribute
+*param* value value to match at given node/attribute
+
+##### TGR finde die nächste Nachricht mit Knoten {string}
+##### TGR find next message with {string}
+find the next message containing given node and memorize it in the {*link*
+#rbelValidator} instance.
+If the previous search using any of the 'find*message' steps found a response message,
+then this search starts after that response, otherwise, it starts after the
+current request message.
+
+*param* rbelPath rbel path to node/attribute
+
+##### TGR finde die letzte Nachricht mit Knoten {string} der mit {string} übereinstimmt
+##### TGR find last message with {string} matching {string}
+find the last message where node value equal or match as regex and memorize it in the {*link*
+#rbelValidator} instance.
+
+*param* rbelPath rbel path to node/attribute
+*param* value value to match at given node/attribute
+
+##### TGR finde die letzte Nachricht mit Knoten {string}
+##### TGR find last message with {string}
+find the last message containing given node and memorize it in the {*link*
+   * #rbelValidator} instance.
+
+*param* rbelPath rbel path to node/attribute
+
 ##### TGR prüfe aktueller Request stimmt im Body überein mit:
 assert that request body matches.
 
@@ -250,3 +301,13 @@ Prints the rbel-tree of the current request to the System-out
 
 ##### TGR liest folgende .tgr Datei {tigerResolvedString}
 Read ##### TGR file and sends messages to local Tiger proxy
+
+##### TGR the custom failure message is set to {tigerResolvedString}
+##### TGR die benutzerdefinierte Fehlermeldung ist auf {tigerResolvedString} gesetzt
+Sets a custom failure message that will be displayed in the logs if a following step in the
+test fails.
+
+*param* customFailureMessage the custom failure message
+
+##### TGR lösche die benutzerdefinierte Fehlermeldung
+Clears the custom failure message
