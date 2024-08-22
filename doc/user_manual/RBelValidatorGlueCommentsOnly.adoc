@@ -133,17 +133,16 @@ find the first message where node value equal or match as regex and memorize it 
 
 ##### TGR finde die erste Nachricht mit Knoten {string}
 ##### TGR find message with {string}
-find the first message containing given node and memorize it in the {*link*
-#rbelValidator} instance.
+find the first message containing given node and memorize it in the {*link* #rbelValidator}
+instance.
 
 *param* rbelPath rbel path to node/attribute
 
 ##### TGR finde die nächste Nachricht mit Knoten {string} der mit {string} übereinstimmt
 ##### TGR find next message with {string} matching {string}
 find the next message where node value equal or match as regex and memorize it in the {*link*
-#rbelValidator} instance.
-If the previous search using the 'find*message' steps found a response message,
-then this search starts after that response, otherwise, it starts after the
+#rbelValidator} instance. If the previous search using the 'find*message' steps found a
+response message, then this search starts after that response, otherwise, it starts after the
 current request message.
 
 *param* rbelPath rbel path to node/attribute
@@ -151,11 +150,10 @@ current request message.
 
 ##### TGR finde die nächste Nachricht mit Knoten {string}
 ##### TGR find next message with {string}
-find the next message containing given node and memorize it in the {*link*
-#rbelValidator} instance.
-If the previous search using any of the 'find*message' steps found a response message,
-then this search starts after that response, otherwise, it starts after the
-current request message.
+find the next message containing given node and memorize it in the {*link* #rbelValidator}
+instance. If the previous search using any of the 'find*message' steps found a response
+message, then this search starts after that response, otherwise, it starts after the current
+request message.
 
 *param* rbelPath rbel path to node/attribute
 
@@ -169,8 +167,8 @@ find the last message where node value equal or match as regex and memorize it i
 
 ##### TGR finde die letzte Nachricht mit Knoten {string}
 ##### TGR find last message with {string}
-find the last message containing given node and memorize it in the {*link*
-   * #rbelValidator} instance.
+find the last message containing given node and memorize it in the {*link* * #rbelValidator}
+instance.
 
 *param* rbelPath rbel path to node/attribute
 
