@@ -126,6 +126,7 @@ public class RbelMessageValidator {
     LocalProxyRbelMessageListener.getInstance().clearValidatableRbelMessages();
   }
 
+  @SuppressWarnings("java:S1135")
   public void filterRequestsAndStoreInContext(final RequestParameter requestParameter) {
     RbelElement message = tryFindMessageByDescription(requestParameter);
     if (message.hasFacet(RbelRequestFacet.class)) {
@@ -134,7 +135,7 @@ public class RbelMessageValidator {
       storeResponseAndSearchAndStoreRequest(message);
     } else {
       log.atInfo()
-          // TODO use element short description mechanism instead of getRawStringContent
+          // TODO TGR-1528 use element short description mechanism instead of getRawStringContent
           .addArgument(message::getRawStringContent)
           .log("Found message that is neither request nor response:\n\n{}");
     }
@@ -157,6 +158,7 @@ public class RbelMessageValidator {
     lastFoundMessage = null;
   }
 
+  @SuppressWarnings("java:S1135")
   private void storeRequestAndWaitForAndStoreResponse(RbelElement request) {
     setCurrentRequest(request);
     setCurrentResponse(null);
@@ -178,7 +180,7 @@ public class RbelMessageValidator {
         }
       } catch (final ConditionTimeoutException cte) {
         log.atError()
-            // TODO use element short description mechanism instead of getRawStringContent
+            // TODO TGR-1528 use element short description mechanism instead of getRawStringContent
             .addArgument(request::getRawStringContent)
             .log("Missing response to filtered request!\n\n{}");
         throw new TigerLibraryException("Missing response to filtered request!", cte);
@@ -186,12 +188,13 @@ public class RbelMessageValidator {
     }
   }
 
+  @SuppressWarnings("java:S1135")
   private void storeResponseAndSearchAndStoreRequest(RbelElement response) {
     setCurrentResponse(response);
     if (!findAndStoreCorrespondingRequest(response)) {
       setCurrentRequest(response);
       log.atInfo()
-          // TODO use element short description mechanism instead of getRawStringContent
+          // TODO TGR-1528 use element short description mechanism instead of getRawStringContent
           .addArgument(response::getRawStringContent)
           .log("Missing request to filtered response!\n\n{}");
     }
