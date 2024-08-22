@@ -10,7 +10,7 @@
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
         <relativePath>../pom.xml</relativePath>
-        <version>3.2.3</version>
+        <version>3.2.4-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -103,7 +103,7 @@
                     <plugin>
                         <groupId>de.gematik.test</groupId>
                         <artifactId>tiger-maven-plugin</artifactId>
-                        <version>3.2.3</version>
+                        <version>3.2.4-SNAPSHOT</version>
                         <executions>
                             <execution>
                                 <id>generate-tiger-drivers</id>
@@ -202,7 +202,7 @@
                     <plugin>
                         <groupId>de.gematik.test</groupId>
                         <artifactId>tiger-maven-plugin</artifactId>
-                        <version>3.2.3</version>
+                        <version>3.2.4-SNAPSHOT</version>
                         <goals>
                             <goal>generate-serenity-reports</goal>
                         </goals>
