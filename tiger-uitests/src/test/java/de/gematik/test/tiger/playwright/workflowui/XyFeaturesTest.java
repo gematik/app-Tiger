@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -21,6 +21,7 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -28,16 +29,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 /** Tests all feature files and scenarios by name. */
 @TestMethodOrder(MethodOrderer.MethodName.class)
 class XyFeaturesTest extends AbstractTests {
-
-  @BeforeEach
-  void printInfoStarted(TestInfo testInfo) {
-    System.out.println("started = " + testInfo.getDisplayName());
-  }
-
-  @AfterEach
-  void printInfoFinished(TestInfo testInfo) {
-    System.out.println("finished = " + testInfo.getDisplayName());
-  }
 
   @Test
   void testFeaturesAndScenarioAmount() {
@@ -89,7 +80,7 @@ class XyFeaturesTest extends AbstractTests {
         Get Request to folder                   | 1  | 0 |
         PUT Request to folder                   | 2  | 0 |
         PUT Request with body to folder         | 3  | 0 |
-        DELETE Request without body             | 4  | 0 |
+        DELETE Request without body shall fail  | 4  | 0 |
         Request with custom header              | 5  | 0 |
         Request with default header             | 6  | 0 |
         Request with custom and default header  | 7  | 0 |
@@ -203,21 +194,11 @@ class XyFeaturesTest extends AbstractTests {
   }
 
   @Test
-  void testScrollingToKlickedFirstTestfile() {
+  void testScrollingToClickedFirstTestfile() {
     page.querySelector("#test-tiger-logo").click();
     page.locator(".test-sidebar-scenario-name").first().locator(".scenarioLink").click();
-    Double bottom =
-        (Double)
-            page.evaluate(
-                "document.getElementsByClassName('test-execution-pane-scenario-title')[0].getBoundingClientRect().bottom");
-    Double top =
-        (Double)
-            page.evaluate(
-                "document.getElementsByClassName('test-execution-pane-scenario-title')[0].getBoundingClientRect().top");
-    Integer clientHeight = (Integer) page.evaluate("document.documentElement.clientHeight");
-    Integer innerHeight = (Integer) page.evaluate("window.innerHeight");
-    var viewHeight = Math.max(clientHeight, innerHeight);
-    assertTrue((!(bottom < 0 || top - viewHeight >= 0)), "Scenario is not visible in viewport");
+    PlaywrightAssertions.assertThat(page.locator(".test-execution-pane-scenario-title").first())
+        .isVisible();
   }
 
   @Test

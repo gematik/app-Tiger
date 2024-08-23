@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -256,9 +256,9 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
             bodyTitleElements.add(
                 RbelHtmlRenderer.showContentButtonAndDialog(facet.getBody(), renderingToolkit)));
 
-    bodyTitleElements.add(
-        div(httpRequestFacet.map(f -> t2("REQ Body")).orElseGet(() -> t2("RES Body")))
-            .withClass("text-info"));
+    String bodyTitleString = httpRequestFacet.map(f -> "REQ Body").orElse("RES Body");
+
+    bodyTitleElements.add(div(t2(bodyTitleString)).withClass("text-info"));
 
     List<DomContent> messageBodyElements = new ArrayList<>();
     messageBodyElements.add(
@@ -286,8 +286,10 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
                             .map(
                                 s ->
                                     StringUtils.isBlank(s)
-                                        ? div("Empty body")
-                                            .withClass(CLS_BODY + " notification tile is-child")
+                                        ? div()
+                                            .withClass(
+                                                CLS_BODY + " notification container is-child")
+                                            .with(t2(bodyTitleString + " Empty"))
                                         : div()
                                             .with(
                                                 collapsibleCard(

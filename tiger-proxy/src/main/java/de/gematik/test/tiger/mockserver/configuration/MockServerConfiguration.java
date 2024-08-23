@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -36,10 +36,10 @@ import lombok.experimental.Accessors;
  */
 @Data
 @Accessors(fluent = true)
-public class Configuration {
+public class MockServerConfiguration {
 
-  public static Configuration configuration() {
-    return new Configuration();
+  public static MockServerConfiguration configuration() {
+    return new MockServerConfiguration();
   }
 
   // general
@@ -65,6 +65,7 @@ public class Configuration {
 
   // non http proxying
   private BinaryProxyListener binaryProxyListener = null;
+  private boolean enableTlsTermination = true;
 
   // proxy
   private InetSocketAddress forwardHttpProxy = null;
@@ -88,6 +89,7 @@ public class Configuration {
   private UnaryOperator<SslContextBuilder> sslClientContextBuilderCustomizer =
       UnaryOperator.identity();
   private Function<java.security.cert.X509Certificate, byte[]> ocspResponseSupplier = null;
+  private String masterSecretFile = null;
 
   // inbound - dynamic private key & x509
   private String sslCertificateDomainName = "localhost";

@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import de.gematik.test.tiger.common.config.SourceType;
+import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
@@ -166,7 +166,7 @@ class TestTigerTestEnvMgrStartupSequence {
     final AbstractTigerServer server = new MockTigerServer(name, configuration, envMgr);
     TigerGlobalConfiguration.readFromYaml(
         new ObjectMapper().writeValueAsString(configuration),
-        SourceType.TEST_CONTEXT,
+        ConfigurationValuePrecedence.TEST_CONTEXT,
         "tiger",
         "servers",
         name);
@@ -185,7 +185,7 @@ class TestTigerTestEnvMgrStartupSequence {
         new MockTigerServer(name, configuration, envMgr, delayStartupUntilThisServerIsRunning);
     TigerGlobalConfiguration.readFromYaml(
         new ObjectMapper().writeValueAsString(configuration),
-        SourceType.TEST_CONTEXT,
+        ConfigurationValuePrecedence.TEST_CONTEXT,
         "tiger",
         "servers",
         name);

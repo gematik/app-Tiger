@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -21,6 +21,7 @@ import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndRespons
 import de.gematik.test.tiger.mockserver.model.*;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.PatternSyntaxException;
@@ -48,13 +49,15 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
   private final int priority;
   private final HttpRequest requestPattern;
   @Setter private HttpAction httpAction;
+  private final List<String> hostRegexes;
   private ExpectationCallback expectationCallback;
 
-  public Expectation(HttpRequest requestDefinition, int priority) {
+  public Expectation(HttpRequest requestDefinition, int priority, List<String> hostRegexes) {
     // ensure created enforces insertion order by relying on system time, and a counter
     EXPECTATION_COUNTER.compareAndSet(Integer.MAX_VALUE, 0);
     this.requestPattern = requestDefinition;
     this.priority = priority;
+    this.hostRegexes = hostRegexes;
   }
 
   public Expectation thenForward(ExpectationForwardAndResponseCallback callback) {
@@ -76,8 +79,11 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
     if (!requestPattern.getHeaders().containsEntry("Host")) {
       return true;
     }
-    return StringUtils.equals(
-        requestPattern.getFirstHeader("Host"), request.getFirstHeader("Host"));
+    if (StringUtils.equals(
+        requestPattern.getFirstHeader("Host"), request.getFirstHeader("Host"))) {
+      return true;
+    }
+    return hostRegexes.stream().anyMatch(request.getFirstHeader("Host")::matches);
   }
 
   private boolean protocolMatches(Protocol protocol, Protocol otherProtocol) {

@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -16,17 +16,14 @@
 
 package de.gematik.test.tiger.mockserver.netty.responsewriter;
 
-import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONNECTION;
 import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_LENGTH;
 import static io.netty.handler.codec.http.HttpHeaderValues.CLOSE;
 import static io.netty.handler.codec.http.HttpHeaderValues.KEEP_ALIVE;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
-import de.gematik.test.tiger.mockserver.model.Header;
-import de.gematik.test.tiger.mockserver.model.HttpRequest;
-import de.gematik.test.tiger.mockserver.model.HttpResponse;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
+import de.gematik.test.tiger.mockserver.model.*;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -40,17 +37,21 @@ import lombok.extern.slf4j.Slf4j;
 public class NettyResponseWriter {
 
   private final ChannelHandlerContext ctx;
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
 
-  public NettyResponseWriter(Configuration configuration, ChannelHandlerContext ctx) {
+  public NettyResponseWriter(MockServerConfiguration configuration, ChannelHandlerContext ctx) {
     this.configuration = configuration;
     this.ctx = ctx;
   }
 
-  public void writeResponse(final HttpRequest request, HttpResponse response) {
+  public void writeResponse(final HttpRequest request, Action<?> response) {
     if (response == null) {
-      response = notFoundResponse();
+      response = new CloseChannel();
     }
+    response.write(this, request);
+  }
+
+  public void writeHttpResponse(final HttpRequest request, HttpResponse response) {
     String contentLengthHeader = response.getFirstHeader(CONTENT_LENGTH.toString());
     if (isNotBlank(contentLengthHeader)) {
       try {

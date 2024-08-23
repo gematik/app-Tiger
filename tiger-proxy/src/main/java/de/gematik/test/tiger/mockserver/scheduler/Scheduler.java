@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -21,7 +21,7 @@ import static de.gematik.test.tiger.mockserver.mock.HttpState.setPort;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import com.google.common.annotations.VisibleForTesting;
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.httpclient.SocketCommunicationException;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpForwardActionResult;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
@@ -37,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class Scheduler {
 
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private final ScheduledExecutorService scheduler;
 
   private final boolean synchronous;
@@ -67,12 +67,12 @@ public class Scheduler {
     }
   }
 
-  public Scheduler(Configuration configuration) {
+  public Scheduler(MockServerConfiguration configuration) {
     this(configuration, false);
   }
 
   @VisibleForTesting
-  public Scheduler(Configuration configuration, boolean synchronous) {
+  public Scheduler(MockServerConfiguration configuration, boolean synchronous) {
     this.configuration = configuration;
     this.synchronous = synchronous;
     if (!this.synchronous) {

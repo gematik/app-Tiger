@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -24,12 +24,16 @@ import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.smtp.RbelSmtpCommand;
 import de.gematik.rbellogger.util.EmailConversionUtils;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 
 @Slf4j
+@ConverterInfo(onlyActivateFor = "smtp")
 public class RbelSmtpCommandConverter implements RbelConverterPlugin {
 
   public static final int MIN_SMTP_COMMAND_LINE_LENGTH = 6;
@@ -40,8 +44,18 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
         .ifPresent(
             facet -> {
               element.addFacet(facet);
-              Optional.ofNullable(facet.getBody()).ifPresent(context::convertElement);
+              facet
+                  .getCommand()
+                  .seekValue(RbelSmtpCommand.class)
+                  .filter(RbelSmtpCommand.DATA::equals)
+                  .map(command -> facet.getBody())
+                  .ifPresent(context::convertElement);
               element.addFacet(new RbelRootFacet<>(facet));
+              element.addFacet(
+                  RbelRequestFacet.builder()
+                      .responseRequired(true)
+                      .menuInfoString(facet.getCommand().getRawStringContent())
+                      .build());
             });
   }
 
@@ -59,9 +73,14 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
   }
 
   private boolean isCompleteCommand(String command) {
-    return command.startsWith("DATA\r\n")
-        ? command.endsWith(CRLF_DOT_CRLF)
-        : command.indexOf(CRLF) == command.length() - 2;
+    if (command.startsWith("DATA\r\n")) {
+      return command.endsWith(CRLF_DOT_CRLF);
+    } else if (command.startsWith("AUTH ") && !command.startsWith("AUTH PLAIN")) {
+      // AUTH (without PLAIN) needs another 2 lines with the credentials
+      return command.split(CRLF).length == 3;
+    } else {
+      return command.indexOf(CRLF) == command.length() - CRLF.length();
+    }
   }
 
   private Optional<RbelSmtpCommand> parseCommand(byte[] c) {
@@ -79,12 +98,29 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
   private RbelSmtpCommandFacet buildSmtpCommandFacet(
       RbelSmtpCommand command, String content, RbelElement element) {
     String[] lines = content.split(CRLF, -1);
+    RbelElement body = buildSmtpBody(command, element, lines);
     return RbelSmtpCommandFacet.builder()
         .command(
             RbelElement.wrap(command.name().getBytes(StandardCharsets.UTF_8), element, command))
         .arguments(parseArguments(lines[0], element))
-        .body(EmailConversionUtils.parseMailBody(element, lines))
+        .body(body)
         .build();
+  }
+
+  private RbelElement buildSmtpBody(RbelSmtpCommand command, RbelElement element, String[] lines) {
+    return switch (command) {
+      case AUTH ->
+          lines.length > 2
+              ? EmailConversionUtils.createChildElement(
+                  element,
+                  Arrays.stream(lines)
+                      .skip(1)
+                      .limit(lines.length - 2L)
+                      .collect(Collectors.joining(CRLF)))
+              : null;
+      case DATA -> EmailConversionUtils.parseMailBody(element, lines);
+      default -> null;
+    };
   }
 
   private static RbelElement parseArguments(String line, RbelElement element) {

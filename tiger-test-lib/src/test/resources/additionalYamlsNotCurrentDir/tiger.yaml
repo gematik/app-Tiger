@@ -1,4 +1,4 @@
-additionalYamls:
+additionalConfigurationFiles:
   - filename: additionalYaml.yaml
     baseKey: notCurrentDir
 

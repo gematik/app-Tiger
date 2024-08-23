@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -25,7 +25,7 @@ import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static io.netty.handler.codec.http.HttpResponseStatus.*;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
@@ -38,7 +38,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.AttributeKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.HashSet;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.text.StringEscapeUtils;
@@ -54,12 +53,12 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
   public static final AttributeKey<Set<String>> LOCAL_HOST_HEADERS =
       AttributeKey.valueOf("LOCAL_HOST_HEADERS");
   private HttpState httpState;
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private MockServer server;
   private HttpActionHandler httpActionHandler;
 
   public HttpRequestHandler(
-      Configuration configuration,
+      MockServerConfiguration configuration,
       MockServer server,
       HttpState httpState,
       HttpActionHandler httpActionHandler) {
@@ -77,18 +76,8 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
     return false;
   }
 
-  private static Set<String> getLocalAddresses(ChannelHandlerContext ctx) {
-    if (ctx != null
-        && ctx.channel().attr(LOCAL_HOST_HEADERS) != null
-        && ctx.channel().attr(LOCAL_HOST_HEADERS).get() != null) {
-      return ctx.channel().attr(LOCAL_HOST_HEADERS).get();
-    }
-    return new HashSet<>();
-  }
-
   @Override
   protected void channelRead0(final ChannelHandlerContext ctx, final HttpRequest request) {
-
     NettyResponseWriter responseWriter = new NettyResponseWriter(configuration, ctx);
     try {
       configuration.addSubjectAlternativeName(request.getFirstHeader(HOST.toString()));
@@ -143,7 +132,6 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
                 request,
                 responseWriter,
                 ctx,
-                getLocalAddresses(ctx),
                 isProxyingRequest(ctx),
                 false);
           } catch (RuntimeException e) {

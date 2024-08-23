@@ -47,7 +47,7 @@ skinparam interface {
         contextual values, test execution variables
         in a "world object" to be available between bdd steps.
 
-        can be used thread safe by using appropriate SourceType
+        can be used thread safe by using appropriate ConfigurationFileType
 
         supports hierarchical domains to allow separation of data
         from different suites

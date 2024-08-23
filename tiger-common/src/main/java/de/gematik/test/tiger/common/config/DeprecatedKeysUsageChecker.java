@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.StringJoiner;
 
 /** A specialized class that checks for old/deprecated keys. */
-public final class DeprecatedKeysForbiddenUsageChecker {
+public final class DeprecatedKeysUsageChecker {
 
   private static final List<DeprecatedKeyDescriptor> deprecatedKeysMap =
       List.of(
@@ -58,20 +58,45 @@ public final class DeprecatedKeysForbiddenUsageChecker {
           DeprecatedKeyDescriptor.builder()
               .compareKey("tiger.tigerproxyconfiguration.activateVauAnalysis")
               .deprecatedKey("activateVauAnalysis")
-              .newKey("activateEpaVauAnalysis")
+              .newKey("activateRbelParsingFor")
               .build(),
           DeprecatedKeyDescriptor.builder()
               .compareKey("tiger.servers.*.tigerproxyconfiguration.proxycfg.activateVauAnalysis")
               .deprecatedKey("activateVauAnalysis")
-              .newKey("activateEpaVauAnalysis")
+              .newKey("activateRbelParsingFor")
               .build(),
           DeprecatedKeyDescriptor.builder()
               .compareKey("tiger.servers.*.tigerproxyconfiguration")
               .deprecatedKey("tigerProxyCfg")
               .newKey("tigerProxyConfiguration")
+              .build(),
+          DeprecatedKeyDescriptor.builder()
+              .compareKey("tiger.tigerproxyconfiguration.activateEpaVauAnalysis")
+              .deprecatedKey("activateEpaVauAnalysis")
+              .newKey("activateRbelParsingFor")
+              .build(),
+          DeprecatedKeyDescriptor.builder()
+              .compareKey("tiger.tigerproxyconfiguration.activateEpaVauAnalysis")
+              .deprecatedKey("activateAsn1Parsing")
+              .newKey("activateRbelParsingFor")
+              .build(),
+          DeprecatedKeyDescriptor.builder()
+              .compareKey("tiger.tigerproxyconfiguration.activateEpaVauAnalysis")
+              .deprecatedKey("activateAsn1Parsing")
+              .newKey("activateRbelParsingFor")
+              .build(),
+          DeprecatedKeyDescriptor.builder()
+              .compareKey("tiger.tigerproxyconfiguration.activateEpaVauAnalysis")
+              .deprecatedKey("activateErpVauAnalysis")
+              .newKey("activateRbelParsingFor")
+              .build(),
+          DeprecatedKeyDescriptor.builder()
+              .compareKey("tiger.additionalYamls")
+              .deprecatedKey("additionalYamls")
+              .newKey(TigerGlobalConfiguration.ADDITIONAL_CONFIGURATION_FILES)
               .build());
 
-  private DeprecatedKeysForbiddenUsageChecker() {}
+  private DeprecatedKeysUsageChecker() {}
 
   public static void checkForDeprecatedKeys(Map<TigerConfigurationKey, String> valueMap)
       throws TigerConfigurationException {
@@ -81,7 +106,8 @@ public final class DeprecatedKeysForbiddenUsageChecker {
     StringJoiner joiner = new StringJoiner("\n");
     for (DeprecatedKeyDescriptor deprecatedKey : deprecatedKeysMap) {
       valueMap.keySet().stream()
-          .filter(key -> key.containsKey(deprecatedKey.getCompareKey()))
+          .filter(key -> key.containsKey(deprecatedKey.getCompareKey())
+                         || key.isBelow(new TigerConfigurationKey(deprecatedKey.getCompareKey())))
           .findFirst()
           .ifPresent(
               a -> {

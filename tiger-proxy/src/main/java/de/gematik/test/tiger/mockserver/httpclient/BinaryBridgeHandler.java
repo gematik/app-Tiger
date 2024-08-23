@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -19,7 +19,7 @@ package de.gematik.test.tiger.mockserver.httpclient;
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.closeOnFlush;
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.connectionClosedException;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.mockserver.model.BinaryProxyListener;
 import io.netty.buffer.Unpooled;
@@ -42,12 +42,12 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
       AttributeKey.valueOf("INCOMING_CHANNEL");
   private final BinaryProxyListener binaryProxyListener;
 
-  public BinaryBridgeHandler(Configuration configuration) {
+  public BinaryBridgeHandler(MockServerConfiguration configuration) {
     this.binaryProxyListener = configuration.binaryProxyListener();
   }
 
   @Override
-  protected void channelRead0(ChannelHandlerContext ctx, BinaryMessage msg) throws Exception {
+  protected void channelRead0(ChannelHandlerContext ctx, BinaryMessage msg) {
     Optional.ofNullable(ctx.channel().attr(INCOMING_CHANNEL).get())
         .orElseThrow(() -> new IllegalStateException("Incoming channel is not set."))
         .writeAndFlush(Unpooled.copiedBuffer(msg.getBytes()));
@@ -59,12 +59,12 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
   }
 
   @Override
-  public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+  public void channelInactive(ChannelHandlerContext ctx) {
     ctx.close();
   }
 
   @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     if (connectionClosedException(cause)) {
       log.error(
           "exception caught by {} handler -> closing pipeline {}",

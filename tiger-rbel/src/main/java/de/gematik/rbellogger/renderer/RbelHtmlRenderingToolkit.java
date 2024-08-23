@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -17,6 +17,7 @@
 package de.gematik.rbellogger.renderer;
 
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
+import static de.gematik.rbellogger.util.EmailConversionUtils.CRLF;
 import static j2html.TagCreator.*;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -48,6 +49,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -76,6 +78,10 @@ public class RbelHtmlRenderingToolkit {
   private static final String HEX_STYLE =
       "display: inline-flex;padding-bottom: 0.2rem;padding-top: 0.2rem;white-space: revert;";
   public static final String JSON_NOTE = "json-note";
+
+  private static String isSize(int n) {
+    return "is-size-" + n;
+  }
 
   @Getter
   private final ObjectMapper objectMapper =
@@ -157,12 +163,34 @@ public class RbelHtmlRenderingToolkit {
     return h2(text).withClass("title");
   }
 
+  public DomContent renderMimeBodyContent(RbelElement body) {
+    return Optional.ofNullable(body)
+        .flatMap(b -> b.seekValue(String.class))
+        .filter(s -> shouldRenderEntitiesWithSize(s.length()))
+        .map(s -> s.split(CRLF))
+        .map(Arrays::stream)
+        .map(lines -> lines.map(line -> text(line + CRLF)).toList())
+        .map(textarea().withClass("full-width")::with)
+        .map(DomContent.class::cast)
+        .orElseGet(() -> computeReplacementString(body));
+  }
+
+  private static DomContent computeReplacementString(RbelElement bodyElement) {
+    return Optional.ofNullable(bodyElement)
+        .map(
+            body ->
+                (DomContent)
+                    span(RbelHtmlRenderer.buildOversizeReplacementString(body))
+                        .withClass(isSize(7)))
+        .orElseGet(TagCreator::pre);
+  }
+
   public DomContent constructMessageId(final RbelElement message) {
     if (message.getParentNode() != null) {
       return span();
     }
     return span(getElementSequenceNumber(message))
-        .withClass("msg-sequence tag is-info is-light me-3 is-size-4 test-message-number");
+        .withClass("msg-sequence tag is-info is-light me-3 " + isSize(4) + " test-message-number");
   }
 
   @SuppressWarnings({"rawtypes", "java:S3740"})
@@ -187,7 +215,7 @@ public class RbelHtmlRenderingToolkit {
         && !shouldRenderEntitiesWithSize(element.getRawContent().length)) {
       return addNotes(
           element,
-          span(RbelHtmlRenderer.buildOversizeReplacementString(element)).withClass("is-size-7"));
+          span(RbelHtmlRenderer.buildOversizeReplacementString(element)).withClass(isSize(7)));
     }
 
     return convertUnforced(element, key)
@@ -197,7 +225,7 @@ public class RbelHtmlRenderingToolkit {
                 return addNotes(element, printAsBinary(element));
               } else {
                 return addNotes(
-                    element, span(performElementToTextConversion(element)).withClass("is-size-7"));
+                    element, span(performElementToTextConversion(element)).withClass(isSize(7)));
               }
             });
   }
@@ -278,7 +306,7 @@ public class RbelHtmlRenderingToolkit {
 
   public DomContent renderMenu() {
     return div()
-        .withClass(" col is-one-fifth menu is-size-4 sidebar")
+        .withClass(" col is-one-fifth menu " + isSize(4) + " sidebar")
         .with(h2("Flow").withClass("mb-3 ms-2"), div().withClass("ms-1").withId("sidebar-menu"));
   }
 
@@ -304,8 +332,8 @@ public class RbelHtmlRenderingToolkit {
             .getFacet(RbelMessageTimingFacet.class)
             .map(RbelMessageTimingFacet::getTransmissionTime)
             .orElse(null));
-    metaData.put("isRequest", rbelElement.hasFacet(RbelRequestFacet.class));
-    return "createMenuEntry(" + metaData.toString() + ")";
+    metaData.put("request", rbelElement.hasFacet(RbelRequestFacet.class));
+    return "createMenuEntry(" + metaData + ")";
   }
 
   private String getElementSequenceNumber(RbelElement rbelElement) {
@@ -361,7 +389,7 @@ public class RbelHtmlRenderingToolkit {
                         .withSrc(
                             localRessources
                                 ? "../webjars/dayjs/dayjs.min.js"
-                                : "https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js"),
+                                : "https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.11/dayjs.min.js"),
                     link2CSS(
                         localRessources
                             ? "../webjars/bootstrap/css/bootstrap.min.css"
@@ -376,6 +404,7 @@ public class RbelHtmlRenderingToolkit {
                             : "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"),
                     link().withRel("icon").withType("image/png").withHref(getLogoBase64Str()),
                     tag("style")
+                        .withId("rbel_css")
                         .with(
                             new UnescapedText(
                                 IOUtils.resourceToString("/rbel.css", StandardCharsets.UTF_8)))),
@@ -396,18 +425,22 @@ public class RbelHtmlRenderingToolkit {
                                                     .withSrc(getLogoBase64Str())
                                                     .withId("test-tiger-logo")),
                                         div()
-                                            .withClass("col is-size-6")
+                                            .withClass("col " + isSize(6))
                                             .with(
                                                 div()
                                                     .withClass("row my-auto")
                                                     .with(
                                                         div(rbelHtmlRenderer.getTitle())
                                                             .withClass(
-                                                                "col navbar-title is-size-3 h-100"
+                                                                "col navbar-title "
+                                                                    + isSize(3)
+                                                                    + " h-100"
                                                                     + " my-auto"),
                                                         span(rbelHtmlRenderer.getVersionInfo())
                                                             .withClass(
-                                                                "col-2 is-size-7 navbar-version")),
+                                                                "col-2 "
+                                                                    + isSize(7)
+                                                                    + " navbar-version")),
                                                 div(
                                                     new UnescapedText(
                                                         rbelHtmlRenderer.getSubTitle()))))),
@@ -423,7 +456,9 @@ public class RbelHtmlRenderingToolkit {
                                                 + DateTimeFormatter.RFC_1123_DATE_TIME.format(
                                                     ZonedDateTime.now()))
                                             .withClass(
-                                                "created fst-italic is-size-6 float-end me-6"),
+                                                "created fst-italic "
+                                                    + isSize(6)
+                                                    + " float-end me-6"),
                                         div()
                                             .with(
                                                 elements.stream()
@@ -436,7 +471,9 @@ public class RbelHtmlRenderingToolkit {
                                                 + DateTimeFormatter.RFC_1123_DATE_TIME.format(
                                                     ZonedDateTime.now()))
                                             .withClass(
-                                                "created fst-italic is-size-6 float-end me-6")))))
+                                                "created fst-italic "
+                                                    + isSize(6)
+                                                    + " float-end me-6")))))
             .with(
                 script()
                     .with(

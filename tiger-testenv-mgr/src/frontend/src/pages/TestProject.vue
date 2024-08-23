@@ -1,14 +1,14 @@
 <!--
-  - Copyright (c) 2024 gematik GmbH
-  - 
-  - Licensed under the Apache License, Version 2.0 (the License);
+  - Copyright 2024 gematik GmbH
+  -
+  - Licensed under the Apache License, Version 2.0 (the "License");
   - you may not use this file except in compliance with the License.
   - You may obtain a copy of the License at
-  - 
+  -
   -     http://www.apache.org/licenses/LICENSE-2.0
-  - 
+  -
   - Unless required by applicable law or agreed to in writing, software
-  - distributed under the License is distributed on an 'AS IS' BASIS,
+  - distributed under the License is distributed on an "AS IS" BASIS,
   - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   - See the License for the specific language governing permissions and
   - limitations under the License.
@@ -47,7 +47,8 @@
                id="test-sidebar-pause-icon"></i>
           </button>
           <button type="button" title="Configuration Editor"
-                  class="btn btn-sm m-1 btn-secondary " id="test-sidebar-tg-config-editor-icon"
+                  :class="`btn btn-sm m-1 btn-secondary ${(quitTestrunOngoing ? 'disabled active' : 'enabled')}`"
+                  id="test-sidebar-tg-config-editor-icon"
                   v-on:click="() => configEditorSidePanelIsOpened = true"
           >
             <i class="fa-lg fa-solid fa-gears fa-fw"></i>
@@ -484,78 +485,78 @@ function mergeMessage(map: Map<string, TigerServerStatusDto>, message: TestEnvSt
 
 function fetchInitialServerStatus() {
   fetch(baseURL + "status")
-  .then((response) => response.text())
-  .then((data) => {
-    debug("FETCH: " + data);
-    const json = JSON.parse(data);
+      .then((response) => response.text())
+      .then((data) => {
+        debug("FETCH: " + data);
+        const json = JSON.parse(data);
 
-    const fetchedServerStatus = new Map<string, TigerServerStatusDto>();
-    TigerServerStatusDto.addToMapFromJson(fetchedServerStatus, json.servers);
+        const fetchedServerStatus = new Map<string, TigerServerStatusDto>();
+        TigerServerStatusDto.addToMapFromJson(fetchedServerStatus, json.servers);
 
-    if (fetchedServerStatus.has("local_tiger_proxy")) {
-      const url = fetchedServerStatus.get("local_tiger_proxy")?.baseUrl;
-      if (url) {
-        localProxyWebUiUrl.value = url;
-      }
-    }
+        if (fetchedServerStatus.has("local_tiger_proxy")) {
+          const url = fetchedServerStatus.get("local_tiger_proxy")?.baseUrl;
+          if (url) {
+            localProxyWebUiUrl.value = url;
+          }
+        }
 
-    if (currentServerStatus.value.size !== 0) {
-      console.error("Fetching while currentServerStatus is set is not supported!")
-      return;
-    }
+        if (currentServerStatus.value.size !== 0) {
+          console.error("Fetching while currentServerStatus is set is not supported!")
+          return;
+        }
 
-    // sort prefetched Messages based on index;
-    TestEnvStatusDto.sortArray(preFetchMessageList);
+        // sort prefetched Messages based on index;
+        TestEnvStatusDto.sortArray(preFetchMessageList);
 
-    // if notification list is missing a message (index not increased by one) abort and fetch anew assuming we might get a more current state
-    const indexConsistent = TestEnvStatusDto.checkMessagesInArrayAreWellOrdered(preFetchMessageList);
-    if (!indexConsistent) {
-      debug("prefetched message list is not consistent \nwait 500ms and refetch!");
-      // TODO add them to the outOfOrderMessage list and return
-      window.setTimeout(fetchInitialServerStatus, 500);
-      return;
-    }
+        // if notification list is missing a message (index not increased by one) abort and fetch anew assuming we might get a more current state
+        const indexConsistent = TestEnvStatusDto.checkMessagesInArrayAreWellOrdered(preFetchMessageList);
+        if (!indexConsistent) {
+          debug("prefetched message list is not consistent \nwait 500ms and refetch!");
+          // TODO add them to the outOfOrderMessage list and return
+          window.setTimeout(fetchInitialServerStatus, 500);
+          return;
+        }
 
-    featureUpdateMap.value.clear();
-    FeatureUpdate.addToMapFromJson(featureUpdateMap.value, json.featureMap);
-    debug("FETCH FEATURE MERGE DONE");
+        featureUpdateMap.value.clear();
+        FeatureUpdate.addToMapFromJson(featureUpdateMap.value, json.featureMap);
+        debug("FETCH FEATURE MERGE DONE");
 
-    if (json.bannerMessage) {
-      bannerData.value.splice(0, bannerData.value.length);
-      bannerData.value.push(BannerMessage.fromJson(json));
-    }
+        if (json.bannerMessage) {
+          bannerData.value.splice(0, bannerData.value.length);
+          bannerData.value.push(BannerMessage.fromJson(json));
+        }
 
-    preFetchMessageList.forEach((testEnvStatusDtoMessage) => {
-      if (testEnvStatusDtoMessage.index > json.currentIndex) {
-        mergeMessage(fetchedServerStatus, testEnvStatusDtoMessage);
-      }
-    });
-    currentMessageIndex = json.currentIndex;
-    fetchedServerStatus.forEach((value, key) => currentServerStatus.value.set(key, value));
-    fetchedInitialStatus = true;
-    debug("FETCH DONE " + currentMessageIndex);
-    //TODO now check outOfOrder list if there is any new messages with higher index in list
-    debug("OOFList: " + JSON.stringify(outOfOrderMessageList));
-    outOfOrderMessageList = new Array<TestEnvStatusDto>();
-  });
+        preFetchMessageList.forEach((testEnvStatusDtoMessage) => {
+          if (testEnvStatusDtoMessage.index > json.currentIndex) {
+            mergeMessage(fetchedServerStatus, testEnvStatusDtoMessage);
+          }
+        });
+        currentMessageIndex = json.currentIndex;
+        fetchedServerStatus.forEach((value, key) => currentServerStatus.value.set(key, value));
+        fetchedInitialStatus = true;
+        debug("FETCH DONE " + currentMessageIndex);
+        //TODO now check outOfOrder list if there is any new messages with higher index in list
+        debug("OOFList: " + JSON.stringify(outOfOrderMessageList));
+        outOfOrderMessageList = new Array<TestEnvStatusDto>();
+      });
 }
 
 function fetchTigerVersion() {
   fetch(baseURL + "status/version")
-  .then((response) => response.text())
-  .then((data) => {
-    debug("FETCH Version: " + data);
-    version.value = data;
-  });
+      .then((response) => response.text())
+      .then((data) => {
+        debug("FETCH Version: " + data);
+        version.value = data;
+      });
 }
 
 function fetchTigerBuild() {
   fetch(baseURL + "status/build")
-  .then((response) => response.text())
-  .then((data) => {
-    debug("FETCH Build: " + data);
-    build.value = data;
-  });
+      .then((response) => response.text())
+      .then((data) => {
+        debug("FETCH Build: " + data);
+        build.value = data;
+      });
 }
 
 function updateServerStatus(serverStatus: Map<string, TigerServerStatusDto>, update: Map<string, TigerServerStatusUpdateDto>) {
@@ -607,21 +608,21 @@ function toggleLeftSideBar() {
 function quitTestrun(ev: MouseEvent) {
   ev.preventDefault();
   fetch(baseURL + "testExecution/quit", {method: 'PUT'})
-  .then(response => {
-        console.log("RES: " + JSON.stringify(response));
-        if (!response.ok) {
-          alert("Failed to abort test execution! " + response.statusText);
-          return false;
-        }
-        quitTestrunOngoing.value = true;
-        shutdownTestrunOngoing.value = false;
-      },
-      error => {
-        console.log("ERR: " + JSON.stringify(error))
-      })
-  .catch(error => {
-    console.log("CATCH: " + JSON.stringify(error))
-  });
+      .then(response => {
+            console.log("RES: " + JSON.stringify(response));
+            if (!response.ok) {
+              alert("Failed to abort test execution! " + response.statusText);
+              return false;
+            }
+            quitTestrunOngoing.value = true;
+            shutdownTestrunOngoing.value = false;
+          },
+          error => {
+            console.log("ERR: " + JSON.stringify(error))
+          })
+      .catch(error => {
+        console.log("CATCH: " + JSON.stringify(error))
+      });
   return false;
 }
 
@@ -629,19 +630,19 @@ function pauseTestrun(ev: MouseEvent) {
   pauseTestrunOngoing.value = !pauseTestrunOngoing.value;
   ev.preventDefault();
   fetch(baseURL + "testExecution/pause", {method: 'PUT'})
-  .then(response => {
-        console.log("RES: " + JSON.stringify(response));
-        if (!response.ok) {
-          alert("Failed to pause test execution! " + response.statusText);
-          return false;
-        }
-      },
-      error => {
-        console.log("ERR: " + JSON.stringify(error))
-      })
-  .catch(error => {
-    console.log("CATCH: " + JSON.stringify(error))
-  });
+      .then(response => {
+            console.log("RES: " + JSON.stringify(response));
+            if (!response.ok) {
+              alert("Failed to pause test execution! " + response.statusText);
+              return false;
+            }
+          },
+          error => {
+            console.log("ERR: " + JSON.stringify(error))
+          })
+      .catch(error => {
+        console.log("CATCH: " + JSON.stringify(error))
+      });
   return false;
 }
 

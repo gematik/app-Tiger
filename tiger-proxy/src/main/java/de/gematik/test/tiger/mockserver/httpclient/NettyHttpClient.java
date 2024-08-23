@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -18,7 +18,7 @@ package de.gematik.test.tiger.mockserver.httpclient;
 
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.mockserver.model.Protocol;
@@ -55,7 +55,7 @@ public class NettyHttpClient {
       AttributeKey.valueOf("RESPONSE_FUTURE");
   public static final AttributeKey<Boolean> ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE =
       AttributeKey.valueOf("ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE");
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private final EventLoopGroup eventLoopGroup;
   private final Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations;
   private final NettySslContextFactory nettySslContextFactory;
@@ -63,7 +63,7 @@ public class NettyHttpClient {
   @Getter private final ClientBootstrapFactory clientBootstrapFactory;
 
   public NettyHttpClient(
-      Configuration configuration,
+      MockServerConfiguration configuration,
       EventLoopGroup eventLoopGroup,
       List<ProxyConfiguration> proxyConfigurations,
       NettySslContextFactory nettySslContextFactory) {
@@ -134,7 +134,6 @@ public class NettyHttpClient {
                           future.channel().writeAndFlush(requestInfo.getDataToSend());
                         }
                       });
-
                 } else {
                   httpResponseFuture.completeExceptionally(future.cause());
                 }
@@ -217,12 +216,13 @@ public class NettyHttpClient {
           (ChannelFutureListener)
               future -> {
                 if (future.isSuccess()) {
-                  if (log.isDebugEnabled()) {
-                    log.debug(
-                        "sending bytes hex {} to {}",
-                        ByteBufUtil.hexDump(binaryRequestInfo.getBytes()),
-                        future.channel().attr(REMOTE_SOCKET).get());
-                  }
+                  log.atDebug().log(
+                      () ->
+                          "sending bytes hex %s to %s"
+                              .formatted(
+                                  ByteBufUtil.hexDump(binaryRequestInfo.getBytes()),
+                                  future.channel().attr(REMOTE_SOCKET).get()));
+
                   // send the binary request
                   future
                       .channel()

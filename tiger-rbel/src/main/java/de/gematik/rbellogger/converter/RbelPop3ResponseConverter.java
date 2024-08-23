@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -16,8 +16,7 @@
 
 package de.gematik.rbellogger.converter;
 
-import static de.gematik.rbellogger.util.EmailConversionUtils.CRLF;
-import static de.gematik.rbellogger.util.EmailConversionUtils.CRLF_DOT_CRLF;
+import static de.gematik.rbellogger.util.EmailConversionUtils.*;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
@@ -25,23 +24,49 @@ import de.gematik.rbellogger.data.pop3.RbelPop3Command;
 import de.gematik.rbellogger.util.EmailConversionUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 
+@ConverterInfo(onlyActivateFor = "pop3")
 @Slf4j
 public class RbelPop3ResponseConverter implements RbelConverterPlugin {
 
   private static final Pattern STAT_OR_LIST_HEADER =
-      Pattern.compile("(?<count>\\d+) ((?<size>\\d+)|messages \\((?<size2>\\d+) octets\\))");
+      Pattern.compile("(?<count>\\d+) ((?<size>\\d+)|messages(:| \\((?<size2>\\d+) octets\\)))");
+
+  private static final Set<RbelPop3Command> MIME_BODY_RESPONSE_COMMANDS =
+      Set.of(RbelPop3Command.RETR, RbelPop3Command.TOP);
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
     buildPop3ResponseFacet(element, context)
-        .ifPresent(
+        .ifPresentOrElse(
             facet -> {
               element.addFacet(facet);
-              Optional.ofNullable(facet.getBody()).ifPresent(context::convertElement);
-            });
+              element.addFacet(new RbelResponseFacet(facet.getStatus().getRawStringContent()));
+              Optional.ofNullable(facet.getBody())
+                  .filter(
+                      body ->
+                          findPop3Command(element, context)
+                              .filter(MIME_BODY_RESPONSE_COMMANDS::contains)
+                              .isPresent())
+                  .ifPresent(context::convertElement);
+              findPop3Request(element, context)
+                  .ifPresent(
+                      request -> {
+                        request.removeFacetsOfType(TigerNonPairedMessageFacet.class);
+                        element.removeFacetsOfType(TigerNonPairedMessageFacet.class);
+                      });
+            },
+            () ->
+                element
+                    .getFacet(TracingMessagePairFacet.class)
+                    .ifPresent(
+                        pair -> {
+                          pair.getRequest().removeFacetsOfType(TracingMessagePairFacet.class);
+                          pair.getResponse().removeFacetsOfType(TracingMessagePairFacet.class);
+                        }));
   }
 
   private Optional<RbelPop3ResponseFacet> buildPop3ResponseFacet(
@@ -73,13 +98,12 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
     String[] firstLineParts = lines[0].split(" ", 2);
     String status = firstLineParts[0];
     String header = firstLineParts.length > 1 ? firstLineParts[1] : null;
-    context.waitForAllElementsBeforeGivenToBeParsed(element.findRootElement());
-    if (header == null) {
+    if (header == null || header.isBlank()) {
       return findPop3Command(element, context)
           .flatMap(
               command ->
                   switch (command) {
-                    case CAPA, RETR -> lines.length < 3
+                    case CAPA, RETR, TOP, LIST, UIDL -> lines.length < 3
                         ? Optional.empty()
                         : Optional.of(buildResponseFacet(element, status, null, lines));
                     case USER, PASS -> lines.length > 2
@@ -113,46 +137,12 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
         .orElse(Optional.of(EmailConversionUtils.createChildElement(element, header)));
   }
 
+  private Optional<RbelElement> findPop3Request(RbelElement element, RbelConverter context) {
+    return RbelTcpIpMessageFacet.findAndPairMatchingRequest(element, context, RbelPop3CommandFacet.class);
+  }
+
   private Optional<RbelPop3Command> findPop3Command(RbelElement element, RbelConverter context) {
-    return context
-        .messagesStreamLatestFirst()
-        .filter(e -> element != e)
-        .filter(e -> e.hasFacet(RbelPop3CommandFacet.class))
-        .filter(e -> matchesSenderAndReceiver(e, element))
-        .findFirst()
-        .flatMap(this::getPop3Command);
-  }
-
-  private boolean matchesSenderAndReceiver(RbelElement pop3Command, RbelElement pop3Response) {
-    return pop3Command
-        .getFacet(RbelTcpIpMessageFacet.class)
-        .filter(
-            request ->
-                pop3Response
-                    .getFacet(RbelTcpIpMessageFacet.class)
-                    .filter(
-                        response ->
-                            equalAddresses(request.getSender(), response.getReceiver())
-                                && equalAddresses(request.getReceiver(), response.getSender()))
-                    .isPresent())
-        .isPresent();
-  }
-
-  private static boolean equalAddresses(RbelElement a1, RbelElement a2) {
-    return a1.getFacet(RbelHostnameFacet.class)
-        .filter(
-            host1 ->
-                a2.getFacet(RbelHostnameFacet.class)
-                    .filter(host2 -> equalValues(host1.getDomain(), host2.getDomain()))
-                    .filter(host2 -> equalValues(host1.getPort(), host2.getPort()))
-                    .isPresent())
-        .isPresent();
-  }
-
-  private static boolean equalValues(RbelElement e1, RbelElement e2) {
-    return e1.seekValue()
-        .filter(v1 -> e2.seekValue().filter(v2 -> v1.equals(v2)).isPresent())
-        .isPresent();
+    return findPop3Request(element, context).flatMap(this::getPop3Command);
   }
 
   private Optional<RbelPop3Command> getPop3Command(RbelElement element) {
@@ -172,7 +162,10 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
               .addFacet(
                   RbelPop3StatOrListHeaderFacet.builder()
                       .count(RbelElement.wrap(element, count))
-                      .size(RbelElement.wrap(element, size))
+                      .size(
+                          Optional.ofNullable(size)
+                              .map(s -> RbelElement.wrap(element, s))
+                              .orElse(null))
                       .build()));
     }
     return Optional.empty();

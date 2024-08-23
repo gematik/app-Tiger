@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -16,6 +16,7 @@
 
 package de.gematik.rbellogger.converter;
 
+import de.gematik.rbellogger.RbelConverterInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelElementConvertionPair;
 import de.gematik.rbellogger.data.RbelHostname;
@@ -55,38 +56,27 @@ public class RbelConverter {
   @Getter private final RbelKeyManager rbelKeyManager;
   @Getter private final RbelValueShader rbelValueShader = new RbelValueShader();
   @Getter private final List<RbelConverterPlugin> postConversionListeners = new ArrayList<>();
-  private final List<RbelConverterPlugin> converterPlugins =
-      new LinkedList<>(
-          List.of(
-              new RbelBase64JsonConverter(),
-              new RbelUriConverter(),
-              new RbelHttpResponseConverter(),
-              new RbelHttpRequestConverter(),
-              new RbelJwtConverter(),
-              new RbelHttpFormDataConverter(),
-              new RbelJweConverter(),
-              new RbelBearerTokenConverter(),
-              new RbelXmlConverter(),
-              new RbelJsonConverter(),
-              new RbelVauEpaKeyDeriver(),
-              new RbelMtomConverter(),
-              new RbelX509Converter(),
-              new RbelX500Converter(),
-              new RbelSicctEnvelopeConverter(),
-              new RbelSicctCommandConverter(),
-              new RbelCetpConverter(),
-              new RbelCborConverter(),
-              new RbelPop3CommandConverter(),
-              new RbelPop3ResponseConverter(),
-              new RbelMimeConverter(),
-              new RbelEncryptedMailConverter(),
-              new RbelSmtpCommandConverter(),
-              new RbelSmtpResponseConverter()));
+  private final List<RbelConverterPlugin> converterPlugins = new ArrayList<>();
   @Builder.Default private int rbelBufferSizeInMb = 1024;
   @Builder.Default private boolean manageBuffer = false;
   @Getter @Builder.Default private long currentBufferSize = 0;
   @Builder.Default private long messageSequenceNumber = 0;
   @Builder.Default private int skipParsingWhenMessageLargerThanKb = -1;
+  @Builder.Default private List<String> activateRbelParsingFor = List.of();
+
+  @Builder.Default private volatile boolean shallInitializeConverters = true;
+
+  public void initializeConverters() {
+    if (shallInitializeConverters) {
+      // the outside check is done to avoid the synchronized overhead for most calls
+      synchronized (converterPlugins) {
+        if (shallInitializeConverters) {
+          new RbelConverterInitializer(this, activateRbelParsingFor).addConverters();
+          shallInitializeConverters = false;
+        }
+      }
+    }
+  }
 
   public RbelElement convertElement(final byte[] input, RbelElement parentNode) {
     return convertElement(RbelElement.builder().parentNode(parentNode).rawContent(input).build());
@@ -105,6 +95,7 @@ public class RbelConverter {
   }
 
   public RbelElement convertElement(final RbelElement convertedInput) {
+    initializeConverters();
     log.trace("Converting {}...", convertedInput);
     boolean elementIsOversized =
         skipParsingWhenMessageLargerThanKb > -1
@@ -151,7 +142,9 @@ public class RbelConverter {
   }
 
   public void addConverter(RbelConverterPlugin converter) {
-    converterPlugins.add(converter);
+    synchronized (converterPlugins) {
+      converterPlugins.add(converter);
+    }
   }
 
   public RbelElement parseMessage(

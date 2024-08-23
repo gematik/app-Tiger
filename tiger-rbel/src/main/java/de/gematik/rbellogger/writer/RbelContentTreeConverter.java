@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -46,7 +46,6 @@ public class RbelContentTreeConverter {
           new RbelBearerTokenElementToNodeConverter());
   private final RbelElement input;
   @Getter private final TigerJexlContext jexlContext;
-  private Set<String> transitiveTypes = Set.of("xml", "json");
 
   public RbelContentTreeConverter(RbelElement input, TigerJexlContext jexlContext) {
     this.input = input;
@@ -86,7 +85,7 @@ public class RbelContentTreeConverter {
                 s -> {
                   var source =
                       new BasicTigerConfigurationSource(
-                          SourceType.RUNTIME_EXPORT, Map.of(ENCODE_AS, s));
+                          ConfigurationValuePrecedence.RUNTIME_EXPORT, Map.of(ENCODE_AS, s));
                   conversionContext.addConfigurationSource(source);
                   return source;
                 });
@@ -108,7 +107,7 @@ public class RbelContentTreeConverter {
   }
 
   private boolean isTransitiveType(String encodingType) {
-    return transitiveTypes.contains(encodingType);
+    return RbelContentType.seekValueFor(encodingType).isTransitive();
   }
 
   private Optional<String> extractEncodingType(
@@ -149,8 +148,8 @@ public class RbelContentTreeConverter {
     for (Object iterate : ((Collection) context.get("t"))) {
       BasicTigerConfigurationSource localSource =
           new BasicTigerConfigurationSource(
-              SourceType.RUNTIME_EXPORT,
-              TigerConfigurationLoader.addYamlToMap(
+              ConfigurationValuePrecedence.RUNTIME_EXPORT,
+              TigerConfigurationLoader.addConfigurationFileToMap(
                   iterate,
                   new TigerConfigurationKey(loopStatement.split(":")[0].trim()),
                   new HashMap<>()));

@@ -23,7 +23,7 @@ The following inlets are considered in the TigerGlobalConfiguration (ordered fro
 * System-Properties (System.setProperty)
 * Environment-Variables (export "FOO_BAR" = 42)
 * Full-text YAML file (value of `tiger.yaml` configuration key)
-* Additional YAML-Files (`additionalYamls:`)
+* Additional YAML-Files (`additionalConfigurationFiles:`)
 * Host YAML-File (`tiger-<hostname>.yaml`)
 * Main YAML-File (`tiger.yaml`)
 * Interne Defaults
@@ -47,7 +47,7 @@ To enable this simply reference the Thread-context when storing a variable:
 
 [source,java]
 ----
-TigerGlobalConfiguration.putValue("foo.value", "bar", SourceType.THREAD_CONTEXT);
+TigerGlobalConfiguration.putValue("foo.value", "bar", ConfigurationFileType.THREAD_CONTEXT);
 ----
 
 When retrieving the variable you could simply ask for `foo.value`: Only when you are in the thread that stored this variable you will find it again.

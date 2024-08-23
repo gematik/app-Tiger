@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -179,7 +179,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     } else {
       targetDiv = "<div class=\"col ms-6 msglist\" id=\"rbelmsglist\">";
     }
-    html = replaceScript(html.replace("<div class=\"col ms-6\">", targetDiv));
+    html = addTigerProxyJsAndCss(html.replace("<div class=\"col ms-6\">", targetDiv));
 
     String navbar;
 
@@ -434,14 +434,28 @@ public class TigerWebUiController implements ApplicationContextAware {
         .render();
   }
 
-  private String replaceScript(String html) {
+  private String addTigerProxyJsAndCss(String html) {
     var jsoup = Jsoup.parse(html);
     final Element mainWebUiScript = jsoup.getElementById("mainWebUiScript");
-    mainWebUiScript.attr("type", "module");
-    mainWebUiScript
-        .dataNodes()
-        .get(0)
-        .replaceWith(new DataNode(loadResourceToString("/tigerProxy.js")));
+
+    if (mainWebUiScript == null) {
+      throw new TigerProxyWebUiException("Unable to embed proxy scripts into webui!");
+    }
+    var addScript = new Element("script");
+    addScript.attr("type", "module");
+    addScript.attr("id", "tigerProxyScript");
+    addScript.appendChild(new DataNode(loadResourceToString("/tigerProxy.js")));
+    mainWebUiScript.after(addScript);
+
+    final Element rbelCss = jsoup.getElementById("rbel_css");
+    if (rbelCss == null) {
+      throw new TigerProxyWebUiException("Unable to embed proxy css into webui!");
+    }
+
+    var addCss = new Element("style");
+    addCss.attr("id", "tigerProxy_css");
+    addCss.appendChild(new DataNode(loadResourceToString("/proxy.css")));
+    rbelCss.after(addCss);
     return jsoup.html();
   }
 
@@ -612,7 +626,6 @@ public class TigerWebUiController implements ApplicationContextAware {
                         .build())
             .toList());
     result.setMetaMsgList(msgs.stream().map(MessageMetaDataDto::createFrom).toList());
-    result.setPagesAvailable(((msgs.size() - 1) / pageSize) + 1);
     result.setTotalMsgCount(tigerProxy.getRbelLogger().getMessageHistory().size());
     log.info(
         "Returning {} messages ({} in menu, {} filtered) of total {}",

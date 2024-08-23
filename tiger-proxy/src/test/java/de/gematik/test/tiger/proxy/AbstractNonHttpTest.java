@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -27,6 +27,7 @@ import de.gematik.test.tiger.ByteArrayToStringRepresentation;
 import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -42,7 +43,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -79,13 +79,13 @@ public abstract class AbstractNonHttpTest {
         .isEqualTo(message);
   }
 
-  public void executeTestRun(
+  public void executeTestRunWithDirectReverseProxy(
       ThrowingConsumer<Socket> clientActionCallback,
       VerifyInteractionsConsumer interactionsVerificationCallback,
       ThrowingConsumer<Socket> serverAcceptedConnectionCallback,
       RbelConverterPlugin... postConversionListeners)
       throws Exception {
-    executeTestRun(
+    executeTestRunWithTls(
         clientActionCallback,
         interactionsVerificationCallback,
         serverAcceptedConnectionCallback,
@@ -111,12 +111,13 @@ public abstract class AbstractNonHttpTest {
   }
 
   public void executeTestRun(
+      boolean withTls,
       ThrowingConsumer<Socket> clientActionCallback,
       VerifyInteractionsConsumer interactionsVerificationCallback,
       ThrowingConsumer<Socket> serverAcceptedConnectionCallback,
       Function<Integer, TigerProxy> tigerProxyGenerator)
       throws Exception {
-    try (GenericRespondingServer listenerServer = new GenericRespondingServer()) {
+    try (GenericRespondingServer listenerServer = new GenericRespondingServer(withTls)) {
       AtomicInteger handlerCalledRequest = new AtomicInteger(0);
       AtomicInteger handlerCalledResponse = new AtomicInteger(0);
       AtomicInteger serverConnectionsOpenend = new AtomicInteger(0);
@@ -127,8 +128,8 @@ public abstract class AbstractNonHttpTest {
           });
       tigerProxy = tigerProxyGenerator.apply(listenerServer.getLocalPort());
 
-      final de.gematik.test.tiger.mockserver.configuration.Configuration configuration =
-          (de.gematik.test.tiger.mockserver.configuration.Configuration)
+      final MockServerConfiguration configuration =
+          (MockServerConfiguration)
               ReflectionTestUtils.getField(
                   ReflectionTestUtils.getField(tigerProxy, "mockServer"), "configuration");
       final de.gematik.test.tiger.mockserver.model.BinaryProxyListener oldListener =
@@ -154,7 +155,7 @@ public abstract class AbstractNonHttpTest {
       CompletableFuture<Void> executionResult =
           CompletableFuture.supplyAsync(
               () -> {
-                try (Socket clientSocket = newClientSocketTo(tigerProxy)) {
+                try (Socket clientSocket = newClientSocketTo(tigerProxy, withTls)) {
                   log.info("listenerServer on port: " + listenerServer.getLocalPort());
                   clientActionCallback.accept(clientSocket);
                 } catch (IOException e) {
@@ -173,10 +174,8 @@ public abstract class AbstractNonHttpTest {
         await()
             .atMost(10, TimeUnit.SECONDS)
             .failFast(executionResult::isCompletedExceptionally)
-            .pollDelay(
-                1000,
-                TimeUnit.MILLISECONDS) // to ensure the server would have had a chance to handle a
             // response
+            .ignoreExceptions()
             .pollInterval(200, TimeUnit.MILLISECONDS)
             .untilAsserted(
                 () -> {
@@ -194,6 +193,7 @@ public abstract class AbstractNonHttpTest {
                       handlerCalledRequest, handlerCalledResponse, serverConnectionsOpenend);
                 });
       } catch (RuntimeException e) {
+        log.error("Exception while executing test", e);
         log.error(
             "Found messages: \n\n{}",
             getTigerProxy().getRbelMessages().stream()
@@ -208,6 +208,20 @@ public abstract class AbstractNonHttpTest {
     }
   }
 
+  public void executeTestRunWithTls(
+      ThrowingConsumer<Socket> clientActionCallback,
+      VerifyInteractionsConsumer interactionsVerificationCallback,
+      ThrowingConsumer<Socket> serverAcceptedConnectionCallback,
+      Function<Integer, TigerProxy> tigerProxyGenerator)
+      throws Exception {
+    executeTestRun(
+        true,
+        clientActionCallback,
+        interactionsVerificationCallback,
+        serverAcceptedConnectionCallback,
+        tigerProxyGenerator);
+  }
+
   public static class GenericRespondingServer implements AutoCloseable {
 
     private final ServerSocket listenerServer;
@@ -216,8 +230,8 @@ public abstract class AbstractNonHttpTest {
     private boolean shouldRun = true;
     private final AtomicReference<Throwable> serverSidedException = new AtomicReference<>();
 
-    public GenericRespondingServer() {
-      listenerServer = newSslServerSocket();
+    public GenericRespondingServer(boolean secure) {
+      listenerServer = newServerSocket(secure);
       final AtomicBoolean isServerReady = new AtomicBoolean(false);
       serverThread =
           new Thread(
@@ -289,21 +303,6 @@ public abstract class AbstractNonHttpTest {
     void acceptThrows(T elem) throws Exception;
   }
 
-  @FunctionalInterface
-  public interface ThrowingSupplier<T> extends Supplier<T> {
-
-    @Override
-    default T get() {
-      try {
-        return getThrows();
-      } catch (final Exception e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    T getThrows() throws Exception;
-  }
-
   public interface VerifyInteractionsConsumer {
 
     void acceptThrows(
@@ -312,29 +311,35 @@ public abstract class AbstractNonHttpTest {
   }
 
   @NotNull
-  public static Socket newClientSocketTo(TigerProxy tigerProxy) throws IOException {
-    return tigerProxy
-        .buildSslContext()
-        .getSocketFactory()
-        .createSocket("localhost", tigerProxy.getProxyPort());
+  public static Socket newClientSocketTo(TigerProxy tigerProxy, boolean secure) throws IOException {
+    if (secure) {
+      return tigerProxy
+          .buildSslContext()
+          .getSocketFactory()
+          .createSocket("localhost", tigerProxy.getProxyPort());
+    } else {
+      return new Socket("localhost", tigerProxy.getProxyPort());
+    }
   }
 
   @NotNull
   @SneakyThrows
-  public static ServerSocket newSslServerSocket() {
-    final KeyStore ks = buildTruststore();
+  public static ServerSocket newServerSocket(boolean secure) {
+    if (secure) {
+      final KeyStore ks = buildTruststore();
+      final TrustManagerFactory tmf =
+          TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      tmf.init(ks);
+      KeyManagerFactory keyManagerFactory =
+          KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+      keyManagerFactory.init(ks, "gematik".toCharArray());
+      SSLContext sslContext = SSLContext.getInstance("TLS");
+      sslContext.init(keyManagerFactory.getKeyManagers(), null, null);
 
-    final TrustManagerFactory tmf =
-        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-    tmf.init(ks);
-    KeyManagerFactory keyManagerFactory =
-        KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    keyManagerFactory.init(ks, "gematik".toCharArray());
-
-    SSLContext sslContext = SSLContext.getInstance("TLS");
-    sslContext.init(keyManagerFactory.getKeyManagers(), null, null);
-
-    return sslContext.getServerSocketFactory().createServerSocket(0);
+      return sslContext.getServerSocketFactory().createServerSocket(0);
+    } else {
+      return new ServerSocket(0);
+    }
   }
 
   @SneakyThrows

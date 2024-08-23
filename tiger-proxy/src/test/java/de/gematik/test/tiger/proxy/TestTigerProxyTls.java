@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -44,6 +44,8 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Proxy.Type;
 import java.net.Socket;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.*;
 import java.security.cert.*;
 import java.time.ZonedDateTime;
@@ -81,6 +83,7 @@ import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -470,11 +473,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   private CloseableHttpClient loadSslContextForClientCert() throws Exception {
     KeyStore trustStore = KeyStore.getInstance("PKCS12");
 
-    FileInputStream instream = new FileInputStream("src/test/resources/mailuser-rsa1.p12");
-    try {
+    try (FileInputStream instream = new FileInputStream("src/test/resources/mailuser-rsa1.p12")) {
       trustStore.load(instream, "00".toCharArray());
-    } finally {
-      instream.close();
     }
 
     final SSLContext sslContext =
@@ -588,7 +588,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     final TigerConfigurationPkiIdentity clientIdentity =
         new TigerConfigurationPkiIdentity("src/test/resources/gateway_ecc.p12;00");
 
-    int serverPort = startKonnektorAlikeServerReturningAlways555(clientIdentity);
+    int serverPort = startKonnektorAlikeServerReturningAlways555(Optional.of(clientIdentity));
 
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
@@ -612,74 +612,6 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
     final HttpResponse<String> response = proxyRest.get("http://backend/foobar").asString();
     assertThat(response.getStatus()).isEqualTo(555);
-  }
-
-  AtomicBoolean shouldServerRun = new AtomicBoolean(true);
-
-  @SneakyThrows
-  public int startKonnektorAlikeServerReturningAlways555(
-      TigerConfigurationPkiIdentity clientIdentity) {
-    var threadPool = Executors.newCachedThreadPool();
-
-    SSLContext sslContext = getSSLContext(clientIdentity);
-    SSLServerSocketFactory ssf = sslContext.getServerSocketFactory();
-    SSLServerSocket serverSocket = (SSLServerSocket) ssf.createServerSocket(0);
-    String[] ciphers = {
-      "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
-    };
-    serverSocket.setEnabledCipherSuites(ciphers);
-    serverSocket.setEnabledProtocols(new String[] {"TLSv1.2"});
-    serverSocket.setNeedClientAuth(true);
-
-    threadPool.execute(
-        () -> {
-          while (shouldServerRun.get()) {
-            try {
-              Socket socket = serverSocket.accept();
-              OutputStream out = socket.getOutputStream();
-              out.write("HTTP/1.1 555\r\nContent-Length: 0\r\n\r\n".getBytes());
-              out.flush();
-            } catch (IOException e) {
-              // swallow
-            }
-          }
-        });
-
-    return serverSocket.getLocalPort();
-  }
-
-  protected SSLContext getSSLContext(TigerConfigurationPkiIdentity clientIdentity)
-      throws Exception {
-    SSLContext sslContext = SSLContext.getInstance("TLS", new BouncyCastleJsseProvider());
-    final TigerConfigurationPkiIdentity serverCert =
-        new TigerConfigurationPkiIdentity("src/test/resources/eccStoreWithChain.jks;gematik");
-    // Set up key manager factory to use our key store
-    KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-    kmf.init(serverCert.toKeyStoreWithPassword("00"), "00".toCharArray());
-
-    // Initialize the SSLContext to work with our key managers.
-    final X509TrustManager x509TrustManager =
-        new X509TrustManager() {
-          @Override
-          public void checkClientTrusted(X509Certificate[] chain, String authType)
-              throws CertificateException {
-            // swallow
-          }
-
-          @Override
-          public void checkServerTrusted(X509Certificate[] chain, String authType)
-              throws CertificateException {
-            // swallow
-          }
-
-          @Override
-          public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[] {clientIdentity.getCertificate()};
-          }
-        };
-    sslContext.init(kmf.getKeyManagers(), new X509TrustManager[] {x509TrustManager}, null);
-
-    return sslContext;
   }
 
   @Test
@@ -935,6 +867,37 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @SneakyThrows
+  @Test
+  void masterSecretFileDefined_shouldDumpSecretInCorrectForm() throws UnirestException {
+    final Path masterSecretsFile = Paths.get("target/masterSecrets.txt");
+    FileUtils.deleteQuietly(masterSecretsFile.toFile());
+
+    spawnTigerProxyWith(
+      TigerProxyConfiguration.builder()
+        .proxyRoutes(
+          List.of(
+            TigerRoute.builder()
+              .from("https://blub")
+              .to("http://localhost:" + fakeBackendServerPort)
+              .build()))
+        .tls(
+          TigerTlsConfiguration.builder()
+            .masterSecretsFile(masterSecretsFile.toString())
+            .build())
+        .build());
+
+    proxyRest.get("https://blub/foobar").asString();
+
+    final String tls1_2sharedSecret = "(CLIENT_RANDOM [0-9a-fA-F]{64} [0-9a-fA-F]{96}\\n)*";
+    // "CLIENT_RANDOM" followed by client-random followed by master secret
+    // The exact length of the secret might differ in other TLS versions
+    assertThat(masterSecretsFile)
+        .exists()
+        .content()
+        .matches(tls1_2sharedSecret);
   }
 
   @SneakyThrows

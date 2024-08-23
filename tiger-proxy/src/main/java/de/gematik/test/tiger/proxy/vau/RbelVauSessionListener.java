@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -16,8 +16,7 @@
 
 package de.gematik.test.tiger.proxy.vau;
 
-import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.converter.RbelConverterPlugin;
+import de.gematik.rbellogger.converter.*;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import java.util.HashMap;
@@ -26,6 +25,9 @@ import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
+@ConverterInfo(
+    onlyActivateFor = {"epa-vau"},
+    addAsPostConversionListener = true)
 @Slf4j
 public class RbelVauSessionListener implements RbelConverterPlugin {
 
@@ -116,7 +118,6 @@ public class RbelVauSessionListener implements RbelConverterPlugin {
           .findElement("$.VAUClientHelloDataHash")
           .map(RbelElement::getRawStringContent)
           .map(clientHelloHashToSessionMap::get)
-          .filter(Objects::nonNull)
           .ifPresent(
               vauSessionFacet -> {
                 rbelElement.addFacet(vauSessionFacet.toBuilder().build());
@@ -164,8 +165,10 @@ public class RbelVauSessionListener implements RbelConverterPlugin {
     try {
       function.run();
     } catch (RuntimeException e) {
-      log.trace(
-          "Swallowed exception during safe execution in {}: {}", getClass().getSimpleName(), e);
+      log.atTrace()
+          .addArgument(RbelVauSessionListener.class::getSimpleName)
+          .addArgument(e)
+          .log("Swallowed exception during safe execution in {}: {}");
     }
   }
 }

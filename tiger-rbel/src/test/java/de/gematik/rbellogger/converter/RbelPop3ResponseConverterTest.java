@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -18,28 +18,18 @@ package de.gematik.rbellogger.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelPop3ResponseFacet;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
-import java.nio.charset.StandardCharsets;
-import java.util.Optional;
+
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.BeforeEach;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-class RbelPop3ResponseConverterTest {
-
-  private RbelConverter converter;
-
-  @BeforeEach
-  void init() {
-    converter = RbelLogger.build().getRbelConverter();
-  }
+class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
 
   @Test
   void shouldConvertListHeader() {
@@ -55,6 +45,29 @@ class RbelPop3ResponseConverterTest {
   }
 
   @Test
+  void shouldConvertListHeaderWithoutSize() {
+    String request = "LIST\r\n";
+    String status = "+OK";
+    String count = "2";
+    String header = count + " messages:";
+    String response = status + " " + header + "\r\n";
+    RbelElement element = convertMessagePair(request, response);
+    RbelElementAssertion.assertThat(element)
+        .extractChildWithPath("$.pop3Status")
+        .hasStringContentEqualTo(status)
+        .andTheInitialElement()
+        .extractChildWithPath("$.pop3Header")
+        .hasStringContentEqualTo(header)
+        .andTheInitialElement()
+        .extractChildWithPath("$.pop3Header.count")
+        .hasStringContentEqualTo(count)
+        .andTheInitialElement()
+        .doesNotHaveChildWithPath("$.pop3Header.size")
+        .andTheInitialElement()
+        .doesNotHaveChildWithPath("$.pop3Body");
+  }
+
+  @Test
   void shouldConvertStatHeader() {
     String request = "STAT\r\n";
     String status = "+OK";
@@ -67,22 +80,22 @@ class RbelPop3ResponseConverterTest {
     checkListOrStatResponseWithoutBody(element, status, header, count, size);
   }
 
-  private static RbelElementAssertion checkListOrStatResponseWithoutBody(
+  private static void checkListOrStatResponseWithoutBody(
       RbelElement element, String status, String header, String count, String size) {
-    return RbelElementAssertion.assertThat(element)
-        .extractChildWithPath("$.status")
+    RbelElementAssertion.assertThat(element)
+        .extractChildWithPath("$.pop3Status")
         .hasStringContentEqualTo(status)
         .andTheInitialElement()
-        .extractChildWithPath("$.header")
+        .extractChildWithPath("$.pop3Header")
         .hasStringContentEqualTo(header)
         .andTheInitialElement()
-        .extractChildWithPath("$.header.count")
+        .extractChildWithPath("$.pop3Header.count")
         .hasStringContentEqualTo(count)
         .andTheInitialElement()
-        .extractChildWithPath("$.header.size")
+        .extractChildWithPath("$.pop3Header.size")
         .hasStringContentEqualTo(size)
         .andTheInitialElement()
-        .doesNotHaveChildWithPath("$.body");
+        .doesNotHaveChildWithPath("$.pop3Body");
   }
 
   @ParameterizedTest
@@ -98,7 +111,7 @@ class RbelPop3ResponseConverterTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"CAPA", "RETR 1"})
+  @ValueSource(strings = {"CAPA", "RETR 1", "UIDL", "TOP 2 20"})
   void shouldAcceptMultilineWithoutHeader(String command) {
     String request = command + "\r\n";
     String status = "+OK";
@@ -106,12 +119,31 @@ class RbelPop3ResponseConverterTest {
     String response = status + "\r\n" + body + "\r\n.\r\n";
     RbelElement element = convertMessagePair(request, response);
     RbelElementAssertion.assertThat(element)
-        .extractChildWithPath("$.status")
+        .extractChildWithPath("$.pop3Status")
         .hasStringContentEqualTo(status)
         .andTheInitialElement()
-        .doesNotHaveChildWithPath("$.header")
+        .doesNotHaveChildWithPath("$.pop3Header")
         .andTheInitialElement()
-        .extractChildWithPath("$.body")
+        .extractChildWithPath("$.pop3Body")
+        .hasStringContentEqualTo(body);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"CAPA", "RETR 1", "TOP 5 10"})
+  void shouldAcceptMultilineWithEmptyHeader(String command) {
+    String request = command + "\r\n";
+    String status = "+OK";
+    String body = "foobar foobar";
+    String header = " ";
+    String response = status + " " + header + "\r\n" + body + "\r\n.\r\n";
+    RbelElement element = convertMessagePair(request, response);
+    RbelElementAssertion.assertThat(element)
+        .extractChildWithPath("$.pop3Status")
+        .hasStringContentEqualTo(status)
+        .andTheInitialElement()
+        .doesNotHaveChildWithPath("$.pop3Header")
+        .andTheInitialElement()
+        .extractChildWithPath("$.pop3Body")
         .hasStringContentEqualTo(body);
   }
 
@@ -123,12 +155,12 @@ class RbelPop3ResponseConverterTest {
     String response = status + "\r\n";
     RbelElement element = convertMessagePair(request, response);
     RbelElementAssertion.assertThat(element)
-        .extractChildWithPath("$.status")
+        .extractChildWithPath("$.pop3Status")
         .hasStringContentEqualTo(status)
         .andTheInitialElement()
-        .doesNotHaveChildWithPath("$.header")
+        .doesNotHaveChildWithPath("$.pop3Header")
         .andTheInitialElement()
-        .doesNotHaveChildWithPath("$.body");
+        .doesNotHaveChildWithPath("$.pop3Body");
   }
 
   @ParameterizedTest
@@ -144,7 +176,7 @@ class RbelPop3ResponseConverterTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"CAPA", "RETR 1"})
+  @ValueSource(strings = {"CAPA", "RETR 1", "TOP 2 10"})
   void shouldRejectMissingBody(String command) {
     String request = command + "\r\n";
     String status = "+OK";
@@ -162,13 +194,13 @@ class RbelPop3ResponseConverterTest {
     RbelElement element = convertToRbelElement(input);
 
     RbelElementAssertion.assertThat(element)
-        .extractChildWithPath("$.status")
+        .extractChildWithPath("$.pop3Status")
         .hasStringContentEqualTo(status)
         .andTheInitialElement()
-        .extractChildWithPath("$.header")
+        .extractChildWithPath("$.pop3Header")
         .hasStringContentEqualTo(header)
         .andTheInitialElement()
-        .doesNotHaveChildWithPath("$.body");
+        .doesNotHaveChildWithPath("$.pop3Body");
   }
 
   @Test
@@ -193,13 +225,13 @@ class RbelPop3ResponseConverterTest {
 
     RbelElement element = convertToRbelElement(input);
     RbelElementAssertion.assertThat(element)
-        .extractChildWithPath("$.status")
+        .extractChildWithPath("$.pop3Status")
         .hasStringContentEqualTo(status)
         .andTheInitialElement()
-        .extractChildWithPath("$.header")
+        .extractChildWithPath("$.pop3Header")
         .hasStringContentEqualTo(header)
         .andTheInitialElement()
-        .extractChildWithPath("$.body")
+        .extractChildWithPath("$.pop3Body")
         .hasStringContentEqualTo(body);
   }
 
@@ -217,25 +249,6 @@ class RbelPop3ResponseConverterTest {
   void shouldRejectMalformedPop3Response(String input) {
     RbelElement element = convertToRbelElement(input);
     assertThat(element.hasFacet(RbelPop3ResponseFacet.class)).isFalse();
-  }
-
-  private RbelElement convertMessagePair(String request, String response) {
-    var sender = new RbelHostname("host1", 1);
-    var receiver = new RbelHostname("host2", 2);
-    convertToRbelElement(request, sender, receiver);
-    return convertToRbelElement(response, receiver, sender);
-  }
-
-  private RbelElement convertToRbelElement(String request) {
-    var sender = new RbelHostname("host1", 1);
-    var receiver = new RbelHostname("host2", 2);
-    return convertToRbelElement(request, sender, receiver);
-  }
-
-  private RbelElement convertToRbelElement(
-      String input, RbelHostname sender, RbelHostname recipient) {
-    return converter.parseMessage(
-        input.getBytes(StandardCharsets.UTF_8), sender, recipient, Optional.empty());
   }
 
   private static String duplicateDotsAtLineBegins(String input) {

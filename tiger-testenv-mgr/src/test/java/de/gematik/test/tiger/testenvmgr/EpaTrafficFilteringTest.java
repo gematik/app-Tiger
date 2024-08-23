@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -21,7 +21,6 @@ import static org.awaitility.Awaitility.await;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelValueFacet;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
@@ -42,7 +41,8 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
           """
             tigerProxy:
               skipTrafficEndpointsSubscription: true
-              activateEpaVauAnalysis: true
+              activateRbelParsingFor:
+                - epa-vau
               trafficEndpointFilterString: "$.body.recordId == 'X114428539'"
               keyFolders:
                 - '../tiger-proxy/src/test/resources'
@@ -80,12 +80,13 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
         .atMost(5, TimeUnit.SECONDS)
         .ignoreExceptions()
         .until(
-            () -> envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().stream()
-                      .anyMatch(
-                          e ->
-                              e.findElement("$.body.recordId")
-                                  .flatMap(RbelElement::seekValue)
-                                  .filter(v -> v.equals("X114428539"))
-                                  .isPresent()));
+            () ->
+                envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().stream()
+                    .allMatch(
+                        e ->
+                            e.findElement("$.body.recordId")
+                                .flatMap(RbelElement::seekValue)
+                                .filter(v -> v.equals("X114428539"))
+                                .isPresent()));
   }
 }

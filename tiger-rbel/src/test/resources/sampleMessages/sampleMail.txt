@@ -17,7 +17,7 @@ This is a multi-part message in MIME format.
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Content-Transfer-Encoding: 7bit
 
-bvbfdfbdfbfbdfb
+{"foo" : "bar"}
 
 --------------BL3hx4oLOfTW1BZku2TdrpFZ
 Content-Type: application/x-zip-compressed; name="20MB.zip"

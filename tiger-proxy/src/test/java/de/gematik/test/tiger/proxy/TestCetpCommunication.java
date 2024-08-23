@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -53,7 +53,7 @@ class TestCetpCommunication extends AbstractNonHttpTest {
   @Test
   @DisplayName("Client sends two non-http request, no reply from server, connection stays open")
   void sendNonHttpTrafficWithoutResponseFromServer() throws Exception {
-    executeTestRun(
+    executeTestRunWithDirectReverseProxy(
         socket -> {
           writeSingleRequestMessage(socket);
           TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessages(getTigerProxy(), 1);
@@ -76,15 +76,15 @@ class TestCetpCommunication extends AbstractNonHttpTest {
           + " client message")
   void sendNonHttpTrafficWithoutResponseAndWithSocketCloseBetweenEachMessage() throws Exception {
     log.info("RUNNING sendNonHttpTrafficWithoutResponseAndWithSocketCloseBetweenEachMessage");
-    executeTestRun(
+    executeTestRunWithDirectReverseProxy(
         socket -> {
           socket.close();
-          try (Socket clientSocket = newClientSocketTo(getTigerProxy())) {
+          try (Socket clientSocket = newClientSocketTo(getTigerProxy(), true)) {
             writeSingleRequestMessage(clientSocket);
           }
           TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
               getTigerProxy(), 1, 10);
-          try (Socket clientSocket = newClientSocketTo(getTigerProxy())) {
+          try (Socket clientSocket = newClientSocketTo(getTigerProxy(), true)) {
             writeSingleRequestMessage(clientSocket);
             TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
                 getTigerProxy(), 2, 10);
@@ -104,11 +104,11 @@ class TestCetpCommunication extends AbstractNonHttpTest {
     writeSingleRequestMessage(socket, message);
   }
 
-  public void executeTestRun(
+  public void executeTestRunWithDirectReverseProxy(
       ThrowingConsumer<Socket> clientActionCallback,
       VerifyInteractionsConsumer interactionsVerificationCallback)
       throws Exception {
-    executeTestRun(
+    executeTestRunWithDirectReverseProxy(
         clientActionCallback,
         interactionsVerificationCallback,
         serverSocket -> {

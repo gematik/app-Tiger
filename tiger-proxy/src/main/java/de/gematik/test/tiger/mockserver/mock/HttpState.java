@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -19,7 +19,7 @@ package de.gematik.test.tiger.mockserver.mock;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static org.apache.commons.lang3.StringUtils.*;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.scheduler.Scheduler;
 import de.gematik.test.tiger.mockserver.uuid.UUIDService;
@@ -40,7 +40,7 @@ public class HttpState {
   private final String uniqueLoopPreventionHeaderValue = "MockServer_" + UUIDService.getUUID();
   private final Scheduler scheduler;
   // mockserver
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private List<Expectation> expectations = new ArrayList<>();
 
   public static void setPort(final HttpRequest request) {
@@ -74,7 +74,7 @@ public class HttpState {
     return LOCAL_PORT.get();
   }
 
-  public HttpState(Configuration configuration, Scheduler scheduler) {
+  public HttpState(MockServerConfiguration configuration, Scheduler scheduler) {
     this.configuration = configuration;
     this.scheduler = scheduler;
   }

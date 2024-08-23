@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -20,8 +20,6 @@ import static de.gematik.rbellogger.file.RbelFileWriter.PAIRED_MESSAGE_UUID;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.RbelErpVauDecrpytionConverter;
-import de.gematik.rbellogger.converter.RbelVauEpaConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
@@ -34,7 +32,6 @@ import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import de.gematik.test.tiger.proxy.client.ProxyFileReadingFilter;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
-import de.gematik.test.tiger.proxy.vau.RbelVauSessionListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -204,16 +201,11 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
           .forEach(
               folder -> rbelConfiguration.addInitializer(new RbelKeyFolderInitializer(folder)));
     }
-    if (configuration.isActivateEpaVauAnalysis()) {
-      rbelConfiguration.addPostConversionListener(new RbelVauSessionListener());
-      rbelConfiguration.addAdditionalConverter(new RbelVauEpaConverter());
+
+    if (configuration.getActivateRbelParsingFor() != null) {
+      configuration.getActivateRbelParsingFor().forEach(rbelConfiguration::activateConversionFor);
     }
-    if (configuration.isActivateErpVauAnalysis()) {
-      rbelConfiguration.addAdditionalConverter(new RbelErpVauDecrpytionConverter());
-    }
-    rbelConfiguration.setActivateVauEpa3Parsing(configuration.isActivateEpa3VauAnalysis());
     initializeFileSaver(configuration);
-    rbelConfiguration.setActivateAsn1Parsing(configuration.isActivateAsn1Parsing());
     rbelConfiguration.setRbelBufferSizeInMb(configuration.getRbelBufferSizeInMb());
     rbelConfiguration.setSkipParsingWhenMessageLargerThanKb(
         configuration.getSkipParsingWhenMessageLargerThanKb());

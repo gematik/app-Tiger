@@ -309,7 +309,20 @@ lib:
 The docker container node allows to instantiate a local docker container from the configured image.
 The exposed port of the docker container is available as a special token in the substitution process of the exports entries (`${PORT:xxxx}` where xxxx is the port being exposed inside the container).
 
-To customize the docker container you may alter the entry point command line and add the Tiger Proxy certificate to the container's operating system list of trusted certificates.
+To customize the docker container you may alter the entry point command line.
+Additionally, Tiger will automatically add the Tiger Proxy certificate to the container's operating system list of trusted certificates.
+This modification can be disabled by setting the property `dockerOptions.proxied` to false.
+E.g.:
+
+[source,yaml]
+----
+servers:
+  exampleDockerServer:
+    type: docker
+    dockerOptions:
+        proxied: false # default is true
+----
+
 For containers that should exit after a single command you may enable the oneShot property.
 
 You can also copy files to the container by configuring the source and destinations paths of files or folder to be copied.
@@ -736,7 +749,7 @@ For more information about what the Tiger Proxy is and how it works see the chap
 localProxyActive: true
 
 # Specifiy additional yaml-files to read in during startup
-additionalYamls:
+additionalConfigurationFiles:
   -
     # the path to the file to read
     filename: specialEnvironment.yaml
@@ -758,6 +771,8 @@ tigerProxy:
     filename: "foobar.tgr"
     # default false
     clearFileOnBoot: true
+    # read traffic from a file at startup
+    sourceFile: "sourceFile.tgr"
     # filter messages read from file (JEXL expression)
     readFilter: "message.statusCode == '200'"
   # a list of routing entries the proxy should apply to traffic
@@ -771,6 +786,10 @@ tigerProxy:
       to: "https://another.de/server"
       # the traffic for this route will NOT be logged (default is false)
       disableRbelLogging: true
+      hosts:
+        - "www.google.com"
+        - "www.bing.com"
+      # For reverse proxy-routes this allows to differentiate requests based on the host-header. This is useful when the DNS-resolvement of the client can be influenced, but not the ports used.
 
   # a list of modifications that will be applied to every proxied request and response
   modifications:
@@ -828,6 +847,9 @@ tigerProxy:
   localResources: true
   # When active the host-headers are rewritten even for a reverse-proxy-route
   rewriteHostHeader: true
+  # This option can be used to deactivate TLS-Termination. Only deactivate this in
+  # conjunction with a directReverseProxy
+  activateTlsTermination: true
 
   tls:
     # Can be used to define a CA-Identity to be used with TLS. The Tiger Proxy will
@@ -883,6 +905,11 @@ tigerProxy:
       - localhost
       - 63.54.54.43
       - foo.bar.server.com
+    # the file into which the master-secrets are written. For this to work
+    # the tiger-java-agent has to be attached to the JVM
+    # (eg. -javaagent:tiger-java-agent-3.1.4.jar). This can be done by
+    # executing the goal 'attach-tiger-agent' to the tiger-maven-plugin.
+    masterSecretsFile: "masterSecretsFile.txt"
 
   # the given folders are loaded into RBel for analysis. This is only necessary to decrypt
   # traffic when analyzing it. It has no effect on the proxy-functions themselves.
@@ -903,7 +930,6 @@ tigerProxy:
     # the name for the traffic Endpoint. can be any string, which will be
     # displayed at /tracingpoints
     name: "tigerProxy Tracing Point"
-
 ----
 
 === Standalone mode vs. implicit startup with test suite
