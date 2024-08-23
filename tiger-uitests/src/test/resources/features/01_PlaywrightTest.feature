@@ -33,10 +33,11 @@ Feature: Playwright Test feature
     And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/put\/?"
     And TGR assert "!{rbel:currentRequestAsString('$.body.hello')}" matches "world"
 
-  Scenario: DELETE Request without body
+  @FailsOnPurpose
+  Scenario: DELETE Request without body shall fail
     When TGR send empty DELETE request to "http://httpbin/not_a_file"
     Then TGR find last request to path ".*"
-    And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "DELET"
+    And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "THIS_ON_PURPOSE_SHALL_NEVER_MATCH"
     And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/not_a_file\/?"
 
   Scenario: Request with custom header

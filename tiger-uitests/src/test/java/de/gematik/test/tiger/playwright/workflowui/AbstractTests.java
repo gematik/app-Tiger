@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -19,7 +19,6 @@ package de.gematik.test.tiger.playwright.workflowui;
 import static org.awaitility.Awaitility.await;
 
 import com.microsoft.playwright.*;
-import com.microsoft.playwright.BrowserType.LaunchOptions;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -33,7 +32,10 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestWatcher;
@@ -77,6 +79,10 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
   protected static final int NUMBER_OF_FEATURES = 2;
   protected static final int NUMBER_OF_SCENARIOS = 26;
   protected static final int TOTAL_MESSAGES = 60;
+  private static BrowserContext context;
+
+  private static boolean tracingEnabled =
+      Boolean.parseBoolean(System.getProperty("tiger.test.tracing", "true"));
 
   private static void checkPort() {
     if (port != null && !port.isEmpty()) {
@@ -126,23 +132,66 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
   @BeforeAll
   static synchronized void launchBrowser() throws IOException {
     if (playwright != null) {
+      activateTracing();
       return;
     }
     checkPort();
     playwright = Playwright.create();
     log.info("Playwright created");
     boolean runHeadless = Boolean.parseBoolean(System.getProperty("tiger.test.headless", "true"));
-    browser = playwright.chromium().launch(new LaunchOptions().setHeadless(runHeadless));
-    log.info("Browser launched");
-    page = browser.newPage();
-    log.info("new page");
+    browser = playwright.firefox().launch(new BrowserType.LaunchOptions().setHeadless(runHeadless));
+
+    context = browser.newContext();
+    activateTracing();
+    log.info("Browser launched at http://localhost:{}", port);
+    page = context.newPage();
+    page.setDefaultTimeout(30000D);
+    page.setDefaultNavigationTimeout(30000D);
     page.navigate("http://localhost:" + port);
-    log.info("to http://localhost:" + port + " navigated");
 
     File artefactsFolder =
         Path.of(System.getProperty("buildDirectory", "target"), "playwright-artifacts").toFile();
     FileUtils.deleteDirectory(artefactsFolder);
     FileUtils.forceMkdir(artefactsFolder);
+  }
+
+  private static void activateTracing() {
+    if (tracingEnabled && context != null) {
+      log.info("Activating tracing...");
+      context
+          .tracing()
+          .start(
+              new Tracing.StartOptions().setScreenshots(true).setSnapshots(true).setSources(true));
+    }
+  }
+
+  @BeforeEach
+  void logMethodName(TestInfo testInfo) {
+    log.info("Running test: {}", testInfo.getDisplayName());
+  }
+
+  @AfterAll
+  static synchronized void saveTracing(TestInfo testInfo) {
+    String clzName =
+        testInfo
+            .getTestClass()
+            .orElseGet(
+                () -> {
+                  return UnknownError.class;
+                })
+            .getName();
+    if (tracingEnabled) {
+      log.info("Saving playwright trace archive for {}...", clzName);
+      context
+          .tracing()
+          .stop(
+              new Tracing.StopOptions()
+                  .setPath(
+                      Paths.get(
+                          System.getProperty("buildDirectory", "target"),
+                          "playwright-artifacts",
+                          "trace-" + clzName + ".zip")));
+    }
   }
 
   void setBackToNormalState() {
@@ -186,6 +235,8 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
 
   @Override
   public void close() {
+    log.info("Closing playwright...");
+    context.close();
     browser.close();
     playwright.close();
   }
@@ -197,6 +248,7 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
 
     @Override
     public void testFailed(ExtensionContext context, Throwable cause) {
+      log.error("FAILED");
       AbstractTests testInstance = getTestInstance(context);
       String fileName = getFileName(context);
       saveScreenshot(fileName);
@@ -205,6 +257,7 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
 
     @Override
     public void testSuccessful(ExtensionContext context) {
+      log.info("PASS");
       AbstractTests testInstance = getTestInstance(context);
       testInstance.setBackToNormalState();
     }
@@ -223,6 +276,7 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
 
     private void saveScreenshot(String fileName) {
       try {
+        log.info("Saving screenie for failed test in {}", fileName);
         byte[] screenshot = page.screenshot();
         String directory = "playwright-artifacts";
         Files.write(Paths.get(buildDirectory, directory, fileName + ".png"), screenshot);

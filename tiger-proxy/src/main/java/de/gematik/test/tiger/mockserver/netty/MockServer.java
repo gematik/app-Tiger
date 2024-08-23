@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.mockserver.netty;
 
-import static de.gematik.test.tiger.mockserver.configuration.Configuration.configuration;
+import static de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration.configuration;
 import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.REMOTE_SOCKET;
 import static de.gematik.test.tiger.mockserver.netty.HttpRequestHandler.PROXYING;
 import static de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration.proxyConfiguration;
@@ -24,12 +24,13 @@ import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 import de.gematik.test.tiger.mockserver.ExpectationBuilder;
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
+import de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
@@ -80,7 +81,7 @@ public class MockServer extends LifeCycle {
    *
    * @param localPorts the local port(s) to use, use 0 or no vararg values to specify any free port
    */
-  public MockServer(final Configuration configuration, final Integer... localPorts) {
+  public MockServer(final MockServerConfiguration configuration, final Integer... localPorts) {
     this(configuration, proxyConfiguration(configuration), localPorts);
   }
 
@@ -105,7 +106,7 @@ public class MockServer extends LifeCycle {
    * @param localPorts the local port(s) to use, use 0 or no vararg values to specify any free port
    */
   public MockServer(
-      final Configuration configuration,
+      final MockServerConfiguration configuration,
       final List<ProxyConfiguration> proxyConfigurations,
       final Integer... localPorts) {
     super(configuration);
@@ -137,7 +138,7 @@ public class MockServer extends LifeCycle {
    * @param localPorts the local port(s) to use
    */
   public MockServer(
-      final Configuration configuration,
+      final MockServerConfiguration configuration,
       final Integer remotePort,
       @Nullable final String remoteHost,
       final Integer... localPorts) {
@@ -154,7 +155,7 @@ public class MockServer extends LifeCycle {
    * @param remotePort the port of the remote server to connect to
    */
   public MockServer(
-      final Configuration configuration,
+      final MockServerConfiguration configuration,
       final ProxyConfiguration proxyConfiguration,
       @Nullable String remoteHost,
       final Integer remotePort,
@@ -172,7 +173,7 @@ public class MockServer extends LifeCycle {
    * @param remotePort the port of the remote server to connect to
    */
   public MockServer(
-      final Configuration configuration,
+      final MockServerConfiguration configuration,
       final List<ProxyConfiguration> proxyConfigurations,
       @Nullable String remoteHost,
       final Integer remotePort,
@@ -194,7 +195,7 @@ public class MockServer extends LifeCycle {
   }
 
   private void createServerBootstrap(
-      Configuration configuration,
+      MockServerConfiguration configuration,
       final List<ProxyConfiguration> proxyConfigurations,
       final Integer... localPorts) {
     if (configuration == null) {
@@ -249,12 +250,12 @@ public class MockServer extends LifeCycle {
     return remoteSocket;
   }
 
-  public ExpectationBuilder when(HttpRequest httpRequest, Integer priority) {
-    return new ExpectationBuilder(new Expectation(httpRequest, priority), this);
+  public ExpectationBuilder when(HttpRequest httpRequest, Integer priority, List<String> hostRegexes) {
+    return new ExpectationBuilder(new Expectation(httpRequest, priority, hostRegexes), this);
   }
 
-  public ExpectationBuilder when(HttpRequest requestDefinition) {
-    return new ExpectationBuilder(new Expectation(requestDefinition, 0), this);
+  public ExpectationBuilder when(HttpRequest requestDefinition, List<String> hostRegexes) {
+    return new ExpectationBuilder(new Expectation(requestDefinition, 0, hostRegexes), this);
   }
 
   public void removeExpectation(String expectationId) {
@@ -282,7 +283,7 @@ public class MockServer extends LifeCycle {
   @RequiredArgsConstructor
   static class MockServerChannelInitializer extends ChannelInitializer<SocketChannel> {
 
-    private final Configuration configuration;
+    private final MockServerConfiguration configuration;
     private final MockServer mockServer;
     private final HttpState httpState;
     private final HttpActionHandler actionHandler;
@@ -290,11 +291,12 @@ public class MockServer extends LifeCycle {
 
     @Override
     public void initChannel(SocketChannel ch) {
-      ch.pipeline().addFirst(new ConnectionCounterHandler(mockServer));
+      ch.pipeline().addFirst(new LoggingHandler(LogLevel.DEBUG));
+      ch.pipeline().addLast(new ConnectionCounterHandler(mockServer));
 
       ch.pipeline()
           .addLast(
-              new MockServerUnificationInitializer(
+              new PortUnificationHandler(
                   configuration,
                   mockServer,
                   httpState,

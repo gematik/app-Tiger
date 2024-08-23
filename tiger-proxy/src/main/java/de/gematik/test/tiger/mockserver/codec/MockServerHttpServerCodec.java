@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.mockserver.codec;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import io.netty.channel.CombinedChannelDuplexHandler;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -30,7 +30,7 @@ public class MockServerHttpServerCodec
         NettyHttpToMockServerHttpRequestDecoder, MockServerHttpToNettyHttpResponseEncoder> {
 
   public MockServerHttpServerCodec(
-      Configuration configuration,
+      MockServerConfiguration configuration,
       boolean isSecure,
       Certificate[] clientCertificates,
       SocketAddress socketAddress) {
@@ -44,7 +44,7 @@ public class MockServerHttpServerCodec
   }
 
   public MockServerHttpServerCodec(
-      Configuration configuration,
+      MockServerConfiguration configuration,
       boolean isSecure,
       Certificate[] clientCertificates,
       Integer port) {

@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -24,7 +24,8 @@ import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TIGER_Y
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
-import de.gematik.test.tiger.common.data.config.AdditionalYamlProperty;
+import de.gematik.test.tiger.common.data.config.AdditionalConfigurationFileProperty;
+import de.gematik.test.tiger.common.data.config.ConfigurationFileType;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.io.File;
 import java.io.IOException;
@@ -39,6 +40,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -54,6 +56,7 @@ public class TigerGlobalConfiguration {
   private static final TigerConfigurationLoader globalConfigurationLoader =
       new TigerConfigurationLoader();
   private static final int NUMBER_OF_FREE_PORTS = 256;
+  public static final String ADDITIONAL_CONFIGURATION_FILES = "additionalConfigurationFiles";
   @Getter @Setter private static boolean requireTigerYaml = false;
   private static boolean initialized = false;
 
@@ -83,14 +86,15 @@ public class TigerGlobalConfiguration {
 
     if (additionalProperties != null) {
       additionalProperties.forEach(
-          (key, value) -> TigerGlobalConfiguration.putValue(key, value, SourceType.CLI));
+          (key, value) ->
+              TigerGlobalConfiguration.putValue(key, value, ConfigurationValuePrecedence.CLI));
     }
 
     var fixedPorts = addFreePortVariables();
     addHostnameVariable();
     readMainYamlFile();
     readHostYamlFile();
-    readAdditionalYamlFiles();
+    readAdditionalConfigurationFiles();
     addFixedPortVariables(fixedPorts);
   }
 
@@ -106,11 +110,14 @@ public class TigerGlobalConfiguration {
   }
 
   private static void addHostnameVariable() {
-    globalConfigurationLoader.putValue("hostname", getComputerName(), SourceType.DEFAULTS);
     globalConfigurationLoader.putValue(
-        "canonicalHostname", getHostname().getCanonicalHostName(), SourceType.DEFAULTS);
+        "hostname", getComputerName(), ConfigurationValuePrecedence.DEFAULTS);
     globalConfigurationLoader.putValue(
-        "fullHostname", getHostname().getHostName(), SourceType.DEFAULTS);
+        "canonicalHostname",
+        getHostname().getCanonicalHostName(),
+        ConfigurationValuePrecedence.DEFAULTS);
+    globalConfigurationLoader.putValue(
+        "fullHostname", getHostname().getHostName(), ConfigurationValuePrecedence.DEFAULTS);
   }
 
   private static List<Integer> addFreePortVariables() {
@@ -121,7 +128,7 @@ public class TigerGlobalConfiguration {
         globalConfigurationLoader.putValue(
             "free.port." + i,
             Integer.toString(serverSocket.getLocalPort()),
-            SourceType.RUNTIME_EXPORT);
+            ConfigurationValuePrecedence.RUNTIME_EXPORT);
         sockets.add(serverSocket);
       } catch (IOException e) {
         throw new TigerConfigurationException(
@@ -197,9 +204,18 @@ public class TigerGlobalConfiguration {
   }
 
   public static synchronized void readFromYaml(
-      String yamlSource, SourceType sourceType, String... baseKeys) {
+      String yamlSource, ConfigurationValuePrecedence precedence, String... baseKeys) {
     assertGlobalConfigurationIsInitialized();
-    globalConfigurationLoader.readFromYaml(yamlSource, sourceType, baseKeys);
+    globalConfigurationLoader.readFromYaml(yamlSource, precedence, baseKeys);
+  }
+
+  public static synchronized void readConfigurationFile(
+      String yamlSource,
+      ConfigurationValuePrecedence precedence,
+      ConfigurationFileType fileType,
+      String... baseKeys) {
+    assertGlobalConfigurationIsInitialized();
+    globalConfigurationLoader.readConfigurationFile(yamlSource, precedence, fileType, baseKeys);
   }
 
   public static synchronized boolean readBoolean(String key) {
@@ -279,14 +295,14 @@ public class TigerGlobalConfiguration {
     globalConfigurationLoader.putValue(key, Integer.toString(value));
   }
 
-  public static void putValue(String key, String value, SourceType sourceType) {
+  public static void putValue(String key, String value, ConfigurationValuePrecedence precedence) {
     assertGlobalConfigurationIsInitialized();
-    globalConfigurationLoader.putValue(key, value, sourceType);
+    globalConfigurationLoader.putValue(key, value, precedence);
   }
 
-  public static void putValue(String key, Object value, SourceType sourceType) {
+  public static void putValue(String key, Object value, ConfigurationValuePrecedence precedence) {
     assertGlobalConfigurationIsInitialized();
-    globalConfigurationLoader.putValue(key, value, sourceType);
+    globalConfigurationLoader.putValue(key, value, precedence);
   }
 
   public static String resolvePlaceholders(String stringToSubstitute) {
@@ -311,7 +327,7 @@ public class TigerGlobalConfiguration {
     if (tigerYamlValue.isPresent()) {
       log.info("Reading configuration from tiger.yaml property as string");
       globalConfigurationLoader.readFromYaml(
-          tigerYamlValue.get(), SourceType.TEST_YAML, TIGER_BASEKEY);
+          tigerYamlValue.get(), ConfigurationValuePrecedence.TEST_YAML, TIGER_BASEKEY);
       return;
     }
 
@@ -319,7 +335,10 @@ public class TigerGlobalConfiguration {
 
     if (customCfgFile.isPresent()) {
       if (customCfgFile.get().exists()) {
-        readYamlFile(customCfgFile.get(), Optional.of(TIGER_BASEKEY), SourceType.MAIN_YAML);
+        readYamlFile(
+            customCfgFile.get(),
+            Optional.of(TIGER_BASEKEY),
+            ConfigurationValuePrecedence.MAIN_YAML);
         return;
       } else {
         throw new TigerConfigurationException(
@@ -334,7 +353,8 @@ public class TigerGlobalConfiguration {
             .filter(File::exists)
             .findFirst();
     if (mainCfgFile.isPresent()) {
-      readYamlFile(mainCfgFile.get(), Optional.of(TIGER_BASEKEY), SourceType.MAIN_YAML);
+      readYamlFile(
+          mainCfgFile.get(), Optional.of(TIGER_BASEKEY), ConfigurationValuePrecedence.MAIN_YAML);
       return;
     }
 
@@ -352,46 +372,50 @@ public class TigerGlobalConfiguration {
         .findFirst()
         .ifPresent(
             hostCfgFile ->
-                readYamlFile(hostCfgFile, Optional.of(TIGER_BASEKEY), SourceType.HOST_YAML));
+                readYamlFile(
+                    hostCfgFile,
+                    Optional.of(TIGER_BASEKEY),
+                    ConfigurationValuePrecedence.HOST_YAML));
   }
 
-  private static void readAdditionalYamlFiles() {
-    final List<AdditionalYamlProperty> additionalYamls =
+  private static void readAdditionalConfigurationFiles() {
+    final List<AdditionalConfigurationFileProperty> additionalConfigurationFiles =
         globalConfigurationLoader.instantiateConfigurationBean(
-            new TypeReference<>() {}, TIGER_BASEKEY, "additionalYamls");
+            new TypeReference<>() {}, TIGER_BASEKEY, ADDITIONAL_CONFIGURATION_FILES);
 
-    for (AdditionalYamlProperty additionalYaml : additionalYamls) {
-      File additionalYamlFile =
-          findAdditionalYamlFile(
-              TigerGlobalConfiguration.resolvePlaceholders(additionalYaml.getFilename()));
-      readYamlFile(
-          additionalYamlFile,
-          Optional.ofNullable(additionalYaml.getBaseKey()),
-          SourceType.ADDITIONAL_YAML);
+    for (AdditionalConfigurationFileProperty additionalConfigurationFile :
+        additionalConfigurationFiles) {
+      val file =
+          findAdditionalConfigurationFile(
+              TigerGlobalConfiguration.resolvePlaceholders(
+                  additionalConfigurationFile.getFilename()));
+      readConfigurationFile(
+          file.toFile(),
+          Optional.ofNullable(additionalConfigurationFile.getBaseKey()),
+          ConfigurationValuePrecedence.ADDITIONAL_YAML,
+          additionalConfigurationFile.getType());
     }
   }
 
-  private static File findAdditionalYamlFile(String additionalYaml) {
+  private static Path findAdditionalConfigurationFile(String filename) {
     Optional<Path> configFileLocation = TIGER_TESTENV_CFGFILE_LOCATION.getValue().map(Path::of);
 
     if (configFileLocation.isPresent()) {
-      final File yamlRelativeToTigerYaml =
-          configFileLocation.get().resolveSibling(additionalYaml).toFile();
-      if (yamlRelativeToTigerYaml.exists()) {
+      val yamlRelativeToTigerYaml = configFileLocation.get().resolveSibling(filename);
+      if (yamlRelativeToTigerYaml.toFile().exists()) {
         return yamlRelativeToTigerYaml;
       }
     }
 
     Path currentDirectory = Path.of(".");
-    final File yamlRelativeToWorkingDirectory =
-        currentDirectory.resolveSibling(additionalYaml).toFile();
-    if (yamlRelativeToWorkingDirectory.exists()) {
+    val yamlRelativeToWorkingDirectory = currentDirectory.resolveSibling(filename);
+    if (yamlRelativeToWorkingDirectory.toFile().exists()) {
       return yamlRelativeToWorkingDirectory;
     }
 
     throw new TigerConfigurationException(
         "The file "
-            + additionalYaml
+            + filename
             + " relative to parent folder of tiger.yaml "
             + configFileLocation
             + " or current working directory "
@@ -411,14 +435,27 @@ public class TigerGlobalConfiguration {
     }
   }
 
-  private static void readYamlFile(File file, Optional<String> baseKey, SourceType sourceType) {
+  private static void readYamlFile(
+      File file, Optional<String> baseKey, ConfigurationValuePrecedence precedence) {
+    readConfigurationFile(file, baseKey, precedence, ConfigurationFileType.YAML);
+  }
+
+  private static void readConfigurationFile(
+      File file,
+      Optional<String> baseKey,
+      ConfigurationValuePrecedence precedence,
+      ConfigurationFileType fileType) {
     try {
       log.info("Reading configuration from file '{}'", file.getAbsolutePath());
       if (baseKey.isPresent()) {
-        readFromYaml(
-            FileUtils.readFileToString(file, StandardCharsets.UTF_8), sourceType, baseKey.get());
+        readConfigurationFile(
+            FileUtils.readFileToString(file, StandardCharsets.UTF_8),
+            precedence,
+            fileType,
+            baseKey.get());
       } else {
-        readFromYaml(FileUtils.readFileToString(file, StandardCharsets.UTF_8), sourceType);
+        readConfigurationFile(
+            FileUtils.readFileToString(file, StandardCharsets.UTF_8), precedence, fileType);
       }
     } catch (TigerConfigurationException tcex) {
       throw tcex;
@@ -433,14 +470,6 @@ public class TigerGlobalConfiguration {
     }
   }
 
-  static void addConfigurationSource(AbstractTigerConfigurationSource configurationSource) {
-    globalConfigurationLoader.addConfigurationSource(configurationSource);
-  }
-
-  static boolean removeConfigurationSource(AbstractTigerConfigurationSource configurationSource) {
-    return globalConfigurationLoader.removeConfigurationSource(configurationSource);
-  }
-
   public static ObjectMapper getObjectMapper() {
     return globalConfigurationLoader.getObjectMapper();
   }
@@ -449,16 +478,20 @@ public class TigerGlobalConfiguration {
     globalConfigurationLoader.listSources().forEach(source -> source.removeValue(configurationKey));
   }
 
-  public static Map<String, Pair<SourceType, String>> exportConfiguration() {
+  public static void dangerouslyDeleteAllProperties() {
+    globalConfigurationLoader.reset();
+  }
+
+  public static Map<String, Pair<ConfigurationValuePrecedence, String>> exportConfiguration() {
     var sources =
         globalConfigurationLoader.listSources().stream()
             .sorted(
                 Comparator.comparing(
-                        AbstractTigerConfigurationSource::getSourceType,
-                        Comparator.comparing(SourceType::getPrecedence))
+                        AbstractTigerConfigurationSource::getPrecedence,
+                        Comparator.comparing(ConfigurationValuePrecedence::getValue))
                     .reversed());
 
-    Map<String, Pair<SourceType, String>> exportedConfiguration = new HashMap<>();
+    Map<String, Pair<ConfigurationValuePrecedence, String>> exportedConfiguration = new HashMap<>();
 
     sources
         .sequential()
@@ -468,29 +501,31 @@ public class TigerGlobalConfiguration {
                     .forEach(
                         (k, v) ->
                             exportedConfiguration.put(
-                                k.downsampleKeyCaseSensitive(), Pair.of(s.getSourceType(), v))));
+                                k.downsampleKeyCaseSensitive(), Pair.of(s.getPrecedence(), v))));
 
     return Collections.unmodifiableMap(exportedConfiguration);
   }
 
   /**
    * Clears local test variables. These are variables from the source
-   * SourceType.LOCAL_TEST_CASE_CONTEXT, which should only be active during a single test case.
+   * ConfigurationValuePrecedence.LOCAL_TEST_CASE_CONTEXT, which should only be active during a
+   * single test case.
    */
   public static void clearLocalTestVariables() {
     globalConfigurationLoader.listSources().stream()
-        .filter(s -> s.getSourceType() == SourceType.LOCAL_TEST_CASE_CONTEXT)
+        .filter(s -> s.getPrecedence() == ConfigurationValuePrecedence.LOCAL_TEST_CASE_CONTEXT)
         .findAny()
         .ifPresent(globalConfigurationLoader::removeConfigurationSource);
   }
 
   /**
-   * Clears test variables. These are variables from the source SourceType.TEST_CONTEXT, which
-   * should only be active during the execution of a feature file.
+   * Clears test variables. These are variables from the source
+   * ConfigurationValuePrecedence.TEST_CONTEXT, which should only be active during the execution of
+   * a feature file.
    */
   public static void clearTestVariables() {
     globalConfigurationLoader.listSources().stream()
-        .filter(s -> s.getSourceType() == SourceType.TEST_CONTEXT)
+        .filter(s -> s.getPrecedence() == ConfigurationValuePrecedence.TEST_CONTEXT)
         .findAny()
         .ifPresent(globalConfigurationLoader::removeConfigurationSource);
   }

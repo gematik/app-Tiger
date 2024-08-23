@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -21,13 +21,17 @@ import de.gematik.rbellogger.data.facet.RbelDecryptedEmailFacet;
 import de.gematik.rbellogger.data.facet.RbelMimeMessageFacet;
 import de.gematik.rbellogger.util.email_crypto.EmailDecryption;
 import de.gematik.rbellogger.util.email_crypto.RbelDecryptionException;
-import de.gematik.rbellogger.util.email_crypto.SignatureVerification;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Optional;
+
+import eu.europa.esig.dss.spi.DSSUtils;
 import lombok.SneakyThrows;
 import org.apache.james.mime4j.dom.SingleBody;
 import org.bouncycastle.cms.CMSException;
 
+@ConverterInfo(onlyActivateFor = "mime")
 public class RbelEncryptedMailConverter implements RbelConverterPlugin {
 
   private static class EmailDecryptionFailedException extends Exception {}
@@ -64,8 +68,12 @@ public class RbelEncryptedMailConverter implements RbelConverterPlugin {
     return RbelDecryptedEmailFacet.builder().decrypted(decrypted).build();
   }
 
-  private static byte[] extractRfc822Message(byte[] signedMessageContent) throws IOException {
-    return SignatureVerification.validate(signedMessageContent).getOriginalData();
+  private static byte[] extractRfc822Message(byte[] signedMessageContent)
+      throws IOException, CMSException {
+    try (var out = new ByteArrayOutputStream()) {
+      DSSUtils.toCMSSignedData(signedMessageContent).getSignedContent().write(out);
+      return out.toByteArray();
+    }
   }
 
   private static byte[] extractContentFromMessage(final byte[] data) throws IOException {

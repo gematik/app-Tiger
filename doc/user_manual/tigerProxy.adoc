@@ -100,6 +100,21 @@ tigerProxy:
 
 and you execute GET http://my.domain/deep/deeper, you will get the result of GET http://orf.at/blub/deeper (the /deep in between has been eliminated along with my.domain).
 
+==== hosts
+
+In some instances you might be pressed to "hosts" multiple servers on one tiger-proxy. This can happen when you can influence DNS-Resolvement, but neither the path nor the port used. In this case you can use the hosts-property to define which hosts should be routed to which target.
+
+[source,yaml]
+----
+tigerProxy:
+    proxyRoutes:
+      hosts:
+        - "www.google.com"
+        - ".*.bing.com"
+----
+
+The entries are matched as regular expressions.
+
 ==== criterions
 
 As an additional measure for a more fine-grained matching you can use criterions. These are JEXL-expressions which have to be fulfilled for the route to be used. This can be leveraged to make the routing decision dependent on the content of the message.
@@ -254,6 +269,45 @@ tigerProxy:
 
 The server will then use this OCSP-Signer to create a fake OCSP-Response during the TLS-handshake.
 
+==== TLS Decryption in wireshark
+
+Sometimes you might want to look at decrypted TLS-traffic in wireshark. To achieve this we need to extract the masterSecrets of every connection from the Tiger Proxy and provide them to wireshark. This is actually pretty straight forward, with one big caveat: It is very insecure to access the masterSecrets of a TLS-connection, so we need to attach a Java-Agent to the VM.
+
+When you are using the Tiger Proxy in a normal tiger-testsuite you can simply add the                             `<goal>attach-tiger-agent</goal>` goal to the tiger-maven-plugin:
+
+[source,xml]
+----
+            <plugin>
+                <groupId>de.gematik.test</groupId>
+                <artifactId>tiger-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>generate-drivers</goal>
+                            <goal>attach-tiger-agent</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+----
+
+This will modify the `argLine` property used by failsafe to start the testsuite and attach the TigerAgent to the VM. Next we need to set the filename where to write the masterSecrets to:
+
+[source,yaml]
+----
+tigerProxy:
+    tls:
+      masterSecretsFile: "myMasterSecrets.txt"
+----
+
+The Tiger Proxy will write the secrets to the given file.
+
+The final step is to import the masterSecrets into wireshark:
+
+Go to Edit -> Preferences. Open the Protocols tree and select TLS. Alternatively, select a TLS packet in the packet list, right-click on the TLS layer in the packet details view and open the Protocol preferences menu. Set the `(Pre)-Master-Secret log filename` to the file containing the master secrets. Now wireshark should decrypt TLS traffic routed through the Tiger Proxy on-the-fly.
+
 === Modifications
 
 Modifications are a powerful tool to alter messages before forwarding them.
@@ -329,6 +383,10 @@ tigerProxy:
     # default of skipTrafficEndpointsSubscription is false
     downloadInitialTrafficFromEndpoints: true
     # Should the traffic currently available (cached) in the remote be download upon initial connection?
+    # default of downloadInitialTrafficFromEndpoints is true
+    failOnOfflineTrafficEndpoints: false
+    # Should the Tiger Proxy fail on startup, when a traffic endpoint is offline? Default is true.
+    # Ignoring this error might lead to an unexpected testing environment!
 ----
 
 Please be advised to use the server-port (`server.port`) here, not the proxy-port (`tigerProxy.proxyPort`).
@@ -421,6 +479,10 @@ You can also use wildcards to retrieve all members of a certain level:
 
  $.body.[*].nbf
 
+or
+
+ $.body.*.nbf
+
 Alternatively you can recursively descend and retrieve all members:
 
  $..nbf
@@ -437,6 +499,28 @@ To use keys containing spaces, escape them via `['foo bar']`, like so:
 
 Please note that the keys in the bracket are URL unescaped.
 So to use special characters please URL encode them (Space is a special case since + and ' ' are allowed, depending on the exact position).
+
+==== Arrays
+
+To make things easy and consistent, the entries of an array are simply stored as a map with the index as key. So the following expression will return the first element of the array:
+
+`$.body.array.0`
+
+==== Differentiating between multiple elements
+
+When a key is present multiple times, all elements are returned. To differentiate between them, you can use the index:
+
+`$.body.entry[0]`
+
+would give the first element in the following XML:
+
+[source,xml]
+----
+<body>
+    <entry>first</entry>
+    <entry>second</entry>
+</body>
+----
 
 ==== Alternate keys
 
@@ -598,10 +682,10 @@ Below some properties along with their respective default values:
 ----
 tigerProxy:
     activateRbelParsing: true
-    activateAsn1Parsing: false
-    activateEpaVauAnalysis: false
     parsingShouldBlockCommunication: false
     activateTrafficLogging: true
+    activateRbelParsingFor:
+      - epa-vau
 ----
 
 ===== activateRbelParsing
@@ -609,19 +693,18 @@ tigerProxy:
 Deactivating this flag turns off all Rbel-Analysis of the incoming traffic.
 This is a huge deal in terms of memory- and CPU-consumption but you will loose all benefit of performing Rbel-Analysis.
 
-===== activateAsn1Parsing
+===== activateRbelParsingFor
 
-This is off by default.
-ASN.1 objects are very common in crypto applications.
-While parsing them will enable you to directly have a look inside certificates it comes with a penalty in performance and also clutters the object-tree.
-Often it's enough to know that there is a certificate, only in some scenarios is the content of interest.
-If the latter is of interest to you activate ASN.1 parsing.
+This option can activate various optional Rbel-Converters. Currently supported are:
 
-===== activateEpaVauAnalysis/activateErpVauAnalysis
-
-VAU-Analysis adds information about the current session to every single VAU-message.
-If you are not trying to analyze ePA-VAU messages leave this option turned off.
-If you do, enabling it will give you additional information about the messages.
+* `pop3` for RbelPop3CommandConverter and RbelPop3ResponseConverter
+* `smtp` for RbelSmtpCommandConverter and RbelSmtpResponseConverter
+* `mime` for RbelMimeConverter and RbelEncryptedMailConverter
+* `asn1` for RbelAsn1Converter
+* `epa-vau` for RbelVauEpaConverter and RbelVauEpaKeyDeriver
+* `erp-vau` for RbelErpVauDecryptionConverter
+* `epa3-vau` for RbelVauEpa3Converter
+* `sicct` for RbelSicctCommandConverter and RbelSicctEnvelopeConverter
 
 ===== parsingShouldBlockCommunication
 

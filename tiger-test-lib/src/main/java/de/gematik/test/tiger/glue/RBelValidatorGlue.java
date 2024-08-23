@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -19,7 +19,7 @@ package de.gematik.test.tiger.glue;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.test.tiger.common.config.SourceType;
+import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerLibraryException;
@@ -67,7 +67,7 @@ public class RBelValidatorGlue {
   @Given("TGR set request wait timeout to {int} seconds")
   public void tgrSetRequestWaitTimeout(final int waitsec) {
     TigerGlobalConfiguration.putValue(
-        "tiger.rbel.request.timeout", waitsec, SourceType.TEST_CONTEXT);
+        "tiger.rbel.request.timeout", waitsec, ConfigurationValuePrecedence.TEST_CONTEXT);
   }
 
   /**
@@ -89,7 +89,8 @@ public class RBelValidatorGlue {
   @Wenn("TGR filtere Anfragen nach Server {tigerResolvedString}")
   @When("TGR filter requests based on host {tigerResolvedString}")
   public void tgrFilterBasedOnHost(final String hostname) {
-    TigerConfigurationKeys.REQUEST_FILTER_HOST.putValue(hostname, SourceType.TEST_CONTEXT);
+    TigerConfigurationKeys.REQUEST_FILTER_HOST.putValue(
+        hostname, ConfigurationValuePrecedence.TEST_CONTEXT);
   }
 
   /**
@@ -101,7 +102,7 @@ public class RBelValidatorGlue {
   @When("TGR filter requests based on method {tigerResolvedString}")
   public void tgrFilterBasedOnMethod(final String method) {
     TigerConfigurationKeys.REQUEST_FILTER_METHOD.putValue(
-        method.toUpperCase(), SourceType.TEST_CONTEXT);
+        method.toUpperCase(), ConfigurationValuePrecedence.TEST_CONTEXT);
   }
 
   /** reset filter for method for subsequent findRequest steps. */
@@ -128,7 +129,7 @@ public class RBelValidatorGlue {
         RequestParameter.builder()
             .rbelPath(rbelPath)
             .value(value)
-            .requireHttpMessage(false)
+            .requireRequestMessage(false)
             .build());
   }
 
@@ -152,7 +153,7 @@ public class RBelValidatorGlue {
             .rbelPath(rbelPath)
             .value(value)
             .requireNewMessage(true)
-            .requireHttpMessage(false)
+            .requireRequestMessage(false)
             .build());
   }
 
@@ -204,7 +205,7 @@ public class RBelValidatorGlue {
     rbelValidator.filterRequestsAndStoreInContext(
         RequestParameter.builder()
             .path(path)
-            .startFromLastRequest(true)
+            .startFromLastMessage(true)
             .build()
             .resolvePlaceholders());
   }
@@ -228,7 +229,7 @@ public class RBelValidatorGlue {
             .path(path)
             .rbelPath(rbelPath)
             .value(value)
-            .startFromLastRequest(true)
+            .startFromLastMessage(true)
             .build()
             .resolvePlaceholders());
   }
@@ -258,7 +259,12 @@ public class RBelValidatorGlue {
   @When("TGR find next request to path {string} containing node {string}")
   public void findNextRequestToPathContainingNode(final String path, final String rbelPath) {
     rbelValidator.filterRequestsAndStoreInContext(
-        RequestParameter.builder().path(path).rbelPath(rbelPath).build().resolvePlaceholders());
+        RequestParameter.builder()
+            .startFromLastMessage(true)
+            .path(path)
+            .rbelPath(rbelPath)
+            .build()
+            .resolvePlaceholders());
   }
 
   /**
@@ -326,6 +332,108 @@ public class RBelValidatorGlue {
   @Deprecated(forRemoval = true)
   public void findAnyMessageAttributeMatches(final String rbelPath, final String value) {
     rbelValidator.findAnyMessageMatchingAtNode(rbelPath, value);
+  }
+
+  /**
+   * find the first message where node value equal or match as regex and memorize it in the {@link
+   * #rbelValidator} instance.
+   *
+   * @param rbelPath rbel path to node/attribute
+   * @param value value to match at given node/attribute
+   */
+  @Wenn("TGR finde die erste Nachricht mit Knoten {string} der mit {string} übereinstimmt")
+  @When("TGR find message with {string} matching {string}")
+  public void findMessageWithNodeMatching(final String rbelPath, final String value)
+      throws AssertionError {
+    rbelValidator.filterRequestsAndStoreInContext(
+        RequestParameter.builder()
+            .rbelPath(rbelPath)
+            .value(value)
+            .requireRequestMessage(false)
+            .build()
+            .resolvePlaceholders());
+  }
+
+  /**
+   * find the first message containing given node and memorize it in the {@link #rbelValidator}
+   * instance.
+   *
+   * @param rbelPath rbel path to node/attribute
+   */
+  @Wenn("TGR finde die erste Nachricht mit Knoten {string}")
+  @When("TGR find message with {string}")
+  public void findMessageWithNode(final String rbelPath) throws AssertionError {
+    findMessageWithNodeMatching(rbelPath, null);
+  }
+
+  /**
+   * find the next message where node value equal or match as regex and memorize it in the {@link
+   * #rbelValidator} instance. If the previous search using the 'find*message' steps found a
+   * response message, then this search starts after that response, otherwise, it starts after the
+   * current request message.
+   *
+   * @param rbelPath rbel path to node/attribute
+   * @param value value to match at given node/attribute
+   */
+  @Wenn("TGR finde die nächste Nachricht mit Knoten {string} der mit {string} übereinstimmt")
+  @When("TGR find next message with {string} matching {string}")
+  public void findNextMessageWithNodeMatching(final String rbelPath, final String value)
+      throws AssertionError {
+    rbelValidator.filterRequestsAndStoreInContext(
+        RequestParameter.builder()
+            .rbelPath(rbelPath)
+            .value(value)
+            .requireRequestMessage(false)
+            .startFromLastMessage(true)
+            .build()
+            .resolvePlaceholders());
+  }
+
+  /**
+   * find the next message containing given node and memorize it in the {@link #rbelValidator}
+   * instance. If the previous search using any of the 'find*message' steps found a response
+   * message, then this search starts after that response, otherwise, it starts after the current
+   * request message.
+   *
+   * @param rbelPath rbel path to node/attribute
+   */
+  @Wenn("TGR finde die nächste Nachricht mit Knoten {string}")
+  @When("TGR find next message with {string}")
+  public void findNextMessageWithNode(final String rbelPath) throws AssertionError {
+    findNextMessageWithNodeMatching(rbelPath, null);
+  }
+
+  /**
+   * find the last message where node value equal or match as regex and memorize it in the {@link
+   * #rbelValidator} instance.
+   *
+   * @param rbelPath rbel path to node/attribute
+   * @param value value to match at given node/attribute
+   */
+  @Wenn("TGR finde die letzte Nachricht mit Knoten {string} der mit {string} übereinstimmt")
+  @When("TGR find last message with {string} matching {string}")
+  public void findLastMessageWithNodeMatching(final String rbelPath, final String value)
+      throws AssertionError {
+    rbelValidator.filterRequestsAndStoreInContext(
+        RequestParameter.builder()
+            .rbelPath(rbelPath)
+            .value(value)
+            .requireRequestMessage(false)
+            .filterPreviousRequest(true)
+            .build()
+            .resolvePlaceholders());
+  }
+
+  /**
+   * find the last message containing given node and memorize it in the {@link * #rbelValidator}
+   * instance.
+   *
+   * @param rbelPath rbel path to node/attribute
+   */
+  @Wenn("TGR finde die letzte Nachricht mit Knoten {string}")
+  @When("TGR find last message with {string}")
+  public void findLastMessageWithNode(final String rbelPath) throws AssertionError {
+    findLastMessageWithNodeMatching(rbelPath, null);
   }
 
   // =================================================================================================================
@@ -448,7 +556,7 @@ public class RBelValidatorGlue {
             .filter(Objects::nonNull)
             .map(String::trim)
             .collect(Collectors.joining());
-    TigerGlobalConfiguration.putValue(varName, text, SourceType.TEST_CONTEXT);
+    TigerGlobalConfiguration.putValue(varName, text, ConfigurationValuePrecedence.TEST_CONTEXT);
     log.info(String.format("Storing '%s' in variable '%s'", text, varName));
   }
 
@@ -479,7 +587,8 @@ public class RBelValidatorGlue {
                 () ->
                     new TigerLibraryException("No configuration property '" + varName + "' found!"))
             .replaceAll(regexPattern, replace);
-    TigerGlobalConfiguration.putValue(varName, newContent, SourceType.TEST_CONTEXT);
+    TigerGlobalConfiguration.putValue(
+        varName, newContent, ConfigurationValuePrecedence.TEST_CONTEXT);
     log.info(String.format("Modified content in variable '%s' to '%s'", varName, newContent));
   }
 
@@ -643,7 +752,7 @@ public class RBelValidatorGlue {
   @Then("TGR print current response as rbel-tree")
   @SuppressWarnings("java:S106")
   public void printCurrentResponse() {
-    System.out.println(RbelMessageValidator.getCurrentResponse().printTreeStructure());
+    System.out.println(rbelValidator.getCurrentResponse().printTreeStructure());
   }
 
   /** Prints the rbel-tree of the current request to the System-out */
@@ -651,7 +760,7 @@ public class RBelValidatorGlue {
   @Then("TGR print current request as rbel-tree")
   @SuppressWarnings("java:S106")
   public void printCurrentRequest() {
-    System.out.println(RbelMessageValidator.getCurrentRequest().printTreeStructure());
+    System.out.println(rbelValidator.getCurrentRequest().printTreeStructure());
   }
 
   /** Read TGR file and sends messages to local Tiger proxy */
@@ -659,5 +768,24 @@ public class RBelValidatorGlue {
   @Then("TGR reads the following .tgr file {tigerResolvedString}")
   public void readTgrFile(String filePath) {
     rbelValidator.readTgrFile(filePath);
+  }
+
+  /**
+   * Sets a custom failure message that will be displayed in the logs if a following step in the
+   * test fails.
+   *
+   * @param customFailureMessage the custom failure message
+   */
+  @Given("TGR the custom failure message is set to {tigerResolvedString}")
+  @Gegebensei("TGR die benutzerdefinierte Fehlermeldung ist auf {tigerResolvedString} gesetzt")
+  public void setCustomFailureMessage(String customFailureMessage) {
+    TigerConfigurationKeys.CUSTOM_FAILURE_MESSAGE.putValue(customFailureMessage);
+  }
+
+  /** Clears the custom failure message */
+  @Then("TGR clear the custom failure message")
+  @Dann("TGR lösche die benutzerdefinierte Fehlermeldung")
+  public void resetCustomFailureMessage() {
+    TigerConfigurationKeys.CUSTOM_FAILURE_MESSAGE.clearValue();
   }
 }

@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -41,7 +41,7 @@ public class VauEpa3ConverterTest {
         RbelLogger.build(
             new RbelConfiguration()
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-                .setActivateVauEpa3Parsing(true)
+                .activateConversionFor("epa3-vau")
                 .addCapturer(
                     RbelFileReaderCapturer.builder()
                         .rbelFile("src/test/resources/vau3traffic.tgr")
@@ -84,7 +84,8 @@ public class VauEpa3ConverterTest {
         .andTheInitialElement()
         .extractChildWithPath("$.body.header.keyId")
         .hasValueEqualTo(
-            new BigInteger("49117871460386101168058772883563639427765135898532450228055942387686676034354"));
+            new BigInteger(
+                "49117871460386101168058772883563639427765135898532450228055942387686676034354"));
   }
 
   @Test
@@ -93,7 +94,7 @@ public class VauEpa3ConverterTest {
         RbelLogger.build(
             new RbelConfiguration()
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-                .setActivateVauEpa3Parsing(true)
+                .activateConversionFor("epa3-vau")
                 .addCapturer(
                     RbelFileReaderCapturer.builder()
                         .rbelFile("src/test/resources/nestedPathProblems.tgr")
@@ -110,7 +111,7 @@ public class VauEpa3ConverterTest {
         RbelLogger.build(
             new RbelConfiguration()
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-                .setActivateVauEpa3Parsing(true)
+                .activateConversionFor("epa3-vau")
                 .addCapturer(
                     RbelFileReaderCapturer.builder()
                         .rbelFile("src/test/resources/vau3WithInnerGzip.tgr")
@@ -118,7 +119,8 @@ public class VauEpa3ConverterTest {
     try (final var capturer = logger.getRbelCapturer()) {
       capturer.initialize();
     }
-    assertThat(logger.getMessageList().get(1)).extractChildWithPath("$.body.decrypted.body.resourceType")
-      .hasStringContentEqualTo("Bundle");
+    assertThat(logger.getMessageList().get(1))
+        .extractChildWithPath("$.body.decrypted.body.resourceType")
+        .hasStringContentEqualTo("Bundle");
   }
 }

@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -43,24 +43,31 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
       return;
     }
     String firstLine = content.split(eol)[0].trim();
-    if (!((firstLine.startsWith("GET ")
-            || firstLine.startsWith("POST ")
-            || firstLine.startsWith("PUT ")
-            || firstLine.startsWith("DELETE "))
-        && (firstLine.endsWith("HTTP/1.0")
-            || firstLine.endsWith("HTTP/1.1")
-            || firstLine.endsWith("HTTP/2.0")))) {
+    final String[] firstLineParts = firstLine.split(" ");
+
+    if (firstLineParts.length != 3) {
       return;
     }
+    final String method = firstLineParts[0];
+    if (!(method.equals("GET")
+            || method.equals("POST")
+            || method.equals("PUT")
+            || method.equals("DELETE")
+            || method.equals("PATCH")
+            || method.equals("HEAD")
+            || method.equals("OPTIONS")
+            || method.equals("TRACE")
+            || method.equals("CONNECT"))
+        || !(firstLineParts[2].startsWith("HTTP/"))) {
+      return;
+    }
+    final String path = firstLineParts[1];
+    final var httpVersion = new RbelElement(firstLineParts[2].getBytes(), targetElement);
+
     int endOfHeadIndex = indexOf(targetElement.getRawContent(), (eol + eol).getBytes());
     if (endOfHeadIndex < 0) {
       endOfHeadIndex = content.length();
     }
-    String messageHeader = content.substring(0, endOfHeadIndex);
-    final int space = messageHeader.indexOf(" ");
-    final int space2 = messageHeader.indexOf(" ", space + 1);
-    final String method = messageHeader.substring(0, space);
-    final String path = messageHeader.substring(space + 1, space2);
 
     final RbelElement headerElement = extractHeaderFromMessage(targetElement, converter, eol);
 
@@ -87,9 +94,17 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
             .path(pathElement)
             .build();
     targetElement.addFacet(httpRequest);
-    targetElement.addFacet(new RbelRequestFacet(method + " " + path));
     targetElement.addFacet(
-        RbelHttpMessageFacet.builder().header(headerElement).body(bodyElement).build());
+        RbelRequestFacet.builder()
+            .responseRequired(true)
+            .menuInfoString(method + " " + path)
+            .build());
+    targetElement.addFacet(
+        RbelHttpMessageFacet.builder()
+            .header(headerElement)
+            .body(bodyElement)
+            .httpVersion(httpVersion)
+            .build());
     converter.convertElement(bodyElement);
   }
 

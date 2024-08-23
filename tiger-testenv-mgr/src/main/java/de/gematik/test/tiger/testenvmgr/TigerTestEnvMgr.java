@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -28,7 +28,7 @@ import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.rbellogger.util.RbelJexlExecutor;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.banner.Banner;
-import de.gematik.test.tiger.common.config.SourceType;
+import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
@@ -38,6 +38,7 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
+import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import de.gematik.test.tiger.testenvmgr.env.*;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerLogListener;
@@ -201,7 +202,7 @@ public class TigerTestEnvMgr
 
   private static void addDefaults() {
     TigerGlobalConfiguration.putValue(
-        "tiger.tigerProxy.parsingShouldBlockCommunication", "true", SourceType.DEFAULTS);
+        "tiger.tigerProxy.parsingShouldBlockCommunication", "true", ConfigurationValuePrecedence.DEFAULTS);
   }
 
   public void startLocalTigerProxyIfActivated() {
@@ -461,55 +462,70 @@ public class TigerTestEnvMgr
   }
 
   public void setUpEnvironment(Optional<IRbelMessageListener> localTigerProxyMessageListener) {
-    assertNoCyclesInGraph();
-    assertNoUnknownServersInDependencies();
+    try {
+      assertNoCyclesInGraph();
+      assertNoUnknownServersInDependencies();
 
-    startLocalTigerProxyIfActivated();
-    localTigerProxyMessageListener.ifPresent(
-        provider ->
-            getLocalTigerProxyOptional()
-                .ifPresent(proxy -> proxy.addRbelMessageListener(provider)));
+      startLocalTigerProxyIfActivated();
+      localTigerProxyMessageListener.ifPresent(
+          provider ->
+              getLocalTigerProxyOptional()
+                  .ifPresent(proxy -> proxy.addRbelMessageListener(provider)));
 
-    Map<String, TigerServerStatusUpdate> activeServers =
-        servers.values().stream()
-            .filter(server -> server.getConfiguration().isActive())
-            .collect(
-                Collectors.toMap(
-                    AbstractTigerServer::getServerId,
-                    server ->
-                        TigerServerStatusUpdate.builder()
-                            .type(server.getConfiguration().getType())
-                            .status(TigerServerStatus.NEW)
-                            .build()));
+      Map<String, TigerServerStatusUpdate> activeServers =
+          servers.values().stream()
+              .filter(server -> server.getConfiguration().isActive())
+              .collect(
+                  Collectors.toMap(
+                      AbstractTigerServer::getServerId,
+                      server ->
+                          TigerServerStatusUpdate.builder()
+                              .type(server.getConfiguration().getType())
+                              .status(TigerServerStatus.NEW)
+                              .build()));
 
-    getFixedPoolExecutor()
-        .submit(
-            () ->
-                listeners.parallelStream()
-                    .forEach(
-                        listener ->
-                            listener.receiveTestEnvUpdate(
-                                TigerStatusUpdate.builder()
-                                    .serverUpdate(new LinkedHashMap<>(activeServers))
-                                    .build())));
+      getFixedPoolExecutor()
+          .submit(
+              () ->
+                  listeners.parallelStream()
+                      .forEach(
+                          listener ->
+                              listener.receiveTestEnvUpdate(
+                                  TigerStatusUpdate.builder()
+                                      .serverUpdate(new LinkedHashMap<>(activeServers))
+                                      .build())));
 
-    final List<AbstractTigerServer> initialServersToBoot =
-        servers.values().parallelStream()
-            .filter(server -> server.getDependUponList().isEmpty())
-            .toList();
+      final List<AbstractTigerServer> initialServersToBoot =
+          servers.values().parallelStream()
+              .filter(server -> server.getDependUponList().isEmpty())
+              .toList();
 
-    log.info(
-        "Booting following server(s): {}",
-        initialServersToBoot.stream().map(AbstractTigerServer::getHostname).toList());
+      log.info(
+          "Booting following server(s): {}",
+          initialServersToBoot.stream().map(AbstractTigerServer::getHostname).toList());
 
-    initialServersToBoot.parallelStream().forEach(this::startServer);
+      initialServersToBoot.parallelStream().forEach(this::startServer);
 
-    if (isLocalTigerProxyActive()) {
-      log.info("Subscribing to traffic endpoints with local tiger proxy...");
-      localTigerProxy.subscribeToTrafficEndpoints();
+      if (isLocalTigerProxyActive()) {
+        log.info("Subscribing to traffic endpoints with local tiger proxy...");
+        localTigerProxy.subscribeToTrafficEndpoints();
+      }
+
+      log.info(Ansi.colorize("Finished set up test environment OK", RbelAnsiColors.GREEN_BOLD));
+    } catch (RuntimeException rte) {
+      receiveTestEnvUpdate(
+          TigerStatusUpdate.builder()
+              .bannerMessage(
+                  "<p class=\"failed\">Start up of Test environment failed!</p>"
+                      + "<p class=\"smallcode\">"
+                      + rte.getMessage()
+                      + "</p>")
+              .bannerColor("red")
+              .bannerType(BannerType.MESSAGE)
+              .bannerIsHtml(true)
+              .build());
+      throw rte;
     }
-
-    log.info(Ansi.colorize("Finished set up test environment OK", RbelAnsiColors.GREEN_BOLD));
   }
 
   public void setDefaultProxyToLocalTigerProxy() {

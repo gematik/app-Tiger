@@ -1,28 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2024 gematik GmbH
-  ~ 
-  ~ Licensed under the Apache License, Version 2.0 (the License);
-  ~ you may not use this file except in compliance with the License.
-  ~ You may obtain a copy of the License at
-  ~ 
-  ~     http://www.apache.org/licenses/LICENSE-2.0
-  ~ 
-  ~ Unless required by applicable law or agreed to in writing, software
-  ~ distributed under the License is distributed on an 'AS IS' BASIS,
-  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  ~ See the License for the specific language governing permissions and
-  ~ limitations under the License.
+  ~ ${GEMATIK_COPYRIGHT_STATEMENT}
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
         <relativePath>../pom.xml</relativePath>
-        <version>3.1.3</version>
+        <version>3.2.4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -144,6 +132,12 @@
             <version>${version.cucumber}</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-java-agent</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -151,7 +145,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.6.0</version>
+                <version>3.7.1</version>
                 <executions>
                     <execution>
                         <id>copy</id>
@@ -166,7 +160,7 @@
                         <artifactItem>
                             <groupId>org.jenkins-ci</groupId>
                             <artifactId>winstone</artifactId>
-                            <version>4.1</version>
+                            <version>${version.winstone}</version>
                             <type>jar</type>
                             <overWrite>false</overWrite>
                             <outputDirectory>${project.build.directory}</outputDirectory>
@@ -192,7 +186,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.7.0</version>
+                <version>${version.maven.javadoc}</version>
                 <configuration>
                     <show>private</show>
                 </configuration>
@@ -233,7 +227,7 @@
                     <plugin>
                         <groupId>de.gematik.test</groupId>
                         <artifactId>tiger-maven-plugin</artifactId>
-                        <version>3.1.3</version>
+                        <version>3.2.4</version>
                         <executions>
                             <execution>
                                 <configuration>
@@ -267,7 +261,7 @@
                     </plugin>
                     <plugin>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>${version.maven.failsafe}</version>
+                        <version>${version.maven.surefire}</version>
                         <configuration>
                             <skip>true</skip>
                         </configuration>

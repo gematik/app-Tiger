@@ -30,7 +30,7 @@ lib:
   activateWorkflowUi: false
   trafficVisualization: true
 
-additionalYamls:
+additionalConfigurationFiles:
   - filename: src/test/resources/testdata/specialEnvironment.yaml
     baseKey: external
 

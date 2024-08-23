@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -48,9 +48,8 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
           "gzip", RbelHttpResponseConverter::decodeGzip);
 
   private static byte[] decodeGzip(byte[] bytes, String eol, Charset charset) {
-    log.atInfo()
-        .addArgument(() -> new String(bytes, charset))
-        .log(() -> "Decoding data {} with gzip");
+    log.atTrace()
+        .log(() -> "Decoding data with gzip");
     try (final InputStream inputStream = new GZIPInputStream(new ByteArrayInputStream(bytes))) {
       return inputStream.readAllBytes();
     } catch (Exception e) {
@@ -60,8 +59,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
   private static byte[] decodeDeflate(byte[] bytes, String eol, Charset charset) {
     log.atTrace()
-        .addArgument(() -> new String(bytes, charset))
-        .log(() -> "Decoding data {} with deflate");
+        .log(() -> "Decoding data with deflate");
     try (final InputStream inputStream = new InflaterInputStream(new ByteArrayInputStream(bytes))) {
       return inputStream.readAllBytes();
     } catch (Exception e) {
@@ -71,8 +69,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
   private static byte[] decodeChunked(byte[] inputData, String eol, Charset charset) {
     log.atTrace()
-      .addArgument(() -> new String(inputData, charset))
-      .log(() -> "Decoding data {} with chunked encoding");
+      .log(() -> "Decoding data with chunked encoding");
     int chunkSeparator = new String(inputData, charset).indexOf(eol) + eol.length();
 
     final int indexOfChunkTerminator =
@@ -130,8 +127,9 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
     targetElement.addFacet(rbelHttpResponse);
     targetElement.addFacet(new RbelResponseFacet(responseCode.getRawStringContent()));
+    final var httpVersion = new RbelElement(content.substring(0, content.indexOf(" ")).getBytes(), targetElement);
     targetElement.addFacet(
-        RbelHttpMessageFacet.builder().header(headerElement).body(bodyElement).build());
+        RbelHttpMessageFacet.builder().header(headerElement).body(bodyElement).httpVersion(httpVersion).build());
 
     converter.convertElement(bodyElement);
   }

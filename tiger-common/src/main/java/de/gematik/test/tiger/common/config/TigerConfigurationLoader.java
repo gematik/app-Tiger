@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -19,6 +19,11 @@ package de.gematik.test.tiger.common.config;
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeyString.wrapAsKey;
 
 import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.JacksonException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.Module;
@@ -33,16 +38,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
+import de.gematik.test.tiger.common.data.config.ConfigurationFileType;
 import de.gematik.test.tiger.zion.config.TigerSkipEvaluation;
 import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -81,7 +84,7 @@ public class TigerConfigurationLoader {
     }
   }
 
-  public static Map<TigerConfigurationKey, String> addYamlToMap(
+  public static Map<TigerConfigurationKey, String> addConfigurationFileToMap(
       final Object value,
       final TigerConfigurationKey baseKeys,
       final Map<TigerConfigurationKey, String> valueMap) {
@@ -90,14 +93,14 @@ public class TigerConfigurationLoader {
           (key, value1) -> {
             var newList = new TigerConfigurationKey(baseKeys);
             newList.add((String) key);
-            addYamlToMap(value1, newList, valueMap);
+            addConfigurationFileToMap(value1, newList, valueMap);
           });
     } else if (value instanceof List<?> asList) {
       int counter = 0;
       for (Object entry : asList) {
         TigerConfigurationKey newList = new TigerConfigurationKey(baseKeys);
         newList.add(wrapAsKey(Integer.toString(counter++)));
-        addYamlToMap(entry, newList, valueMap);
+        addConfigurationFileToMap(entry, newList, valueMap);
       }
     } else {
       if (value != null) {
@@ -278,19 +281,23 @@ public class TigerConfigurationLoader {
   }
 
   public void readFromYaml(String yamlSource, String... baseKeys) {
-    readFromYaml(yamlSource, SourceType.ADDITIONAL_YAML, baseKeys);
+    readFromYaml(yamlSource, ConfigurationValuePrecedence.ADDITIONAL_YAML, baseKeys);
   }
 
-  public void readFromYaml(String yamlSource, SourceType sourceType, String... baseKeys) {
+  public void readFromYaml(String yamlSource, ConfigurationValuePrecedence precedence, String... baseKeys) {
+    readConfigurationFile(yamlSource, precedence, ConfigurationFileType.YAML, baseKeys);
+  }
+
+  public void readConfigurationFile(String yamlSource, ConfigurationValuePrecedence precedence, ConfigurationFileType configurationFileType, String... baseKeys) {
     initialize();
 
-    Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
+    val values = configurationFileType.loadFromString(yamlSource);
     final HashMap<TigerConfigurationKey, String> valueMap = new HashMap<>();
-    addYamlToMap(yaml.load(yamlSource), new TigerConfigurationKey(baseKeys), valueMap);
-    DeprecatedKeysForbiddenUsageChecker.checkForDeprecatedKeys(valueMap);
+    addConfigurationFileToMap(values, new TigerConfigurationKey(baseKeys), valueMap);
+    DeprecatedKeysUsageChecker.checkForDeprecatedKeys(valueMap);
 
     sourcesManager.addNewSource(
-        BasicTigerConfigurationSource.builder().values(valueMap).sourceType(sourceType).build());
+        BasicTigerConfigurationSource.builder().values(valueMap).precedence(precedence).build());
   }
 
   public boolean readBoolean(String key) {
@@ -322,7 +329,7 @@ public class TigerConfigurationLoader {
                       TigerTemplateSource.builder()
                           .templateName(m.get("templateName").toString())
                           .targetPath(new TigerConfigurationKey(baseKeys))
-                          .values(addYamlToMap(m, new TigerConfigurationKey(), new HashMap<>()))
+                          .values(addConfigurationFileToMap(m, new TigerConfigurationKey(), new HashMap<>()))
                           .build()));
     } else {
       throw new TigerConfigurationException(
@@ -333,7 +340,7 @@ public class TigerConfigurationLoader {
   public void loadEnvironmentVariables() {
     sourcesManager
         .getSortedStream()
-        .filter(source -> source.getSourceType() == SourceType.ENV)
+        .filter(source -> source.getPrecedence() == ConfigurationValuePrecedence.ENV)
         .forEach(sourcesManager::removeSource);
 
     sourcesManager.addNewSource(
@@ -345,14 +352,14 @@ public class TigerConfigurationLoader {
                             entry -> new TigerConfigurationKey(entry.getKey()),
                             Map.Entry::getValue,
                             (e1, e2) -> mapConflictResolver(e1, e2, "environment variables"))))
-            .sourceType(SourceType.ENV)
+            .precedence(ConfigurationValuePrecedence.ENV)
             .build());
   }
 
   public void loadSystemProperties() {
     sourcesManager
         .getSortedStream()
-        .filter(source -> source.getSourceType() == SourceType.PROPERTIES)
+        .filter(source -> source.getPrecedence() == ConfigurationValuePrecedence.PROPERTIES)
         .forEach(sourcesManager::removeSource);
 
     sourcesManager.addNewSource(
@@ -364,7 +371,7 @@ public class TigerConfigurationLoader {
                             entry -> new TigerConfigurationKey(entry.getKey().toString()),
                             entry -> entry.getValue().toString(),
                             (e1, e2) -> mapConflictResolver(e1, e2, "system properties"))))
-            .sourceType(SourceType.PROPERTIES)
+            .precedence(ConfigurationValuePrecedence.PROPERTIES)
             .build());
   }
 
@@ -404,7 +411,7 @@ public class TigerConfigurationLoader {
   private JsonNode convertMapToTree(Map<TigerConfigurationKey, String> map) {
     final ObjectNode result = new ObjectNode(objectMapper.getNodeFactory());
 
-    for (var entry : map.entrySet()) {
+    for (Entry<TigerConfigurationKey, String> entry : map.entrySet()) {
       createAndReturnDeepPath(entry.getKey(), result)
           .put(entry.getKey().get(entry.getKey().size() - 1).getValue(), entry.getValue());
     }
@@ -551,14 +558,14 @@ public class TigerConfigurationLoader {
   }
 
   public void putValue(String key, Object value) {
-    putValue(key, value, SourceType.RUNTIME_EXPORT);
+    putValue(key, value, ConfigurationValuePrecedence.RUNTIME_EXPORT);
   }
 
-  public void putValue(String key, Object value, SourceType sourceType) {
-    putValue(new TigerConfigurationKey(key), value, sourceType);
+  public void putValue(String key, Object value, ConfigurationValuePrecedence precedence) {
+    putValue(new TigerConfigurationKey(key), value, precedence);
   }
 
-  public void putValue(TigerConfigurationKey key, Object value, SourceType sourceType) {
+  public void putValue(TigerConfigurationKey key, Object value, ConfigurationValuePrecedence precedence) {
     if (value == null) {
       throw new TigerConfigurationException(
           "Trying to store null-value. Only non-values are allowed!");
@@ -567,9 +574,9 @@ public class TigerConfigurationLoader {
     final AbstractTigerConfigurationSource configurationSource =
         sourcesManager
             .getSortedStream()
-            .filter(source -> source.getSourceType() == sourceType)
+            .filter(source -> source.getPrecedence() == precedence)
             .findAny()
-            .orElseGet(() -> generateNewConfigurationSource(sourceType));
+            .orElseGet(() -> generateNewConfigurationSource(precedence));
 
     if (value instanceof String asString) {
       configurationSource.putValue(key, asString);
@@ -577,7 +584,7 @@ public class TigerConfigurationLoader {
       try {
         Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
         final HashMap<TigerConfigurationKey, String> valueMap = new HashMap<>();
-        addYamlToMap(yaml.load(objectMapper.writeValueAsString(value)), key, valueMap);
+        addConfigurationFileToMap(yaml.load(objectMapper.writeValueAsString(value)), key, valueMap);
 
         valueMap.forEach(configurationSource::putValue);
       } catch (JsonProcessingException e) {
@@ -586,9 +593,9 @@ public class TigerConfigurationLoader {
     }
   }
 
-  private AbstractTigerConfigurationSource generateNewConfigurationSource(SourceType sourceType) {
+  private AbstractTigerConfigurationSource generateNewConfigurationSource(ConfigurationValuePrecedence precedence) {
     final AbstractTigerConfigurationSource newSource =
-        new BasicTigerConfigurationSource(sourceType);
+        new BasicTigerConfigurationSource(precedence);
     sourcesManager.addNewSource(newSource);
     return newSource;
   }

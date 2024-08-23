@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -18,9 +18,13 @@ package de.gematik.test.tiger.proxy.handler;
 
 import static de.gematik.test.tiger.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 
+import de.gematik.test.tiger.mockserver.model.Action;
+import de.gematik.test.tiger.mockserver.model.CloseChannel;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 /**
  * Callback used for as a forward-all route in the TigerProxy. The messages received here are simply
@@ -67,5 +71,22 @@ public class ForwardAllCallback extends AbstractTigerRouteCallback {
   @Override
   boolean shouldLogTraffic() {
     return true;
+  }
+
+  @Override
+  public Optional<Action> cannedResponse(HttpRequest httpRequest) {
+    if (targetsSelf(httpRequest)) {
+      return Optional.of(new CloseChannel());
+    } else {
+      return Optional.empty();
+    }
+  }
+
+  private boolean targetsSelf(HttpRequest req) {
+    val requestPort = req.socketAddressFromHostHeader().getPort();
+    val requestHostName = req.socketAddressFromHostHeader().getHostName();
+    return requestPort == getTigerProxy().getProxyPort()
+        && (requestHostName.equalsIgnoreCase("127.0.0.1")
+            || requestHostName.equalsIgnoreCase("localhost"));
   }
 }

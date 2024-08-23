@@ -29,3 +29,7 @@ Feature Tiger validation steps
             <entry index="2">bsso</entry>
           </arr1>
         """
+
+    Given TGR find message with "$.pop3Body.mimeHeader.subject" matching ".*test.*"
+    Given TGR find next message with "$.pop3Status" matching "-ERR"
+    Given TGR find last message with "$.pop3Command" matching "RETR"

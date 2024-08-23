@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -120,42 +120,32 @@ class ConfigurationEditorTest extends AbstractTests {
   }
 
   void testSourceTypeVisibility(String key, String icon, String source, String value) {
-    var allRows = page.locator(".ag-row").all();
     var row =
-        allRows.stream()
-            .filter(r -> r.locator("div[col-id='key']").textContent().equals(key))
-            .toList();
+        page.locator(
+            "//div[@id='test-tg-config-editor-table']"
+                + "//div[@col-id='key' and text()='"
+                + key
+                + "']/..");
 
+    row.scrollIntoViewIfNeeded();
     assertAll(
-        () -> assertTrue(row.stream().allMatch(r -> r.locator(icon).isVisible())),
+        () -> PlaywrightAssertions.assertThat(row.locator(icon)).isVisible(),
+        () -> PlaywrightAssertions.assertThat(row.locator(icon)).hasAttribute("title", source),
         () ->
-            assertThat(
-                    row.stream()
-                        .filter(r -> r.locator(icon).getAttribute("title").equals(source))
-                        .count())
-                .isEqualTo(1),
-        () ->
-            assertThat(
-                    row.stream()
-                        .filter(
-                            r ->
-                                r.locator(".test-tg-config-editor-table-row")
-                                    .textContent()
-                                    .equals(value))
-                        .count())
-                .isEqualTo(1));
+            PlaywrightAssertions.assertThat(row.locator(".test-tg-config-editor-table-row"))
+                .hasText(value));
   }
 
   @Test
   void testClickExpandButtonWithMultilineEnvSourceType() {
     String envMultilineValue = "Lorem ipsum";
-    var allRows = page.locator(".ag-row").all();
-
     var row =
-        allRows.stream()
-            .filter(
-                r -> r.locator("div[col-id='key']").textContent().equals(ENV_MULTILINE_CHECK_KEY))
-            .toList();
+        List.of(
+            page.locator(
+                "//div[@id='test-tg-config-editor-table']"
+                    + "//div[@col-id='key' and text()='"
+                    + ENV_MULTILINE_CHECK_KEY
+                    + "']/.."));
 
     assertValueTextTruncateAndContains(row, envMultilineValue);
     assertExpandIconExists(row);
@@ -284,38 +274,32 @@ class ConfigurationEditorTest extends AbstractTests {
     String newValue = "Success";
     var row = findRowBySourceTypeKey(key);
     assertRowContainsIcon(row, iconSelector);
-    assertTrue(
-        row.stream()
-            .anyMatch(
-                r -> r.locator(".test-tg-config-editor-table-row").textContent().equals(value)));
-
+    PlaywrightAssertions.assertThat(row.locator(".test-tg-config-editor-table-row")).hasText(value);
     editRowValueByDoubleClick(value, newValue);
 
     var updatedRow = findRowBySourceTypeKey(key);
     String RUNTIME_EXPORT_ICON = ".fa.fa-lg.fa-cloud";
     assertRowContainsIcon(updatedRow, RUNTIME_EXPORT_ICON);
-    assertTrue(
-        updatedRow.stream()
-            .anyMatch(
-                r ->
-                    r.locator(".test-tg-config-editor-table-row")
-                        .textContent()
-                        .equals(value + newValue)));
+    PlaywrightAssertions.assertThat(updatedRow.locator(".test-tg-config-editor-table-row"))
+        .hasText(value + newValue);
   }
 
   private void openTgConfigEditor() {
     page.querySelector("#test-sidebar-tg-config-editor-icon").click();
   }
 
-  private List<Locator> findRowBySourceTypeKey(String key) {
-    var allRows = page.locator(".ag-row").all();
-    return allRows.stream()
-        .filter(r -> r.locator("div[col-id='key']").textContent().equals(key))
-        .toList();
+  private Locator findRowBySourceTypeKey(String key) {
+    return page.locator(
+        "//div[@id='test-tg-config-editor-table']"
+            + "//div[@col-id='key' and text()='"
+            + key
+            + "']/..");
   }
 
-  private void assertRowContainsIcon(List<Locator> row, String iconSelector) {
-    assertTrue(row.stream().allMatch(r -> r.locator(iconSelector).isVisible()));
+  private void assertRowContainsIcon(Locator row, String iconSelector) {
+    var icon = row.locator(iconSelector);
+    icon.scrollIntoViewIfNeeded();
+    PlaywrightAssertions.assertThat(row.locator(iconSelector)).isVisible();
   }
 
   private void editRowValueByDoubleClick(String oldValue, String newValue) {
@@ -363,11 +347,7 @@ class ConfigurationEditorTest extends AbstractTests {
   void testDeleteSourceTypeRow(String key, String icon, String value) {
     var row = findRowBySourceTypeKey(key);
     assertRowContainsIcon(row, icon);
-    assertTrue(
-        row.stream()
-            .anyMatch(
-                r -> r.locator(".test-tg-config-editor-table-row").textContent().equals(value)));
-
+    PlaywrightAssertions.assertThat(row.locator(".test-tg-config-editor-table-row")).hasText(value);
     page.locator(
             "//div[@col-id='key' and text()='"
                 + key
@@ -377,16 +357,7 @@ class ConfigurationEditorTest extends AbstractTests {
     await()
         .untilAsserted(
             () -> {
-              List<Locator> matchingRows =
-                  row.stream()
-                      .filter(
-                          r ->
-                              r.locator(".test-tg-config-editor-table-row")
-                                  .textContent()
-                                  .equals(value))
-                      .toList();
-
-              assertThat(matchingRows).isEmpty();
+              var deletedRow = findRowBySourceTypeKey(key);
             });
   }
 

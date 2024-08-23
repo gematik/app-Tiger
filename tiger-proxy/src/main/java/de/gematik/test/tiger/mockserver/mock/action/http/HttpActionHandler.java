@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -20,11 +20,10 @@ import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.*;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
-import static io.netty.handler.codec.http.HttpHeaderNames.*;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.filters.HopByHopHeaderFilter;
 import de.gematik.test.tiger.mockserver.httpclient.HttpRequestInfo;
 import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
@@ -42,7 +41,6 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.util.AttributeKey;
 import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
@@ -59,7 +57,7 @@ public class HttpActionHandler {
   public static final AttributeKey<InetSocketAddress> REMOTE_SOCKET =
       AttributeKey.valueOf("REMOTE_SOCKET");
 
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private final HttpState httpStateHandler;
   private final Scheduler scheduler;
   private HttpForwardActionHandler httpForwardActionHandler;
@@ -69,7 +67,7 @@ public class HttpActionHandler {
   private HopByHopHeaderFilter hopByHopHeaderFilter = new HopByHopHeaderFilter();
 
   public HttpActionHandler(
-      Configuration configuration,
+      MockServerConfiguration configuration,
       EventLoopGroup eventLoopGroup,
       HttpState httpStateHandler,
       List<ProxyConfiguration> proxyConfigurations,
@@ -86,7 +84,6 @@ public class HttpActionHandler {
       final HttpRequest request,
       final NettyResponseWriter responseWriter,
       final ChannelHandlerContext ctx,
-      Set<String> localAddresses,
       boolean proxyingRequest,
       final boolean synchronous) {
     if (request.getHeaders() == null

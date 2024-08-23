@@ -10,6 +10,7 @@ servers:
     serverPort: ${free.port.0}
     healthcheckUrl: http://localhost:${free.port.0}/status/200
   remoteTigerProxy:
+    dependsUpon: httpbin
     type: tigerProxy
     tigerProxyConfiguration:
       adminPort: ${free.port.2}
@@ -25,7 +26,7 @@ lib:
   activateWorkflowUi: true
   startBrowser: false
 
-additionalYamls:
+additionalConfigurationFiles:
   - filename: additionalYaml.yaml
     baseKey: tgrTestAdditionalYaml
 

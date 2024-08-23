@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -20,6 +20,7 @@ import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineB
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.RbelValueShader;
 import de.gematik.rbellogger.data.RbelElement;
@@ -49,7 +50,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class RbelHtmlRendererTest {
 
-  private static final RbelConverter RBEL_CONVERTER = RbelLogger.build().getRbelConverter();
+  private static final RbelConverter RBEL_CONVERTER =
+      RbelLogger.build(
+              new RbelConfiguration().activateConversionFor("pop3").activateConversionFor("mime").activateConversionFor("asn1"))
+          .getRbelConverter();
   private static final RbelHtmlRenderer RENDERER = new RbelHtmlRenderer();
 
   @BeforeEach
@@ -169,13 +173,11 @@ class RbelHtmlRendererTest {
             "src/test/resources/sampleMessages/jwtMessage.curl");
 
     final RbelElement convertedMessage =
-        RbelLogger.build()
-            .getRbelConverter()
-            .parseMessage(
-                curlMessage.getBytes(),
-                new RbelHostname("foobar", 666),
-                null,
-                Optional.of(ZonedDateTime.now()));
+        RBEL_CONVERTER.parseMessage(
+            curlMessage.getBytes(),
+            new RbelHostname("foobar", 666),
+            null,
+            Optional.of(ZonedDateTime.now()));
 
     final String convertedHtml = RENDERER.render(List.of(convertedMessage));
 
@@ -205,19 +207,17 @@ class RbelHtmlRendererTest {
   void shouldRenderBinaryMessagesDirectly() throws IOException {
     final byte[] content = Base64.getDecoder().decode("awAAAUEAAAAADoAoAAAIaQYTABMAEwD/");
     final RbelElement convertedMessage =
-        RbelLogger.build()
-            .getRbelConverter()
-            .parseMessage(
-                content,
-                new RbelHostname("sender", 1),
-                new RbelHostname("receiver", 1),
-                Optional.of(ZonedDateTime.now()));
+        RBEL_CONVERTER.parseMessage(
+            content,
+            new RbelHostname("sender", 1),
+            new RbelHostname("receiver", 1),
+            Optional.of(ZonedDateTime.now()));
     convertedMessage.addFacet(new RbelBinaryFacet());
 
     final String convertedHtml = RENDERER.render(List.of(convertedMessage));
     FileUtils.writeStringToFile(new File("target/binary.html"), convertedHtml);
 
-    assertThat(convertedHtml).contains("08 69 06 13 00 13 00 13 00 ff").contains(".i........");
+    assertThat(convertedHtml).contains("08 69").contains("06 13 00 13 00 13 00 ff").contains(".i").contains("........");
   }
 
   @Test
@@ -298,13 +298,11 @@ class RbelHtmlRendererTest {
     String pop3Message = command + "\r\n";
     byte[] htmlBytes = pop3Message.getBytes(StandardCharsets.UTF_8);
     final RbelElement convertedMessage =
-        RbelLogger.build()
-            .getRbelConverter()
-            .parseMessage(
-                htmlBytes,
-                new RbelHostname("sender", 13421),
-                new RbelHostname("receiver", 14512),
-                Optional.of(ZonedDateTime.now()));
+        RBEL_CONVERTER.parseMessage(
+            htmlBytes,
+            new RbelHostname("sender", 13421),
+            new RbelHostname("receiver", 14512),
+            Optional.of(ZonedDateTime.now()));
 
     final String convertedHtml = RENDERER.render(List.of(convertedMessage));
     FileUtils.writeStringToFile(new File("target/directHtml.html"), convertedHtml);
@@ -322,16 +320,13 @@ class RbelHtmlRendererTest {
     String pop3Message = response + "\r\nbody\r\n.\r\n";
     byte[] htmlBytes = pop3Message.getBytes(StandardCharsets.UTF_8);
     final RbelElement convertedMessage =
-        RbelLogger.build()
-            .getRbelConverter()
-            .parseMessage(
-                htmlBytes,
-                new RbelHostname("sender", 13421),
-                new RbelHostname("receiver", 14512),
-                Optional.of(ZonedDateTime.now()));
+        RBEL_CONVERTER.parseMessage(
+            htmlBytes,
+            new RbelHostname("sender", 13421),
+            new RbelHostname("receiver", 14512),
+            Optional.of(ZonedDateTime.now()));
 
     final String convertedHtml = RENDERER.render(List.of(convertedMessage));
-    FileUtils.writeStringToFile(new File("target/directHtml.html"), convertedHtml);
 
     String firstline = response.split("\r\n")[0];
     String[] responseLine = firstline.split(" ");

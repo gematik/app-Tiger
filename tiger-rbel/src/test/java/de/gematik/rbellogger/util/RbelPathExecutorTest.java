@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -43,7 +43,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 class RbelPathExecutorTest {
 
   private static final RbelConverter RBEL_CONVERTER =
-      RbelLogger.build(RbelConfiguration.builder().activateAsn1Parsing(false).build())
+      RbelLogger.build(new RbelConfiguration().activateConversionFor("asn1"))
           .getRbelConverter();
   private static RbelElement jwtMessage;
   private static RbelElement xmlMessage;
@@ -99,92 +99,51 @@ class RbelPathExecutorTest {
         .startsWith("http://");
   }
 
-  @Test
-  void squareBracketRbelPath_shouldFindTarget() {
-    assertThat(jwtMessage.findRbelPathMembers("$.['body'].['body'].['nbf']"))
-        .containsExactly(
-            jwtMessage
-                .getFirst("body")
-                .get()
-                .getFirst("body")
-                .get()
-                .getFirst("nbf")
-                .get()
-                .getFirst("content")
-                .get());
+  @ParameterizedTest
+  @CsvSource({
+    "$.['body'].['body'].['nbf'], $.body.body.nbf",
+    "$.body.[*].nbf, $.body.body.nbf.content", // wildcard
+    "$.body.*.nbf, $.body.body.nbf.content", // wildcard
+    "$.body..nbf, $.body.body.nbf.content", // recursive descent
+    "$..[?(path=~'.*scopes_supported\\.\\d')], $.body.body.scopes_supported.*", // complex JEXL
+    "$.body.body..[?(path=~'.*scopes_supported\\.\\d')], $.body.body.scopes_supported.*", // complex JEXL
+    "$.body.body.['nbf'|'foobar'], $.body.body.nbf", // alternate keys
+    "$.body.body.['foobar'|'nbf'], $.body.body.nbf" // alternate keys
+  })
+  void testPathsWithJwtMessage(String thisPath, String shouldMatchPath) {
+    final List<RbelElement> path1Results = jwtMessage.findRbelPathMembers(thisPath);
+    final List<RbelElement> path2Results = jwtMessage.findRbelPathMembers(shouldMatchPath);
+    assertThat(path1Results).containsAll(path2Results).isNotEmpty();
+    assertThat(path2Results).containsAll(path1Results).isNotEmpty();
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "$..nbf", // recursive descent
+    "$..[?(key=='nbf')]", // simple JEXL
+  })
+  void testRecursiveDescent(String recursivePath) {
+    final List<RbelElement> pathResults = jwtMessage.findRbelPathMembers(recursivePath);
+    final List<RbelElement> referenceResults = List.of(
+      jwtMessage.findElement("$.header.nbf").get(),
+      jwtMessage.findElement("$.body.body.nbf").get()
+    );
+    assertThat(pathResults).containsAll(referenceResults).isNotEmpty();
+    assertThat(referenceResults).containsAll(pathResults).isNotEmpty();
   }
 
   @Test
-  void wildcardDescent_shouldFindSpecificTarget() {
-    assertThat(jwtMessage.findRbelPathMembers("$.body.[*].nbf"))
-        .containsExactly(
-            jwtMessage
-                .getFirst("body")
-                .get()
-                .getFirst("body")
-                .get()
-                .getFirst("nbf")
-                .get()
-                .getFirst("content")
-                .get());
-  }
-
-  @Test
-  void recursiveDescent_shouldFindSpecificTarget() {
-    assertThat(jwtMessage.findRbelPathMembers("$..nbf"))
-        .hasSize(2)
-        .contains(
-            jwtMessage
-                .getFirst("body")
-                .get()
-                .getFirst("body")
-                .get()
-                .getFirst("nbf")
-                .get()
-                .getFirst("content")
-                .get());
-    assertThat(jwtMessage.findRbelPathMembers("$.body..nbf"))
-        .hasSize(1)
-        .contains(
-            jwtMessage
-                .getFirst("body")
-                .get()
-                .getFirst("body")
-                .get()
-                .getFirst("nbf")
-                .get()
-                .getFirst("content")
-                .get());
-  }
-
-  @Test
-  void jexlExpression_shouldFindSpecificTarget() {
-    assertThat(jwtMessage.findRbelPathMembers("$..[?(key=='nbf')]"))
-        .hasSize(2)
-        .contains(
-            jwtMessage
-                .getFirst("body")
-                .get()
-                .getFirst("body")
-                .get()
-                .getFirst("nbf")
-                .get()
-                .getFirst("content")
-                .get());
-  }
-
-  @Test
-  void complexJexlExpression_shouldFindSpecificTarget() {
-    assertThat(jwtMessage.findRbelPathMembers("$..[?(path=~'.*scopes_supported\\.\\d')]"))
-        .hasSize(2);
-
-    assertThat(jwtMessage.findRbelPathMembers("$.body.body..[?(path=~'.*scopes_supported\\.\\d')]"))
-        .hasSize(2);
+  void alternateKeys_shouldFindMultipleTargets() {
+    assertThat(jwtMessage.findRbelPathMembers("$.body.body.['exp'|'iat'|'nbf']"))
+        .containsExactlyInAnyOrder(
+            jwtMessage.findElement("$.body.body.nbf").get(),
+            jwtMessage.findElement("$.body.body.exp").get(),
+            jwtMessage.findElement("$.body.body.iat").get());
   }
 
   @Test
   void findAllMembers() {
-    assertThat(jwtMessage.findRbelPathMembers("$..*")).hasSize(72);
+    assertThat(jwtMessage.findRbelPathMembers("$..*")).hasSize(224);
   }
 
   @Test
@@ -238,14 +197,14 @@ class RbelPathExecutorTest {
         + " text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text",
     "$..RegistryError[1].textTest[?(@.hier=='ist kein"
         + " text')].text,$.body.RegistryResponse.RegistryErrorList.RegistryError.textTest.text",
-    "$..x5c.0.content.0.7..[?(@.0 == '1.3.36.8.3.3')],$..7.content.1"
+    "$..x5c.0.content.0.7..[?(@.0 == '1.3.36.8.3.3')],$..7.content.1",
+    "$.body.RegistryResponse.RegistryErrorList.RegistryError[1].jwtTag,$.body.RegistryResponse.RegistryErrorList.RegistryError.jwtTag",
   })
   void rbelPathWithAddSign_ShouldFindCorrectNode(String path1, String path2) {
     final List<RbelElement> path1Results = xmlMessage.findRbelPathMembers(path1);
     final List<RbelElement> path2Results = xmlMessage.findRbelPathMembers(path2);
-    assertThat(path1Results).containsAll(path2Results);
-
-    assertThat(path2Results).containsAll(path1Results);
+    assertThat(path1Results).containsAll(path2Results).isNotEmpty();
+    assertThat(path2Results).containsAll(path1Results).isNotEmpty();
   }
 
   @Test
@@ -310,23 +269,6 @@ class RbelPathExecutorTest {
     assertThat(RBEL_CONVERTER.convertElement("{\"foo|bar\":\"value\"}", null))
         .extractChildWithPath("$.['foo%7Cbar']")
         .hasStringContentEqualTo("value");
-  }
-
-  @Test
-  void alternateKeys_shouldFindTarget() {
-    assertThat(jwtMessage.findRbelPathMembers("$.body.body.['nbf'|'foobar']"))
-        .containsExactly(jwtMessage.findElement("$.body.body.nbf").get());
-    assertThat(jwtMessage.findRbelPathMembers("$.body.body.['foobar'|'nbf']"))
-        .containsExactly(jwtMessage.findElement("$.body.body.nbf").get());
-  }
-
-  @Test
-  void alternateKeys_shouldFindMultipleTargets() {
-    assertThat(jwtMessage.findRbelPathMembers("$.body.body.['exp'|'iat'|'nbf']"))
-        .containsExactlyInAnyOrder(
-            jwtMessage.findElement("$.body.body.nbf").get(),
-            jwtMessage.findElement("$.body.body.exp").get(),
-            jwtMessage.findElement("$.body.body.iat").get());
   }
 
   @ParameterizedTest

@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -35,6 +35,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 @TigerTest
 class TigerGlueStartStopTest {
 
+  private static TigerGlue tigerGlue = new TigerGlue();
+
   @BeforeAll
   public static void setUp(TigerTestEnvMgr testEnvMgr) {
     ReflectionTestUtils.setField(TigerDirector.class, "tigerTestEnvMgr", testEnvMgr);
@@ -43,8 +45,8 @@ class TigerGlueStartStopTest {
 
   public static Stream<Arguments> startStopRunnables() {
     return Stream.of(
-        Arguments.of((Consumer<String>) TigerGlue::tgrStartServer),
-        Arguments.of((Consumer<String>) TigerGlue::tgrStopServer));
+        Arguments.of((Consumer<String>) tigerGlue::tgrStartServer),
+        Arguments.of((Consumer<String>) tigerGlue::tgrStopServer));
   }
 
   @ParameterizedTest
@@ -57,14 +59,14 @@ class TigerGlueStartStopTest {
 
   @Test
   void startStopServerInWrongConfiguration_shouldGiveException() {
-    assertThatThrownBy(() -> TigerGlue.tgrStartServer("remoteTigerProxy"))
+    assertThatThrownBy(() -> tigerGlue.tgrStartServer("remoteTigerProxy"))
         .isInstanceOf(TigerLibraryException.class)
         .hasMessageContaining(
             "Server with name remoteTigerProxy is not stopped! Current status is RUNNING");
 
-    TigerGlue.tgrStopServer("remoteTigerProxy");
+    tigerGlue.tgrStopServer("remoteTigerProxy");
 
-    assertThatThrownBy(() -> TigerGlue.tgrStopServer("remoteTigerProxy"))
+    assertThatThrownBy(() -> tigerGlue.tgrStopServer("remoteTigerProxy"))
         .isInstanceOf(TigerLibraryException.class)
         .hasMessageContaining(
             "Server with name remoteTigerProxy is not running! Current status is STOPPED");

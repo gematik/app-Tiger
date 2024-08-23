@@ -1,11 +1,172 @@
 # Changelog Tiger Test platform
 
+# Release 3.2.2
+
+* Serenity BDD 4.1.14
+* Cucumber 7.18.1
+* RestAssured 5.4.0
+* Selenium 4.18.1
+* Appium 9.0.0
+* Spring Boot 3.3.2
+* Logback 1.5.6
+*
+
+## Breaking Changes
+
+* TGR-1471: Activation and deactivation of various RbelConverters is now different. By default, all RbelConverters in
+  the
+  classpath are added, except those that define key-phrases for activation (This is done by
+  adding `@ConverterInfo(onlyActivateFor = "pop3")`
+  to the class). Currently, these optional converters are:
+
+    * `pop3` for RbelPop3CommandConverter and RbelPop3ResponseConverter
+    * `smtp` for RbelSmtpCommandConverter and RbelSmtpResponseConverter
+    * `mime` for RbelMimeConverter and RbelEncryptedMailConverter
+    * `asn1` for RbelAsn1Converter
+    * `epa-vau` for RbelVauEpaConverter and RbelVauEpaKeyDeriver
+    * `erp-vau` for RbelErpVauDecryptionConverter
+    * `epa3-vau` for RbelVauEpa3Converter
+    * `sicct` for RbelSicctCommandConverter and RbelSicctEnvelopeConverter
+
+These options supersede the `activateEpaVauAnalysis` etc. configuration keys. All these conversions are deactivated by
+default!
+
+* TGR-1215: You can clear the traffic observed by the tiger proxy during test setup phase by using the configuration
+  key `tiger.lib.clearEnvironmentStartupTraffic`. This is active by default.
+* TGR-1502: add POP3/MIME specific prefix to facet fields
+    * for POP3, the fields status, header, body are now named pop3Status, pop3Header, pop3Body
+    * for MIME, the fields header, body are now named mimeHeader, mimeBody
+* TGR-1508: Additional YAML files are now configured under `additionalConfigurationFiles` instead of `additionalYamls`.
+  This is necessary for consistency, since now you can also read other types (namely `ENV` files, done via `type: ENV`).
+  Default for type is `YAML`, so you can omit it for YAML files.
+* TGR-1458: Add functionality to RbelMessageValidator to allow filtering for message pairs by response fields.
+    * This change involves changing the former filtering of the existing steps for just HTTP requests to filter 
+      for ALL requests instead. This might break former testcase behavior, as potentially other requests that are
+      not HTTP requests could be found that match the former criteria (though it is unlikely).
+    * New steps to RbelValidatorGlue have been added
+    * When a response is found by these steps, the corresponding request is set as the current request,
+      if no corresponding request is found, the response is set as the current request, as well
+    * For POP3/SMTP responses, they are paired with their requests.
+    * Only if the found request has a facet implementing the new marker interface RbelRequestWithResponse
+      (for now true for HTTP, POP3 and SMTP request), the corresponding response is searched for, 
+      if a request is queried and found, otherwise, the current response is cleared.
+    * If a request is queried and not found, both the current request and the current response are cleared. 
+      This is another breaking change, as previously, the status of the current request/response pair was unchanged
+      by a failed query.
+    * If the previous search found a response, then the "find next" steps, when not searching explicitly for a request
+      will start their search after that response, otherwise, they will start their search after the previously found request
+```gherkin
+Gegebensei TGR finde die erste Nachricht mit Knoten {tigerResolvedString} der mit {tigerResolvedString} übereinstimmt
+Given TGR find message with {tigerResolvedString} matching {tigerResolvedString}
+Gegebensei TGR finde die nächste Nachricht mit Knoten {tigerResolvedString} der mit {tigerResolvedString} übereinstimmt
+Given TGR find next message with {tigerResolvedString} matching {tigerResolvedString}
+Gegebensei TGR finde die letzte Nachricht mit Knoten {tigerResolvedString} der mit {tigerResolvedString} übereinstimmt
+Given TGR find last message with {tigerResolvedString} matching {tigerResolvedString}
+Gegebensei TGR finde die erste Nachricht mit Knoten {tigerResolvedString}
+Given TGR find message with {tigerResolvedString}
+Gegebensei TGR finde die nächste Nachricht mit Knoten {tigerResolvedString}
+Given TGR find next message with {tigerResolvedString}
+Gegebensei TGR finde die letzte Nachricht mit Knoten {tigerResolvedString}
+Given TGR find last message with {tigerResolvedString}
+```
+
+# Features
+
+* TGR-1385: in the WebUi sidebar the inner (crypted) requests and response codes will be displayed when available
+* TGR-1449: Enable Host-Header Routing for reverse-proxies
+* TGR-1423: Failure on setup of the test environment is shown on the Workflow UI with a large bottom banner
+* TGR-1508: Configuration: Added support for additional non-yaml files. This is useful when trying to import values from
+  a properties or .env file:
+
+```yaml
+additionalConfigurationFiles:
+  - filename: myProperties.env
+    type: ENV
+```
+
+* TGR-1237: Configuration Editor: it is now possible to export and import the tiger global configuration as a yaml file
+  from the Workflow UI. Two new glue code steps also allow to trigger the import and export from a test scenario:
+
+```gherkin
+TGR save TigerGlobalConfiguration to file {tigerResolvedString}
+TGR speichere TigerGlobalConfiguration in Datei {tigerResolvedString}
+TGR load TigerGlobalConfiguration from file {tigerResolvedString}
+TGR lade TigerGlobalConfiguration aus Datei {tigerResolvedString}
+```
+
+* TGR-1486: For CBOR decoded binary content, add binary facet and HTML note to distinguish from CBOR strings.
+* TGR-1474: Rbel: Http-version is now parsed and stored in the Rbel tree
+* TGR-1317: Tiger-Proxy: The masterSecrets can now be stored to file. Please set the configuration key
+  `tiger.tigerProxy.tls.masterSecretsFile` to the desired location. The written files are compatible with Wireshark. To
+  enable this feature the
+  tiger-java-agent has to be attached to the JVM. For a standard
+  maven-run this can be done by <goal>attach-tiger-agent</goal> to the
+  tiger-maven-plugin. For a more detailed explanation please refer to the user manual, section "Tiger-Proxy > TLS > TLS
+  Decryption in wireshark".
+* TGR-1507: Tiger-Proxy: Added option to ignore offline traffic endpoints:
+
+```yaml
+tigerProxy:
+  failOnOfflineTrafficEndpoints: false
+```
+
+* TGR-1371: Tiger-Test-Lib: it is now possible to set a custom failure message that will be displayed when an assertion
+  fails. This is achieved with the following steps:
+
+```gherkin
+Given TGR the custom failure message is set to {tigerResolvedString}
+Gegebensei TGR die benutzerdefinierte Fehlermeldung ist auf {tigerResolvedString} gesetzt
+[...]
+Then TGR clear the custom failure message
+Dann TGR lösche die benutzerdefinierte Fehlermeldung 
+```
+
+* TGR-1198: Tiger-Test-Lib: a new inline method `rbel:encodeAs` can be used to explicitly encode a value as one of the
+  RbelContentTypes: XML, JSON, JWT, JWE, URL, BEARER_TOKEN.
+  Due to limitations on how the escaping of multiline strings in the bdd steps work, the value to encode must come from
+  a configuration value or read directly from a file. Directly writing the string to be encoded in the BDD step does not
+  work.
+
+```gherkin
+Feature: Example usage
+
+  Scenario: save first to a variable
+    Given TGR set global variable "exampleJWT" to "!{file('exampleJWT.json')}"
+    Then TGR set global variable "encodedJWTFromGetValue" to "!{rbel:encodeAs(getValue('exampleJWT'), 'JWT')}"
+
+  Scenario:
+    Then TGR set global variable "encodedJWTFromFile" to "!{rbel:encodeAs(file('exampleJWT.json'), 'JWT')}"
+```
+
+* TGR-1451: replace deprecated Jenkins commands
+* TGR-1498:
+    * Enhanced MIME body rendering for better presentation of lengthy content, including truncation and contextual
+      titles.
+    * Enhanced MIME body rendering for with rendering of contained elements.
+    * Improved conversion logic for MIME data processing, ensuring proper handling of body elements.
+
+# Bugfixes
+
+* TGR-1455: implement conversion of POP3 AUTH command
+* TGR-1454: Tiger-Proxy: fix issue where small messages were not being forwarded.
+* TGR-1436: Fix HTTP message pairing for old tgr-files
+* TGR-1456: Only interpret POP3 RETR response as MIME
+* TGR-1500: Tiger-Proxy: Fixed infinite-loop when no matching route found
+* TCLE-14: User Manual: improvements in Docker server type documentation.
+* TGR-1480: Fix handling of SMTP AUTH command
+* TGR-1490: Fix handling of POP3 LIST/UIDL responses
+* TGR-1491: Only convert body of SMTP data command as MIME
+* TGR-1492: Avoid missing converters inside RbelConverter in test code
+* TGR-1493: Distinguish between different SMTP AUTH command handling
+* TGR-1499: Treat POP3 TOP response similar to POP3 RETR response
+
 # Release 3.1.3
 
 ## Breaking Changes
 
 * TGR-1394: Tiger-Test-Lib: the glue code
-  step `TGR filter requests based on host {tigerResolvedString}` / `TGR filtere Anfragen nach Server {tigerResolvedString}`
+  step `TGR filter requests based on host {tigerResolvedString}` /
+  `TGR filtere Anfragen nach Server {tigerResolvedString}`
   no longer filters the messages based on the Host http
   header.
   Instead, it refers to the hostname or the server name as defined in the tiger.yaml. E.g.:
@@ -23,17 +184,17 @@ servers:
 
 * TGR-1444: Bugfix for relaying multiline TCP messages to downstream tiger proxy
 * TGR-1446: External-Jar: Solved race condition that could lead to a NPE when starting the server.
+* TGR-1472: add misssing POP3/SMTP commands SASL,AUTH
 
 ## Features
 
 * TGR-1411: Tiger-Proxy: Content- and Transfer-Encodings are no longer deleted on retransmission.
 * TGR-1375: Rbel Parsing of SMTP messages
+* TGR-1448: Tiger-Proxy: Added an option to deactivate TLS-Termination for a directReverseProxy.
 * TGR-1395: Implement mail decryption
 * TGR-1443: REST requests are now fully configurable via TigerHttpClient
 
 # Release 3.1.2
-
-
 
 ## Bugfixes
 

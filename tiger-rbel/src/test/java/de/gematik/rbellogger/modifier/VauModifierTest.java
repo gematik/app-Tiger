@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -21,8 +21,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.RbelErpVauDecrpytionConverter;
-import de.gematik.rbellogger.converter.RbelVauEpaConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
@@ -45,8 +43,8 @@ class VauModifierTest {
       rbelLogger =
           RbelLogger.build(
               new RbelConfiguration()
-                  .addAdditionalConverter(new RbelVauEpaConverter())
-                  .addAdditionalConverter(new RbelErpVauDecrpytionConverter())
+                  .activateConversionFor("epa-vau")
+                  .activateConversionFor("erp-vau")
                   .addInitializer(new RbelKeyFolderInitializer("src/test/resources")));
     }
     rbelLogger.getRbelModifier().deleteAllModifications();
@@ -105,7 +103,7 @@ class VauModifierTest {
         RbelLogger.build(
             new RbelConfiguration()
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-                .addAdditionalConverter(new RbelVauEpaConverter())
+                .activateConversionFor("epa-vau")
                 .addCapturer(
                     RbelFileReaderCapturer.builder()
                         .rbelFile("src/test/resources/vauFlow.tgr")

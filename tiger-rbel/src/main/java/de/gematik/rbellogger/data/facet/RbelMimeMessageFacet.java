@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -47,7 +47,6 @@ public record RbelMimeMessageFacet(RbelElement header, RbelElement body) impleme
               RbelHtmlRenderingToolkit renderingToolkit) {
             return div(
                 h2().withClass("title").withText("Mime Message: "),
-                br(),
                 ancestorTitle()
                     .with(vertParentTitle().with(renderingToolkit.convertNested(element))));
           }
@@ -56,6 +55,6 @@ public record RbelMimeMessageFacet(RbelElement header, RbelElement body) impleme
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>().with("header", header).with("body", body);
+    return new RbelMultiMap<RbelElement>().with("mimeHeader", header).with("mimeBody", body);
   }
 }

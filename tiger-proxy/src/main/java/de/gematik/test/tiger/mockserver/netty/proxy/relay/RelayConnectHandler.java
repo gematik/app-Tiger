@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -22,7 +22,7 @@ import static de.gematik.test.tiger.mockserver.model.Protocol.HTTP_2;
 import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.*;
 import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.getALPNProtocol;
 
-import de.gematik.test.tiger.mockserver.configuration.Configuration;
+import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -51,12 +51,12 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
   public static final String PROXIED = "PROXIED_";
   public static final String PROXIED_SECURE = PROXIED + "SECURE_";
   public static final String PROXIED_RESPONSE = "PROXIED_RESPONSE_";
-  private final Configuration configuration;
+  private final MockServerConfiguration configuration;
   private final LifeCycle server;
   protected final String host;
   protected final int port;
 
-  public RelayConnectHandler(Configuration configuration, LifeCycle server, String host, int port) {
+  public RelayConnectHandler(MockServerConfiguration configuration, LifeCycle server, String host, int port) {
     this.configuration = configuration;
     this.server = server;
     this.host = host;

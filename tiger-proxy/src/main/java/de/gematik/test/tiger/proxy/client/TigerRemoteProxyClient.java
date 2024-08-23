@@ -1,14 +1,14 @@
 /*
- * Copyright (c) 2024 gematik GmbH
- * 
- * Licensed under the Apache License, Version 2.0 (the License);
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an 'AS IS' BASIS,
+ * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
@@ -27,6 +27,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.WebSocketContainer;
 import java.time.Duration;
@@ -119,10 +120,18 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   }
 
   public void connect() {
-    connectToRemoteUrl(
-        tigerStompSessionHandler,
-        connectionTimeoutInSeconds,
-        getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints());
+    try {
+      connectToRemoteUrl(
+          tigerStompSessionHandler,
+          connectionTimeoutInSeconds,
+          getTigerProxyConfiguration().isDownloadInitialTrafficFromEndpoints());
+    } catch (TigerProxyStartupException e) {
+      if (getTigerProxyConfiguration().isFailOnOfflineTrafficEndpoints()) {
+        log.warn("Ignoring offline traffic endpoint {}", remoteProxyUrl);
+      } else {
+        throw e;
+      }
+    }
   }
 
   private String getTracingWebSocketUrl(String remoteProxyUrl) {
