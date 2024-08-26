@@ -134,7 +134,7 @@ pipeline {
                             mv ./tiger_user_manual.html ./Tiger-User-Manual.html
                             """
 
-                        gitCommitAndTagDocu("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
+                        gitCommitAndTagDocu("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, true)
                         sh "git checkout master"
                     }
                 }
