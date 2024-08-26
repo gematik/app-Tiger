@@ -80,6 +80,22 @@ pipeline {
             }
         }
 
+        stage('GitHub-Docu-Release') {
+            when {
+                expression { params.GITHUB_DOCU == 'YES' }
+            }
+            steps {
+                build job: 'Tiger-TIGER-GitHub-Docu-Release',
+                        parameters: [
+                                string(name: 'GITLAB_TAG', value: String.valueOf("docu/R${RELEASE_VERSION}")),
+                                text(name: 'COMMIT_MESSAGE', value: String.valueOf("Release ${RELEASE_VERSION}")),
+                                text(name: 'REMOTE_BRANCH', value: String.valueOf("gh-pages")),
+                                string(name: 'AUTOMATIC_MERGE', value: String.valueOf("YES")),
+                                string(name: 'GITHUB_TAG', value: String.valueOf("docu/R${RELEASE_VERSION}")),
+                        ]
+            }
+        }
+
         stage('Publish Images to Docker-Hub') {
             when {
                 expression { params.DOCKER_HUB == 'YES' }
