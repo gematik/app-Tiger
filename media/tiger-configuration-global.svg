@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  - Copyright 2024 gematik GmbH
+  -
+  - Licensed under the Apache License, Version 2.0 (the "License");
+  - you may not use this file except in compliance with the License.
+  - You may obtain a copy of the License at
+  -
+  -     http://www.apache.org/licenses/LICENSE-2.0
+  -
+  - Unless required by applicable law or agreed to in writing, software
+  - distributed under the License is distributed on an "AS IS" BASIS,
+  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  - See the License for the specific language governing permissions and
+  - limitations under the License.
+  -->
+
+<svg xmlns="http://www.w3.org/2000/svg" contentStyleType="text/css" height="337px" preserveAspectRatio="none"
+    style="width:1005px;height:337px;background:#FFFFF0;" version="1.1" viewBox="0 0 1005 337" width="1005px"
+    zoomAndPan="magnify"><defs/><g><!--MD5=[00b4040e603364f3b74d798c0912c1e4]
+entity conf--><g id="elem_conf"><rect fill="#FFFFF0" height="47.6094" rx="10" ry="10" style="stroke:#808080;stroke-width:0.5;" width="199" x="374" y="134"/><rect fill="#FFFFF0" height="10" style="stroke:#808080;stroke-width:0.5;" width="15" x="553" y="139"/><rect fill="#FFFFF0" height="2" style="stroke:#808080;stroke-width:0.5;" width="4" x="551" y="141"/><rect fill="#FFFFF0" height="2" style="stroke:#808080;stroke-width:0.5;" width="4" x="551" y="145"/><text fill="#333333" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="159" x="389" y="168.5332">TigerGlobalConfiguration</text></g><!--MD5=[2d9b1b547551df9e16d80fce9b861837]
+entity source1--><g id="elem_source1"><ellipse cx="127.5" cy="44" fill="#FFFFF0" rx="8" ry="8" style="stroke:#808080;stroke-width:0.5;"/><text fill="#006400" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="91" x="82" y="75.5332">YAML sources</text></g><!--MD5=[13229bb22be403d02bb09698a92fd1b0]
+entity source2--><g id="elem_source2"><ellipse cx="294.5" cy="44" fill="#FFFFF0" rx="8" ry="8" style="stroke:#808080;stroke-width:0.5;"/><text fill="#006400" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="142" x="223.5" y="75.5332">Environment Variables</text></g><!--MD5=[e2fddbec46de01992ef0f900b6f46e23]
+entity source3--><g id="elem_source3"><ellipse cx="473.5" cy="44" fill="#FFFFF0" rx="8" ry="8" style="stroke:#808080;stroke-width:0.5;"/><text fill="#006400" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="115" x="416" y="75.5332">System Properties</text></g><!--MD5=[f7940866ed1fde6011f20e9f0b85ed70]
+entity source4--><g id="elem_source4"><ellipse cx="630.5" cy="44" fill="#FFFFF0" rx="8" ry="8" style="stroke:#808080;stroke-width:0.5;"/><text fill="#006400" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="98" x="581.5" y="75.5332">CLI Parameters</text></g><!--MD5=[15d0db4e9ccb06eb2261fe7527d356a4]
+entity source5--><g id="elem_source5"><ellipse cx="796.5" cy="44" fill="#FFFFF0" rx="8" ry="8" style="stroke:#808080;stroke-width:0.5;"/><text fill="#006400" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="132" x="730.5" y="75.5332">Manual configuration</text></g><!--MD5=[77d70affbc61c8e154a03eecd75cd5b2]
+entity target1--><g id="elem_target1"><ellipse cx="226.5" cy="272" fill="#FFFFF0" rx="8" ry="8" style="stroke:#808080;stroke-width:0.5;"/><text fill="#006400" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="381" x="36" y="303.5332">TigerGlobalConfiguration.readString("tiger.nested.property")</text></g><!--MD5=[9a8227bea4c428fe0be81d072b791def]
+entity target2--><g id="elem_target2"><ellipse cx="720.5" cy="272" fill="#FFFFF0" rx="8" ry="8" style="stroke:#808080;stroke-width:0.5;"/><text fill="#006400" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="506" x="467.5" y="303.5332">TigerGlobalConfiguration.instantiateConfigurationBean(MyBean.class, "foo.bar")</text></g><!--MD5=[52b7bce456e27f755bea002b3a8835fc]
+link source1 to conf--><g id="link_source1_conf"><path d="M136.89,49.25 C150.22,55.19 175.44,66.14 197.5,74 C259.03,95.94 329.59,117.09 383.96,132.55 " fill="none" id="source1-to-conf" style="stroke:#808080;stroke-width:2.0;"/><polygon fill="#808080" points="388.84,133.93,381.2802,127.6173,384.0313,132.5602,379.0885,135.3113,388.84,133.93" style="stroke:#808080;stroke-width:2.0;"/></g><!--MD5=[cd68dc74e4120d86179ea8269b3fc62a]
+link source2 to conf--><g id="link_source2_conf"><path d="M303.62,50.71 C326.97,65.32 390.04,104.78 432.4,131.29 " fill="none" id="source2-to-conf" style="stroke:#808080;stroke-width:2.0;"/><polygon fill="#808080" points="436.69,133.97,431.1657,125.8164,432.446,131.3264,426.9359,132.6068,436.69,133.97" style="stroke:#808080;stroke-width:2.0;"/></g><!--MD5=[e7486ad9b79e21eb68af86ec88796da7]
+link source3 to conf--><g id="link_source3_conf"><path d="M473.5,53.05 C473.5,68.6 473.5,103.42 473.5,128.48 " fill="none" id="source3-to-conf" style="stroke:#808080;stroke-width:2.0;"/><polygon fill="#808080" points="473.5,133.67,477.5,124.67,473.5,128.67,469.5,124.67,473.5,133.67" style="stroke:#808080;stroke-width:2.0;"/></g><!--MD5=[648b036a6c4f6bf55ccc1d61303a902a]
+link source4 to conf--><g id="link_source4_conf"><path d="M621.15,51.67 C599.83,66.88 546.69,104.79 510.33,130.73 " fill="none" id="source4-to-conf" style="stroke:#808080;stroke-width:2.0;"/><polygon fill="#808080" points="505.98,133.83,515.6312,131.8666,510.0525,130.9292,510.9899,125.3506,505.98,133.83" style="stroke:#808080;stroke-width:2.0;"/></g><!--MD5=[9db2461383dd25f1dce4c846e7184159]
+link source5 to conf--><g id="link_source5_conf"><path d="M787.18,48.23 C752.14,60.38 626.16,104.07 544.91,132.24 " fill="none" id="source5-to-conf" style="stroke:#808080;stroke-width:2.0;"/><polygon fill="#808080" points="540.1,133.9,549.912,134.7512,544.8275,132.2718,547.3069,127.1873,540.1,133.9" style="stroke:#808080;stroke-width:2.0;"/></g><!--MD5=[b3d7c6671a578fe29d49a5dde6762746]
+link conf to target1--><g id="link_conf_target1"><path d="M422.62,182.07 C365.01,208.19 274.7,249.14 240.37,264.71 " fill="none" id="conf-to-target1" style="stroke:#808080;stroke-width:2.0;"/><polygon fill="#808080" points="235.72,266.82,245.5685,266.7372,240.2718,264.751,242.2581,259.4543,235.72,266.82" style="stroke:#808080;stroke-width:2.0;"/></g><!--MD5=[40190b2da594b049c606237ed01bf5f1]
+link conf to target2--><g id="link_conf_target2"><path d="M524.38,182.07 C581.99,208.19 672.3,249.14 706.63,264.71 " fill="none" id="conf-to-target2" style="stroke:#808080;stroke-width:2.0;"/><polygon fill="#808080" points="711.28,266.82,704.7419,259.4543,706.7282,264.751,701.4315,266.7372,711.28,266.82" style="stroke:#808080;stroke-width:2.0;"/></g><!--MD5=[97ba5c1a08dde5b390f0f96f86ba796f]
+@startuml
+
+!include plantuml.style
+
+<style>
+  title {
+    margin 20
+  }
+</style>
+
+component "TigerGlobalConfiguration" as conf
+
+() "YAML sources" as source1
+() "Environment Variables" as source2
+() "System Properties" as source3
+() "CLI Parameters" as source4
+() "Manual configuration" as source5
+
+source1 -down-> conf <<NextRelease>>
+source2 -down-> conf <<NextRelease>>
+source3 -down-> conf <<NextRelease>>
+source4 -down-> conf <<NextRelease>>
+source5 -down-> conf <<NextRelease>>
+
+() "TigerGlobalConfiguration.readString("tiger.nested.property")" as target1
+() "TigerGlobalConfiguration.instantiateConfigurationBean(MyBean.class, "foo.bar")" as target2
+
+conf -down-> target1 <<NextRelease>>
+conf -down-> target2 <<NextRelease>>
+
+@enduml
+
+@startuml
+
+<style>
+root {
+    Margin 30
+    BackgroundColor #fffff0
+    RoundCorner 20
+    FontColor #333
+    LineColor Gray
+    BorderColor Gray
+    HorizontalAlignment center
+    ImagePosition center
+}
+
+title {
+  FontSize 30
+  Margin 0
+  Padding 10 100
+  BackgroundColor White
+}
+
+arrow {
+    LineColor LightGreen
+    FontColor Green
+    LineThickness 2
+}
+
+.Package {
+    BackGroundColor White
+}
+
+.Rect {
+    LineColor Blue
+}
+
+.Tiger {
+    BackgroundColor LightGreen
+    FontColor Green
+    LineColor Green
+}
+
+.Other {
+    BackgroundColor LightSkyBlue
+    LineColor Blue
+}
+
+.NextRelease  {
+    BackgroundColor LightGray
+    FontColor Gray
+    LineColor Gray
+}
+
+interface {
+    FontColor DarkGreen
+}
+
+.HTTP {
+    LineColor Red
+    FontColor Red
+    LineThickness 2
+}
+
+.HTTP2 {
+    LineColor transparent
+}
+
+.Current {
+  BackgroundColor White
+  FontColor DarkRed
+}
+
+.File {
+    LineColor SlateBlue
+    BackgroundColor LightSkyBlue
+    FontColor SlateBlue
+}
+
+.Folder {
+    FontColor Gray
+    BackgroundColor White
+}
+</style>
+
+<style>
+  title {
+    margin 20
+  }
+</style>
+
+component "TigerGlobalConfiguration" as conf
+
+() "YAML sources" as source1
+() "Environment Variables" as source2
+() "System Properties" as source3
+() "CLI Parameters" as source4
+() "Manual configuration" as source5
+
+source1 -down-> conf <<NextRelease>>
+source2 -down-> conf <<NextRelease>>
+source3 -down-> conf <<NextRelease>>
+source4 -down-> conf <<NextRelease>>
+source5 -down-> conf <<NextRelease>>
+
+() "TigerGlobalConfiguration.readString("tiger.nested.property")" as target1
+() "TigerGlobalConfiguration.instantiateConfigurationBean(MyBean.class, "foo.bar")" as target2
+
+conf -down-> target1 <<NextRelease>>
+conf -down-> target2 <<NextRelease>>
+
+@enduml
+
+PlantUML version 1.2022.5(Sat Apr 30 12:55:52 CEST 2022)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: Cp1252
+Language: de
+Country: DE
+--></g></svg>
