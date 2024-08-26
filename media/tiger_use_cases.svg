@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><!--
+  - Copyright 2024 gematik GmbH
+  -
+  - Licensed under the Apache License, Version 2.0 (the "License");
+  - you may not use this file except in compliance with the License.
+  - You may obtain a copy of the License at
+  -
+  -     http://www.apache.org/licenses/LICENSE-2.0
+  -
+  - Unless required by applicable law or agreed to in writing, software
+  - distributed under the License is distributed on an "AS IS" BASIS,
+  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  - See the License for the specific language governing permissions and
+  - limitations under the License.
+  -->
+
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="1430px" preserveAspectRatio="none" style="width:1658px;height:1430px;background:#FFFFF0;" version="1.1" viewBox="0 0 1658 1430" width="1658px" zoomAndPan="magnify"><defs><filter height="300%" id="f16dpl5yexsfvi" width="300%" x="-1" y="-1"><feGaussianBlur result="blurOut" stdDeviation="2.0"/><feColorMatrix in="blurOut" result="blurOut2" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"/><feOffset dx="4.0" dy="4.0" in="blurOut2" result="blurOut3"/><feBlend in="SourceGraphic" in2="blurOut3" mode="normal"/></filter></defs><g><rect fill="#FFFFFF" height="54.9219" rx="10" ry="10" style="stroke:#808080;stroke-width:1.0;" width="459" x="595" y="30"/><text fill="#333333" font-family="sans-serif" font-size="30" font-weight="bold" lengthAdjust="spacing" textLength="259" x="695" y="67.8467">Tiger use cases</text><!--MD5=[5d5c91861b2691118b7ceba66fed8ef3]
+cluster Test environment manager--><polygon fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" points="1214,806.9219,1438,806.9219,1445,829.2188,1524,829.2188,1524,1174.9219,1214,1174.9219,1214,806.9219" style="stroke:#808080;stroke-width:1.0;"/><line style="stroke:#808080;stroke-width:1.0;" x1="1214" x2="1445" y1="829.2188" y2="829.2188"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="218" x="1218" y="821.917">Test environment manager</text><!--MD5=[71a37d756edbbef83a50e9f0bc8cfd03]
+cluster Titus connect--><polygon fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" points="1237,599.9219,1351,599.9219,1358,622.2188,1501,622.2188,1501,782.9219,1237,782.9219,1237,599.9219" style="stroke:#808080;stroke-width:1.0;"/><line style="stroke:#808080;stroke-width:1.0;" x1="1237" x2="1358" y1="622.2188" y2="622.2188"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="108" x="1241" y="614.917">Titus connect</text><!--MD5=[436b70986786860ad03c1537cc29a21b]
+cluster Serenity integration--><polygon fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" points="1122,91.9219,1291,91.9219,1298,114.2188,1616,114.2188,1616,343.9219,1122,343.9219,1122,91.9219" style="stroke:#808080;stroke-width:1.0;"/><line style="stroke:#808080;stroke-width:1.0;" x1="1122" x2="1298" y1="114.2188" y2="114.2188"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="163" x="1126" y="106.917">Serenity integration</text><!--MD5=[82bdaecdcefe070d46bafbdfaa6080e5]
+cluster Polarion integration--><polygon fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" points="1185.5,367.9219,1352.5,367.9219,1359.5,390.2188,1552.5,390.2188,1552.5,575.9219,1185.5,575.9219,1185.5,367.9219" style="stroke:#808080;stroke-width:1.0;"/><line style="stroke:#808080;stroke-width:1.0;" x1="1185.5" x2="1359.5" y1="390.2188" y2="390.2188"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacing" textLength="161" x="1189.5" y="382.917">Polarion integration</text><ellipse cx="1369.1957" cy="867.761" fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" rx="114.6957" ry="25.3391" style="stroke:#808080;stroke-width:1.0;"/><text fill="#333333" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="196" x="1271.1957" y="870.6077">Use local docker containers</text><ellipse cx="1369.2348" cy="959.1688" fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" rx="139.2348" ry="30.247" style="stroke:#808080;stroke-width:1.0;"/><text fill="#333333" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="248" x="1245.2348" y="962.0155">Use cloud based docker containers</text><ellipse cx="1369.1502" cy="1050.8519" fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" rx="122.6502" ry="26.93" style="stroke:#808080;stroke-width:1.0;"/><text fill="#333333" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="213" x="1262.6502" y="1053.6986">Use test instances from TU/RU</text><ellipse cx="1369.2481" cy="1135.7715" fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" rx="102.2481" ry="22.8496" style="stroke:#808080;stroke-width:1.0;"/><text fill="#333333" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="169" x="1284.7481" y="1138.6182">Use self hosted services</text><ellipse cx="1368.9738" cy="743.8166" fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" rx="99.9738" ry="22.3948" style="stroke:#808080;stroke-width:1.0;"/><text fill="#333333" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="164" x="1286.9738" y="746.6633">Sync test cases to Titus</text><ellipse cx="1369.0937" cy="661.0406" fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" rx="116.0937" ry="25.6187" style="stroke:#808080;stroke-width:1.0;"/><text fill="#333333" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="199" x="1269.5937" y="663.8873">Sync test run results to Titus</text><ellipse cx="1369.167" cy="175.0553" fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" rx="231.167" ry="48.6334" style="stroke:#808080;stroke-width:1.0;"/><text fill="#333333" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="437" x="1150.667" y="177.902">Analyze test runs based on local reports with detailed testlogs</text><ellipse cx="1368.8486" cy="292.9916" fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" rx="160.8486" ry="34.5697" style="stroke:#808080;stroke-width:1.0;"/><text fill="#333333" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="293" x="1222.3486" y="295.8383">See requirements coverage in test report</text><ellipse cx="1368.9811" cy="428.0181" fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" rx="110.9811" ry="24.5962" style="stroke:#808080;stroke-width:1.0;"/><text fill="#333333" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="188" x="1274.9811" y="430.8648">Sync test cases to Polarion</text><ellipse cx="1369.1213" cy="523.8461" fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" rx="167.6213" ry="35.9243" style="stroke:#808080;stroke-width:1.0;"/><text fill="#333333" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="307" x="1215.6213" y="526.6928">Sync test run results to Polarion and Aurora</text><!--MD5=[86f3deb032ffd1616ce2ddd800d6d209]
+entity tigUsr--><ellipse cx="70.5" cy="935.9219" fill="#90EE90" filter="url(#f16dpl5yexsfvi)" rx="16" ry="16" style="stroke:#008000;stroke-width:1.5;"/><path d="M70.5,955.9219 C74.5,955.9219 77.5,955.9219 81.5,951.9219 C89.5,951.9219 97.5,959.9219 97.5,967.9219 L97.5,971.9219 C97.5,975.9219 93.5,979.9219 89.5,979.9219 L51.5,979.9219 C47.5,979.9219 43.5,975.9219 43.5,971.9219 L43.5,967.9219 C43.5,959.9219 51.5,951.9219 59.5,951.9219 C63.5,955.9219 66.5,955.9219 70.5,955.9219 " fill="#90EE90" filter="url(#f16dpl5yexsfvi)" style="stroke:#008000;stroke-width:1.5;"/><text fill="#008000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="69" x="36" y="994.417">TigerUser</text><!--MD5=[9bc052f92cc12dcdbffa98086d6436ae]
+entity gemTT--><ellipse cx="352" cy="1028.9219" fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" rx="16" ry="16" style="stroke:#808080;stroke-width:1.5;"/><path d="M352,1048.9219 C356,1048.9219 359,1048.9219 363,1044.9219 C371,1044.9219 379,1052.9219 379,1060.9219 L379,1064.9219 C379,1068.9219 375,1072.9219 371,1072.9219 L333,1072.9219 C329,1072.9219 325,1068.9219 325,1064.9219 L325,1060.9219 C325,1052.9219 333,1044.9219 341,1044.9219 C345,1048.9219 348,1048.9219 352,1048.9219 " fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" style="stroke:#808080;stroke-width:1.5;"/><text fill="#333333" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="131" x="286.5" y="1087.417">GematikTestTeam</text><!--MD5=[11f8cb844e00ebd2bdd8a18258e232a7]
+entity extProd--><ellipse cx="352" cy="1142.9219" fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" rx="16" ry="16" style="stroke:#808080;stroke-width:1.5;"/><path d="M352,1162.9219 C356,1162.9219 359,1162.9219 363,1158.9219 C371,1158.9219 379,1166.9219 379,1174.9219 L379,1178.9219 C379,1182.9219 375,1186.9219 371,1186.9219 L333,1186.9219 C329,1186.9219 325,1182.9219 325,1178.9219 L325,1174.9219 C325,1166.9219 333,1158.9219 341,1158.9219 C345,1162.9219 348,1162.9219 352,1162.9219 " fill="#FFFFF0" filter="url(#f16dpl5yexsfvi)" style="stroke:#808080;stroke-width:1.5;"/><text fill="#333333" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="148" x="278" y="1201.417">ExternalPoductTeam</text><ellipse cx="836.9267" cy="970.1072" fill="#90EE90" filter="url(#f16dpl5yexsfvi)" rx="173.9267" ry="37.1853" style="stroke:#008000;stroke-width:1.0;"/><text fill="#008000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="320" x="676.9267" y="972.9539">Reuse of cases/steps from existing test suites</text><line style="stroke:#008000;stroke-width:1.0;" x1="996.9906" x2="958.764" y1="957.1444" y2="995.371"/><ellipse cx="836.8317" cy="863.0882" fill="#90EE90" filter="url(#f16dpl5yexsfvi)" rx="161.3317" ry="34.6663" style="stroke:#008000;stroke-width:1.0;"/><text fill="#008000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="294" x="689.8317" y="865.9349">Fast and easy set up of test environments</text><line style="stroke:#008000;stroke-width:1.0;" x1="985.3046" x2="949.6168" y1="851.0035" y2="886.6913"/><ellipse cx="352.0906" cy="659.04" fill="#90EE90" filter="url(#f16dpl5yexsfvi)" rx="186.0906" ry="39.6181" style="stroke:#008000;stroke-width:1.0;"/><text fill="#008000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="345" x="179.5906" y="661.8867">Uncomplicated automated execution of IOP tests</text><line style="stroke:#008000;stroke-width:1.0;" x1="523.349" x2="482.6701" y1="645.2291" y2="685.908"/><ellipse cx="837.0326" cy="299.7284" fill="#90EE90" filter="url(#f16dpl5yexsfvi)" rx="124.5326" ry="27.3065" style="stroke:#008000;stroke-width:1.0;"/><text fill="#008000" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="217" x="728.5326" y="302.5751">Explicit analysis of test failures</text><line style="stroke:#008000;stroke-width:1.0;" x1="951.6394" x2="923.3664" y1="290.2093" y2="318.4823"/><ellipse cx="351.9969" cy="1269.1212" fill="#D3D3D3" filter="url(#f16dpl5yexsfvi)" rx="133.9969" ry="29.1994" style="stroke:#808080;stroke-width:1.0;"/><text fill="#808080" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="237" x="233.4969" y="1271.9679">Support non Java Testautomation</text><line style="stroke:#808080;stroke-width:1.0;" x1="475.3136" x2="445.1342" y1="1258.9423" y2="1289.1218"/><ellipse cx="837.1274" cy="1181.9474" fill="#D3D3D3" filter="url(#f16dpl5yexsfvi)" rx="115.6274" ry="25.5255" style="stroke:#808080;stroke-width:1.0;"/><text fill="#808080" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="198" x="738.1274" y="1184.794">Support C# test automation</text><ellipse cx="836.834" cy="1268.7887" fill="#D3D3D3" filter="url(#f16dpl5yexsfvi)" rx="119.834" ry="26.3668" style="stroke:#808080;stroke-width:1.0;"/><text fill="#808080" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="207" x="733.334" y="1271.6353">Support Rust test automation</text><ellipse cx="836.9716" cy="1361.8162" fill="#D3D3D3" filter="url(#f16dpl5yexsfvi)" rx="144.9716" ry="31.3943" style="stroke:#808080;stroke-width:1.0;"/><text fill="#808080" font-family="sans-serif" font-size="14" lengthAdjust="spacing" textLength="260" x="706.9716" y="1364.6629">Provide REST API for test automation</text><!--MD5=[fcb41b49dd96fe4860a323432586328d]
+reverse link tigUsr to gemTT--><path d="M124.29,979.9419 C127.9,981.3219 131.49,982.6619 135,983.9219 C185.26,1001.9619 243.08,1019.7519 286.24,1032.4519 " fill="none" id="tigUsr-backto-gemTT" style="stroke:#90EE90;stroke-width:2.0;"/><polygon fill="none" points="121.23,986.2619,105.23,972.3719,126.4,973.2519,121.23,986.2619" style="stroke:#90EE90;stroke-width:2.0;"/><!--MD5=[bd34c70e77a5b10dabde63de8d2f5594]
+reverse link tigUsr to extProd--><path d="M95.71,1015.7819 C111.51,1047.1119 135,1084.1719 166,1107.9219 C198.28,1132.6519 241.38,1146.7419 277.85,1154.7219 " fill="none" id="tigUsr-backto-extProd" style="stroke:#90EE90;stroke-width:2.0;"/><polygon fill="none" points="89.36,1018.7219,87.08,997.6519,102,1012.7019,89.36,1018.7219" style="stroke:#90EE90;stroke-width:2.0;"/><!--MD5=[fda960697d312673f7e9128f4283e035]
+link tigUsr to BBSUC1--><path d="M105.34,958.4519 C200.24,959.9419 474.03,964.2419 658.17,967.1319 " fill="none" id="tigUsr-to-BBSUC1" style="stroke:#90EE90;stroke-width:2.0;"/><polygon fill="#90EE90" points="663.32,967.2119,654.3781,963.0837,658.3205,967.1405,654.2638,971.0829,663.32,967.2119" style="stroke:#90EE90;stroke-width:2.0;"/><!--MD5=[8c0669a6dfa1397ce0384d18311c64bc]
+link tigUsr to BBSUC2--><path d="M105.29,943.4219 C114.76,939.8319 125.16,936.3319 135,933.9219 C323.25,887.7619 375.05,900.3319 568,881.9219 C603.07,878.5719 640.78,875.5519 676.52,872.9419 " fill="none" id="tigUsr-to-BBSUC2" style="stroke:#90EE90;stroke-width:2.0;"/><polygon fill="#90EE90" points="681.77,872.5619,672.5072,869.2151,676.7828,872.9191,673.0788,877.1947,681.77,872.5619" style="stroke:#90EE90;stroke-width:2.0;"/><!--MD5=[95fb19ebbca3afd66e425c7430c55d06]
+link tigUsr to BBSUC3--><path d="M86.74,918.2819 C97.77,892.6219 114.35,859.3719 135,833.9219 C178.68,780.0719 241.36,731.5519 287.96,699.3319 " fill="none" id="tigUsr-to-BBSUC3" style="stroke:#90EE90;stroke-width:2.0;"/><polygon fill="#90EE90" points="292.13,696.4619,282.4488,698.2716,288.0119,699.2975,286.9859,704.8606,292.13,696.4619" style="stroke:#90EE90;stroke-width:2.0;"/><!--MD5=[25fb245ec0d3b2003d3d4677358f8f9a]
+link tigUsr to BBSUC4--><path d="M73.26,918.1519 C78.15,848.1719 96.58,701.0519 166,601.9219 C290.9,423.5719 363.11,395.5919 568,321.9219 C612.1,306.0619 662.82,299.2619 708.19,296.8519 " fill="none" id="tigUsr-to-BBSUC4" style="stroke:#90EE90;stroke-width:2.0;"/><polygon fill="#90EE90" points="713.41,296.5919,704.2265,293.0332,708.4159,296.8344,704.6147,301.0238,713.41,296.5919" style="stroke:#90EE90;stroke-width:2.0;"/><!--MD5=[afdcd907771ac39c11b040fcf0a27869]
+link tigUsr to BBSUC5--><path d="M74.35,997.8419 C80.67,1055.8119 100.99,1162.8119 166,1221.9219 C182.87,1237.2619 204.03,1247.7519 225.96,1254.8819 " fill="none" id="tigUsr-to-BBSUC5" style="stroke:#808080;stroke-width:2.0;"/><polygon fill="#808080" points="230.95,1256.4519,223.5639,1249.9369,226.1801,1254.9524,221.1647,1257.5686,230.95,1256.4519" style="stroke:#808080;stroke-width:2.0;"/><!--MD5=[cbbb5ddc6e516c7b2bb4c01bdd06323b]
+link BBSUC2 to TEMUC1--><path d="M998.46,864.4319 C1079.09,865.1919 1175.1,866.1019 1249.04,866.8019 " fill="none" id="BBSUC2-to-TEMUC1" style="stroke:#90EE90;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#90EE90" points="1254.33,866.8519,1245.3763,862.7493,1249.3303,866.7947,1245.2849,870.7488,1254.33,866.8519" style="stroke:#90EE90;stroke-width:1.0;"/><text fill="#008000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="1042" y="860.9888">«include»</text><!--MD5=[baa5e15cb43456fbb75cf2b7b7db4922]
+link BBSUC2 to TEMUC2--><path d="M947.98,888.1819 C969.57,895.2719 991.54,904.0919 1011,914.9219 C1064.38,944.6219 1058.98,979.3819 1114,1005.9219 C1154.59,1025.5019 1202.51,1036.6419 1245.73,1042.9519 " fill="none" id="BBSUC2-to-TEMUC2" style="stroke:#90EE90;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#90EE90" points="1250.7,1043.6619,1242.3477,1038.4428,1245.7491,1042.9628,1241.2291,1046.3642,1250.7,1043.6619" style="stroke:#90EE90;stroke-width:1.0;"/><text fill="#008000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="1042" y="934.9888">«include»</text><!--MD5=[8c072e1f020684c371393449090c4d80]
+link BBSUC2 to TEMUC3--><path d="M960.92,885.1919 C1050.27,901.3719 1170.21,923.0919 1256.73,938.7719 " fill="none" id="BBSUC2-to-TEMUC3" style="stroke:#90EE90;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#90EE90" points="1261.86,939.6919,1253.7094,934.1631,1256.9388,938.8075,1252.2944,942.0369,1261.86,939.6919" style="stroke:#90EE90;stroke-width:1.0;"/><text fill="#008000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="1042" y="896.9888">«include»</text><!--MD5=[f7dbf8cdd9a4257b287cae5a78ad5d23]
+link BBSUC2 to TEMUC4--><path d="M964.78,884.3119 C981.98,891.7219 998.12,901.6419 1011,914.9219 C1046.88,951.9119 1014.45,982.7519 1041,1026.9219 C1063.85,1064.9219 1074.17,1075.4319 1114,1094.9219 C1159.68,1117.2719 1214.97,1127.8519 1262.28,1132.7119 " fill="none" id="BBSUC2-to-TEMUC4" style="stroke:#90EE90;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#90EE90" points="1267.42,1133.2219,1258.8655,1128.3413,1262.4451,1132.7215,1258.0649,1136.3012,1267.42,1133.2219" style="stroke:#90EE90;stroke-width:1.0;"/><text fill="#008000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="1042" y="1022.9888">«include»</text><!--MD5=[18219cb2f16aa78a155519e0975286d6]
+link BBSUC3 to BBSUC1--><path d="M389.91,698.0019 C444.57,753.7419 552.53,855.8119 663,914.9219 C681.01,924.5619 700.99,932.8419 720.78,939.8319 " fill="none" id="BBSUC3-to-BBSUC1" style="stroke:#90EE90;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#90EE90" points="725.54,941.4919,718.3512,934.7597,720.8169,939.8509,715.7257,942.3166,725.54,941.4919" style="stroke:#90EE90;stroke-width:1.0;"/><text fill="#008000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="569" y="852.9888">«include»</text><!--MD5=[61d33c9d9b055cc88aeb9e932c85a5d9]
+link BBSUC3 to BBSUC2--><path d="M406.45,696.9419 C448.65,725.5219 509.91,763.9119 568,788.9219 C615.05,809.1819 669.15,825.3619 716.37,837.3619 " fill="none" id="BBSUC3-to-BBSUC2" style="stroke:#90EE90;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#90EE90" points="721.51,838.6619,713.7699,832.5716,716.6635,837.4324,711.8027,840.326,721.51,838.6619" style="stroke:#90EE90;stroke-width:1.0;"/><text fill="#008000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="569" y="784.9888">«include»</text><!--MD5=[6260ce83960a4a48a8ca7f32a2006a02]
+link BBSUC3 to BBSUC4--><path d="M372.65,619.5819 C405.01,558.8219 475.26,442.5419 568,378.9219 C615.08,346.6219 675.52,327.3219 727.08,315.9019 " fill="none" id="BBSUC3-to-BBSUC4" style="stroke:#90EE90;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#90EE90" points="732.05,314.8219,722.4076,312.8157,727.1631,315.8793,724.0995,320.6347,732.05,314.8219" style="stroke:#90EE90;stroke-width:1.0;"/><text fill="#008000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="569" y="342.9888">«include»</text><!--MD5=[4cdddafdcc833b615b97bba30dbcf63b]
+link BBSUC3 to TCUC1--><path d="M524.35,673.9919 C569.44,677.9219 618.05,682.1119 663,685.9219 C879.41,704.2519 1133.27,724.9319 1269.56,735.9719 " fill="none" id="BBSUC3-to-TCUC1" style="stroke:#808080;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#808080" points="1274.76,736.3919,1266.1221,731.6603,1269.7772,735.9778,1265.4597,739.6329,1274.76,736.3919" style="stroke:#808080;stroke-width:1.0;"/><text fill="#808080" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="805.5" y="681.9888">«include»</text><!--MD5=[c7b328f748a95371eb185de81dfffa35]
+link BBSUC3 to TCUC2--><path d="M538.28,659.2919 C744.71,659.6919 1072.44,660.3419 1247.85,660.6819 " fill="none" id="BBSUC3-to-TCUC2" style="stroke:#808080;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#808080" points="1253,660.6919,1244.0115,656.6662,1248,660.6776,1243.9886,664.6661,1253,660.6919" style="stroke:#808080;stroke-width:1.0;"/><text fill="#808080" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="805.5" y="655.9888">«include»</text><!--MD5=[d69fc29b673971ce80a2c4c51340ff12]
+link BBSUC3 to SIUC2--><path d="M401.39,620.6619 C460.06,576.0719 563.5,503.1319 663,460.9219 C766.95,416.8319 1071.67,351.9819 1244.55,317.1619 " fill="none" id="BBSUC3-to-SIUC2" style="stroke:#90EE90;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#90EE90" points="1249.63,316.1419,1240.0179,313.9954,1244.7282,317.128,1241.5956,321.8383,1249.63,316.1419" style="stroke:#90EE90;stroke-width:1.0;"/><text fill="#008000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="805.5" y="363.9888">«include»</text><!--MD5=[d7790ae895a4dc4b638b6852ecac68ff]
+link BBSUC3 to PIUC1--><path d="M437.56,623.7519 C499.17,599.2719 585.12,567.4619 663,546.9219 C859.62,495.0619 913.47,503.6219 1114,469.9219 C1167.05,461.0019 1226.37,451.1919 1274.33,443.2919 " fill="none" id="BBSUC3-to-PIUC1" style="stroke:#90EE90;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#90EE90" points="1279.53,442.4319,1269.9983,439.9524,1274.5969,443.2469,1271.3024,447.8454,1279.53,442.4319" style="stroke:#90EE90;stroke-width:1.0;"/><text fill="#008000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="805.5" y="481.9888">«include»</text><!--MD5=[f518f84b419bbd3f918b2a5c73578699]
+link BBSUC3 to PIUC2--><path d="M509.92,638.0519 C703.94,612.2419 1031.63,568.6619 1220.96,543.4819 " fill="none" id="BBSUC3-to-PIUC2" style="stroke:#90EE90;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#90EE90" points="1225.97,542.8119,1216.5224,540.0293,1221.0134,543.469,1217.5737,547.9599,1225.97,542.8119" style="stroke:#90EE90;stroke-width:1.0;"/><text fill="#008000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="805.5" y="567.9888">«include»</text><!--MD5=[75ec4d3b4ab2fd80c5c502f361c89593]
+link BBSUC4 to SIUC1--><path d="M922.86,279.9119 C999.93,261.7319 1115.59,234.4519 1209.7,212.2519 " fill="none" id="BBSUC4-to-SIUC1" style="stroke:#90EE90;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#90EE90" points="1214.73,211.0719,1205.0492,209.2601,1209.8654,212.2274,1206.8981,217.0435,1214.73,211.0719" style="stroke:#90EE90;stroke-width:1.0;"/><text fill="#008000" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="1042" y="233.9888">«include»</text><!--MD5=[9b1c77b1b91e96e593191aa0d1f08adf]
+link BBSUC5 to NJTUC1--><path d="M455.43,1250.4719 C540.11,1235.2219 659.39,1213.7319 741.73,1198.9019 " fill="none" id="BBSUC5-to-NJTUC1" style="stroke:#808080;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#808080" points="747.1,1197.9319,737.5332,1195.5917,742.1793,1198.8187,738.9522,1203.4648,747.1,1197.9319" style="stroke:#808080;stroke-width:1.0;"/><text fill="#808080" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="569" y="1216.9888">«include»</text><!--MD5=[b409dedb6370f2e93122ca58d9418d6a]
+link BBSUC5 to NJTUC2--><path d="M486.26,1268.9219 C556.61,1268.9219 642.41,1268.9219 711.42,1268.9219 " fill="none" id="BBSUC5-to-NJTUC2" style="stroke:#808080;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#808080" points="716.78,1268.9219,707.7915,1264.8962,711.78,1268.9076,707.7686,1272.8961,716.78,1268.9219" style="stroke:#808080;stroke-width:1.0;"/><text fill="#808080" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="569" y="1264.9888">«include»</text><!--MD5=[8e2a2d61f72f763817e72078aa1e84bb]
+link BBSUC5 to NJTUC3--><path d="M452.78,1288.1319 C531.31,1303.2519 640.76,1324.3319 722.6,1340.0819 " fill="none" id="BBSUC5-to-NJTUC3" style="stroke:#808080;stroke-width:1.0;stroke-dasharray:7.0,7.0;"/><polygon fill="#808080" points="727.95,1341.1119,719.8649,1335.4877,723.0396,1340.1698,718.3575,1343.3444,727.95,1341.1119" style="stroke:#808080;stroke-width:1.0;"/><text fill="#808080" font-family="sans-serif" font-size="13" lengthAdjust="spacing" textLength="63" x="569" y="1308.9888">«include»</text><!--MD5=[fdc426a53dc772daf0bfd37f25823d28]
+@startuml
+
+!include plantuml.style
+
+hide stereotype
+
+skinparam actorStyle awesome
+
+skinparam StereotypeTitleOpening [
+skinparam StereotypeTitleClosing ]
+
+title "Tiger use cases"
+
+actor TigerUser as tigUsr <<Tiger>>
+actor GematikTestTeam as gemTT
+actor ExternalPoductTeam as extProd
+
+left to right direction
+
+tigUsr <|-down- gemTT
+tigUsr <|-down- extProd
+
+usecase/ "Reuse of cases/steps from existing test suites"  as BBSUC1 <<Tiger>>
+usecase/ "Fast and easy set up of test environments" as BBSUC2 <<Tiger>>
+usecase/ "Uncomplicated automated execution of IOP tests" as BBSUC3 <<Tiger>>
+usecase/ "Explicit analysis of test failures" as BBSUC4 <<Tiger>>
+usecase/ "Support non Java Testautomation" as BBSUC5 <<NextRelease>>
+
+tigUsr - -> BBSUC1
+tigUsr -> BBSUC2
+tigUsr - -> BBSUC3
+tigUsr - -> BBSUC4
+tigUsr - -> BBSUC5 <<NextRelease>>
+
+package "Test environment manager" {
+    usecase "Use local docker containers" as TEMUC1
+    usecase "Use cloud based docker containers" as TEMUC3
+    usecase "Use test instances from TU/RU" as TEMUC2
+    usecase "Use self hosted services" as TEMUC4
+}
+
+package "Titus connect" <<NextRelease>> {
+  usecase "Sync test cases to Titus" as TCUC1
+  usecase "Sync test run results to Titus" as TCUC2
+}
+
+package "Serenity integration" {
+    usecase "Analyze test runs based on local reports with detailed testlogs" as SIUC1
+    usecase "See requirements coverage in test report" as SIUC2
+}
+
+package "Polarion integration" {
+    usecase "Sync test cases to Polarion" as PIUC1
+    usecase "Sync test run results to Polarion and Aurora" as PIUC2
+}
+
+usecase "Support C# test automation" as NJTUC1 <<NextRelease>>
+usecase "Support Rust test automation" as NJTUC2 <<NextRelease>>
+usecase "Provide REST API for test automation" as NJTUC3 <<NextRelease>>
+
+BBSUC2 ..> TEMUC1  : &#171;include&#187;
+BBSUC2 ..> TEMUC2 : &#171;include&#187;
+BBSUC2 ..> TEMUC3 : &#171;include&#187;
+BBSUC2 ..> TEMUC4 : &#171;include&#187;
+
+BBSUC3 ..> BBSUC1 : &#171;include&#187;
+BBSUC3 ..> BBSUC2 : &#171;include&#187;
+BBSUC3 ..> BBSUC4 : &#171;include&#187;
+
+BBSUC3 ...> TCUC1 <<NextRelease>> : &#171;include&#187;
+BBSUC3 ...> TCUC2 <<NextRelease>> : &#171;include&#187;
+BBSUC3 ..> SIUC2  : &#171;include&#187;
+BBSUC3 ...> PIUC1  : &#171;include&#187;
+BBSUC3 ..> PIUC2  : &#171;include&#187;
+
+BBSUC4 ..> SIUC1  : &#171;include&#187;
+
+BBSUC5 ..> NJTUC1 <<NextRelease>> : &#171;include&#187;
+BBSUC5 ..> NJTUC2 <<NextRelease>> : &#171;include&#187;
+BBSUC5 ..> NJTUC3 <<NextRelease>> : &#171;include&#187;
+
+@enduml
+
+@startuml
+
+<style>
+root {
+    Margin 30
+    BackgroundColor #fffff0
+    RoundCorner 20
+    FontColor #333
+    LineColor Gray
+    BorderColor Gray
+    HorizontalAlignment center
+    ImagePosition center
+}
+
+title {
+  FontSize 30
+  Margin 0
+  Padding 10 100
+  BackgroundColor White
+}
+
+arrow {
+    LineColor LightGreen
+    FontColor Green
+    LineThickness 2
+}
+
+.Package {
+    BackGroundColor White
+}
+
+.Rect {
+    LineColor Blue
+}
+
+.Tiger {
+    BackgroundColor LightGreen
+    FontColor Green
+    LineColor Green
+}
+
+.Other {
+    BackgroundColor LightSkyBlue
+    LineColor Blue
+}
+
+.NextRelease  {
+    BackgroundColor LightGray
+    FontColor Gray
+    LineColor Gray
+}
+
+interface {
+    FontColor DarkGreen
+}
+
+.HTTP {
+    LineColor Red
+    FontColor Red
+    LineThickness 2
+}
+
+.HTTP2 {
+    LineColor transparent
+}
+
+
+.Current {
+  BackgroundColor White
+  FontColor DarkRed
+}
+
+
+
+.File {
+    LineColor SlateBlue
+    BackgroundColor LightSkyBlue
+    FontColor SlateBlue
+}
+
+.Folder {
+    FontColor Gray
+    BackgroundColor White
+}
+</style>
+
+hide stereotype
+
+skinparam actorStyle awesome
+
+skinparam StereotypeTitleOpening [
+skinparam StereotypeTitleClosing ]
+
+title "Tiger use cases"
+
+actor TigerUser as tigUsr <<Tiger>>
+actor GematikTestTeam as gemTT
+actor ExternalPoductTeam as extProd
+
+left to right direction
+
+tigUsr <|-down- gemTT
+tigUsr <|-down- extProd
+
+usecase/ "Reuse of cases/steps from existing test suites"  as BBSUC1 <<Tiger>>
+usecase/ "Fast and easy set up of test environments" as BBSUC2 <<Tiger>>
+usecase/ "Uncomplicated automated execution of IOP tests" as BBSUC3 <<Tiger>>
+usecase/ "Explicit analysis of test failures" as BBSUC4 <<Tiger>>
+usecase/ "Support non Java Testautomation" as BBSUC5 <<NextRelease>>
+
+tigUsr - -> BBSUC1
+tigUsr -> BBSUC2
+tigUsr - -> BBSUC3
+tigUsr - -> BBSUC4
+tigUsr - -> BBSUC5 <<NextRelease>>
+
+package "Test environment manager" {
+    usecase "Use local docker containers" as TEMUC1
+    usecase "Use cloud based docker containers" as TEMUC3
+    usecase "Use test instances from TU/RU" as TEMUC2
+    usecase "Use self hosted services" as TEMUC4
+}
+
+package "Titus connect" <<NextRelease>> {
+  usecase "Sync test cases to Titus" as TCUC1
+  usecase "Sync test run results to Titus" as TCUC2
+}
+
+package "Serenity integration" {
+    usecase "Analyze test runs based on local reports with detailed testlogs" as SIUC1
+    usecase "See requirements coverage in test report" as SIUC2
+}
+
+package "Polarion integration" {
+    usecase "Sync test cases to Polarion" as PIUC1
+    usecase "Sync test run results to Polarion and Aurora" as PIUC2
+}
+
+usecase "Support C# test automation" as NJTUC1 <<NextRelease>>
+usecase "Support Rust test automation" as NJTUC2 <<NextRelease>>
+usecase "Provide REST API for test automation" as NJTUC3 <<NextRelease>>
+
+BBSUC2 ..> TEMUC1  : &#171;include&#187;
+BBSUC2 ..> TEMUC2 : &#171;include&#187;
+BBSUC2 ..> TEMUC3 : &#171;include&#187;
+BBSUC2 ..> TEMUC4 : &#171;include&#187;
+
+BBSUC3 ..> BBSUC1 : &#171;include&#187;
+BBSUC3 ..> BBSUC2 : &#171;include&#187;
+BBSUC3 ..> BBSUC4 : &#171;include&#187;
+
+BBSUC3 ...> TCUC1 <<NextRelease>> : &#171;include&#187;
+BBSUC3 ...> TCUC2 <<NextRelease>> : &#171;include&#187;
+BBSUC3 ..> SIUC2  : &#171;include&#187;
+BBSUC3 ...> PIUC1  : &#171;include&#187;
+BBSUC3 ..> PIUC2  : &#171;include&#187;
+
+BBSUC4 ..> SIUC1  : &#171;include&#187;
+
+BBSUC5 ..> NJTUC1 <<NextRelease>> : &#171;include&#187;
+BBSUC5 ..> NJTUC2 <<NextRelease>> : &#171;include&#187;
+BBSUC5 ..> NJTUC3 <<NextRelease>> : &#171;include&#187;
+
+@enduml
+
+PlantUML version 1.2021.11(Sat Oct 02 15:26:11 CEST 2021)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Default Encoding: UTF-8
+Language: en
+Country: US
+--></g></svg>
