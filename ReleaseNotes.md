@@ -1,5 +1,13 @@
 # Changelog Tiger Test platform
 
+# Release 3.2.5
+
+## Breaking Changes
+
+* TGR-1527: rbel validation steps now also support rbelpaths that return more than one node, by evaluating each. If the
+  value should match, the step succeeds if there is at least ONE node matching. If it should not match then the step
+  succeeds if NO node matches.
+
 # Release 3.2.2
 
 * Serenity BDD 4.1.14
@@ -9,7 +17,6 @@
 * Appium 9.0.0
 * Spring Boot 3.3.2
 * Logback 1.5.6
-*
 
 ## Breaking Changes
 
@@ -40,7 +47,7 @@ default!
   This is necessary for consistency, since now you can also read other types (namely `ENV` files, done via `type: ENV`).
   Default for type is `YAML`, so you can omit it for YAML files.
 * TGR-1458: Add functionality to RbelMessageValidator to allow filtering for message pairs by response fields.
-    * This change involves changing the former filtering of the existing steps for just HTTP requests to filter 
+    * This change involves changing the former filtering of the existing steps for just HTTP requests to filter
       for ALL requests instead. This might break former testcase behavior, as potentially other requests that are
       not HTTP requests could be found that match the former criteria (though it is unlikely).
     * New steps to RbelValidatorGlue have been added
@@ -48,13 +55,15 @@ default!
       if no corresponding request is found, the response is set as the current request, as well
     * For POP3/SMTP responses, they are paired with their requests.
     * Only if the found request has a facet implementing the new marker interface RbelRequestWithResponse
-      (for now true for HTTP, POP3 and SMTP request), the corresponding response is searched for, 
+      (for now true for HTTP, POP3 and SMTP request), the corresponding response is searched for,
       if a request is queried and found, otherwise, the current response is cleared.
-    * If a request is queried and not found, both the current request and the current response are cleared. 
+    * If a request is queried and not found, both the current request and the current response are cleared.
       This is another breaking change, as previously, the status of the current request/response pair was unchanged
       by a failed query.
     * If the previous search found a response, then the "find next" steps, when not searching explicitly for a request
-      will start their search after that response, otherwise, they will start their search after the previously found request
+      will start their search after that response, otherwise, they will start their search after the previously found
+      request
+
 ```gherkin
 Gegebensei TGR finde die erste Nachricht mit Knoten {tigerResolvedString} der mit {tigerResolvedString} übereinstimmt
 Given TGR find message with {tigerResolvedString} matching {tigerResolvedString}

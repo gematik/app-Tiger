@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.glue;
@@ -455,7 +456,8 @@ public class RBelValidatorGlue {
   }
 
   /**
-   * assert that request matches at given rbel path node/attribute.
+   * assert that request matches the value at given rbel path node/attribute. If multiple nodes are
+   * found, each is tested and if any matches, this step succeeds.
    *
    * @param rbelPath path to node/attribute
    * @param value value / regex that should equal or match as string content with MultiLine and
@@ -470,7 +472,7 @@ public class RBelValidatorGlue {
   }
 
   /**
-   * assert that request contains node/attribute at given rbel path.
+   * assert that request contains at least 1 (or maybe more) node/attribute at given rbel path.
    *
    * @param rbelPath path to node/attribute
    */
@@ -481,7 +483,8 @@ public class RBelValidatorGlue {
   }
 
   /**
-   * assert that request matches at given rbel path node/attribute.
+   * assert that request matches at given rbel path node/attribute. If multiple nodes are found,
+   * each is tested and if any matches, this step succeeds.
    *
    * @param rbelPath path to node/attribute
    * @param docString value / regex that should equal or match as string content with MultiLine and
@@ -495,7 +498,8 @@ public class RBelValidatorGlue {
   }
 
   /**
-   * assert that request matches at given rbel path node/attribute assuming its JSON or XML
+   * assert that request matches at given rbel path node/attribute assuming it's JSON or XML. If
+   * multiple nodes are found, each is tested, and if any matches, this step succeeds.
    *
    * @param rbelPath path to node/attribute
    * @param mode one of JSON|XML
@@ -513,7 +517,8 @@ public class RBelValidatorGlue {
   }
 
   /**
-   * assert that request does not match at given rbel path node/attribute.
+   * assert that request does not match at given rbel path node/attribute. If multiple nodes are
+   * found, each is tested, and if any matches, this step fails.
    *
    * @param rbelPath path to node/attribute
    * @param value value / regex that should NOT BE equal or should NOT match as string content with
@@ -611,7 +616,8 @@ public class RBelValidatorGlue {
   }
 
   /**
-   * assert that response of filtered request contains node/attribute at given rbel path.
+   * assert that response of filtered request contains at least one node/attribute at given rbel
+   * path.
    *
    * @param rbelPath path to node/attribute
    */
@@ -622,7 +628,8 @@ public class RBelValidatorGlue {
   }
 
   /**
-   * assert that response of filtered request matches at given rbel path node/attribute.
+   * assert that response of filtered request matches at given rbel path node/attribute. If multiple
+   * nodes are found, each is tested and if any matches, this step succeeds.
    *
    * @param rbelPath path to node/attribute
    * @param value value / regex that should equal or match as string content with MultiLine and
@@ -637,7 +644,8 @@ public class RBelValidatorGlue {
   }
 
   /**
-   * assert that response of filtered request does not match at given rbel path node/attribute.
+   * assert that response of filtered request does not match at given rbel path node/attribute. If
+   * multiple nodes are found, each is tested and if any matches, this step fails.
    *
    * @param rbelPath path to node/attribute
    * @param value value / regex that should NOT BE equal or should NOT match as string content with
@@ -655,7 +663,8 @@ public class RBelValidatorGlue {
   }
 
   /**
-   * assert that response of filtered request matches at given rbel path node/attribute.
+   * assert that response of filtered request matches at given rbel path node/attribute. If multiple
+   * nodes are found, each is tested and if any matches, this step succeeds.
    *
    * @param rbelPath path to node/attribute
    * @param docString value / regex that should equal or match as string content with MultiLine and
@@ -669,7 +678,8 @@ public class RBelValidatorGlue {
   }
 
   /**
-   * assert that response of filtered request does not match at given rbel path node/attribute.
+   * assert that response of filtered request does not match at given rbel path node/attribute. If
+   * multiple nodes are found, each is tested and if any matches, this step fails.
    *
    * @param rbelPath path to node/attribute
    * @param docString value / regex that should equal or match as string content with MultiLine and
@@ -684,8 +694,8 @@ public class RBelValidatorGlue {
   }
 
   /**
-   * assert that response of filtered request matches at given rbel path node/attribute assuming its
-   * JSON or XML
+   * assert that response of filtered request matches at given rbel path node/attribute assuming
+   * it's JSON or XML. If multiple nodes match, each is tested, and if any match this step succeeds.
    *
    * @param rbelPath path to node/attribute
    * @param mode one of JSON|XML
@@ -699,12 +709,13 @@ public class RBelValidatorGlue {
   public void currentResponseAtMatchesAsJsonOrXml(
       final String rbelPath, final ModeType mode, final String oracleDocStr) {
     rbelValidator.assertAttributeOfCurrentResponseMatchesAs(
-        rbelPath, mode, TigerGlobalConfiguration.resolvePlaceholders(oracleDocStr));
+        rbelPath, mode, TigerGlobalConfiguration.resolvePlaceholders(oracleDocStr), "");
   }
 
   /**
    * assert that response of filtered request matches at given rbel path node/attribute assuming its
-   * XML with given list of diff options.
+   * XML with the given list of diff options. If multiple nodes match, each is tested and if any
+   * match, this step succeeds
    *
    * @param rbelPath path to node/attribute
    * @param diffOptionsCSV a csv separated list of diff option identifiers to be applied to
@@ -728,8 +739,9 @@ public class RBelValidatorGlue {
           + " {tigerResolvedString}:")
   public void currentResponseAtMatchesAsXMLAndDiffOptions(
       final String rbelPath, String diffOptionsCSV, final String xmlDocStr) {
-    rbelValidator.compareXMLStructureOfRbelElement(
-        rbelValidator.findElementInCurrentResponse(rbelPath),
+    rbelValidator.assertAttributeOfCurrentResponseMatchesAs(
+        rbelPath,
+        ModeType.XML,
         TigerGlobalConfiguration.resolvePlaceholders(xmlDocStr),
         diffOptionsCSV);
   }

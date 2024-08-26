@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.lib.json;
@@ -66,10 +67,10 @@ public class JsonChecker {
       return;
     }
     if (!jsonValue.getClass().equals(oracleValue.getClass())) {
-      throw new JsonCheckerAssertionError(
-          String.format(
-              "Could not compare %s to %s: Different types!",
-              jsonValue.getClass().getSimpleName(), oracleValue.getClass().getSimpleName()));
+      throw new JsonCheckerMismatchException(
+              String.format(
+                      "Could not compare %s to %s: Different types!",
+                      jsonValue.getClass().getSimpleName(), oracleValue.getClass().getSimpleName()));
     }
 
     if (jsonValue instanceof JSONObject jsonObject) {
@@ -131,37 +132,37 @@ public class JsonChecker {
     try {
       for (String oracleKey : oracle.keySet()) {
         if (keyNotContainedInSetOrOptional(oracleKey, json.keySet())) {
-          throw new JsonCheckerAssertionError(
-              "Expected JSON to have key '"
-                  + oracleKey
-                  + "', but only found keys '"
-                  + json.keySet()
-                  + "'");
+          throw new JsonCheckerMismatchException(
+                  "Expected JSON to have key '"
+                          + oracleKey
+                          + "', but only found keys '"
+                          + json.keySet()
+                          + "'");
         }
       }
 
       if (checkExtraAttributes) {
         // check json keys are all in oracle (either as name or as ____name
-        final Optional<JsonCheckerAssertionError> checkerAssertionError =
+        final Optional<JsonCheckerMismatchException> checkerMismatchException =
             json.keySet().stream()
                 .filter(key -> keyNotContainedInSetOrOptional(key, oracle.keySet()))
                 .findAny()
                 .map(
                     key ->
-                        new JsonCheckerAssertionError(
-                            "EXTRA Key " + key + " detected in received in JSON"));
-        if (checkerAssertionError.isPresent()) {
-          throw checkerAssertionError.get();
+                            new JsonCheckerMismatchException(
+                                    "EXTRA Key " + key + " detected in received in JSON"));
+        if (checkerMismatchException.isPresent()) {
+          throw checkerMismatchException.get();
         }
       }
 
       compareAllAttributes(json, oracle);
     } catch (final NoSuchMethodError nsme) {
-      Assertions.fail(
-          dumpComparisonBetween(
-              "JSON does not match!\nExpected:\n%s\n\n--------\n\nReceived:\n%s",
-              oracle.toString(2), json.toString(2)),
-          nsme);
+      throw new JsonCheckerMismatchException(
+              dumpComparisonBetween(
+                      "JSON does not match!\nExpected:\n%s\n\n--------\n\nReceived:\n%s",
+                      oracle.toString(2), json.toString(2)),
+              nsme);
     }
   }
 
@@ -206,17 +207,17 @@ public class JsonChecker {
       final Object jsonTarget =
           jsonTargetOptional.orElseThrow(
               () ->
-                  new JsonCheckerAssertionError(
-                      "Could not find attribute by key '" + oracleKey + "' in '" + json + "'"));
+                      new JsonCheckerMismatchException(
+                              "Could not find attribute by key '" + oracleKey + "' in '" + json + "'"));
       final Object oracleTarget =
           oracleTargetOptional.orElseThrow(
               () ->
-                  new JsonCheckerAssertionError(
-                      "Could not find attribute by key '" + oracleKey + "' in '" + oracle + "'"));
+                      new JsonCheckerMismatchException(
+                              "Could not find attribute by key '" + oracleKey + "' in '" + oracle + "'"));
       try {
         compareValues(jsonTarget, oracleTarget);
       } catch (AssertionError e) {
-        throw new JsonCheckerAssertionError("Comparison failed at key '" + oracleKey + "'", e);
+        throw new JsonCheckerMismatchException("Comparison failed at key '" + oracleKey + "'", e);
       }
     }
   }
@@ -231,12 +232,12 @@ public class JsonChecker {
     }
     if (!(oracleTarget instanceof String)
         && !jsonTarget.getClass().equals(oracleTarget.getClass())) {
-      throw new JsonCheckerAssertionError(
-          "Expected an '"
-              + oracleTarget.getClass().getSimpleName()
-              + "', but found '"
-              + jsonTarget.getClass().getSimpleName()
-              + "'");
+      throw new JsonCheckerMismatchException(
+              "Expected an '"
+                      + oracleTarget.getClass().getSimpleName()
+                      + "', but found '"
+                      + jsonTarget.getClass().getSimpleName()
+                      + "'");
     }
 
     if (oracleTarget instanceof JSONObject) {
@@ -252,7 +253,7 @@ public class JsonChecker {
               .withFailMessage(dumpComparisonAtKeyDiffer(oracleTarget.toString(), jsoValue))
               .matches(oracleTarget.toString());
         } catch (final RuntimeException ex) {
-          Assertions.fail(dumpComparisonAtKeyDiffer(oracleTarget.toString(), jsoValue));
+          throw new JsonCheckerMismatchException(dumpComparisonAtKeyDiffer(oracleTarget.toString(), jsoValue));
         }
       }
     }
@@ -282,7 +283,7 @@ public class JsonChecker {
             .withFailMessage(dumpComparisonAtKeyDiffer(regex, jsoValue))
             .matches(regex);
       } catch (AssertionError e) {
-        throw new JsonCheckerAssertionError("Assertion failed at key '" + claimName + "'", e);
+        throw new JsonCheckerMismatchException("Assertion failed at key '" + claimName + "'", e);
       }
     }
   }
@@ -322,22 +323,18 @@ public class JsonChecker {
 
   static class JsonCheckerConversionException extends RuntimeException {
 
-    public JsonCheckerConversionException(String failingJsonString) {
-      super("Exception while trying to convert '" + failingJsonString + "' to JSON-Object");
-    }
-
     public JsonCheckerConversionException(String failingJsonString, Exception e) {
       super("Exception while trying to convert '" + failingJsonString + "' to JSON-Object", e);
     }
   }
 
-  static class JsonCheckerAssertionError extends AssertionError {
+  public static class JsonCheckerMismatchException extends RuntimeException {
 
-    public JsonCheckerAssertionError(String s) {
+    public JsonCheckerMismatchException(String s) {
       super(s);
     }
 
-    public JsonCheckerAssertionError(String s, Throwable e) {
+    public JsonCheckerMismatchException(String s, Throwable e) {
       super(s, e);
     }
   }

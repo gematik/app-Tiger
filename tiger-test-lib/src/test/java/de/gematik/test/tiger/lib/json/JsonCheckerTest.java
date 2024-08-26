@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.lib.json;
@@ -83,19 +84,19 @@ class JsonCheckerTest {
             "Match json: optional field with incorrect regex value",
             "{ attr1:'val1', attr2:'val2' }",
             "{ attr1: 'val1', ____attr2: 'valXXX' }",
-            Optional.of(AssertionError.class),
+            Optional.of(JsonChecker.JsonCheckerMismatchException.class),
             true),
         Arguments.of(
             "Match json: optional field with incorrect regex value",
             "{ attr1:'val1', attr2:'val2' }",
             "{ attr1: 'val1', ____attr2: 'v?\\\\d' }",
-            Optional.of(AssertionError.class),
+            Optional.of(JsonChecker.JsonCheckerMismatchException.class),
             true),
         Arguments.of(
             "Match json: missing field, optional field, extra attributes checked",
             "{ attr1: 'val1', attr3: 'val3' }",
             "{ attr1: 'val1', ____attr2: 'val2' }",
-            Optional.of(AssertionError.class),
+            Optional.of(JsonChecker.JsonCheckerMismatchException.class),
             true),
         Arguments.of(
             "Match json: missing field, optional field, extra attributes not checked",
@@ -149,13 +150,13 @@ class JsonCheckerTest {
             "Match json: nested object, incorrect regex (1)",
             "{ attr1: { sub1: 'val1' }, attr2:'val2' }",
             "{ attr1: { sub1: 'val1xxxx' }, attr2: 'val2' }",
-            Optional.of(AssertionError.class),
+            Optional.of(JsonChecker.JsonCheckerMismatchException.class),
             true),
         Arguments.of(
             "Match json: nested object, incorrect regex (2)",
             "{ attr1: { sub1: 'val1' }, attr2:'val2' }",
             "{ attr1: { sub1: 'xxx.*' }, attr2: 'val2' }",
-            Optional.of(AssertionError.class),
+            Optional.of(JsonChecker.JsonCheckerMismatchException.class),
             true),
         Arguments.of(
             "Match json: optional field in nested object",
@@ -227,7 +228,7 @@ class JsonCheckerTest {
             "Match json: missing field in a nested array, extra attributes checked",
             "{id:1,name:'Joe',friends:[{id:2,name:'Pat',pets:['dog']},{id:3,name:'Sue',pets:['cat','fish']}],pets:[]}",
             "{id:1,name:'Joe',pets:[]}",
-            Optional.of(AssertionError.class),
+            Optional.of(JsonChecker.JsonCheckerMismatchException.class),
             true),
         Arguments.of(
             "Match json: ignore value of a bigger nested key",
@@ -337,13 +338,13 @@ class JsonCheckerTest {
             "{ attr1: 'val1', attr3: 'val3' }",
             "attr3",
             "val3XXXX",
-            Optional.of(AssertionError.class)),
+            Optional.of(JsonChecker.JsonCheckerMismatchException.class)),
         Arguments.of(
             "Match value to key: with incorrect regex (2)",
             "{ attr1: 'val1', attr3: 'val3' }",
             "attr3",
             "xxx.*",
-            Optional.of(AssertionError.class)),
+            Optional.of(JsonChecker.JsonCheckerMismatchException.class)),
 
         // TODO: "TGR-337: JsonChecker unterstützt nested Structures"
 
@@ -651,7 +652,7 @@ class JsonCheckerTest {
       value = {
         "N_o_T a {{{ j[[son; {\"correct\":\"json\"}; N_o_T",
         "{\"correct\":\"json\"}; N_o_T a {{{ j[[son; N_o_T",
-        "{\"array\":\"json\"}; {\"array\":[1,2,3]}; Comparison failed at key 'array'",
+        "{\"array\":\"json\"}; {\"array\":[1,2,3]}; Expected an 'JSONArray', but found 'String'",
         "{\"array\":[1,2,3]}; {\"array\":\"json\"}; Comparison failed at key 'array'"
       },
       delimiter = ';')
