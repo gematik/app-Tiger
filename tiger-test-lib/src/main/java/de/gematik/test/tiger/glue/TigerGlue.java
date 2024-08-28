@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.glue;
@@ -160,24 +161,42 @@ public class TigerGlue {
     log.info("\n" + Banner.toBannerStrWithCOLOR(text, "WHITE"));
   }
 
+  /** This step aborts the test after user acknowledgement. */
   @When("TGR wait for user abort")
   @Wenn("TGR warte auf Abbruch")
   public void tgrWaitForUserAbort() {
     TigerDirector.waitForAcknowledgedQuit();
   }
 
+  /**
+   * Pauses the validation test suite. Please note, these steps are only modified for the Workflow
+   * UI and don't work on a regular console (no failure, there is just no pause).
+   */
   @When("TGR pause test run execution")
   @Wenn("TGR pausiere Testausführung")
   public void tgrPauseExecution() {
     TigerDirector.pauseExecution();
   }
 
+  /**
+   * Pauses the validation test suite with a message. Please note, these steps are only modified for
+   * the Workflow UI and don't work on a regular console (no failure, there is just no popup / pause).
+   *
+   * @param message message to be displayed in the Workflow UI.
+   */
   @When("TGR pause test run execution with message {string}")
   @Wenn("TGR pausiere Testausführung mit Nachricht {string}")
   public void tgrPauseExecutionWithMessage(String message) {
     TigerDirector.pauseExecution(TigerGlobalConfiguration.resolvePlaceholders(message));
   }
 
+  /**
+   * Pauses the validation test suite with a message shown and the option to either continue or fail
+   * with the given error message. Please note, these steps are only modified for the Workflow UI
+   * and don't work on a regular console (no failure, there is just no popup / pause).
+   *
+   * @param message message to be displayed in the Workflow UI.
+   */
   @When(
       "TGR pause test run execution with message {tigerResolvedString} and message in case of error"
           + " {tigerResolvedString}")

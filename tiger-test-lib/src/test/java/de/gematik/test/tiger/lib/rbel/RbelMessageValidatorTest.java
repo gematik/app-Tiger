@@ -552,7 +552,7 @@ class RbelMessageValidatorTest extends AbstractRbelMessageValidatorTest {
     glue.currentRequestBodyMatches("!{rbel:currentRequestAsString('$.body')}");
     glue.currentRequestMessageAttributeMatches("$.body.foo", "bar");
     glue.currentRequestMessageContainsNode("$.body.foo");
-    glue.currentRequestMessageAtMatchesDocString("$.body", "{\"foo\":\"bar\"}");
+    glue.currentRequestMessageAtMatchesDocString("$.body", "{\"foo\":\"bar\"}\r\n");
     glue.currentRequestAtMatchesAsJsonOrXml("$.body", ModeType.JSON, oracleStr);
     glue.currentRequestMessageAttributeDoesNotMatch("$.body.foo", "foo");
   }

@@ -776,7 +776,7 @@ public class RBelValidatorGlue {
     System.out.println(rbelValidator.getCurrentRequest().printTreeStructure());
   }
 
-  /** Read TGR file and sends messages to local Tiger proxy */
+  /** Reads a Tiger traffic file and sends messages to local Tiger proxy */
   @Dann("TGR liest folgende .tgr Datei {tigerResolvedString}")
   @Then("TGR reads the following .tgr file {tigerResolvedString}")
   public void readTgrFile(String filePath) {

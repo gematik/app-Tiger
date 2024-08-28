@@ -91,7 +91,7 @@ include::tigerExtensions.adoc[]
 * FIRST principle for Unit tests
 ** http://agileinaflash.blogspot.com/2009/02/first.html[AgileOtters Blog]
 
-include::../../../FAQ.adoc[leveloffset=+1]
+include::../../FAQ.adoc[leveloffset=+1]
 
 
 // TODO TGR-316== Glossar
