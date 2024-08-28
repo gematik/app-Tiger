@@ -42,16 +42,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.xmlunit.builder.DiffBuilder;
 
 @Slf4j
+@Getter
 public class RBelValidatorGlue {
 
-  @Getter private final RbelMessageValidator rbelValidator;
+  private final RbelMessageValidator rbelValidator;
 
   public RBelValidatorGlue(RbelMessageValidator rbelValidator) {
     this.rbelValidator = rbelValidator;
   }
 
   public RBelValidatorGlue() {
-    this(new RbelMessageValidator());
+    this(RbelMessageValidator.getInstance());
   }
 
   // =================================================================================================================

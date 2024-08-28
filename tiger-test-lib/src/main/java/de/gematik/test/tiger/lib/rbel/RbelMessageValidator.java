@@ -91,6 +91,14 @@ public class RbelMessageValidator {
     DIFF_OPTIONS.put("txtnormalize", DiffBuilder::normalizeWhitespace);
   }
 
+  private static final class InstanceHolder {
+    private static final RbelMessageValidator instance = new RbelMessageValidator();
+  }
+
+  public static RbelMessageValidator getInstance() {
+    return InstanceHolder.instance;
+  }
+
   private final TigerTestEnvMgr tigerTestEnvMgr;
   private final TigerProxy tigerProxy;
 
@@ -263,19 +271,22 @@ public class RbelMessageValidator {
       log.error("Didn't find any matching messages!");
       printAllPathsOfMessages(getRbelMessages());
       if (requestParameter.getPath() == null) {
-        throw new AssertionError(String.format(
-            "No request with matching rbelPath '%s%s",
-            requestParameter.getRbelPath(), FOUND_IN_MESSAGES));
+        throw new AssertionError(
+            String.format(
+                "No request with matching rbelPath '%s%s",
+                requestParameter.getRbelPath(), FOUND_IN_MESSAGES));
       } else if (requestParameter.getRbelPath() == null) {
-        throw new AssertionError(String.format(
-            "No request with path '%s%s", requestParameter.getPath(), FOUND_IN_MESSAGES));
+        throw new AssertionError(
+            String.format(
+                "No request with path '%s%s", requestParameter.getPath(), FOUND_IN_MESSAGES));
       } else {
-        throw new AssertionError(String.format(
-            "No request with path '%s' and rbelPath '%s' matching '%s%s",
-            requestParameter.getPath(),
-            requestParameter.getRbelPath(),
-            StringUtils.abbreviate(requestParameter.getValue(), 300),
-            FOUND_IN_MESSAGES));
+        throw new AssertionError(
+            String.format(
+                "No request with path '%s' and rbelPath '%s' matching '%s%s",
+                requestParameter.getPath(),
+                requestParameter.getRbelPath(),
+                StringUtils.abbreviate(requestParameter.getValue(), 300),
+                FOUND_IN_MESSAGES));
       }
     }
     return candidate.get();
@@ -476,12 +487,12 @@ public class RbelMessageValidator {
   public void assertAttributeOfCurrentRequestMatches(
       final String rbelPath, final String value, boolean shouldMatch) {
     RbelMessageNodeElementMatchExecutor.builder()
-            .rbelPath(rbelPath)
-            .shouldMatch(shouldMatch)
-            .oracle(value)
-            .elements(findElementsInCurrentRequest(rbelPath))
-            .build()
-            .execute();
+        .rbelPath(rbelPath)
+        .shouldMatch(shouldMatch)
+        .oracle(value)
+        .elements(findElementsInCurrentRequest(rbelPath))
+        .build()
+        .execute();
   }
 
   public void assertAttributeOfCurrentResponseMatchesAs(

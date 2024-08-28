@@ -1,12 +1,15 @@
 # Changelog Tiger Test platform
 
-# Release 3.2.5
+# Release 3.3.0
 
 ## Breaking Changes
 
 * TGR-1527: rbel validation steps now also support rbelpaths that return more than one node, by evaluating each. If the
   value should match, the step succeeds if there is at least ONE node matching. If it should not match then the step
   succeeds if NO node matches.
+* TGR-1539: Multiple instances of RbelMessageValiditor do no longer share currentRequest/currentResponse as static fields.
+  However, the class RbelMessageValidator has a new static getInstance() method which provides a global instance of this
+  class which is used by default constructor instantiations or RbelValidatorGlue.
 
 # Release 3.2.2
 
