@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.glue;
 
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import de.gematik.rbellogger.builder.RbelBuilder;
 import de.gematik.rbellogger.builder.RbelBuilderManager;

@@ -50,4 +50,10 @@ public class TigerConfigurationKeys {
 
   public static final TigerTypedConfigurationKey<String> CUSTOM_FAILURE_MESSAGE =
       new TigerTypedConfigurationKey<>("tiger.rbel.customFailureMessage", String.class, "");
+
+  public static final TigerTypedConfigurationKey<Boolean> RUN_TESTS_ON_START =
+      new TigerTypedConfigurationKey<>("tiger.lib.runTestsOnStart", Boolean.class, true);
+
+  public static final TigerConfigurationKey CUCUMBER_ENGINE_RUNTIME_CONFIGURATION = // NOSONAR
+      new TigerConfigurationKey("tiger.cucumber.runtime-configuration");
 }

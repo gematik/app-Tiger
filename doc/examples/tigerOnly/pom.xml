@@ -45,27 +45,12 @@
             <artifactId>tiger-test-lib</artifactId>
             <version>${version.tiger}</version>
         </dependency>
-        <!-- for Junit5 Driver classes you need these dependencies -->
-        <!-- needed for support of junit5  driver classes -->
-        <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-suite</artifactId>
-            <version>1.10.3</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-junit-platform-engine</artifactId>
             <version>7.17.0</version>
             <scope>test</scope>
         </dependency>
-        <!-- Optional if you have JUnit5 dependencies
-        but use the JUnit4 based template for your driver classes
-        <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
-            <version>${version.junit5}</version>
-        </dependency>-->
     </dependencies>
     <!-- end::dependencies[] -->
 

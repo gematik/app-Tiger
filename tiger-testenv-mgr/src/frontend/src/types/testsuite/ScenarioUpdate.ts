@@ -26,6 +26,8 @@ interface IScenarioUpdate {
   exampleKeys: Array<string>;
   exampleList: Map<string, string>;
   variantIndex: number;
+  uniqueId: string;
+  isDryRun: boolean;
 }
 
 interface IJsonScenario {
@@ -35,8 +37,8 @@ interface IJsonScenario {
   exampleKeys: Array<string>;
   exampleList: IJsonOutlineList;
   variantIndex: number;
-  uri: string;
-  location: { line: number, column: number };
+  uniqueId: string;
+  isDryRun: boolean;
 }
 
 export interface IJsonScenarios {
@@ -54,8 +56,8 @@ export default class ScenarioUpdate implements IScenarioUpdate {
   exampleKeys = new Array<string>();
   exampleList = new Map<string, string>();
   variantIndex = -1;
-  uri: string = ""
-  location: { line: number, column: number } = {line: NaN, column: NaN};
+  uniqueId = "";
+  isDryRun = false;
 
   public static fromJson(json: IJsonScenario): ScenarioUpdate {
     const scenario: ScenarioUpdate = new ScenarioUpdate();
@@ -75,12 +77,10 @@ export default class ScenarioUpdate implements IScenarioUpdate {
     } else {
       scenario.status = FeatureUpdate.mapToTestResult(scenario.steps);
     }
-    if (json.uri) {
-      scenario.uri = json.uri
+    if (json.uniqueId) {
+      scenario.uniqueId = json.uniqueId
     }
-    if (json.location) {
-      scenario.location = json.location
-    }
+    scenario.isDryRun = json.isDryRun
     return scenario;
   }
 
@@ -105,47 +105,48 @@ export default class ScenarioUpdate implements IScenarioUpdate {
     return map;
   }
 
-    public merge(scenario: ScenarioUpdate) {
-        if (scenario.description) {
-            this.description = scenario.description;
-        }
-        if (scenario.status) {
-            this.status = scenario.status;
-        }
-        if (scenario.variantIndex !== -1) {
-            this.variantIndex = scenario.variantIndex;
-        }
-        if (scenario.steps) {
-            for (const key of scenario.steps.keys()) {
-                this.mergeStep(key, scenario);
-            }
-            // update scenario status and change pending steps to skipped in case of error
-            this.status = FeatureUpdate.mapToTestResult(this.steps);
-            if (this.status === TestResult.FAILED) {
-                this.steps.forEach((step) => {
-                    if (step.status === TestResult.PENDING)
-                        step.status = TestResult.SKIPPED;
-                });
-            }
-        }
+  public merge(scenario: ScenarioUpdate) {
+    if (scenario.description) {
+      this.description = scenario.description;
     }
+    if (scenario.status) {
+      this.status = scenario.status;
+    }
+    if (scenario.variantIndex !== -1) {
+      this.variantIndex = scenario.variantIndex;
+    }
+    this.isDryRun = scenario.isDryRun;
+    if (scenario.steps) {
+      for (const key of scenario.steps.keys()) {
+        this.mergeStep(key, scenario);
+      }
+      // update scenario status and change pending steps to skipped in case of error
+      this.status = FeatureUpdate.mapToTestResult(this.steps);
+      if (this.status === TestResult.FAILED) {
+        this.steps.forEach((step) => {
+          if (step.status === TestResult.PENDING)
+            step.status = TestResult.SKIPPED;
+        });
+      }
+    }
+  }
 
-    private mergeStep(key: string, scenario: ScenarioUpdate) {
-        const step: StepUpdate | undefined = this.steps.get(key);
-        const newStep = scenario.steps.get(key);
-        if (newStep) {
-            if (step) {
-                step.merge(newStep);
-            } else {
-                this.steps.set(key, newStep);
-            }
-        } else {
-            console.error(`RECEIVED a NULL step in scenario ${scenario.description} for key ${key}`);
-        }
+  private mergeStep(key: string, scenario: ScenarioUpdate) {
+    const step: StepUpdate | undefined = this.steps.get(key);
+    const newStep = scenario.steps.get(key);
+    if (newStep) {
+      if (step) {
+        step.merge(newStep);
+      } else {
+        this.steps.set(key, newStep);
+      }
+    } else {
+      console.error(`RECEIVED a NULL step in scenario ${scenario.description} for key ${key}`);
     }
+  }
 
   public getScenarioIdentifier(): ScenarioIdentifier {
-    return new ScenarioIdentifier(this.uri, this.location, this.variantIndex);
+    return new ScenarioIdentifier(this.uniqueId);
   }
 
   public getLink(featureName: string): string {

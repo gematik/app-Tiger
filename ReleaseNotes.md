@@ -7,9 +7,89 @@
 * TGR-1527: rbel validation steps now also support rbelpaths that return more than one node, by evaluating each. If the
   value should match, the step succeeds if there is at least ONE node matching. If it should not match then the step
   succeeds if NO node matches.
-* TGR-1539: Multiple instances of RbelMessageValiditor do no longer share currentRequest/currentResponse as static fields.
+* TGR-1539: Multiple instances of RbelMessageValidator no longer share currentRequest/currentResponse as static
+  fields.
   However, the class RbelMessageValidator has a new static getInstance() method which provides a global instance of this
-  class which is used by default constructor instantiations or RbelValidatorGlue.
+  class which is used by default constructor instantiations of RbelValidatorGlue.
+
+* With the implementation of TGR-1410, Tiger no longer supports JUnit 4 driver classes. This is a
+  necessary change to take advantage of the JUnit Platform API that allows us finer control over the test execution.
+  Running Tests via IntelliJ using the io.cucumber.junit.TigerCucumberRunner will work as previously.
+  When running tests via maven or via the IDE over a custom driver class, only JUnit 5 driver classes will work. These
+  are now automatically created and the option `<junit5Driver>true</junit5Driver>` is no longer needed in the
+  tiger-maven-plugin configuration.
+  When setting up custom driver classes, you need to use the junit platform annotations. For example:
+
+```java
+package de.gematik.test.tiger.integration.YOURPROJECT;
+
+import static io.cucumber.junit.platform.engine.Constants.FILTER_TAGS_PROPERTY_NAME;
+import static io.cucumber.junit.platform.engine.Constants.GLUE_PROPERTY_NAME;
+import static io.cucumber.junit.platform.engine.Constants.PLUGIN_PROPERTY_NAME;
+
+import org.junit.platform.suite.api.ConfigurationParameter;
+import org.junit.platform.suite.api.IncludeEngines;
+import org.junit.platform.suite.api.SelectClasspathResource;
+import org.junit.platform.suite.api.Suite;
+
+@Suite
+@IncludeEngines("cucumber")
+@SelectClasspathResource("features/YOURFEATURE.feature")
+@ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
+@ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
+@ConfigurationParameter(
+        key = PLUGIN_PROPERTY_NAME,
+        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+public class Driver1IT {
+}
+```
+
+The following dependencies are included transitively with the tiger-test-lib package:
+
+```xml
+
+<dependencies>
+    <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-junit-platform-engine</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-suite</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-suite-api</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-launcher</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.junit.vintage</groupId>
+        <artifactId>junit-vintage-engine</artifactId>
+    </dependency>
+</dependencies>
+```
+
+Even though we don't support JUnit 4 drivers, we still include the junit-vintage-engine dependency, because it is
+required
+by cucumbers internal `PickleRunner`. This means the JUnit 4 dependency will still show up in your classpath.
+
+## Features
+
+* TGR-1410: Workflow UI: it is now possible to configure the Workflow UI to not run the test scenario immediately on
+  start up. The tests will be discovered and displayed on the Workflow UI and a play button allows to select specific
+  tests to execute. To activate this functionality you need to configure the following property in the `tiger.yaml`:
+
+```yaml
+lib:
+  runTestsOnStart: false # default is true
+```
 
 # Release 3.2.2
 
@@ -239,7 +319,7 @@ servers:
             </dependency>
         </dependencies>
     </dependencyManagement>
-  """
+  ```
 
 * TGR-1425: Tiger-Test-Lib: the class LocalProxyRbelMessageListener is refactored to be easier to handle in tests. If
   you are using it directly in your test suite, you need to get an instance

@@ -1,7 +1,8 @@
 == Getting started
 
 ifdef::backend-html5[]
-image:media/tiger2-plain.svg[120,120,role="thumb",title="Tiger logo"] ROOOARRR! Ready to rumble!
+image:media/tiger2-plain.svg[120,120,role="thumb",title="Tiger logo"] ROOOARRR!
+Ready to rumble!
 
 endif::[]
 
@@ -23,6 +24,7 @@ When you are developing a testsuite (further), you should use an IDE (we recomme
 TIP: On Windows please refrain from using Powershell or DOS command line windows but stick with GitBash
 
 === Maven in a nutshell
+
 In order to use Tiger with your BDD/Cucumber/Serenity based test suite you need to add a few dependencies to integrate with Tiger
 
 * Current version of Tiger test library
@@ -52,36 +54,41 @@ include::../examples/tigerOnly/tiger.yaml[]
 and finally a minimal feature file under src/test/resources/features:
 
 .Minimum Cucumber feature file
-[source]
+[source,gherkin]
 ----
 include::../examples/tigerOnly/src/test/resources/features/test.feature[]
 ----
 
 With these three files in place you can run the simple dummy test scenario defined in the feature file by issuing
 
+[source,shell]
 ----
 mvn verify
 ----
 
 === Maven plugin details
 
-This section is for the ones that love to know all the details. If you are happy that everything works and
-don't bother to understand all the bits / properties and settings just skip this section and head over to the xref:_example_project[] section.
+This section is for the ones that love to know all the details.
+If you are happy that everything works and don't bother to understand all the bits / properties and settings just skip this section and head over to the xref:_example_project[] section.
 
 // ==== Tiger driver generator plugin
 
 include::../../tiger-maven-plugin/README.adoc[leveloffset=+3]
 
-==== FailSave plugin
+==== FailSafe plugin
 
 The failsafe plugin will trigger the test run.
 It is important to activate the **testFailureIgnore** property, to ensure that even if the test fails, the serenity report is created.
 
-To filter the scenarios/features to be run you may pass in the Java system property cucumber.filter.tags. You can do so either within the <systemPropertyVariables> tag or via the command line using -Dcucumber.filter.tags
+To filter the scenarios/features to be run you may pass in the Java system property cucumber.filter.tags.
+You can do so either within the <systemPropertyVariables> tag or via the command line using -Dcucumber.filter.tags
 
-The "not @Ignore" is the default setting for maven verify as well as for IntelliJ, therefore scenarios that should be ignored are to be tagged with @Ignore. If the user uses the cucumber option "-Dcucumber.options" to set own tags then the default setting of "not @Ignore" is overridden. The same counts for own tag settings in the IntelliJ run configuration.
+The "not @Ignore" is the default setting for maven verify as well as for IntelliJ, therefore scenarios that should be ignored are to be tagged with @Ignore.
+If the user uses the cucumber option "-Dcucumber.options" to set own tags then the default setting of "not @Ignore" is overridden.
+The same counts for own tag settings in the IntelliJ run configuration.
 
 For more details about how to use filter tags see https://cucumber.io/docs/cucumber/api/#tags
+
 [source,xml]
 ----
 include::../../doc/examples/tigerOnly/pom.xml[tag="failsafe-plugin"]
@@ -89,22 +96,22 @@ include::../../doc/examples/tigerOnly/pom.xml[tag="failsafe-plugin"]
 
 TIP: We do not recommend the parallel test execution with Tiger at the moment.
 
-Reason is that when using Tiger Proxies with the Tiger test library validation feature parallel execution may lead to messages
-from different threads / forked processes ending up in the wrong listening queue
-making it very complicated to make sure your validations are working as expected in different timing situations.
+Reason is that when using Tiger Proxies with the Tiger test library validation feature parallel execution may lead to messages from different threads / forked processes ending up in the wrong listening queue making it very complicated to make sure your validations are working as expected in different timing situations.
 
+[#_example_project]
 === Example project
 
-In the /doc/examples/tigerOnly` folder of this project you will find an example for a minimum configured maven project that
+In the `/doc/examples/tigerOnly` folder of this project you will find an example for a minimum configured maven project that
 
-* embedds Tiger
+* embeds Tiger
 * allows to use its Cucumber steps and
 * allows to easily configure your test environment
 
 All you need is to set up three files:
 
 * a Maven `pom.xml` file to declare the dependencies and the plugins needed
-* a `tiger.yaml` to declare your test environment (servers needed, proxy routes,...). This is currently "empty".
+* a `tiger.yaml` to declare your test environment (servers needed, proxy routes,...).
+This is currently "empty".
 * a `test.feature` file containing a test scenario and dummy test steps to be performed.
 
 image::media/structureTigerOnly.png[title="File structure of TigerOnly example project"]
@@ -127,14 +134,14 @@ To be able to successfully start scenarios/features you first need to configure 
 .Run/Debug settings for Java Cucumber template
 * Main class: io.cucumber.junit.TigerCucumberRunner
 * Glue:
-    ** de.gematik.test.tiger.glue
-    ** net.serenitybdd.cucumber.actors +
-       if you are using the screenplay pattern (PREFERRED!)
-    ** additional packages specific to your test suite
+** de.gematik.test.tiger.glue
+** net.serenitybdd.cucumber.actors +
+if you are using the screenplay pattern (PREFERRED!)
+** additional packages specific to your test suite
 * VM Options:
-    ** Java proxy system properties (see xref:Proxy configuration[] below)
+** Java proxy system properties (see xref:_proxy_configuration[] below)
 * Environment variables:
-    ** Proxy environment variables (see xref:Proxy configuration[] below)
+** Proxy environment variables (see xref:_proxy_configuration[] below)
 
 
 Best is to add these settings to the **Configuration Templates** for Cucumber Java.
@@ -144,10 +151,10 @@ Else you would have to apply these settings to any new Debug/Run Configuration, 
 
 image::media/tiger-intellij-run-settings.png[title="Run/Debug settings for IntelliJ"]
 
+[#_proxy_configuration]
 ==== Proxy configuration
 
-If you are located behind a proxy please make sure to set the environment variables HTTPS_PROXY and HTTP_PROXY as well as
-the Java system properties http.proxyHost, http.proxyPort, https.proxyHost and https.proxyPort appropriately so that the internet connections are routed properly through your **company proxy**.
+If you are located behind a proxy please make sure to set the environment variables HTTPS_PROXY and HTTP_PROXY as well as the Java system properties http.proxyHost, http.proxyPort, https.proxyHost and https.proxyPort appropriately so that the internet connections are routed properly through your **company proxy**.
 
 Please also make sure IntelliJ has its proxy settings configured appropriately for HTTP and HTTPS so that it can download the dependencies for the IntelliJ build environment too.
 

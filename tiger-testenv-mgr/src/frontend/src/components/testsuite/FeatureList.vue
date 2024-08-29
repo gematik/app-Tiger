@@ -32,7 +32,8 @@
                         v-if="scenario[1].variantIndex !== -1">[{{ scenario[1].variantIndex + 1 }}]</span>
                 </a>
               </div>
-              <small-replay-button class="ms-1" :scenario="scenario[1].getScenarioIdentifier()"/>
+              <small-play-button class="ms-1" :scenario="scenario[1].getScenarioIdentifier()"
+                                 :show-play-button="scenario[1].isDryRun"/>
             </div>
           </div>
         </div>
@@ -44,7 +45,7 @@
 <script setup lang="ts">
 import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
 import {getTestResultIcon} from "@/types/testsuite/TestResult";
-import SmallReplayButton from "@/components/replay/SmallReplayButton.vue";
+import SmallPlayButton from "@/components/replay/SmallPlayButton.vue";
 
 defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;

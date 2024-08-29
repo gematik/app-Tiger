@@ -92,4 +92,4 @@ For GET requests you have two options:
 * ```$.path.paramname``` which will return the string "paramaname=URLENCODED_VALUE" or
 * ```$.path.paramname.value``` which will return the URL decoded original value.
 
-For further help on JEXL please check out the offical website (https://commons.apache.org/proper/commons-jexl).
+For further help on JEXL please check out the official website (https://commons.apache.org/proper/commons-jexl).

@@ -432,7 +432,6 @@ RBeL-Path is a XPath or JSON-Path inspired expression-language enabling the quic
 
 A simple example:
 [source,java]
-
 ----
 assertThat(convertedMessage.findRbelPathMembers("$.header"))
     .containsExactly(convertedMessage.getFacetOrFail(RbelHttpMessageFacet.class).getHeader());
@@ -440,7 +439,6 @@ assertThat(convertedMessage.findRbelPathMembers("$.header"))
 
 or
 [source,java]
-
 ----
 assertThat(convertedMessage.findElement("$.header"))
     .get()
@@ -691,7 +689,7 @@ tigerProxy:
 ===== activateRbelParsing
 
 Deactivating this flag turns off all Rbel-Analysis of the incoming traffic.
-This is a huge deal in terms of memory- and CPU-consumption but you will loose all benefit of performing Rbel-Analysis.
+This is a huge deal in terms of memory- and CPU-consumption, but you will lose all benefit of performing Rbel-Analysis.
 
 ===== activateRbelParsingFor
 

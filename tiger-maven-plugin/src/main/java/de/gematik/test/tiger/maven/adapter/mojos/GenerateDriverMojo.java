@@ -104,8 +104,6 @@ public class GenerateDriverMojo extends AbstractMojo {
    */
   @Parameter private File templateFile;
 
-  @Parameter private boolean junit5Driver = false;
-
   /** The current project representation. */
   @Parameter(property = "project", readonly = true, required = true)
   private MavenProject project;
@@ -132,11 +130,9 @@ public class GenerateDriverMojo extends AbstractMojo {
       GenerateDriverProperties props =
           GenerateDriverProperties.builder()
               .glues(glues)
-              .gluesCsv(String.join(",", glues))
               .driverPackage(driverPackage)
               .driverClassName(driverClassName)
               .templateFile(templateFile == null ? null : templateFile.toPath())
-              .junit5Driver(junit5Driver)
               .outputFolder(outputFolder)
               .featuresRootFolder(featuresDir)
               .build();

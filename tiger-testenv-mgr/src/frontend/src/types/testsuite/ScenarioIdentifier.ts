@@ -1,4 +1,3 @@
-
 /*
  * Copyright 2024 gematik GmbH
  *
@@ -16,16 +15,10 @@
  */
 
 export default class ScenarioIdentifier {
-  scenarioUri: string;
-  location: { line: number; column: number };
-  variantIndex: number;
+  uniqueId: string;
 
-  constructor(scenarioUri: string,
-              location: { line: number; column: number },
-              variantIndex: number = -1
+  constructor(uniqueId: string,
   ) {
-    this.scenarioUri = scenarioUri;
-    this.location = location;
-    this.variantIndex = variantIndex;
+    this.uniqueId = uniqueId;
   }
 }

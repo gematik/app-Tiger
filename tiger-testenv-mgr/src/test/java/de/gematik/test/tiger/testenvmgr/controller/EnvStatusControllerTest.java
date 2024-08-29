@@ -225,18 +225,20 @@ class EnvStatusControllerTest {
   @Test
   @TigerTest(
       tigerYaml =
-          "localProxyActive: false\n"
-              + "servers:\n"
-              + "  winstoneServer:\n"
-              + "    type: externalJar\n"
-              + "    source:\n"
-              + "      - local:target/winstone.jar\n"
-              + "    healthcheckUrl: http://127.0.0.1:${free.port.0}\n"
-              + "    healthcheckReturnCode: 200\n"
-              + "    externalJarOptions:\n"
-              + "      arguments:\n"
-              + "        - --httpPort=${free.port.0}\n"
-              + "        - --webroot=.\n",
+          """
+                localProxyActive: false
+                servers:
+                  winstoneServer:
+                    type: externalJar
+                    source:
+                      - local:target/winstone.jar
+                    healthcheckUrl: http://127.0.0.1:${free.port.0}
+                    healthcheckReturnCode: 200
+                    externalJarOptions:
+                      arguments:
+                        - --httpPort=${free.port.0}
+                        - --webroot=.
+                """,
       skipEnvironmentSetup = true)
   void verifyServerStatusDuringStartup(final TigerTestEnvMgr envMgr) {
     try {

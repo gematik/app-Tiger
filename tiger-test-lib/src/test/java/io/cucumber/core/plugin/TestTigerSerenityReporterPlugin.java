@@ -17,13 +17,16 @@
 package io.cucumber.core.plugin;
 
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_ADMIN_PORT;
+import static io.cucumber.core.options.Constants.FEATURES_PROPERTY_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.request;
 import static org.mockito.Mockito.mock;
 
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
+import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioUpdate;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import io.cucumber.plugin.event.Argument;
@@ -51,9 +54,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.platform.launcher.Launcher;
+import org.junit.platform.launcher.TestPlan;
+import org.junit.platform.launcher.core.LauncherFactory;
 
 public class TestTigerSerenityReporterPlugin {
 
@@ -80,6 +87,20 @@ public class TestTigerSerenityReporterPlugin {
   }
 
   @BeforeEach
+  public void setUp() {
+    Launcher launcher = LauncherFactory.create();
+    TestPlan testPlan =
+        launcher.discover(
+            request().configurationParameter(FEATURES_PROPERTY_NAME, featureFilePath).build());
+    new TigerExecutionListener().testPlanExecutionStarted(testPlan);
+  }
+
+  @AfterEach
+  public void tearDown() {
+    ScenarioRunner.clearScenarios();
+  }
+
+  @BeforeEach
   public void initListener() {
     listener = new TigerSerenityReporterPlugin();
     LOCAL_PROXY_ADMIN_PORT.putValue(9999);
@@ -88,6 +109,7 @@ public class TestTigerSerenityReporterPlugin {
 
   @Test
   void testCaseStartedSimpleScenario() throws IOException {
+
     TestSourceRead event =
         new TestSourceRead(
             Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
@@ -107,9 +129,11 @@ public class TestTigerSerenityReporterPlugin {
     assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
     Map<String, ScenarioUpdate> scenarios = status.getFeatureMap().get(featureName).getScenarios();
     assertThat(scenarios).hasSize(1);
-    assertThat(
-            scenarios.get(listener.getContext().currentScenarioDefinition.getId()).getDescription())
-        .isEqualTo(scenarioName);
+    String scenarioId =
+        ScenarioRunner.findScenarioUniqueId(
+                listener.getContext().currentScenarioDefinition, featureUri, false, -1)
+            .toString();
+    assertThat(scenarios.get(scenarioId).getDescription()).isEqualTo(scenarioName);
   }
 
   @Test
@@ -142,22 +166,32 @@ public class TestTigerSerenityReporterPlugin {
     assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
     Map<String, ScenarioUpdate> scenarios = status.getFeatureMap().get(featureName).getScenarios();
     assertThat(scenarios).hasSize(1);
-    String scenarioId0 = "0-" + listener.getContext().currentScenarioDefinition.getId();
-    assertThat(scenarios.get(scenarioId0).getDescription()).isEqualTo(scenarioOutlineName);
-    assertThat(scenarios.get(scenarioId0).getVariantIndex()).isZero();
+    var scenario1Id =
+        ScenarioRunner.findScenarioUniqueId(
+                listener.getContext().currentScenarioDefinition, featureUri, true, 0)
+            .toString();
+    var scenario1 = scenarios.get(scenario1Id);
+    assertThat(scenario1.getDescription()).isEqualTo(scenarioOutlineName);
+    assertThat(scenario1.getVariantIndex()).isZero();
 
     // moving to next variant
     ((ScenarioOutlineTestCaseAdapter) startedEvent.getTestCase()).incrementLocationLine();
+
     listener.handleTestCaseStarted(startedEvent);
     assertThat(listener.getReporterCallbacks().getCurrentScenarioDataVariantIndex()).isEqualTo(1);
     status = envStatusController.getStatus();
-    String scenarioId1 = "1-" + listener.getContext().currentScenarioDefinition.getId();
     scenarios = status.getFeatureMap().get(featureName).getScenarios();
     assertThat(scenarios).hasSize(2);
-    assertThat(scenarios.get(scenarioId0).getDescription()).isEqualTo(scenarioOutlineName);
-    assertThat(scenarios.get(scenarioId0).getVariantIndex()).isZero();
-    assertThat(scenarios.get(scenarioId1).getDescription()).isEqualTo(scenarioOutlineName);
-    assertThat(scenarios.get(scenarioId1).getVariantIndex()).isEqualTo(1);
+    var scenario2Id =
+        ScenarioRunner.findScenarioUniqueId(
+                listener.getContext().currentScenarioDefinition, featureUri, true, 1)
+            .toString();
+    var scenario2 = scenarios.get(scenario2Id);
+
+    assertThat(scenario1.getDescription()).isEqualTo(scenarioOutlineName);
+    assertThat(scenario1.getVariantIndex()).isZero();
+    assertThat(scenario2.getDescription()).isEqualTo(scenarioOutlineName);
+    assertThat(scenario2.getVariantIndex()).isEqualTo(1);
   }
 
   /* TODO in order to get this working with the tighter integration with serenity test run event management
@@ -345,6 +379,8 @@ public class TestTigerSerenityReporterPlugin {
   }
 
   private class TestcaseAdapter implements TestCase {
+
+    public TestcaseAdapter() {}
 
     @Override
     public Integer getLine() {

@@ -13,8 +13,8 @@ If none of these files exist it will fail the start-up.
 
 It then loads further yaml-files:
 
-* `tiger-${hostname}.yaml` and `tiger-${hostname}.yml` are read and give the possibility to make computer-dependent configuration.
-The hostname is the of your own computer in the network (on Windows-machines typically the computername).
+* `tiger-$+{hostname}+.yaml` and `tiger-$+{hostname}+.yml` are read and give the possibility to make computer-dependent configuration.
+The hostname is the name of your own computer in the network (on Windows-machines typically the computername).
 * The list given under `tiger.additionalYamls` is read.
 Each list-entry has two properties:
 ** `filename` pointing to the file to be read.
@@ -213,7 +213,7 @@ Their meaning and format are explained in the related section.
     podName:
     # working directory for local helm and kubectl calls
     workingDir:
-    # name sapce to install the helm chart to
+    # name space to install the helm chart to
     nameSpace:
     # flag whether to show more detailed infos about
     # the helm chart installation in the console

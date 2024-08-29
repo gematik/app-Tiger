@@ -166,8 +166,32 @@
         </dependency>
         <!-- needed for TigerCucumberRunner -->
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>io.cucumber</groupId>
+            <artifactId>cucumber-junit-platform-engine</artifactId>
+            <version>${version.cucumber}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <version>${version.junit5}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-suite-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
+        </dependency>
+        <!-- even though we don't directly use junit4, we still need the vintage engine
+        because cucumber uses it on its PickleRunner -->
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
         </dependency>
         <!-- JSON Checker -->
         <dependency>
@@ -225,11 +249,7 @@
         </dependency>
         <!-- TestNG driver is currently not supported with Serenity -->
         <!-- Junit 5 driver is currently not supported with Tiger -->
-        <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
-            <scope>test</scope>
-        </dependency>
+
         <dependency>
             <groupId>uk.org.webcompere</groupId>
             <artifactId>system-stubs-core</artifactId>

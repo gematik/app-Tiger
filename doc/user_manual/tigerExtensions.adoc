@@ -34,5 +34,5 @@ This is an internal gematik extension and can be found on GitLab https://gitlab.
 
 === Tiger Robot Extension
 
-The Tiger-Robot-Extension is an extension designed to control the Cardterminal Robot created by the Gematik.
+The Tiger-Robot-Extension is an extension designed to control the Cardterminal Robot created by the gematik.
 This is an internal gematik extension and can be found on GitLab https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/tiger-robot-extension.

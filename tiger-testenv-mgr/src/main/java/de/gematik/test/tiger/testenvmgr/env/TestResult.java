@@ -24,5 +24,6 @@ public enum TestResult {
   EXECUTING,
   UNDEFINED,
   UNUSED,
-  AMBIGUOUS
+  AMBIGUOUS,
+  TEST_DISCOVERED
 }
