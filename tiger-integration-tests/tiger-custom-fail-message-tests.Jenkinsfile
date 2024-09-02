@@ -5,6 +5,7 @@
 
 def CREDENTIAL_ID_GEMATIK_GIT = 'svc_gitlab_prod_credentials'
 def BRANCH = 'master'
+def REPO_URL = createGitUrl('git/Testtools/tiger/tiger')
 
 pipeline {
     options {
@@ -23,17 +24,18 @@ pipeline {
             }
         }
 
-        stage('gitCreateBranch') {
-            when { branch BRANCH }
+        stage('Checkout') {
             steps {
-                gitCreateBranch()
+                git branch: BRANCH,
+                        credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
+                        url: REPO_URL
             }
         }
 
         stage('Build') {
             steps {
                 sh """
-                  mvn install -DskipTests
+                  mvn clean install -DskipTests
                 """
             }
         }

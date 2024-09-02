@@ -29,7 +29,7 @@ lib:
   rbelPathDebugging: false
   activateWorkflowUi: false
   trafficVisualization: true
-  runTestsOnStart: false
+  runTestsOnStart: true
 
 additionalConfigurationFiles:
   - filename: src/test/resources/testdata/specialEnvironment.yaml
