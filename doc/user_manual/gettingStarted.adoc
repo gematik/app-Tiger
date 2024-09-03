@@ -15,13 +15,13 @@ If you don't have time right now to look through the whole documentation, you ca
 
 === Requirements
 
-.Operating system requirements
+.System requirements
 * Open JDK >= 17
 * Maven >= 3.6
 
 When you are developing a testsuite (further), you should use an IDE (we recommend IntelliJ >= 2021.2.3 because of the IntelliJ Cucumber plugin).
 
-TIP: On Windows please refrain from using Powershell or DOS command line windows but stick with GitBash
+TIP: On Windows you can use Git Bash or Powershell
 
 === Maven in a nutshell
 

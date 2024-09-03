@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.playwright.workflowui;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
@@ -31,10 +31,10 @@ class XDynamicMainContentTests extends AbstractTests {
   void testServerLogPaneActive() {
     page.querySelector("#test-server-log-tab").click();
     assertAll(
-        () -> assertThat(page.locator("#test-execution-pane-tab.active").isVisible()).isFalse(),
-        () -> assertThat(page.locator("#test-server-log-tab.active").isVisible()).isTrue(),
-        () -> assertThat(page.locator("#test-server-log-pane-input-text").isVisible()).isTrue(),
-        () -> assertThat(page.locator("#test-server-log-pane-select").isVisible()).isTrue());
+        () -> assertThat(page.locator("#test-execution-pane-tab.active")).not().isVisible(),
+        () -> assertThat(page.locator("#test-server-log-tab.active")).isVisible(),
+        () -> assertThat(page.locator("#test-server-log-pane-input-text")).isVisible(),
+        () -> assertThat(page.locator("#test-server-log-pane-select")).isVisible());
   }
 
   @ParameterizedTest
@@ -48,7 +48,7 @@ class XDynamicMainContentTests extends AbstractTests {
     page.querySelector("#test-server-log-pane-server-" + server).click();
     page.locator(".test-server-log-pane-log-1")
         .all()
-        .forEach(log -> assertThat(log.textContent()).isEqualTo(server));
+        .forEach(log -> assertThat(log).containsText(server));
   }
 
   @Test
@@ -59,7 +59,7 @@ class XDynamicMainContentTests extends AbstractTests {
     page.locator("#test-server-log-pane-select").selectOption("5");
     page.locator(".test-server-log-pane-log-1")
         .all()
-        .forEach(log -> assertThat(log.textContent()).isNotEqualTo("httpbin"));
+        .forEach(log -> assertThat(log).not().containsText("httpbin"));
   }
 
   @Test
@@ -68,12 +68,12 @@ class XDynamicMainContentTests extends AbstractTests {
     page.querySelector("#test-server-log-pane-server-all").click();
     page.locator("#test-server-log-pane-select").selectOption("2");
     page.locator("#test-server-log-pane-input-text").fill("started");
-    assertThat(page.locator(".test-server-log-pane-log-1").all()).hasSize(5);
+    assertThat(page.locator(".test-server-log-pane-log-1")).hasCount(5);
     page.locator("#test-server-log-pane-input-text").fill("");
     await()
         .untilAsserted(
             () ->
-                assertThat(page.locator("#test-server-log-pane-input-text").textContent())
+                assertThat(page.locator("#test-server-log-pane-input-text"))
                     .isEmpty());
   }
 
@@ -83,12 +83,12 @@ class XDynamicMainContentTests extends AbstractTests {
     page.querySelector("#test-server-log-pane-server-all").click();
     page.locator("#test-server-log-pane-select").selectOption("5");
     page.locator("#test-server-log-pane-input-text").fill("ready");
-    assertThat(page.locator(".test-server-log-pane-log-1").isVisible()).isFalse();
+    assertThat(page.locator(".test-server-log-pane-log-1")).not().isVisible();
     page.locator("#test-server-log-pane-input-text").fill("");
     await()
         .untilAsserted(
             () ->
-                assertThat(page.locator("#test-server-log-pane-input-text").textContent())
+                assertThat(page.locator("#test-server-log-pane-input-text"))
                     .isEmpty());
   }
 
@@ -99,21 +99,21 @@ class XDynamicMainContentTests extends AbstractTests {
     page.locator("#test-server-log-pane-input-text").fill("");
     page.locator("#test-server-log-pane-select").selectOption("5");
     page.locator("#test-server-log-pane-input-text").fill("READY");
-    assertThat(page.locator(".test-server-log-pane-log-1").all()).hasSize(2);
+    assertThat(page.locator(".test-server-log-pane-log-1")).hasCount(2);
     page.locator("#test-server-log-pane-input-text").fill("");
     await()
         .untilAsserted(
             () ->
-                assertThat(page.locator("#test-server-log-pane-input-text").textContent())
+                assertThat(page.locator("#test-server-log-pane-input-text"))
                     .isEmpty());
   }
 
   @Test
   void testClickOnRequestOpensRbelLogDetails() {
     page.querySelector("#test-execution-pane-tab").click();
-    assertThat(page.locator("#rbellog_details_pane").isVisible()).isFalse();
+    assertThat(page.locator("#rbellog_details_pane")).not().isVisible();
     page.locator(".test-rbel-link").first().click();
-    assertThat(page.locator("#rbellog_details_pane").isVisible()).isTrue();
+    assertThat(page.locator("#rbellog_details_pane")).isVisible();
   }
 
   @Test
@@ -121,12 +121,11 @@ class XDynamicMainContentTests extends AbstractTests {
     page.querySelector("#test-server-log-tab").click();
     page.querySelector("#test-server-log-pane-server-all").click();
     page.locator("#test-server-log-pane-select").selectOption("0");
-    assertThat(page.locator(".test-server-log-pane-log-1").isVisible()).isFalse();
+    assertThat(page.locator(".test-server-log-pane-log-1")).not().isVisible();
     page.locator("#test-server-log-pane-input-text").fill("");
     await()
         .untilAsserted(
             () ->
-                assertThat(page.locator("#test-server-log-pane-input-text").textContent())
-                    .isEmpty());
+                assertThat(page.locator("#test-server-log-pane-input-text")).isEmpty());
   }
 }

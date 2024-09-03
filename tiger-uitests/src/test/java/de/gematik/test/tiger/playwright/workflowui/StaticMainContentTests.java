@@ -81,15 +81,14 @@ class StaticMainContentTests extends AbstractTests {
         .atMost(30, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
-                assertThat(
+                PlaywrightAssertions.assertThat(
                         page.locator("#test-sidebar-featurelistbox")
                             .locator(".scenarioLink")
                             .first()
                             .locator("xpath=..")
                             .locator(".test-passed")
-                            .first()
-                            .isVisible())
-                    .isTrue());
+                            .first())
+                            .isVisible());
   }
 
   @Test
@@ -100,12 +99,11 @@ class StaticMainContentTests extends AbstractTests {
         .atMost(60, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
-                assertThat(
+                PlaywrightAssertions.assertThat(
                         page.locator("#test-sidebar-featurelistbox")
                             .locator(".test-pending")
-                            .first()
-                            .isVisible())
-                    .isTrue());
+                            .first())
+                            .isVisible());
 
     page.locator("#workflow-messages").locator(".btn-success").first().click();
   }
@@ -118,29 +116,28 @@ class StaticMainContentTests extends AbstractTests {
         .atMost(60, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
-                assertThat(
+                PlaywrightAssertions.assertThat(
                         page.locator("#test-sidebar-featurelistbox")
                             .locator(".test-failed")
-                            .first()
-                            .isVisible())
-                    .isTrue());
+                            .first())
+                            .isVisible());
   }
 
   @Test
   void testExecutionPaneActive() {
     assertAll(
-        () -> assertThat(page.locator("#test-execution-pane-tab.active").isVisible()).isTrue(),
-        () -> assertThat(page.locator("#test-server-log-tab.active").isVisible()).isFalse());
+        () -> PlaywrightAssertions.assertThat(page.locator("#test-execution-pane-tab.active")).isVisible(),
+        () -> PlaywrightAssertions.assertThat(page.locator("#test-server-log-tab.active")).not().isVisible());
   }
 
   @Test
   void testExecutionPaneDateTime() {
-    assertThat(page.locator("#test-execution-pane-date").isVisible()).isTrue();
+    PlaywrightAssertions.assertThat(page.locator("#test-execution-pane-date")).isVisible();
   }
 
   @Test
   void testExecutionPaneGematikLogo() {
-    assertThat(page.locator("#test-gematik-logo").isVisible()).isTrue();
+    PlaywrightAssertions.assertThat(page.locator("#test-gematik-logo")).isVisible();
   }
 
   @Test
@@ -151,31 +148,28 @@ class StaticMainContentTests extends AbstractTests {
             assertThat(page.locator("#test-server-log-pane-buttons").locator(".active").count())
                 .isEqualTo(1),
         () ->
-            assertThat(
+            PlaywrightAssertions.assertThat(
                     page.locator("#test-server-log-pane-buttons")
-                        .locator("#test-server-log-pane-server-all.active")
-                        .isVisible())
-                .isTrue());
+                        .locator("#test-server-log-pane-server-all.active"))
+                        .isVisible());
   }
 
   @Test
   void testServerPanInputTextIsEmpty() {
     page.querySelector("#test-server-log-tab").click();
     assertAll(
-        () -> assertThat(page.locator("#test-server-log-pane-input-text").isVisible()).isTrue(),
+        () -> PlaywrightAssertions.assertThat(page.locator("#test-server-log-pane-input-text")).isVisible(),
         () ->
-            assertThat(page.locator("#test-server-log-pane-input-text").textContent())
-                .isNullOrEmpty());
+            PlaywrightAssertions.assertThat(page.locator("#test-server-log-pane-input-text")).isEmpty());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"localTigerProxy", "httpbin", "remoteTigerProxy"})
   void testServerPanServerButtonsExist(String server) {
     page.querySelector("#test-server-log-tab").click();
-    assertThat(
+    PlaywrightAssertions.assertThat(
             page.locator("#test-server-log-pane-buttons")
-                .locator(".test-server-log-pane-server-" + server)
-                .isVisible())
-        .isFalse();
+                .locator(".test-server-log-pane-server-" + server))
+                .not().isVisible();
   }
 }

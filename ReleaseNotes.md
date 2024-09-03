@@ -2,6 +2,8 @@
 
 # Release 3.3.0
 
+* TGR-1469: improve responses of UITests for true/false queries
+
 ## Breaking Changes
 
 * TGR-1527: rbel validation steps now also support rbelpaths that return more than one node, by evaluating each. If the
