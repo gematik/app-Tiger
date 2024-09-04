@@ -99,30 +99,16 @@ pipeline {
                         mavenBuild(POM_PATH)
                     }
                 }
-                stage('prepare external release') {
+                stage('create user manual and store in gh_pages branch') {
                     steps {
                         mavenSetVersion("${RELEASE_VERSION}")
                         gitCommitAndTag("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
 
                         sh 'git stash'
-                        //GH Pages
-
-                        dockerPull("swf/tools/gematik-asciidoc-converter", "latest", DOCKER_TARGET_REGISTRY)
                         sh '''
-                          docker create --name tiger-gemdoc-''' + BUILD_NUMBER + ''' europe-west3-docker.pkg.dev/gematik-all-infra-prod/swf/tools/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
-                          docker cp ''' + pwd() + ''' tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata
-                          docker start --attach tiger-gemdoc-''' + BUILD_NUMBER + '''
-                          docker cp tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata/doc/user_manual/tiger_user_manual.pdf .
-                          docker cp tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata/doc/user_manual/tiger_user_manual.html .
-                          docker cp tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata/doc/user_manual/media .
-                          docker cp tiger-gemdoc-''' + BUILD_NUMBER + ''':/tmpdata/doc/user_manual/screenshots .
-                          docker rm tiger-gemdoc-''' + BUILD_NUMBER + '''
+                            mvn generate-test-resources -P userManual 
                         '''
-                        // to test local:
-                        // docker run --name tiger-gemdoc --rm -v $(pwd):/tmpdata europe-west3-docker.pkg.dev/gematik-all-infra-prod/swf/tools/gematik-asciidoc-converter:latest /tmpdata/doc/user_manual/tiger_user_manual.adoc
-                        // or for windows users:
-                        // docker run --name tiger-gemdoc --rm -v /$PWD://tmpdata europe-west3-docker.pkg.dev/gematik-all-infra-prod/swf/tools/gematik-asciidoc-converter:latest //tmpdata/doc/user_manual/tiger_user_manual.adoc
-                        stash includes: 'tiger_user_manual.pdf,tiger_user_manual.html,media/**/*,screenshots/*.png', name: 'manual'
+                        stash includes: 'tiger-test-lib/target/doc/user_manual/tiger_user_manual.pdf,tiger-test-lib/target/doc/user_manual/tiger_user_manual.html,tiger-test-lib/target/doc/user_manual/media/*,tiger-test-lib/target/doc/user_manual/screenshots/*.png', name: 'manual'
 
                         sh label: 'checkoutGhPages', script: """
                             git checkout gh-pages
