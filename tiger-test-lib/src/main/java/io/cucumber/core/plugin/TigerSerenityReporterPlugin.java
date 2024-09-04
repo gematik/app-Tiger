@@ -18,15 +18,21 @@ package io.cucumber.core.plugin;
 
 import de.gematik.test.tiger.exceptions.FailMessageOverrider;
 import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
+import io.cucumber.core.runner.TestCaseDelegate;
 import io.cucumber.plugin.event.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.reflect.MethodUtils;
 
 /** will be replacing teh TigerCucumberListener once Serenity PR is released */
 @Slf4j
 public class TigerSerenityReporterPlugin extends SerenityReporter {
 
   @Getter private SerenityReporterCallbacks reporterCallbacks = new SerenityReporterCallbacks();
+
+  private final AtomicBoolean isDryRun = new AtomicBoolean(false);
 
   public TigerSerenityReporterPlugin() {
     super();
@@ -63,6 +69,7 @@ public class TigerSerenityReporterPlugin extends SerenityReporter {
 
   @Override
   protected void handleTestCaseStarted(TestCaseStarted event) {
+    isDryRun.set(TestCaseDelegate.of(event.getTestCase()).isDryRun());
     super.handleTestCaseStarted(event);
     reporterCallbacks.handleTestCaseStarted(event, getScenarioContextDelegate());
   }
@@ -87,10 +94,16 @@ public class TigerSerenityReporterPlugin extends SerenityReporter {
     super.handleTestCaseFinished(event);
   }
 
+  @SneakyThrows
   @Override
   protected void handleTestRunFinished(TestRunFinished event) {
     reporterCallbacks.handleTestRunFinished(event, getScenarioContextDelegate());
-    super.handleTestRunFinished(event);
+    if (isDryRun.get()) {
+      log.debug("Dry run detected, skipping Serenity report generation");
+      MethodUtils.invokeMethod(this, true, "assureTestSuiteFinished");
+    } else {
+      super.handleTestRunFinished(event);
+    }
   }
 
   protected void handleWriteEvent(WriteEvent event) {

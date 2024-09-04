@@ -43,7 +43,6 @@ public class TigerLauncherDiscoveryListener implements LauncherDiscoveryListener
     TigerGlobalConfiguration.initialize();
     backupInitialConfigParameters(request.getConfigurationParameters());
     forceDryRun();
-    LauncherDiscoveryListener.super.launcherDiscoveryStarted(request);
   }
 
   private void backupInitialConfigParameters(ConfigurationParameters configurationParameters) {
