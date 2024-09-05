@@ -38,7 +38,7 @@ defineProps<{
 }>();
 
 function getStatusFGAndBGColorClass(status: string): string {
-  return status.toLowerCase() + ' bg-' + status.toLowerCase() + 'test-status-' + status.toLowerCase();
+  return `${status.toLowerCase()} bg-${status.toLowerCase()} test-status-${status.toLowerCase()}`;
 }
 
 </script>

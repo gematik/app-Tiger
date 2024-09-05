@@ -56,6 +56,10 @@ export default defineComponent({
   color: var(--gem-success-300) !important;
 }
 
+.test_discovered {
+  color: var(--gem-primary-300) !important;
+}
+
 .skipped {
   color: var(--gem-warning-400) !important;
 }
@@ -74,6 +78,10 @@ export default defineComponent({
 
 .bg-passed {
   background: var(--gem-success-050) !important;
+}
+
+.bg-test_discovered {
+  background: var(--gem-primary-050) !important;
 }
 
 .bg-skipped {

@@ -60,7 +60,6 @@ class DriverGeneratorTest {
             .glues(List.of("pck.of.glue1", "glue2.pck"))
             .driverPackage("fancy.pck.of.driver")
             .outputFolder(outputFolder)
-            .gluesCsv("")
             .driverClassName("Mops${ctr}IT")
             .templateFile(customTemplatePath)
             .build();
@@ -75,22 +74,26 @@ class DriverGeneratorTest {
         () ->
             assertEquals(
                 getNormalizedJavaFrom(
-                    "package: fancy.pck.of.driver\n"
-                        + "feature: relativeRessourceFeatureFile.feature\n"
-                        + "counter: 1\n"
-                        + "glues: \"de.gematik.test.tiger.glue\",\"pck.of.glue1\", \"glue2.pck\"\n"
-                        + "classname: Mops001IT\n"),
+                    """
+                                package: fancy.pck.of.driver
+                                feature: relativeRessourceFeatureFile.feature
+                                counter: 1
+                                gluesCsv: de.gematik.test.tiger.glue,pck.of.glue1,glue2.pck
+                                classname: Mops001IT
+                                """),
                 getNormalizedJavaFrom(
                     outputFolder.resolve(
                         Paths.get("fancy", "pck", "of", "driver", "Mops001IT.java")))),
         () ->
             assertEquals(
                 getNormalizedJavaFrom(
-                    "package: fancy.pck.of.driver\n"
-                        + "feature: /absoluteRessourceFeatureFile\n"
-                        + "counter: 2\n"
-                        + "glues: \"de.gematik.test.tiger.glue\",\"pck.of.glue1\", \"glue2.pck\"\n"
-                        + "classname: Mops002IT\n"),
+                    """
+                                package: fancy.pck.of.driver
+                                feature: /absoluteRessourceFeatureFile
+                                counter: 2
+                                gluesCsv: de.gematik.test.tiger.glue,pck.of.glue1,glue2.pck
+                                classname: Mops002IT
+                                """),
                 getNormalizedJavaFrom(
                     outputFolder.resolve(
                         Paths.get("fancy", "pck", "of", "driver", "Mops002IT.java")))));
@@ -106,35 +109,36 @@ class DriverGeneratorTest {
         GenerateDriverProperties.builder()
             .glues(emptyList())
             .outputFolder(outputFolder)
-            .gluesCsv("")
             .driverClassName("Mops${ctr}IT")
             .build();
 
     final var underTest = new DriverGenerator(props, logger);
 
-    // Execution
     underTest.generateDriverForFeatureFiles(List.of("featureFile.feature"));
 
     // Assertion
     assertEquals(
         getNormalizedJavaFrom(
-            ";\n"
-                + "\n"
-                + "import io.cucumber.junit.CucumberOptions;\n"
-                + "import io.cucumber.junit.TigerCucumberRunner;\n"
-                + "import org.junit.runner.RunWith;\n"
-                + "\n"
-                + "@RunWith(TigerCucumberRunner.class)\n"
-                + "@CucumberOptions("
-                + "features = {\"featureFile.feature\"},"
-                + " plugin = {\n"
-                + "    \"json:target/cucumber-parallel/1.json\" },"
-                + " glue = {\"de.gematik.test.tiger.glue\"},"
-                + " tags = \"not @Ignore\""
-                + ")\n"
-                + "public class Mops001IT {\n"
-                + "\n"
-                + "}\n"),
+            """
+                            ;
+
+                            import io.cucumber.junit.platform.engine.Constants;
+                            import org.junit.platform.suite.api.ConfigurationParameter;
+                            import org.junit.platform.suite.api.IncludeEngines;
+                            import org.junit.platform.suite.api.Suite;
+                            import org.junit.platform.suite.api.SelectFile;
+
+                            @Suite
+                            @IncludeEngines("cucumber")
+                            @SelectFile("featureFile.feature")
+                            @ConfigurationParameter(key = Constants.GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue")
+                            @ConfigurationParameter(key = Constants.FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
+                            @ConfigurationParameter(key = Constants.PLUGIN_PROPERTY_NAME,
+                                                    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+                            public class Mops001IT {
+
+                            }
+                            """),
         getNormalizedJavaFrom(outputFolder.resolve(Paths.get("Mops001IT.java"))));
   }
 

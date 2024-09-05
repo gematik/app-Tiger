@@ -111,6 +111,7 @@ public class EnvStatusController implements TigerUpdateListener {
                 scenario.setExampleKeys(svalue.getExampleKeys());
                 scenario.setExampleList(svalue.getExampleList());
                 scenario.setVariantIndex(svalue.getVariantIndex());
+                scenario.setDryRun(svalue.isDryRun());
                 fillInStepData(svalue, scenario);
               } else {
                 feature.getScenarios().put(skey, svalue);

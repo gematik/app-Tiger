@@ -159,6 +159,24 @@ externalJarOptions:
 
 For the server types docker and compose, we do not yet support the visualization of messages originating on a client port of these servers.
 
+=== Postpone start of test scenarios
+
+It is possible to configure the Workflow UI to not start all tests automatically at startup.
+When setting the following configuration option in the `tiger.yaml`:
+
+[source,yaml]
+----
+lib:
+    runTestsOnStart: false # default is true
+----
+
+the tests will only be discovered and displayed in the Workflow UI.
+The user can then choose which test scenario he/she wants to execute.
+This can be done by clicking the play buttons in either the Test Execution pane or in the Status Bar.
+
+image::screenshots/play_button.png[title="Play Buttons"]
+
+
 
 
 

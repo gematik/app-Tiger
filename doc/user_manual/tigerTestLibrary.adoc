@@ -132,6 +132,18 @@ include::validation-example.feature[]
 include::request-validation-example.feature[]
 --
 
+==== Regex matching
+
+When comparing values (e.g. in the `TGR current response body matches:`) generally the algorithms check for equality and only check for regex matches if they were not equal.
+
+==== Complete set of steps in validation glue code
+
+// use AnnotationParser.java to extract comments
+// to extract anew the steps doc from RbelValidatorGlue.java
+// extracted from module /tiger-test-lib
+// /src/test/java/de/gematik/test/tiger/glue/RBelValidatorGlue.java
+include::./RBelValidatorGlueCommentsOnly.adoc[]
+
 === Modifying RbelObjects (RbelBuilder)
 
 ==== Introduction
@@ -173,6 +185,16 @@ The Tiger HTTP client steps are a set of Cucumber steps that enable you to perfo
 --
 include::HttpGlueCodeTest.feature[]
 --
+
+==== Complete set of steps in HTTP client glue code
+
+// use AnnotationParser.java to extract comments
+// to extract anew the steps doc from RbelValidatorGlue.java
+
+
+// extracted from module /tiger-test-lib
+// /src/test/java/de/gematik/test/tiger/glue/HttpGlueCode.java
+include::./HttpGlueCodeCommentsOnly.adoc[]
 
 ==== XMLUnit Diff Builder
 
@@ -247,7 +269,7 @@ The example above shows three main features of the JSONChecker.
 This applies also to objects and arrays as seen in the dummyarray2 entry.
 * if we match key dummyEntry2 to the value of $REMOVE, it will return true, because this key does not exist.
 
-=== JSON Schema Validation
+===== JSON Schema Validation
 
 Using the validation step `TGR current response at \{string} matches as JSON_SCHEMA:` you are able to assert that the content of any RbelPath node complies with the JSON Schema given in the doc string beneath the step.
 
@@ -300,33 +322,11 @@ would validate a message with a JSON body like:
 
 assuming that the value of `${tiger.value.from.config}` set in the Tiger Global Configuration is `Friedrichstraße`.
 
-For full details how to specify a JSON Schema, refer to the external resource: https://json-schema.org/understanding-json-schema/index.html[Understanding JSON Schema].
+For full details how to specify a JSON Schema, refer to the external resource: https://json-schema.org/understanding-json-schema[Understanding JSON Schema].
 In https://json-schema.org/implementations#validators-web-(online)[this list] you can find a list of online validators which you can use to test your schema.
 Remember to test under JSON Schema version 2020-12.
 
-==== Regex matching
-
-When comparing values (e.g. in the `TGR current response body matches:`) generally the algorithms check for equality and only check for regex matches if they were not equal.
-
-==== Complete set of steps in validation glue code
-
-// use AnnotationParser.java to extract comments
-// to extract anew the steps doc from RbelValidatorGlue.java
-// extracted from module /tiger-test-lib
-// /src/test/java/de/gematik/test/tiger/glue/RBelValidatorGlue.java
-include::./RBelValidatorGlueCommentsOnly.adoc[]
-
-==== Complete set of steps in HTTP client glue code
-
-// use AnnotationParser.java to extract comments
-// to extract anew the steps doc from RbelValidatorGlue.java
-
-
-// extracted from module /tiger-test-lib
-// /src/test/java/de/gematik/test/tiger/glue/HttpGlueCode.java
-include::./HttpGlueCodeCommentsOnly.adoc[]
-
-==== Exemplaric scenario Konnektorfarm EAU validation
+=== Exemplaric scenario Konnektorfarm EAU validation
 
 The EAU Konnektorfarm scenario is a scenario where customers can use their Primärsystem to test signing and verifying documents via a set of Konnektoren and that this works interoperable.
 For this purpose a phalanx of local Tiger Proxies is set up as reverse proxies for each Konnektor being hosted at the gematik location.
@@ -340,22 +340,19 @@ If all is well, at the end the test report JSON files will be packed into a zip 
 
 image::media/tiger-integration-eau-process.svg[title="Tiger EAU Konnektorfarm process"]
 
-.Current message steps for Workflow UI
-
-// copied from module /tiger-test-lib
-// /src/test/java/de/gematik/test/tiger/glue/TigerGlue.java
-include::./TigerGlueCommentsOnly.adoc[]
-
-The pause steps allow to pause the validation test suite.
-Please note, these steps are only modified for the Workflow UI and don't work on a regular console (no failure, there is just no pause).
-The step "wait for user abort" allows to pause the validation test suite and is mainly used in demo scenarios allowing the manual tester to perform demo transactions that will be logged and saved to HTML reports but are not validated.
-This step subsequently terminates the test execution.
-
 === Using Tiger test lib helper classes
 
 If you don't want to use the Tiger test framework but only pick a few helper classes the following classes might be of interest to you:
 
 NOTE: All classes listed here are part of the tiger-common module
+
+For BDD feature files Tiger provides some helper steps too.
+
+==== Complete set of helper steps in Tiger glue code
+
+// copied from module /tiger-test-lib
+// /src/test/java/de/gematik/test/tiger/glue/TigerGlue.java
+include::./TigerGlueCommentsOnly.adoc[]
 
 ==== Banner
 

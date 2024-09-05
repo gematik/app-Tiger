@@ -24,6 +24,7 @@ enum TestResult {
   UNDEFINED = "UNDEFINED",
   UNUSED = "UNUSED",
   AMBIGUOUS = "AMBIGUOUS",
+  TEST_DISCOVERED = "TEST_DISCOVERED"
 }
 
 export default TestResult;
@@ -47,7 +48,9 @@ export function currentOverallTestRunStatus(featureUpdateMap: Map<string, Featur
 }
 
 export function getTestResultIcon(testResult: string, iconFamily: string): string {
-  if (!iconFamily) { iconFamily = "solid"}
+  if (!iconFamily) {
+    iconFamily = "solid"
+  }
   if (testResult === 'PASSED') {
     return 'test-passed fa-circle-check fa-' + iconFamily;
   } else if (testResult === 'FAILED') {
@@ -58,6 +61,8 @@ export function getTestResultIcon(testResult: string, iconFamily: string): strin
     return 'fa-solid fa-spinner blue fa-spin test-running'; // there is no regular for spinner
   } else if (testResult === 'PENDING') {
     return 'fa-solid fa-spinner fa-spin test-pending'; // there is no regular for spinner
+  } else if (testResult === 'TEST_DISCOVERED') {
+    return 'test_discovered fa-eye fa-' + iconFamily;
   } else {
     return 'fa-circle-question fa-' + iconFamily;
   }

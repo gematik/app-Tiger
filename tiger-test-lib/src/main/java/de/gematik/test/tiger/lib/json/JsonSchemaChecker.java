@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.lib.json;
@@ -50,7 +51,7 @@ public class JsonSchemaChecker {
         throw new JsonSchemaAssertionError("Json does not conform to schema: " + errors);
       }
     } catch (JsonProcessingException e) {
-      throw new JsonSchemaAssertionError("Failed to process input json and/or input schema", e);
+      throw new JsonSchemaProcessingError("Failed to process input json and/or input schema", e);
     }
   }
 
@@ -60,7 +61,10 @@ public class JsonSchemaChecker {
       super(message);
     }
 
-    public JsonSchemaAssertionError(String message, Throwable cause) {
+  }
+  public static class JsonSchemaProcessingError extends RuntimeException {
+
+    public JsonSchemaProcessingError(String message, Throwable cause) {
       super(message, cause);
     }
   }

@@ -120,15 +120,15 @@ class XyScreenshotsTest extends AbstractTests {
 
   @SuppressWarnings("squid:S2699")
   @Test
-  void screenshotSmallReplayButton() {
+  void screenshotSmallPlayButton() {
 
     page.querySelector("#test-tiger-logo").click();
     page.evaluate(
-        "document.getElementsByClassName(\"small-replay-button\")[0].style.backgroundColor='yellow'");
+        "document.getElementsByClassName(\"small-play-button\")[0].style.backgroundColor='yellow'");
     page.locator("#test-sidebar-featurelistbox")
         .screenshot(new Locator.ScreenshotOptions().setPath(getPath("sidebar_replaybutton.png")));
     page.evaluate(
-        "document.getElementsByClassName(\"small-replay-button\")[0].style.removeProperty(\"background-color\")");
+        "document.getElementsByClassName(\"small-play-button\")[0].style.removeProperty(\"background-color\")");
     page.querySelector("#test-tiger-logo").click();
   }
 

@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.lib.rbel;
@@ -35,6 +36,7 @@ import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.glue.RBelValidatorGlue;
 import de.gematik.test.tiger.lib.enums.ModeType;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
@@ -550,14 +552,15 @@ class RbelMessageValidatorTest extends AbstractRbelMessageValidatorTest {
     glue.currentRequestBodyMatches("!{rbel:currentRequestAsString('$.body')}");
     glue.currentRequestMessageAttributeMatches("$.body.foo", "bar");
     glue.currentRequestMessageContainsNode("$.body.foo");
-    glue.currentRequestMessageAtMatchesDocString("$.body", "{\"foo\":\"bar\"}");
+    glue.currentRequestMessageAtMatchesDocString("$.body", "{\"foo\":\"bar\"}\r\n");
     glue.currentRequestAtMatchesAsJsonOrXml("$.body", ModeType.JSON, oracleStr);
     glue.currentRequestMessageAttributeDoesNotMatch("$.body.foo", "foo");
   }
 
   @Test
   void testCurrentRequestMatchesJsonSchemaWithPlaceholdersReplacement() {
-    val responseToCheck = """
+    val responseToCheck =
+        """
       HTTP/1.1 200 OK
 
       ["hello", "world"]
@@ -663,6 +666,65 @@ class RbelMessageValidatorTest extends AbstractRbelMessageValidatorTest {
     assertThat(assertionError.getMessage()).isEqualTo("No current response message found!");
   }
 
+  /*
+  testFindMultipleNodesInRequestShouldMatch_OK
+  testFindMultipleNodesInRequestShouldMatch_NOK
+  testFindMultipleNodesInRequestShouldNOTMatch_OK
+  testFindMultipleNodesInRequestShouldNOTMatch_NOK
+
+   TODO
+   currentResponseAtMatchesAsXMLAndDiffOptions
+  */
+
+  @Test
+  void testFindMultipleNodesInRequestShouldMatch_OK() {
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
+    RbelMessageValidator validator = rbelMessageValidator;
+    RBelValidatorGlue gluecode = new RBelValidatorGlue(validator);
+
+    gluecode.findNextRequestToPath("/auth/realms/idp/.well-known/openid-configuration");
+    gluecode.currentResponseMessageAttributeMatches("$..td.a.text", "apidocs.*");
+  }
+
+  @Test
+  void testFindMultipleNodesInRequestShouldMatch_NOK() {
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
+    RbelMessageValidator validator = rbelMessageValidator;
+    RBelValidatorGlue gluecode = new RBelValidatorGlue(validator);
+
+    gluecode.findNextRequestToPath("/auth/realms/idp/.well-known/openid-configuration");
+    assertThatThrownBy(
+            () ->
+                gluecode.currentResponseMessageAttributeMatches(
+                    "$..td.a.text", "SOMETHING THATNEVERMATCHES.*"))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageFindingMatch("Expected that nodes to rbel path '.*' are equal to or match '.*'");
+  }
+
+  @Test
+  void testFindMultipleNodesInRequestShouldNotMatch_OK() {
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
+    RbelMessageValidator validator = rbelMessageValidator;
+    RBelValidatorGlue gluecode = new RBelValidatorGlue(validator);
+
+    gluecode.findNextRequestToPath("/auth/realms/idp/.well-known/openid-configuration");
+    gluecode.currentResponseMessageAttributeDoesNotMatch(
+        "$..td.a.text", "SOMETHINGTHATNEVERMATCHES.*");
+  }
+
+  @Test
+  void testFindMultipleNodesInRequestShouldNotMatch_NOK() {
+    addTwoRequestsToTigerTestHooks(validatableMessagesMock);
+    RbelMessageValidator validator = rbelMessageValidator;
+    RBelValidatorGlue gluecode = new RBelValidatorGlue(validator);
+
+    gluecode.findNextRequestToPath("/auth/realms/idp/.well-known/openid-configuration");
+    assertThatThrownBy(
+            () -> gluecode.currentResponseMessageAttributeDoesNotMatch("$..td.a.text", "apidocs.*"))
+        .isInstanceOf(AssertionError.class)
+        .hasMessageStartingWith("Did not expect that value 'apidocs/");
+  }
+
   @Test
   void testThatWaitForNonPairedMessageToBePresentFindsTargetMessage()
       throws ExecutionException, InterruptedException {
@@ -682,6 +744,10 @@ class RbelMessageValidatorTest extends AbstractRbelMessageValidatorTest {
 
   @Test
   void testWaitingForNewNonPairedMessage() throws ExecutionException, InterruptedException {
+
+    RbelMessageValidator.RBEL_REQUEST_TIMEOUT.putValue(
+        10); // loading the traffic file might take longer than 1sec!
+
     final RequestParameter messageParameters =
         RequestParameter.builder()
             .rbelPath("$.body.Event.Topic.text")
@@ -842,8 +908,11 @@ class RbelMessageValidatorTest extends AbstractRbelMessageValidatorTest {
         Arguments.of(
             "<hello something='world1'>world2</hello>",
             "XML",
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n"
-                + "<hello something=\"world1\">world2</hello>\n"),
+            """
+                        <?xml version="1.0" encoding="UTF-8"?>
+
+                        <hello something="world1">world2</hello>
+                        """),
         Arguments.of("{\"hello\":\"world\"}", "JSON", "{\"hello\": \"world\"}"),
         Arguments.of(
             """

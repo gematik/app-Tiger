@@ -25,8 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -36,24 +34,13 @@ public class DriverGenerator {
 
   public static final String COUNTER_REPLACEMENT_TOKEN = "${ctr}";
 
-  private GenerateDriverProperties props;
+  private final GenerateDriverProperties props;
 
   private final Log log;
 
   public DriverGenerator(final GenerateDriverProperties props, Log log) {
     this.props = props;
     this.log = log;
-  }
-
-  private String toCommaseparatedQuotedList(final List<String> glues) {
-    return Stream.concat(Stream.of("de.gematik.test.tiger.glue"), glues.stream())
-        .distinct()
-        .map(this::withQuotes)
-        .collect(Collectors.joining(", "));
-  }
-
-  private String withQuotes(final String it) {
-    return "\"" + it + "\"";
   }
 
   public void generateDriverForFeatureFiles(final List<String> files) throws IOException {
@@ -96,7 +83,6 @@ public class DriverGenerator {
         .replace("${package}", packageLine)
         .replace("${driverClassName}", currentDriverClassName)
         .replace("${feature}", featurePath.replace("\\", "/"))
-        .replace("${glues}", toCommaseparatedQuotedList(props.getGlues()))
         .replace("${gluesCsv}", props.getGluesCsv())
         .replace("${tags}", props.getCucumberFilterTags());
   }
@@ -116,12 +102,7 @@ public class DriverGenerator {
 
   private String getTemplate() throws IOException {
     if (props.getTemplateFile() == null) {
-      String driverTemplateResource;
-      if (props.isJunit5Driver()) {
-        driverTemplateResource = "/driver5ClassTemplate.jtmpl";
-      } else {
-        driverTemplateResource = "/driver4ClassTemplate.jtmpl";
-      }
+      String driverTemplateResource = "/driver5ClassTemplate.jtmpl";
       try (final InputStream is = getClass().getResourceAsStream(driverTemplateResource)) {
         if (is == null) {
           throw new FileNotFoundException(

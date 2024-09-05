@@ -39,8 +39,9 @@
                     :text="`${scenario[1].description} ${scenario[1].variantIndex !== -1 ? '[' + (scenario[1].variantIndex + 1) + ']' : ''}`"
                     :link="scenario[1].getLink(feature[1].description)">
                 </TestStatusBadge>
-                <large-replay-button
-                    :scenario="scenario[1].getScenarioIdentifier()"></large-replay-button>
+                <large-play-button
+                    :scenario="scenario[1].getScenarioIdentifier()"
+                    :show-play-button="scenario[1].isDryRun"></large-play-button>
               </h4>
               <div v-if="scenario[1].variantIndex !== -1">
                 <div v-for="anzahl in getTableCountForScenarioOutlineKeysLength(scenario[1].exampleKeys)"
@@ -109,7 +110,7 @@ import TestStatusBadge from "@/components/testsuite/TestStatusBadge.vue";
 import BannerMessageWindow from "@/components/testsuite/BannerMessageWindow.vue";
 import {getTestResultIcon} from "@/types/testsuite/TestResult";
 import Ui from "@/types/ui/Ui";
-import LargeReplayButton from "@/components/replay/LargeReplayButton.vue";
+import LargePlayButton from "@/components/replay/LargePlayButton.vue";
 import MessageMetaDataDto from "@/types/rbel/MessageMetaDataDto";
 
 defineProps<{

@@ -1,5 +1,98 @@
 # Changelog Tiger Test platform
 
+# Release 3.3.0
+
+* TGR-1469: improve responses of UITests for true/false queries
+
+## Breaking Changes
+
+* TGR-1527: rbel validation steps now also support rbelpaths that return more than one node, by evaluating each. If the
+  value should match, the step succeeds if there is at least ONE node matching. If it should not match then the step
+  succeeds if NO node matches.
+* TGR-1539: Multiple instances of RbelMessageValidator no longer share currentRequest/currentResponse as static
+  fields.
+  However, the class RbelMessageValidator has a new static getInstance() method which provides a global instance of this
+  class which is used by default constructor instantiations of RbelValidatorGlue.
+
+* With the implementation of TGR-1410, Tiger no longer supports JUnit 4 driver classes. This is a
+  necessary change to take advantage of the JUnit Platform API that allows us finer control over the test execution.
+  Running Tests via IntelliJ using the io.cucumber.junit.TigerCucumberRunner will work as previously.
+  When running tests via maven or via the IDE over a custom driver class, only JUnit 5 driver classes will work. These
+  are now automatically created and the option `<junit5Driver>true</junit5Driver>` is no longer needed in the
+  tiger-maven-plugin configuration.
+  When setting up custom driver classes, you need to use the junit platform annotations. For example:
+
+```java
+package de.gematik.test.tiger.integration.YOURPROJECT;
+
+import static io.cucumber.junit.platform.engine.Constants.FILTER_TAGS_PROPERTY_NAME;
+import static io.cucumber.junit.platform.engine.Constants.GLUE_PROPERTY_NAME;
+import static io.cucumber.junit.platform.engine.Constants.PLUGIN_PROPERTY_NAME;
+
+import org.junit.platform.suite.api.ConfigurationParameter;
+import org.junit.platform.suite.api.IncludeEngines;
+import org.junit.platform.suite.api.SelectClasspathResource;
+import org.junit.platform.suite.api.Suite;
+
+@Suite
+@IncludeEngines("cucumber")
+@SelectClasspathResource("features/YOURFEATURE.feature")
+@ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
+@ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
+@ConfigurationParameter(
+        key = PLUGIN_PROPERTY_NAME,
+        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+public class Driver1IT {
+}
+```
+
+The following dependencies are included transitively with the tiger-test-lib package:
+
+```xml
+
+<dependencies>
+    <dependency>
+        <groupId>io.cucumber</groupId>
+        <artifactId>cucumber-junit-platform-engine</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-suite</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-suite-api</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-launcher</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.junit.vintage</groupId>
+        <artifactId>junit-vintage-engine</artifactId>
+    </dependency>
+</dependencies>
+```
+
+Even though we don't support JUnit 4 drivers, we still include the junit-vintage-engine dependency, because it is
+required
+by cucumbers internal `PickleRunner`. This means the JUnit 4 dependency will still show up in your classpath.
+
+## Features
+
+* TGR-1410: Workflow UI: it is now possible to configure the Workflow UI to not run the test scenario immediately on
+  start up. The tests will be discovered and displayed on the Workflow UI and a play button allows to select specific
+  tests to execute. To activate this functionality you need to configure the following property in the `tiger.yaml`:
+
+```yaml
+lib:
+  runTestsOnStart: false # default is true
+```
+
 # Release 3.2.2
 
 * Serenity BDD 4.1.14
@@ -9,7 +102,6 @@
 * Appium 9.0.0
 * Spring Boot 3.3.2
 * Logback 1.5.6
-*
 
 ## Breaking Changes
 
@@ -40,7 +132,7 @@ default!
   This is necessary for consistency, since now you can also read other types (namely `ENV` files, done via `type: ENV`).
   Default for type is `YAML`, so you can omit it for YAML files.
 * TGR-1458: Add functionality to RbelMessageValidator to allow filtering for message pairs by response fields.
-    * This change involves changing the former filtering of the existing steps for just HTTP requests to filter 
+    * This change involves changing the former filtering of the existing steps for just HTTP requests to filter
       for ALL requests instead. This might break former testcase behavior, as potentially other requests that are
       not HTTP requests could be found that match the former criteria (though it is unlikely).
     * New steps to RbelValidatorGlue have been added
@@ -48,13 +140,15 @@ default!
       if no corresponding request is found, the response is set as the current request, as well
     * For POP3/SMTP responses, they are paired with their requests.
     * Only if the found request has a facet implementing the new marker interface RbelRequestWithResponse
-      (for now true for HTTP, POP3 and SMTP request), the corresponding response is searched for, 
+      (for now true for HTTP, POP3 and SMTP request), the corresponding response is searched for,
       if a request is queried and found, otherwise, the current response is cleared.
-    * If a request is queried and not found, both the current request and the current response are cleared. 
+    * If a request is queried and not found, both the current request and the current response are cleared.
       This is another breaking change, as previously, the status of the current request/response pair was unchanged
       by a failed query.
     * If the previous search found a response, then the "find next" steps, when not searching explicitly for a request
-      will start their search after that response, otherwise, they will start their search after the previously found request
+      will start their search after that response, otherwise, they will start their search after the previously found
+      request
+
 ```gherkin
 Gegebensei TGR finde die erste Nachricht mit Knoten {tigerResolvedString} der mit {tigerResolvedString} übereinstimmt
 Given TGR find message with {tigerResolvedString} matching {tigerResolvedString}
@@ -227,7 +321,7 @@ servers:
             </dependency>
         </dependencies>
     </dependencyManagement>
-  """
+  ```
 
 * TGR-1425: Tiger-Test-Lib: the class LocalProxyRbelMessageListener is refactored to be easier to handle in tests. If
   you are using it directly in your test suite, you need to get an instance

@@ -24,6 +24,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+@SuppressWarnings("java:S2699")
 public class RbelMessageValidatorFindMessageStepsTest extends AbstractRbelMessageValidatorTest {
 
   @BeforeEach

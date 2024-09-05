@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.glue;
@@ -31,8 +32,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public class AnnotationParser {
@@ -72,13 +75,36 @@ public class AnnotationParser {
   }
 
   public static String formatLine(String doc) {
-    return doc.replaceAll("@(\\w+\\b)", "*$1*")
-        .replace("\n\\*", "\n\n*")
-        .replace("<p>", "")
-        .replaceAll("(<pre>|</pre>)", "\n----\n")
-        .replaceAll("(<b>|</b>)", "*")
-        .replace("<br>", "")
-        .replace("TGR", "##### TGR");
+    doc =
+        doc.replaceAll("@(\\w+\\b)", "*$1*")
+            .replace("\n\\*", "\n\n*")
+            .replace("<p>", "")
+            .replaceAll("(<pre>|</pre>)", "----")
+            .replaceAll("(<b>|</b>)", "*")
+            .replace("<br>", "");
+    AtomicBoolean isDescription = new AtomicBoolean(false);
+    doc =
+        Arrays.stream(doc.split("\n"))
+            .map(
+                line -> {
+                  if (line.startsWith("TGR")) {
+                    isDescription.set(false);
+                    return "##### " + line;
+                  } else if (line.trim().isEmpty()) {
+                    isDescription.set(false);
+                    return "";
+                  } else {
+                    if (!isDescription.get()) {
+                      isDescription.set(true);
+                      return "[.indent]\n" + line;
+                    } else {
+                      return line;
+                    }
+                  }
+                })
+            .collect(Collectors.joining("\n"));
+
+    return doc;
   }
 }
 
@@ -103,7 +129,8 @@ class MethodVisitor extends VoidVisitorAdapter<List<String>> {
   }
 
   public List<AnnotationExpr> filterAnnotations(List<AnnotationExpr> annotations) {
-    List<String> annotationsToFind = List.of("When", "Wenn", "Dann", "Gegebensei", "Given");
+    List<String> annotationsToFind =
+        List.of("When", "Wenn", "Dann", "Then", "And", "Und", "But", "Aber", "Gegebensei", "Given");
     return annotations.stream()
         .filter(a -> annotationsToFind.contains(a.getName().getIdentifier()))
         .toList();

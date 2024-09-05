@@ -15,6 +15,7 @@ tiger-testenv-mgr/WinstoneHTTPServer
 /doc/user_manual/tiger_user_manual.adoc
 /doc/user_manual/*CommentsOnly.java
 doc/user_manual/HttpGlueCodeTest.feature
+tiger-uitests/mvn-playwright-log.txt
 
 /.idea/
 /.vscode/

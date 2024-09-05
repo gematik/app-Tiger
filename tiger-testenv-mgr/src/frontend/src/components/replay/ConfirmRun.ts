@@ -14,12 +14,30 @@
  * limitations under the License.
  */
 
+import {ref} from "vue";
+import {runScenario} from "@/components/replay/ScenarioRunner";
 import ScenarioIdentifier from "@/types/testsuite/ScenarioIdentifier";
 
-export function replayScenario(scenarioIdentifier: ScenarioIdentifier) {
-  fetch(import.meta.env.BASE_URL + "replay", {
-    headers: new Headers({'content-type': 'application/json'}),
-    method: "POST",
-    body: JSON.stringify(scenarioIdentifier)
-  });
+export function useConfirmRun() {
+  const dialogIsOpen = ref(false)
+
+  function openDialog() {
+    if (dialogIsOpen.value) {
+      return;
+    }
+    dialogIsOpen.value = true;
+  }
+
+  function onClickConfirm(scenario: ScenarioIdentifier) {
+    runScenario(scenario);
+    dialogIsOpen.value = false;
+  }
+
+  function onClickDismiss() {
+    dialogIsOpen.value = false;
+  }
+
+  return {openDialog, onClickConfirm, onClickDismiss, dialogIsOpen};
 }
+
+

@@ -304,7 +304,7 @@ const DEBUG = true;
 
 function debug(message: string) {
   if (DEBUG) {
-    console.log(Date.now() + " " + message);
+    console.log(new Date().toISOString() + " " + message);
   }
 }
 

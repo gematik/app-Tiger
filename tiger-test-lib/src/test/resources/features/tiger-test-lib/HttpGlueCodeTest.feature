@@ -35,7 +35,7 @@ Feature: HTTP/HTTPS GlueCode Test feature
     And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "PUT"
     And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/put\/?"
     And TGR assert "!{rbel:currentRequestAsString('$.body.project.modelVersion.text')}" matches "4.0.0"
-    # application/octet-stream is used since no rewriting is done, so unknown/default MIME-type is assumed
+   # application/octet-stream is used since no rewriting is done, so unknown/default MIME-type is assumed
     And TGR assert "!{rbel:currentRequestAsString('$.header.Content-Type')}" matches "application/octet-stream.*"
 
   Scenario: DELETE Request without body
@@ -173,7 +173,7 @@ Feature: HTTP/HTTPS GlueCode Test feature
 
   Scenario: Test check filter method reset
     Given TGR reset request method filter
-    # check resetting it works even if done twice
+   # check resetting it works even if done twice
     And TGR reset request method filter
     And TGR send empty GET request to "http://httpbin/anything?foobar=22"
     And TGR send POST request to "http://httpbin/post" with body "{'foobar': '4'}"

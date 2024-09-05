@@ -11,7 +11,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.2.7</version>
+        <version>3.3.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -108,6 +108,10 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.platform</groupId>
+            <artifactId>junit-platform-launcher</artifactId>
         </dependency>
         <dependency>
             <groupId>org.awaitility</groupId>

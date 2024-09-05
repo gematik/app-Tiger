@@ -223,7 +223,7 @@ The glue-code in Tiger automatically resolves the placeholders.
 === Pre-Defined values
 
 Tiger adds some pre-defined values to make your life easier configuring the environment.
-Currently these are:
+Currently, these are:
 
 * `free.port.0` - `free.port.255`: Free ports that are randomly determined at startup but stay fixed during the execution.
 This enables side effect free execution of the testsuite.
@@ -255,9 +255,10 @@ The default-namespace of the inline JEXL-expression carries the following functi
 
 An example of a function-invocation in the default namespace:
 
-```
+[source]
+----
 !{file('src/test/resources/testMessage.json')}
-```
+----
 
 This will load the given file and replace any placeholders found in it.
 
@@ -272,9 +273,10 @@ To give you direct access to the messages sent please use the rbel-namespace:
 
 This can be done like so
 
-```
+[source]
+----
 !{rbel:currentResponseAsString('$.body.html.head.link.href')}
-```
+----
 
 This will immediately return the `href`-attribute of the link in question as a string.
 

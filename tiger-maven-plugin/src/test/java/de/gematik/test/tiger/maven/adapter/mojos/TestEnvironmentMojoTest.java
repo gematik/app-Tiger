@@ -130,7 +130,7 @@ class TestEnvironmentMojoTest {
             "Starting local Tiger Proxy in standalone mode is not supported, deactivating the flag"
                 + " in config")
         .contains(
-            "Starting WorkflowUI in standalone mode is not supported, deactivating the flag in"
+            "Starting Workflow UI in standalone mode is not supported, deactivating the flag in"
                 + " config");
   }
 

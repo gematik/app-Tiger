@@ -19,20 +19,32 @@
 import ScenarioIdentifier from "@/types/testsuite/ScenarioIdentifier";
 import {ref} from "vue";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog.vue";
-import {useConfirmReplay} from "@/components/replay/ConfirmReplay";
+import {useConfirmRun} from "@/components/replay/ConfirmRun";
 
 const isHovering = ref(false)
 
 const props = defineProps<{
   scenario: ScenarioIdentifier
+  showPlayButton: boolean
 }>();
 
-const {openDialog, onClickConfirm, onClickDismiss, dialogIsOpen} = useConfirmReplay();
+console.log("props ", props)
+
+const {openDialog, onClickConfirm, onClickDismiss, dialogIsOpen} = useConfirmRun();
 </script>
 
 <template>
   <div>
-    <div @click="openDialog" role="button" class="btn btn-link p-0 small-replay-button"
+    <div v-if="props.showPlayButton" @click="openDialog" role="button" class="btn btn-link p-0 small-play-button"
+         title="Run Scenario">
+    <span @mouseenter="isHovering = true" @mouseleave="isHovering = false" class="fa-stack fa-2xs circle-arrow d-flex"
+          style="flex-shrink: 0;">
+      <i class="fa fa-regular fa-circle fa-stack-2x outer-circle" :class="{'fa-solid': isHovering}"></i>
+      <i class="fas fa-play fa-stack-1x inner-arrow" :class="{'fa-inverse': isHovering}"></i>
+    </span>
+    </div>
+
+    <div v-else @click="openDialog" role="button" class="btn btn-link p-0 small-play-button"
          title="Replay Scenario">
     <span @mouseenter="isHovering = true" @mouseleave="isHovering = false" class="fa-stack fa-2xs circle-arrow d-flex"
           style="flex-shrink: 0;">
@@ -41,12 +53,13 @@ const {openDialog, onClickConfirm, onClickDismiss, dialogIsOpen} = useConfirmRep
     </span>
     </div>
 
+
     <confirm-dialog :dialog-is-open="dialogIsOpen"
                     @click-confirm="() => onClickConfirm(props.scenario)"
                     @click-dismiss="onClickDismiss"
-                    header="Replay Scenario?"
+                    :header="props.showPlayButton? 'Run Scenario': 'Replay Scenario'"
                     description=""
-                    label-confirm-button="Yes, replay"
+                    :label-confirm-button="props.showPlayButton? 'Yes, run' : 'Yes, replay'"
                     label-dismiss-button="Cancel">
 
     </confirm-dialog>

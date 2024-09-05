@@ -13,7 +13,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.2.7</version>
+        <version>3.3.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -30,13 +30,6 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
-        </dependency>
-        <!-- needed for support of junit5  driver classes -->
-        <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-suite</artifactId>
-            <version>1.10.3</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.cucumber</groupId>
@@ -159,7 +152,7 @@
                 <version>${version.maven.failsafe}</version>
                 <configuration>
                     <!--
-                        WorkflowUI needs this to allow it to block execution of maven,
+                        Workflow UI needs this to allow it to block execution of maven,
                         else maven will try to kill and destroy the tiger spring boot apps
                      -->
                     <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
