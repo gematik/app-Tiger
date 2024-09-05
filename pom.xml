@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ ${GEMATIK_COPYRIGHT_STATEMENT}
+  ~ Copyright 2024 gematik GmbH
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -10,7 +23,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>3.2.7</version>
+    <version>3.3.0</version>
 
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
@@ -47,8 +60,8 @@
         <version.json>20230618</version.json>
         <!-- 20240303 -->
         <version.json-unit>3.4.1</version.json-unit>
-        <version.junit4>4.13.2</version.junit4>
         <version.junit5>5.10.3</version.junit5>
+        <version.junit-platform>1.10.3</version.junit-platform>
         <version.logback>1.5.6</version.logback>
         <version.lombok>1.18.34</version.lombok>
         <version.maven>3.9.8</version.maven>
@@ -103,6 +116,7 @@
              https://service.gematik.de/browse/DEVOPS-1233
         -->
         <yarnAuditAnalyzerEnabled>false</yarnAuditAnalyzerEnabled>
+
     </properties>
 
     <url>https://github.com/gematik/app-Tiger</url>
@@ -193,6 +207,13 @@
                 <module>tiger-coverage</module>
                 <module>tiger-integration-example</module>
             </modules>
+        </profile>
+        <profile>
+            <id>userManual</id>
+            <properties>
+                <mvn.asciidoc.css.style>gematik</mvn.asciidoc.css.style>
+                <asciidoctor.skip>false</asciidoctor.skip>
+            </properties>
         </profile>
         <profile>
             <id>external</id>
@@ -343,11 +364,6 @@
                 <version>${version.slf4j}</version>
             </dependency>
             <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${version.junit4}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter</artifactId>
                 <version>${version.junit5}</version>
@@ -366,6 +382,21 @@
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-params</artifactId>
                 <version>${version.junit5}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-suite</artifactId>
+                <version>${version.junit-platform}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-suite-api</artifactId>
+                <version>${version.junit-platform}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.platform</groupId>
+                <artifactId>junit-platform-launcher</artifactId>
+                <version>${version.junit-platform}</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>

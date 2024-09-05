@@ -16,30 +16,37 @@
 
 <script setup lang="ts">
 
-import ScenarioIdentifier from "@/types/testsuite/ScenarioIdentifier";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog.vue";
-import {useConfirmReplay} from "@/components/replay/ConfirmReplay";
+import {useConfirmRun} from "@/components/replay/ConfirmRun";
+import ScenarioIdentifier from "@/types/testsuite/ScenarioIdentifier";
 
 
 const props = defineProps<{
   scenario: ScenarioIdentifier
+  showPlayButton: boolean
 }>();
 
-const {openDialog, onClickConfirm, onClickDismiss, dialogIsOpen} = useConfirmReplay();
+const {openDialog, onClickConfirm, onClickDismiss, dialogIsOpen} = useConfirmRun();
 
 </script>
 
 <template>
-  <button @click="openDialog" class="btn btn-outline-secondary btn-sm replay-button" title="Replay Scenario"><i
+  <button v-if="props.showPlayButton" @click="openDialog" class="btn btn-outline-secondary btn-sm play-button"
+          title="Run Scenario"><i
+      class="fa fa-play"></i> Run
+  </button>
+  <button v-else @click="openDialog" class="btn btn-outline-secondary btn-sm replay-button"
+          title="Replay Scenario"><i
       class="fa fa-rotate-right"></i> Replay
   </button>
+
 
   <confirm-dialog :dialog-is-open="dialogIsOpen"
                   @click-confirm="() => onClickConfirm(props.scenario)"
                   @click-dismiss="onClickDismiss"
-                  header="Replay Scenario?"
+                  :header="props.showPlayButton? 'Run Scenario': 'Replay Scenario'"
                   description=""
-                  label-confirm-button="Yes, replay"
+                  :label-confirm-button="props.showPlayButton? 'Yes, run' : 'Yes, replay'"
                   label-dismiss-button="Cancel">
 
   </confirm-dialog>

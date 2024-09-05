@@ -17,9 +17,7 @@
 package de.gematik.test.tiger.playwright.workflowui;
 
 import static de.gematik.test.tiger.playwright.workflowui.ConfigurationEditorTest.ENV_MULTILINE_CHECK_KEY;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +25,7 @@ class ConfigEditorScreenshotsTest extends AbstractTests {
 
   @Test
   void testScreenshotsConfigEditor() {
-    assertThat(page.locator("#test-sidebar-tg-config-editor-icon").isVisible()).isTrue();
+    PlaywrightAssertions.assertThat(page.locator("#test-sidebar-tg-config-editor-icon")).isVisible();
     page.locator("#test-sidebar-tg-config-editor-icon").hover();
     screenshotElementById(page, "sidebar_config_editor.png", "test-sidebar-tg-config-editor-icon");
 

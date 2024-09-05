@@ -84,7 +84,7 @@ servers:
 </requestDescription>
 ----
 
-Lets try it out:
+Let's try it out:
 
 [source,bash]
 ----
@@ -102,8 +102,8 @@ $ curl localhost:8080/helloWorld
 </requestDescription>
 ----
 
-Here you see a `tgrFor` construct. As the name leads on, it is used for
-looped rendering.
+Here you see a `tgrFor` construct.
+As the name leads on, it is used for looped rendering.
 It reside WITHIN the element which needs to be considered, which is a bit different compared to other templating languages.
 It just has to be beneath the element in the logical tree of the document.
 So the `tgrFor` can be a tag within `<header>`, but it also could have been an attribute.
@@ -125,7 +125,7 @@ You can then also combine the loop-variable with JEXL like so:
 
 .complicatedResponse.xml
 [source,xml]
-```
+----
 <?xml version="1.0" encoding="utf-8" ?>
 <requestDescription>
     <headers>
@@ -135,13 +135,13 @@ You can then also combine the loop-variable with JEXL like so:
         </header>
     </headers>
 </requestDescription>
-```
+----
 
 will lead to
 
-```
+[source,xml]
+----
 <?xml version="1.0" encoding="UTF-8"?>
-
 <requestDescription>
   <headers>
     <header>1 and 2</header>
@@ -149,11 +149,12 @@ will lead to
     <header>3 and 4</header>
   </headers>
 </requestDescription>
-```
+----
 
 === Conditional rendering (tgrIf)
 
-To make the presence of elements conditional you can use the `tgrIf` statement. Consider the following example:
+To make the presence of elements conditional you can use the `tgrIf` statement.
+Consider the following example:
 
 .complicatedResponse.xml
 [source,xml]
@@ -175,7 +176,9 @@ This will give us
 ----
 
 The tgrIf statement just consist of one single JEXL expression.
-The result must be of type boolean. Please note that the tgrIf-statement, like the tgrFor, has to be beneath the target element in the document tree. This can be done via an attribute in XML, but it can also be done using a tag:
+The result must be of type boolean.
+Please note that the tgrIf-statement, like the tgrFor, has to be beneath the target element in the document tree.
+This can be done via an attribute in XML, but it can also be done using a tag:
 
 .complicatedResponse.xml
 [source,xml]
@@ -280,7 +283,10 @@ Rather you have to specify the importance of a response, with a higher number me
 
 === Matching path variables
 
-In many REST-Apis it is usual to include variables as part of the resource path. Zion allows to configure a response that will match a path and extract the given variables. The assigned values can then be used in the response or be used in additional matching criteria. Here is an example:
+In many REST-Apis it is usual to include variables as part of the resource path.
+Zion allows to configure a response that will match a path and extract the given variables.
+The assigned values can then be used in the response or be used in additional matching criteria.
+Here is an example:
 
 .tiger.yaml
 [source,yaml]
@@ -309,9 +315,12 @@ When making the following request:
  $ curl "localhost:8080/users/123"
  {'id':'123', 'username': 'Tiger'}
 
-the variable `userId` will be matched with the requested url and be assigned the value of `"123"`. This value can then be used in the `additionalCriterions` and in the `body`.
+the variable `userId` will be matched with the requested url and be assigned the value of `"123"`.
+This value can then be used in the `additionalCriterions` and in the `body`.
 
-The matching of paths using the `request` configuration can also be made using nested responses. The path to match will combine paths specified in the different levels of the nested response. For example:
+The matching of paths using the `request` configuration can also be made using nested responses.
+The path to match will combine paths specified in the different levels of the nested response.
+For example:
 
 .tiger.yaml
 [source,yaml]
@@ -345,7 +354,8 @@ servers:
                   Location: "/users/456"
 ----
 
-Here we have two nested responses in the `/users` path. One will match GET requests to the path `/users/+{userId}+` and the other will match POST-Requests to the path `/users`.
+Here we have two nested responses in the `/users` path.
+One will match GET requests to the path `/users/+{userId}+` and the other will match POST-Requests to the path `/users`.
 
 === tgrEncodeAs
 
@@ -358,7 +368,7 @@ For this we use the following response body file:
 
 .complicatedResponse.json
 [source,json]
-```
+----
 {
   "myToken": {
     "tgrEncodeAs": "JWT",
@@ -378,29 +388,39 @@ For this we use the following response body file:
     }
   }
 }
-```
+----
 
 will lead to
 
 [source,json]
-```
+----
 {
   "myToken": "eyJhbGciOiJCUDI1NlIxIiwidHlwIjoiSldUIn0.eyJuYW1lIjogIk1heCBQb3dlciIsImlhdCI6IDE2ODg2MzQ5MjR9.aOnFMxSkzvo9fJjnDSFCeX0G5-IP3XFQPZCRyZFBOEyBAgV2Dy3ImEjz_DpFRqSqtkHdkCcV-T_e6aBejN_A2g"
 }
-```
+----
 
-We see the keyword `tgrEncodeAs` being used here. Currently the following values are supported: `XML, JSON, JWT, JWE, URL, BEARER_TOKEN`.
-A JWT consists of three parts: header, body, signature. The given nodes are searched and taken. The description of the JWT also could have been done in XML.
+We see the keyword `tgrEncodeAs` being used here.
+Currently the following values are supported: `XML, JSON, JWT, JWE, URL, BEARER_TOKEN`.
+A JWT consists of three parts: header, body, signature.
+The given nodes are searched and taken.
+The description of the JWT also could have been done in XML.
 
-We then see another mode-switch being done in the `iat`-claim in the body of the JWT: `iat` is the Unix-Timestamp at which the token was issued. For our faked ad-hoc token we of course want to use the current time for this claim. Unfortunately the `iat` claim is a number, which precludes the direct use of a JEXL-expression. To solve this problem make the claim complex, add the `"jsonNonStringPrimitive"` attribute to the resulting node and set the value to the desired value. This also works for floating-point and boolean values.
+We then see another mode-switch being done in the `iat`-claim in the body of the JWT: `iat` is the Unix-Timestamp at which the token was issued.
+For our faked ad-hoc token we of course want to use the current time for this claim.
+Unfortunately the `iat` claim is a number, which precludes the direct use of a JEXL-expression.
+To solve this problem make the claim complex, add the `"jsonNonStringPrimitive"` attribute to the resulting node and set the value to the desired value.
+This also works for floating-point and boolean values.
 
 === RbelWriter content structures
 
-In this paragraph we'll take a look at the various structures that can be serialized with the RbelWriter, which sits at the core of the Zion-Server. The following examples are kept in JSON (apart from the Bearer token example). Please note that the same result can be achieved from XML (or any other format for that matter).
+In this paragraph we'll take a look at the various structures that can be serialized with the RbelWriter, which sits at the core of the Zion-Server.
+The following examples are kept in JSON (apart from the Bearer token example).
+Please note that the same result can be achieved from XML (or any other format for that matter).
 
 ==== JWT
+
 [source,json]
-```
+----
 {
   "tgrEncodeAs": "JWT",
   "header": {
@@ -414,16 +434,19 @@ In this paragraph we'll take a look at the various structures that can be serial
     "verifiedUsing": "idpEnc"
   }
 }
-```
+----
 
-The three parts denote the different part of a JWT: The header claims (header), body claims (body) and signature properties (signature). RbelWriter will automatically try to sign the given JWT. For this the key at `$.signature.verifiedUsing` is consulted and a matching key is searched in the tiger key-database. This will be filled at start-time by digging through the root-directory of the application recursively and trying to open all found key-files with various default passwords.
+The three parts denote the different part of a JWT: The header claims (header), body claims (body) and signature properties (signature).
+RbelWriter will automatically try to sign the given JWT.
+For this the key at `$.signature.verifiedUsing` is consulted and a matching key is searched in the tiger key-database.
+This will be filled at start-time by digging through the root-directory of the application recursively and trying to open all found key-files with various default passwords.
 
 Please note that the header-claims have to match the given key, otherwise the signing operation can't be completed successfully.
 
 ==== JWE
 
 [source,json]
-```
+----
 {
   "tgrEncodeAs": "JWE",
   "header": {
@@ -438,15 +461,19 @@ Please note that the header-claims have to match the given key, otherwise the si
     "decryptedUsingKeyWithId": "idpEnc"
   }
 }
-```
+----
 
 As with the JWT, for the JWE all relevant claims are to be found in the appropriate sections.
-The signature has been replaced by the `encryptionInfo`-section. Here you need to specify the key to be used for the encryption. Here in this example we are using a public/private key-pair (with the same name as before). Again the header claims have to match the key used.
+The signature has been replaced by the `encryptionInfo`-section.
+Here you need to specify the key to be used for the encryption.
+Here in this example we are using a public/private key-pair (with the same name as before).
+Again the header claims have to match the key used.
 
-Apart from a public/private key-pair you can also use direct keys to encrypt your JWE. Here is an example:
+Apart from a public/private key-pair you can also use direct keys to encrypt your JWE.
+Here is an example:
 
 [source,json]
-```
+----
 {
   "tgrEncodeAs": "JWE",
   "header": {
@@ -461,17 +488,17 @@ Apart from a public/private key-pair you can also use direct keys to encrypt you
     "decryptedUsingKey": "YVI2Ym5wNDVNb0ZRTWFmU1Y1ZTZkRTg1bG9za2tscjg"
   }
 }
-
-```
+----
 
 As we are using a AES 256 bit key the supplied key has to exactly carry 256 bits, Base64 encoded.
 
 ==== URL
 
-To generate a URL you can also use the RbelWriter. Consult the following structure:
+To generate a URL you can also use the RbelWriter.
+Consult the following structure:
 
 [source,json]
-```
+----
 {
   "tgrEncodeAs": "url",
   "basicPath": "http://blub/fdsa",
@@ -479,16 +506,19 @@ To generate a URL you can also use the RbelWriter. Consult the following structu
     "foo": "bar"
   }
 }
-```
+----
 
-The parameters will be added as query-parameters. This can be rather useful to construct more complex parameters, for example
-a dynamically generated JWT.
+The parameters will be added as query-parameters.
+This can be rather useful to construct more complex parameters, for example a dynamically generated JWT.
 
 ==== Bearer Token
 
-A Bearer token can also be serialized directly via RbelWriter. This is very relevant if you want to, for example, generate a JWT on the fly and use it as the Bearer token. The straight-forward way would be to directly write the Bearer token like so:
+A Bearer token can also be serialized directly via RbelWriter.
+This is very relevant if you want to, for example, generate a JWT on the fly and use it as the Bearer token.
+The straight-forward way would be to directly write the Bearer token like so:
 
-```
+[source]
+----
 Bearer {
   "tgrEncodeAs":"JWT",
   "header":{
@@ -502,14 +532,18 @@ Bearer {
     "verifiedUsing":"idpEnc"
   }
 }
-```
+----
 
-Here the whole arrangement will be parsed as a Bearer token (Which is essentially the Word `Bearer`, followed by a space and any string). The value of the Bearer token will be parsed as a JSON. When the result is then serialized, the `tgrEncodeAs` is interpreted and the JSON will be written as a Base64-encoded JWT.
+Here the whole arrangement will be parsed as a Bearer token (Which is essentially the Word `Bearer`, followed by a space and any string).
+The value of the Bearer token will be parsed as a JSON.
+When the result is then serialized, the `tgrEncodeAs` is interpreted and the JSON will be written as a Base64-encoded JWT.
 
-The following example will produce the same result. However the overall structure is a JSON, which will be written as a Bearer token (`"tgrEncodeAs": "BEARER_TOKEN"`). The content of the token is taken from the child-node with the name `BearerToken`.
+The following example will produce the same result.
+However the overall structure is a JSON, which will be written as a Bearer token (`"tgrEncodeAs": "BEARER_TOKEN"`).
+The content of the token is taken from the child-node with the name `BearerToken`.
 
 [source,json]
-```
+----
 {
   "tgrEncodeAs": "BEARER_TOKEN",
   "BearerToken": {
@@ -519,11 +553,11 @@ The following example will produce the same result. However the overall structur
       "typ": "JWT"
     },
     "body": {
-      "claim": "value",
+      "claim": "value"
     },
     "signature": {
       "verifiedUsing": "idpEnc"
     }
   }
 }
-```
+----

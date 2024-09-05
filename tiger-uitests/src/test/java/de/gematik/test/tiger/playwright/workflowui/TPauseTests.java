@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.playwright.workflowui;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import org.junit.jupiter.api.AfterEach;
@@ -29,7 +29,7 @@ class TPauseTests extends AbstractTests {
     page.querySelector("#test-tiger-logo").click();
     page.querySelector("#test-sidebar-pause-icon").click();
     assertAll(
-        () -> assertThat(page.locator("#sidebar-left.test-sidebar-paused").isVisible()).isTrue()
+        () -> assertThat(page.locator("#sidebar-left.test-sidebar-paused")).isVisible()
         //  () -> assertThat(page.locator("#execution_table
         // .test-pending").first().isVisible()).isTrue()
         );

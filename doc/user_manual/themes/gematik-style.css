@@ -12,9 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
-
-
 
 @import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
 
@@ -132,6 +131,10 @@ th {
 /* Responsiveness fixes */
 video {
     max-width: 100%;
+}
+
+.indent {
+    padding-left: 2rem;
 }
 
 @media all and (max-width: 600px) {

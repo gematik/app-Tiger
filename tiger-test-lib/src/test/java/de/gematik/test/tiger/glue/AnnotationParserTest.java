@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.glue;
@@ -37,8 +38,8 @@ class AnnotationParserTest {
   @ParameterizedTest
   @CsvSource({
     "<p>, ''",
-    "@param, *param*",
-    "<b>, *",
+    "@param, '[.indent]\n*param*'",
+    "<b>, '[.indent]\n*'",
     "<br>, ''",
     "TGR send empty, ##### TGR send empty"
   })

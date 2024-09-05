@@ -1,5 +1,5 @@
 package: ${package}
 feature: ${feature}
 counter: ${ctr}
-glues: ${glues}
+glues: ${gluesCsv}
 classname: ${driverClassName}

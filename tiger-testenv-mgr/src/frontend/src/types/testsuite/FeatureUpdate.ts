@@ -70,6 +70,7 @@ export default class FeatureUpdate implements IFeatureUpdate {
     if (feature.status) {
       this.status = feature.status;
     }
+
     if (feature.scenarios) {
       for (const key of feature.scenarios.keys()) {
         const scenario: ScenarioUpdate | undefined = this.scenarios.get(key)
@@ -114,6 +115,7 @@ export default class FeatureUpdate implements IFeatureUpdate {
           case TestResult.FAILED:
           case TestResult.PASSED:
           case TestResult.PENDING:
+          case TestResult.TEST_DISCOVERED:
             result = entryValue.status;
             break;
         }

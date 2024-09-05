@@ -1,6 +1,7 @@
 = Tiger maven plugin
 
-This plugin allows to dynamically generate the JUnit driver classes that are then used in the Surefire plugin to start the test runs. And replaces the serenity maven plugin to generate Serenity BDD test reports.
+This plugin allows to dynamically generate the JUnit driver classes that are then used in the Surefire plugin to start the test runs.
+And replaces the serenity maven plugin to generate Serenity BDD test reports.
 
 == Generate Drivers goal
 
@@ -12,7 +13,6 @@ To activate this feature in your maven project add the following plugin block to
 ----
 include::../doc/examples/tigerOnly/pom.xml[tag="generator-plugin"]
 ----
-
 
 .Mandatory configuration properties
 * **List[glue] glues** (mandatory) +
@@ -29,68 +29,76 @@ list of exclusion patterns for feature files in Ant format (directory/**.feature
 flag whether to skip the execution of this plugin
 * String driverPackage (default: de.gematik.test.tiger.serenity.drivers) +
 package of the to be generated driver class
-* String driverClassName (default: Driver${ctr}) +
+* String driverClassName (default: Driver$+{ctr}+) +
 Name of the to be generated driver class.
 
-NOTE:  The ctr token ${ctr} is mandatory! For more details see section below
+NOTE:  The ctr token $+{ctr}+ is mandatory!
+For more details see section below
 
 * String templateFile (default: null which means that the plugin will use the built-in template file) +
-  Optional path to a custom template file to be used for generating the driver Java source code file.
-  ** The plugin currently supports the following list of tokens:
-    *** ${ctr} +
+Optional path to a custom template file to be used for generating the driver Java source code file.
+** The plugin currently supports the following list of tokens:
+*** $+{ctr}+ +
 counter value that is unique and incremented for each feature file.
-    *** ${package} +
+*** $+{package}+ +
 will be replaced with package declaration code line of the driver class.
 Either empty or of the pattern "package xxx.yyy.zzz;" where xxx.yyy.zzz is replaced with the configured driverPackage configuration property.
-    *** ${driverClassName} +
+*** $+{driverClassName}+ +
 name of the driver class (with the ctr token already being replaced with the incrementing counter value).
-    *** ${feature} +
+*** $+{feature}+ +
 path to the feature file(s).
-*** ${glues} +
-comma separated list of glue/hook packages as specified by the glues configuration property in curly braces.
-*** ${gluesCsv} +
+*** $+{gluesCsv}+ +
 comma separated list of glue/hook packages without curly braces.
 
 === Manually creating driver classes
 
 For each feature (or use wildcards / directories for single driver class) you can implement a driver class based on the example code below.
 
-```java
+[source,java]
+----
 package de.gematik.test.tiger.integration.YOURPROJECT;
 
-import io.cucumber.junit.CucumberOptions;
-import io.cucumber.junit.TigerCucumberRunner;
-import org.junit.runner.RunWith;
+import static io.cucumber.junit.platform.engine.Constants.FILTER_TAGS_PROPERTY_NAME;
+import static io.cucumber.junit.platform.engine.Constants.GLUE_PROPERTY_NAME;
+import static io.cucumber.junit.platform.engine.Constants.PLUGIN_PROPERTY_NAME;
 
-@RunWith(TigerCucumberRunner.class)
-@CucumberOptions(
-    features = {"src/test/resources/features/YOURFEATURE.feature"},
-    plugin = {"json:target/cucumber-parallel/1.json"},
-    monochrome = false,
-    glue = {"de.gematik.test.tiger.glue",
-        "ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code"})
-public class Driver1IT {
+import org.junit.platform.suite.api.ConfigurationParameter;
+import org.junit.platform.suite.api.IncludeEngines;
+import org.junit.platform.suite.api.SelectClasspathResource;
+import org.junit.platform.suite.api.Suite;
 
-}
-```
+@Suite
+@IncludeEngines("cucumber")
+@SelectClasspathResource("features/YOURFEATURE.feature")
+@ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
+@ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
+@ConfigurationParameter(
+    key = PLUGIN_PROPERTY_NAME,
+    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+public class Driver1IT {}
+----
 
 == Generate Reports goal
 
-The second execution block in the example XML section above will trigger the report creation. There are no properties for configuration at the moment.
+The second execution block in the example XML section above will trigger the report creation.
+There are no properties for configuration at the moment.
 Two reports will be generated under target/site/serenity:
 
 * A simple HTML single page report for emailing (serenity-summary.html)
 * A fancy detailed overall report (index.html)
 
-== Start Tiger test environment in stand alone mode
+== Start Tiger test environment in standalone mode
 
-Adding the plugin as shown below will allow you to start a test enviroment in standalone mode by starting mvn as follows: ```mvn tiger:setup-testenv```.
-Please be aware that this is a blocking call, you may specify a timeout configuration property ```autoShutdownAfterSeconds``` with timeout in seconds. To prematurely stop the process either press Ctrl+C in your console or kill it with operating system specific kill commands / tools. In order to customize the tiger yaml to be used either set the environment variable ```TIGER_TESTENV_CFGFILE``` or set the system property ```tiger.testenv.cfgfile```.
+Adding the plugin as shown below will allow you to start a test environment in standalone mode by starting mvn as follows: ```mvn tiger:setup-testenv```.
+Please be aware that this is a blocking call, you may specify a timeout configuration property ```autoShutdownAfterSeconds``` with timeout in seconds.
+To prematurely stop the process either press Ctrl+C in your console or kill it with operating system specific kill commands / tools.
+In order to customize the tiger yaml to be used either set the environment variable ```TIGER_TESTENV_CFGFILE``` or set the system property ```tiger.testenv.cfgfile```.
 
-```xml
-           <plugin>
-                <groupId>de.gematik.test</groupId>
-                <artifactId>tiger-maven-plugin</artifactId>
-                <version>${version.tiger}</version>
-            </plugin>
-```
+[source,xml]
+----
+<plugin>
+     <groupId>de.gematik.test</groupId>
+     <artifactId>tiger-maven-plugin</artifactId>
+     <version>${version.tiger}</version>
+ </plugin>
+----

@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.glue;
@@ -81,7 +82,6 @@ public class HttpGlueCode {
    * Sends an empty request via the selected method and expands the list of default headers with the
    * headers provided by the caller. Placeholders in address and in the data table will be resolved.
    * Example:
-   *
    * <pre>
    *     When TGR send empty GET request to "${myAddress}" with headers:
    *      | name | bob |
@@ -188,7 +188,6 @@ public class HttpGlueCode {
    * Sends a request via the selected method. The request is expanded by the provided key-value
    * pairs. Placeholders in keys and values will be resolved. The values must not be URL encoded, as
    * this is done by the step. Example:
-   *
    * <pre>
    *      When Send POST request to "http://my.address.com" with
    *       | ${configured_param_name}   | state                     | redirect_uri        |
@@ -228,7 +227,6 @@ public class HttpGlueCode {
    * lines.
    *
    * <p>Example:
-   *
    * <pre>
    *      When TGR send POST request to "http://my.address.com" with multiline body:
    *       """
@@ -389,7 +387,7 @@ public class HttpGlueCode {
   }
 
   /**
-   * Resets the global configuration of the HttpClient to its default behaviour of automatically
+   * Resets the global configuration of the HttpClient to its default behavior of automatically
    * following redirects.
    */
   @When("TGR reset HttpClient followRedirects configuration")
