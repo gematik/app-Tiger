@@ -81,7 +81,7 @@
         <dependency>
             <groupId>org.webjars.npm</groupId>
             <artifactId>dayjs</artifactId>
-            <version>1.11.12</version>
+            <version>1.11.13</version>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>

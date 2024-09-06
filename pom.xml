@@ -37,9 +37,9 @@
         <maven.compiler.target>17</maven.compiler.target>
         <skipSurefire>false</skipSurefire>
         <version.assertj>3.26.3</version.assertj>
-        <version.awaitility>4.2.1</version.awaitility>
+        <version.awaitility>4.2.2</version.awaitility>
         <version.bouncycastle>1.78.1</version.bouncycastle>
-        <version.commons-lang3>3.15.0</version.commons-lang3>
+        <version.commons-lang3>3.17.0</version.commons-lang3>
         <version.commons-text>1.12.0</version.commons-text>
         <version.commons-codec>1.17.1</version.commons-codec>
         <version.commons-io>2.16.1</version.commons-io>
@@ -55,31 +55,31 @@
         <version.jacoco-maven-plugin>0.8.12</version.jacoco-maven-plugin>
         <version.jackson>2.17.2</version.jackson>
         <version.jakarta.xml.bind>3.0.1</version.jakarta.xml.bind>
-        <version.javaparser>3.26.1</version.javaparser>
+        <version.javaparser>3.26.2</version.javaparser>
         <version.jose4j>0.9.6</version.jose4j>
         <version.json>20230618</version.json>
         <!-- 20240303 -->
         <version.json-unit>3.4.1</version.json-unit>
         <version.junit5>5.10.3</version.junit5>
-        <version.junit-platform>1.10.3</version.junit-platform>
-        <version.logback>1.5.6</version.logback>
+        <version.junit-platform>1.11.0</version.junit-platform>
+        <version.logback>1.5.7</version.logback>
         <version.lombok>1.18.34</version.lombok>
-        <version.maven>3.9.8</version.maven>
-        <version.maven-deploy-plugin>3.1.2</version.maven-deploy-plugin>
-        <version.maven.failsafe>3.2.5</version.maven.failsafe>
-        <version.maven.surefire>3.3.1</version.maven.surefire>
-        <version.maven.javadoc>3.8.0</version.maven.javadoc>
-        <version.maven-plugin-tools>3.13.1</version.maven-plugin-tools>
-        <version.mockito>5.12.0</version.mockito>
+        <version.maven>3.9.9</version.maven>
+        <version.maven-deploy-plugin>3.1.3</version.maven-deploy-plugin>
+        <version.maven.failsafe>3.5.0</version.maven.failsafe>
+        <version.maven.surefire>3.5.0</version.maven.surefire>
+        <version.maven.javadoc>3.10.0</version.maven.javadoc>
+        <version.maven-plugin-tools>3.15.0</version.maven-plugin-tools>
+        <version.mockito>5.13.0</version.mockito>
         <version.mockserver>5.15.0</version.mockserver>
-        <version.io.rest-assured>5.4.0</version.io.rest-assured>
+        <version.io.rest-assured>5.5.0</version.io.rest-assured>
         <version.serenity.core>4.1.14</version.serenity.core>
         <version.serenity.maven.plugin>4.1.14</version.serenity.maven.plugin>
-        <version.slf4j>2.0.14</version.slf4j>
+        <version.slf4j>2.0.16</version.slf4j>
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
         <spotless-maven-plugin.version>2.43.0</spotless-maven-plugin.version>
         <spotless.google-java-format.version>1.18.1</spotless.google-java-format.version>
-        <version.spring-boot>3.3.2</version.spring-boot>
+        <version.spring-boot>3.3.3</version.spring-boot>
         <version.spring>5.3.20</version.spring>
         <version.system-stubs>2.1.6</version.system-stubs>
         <version.unirest>3.14.5</version.unirest>
@@ -225,7 +225,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.2.4</version>
+                        <version>3.2.5</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
