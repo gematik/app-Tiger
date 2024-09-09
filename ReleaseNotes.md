@@ -1,5 +1,17 @@
 # Changelog Tiger Test platform
 
+# Release 3.3.1
+
+## Breaking Changes
+
+* TGR-1547: Tiger-Test-Lib: the no-args constructor of the class RbelMessageValidator is no longer public. Use
+  `de.gematik.test.tiger.lib.rbel.RbelMessageValidator.getInstance` if you need to get a reference to the default
+  instance. You want to use the same instance across the code base, so that all validation actions operate in the same
+  messages list. If you require a separate instance (e.g.: for Unit Tests), then use the constructor
+  `RbelMessageValidator(TigerTestEnvMgr, TigerProxy, LocalProxyRbelMessageListener)`. You can initialize it with mock or
+  real
+  dependencies depending on your testing needs.
+
 # Release 3.3.0
 
 * TGR-1469: improve responses of UITests for true/false queries
