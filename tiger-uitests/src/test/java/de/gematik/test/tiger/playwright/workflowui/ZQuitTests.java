@@ -36,7 +36,7 @@ import org.junit.jupiter.api.*;
  */
 @Slf4j
 @TestMethodOrder(MethodOrderer.MethodName.class)
-class ZQuitTests extends AbstractTests {
+class ZQuitTests extends AbstractBase {
   @Test
   void testQuitMessageOnSidebar() {
     page.querySelector("#test-tiger-logo").click();

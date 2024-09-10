@@ -21,7 +21,7 @@ import static org.awaitility.Awaitility.await;
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import org.junit.jupiter.api.Test;
 
-class ConfigEditorScreenshotsTest extends AbstractTests {
+class ConfigEditorScreenshotsTest extends AbstractBase {
 
   @Test
   void testScreenshotsConfigEditor() {

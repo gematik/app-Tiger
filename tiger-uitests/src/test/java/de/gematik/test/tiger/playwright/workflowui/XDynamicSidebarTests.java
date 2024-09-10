@@ -37,7 +37,7 @@ import org.junit.jupiter.params.provider.ValueSource;
  * Dynamic tests for the sidebar of the workflow ui, such as server box, feature box, status box tests.
  */
 @Slf4j
-class XDynamicSidebarTests extends AbstractTests {
+class XDynamicSidebarTests extends AbstractBase {
 
     @Test
     void testSidebarIsClosedWhenClickedOnDoubleArrow() {

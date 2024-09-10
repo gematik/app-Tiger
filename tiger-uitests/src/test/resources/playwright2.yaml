@@ -25,15 +25,4 @@ lib:
   rbelPathDebugging: false
   activateWorkflowUi: true
   startBrowser: false
-
-additionalConfigurationFiles:
-  - filename: additionalYaml.yaml
-    baseKey: tgrTestAdditionalYaml
-
-cfgEditor:
-  checkKey: checkMainValue
-  editKey: editMainValue
-  deleteKey: deleteMainValue
-
-test:
-  tracing: false
+  runTestsOnStart: false

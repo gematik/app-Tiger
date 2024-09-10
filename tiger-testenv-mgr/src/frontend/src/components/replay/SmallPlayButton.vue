@@ -35,7 +35,7 @@ const {openDialog, onClickConfirm, onClickDismiss, dialogIsOpen} = useConfirmRun
 
 <template>
   <div>
-    <div v-if="props.showPlayButton" @click="openDialog" role="button" class="btn btn-link p-0 small-play-button"
+    <div v-if="props.showPlayButton" @click="openDialog" role="button" class="btn btn-link p-0 small-play-button test-play-small-button"
          title="Run Scenario">
     <span @mouseenter="isHovering = true" @mouseleave="isHovering = false" class="fa-stack fa-2xs circle-arrow d-flex"
           style="flex-shrink: 0;">

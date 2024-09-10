@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 
 /** Static tests for the sidebar of the workflow ui. */
 @Slf4j
-class StaticSidebarTests extends AbstractTests {
+class StaticSidebarTests extends AbstractBase {
 
   @Test
   void testSidebarClosedIconsAreVisible() {

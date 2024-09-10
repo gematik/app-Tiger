@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @TestMethodOrder(MethodOrderer.MethodName.class)
-class XyScreenshotsTest extends AbstractTests {
+class XyScreenshotsTest extends AbstractBase {
 
   @SuppressWarnings("squid:S2699")
   @Test

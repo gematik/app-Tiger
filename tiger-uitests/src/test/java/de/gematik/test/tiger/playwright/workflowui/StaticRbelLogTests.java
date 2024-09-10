@@ -21,7 +21,7 @@ import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import org.junit.jupiter.api.Test;
 
 /** Tests for static content of the web ui content, e.g. rbel logo. */
-class StaticRbelLogTests extends AbstractTests {
+class StaticRbelLogTests extends AbstractBase {
 
   @Test
   void testExecutionPaneRbelLogo() {

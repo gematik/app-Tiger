@@ -34,7 +34,7 @@ import org.assertj.core.api.Assertions;
  */
 @Slf4j
 @TestMethodOrder(MethodOrderer.MethodName.class)
-class XYDynamicRbelLogTests extends AbstractTests {
+class XYDynamicRbelLogTests extends AbstractBase {
 
     @Test
     void testHExecutionPaneRbelWebUiURLExists() {

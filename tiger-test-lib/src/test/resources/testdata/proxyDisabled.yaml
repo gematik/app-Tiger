@@ -3,6 +3,8 @@ tigerProxy:
     serverRootCa: "CertificateAuthorityCertificate.pem;PKCS8CertificateAuthorityPrivateKey.pem;PKCS8"
 
 localProxyActive: false
+lib:
+  activateWorkflowUi: false
 
 servers:
   idp-rise-tu-noproxy:

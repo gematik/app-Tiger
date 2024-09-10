@@ -61,7 +61,7 @@
         <!-- 20240303 -->
         <version.json-unit>3.4.1</version.json-unit>
         <version.junit5>5.10.3</version.junit5>
-        <version.junit-platform>1.11.0</version.junit-platform>
+        <version.junit-platform>1.10.3</version.junit-platform>
         <version.logback>1.5.7</version.logback>
         <version.lombok>1.18.34</version.lombok>
         <version.maven>3.9.9</version.maven>

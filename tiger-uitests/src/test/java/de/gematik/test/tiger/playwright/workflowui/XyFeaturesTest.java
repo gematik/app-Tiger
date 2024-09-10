@@ -30,7 +30,7 @@ import org.junit.jupiter.params.provider.CsvSource;
  * Tests all feature files and scenarios by name.
  */
 @TestMethodOrder(MethodOrderer.MethodName.class)
-class XyFeaturesTest extends AbstractTests {
+class XyFeaturesTest extends AbstractBase {
 
     @Test
     void testFeaturesAndScenarioAmount() {

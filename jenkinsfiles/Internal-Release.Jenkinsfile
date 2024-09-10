@@ -116,8 +116,10 @@ pipeline {
                             """
                         unstash 'manual'
                         sh label: 'createManual', script: """
-                            mv ./tiger_user_manual.pdf ./Tiger-User-Manual.pdf
-                            mv ./tiger_user_manual.html ./Tiger-User-Manual.html
+                            mv ./tiger-test-lib/target/doc/user_manual/tiger_user_manual.pdf ./Tiger-User-Manual.pdf
+                            mv ./tiger-test-lib/target/doc/user_manual/tiger_user_manual.html ./Tiger-User-Manual.html
+                            mv ./tiger-test-lib/target/doc/user_manual/media .
+                            mv ./tiger-test-lib/target/doc/user_manual/screenshots .
                             """
 
                         gitCommitAndTagDocu("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, true)

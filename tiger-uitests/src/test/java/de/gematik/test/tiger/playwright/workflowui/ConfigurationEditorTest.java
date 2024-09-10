@@ -31,7 +31,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
-class ConfigurationEditorTest extends AbstractTests {
+class ConfigurationEditorTest extends AbstractBase {
 
     protected static final String ENV_MULTILINE_CHECK_KEY = "tgr.testenv.cfg.multiline.check.mode";
     private final String ENV_ICON = ".fa.fa-lg.fa-server";

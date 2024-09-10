@@ -33,7 +33,7 @@ import org.junit.jupiter.api.TestMethodOrder;
  * at a later time.
  */
 @TestMethodOrder(MethodOrderer.MethodName.class)
-class XLaterTests extends AbstractTests {
+class XLaterTests extends AbstractBase {
 
   @Test
   void testENavbarWithButtonsExists() {

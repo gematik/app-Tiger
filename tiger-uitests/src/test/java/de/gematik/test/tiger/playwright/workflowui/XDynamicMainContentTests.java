@@ -25,7 +25,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /** Tests for dynamic content of main content area, e.g. server log pane. */
-class XDynamicMainContentTests extends AbstractTests {
+class XDynamicMainContentTests extends AbstractBase {
 
   @Test
   void testServerLogPaneActive() {
