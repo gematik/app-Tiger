@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 @Slf4j
 public class RbelHttpResponseConverter implements RbelConverterPlugin {
@@ -48,8 +49,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
           "gzip", RbelHttpResponseConverter::decodeGzip);
 
   private static byte[] decodeGzip(byte[] bytes, String eol, Charset charset) {
-    log.atTrace()
-        .log(() -> "Decoding data with gzip");
+    log.atTrace().log(() -> "Decoding data with gzip");
     try (final InputStream inputStream = new GZIPInputStream(new ByteArrayInputStream(bytes))) {
       return inputStream.readAllBytes();
     } catch (Exception e) {
@@ -58,8 +58,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
   }
 
   private static byte[] decodeDeflate(byte[] bytes, String eol, Charset charset) {
-    log.atTrace()
-        .log(() -> "Decoding data with deflate");
+    log.atTrace().log(() -> "Decoding data with deflate");
     try (final InputStream inputStream = new InflaterInputStream(new ByteArrayInputStream(bytes))) {
       return inputStream.readAllBytes();
     } catch (Exception e) {
@@ -68,8 +67,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
   }
 
   private static byte[] decodeChunked(byte[] inputData, String eol, Charset charset) {
-    log.atTrace()
-      .log(() -> "Decoding data with chunked encoding");
+    log.atTrace().log(() -> "Decoding data with chunked encoding");
     int chunkSeparator = new String(inputData, charset).indexOf(eol) + eol.length();
 
     final int indexOfChunkTerminator =
@@ -127,9 +125,14 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
     targetElement.addFacet(rbelHttpResponse);
     targetElement.addFacet(new RbelResponseFacet(responseCode.getRawStringContent()));
-    final var httpVersion = new RbelElement(content.substring(0, content.indexOf(" ")).getBytes(), targetElement);
+    final var httpVersion =
+        new RbelElement(content.substring(0, content.indexOf(" ")).getBytes(), targetElement);
     targetElement.addFacet(
-        RbelHttpMessageFacet.builder().header(headerElement).body(bodyElement).httpVersion(httpVersion).build());
+        RbelHttpMessageFacet.builder()
+            .header(headerElement)
+            .body(bodyElement)
+            .httpVersion(httpVersion)
+            .build());
 
     converter.convertElement(bodyElement);
   }
@@ -271,12 +274,23 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
     if (colon == -1) {
       throw new IllegalArgumentException("Header malformed: '" + line + "'");
     }
-    final String key = line.substring(0, colon).trim();
-    final RbelElement el =
-        new RbelElement(
-            line.substring(colon + 1).trim().getBytes(headerElement.getElementCharset()),
-            headerElement);
+    val key = line.substring(0, colon).trim();
+    val value = line.substring(colon + 1).trim();
+    val rbelElement =
+        context.convertElement(
+            new RbelElement(value.getBytes(headerElement.getElementCharset()), headerElement));
 
-    return new SimpleImmutableEntry<>(key, context.convertElement(el));
+    if (value.contains(",")) {
+      val childNodes = new ArrayList<RbelElement>();
+      rbelElement.addFacet(new RbelListFacet(childNodes));
+      for (String part : value.split(",")) {
+        childNodes.add(
+            context.convertElement(
+                new RbelElement(
+                    part.trim().getBytes(headerElement.getElementCharset()), rbelElement)));
+      }
+    }
+
+    return new SimpleImmutableEntry<>(key, rbelElement);
   }
 }

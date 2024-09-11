@@ -20,12 +20,11 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.data.facet.RbelValueFacet;
 import de.gematik.rbellogger.util.RbelPathAble;
+import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.assertj.core.api.AbstractAssert;
-import org.assertj.core.api.ObjectAssert;
-import org.assertj.core.api.StringAssert;
+import org.assertj.core.api.*;
 
 public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, RbelElement> {
 
@@ -170,5 +169,18 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
   public RbelElementAssertion andPrintTree() {
     System.out.println(actual.printTreeStructure());
     return this;
+  }
+
+  public RbelElementAssertion matchesJexlExpression(String jexlExpression) {
+    if (!TigerJexlExecutor.matchesAsJexlExpression(actual, jexlExpression)) {
+      failWithMessage(
+          "Expecting element to match jexl expression %s, but it did not. Element: %s",
+          jexlExpression, actual.printTreeStructure());
+    }
+    return this;
+  }
+
+  public ListAssert<RbelElement> getChildrenWithPath(String rbelPath) {
+    return new ListAssert<>(actual.findRbelPathMembers(rbelPath));
   }
 }
