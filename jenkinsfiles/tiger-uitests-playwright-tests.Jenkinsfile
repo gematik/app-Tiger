@@ -115,28 +115,33 @@ pipeline {
             }
         }
 
-        parallel {
-            stage('Start Tiger and Dummy Featurefile for none starting Tests') {
-                steps {
-                    script {
-                        withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                            sh """
+        stage('Integration Test None starting Tests') {
+            environment {
+                TIGER_DOCKER_HOST = dockerGetCurrentHostname()
+            }
+
+            parallel {
+                stage('Start Tiger and Dummy Featurefile for none starting Tests') {
+                    steps {
+                        script {
+                            withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
+                                sh """
                                 cd tiger-uitests
                                 rm -f mvn-playwright-log.txt
-                                mvn --no-transfer-progress -P start-tiger-dummy-for-unstarted-tests failsafe:verify | tee mvn-playwright-log.txt
+                                mvn --no-transfer-progress  -P start-tiger-dummy-for-unstarted-tests failsafe:integration-test | tee mvn-playwright-log.txt
                                """
+                            }
                         }
                     }
                 }
-            }
-            stage('Run playwright test for none starting tests') {
-                steps {
-                    sh """
+                stage('Run playwright test for none starting tests') {
+                    steps {
+                        sh """
                             cd tiger-uitests
                             mvn --no-transfer-progress -P run-playwright-test-for-unstarted-tests failsafe:integration-test failsafe:verify
                         """
-                    // clean up mvn-playwright-log.txt and shutdown testenv as soon as tests have ended to minimize time container is running
-                    sh """
+                        // clean up mvn-playwright-log.txt and shutdown testenv as soon as tests have ended to minimize time container is running
+                        sh """
                           cd tiger-uitests
                           rm -f mvn-playwright-log.txt
                           export ENV_PID=\"`ps -ef | grep java | grep start-tiger-dummy-for-unstarted-tests | awk -F\\   \'{ print \$2; }\'`\"
@@ -144,6 +149,7 @@ pipeline {
                             kill \$ENV_PID
                           fi
                         """
+                    }
                 }
             }
         }
@@ -151,7 +157,7 @@ pipeline {
         stage('Commit screenshots') {
             steps {
                 script {
-                sh """
+                    sh """
                      git add doc/user_manual/screenshots/*.png
                      git commit -m "TGR-9999: Jenkins adds PNG files"
                      git push origin ${BRANCH}
