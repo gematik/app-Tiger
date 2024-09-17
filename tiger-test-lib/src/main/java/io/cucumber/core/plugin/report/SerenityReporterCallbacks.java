@@ -18,11 +18,14 @@ package io.cucumber.core.plugin.report;
 
 import static org.awaitility.Awaitility.await;
 
+import com.google.common.collect.Streams;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.Ansi;
+import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.proxy.data.MessageMetaDataDto;
@@ -36,11 +39,7 @@ import io.cucumber.core.plugin.FeatureFileLoader;
 import io.cucumber.core.plugin.ScenarioContextDelegate;
 import io.cucumber.core.plugin.report.EvidenceReport.ReportContext;
 import io.cucumber.core.runner.TestCaseDelegate;
-import io.cucumber.messages.types.Feature;
-import io.cucumber.messages.types.Scenario;
-import io.cucumber.messages.types.Step;
-import io.cucumber.messages.types.TableRow;
-import io.cucumber.plugin.event.*;
+import io.cucumber.messages.types.*;
 import io.cucumber.plugin.event.Event;
 import java.awt.*;
 import java.io.File;
@@ -59,17 +58,29 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import io.cucumber.plugin.event.HookTestStep;
+import io.cucumber.plugin.event.PickleStepTestStep;
+import io.cucumber.plugin.event.TestCaseFinished;
+import io.cucumber.plugin.event.TestCaseStarted;
+import io.cucumber.plugin.event.TestRunFinished;
+import io.cucumber.plugin.event.TestSourceRead;
+import io.cucumber.plugin.event.TestStep;
+import io.cucumber.plugin.event.TestStepFinished;
+import io.cucumber.plugin.event.TestStepStarted;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.core.Serenity;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
-import org.junit.platform.engine.UniqueId;
 
 @Slf4j
 public class SerenityReporterCallbacks {
@@ -196,7 +207,7 @@ public class SerenityReporterCallbacks {
     // TGR
     if (context.isAScenarioOutline()) {
       currentScenarioDataVariantIndex =
-          extractScenarioDataVariantIndex(testCaseStartedEvent, context);
+          extractScenarioDataVariantIndex(testCaseStartedEvent, context).orElse(-1);
     } else {
       currentScenarioDataVariantIndex = -1;
       currentScenarioID = context.getCurrentScenarioId();
@@ -210,17 +221,21 @@ public class SerenityReporterCallbacks {
     featureExecutionMonitor.startTestCase(testCaseStartedEvent);
   }
 
-  private int extractScenarioDataVariantIndex(
+  private Optional<Integer> extractScenarioDataVariantIndex(
       TestCaseStarted event, ScenarioContextDelegate context) {
-    var converter = new LocationConverter();
-
-    List<io.cucumber.messages.types.Location> exampleLocations =
-        context.currentScenarioOutline().getExamples().stream()
-            .flatMap(e -> e.getTableBody().stream())
-            .map(TableRow::getLocation)
-            .toList();
-
-    return exampleLocations.indexOf(converter.convertLocation(event.getTestCase().getLocation()));
+    Location searchLocation =
+        new LocationConverter().convertLocation(event.getTestCase().getLocation());
+    return Streams.mapWithIndex(
+            context.currentScenarioOutline().getExamples().stream()
+                .map(Examples::getTableBody)
+                .flatMap(List::stream)
+                .map(TableRow::getLocation)
+                .map(searchLocation::equals),
+            Pair::of) // (locationMatches, index)
+        .filter(Pair::getLeft)
+        .map(Pair::getRight)
+        .map(Math::toIntExact)
+        .findFirst();
   }
 
   private Optional<Feature> featureFrom(URI currentFeaturePath) {
@@ -231,9 +246,11 @@ public class SerenityReporterCallbacks {
       Feature feature, Scenario scenario) {
     List<Step> steps = new ArrayList<>();
     feature.getChildren().stream()
-        .filter(child -> child.getBackground().isPresent())
-        .map(child -> child.getBackground().get())
-        .forEach(background -> steps.addAll(background.getSteps()));
+        .map(FeatureChild::getBackground)
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .map(Background::getSteps)
+        .forEach(steps::addAll);
     steps.addAll(scenario.getSteps());
     return steps;
   }
@@ -248,115 +265,146 @@ public class SerenityReporterCallbacks {
     Map<String, String> variantDataMap = getVariantDataMap(context);
     log.debug(
         "Current row for scenario variant {} {}", currentScenarioDataVariantIndex, variantDataMap);
-    UniqueId scenarioUniqueId =
+    String scenarioUniqueId =
         ScenarioRunner.findScenarioUniqueId(
-            scenario,
-            context.currentFeaturePath(),
-            context.isAScenarioOutline(),
-            currentScenarioDataVariantIndex);
+                scenario,
+                context.currentFeaturePath(),
+                context.isAScenarioOutline(),
+                currentScenarioDataVariantIndex)
+            .toString();
+    ScenarioUpdate scenarioUpdate =
+        ScenarioUpdate.builder()
+            .isDryRun(isDryRun)
+            .description(replaceOutlineParameters(scenario.getName(), variantDataMap, false))
+            .uniqueId(scenarioUniqueId)
+            .variantIndex(currentScenarioDataVariantIndex)
+            .exampleKeys(context.isAScenarioOutline() ? context.getTable().getHeaders() : null)
+            .exampleList(variantDataMap)
+            .steps(stepUpdates(steps, variantDataMap))
+            .build();
+    FeatureUpdate featureUpdate =
+        FeatureUpdate.builder()
+            .description(feature.getName())
+            .scenarios(convertToLinkedHashMap(scenarioUniqueId, scenarioUpdate))
+            .build();
     TigerDirector.getTigerTestEnvMgr()
         .receiveTestEnvUpdate(
             TigerStatusUpdate.builder()
-                .featureMap(
-                    new LinkedHashMap<>(
-                        Map.of(
-                            feature.getName(),
-                            FeatureUpdate.builder()
-                                .description(feature.getName())
-                                .scenarios(
-                                    new LinkedHashMap<>(
-                                        Map.of(
-                                            scenarioUniqueId.toString(),
-                                            ScenarioUpdate.builder()
-                                                .isDryRun(isDryRun)
-                                                .description(
-                                                    replaceLineWithCurrentDataVariantValues(
-                                                        scenario.getName(), variantDataMap))
-                                                .uniqueId(scenarioUniqueId.toString())
-                                                .variantIndex(currentScenarioDataVariantIndex)
-                                                .exampleKeys(
-                                                    context.isAScenarioOutline()
-                                                        ? context.getTable().getHeaders()
-                                                        : null)
-                                                .exampleList(variantDataMap)
-                                                .steps(
-                                                    mapStepsToStepUpdateMap(
-                                                        steps,
-                                                        line ->
-                                                            replaceLineWithCurrentDataVariantValues(
-                                                                line, variantDataMap)))
-                                                .build())))
-                                .build())))
+                .featureMap(convertToLinkedHashMap(feature.getName(), featureUpdate))
                 .build());
+  }
+
+  private static @NotNull <T> LinkedHashMap<String, T> convertToLinkedHashMap(String key, T value) {
+    return new LinkedHashMap<>(Map.of(key, value));
   }
 
   private Map<String, String> getVariantDataMap(ScenarioContextDelegate context) {
     return context.isAScenarioOutline()
-        ? context.getTable().row(currentScenarioDataVariantIndex).toStringMap()
+        ? context
+            .getTable()
+            .row(currentScenarioDataVariantIndex)
+            .toStringMap()
+            .entrySet()
+            .stream()
+            .collect(
+                Collectors.toMap(
+                    Entry::getKey, e -> tryResolvePlaceholders(e.getValue())))
         : Map.of();
   }
 
-  private String replaceLineWithCurrentDataVariantValues(
-      String line, Map<String, String> variantDataMap) {
+  private String replaceOutlineParameters(
+      String line, Map<String, String> variantDataMap, boolean escape) {
     if (variantDataMap == null) {
       return line;
     }
 
     String parsedLine = line;
     for (Entry<String, String> entry : variantDataMap.entrySet()) {
-      parsedLine = parsedLine.replace("<" + entry.getKey() + ">", "<" + entry.getValue() + ">");
+      String parameterReference = escape? StringEscapeUtils.escapeHtml4("<" + entry.getKey() + ">"): "<" + entry.getKey() + ">";
+      String parameterValue = escape? StringEscapeUtils.escapeHtml4(entry.getValue()): entry.getValue();
+      parsedLine = parsedLine.replace(parameterReference, parameterValue);
     }
     return parsedLine;
   }
 
-  private String getStepDescription(Step step) {
+  private String getStepToolTip(Step step) {
+    return getStepDescription(step, false, false);
+  }
+
+  private String getStepDescription(Step step, boolean convertToHtml, boolean resolve) {
+    UnaryOperator<String> converter = convertToHtml ? StringEscapeUtils::escapeHtml4 : t -> t;
+    final String resolvedText = resolve ? tryResolvePlaceholders(step.getText()) : "";
     final StringBuilder stepText =
-        new StringBuilder(step.getKeyword()).append(StringEscapeUtils.escapeHtml4(step.getText()));
-    step.getDocString()
-        .ifPresent(
-            docStr ->
-                stepText
-                    .append("<div class=\"steps-docstring\">")
-                    .append(StringEscapeUtils.escapeHtml4(docStr.getContent()))
-                    .append("</div>"));
-    step.getDataTable()
-        .ifPresent(
-            dataTable -> {
-              stepText.append("<br/><table class=\"table table-sm table-data-table\">");
-              dataTable
-                  .getRows()
-                  .forEach(
-                      row -> {
-                        stepText.append("<tr>");
-                        row.getCells()
-                            .forEach(
-                                cell ->
-                                    stepText
-                                        .append("<td>")
-                                        .append(StringEscapeUtils.escapeHtml4(cell.getValue()))
-                                        .append("</td>"));
-                        stepText.append("</tr>");
-                      });
-              stepText.append("</table>");
-            });
+        new StringBuilder(step.getKeyword()).append(converter.apply(resolvedText));
+    if (convertToHtml) {
+      step.getDocString()
+          .map(DocString::getContent)
+          .map(a -> resolve ? tryResolvePlaceholders(a) : a)
+          .ifPresent(
+              resolvedDocStr ->
+                  stepText
+                      .append("<div class=\"steps-docstring\">")
+                      .append(converter.apply(resolvedDocStr))
+                      .append("</div>"));
+      step.getDataTable()
+          .ifPresent(
+              dataTable -> {
+                stepText.append("<br/><table class=\"table table-sm table-data-table\">");
+                dataTable
+                    .getRows()
+                    .forEach(
+                        row -> {
+                          stepText.append("<tr>");
+                          row.getCells().stream()
+                              .map(TableCell::getValue)
+                              .map(a -> resolve ? tryResolvePlaceholders(a) : a)
+                              .forEach(
+                                  resolvedCellText ->
+                                      stepText
+                                          .append("<td>")
+                                          .append(converter.apply(resolvedCellText))
+                                          .append("</td>"));
+                          stepText.append("</tr>");
+                        });
+                stepText.append("</table>");
+              });
+    } else {
+      step.getDataTable()
+          .ifPresent(
+              dataTable -> {
+                stepText.append("\n");
+                dataTable
+                    .getRows()
+                    .forEach(
+                        row -> {
+                          row.getCells().stream()
+                              .map(TableCell::getValue)
+                              .map(a -> resolve ? tryResolvePlaceholders(a) : a)
+                              .forEach(
+                                  resolvedCellText ->
+                                      stepText
+                                          .append(converter.apply(resolvedCellText))
+                                          .append("\t\t\t"));
+                          stepText.append("\n");
+                        });
+              });
+    }
     return stepText.toString();
   }
 
-  private Map<String, StepUpdate> mapStepsToStepUpdateMap(
-      List<Step> steps, UnaryOperator<String> postProduction) {
-    Map<String, StepUpdate> map = new LinkedHashMap<>();
-    for (int stepIndex = 0; stepIndex < steps.size(); stepIndex++) {
-      if (map.put(
-              Integer.toString(stepIndex),
-              StepUpdate.builder()
-                  .description(postProduction.apply(getStepDescription(steps.get(stepIndex))))
-                  .status(TestResult.PENDING)
-                  .stepIndex(stepIndex)
-                  .build())
-          != null) {
-        throw new IllegalStateException("Duplicate key");
-      }
-    }
+  private LinkedHashMap<String, StepUpdate> stepUpdates(
+      List<Step> steps, Map<String, String> outlineParameters) {
+    var map = new LinkedHashMap<String, StepUpdate>();
+    Streams.mapWithIndex(
+            steps.stream(),
+            (step, stepIndex) ->
+                StepUpdate.builder()
+                    .description(getDescriptionWithReplacements(step, outlineParameters))
+                    .tooltip(getStepToolTip(step))
+                    .status(TestResult.PENDING)
+                    .stepIndex(Math.toIntExact(stepIndex))
+                    .build())
+        .forEach(stepUpdate -> map.put(Integer.toString(stepUpdate.getStepIndex()), stepUpdate));
     return map;
   }
 
@@ -378,7 +426,7 @@ public class SerenityReporterCallbacks {
 
     if (context.getCurrentStep() != null) {
       evidenceRecorder.openStepContext(
-          new ReportStepConfiguration(getStepDescription(context.getCurrentStep())));
+          new ReportStepConfiguration(getStepDescription(context.getCurrentStep(), true, false)));
     }
   }
 
@@ -389,7 +437,7 @@ public class SerenityReporterCallbacks {
     Matcher m = showSteps.matcher(pickleTestStep.getStep().getText());
     if (m.find()) {
       Color col;
-      String colStr = replaceLineWithCurrentDataVariantValues(m.group(2), variantDataMap).trim();
+      String colStr = replaceOutlineParameters(m.group(2), variantDataMap, false).trim();
       try {
         if (!colStr.isEmpty()) {
           col =
@@ -400,14 +448,14 @@ public class SerenityReporterCallbacks {
         } else {
           col = Color.BLACK;
         }
-      } catch (Exception ignored) {
+      } catch (NoSuchFieldException | IllegalAccessException ignored) {
         col = Color.BLACK;
       }
       statusUpdateBuilder
           .bannerColor(String.format("#%06X", (0xFFFFFF & col.getRGB())))
           .bannerMessage(
-              TigerGlobalConfiguration.resolvePlaceholders(
-                  replaceLineWithCurrentDataVariantValues(m.group(4), variantDataMap)));
+              tryResolvePlaceholders(
+                  replaceOutlineParameters(m.group(4), variantDataMap, false)));
     }
   }
 
@@ -472,53 +520,59 @@ public class SerenityReporterCallbacks {
       addBannerMessageToUpdate(variantDataMap, pickleTestStep, builder);
     }
 
-    UniqueId scenarioUniqueId =
+    String scenarioUniqueId =
         ScenarioRunner.findScenarioUniqueId(
-            scenario,
-            context.currentFeaturePath(),
-            context.isAScenarioOutline(),
-            currentScenarioDataVariantIndex);
+                scenario,
+                context.currentFeaturePath(),
+                context.isAScenarioOutline(),
+                currentScenarioDataVariantIndex)
+            .toString();
 
+    Step currentStep = context.getCurrentStep();
+    StepUpdate currentStepUpdate =
+        StepUpdate.builder()
+            .description(getDescriptionWithReplacements(currentStep, variantDataMap))
+            .tooltip(getStepToolTip(currentStep))
+            .status(TestResult.valueOf(status))
+            .stepIndex(currentStepIndex)
+            .rbelMetaData(stepMessagesMetaDataList)
+            .build();
+
+    ScenarioUpdate scenarioUpdate =
+        ScenarioUpdate.builder()
+            .isDryRun(isDryRun)
+            .description(replaceOutlineParameters(scenario.getName(), variantDataMap, false))
+            .uniqueId(scenarioUniqueId)
+            .variantIndex(currentScenarioDataVariantIndex)
+            .exampleKeys(context.isAScenarioOutline() ? context.getTable().getHeaders() : null)
+            .exampleList(variantDataMap)
+            .steps(Map.of(String.valueOf(currentStepIndex), currentStepUpdate))
+            .build();
+
+    FeatureUpdate featureUpdate =
+        FeatureUpdate.builder()
+            .description(featureName)
+            .scenarios(convertToLinkedHashMap(scenarioUniqueId, scenarioUpdate))
+            .build();
     TigerDirector.getTigerTestEnvMgr()
-        .receiveTestEnvUpdate(
-            builder
-                .featureMap(
-                    new LinkedHashMap<>(
-                        Map.of(
-                            featureName,
-                            FeatureUpdate.builder()
-                                .description(featureName)
-                                .scenarios(
-                                    new LinkedHashMap<>(
-                                        Map.of(
-                                            scenarioUniqueId.toString(),
-                                            ScenarioUpdate.builder()
-                                                .isDryRun(isDryRun)
-                                                .description(
-                                                    replaceLineWithCurrentDataVariantValues(
-                                                        scenario.getName(), variantDataMap))
-                                                .uniqueId(scenarioUniqueId.toString())
-                                                .variantIndex(currentScenarioDataVariantIndex)
-                                                .steps(
-                                                    new HashMap<>(
-                                                        Map.of(
-                                                            String.valueOf(currentStepIndex),
-                                                            StepUpdate.builder()
-                                                                .description(
-                                                                    replaceLineWithCurrentDataVariantValues(
-                                                                        getStepDescription(
-                                                                            context
-                                                                                .getCurrentStep()),
-                                                                        variantDataMap))
-                                                                .status(TestResult.valueOf(status))
-                                                                .stepIndex(currentStepIndex)
-                                                                .rbelMetaData(
-                                                                    stepMessagesMetaDataList)
-                                                                .build())))
-                                                .build())))
-                                .build())))
-                .build());
+        .receiveTestEnvUpdate(builder.featureMap(convertToLinkedHashMap(featureName, featureUpdate)).build());
     LocalProxyRbelMessageListener.getInstance().getStepRbelMessages().clear();
+  }
+
+  private String tryResolvePlaceholders(String input) {
+    try {
+      return TigerGlobalConfiguration.resolvePlaceholders(input);
+    } catch (JexlException | TigerJexlException | TigerConfigurationException e) {
+      log.trace("Could not resolve placeholders in {}", input, e);
+      return input;
+    }
+  }
+
+  private String getDescriptionWithReplacements(Step step, Map<String, String> variantDataMap) {
+    return replaceOutlineParameters(
+        getStepDescription(step, true, true),
+        variantDataMap,
+        true);
   }
 
   // -------------------------------------------------------------------------------------------------------------------------------------
@@ -617,7 +671,7 @@ public class SerenityReporterCallbacks {
             .fromFile(logFile.toPath());
       }
       log.info("Saved HTML report of scenario '{}' to {}", scenarioName, logFile.getAbsolutePath());
-    } catch (final Exception e) {
+    } catch (final IOException e) {
       log.error("Unable to create/save rbel log for scenario " + scenarioName, e);
     } finally {
       LocalProxyRbelMessageListener.getInstance().clearMessages();

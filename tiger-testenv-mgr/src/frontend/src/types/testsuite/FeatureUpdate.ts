@@ -123,4 +123,8 @@ export default class FeatureUpdate implements IFeatureUpdate {
     });
     return result;
   }
+
+  public getLink(featureName: string): string {
+    return encodeURIComponent(featureName.trim());
+  }
 }

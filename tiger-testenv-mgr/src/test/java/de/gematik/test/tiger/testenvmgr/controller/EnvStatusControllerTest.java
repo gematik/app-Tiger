@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -50,53 +51,40 @@ class EnvStatusControllerTest {
 
     assertThat(envStatusController.getStatus().getFeatureMap()).isEmpty();
 
-    envMgr.receiveTestEnvUpdate(
-        TigerStatusUpdate.builder()
-            .featureMap(
-                new LinkedHashMap<>(
-                    Map.of(
-                        "feature",
-                        FeatureUpdate.builder()
-                            .description("feature")
-                            .scenarios(
-                                new LinkedHashMap<>(
-                                    Map.of(
-                                        "scenario",
-                                        ScenarioUpdate.builder()
-                                            .description("scenario")
-                                            .steps(
-                                                new LinkedHashMap<>(
-                                                    Map.of(
-                                                        "0",
-                                                        StepUpdate.builder()
-                                                            .description("step")
-                                                            .build())))
-                                            .build())))
-                            .build())))
-            .build());
+    String featureKey = "featureKey";
+    String featureDescription = "feature";
+    String scenarioKey = "scenarioKey";
+    String scenarioDescription = "scenario";
+    String stepKey = "0";
+    String stepDescription = "step";
+    String stepTooltip = "stepTooltip";
 
-    assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getDescription())
-        .isEqualTo("feature");
-    assertThat(
-            envStatusController
-                .getStatus()
-                .getFeatureMap()
-                .get("feature")
-                .getScenarios()
-                .get("scenario")
-                .getDescription())
-        .isEqualTo("scenario");
-    assertThat(
-            envStatusController
-                .getStatus()
-                .getFeatureMap()
-                .get("feature")
-                .getScenarios()
-                .get("scenario")
-                .getSteps()
-                .get("0")
-                .getDescription())
-        .isEqualTo("step");
+    StepUpdate stepUpdate =
+        StepUpdate.builder().description(stepDescription).tooltip(stepTooltip).build();
+    ScenarioUpdate scenarioUpdate =
+        ScenarioUpdate.builder()
+            .description(scenarioDescription)
+            .steps(convertToLinkedHashMap(stepKey, stepUpdate))
+            .build();
+    FeatureUpdate featureUpdate =
+        FeatureUpdate.builder()
+            .description(featureDescription)
+            .scenarios(convertToLinkedHashMap(scenarioKey, scenarioUpdate))
+            .build();
+    envMgr.receiveTestEnvUpdate(
+        TigerStatusUpdate.builder().featureMap(convertToLinkedHashMap(featureKey, featureUpdate)).build());
+
+    FeatureUpdate feature = envStatusController.getStatus().getFeatureMap().get(featureKey);
+    assertThat(feature.getDescription()).isEqualTo(featureDescription);
+    ScenarioUpdate scenario = feature.getScenarios().get(scenarioKey);
+    assertThat(scenario.getDescription()).isEqualTo(scenarioDescription);
+    StepUpdate step = scenario.getSteps().get(stepKey);
+    assertThat(step.getDescription()).isEqualTo(stepDescription);
+    assertThat(step.getTooltip()).isEqualTo(stepTooltip);
+  }
+
+  private static @NotNull <T> LinkedHashMap<String, T> convertToLinkedHashMap(String key, T value) {
+    return new LinkedHashMap<>(Map.of(key, value));
   }
 
   @Test
@@ -107,71 +95,27 @@ class EnvStatusControllerTest {
 
     assertThat(envStatusController.getStatus().getFeatureMap()).isEmpty();
 
+    ScenarioUpdate firstScenarioUpdate = ScenarioUpdate.builder()
+        .description("scenario")
+        .steps(
+            convertToLinkedHashMap(
+                "0", StepUpdate.builder().description("step0").build()))
+        .build();
+    FeatureUpdate firstFeatureUpdate = FeatureUpdate.builder()
+        .description("feature")
+        .scenarios(
+            convertToLinkedHashMap(
+                "scenario",
+                firstScenarioUpdate))
+        .build();
     envMgr.receiveTestEnvUpdate(
         TigerStatusUpdate.builder()
             .featureMap(
-                new LinkedHashMap<>(
-                    Map.of(
-                        "feature",
-                        FeatureUpdate.builder()
-                            .description("feature")
-                            .scenarios(
-                                new LinkedHashMap<>(
-                                    Map.of(
-                                        "scenario",
-                                        ScenarioUpdate.builder()
-                                            .description("scenario")
-                                            .steps(
-                                                new LinkedHashMap<>(
-                                                    Map.of(
-                                                        "0",
-                                                        StepUpdate.builder()
-                                                            .description("step0")
-                                                            .build())))
-                                            .build())))
-                            .build())))
-            .build());
-    envMgr.receiveTestEnvUpdate(
-        TigerStatusUpdate.builder()
-            .featureMap(
-                new LinkedHashMap<>(
-                    Map.of(
-                        "feature",
-                        FeatureUpdate.builder()
-                            .description("feature")
-                            .scenarios(
-                                new LinkedHashMap<>(
-                                    Map.of(
-                                        "scenario",
-                                        ScenarioUpdate.builder()
-                                            .description("scenario")
-                                            .steps(
-                                                new LinkedHashMap<>(
-                                                    Map.of(
-                                                        "0",
-                                                        StepUpdate.builder()
-                                                            .description("step00")
-                                                            .status(TestResult.PASSED)
-                                                            .build(),
-                                                        "1",
-                                                        StepUpdate.builder()
-                                                            .description("step1")
-                                                            .build())))
-                                            .build())))
-                            .build())))
+                convertToLinkedHashMap(
+                    "feature",
+                    firstFeatureUpdate))
             .build());
 
-    assertThat(envStatusController.getStatus().getFeatureMap().get("feature").getDescription())
-        .isEqualTo("feature");
-    assertThat(
-            envStatusController
-                .getStatus()
-                .getFeatureMap()
-                .get("feature")
-                .getScenarios()
-                .get("scenario")
-                .getDescription())
-        .isEqualTo("scenario");
     assertThat(
             envStatusController
                 .getStatus()
@@ -181,30 +125,48 @@ class EnvStatusControllerTest {
                 .get("scenario")
                 .getSteps()
                 .get("0")
-                .getDescription())
-        .isEqualTo("step00");
-    assertThat(
-            envStatusController
-                .getStatus()
-                .getFeatureMap()
-                .get("feature")
-                .getScenarios()
-                .get("scenario")
-                .getSteps()
-                .get("0")
-                .getStatus())
-        .isEqualTo(TestResult.PASSED);
-    assertThat(
-            envStatusController
-                .getStatus()
-                .getFeatureMap()
-                .get("feature")
-                .getScenarios()
-                .get("scenario")
-                .getSteps()
-                .get("1")
-                .getDescription())
-        .isEqualTo("step1");
+                .getTooltip())
+        .isNull();
+
+    ScenarioUpdate nextScenarioUpdate = ScenarioUpdate.builder()
+        .description("scenario")
+        .steps(
+            Map.of(
+                "0",
+                StepUpdate.builder()
+                    .description("step00")
+                    .tooltip("tooltip")
+                    .status(TestResult.PASSED)
+                    .build(),
+                "1",
+                StepUpdate.builder().description("step1").build()))
+        .build();
+    FeatureUpdate nextFeatureUpdate = FeatureUpdate.builder()
+        .description("feature")
+        .scenarios(
+            convertToLinkedHashMap(
+                "scenario",
+                nextScenarioUpdate))
+        .build();
+    envMgr.receiveTestEnvUpdate(
+        TigerStatusUpdate.builder()
+            .featureMap(
+                convertToLinkedHashMap(
+                    "feature",
+                    nextFeatureUpdate))
+            .build());
+
+    FeatureUpdate feature = envStatusController.getStatus().getFeatureMap().get("feature");
+    assertThat(feature.getDescription()).isEqualTo("feature");
+    ScenarioUpdate scenario = feature.getScenarios().get("scenario");
+    assertThat(scenario.getDescription()).isEqualTo("scenario");
+    StepUpdate step0 = scenario.getSteps().get("0");
+    assertThat(step0.getDescription()).isEqualTo("step00");
+    assertThat(step0.getStatus()).isEqualTo(TestResult.PASSED);
+    assertThat(step0.getTooltip()).isEqualTo("tooltip");
+    StepUpdate step1 = scenario.getSteps().get("1");
+    assertThat(step1.getDescription()).isEqualTo("step1");
+    assertThat(step1.getTooltip()).isNull();
   }
 
   @Test

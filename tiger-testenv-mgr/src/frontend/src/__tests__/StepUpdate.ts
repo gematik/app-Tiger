@@ -22,6 +22,7 @@ describe('testing StepUpdate class', () => {
   test('empty step should contain undefined values', () => {
     const step = new StepUpdate();
     expect(step.description).toBe('');
+    expect(step.tooltip).toEqual('');
     expect(step.status).toBe(TestResult.UNUSED);
     expect(step.stepIndex).toEqual(-1);
   });
@@ -29,12 +30,14 @@ describe('testing StepUpdate class', () => {
   test('empty JSON applies correctly', () => {
     const step = StepUpdate.fromJson(JSON.parse('{ }'));
     expect(step.description).toBe('');
+    expect(step.tooltip).toBe('');
     expect(step.status).toBe(TestResult.UNUSED);
   });
 
   test('empty JSON description applies correctly', () => {
     const step = StepUpdate.fromJson(JSON.parse('{ "status": "PASSED" }'));
     expect(step.description).toBe('');
+    expect(step.tooltip).toBe('');
     expect(step.status).toBe(TestResult.PASSED);
   });
 
@@ -42,6 +45,11 @@ describe('testing StepUpdate class', () => {
     const step = StepUpdate.fromJson(JSON.parse('{ "description": "desc" }'));
     expect(step.description).toBe('desc');
     expect(step.status).toBe(TestResult.UNUSED);
+  });
+
+  test('tooltip applies correctly', () => {
+    const step = StepUpdate.fromJson(JSON.parse('{ "tooltip": "tooltip" }'));
+    expect(step.tooltip).toBe('tooltip');
   });
 
   test("empty JSON index applies correctly", () => {
@@ -70,16 +78,18 @@ describe('testing StepUpdate class', () => {
   });
 
   test('full JSON applies correctly', () => {
-    const step = StepUpdate.fromJson(JSON.parse('{"description":"Then User requests classes with parameter xyz=4","status":"PASSED","stepIndex":3,"rbelMetaData":[]}'));
+    const step = StepUpdate.fromJson(JSON.parse('{"description":"Then User requests classes with parameter xyz=4","tooltip":"tooltip","status":"PASSED","stepIndex":3,"rbelMetaData":[]}'));
     expect(step.description).toBe('Then User requests classes with parameter xyz=4');
+    expect(step.tooltip).toBe('tooltip');
     expect(step.status).toBe(TestResult.PASSED);
   });
 
   test('complete merge works correctly', () => {
-    const step1 = StepUpdate.fromJson(JSON.parse('{ "description": "desc1", "status": "FAILED", "stepIndex":3, "rbelMetaData":[]}'));
-    const step2 = StepUpdate.fromJson(JSON.parse('{ "description": "desc2", "status": "PENDING", "stepIndex":4, "rbelMetaData":[{"uuid": "someUUID", "path": "/some/path", "method": "someMethod", "responseCode": 200, "recipient": "someRecipient", "sender": "someSender", "sequenceNumber": 1}]}'));
+    const step1 = StepUpdate.fromJson(JSON.parse('{ "description": "desc1", "tooltip": "tooltip1", "status": "FAILED", "stepIndex":3, "rbelMetaData":[]}'));
+    const step2 = StepUpdate.fromJson(JSON.parse('{ "description": "desc2", "tooltip": "tooltip2", "status": "PENDING", "stepIndex":4, "rbelMetaData":[{"uuid": "someUUID", "path": "/some/path", "method": "someMethod", "responseCode": 200, "recipient": "someRecipient", "sender": "someSender", "sequenceNumber": 1}]}'));
     step1.merge(step2);
     expect(step1.description).toBe('desc2');
+    expect(step1.tooltip).toBe('tooltip2');
     expect(step1.status).toBe(TestResult.PENDING);
     expect(step1.stepIndex).toBe(4);
     expect(step1.rbelMetaData[0].uuid).toBe("someUUID");
@@ -105,6 +115,16 @@ describe('testing StepUpdate class', () => {
     expect(step1.rbelMetaData[0].recipient).toBe("someRecipient");
     expect(step1.rbelMetaData[0].sender).toBe("someSender");
     expect(step1.rbelMetaData[0].sequenceNumber).toBe(1);
+  });
+
+
+  test('empty description/tooltip merge works correctly', () => {
+    const step1 = StepUpdate.fromJson(JSON.parse('{ "description": "desc1", "tooltip" : "tooltip1", "status": "FAILED" }'));
+    const step2 = StepUpdate.fromJson(JSON.parse('{ "status": "PENDING" }'));
+    step1.merge(step2);
+    expect(step1.description).toBe('desc1');
+    expect(step1.tooltip).toBe('tooltip1')
+    expect(step1.status).toBe(TestResult.PENDING);
   });
 
   test('empty status turned to UNUSED merge works correctly', () => {

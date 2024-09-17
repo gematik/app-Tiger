@@ -87,7 +87,7 @@ class XDynamicSidebarTests extends AbstractBase {
                 .trim();
         assertThat(sidebarTitle).containsText(featureTitle.trim());
         assertThat(page.locator(".test-step-status-skipped").first().locator("..")).containsText(
-            "And TGR assert \"!{rbel:currentRequestAsString('$.path')}\" matches"
+            "And TGR assert \"/not_a_file\" matches"
                 + " \"\\/not_a_file\\/?\"");
     }
 

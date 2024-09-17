@@ -19,6 +19,7 @@ package de.gematik.test.tiger.testenvmgr.env;
 import static io.cucumber.core.options.Constants.EXECUTION_DRY_RUN_PROPERTY_NAME;
 import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.request;
 
+import com.google.common.collect.Streams;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import io.cucumber.messages.types.Examples;
@@ -32,8 +33,11 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+
+import io.cucumber.messages.types.TableRow;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.platform.engine.TestSource;
 import org.junit.platform.engine.UniqueId;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
@@ -127,12 +131,14 @@ public class ScenarioRunner {
     ScenarioRunner.ScenarioLocation scenarioLocation;
     if (isOutline) {
       var exampleLocation =
-          scenario.getExamples().stream()
-              .map(Examples::getTableBody)
-              .flatMap(List::stream)
-              .toList()
-              .get(scenarioDataVariantIndex)
-              .getLocation();
+          Streams.mapWithIndex(
+                  scenario.getExamples().stream().map(Examples::getTableBody).flatMap(List::stream),
+                  Pair::of) // (tableRow, index)
+              .filter(pair -> pair.getRight() == scenarioDataVariantIndex)
+              .map(Pair::getLeft)
+              .map(TableRow::getLocation)
+              .findFirst()
+              .orElseThrow();
       scenarioLocation = new ScenarioRunner.ScenarioLocation(featurePath, exampleLocation);
     } else {
       scenarioLocation = new ScenarioRunner.ScenarioLocation(featurePath, scenario.getLocation());

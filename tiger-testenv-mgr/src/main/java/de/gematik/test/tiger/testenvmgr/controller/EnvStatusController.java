@@ -130,6 +130,7 @@ public class EnvStatusController implements TigerUpdateListener {
                   step.setStatus(stvalue.getStatus());
                 }
                 step.setDescription(stvalue.getDescription());
+                step.setTooltip(stvalue.getTooltip());
                 step.setStepIndex(stvalue.getStepIndex());
                 if (stvalue.getRbelMetaData() != null) {
                   if (step.getRbelMetaData() == null) {
@@ -200,13 +201,15 @@ public class EnvStatusController implements TigerUpdateListener {
 
   @GetMapping(path = "/version")
   public String getTigerVersion() {
-    log.trace("Fetch requests the tiger version {}", buildProperties.tigerVersionAsString());
-    return buildProperties.tigerVersionAsString();
+    String version = buildProperties.tigerVersionAsString();
+    log.trace("Fetch requests the tiger version {}", version);
+    return version;
   }
 
   @GetMapping(path = "/build")
   public String getBuildDate() {
-    log.trace("Fetch requests the build date ", buildProperties.tigerBuildDateAsString());
-    return buildProperties.tigerBuildDateAsString();
+    String buildDate = buildProperties.tigerBuildDateAsString();
+    log.trace("Fetch requests the build date {}", buildDate);
+    return buildDate;
   }
 }

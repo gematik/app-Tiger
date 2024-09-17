@@ -36,4 +36,11 @@ cfgEditor:
   deleteKey: deleteMainValue
 
 test:
-  tracing: false
+  tracing: true
+
+example:
+  - text: text1
+  - text: text2
+  - text: text3
+  - text: text4
+  - text: text5
