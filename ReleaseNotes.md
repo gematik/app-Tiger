@@ -17,6 +17,10 @@
 * TGR-1557: Rbel-Parser: Added support for comma-seperated values in HTTP-Headers. This is useful for headers like `Accept-Language` or `Accept-Encoding`. To look for a specific value in a comma-seperated list, you can use the following syntax: `$.header.Accept-Encoding.. == 'Value1'`.
 * TGR-905: WorkflowUI: Rbel-Path Tab in Inspect Modal has now color coding for true/false/invalid rbel path
 
+## Bugs
+
+* TGR-1497: Tiger Proxy Log - filter matching all says that none match
+
 # Release 3.3.0
 
 * TGR-1469: improve responses of UITests for true/false queries

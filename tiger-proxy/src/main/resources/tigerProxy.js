@@ -886,11 +886,11 @@ function filterAtLeastN(frequencyMap, atLeastN) {
 function setFilterMessage() {
     const element = document.getElementById("filteredMessage");
     if (allMessagesAmount === filteredMessagesAmount) {
-        element.textContent = "Filter didn't match any of the " + allMessagesAmount
-            + " messages.";
+        element.textContent = `Filter matched to all of the ${allMessagesAmount} messages.`;
+    } else if (filteredMessagesAmount === 0) {
+        element.textContent = `Filter didn't match any of the ${allMessagesAmount} messages.`;
     } else {
-        element.textContent = filteredMessagesAmount + " of " + allMessagesAmount
-            + " did match the filter criteria.";
+        element.textContent = `${filteredMessagesAmount} of ${allMessagesAmount} did match the filter criteria.`;
     }
 }
 
