@@ -15,6 +15,8 @@
 ## Features
 
 * TGR-1557: Rbel-Parser: Added support for comma-seperated values in HTTP-Headers. This is useful for headers like `Accept-Language` or `Accept-Encoding`. To look for a specific value in a comma-seperated list, you can use the following syntax: `$.header.Accept-Encoding.. == 'Value1'`.
+* TGR-1567: Added Glue-Code step for selecting a request with a node matching a value regardless of the path: 
+`And TGR find last request with "$.path.foobar.value" matching "22"`
 * TGR-905: WorkflowUI: Rbel-Path Tab in Inspect Modal has now color coding for true/false/invalid rbel path
 
 ## Bugs

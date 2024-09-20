@@ -20,11 +20,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import org.junit.jupiter.api.Test;
 
-@TigerTest
-class TigerGlueTest {
+class TigerVariablePrecedenceTest {
 
   private final TigerGlue tigerGlue = new TigerGlue();
 

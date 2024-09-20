@@ -310,6 +310,28 @@ public class RBelValidatorGlue {
             .resolvePlaceholders());
   }
 
+  /**
+   * find the LAST request where the node value equal or match as regex and memorize it in the
+   * {@link #rbelValidator} instance.
+   *
+   * @param rbelPath rbel path to node/attribute
+   * @param value value to match at given node/attribute
+   */
+  @Wenn(
+      "TGR finde die letzte Anfrage mit Knoten {string} der mit {string}"
+          + " übereinstimmt")
+  @When("TGR find last request with {string} matching {string}")
+  public void findLastRequestWithNodeMatching(final String rbelPath, final String value) {
+    rbelValidator.filterRequestsAndStoreInContext(
+        RequestParameter.builder()
+            .rbelPath(rbelPath)
+            .path(".*")
+            .value(value)
+            .filterPreviousRequest(true)
+            .build()
+            .resolvePlaceholders());
+  }
+
   /** find the LAST request. */
   @Wenn("TGR finde die letzte Anfrage")
   @When("TGR find the last request")
@@ -790,7 +812,7 @@ public class RBelValidatorGlue {
    * @param customFailureMessage the custom failure message
    */
   @Given("TGR the custom failure message is set to {tigerResolvedString}")
-  @Gegebensei("TGR die benutzerdefinierte Fehlermeldung ist auf {tigerResolvedString} gesetzt")
+  @Gegebensei("TGR die Fehlermeldung wird gesetzt auf: {tigerResolvedString}")
   public void setCustomFailureMessage(String customFailureMessage) {
     TigerConfigurationKeys.CUSTOM_FAILURE_MESSAGE.putValue(customFailureMessage);
   }

@@ -691,31 +691,27 @@ public class RbelMessageValidator {
   }
 
   public List<RbelElement> findElementsInCurrentResponse(final String rbelPath) {
-    try {
-      assertCurrentResponseFound();
-      final List<RbelElement> elems = currentResponse.findRbelPathMembers(rbelPath);
-      assertThat(elems).isNotEmpty();
-      return elems;
-    } catch (final Exception e) {
+    assertCurrentResponseFound();
+    final List<RbelElement> elems = currentResponse.findRbelPathMembers(rbelPath);
+    if (elems.isEmpty()) {
       throw new AssertionError(
-          "Unable to find element in last response for rbel path '"
-              + rbelPath
-              + printMessageTree(currentResponse));
+        "Unable to find element in response for rbel path '"
+        + rbelPath
+        + printMessageTree(currentResponse));
     }
+    return elems;
   }
 
   public List<RbelElement> findElementsInCurrentRequest(final String rbelPath) {
-    try {
-      assertCurrentRequestFound();
-      final List<RbelElement> elems = currentRequest.findRbelPathMembers(rbelPath);
-      assertThat(elems).isNotEmpty();
-      return elems;
-    } catch (final Exception e) {
+    assertCurrentRequestFound();
+    final List<RbelElement> elems = currentRequest.findRbelPathMembers(rbelPath);
+    if (elems.isEmpty()) {
       throw new AssertionError(
-          "Unable to find element in request for rbel path '"
-              + rbelPath
-              + printMessageTree(currentRequest));
+        "Unable to find element in request for rbel path '"
+        + rbelPath
+        + printMessageTree(currentRequest));
     }
+    return elems;
   }
 
   private void assertCurrentRequestFound() {
