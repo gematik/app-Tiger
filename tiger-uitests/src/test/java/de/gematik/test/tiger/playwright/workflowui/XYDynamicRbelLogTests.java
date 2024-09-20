@@ -103,6 +103,7 @@ class XYDynamicRbelLogTests extends AbstractBase {
             .first()
             .click();
         await()
+            .atMost(10, TimeUnit.SECONDS)
             .untilAsserted(
                 () ->
                     assertThat(
@@ -141,7 +142,7 @@ class XYDynamicRbelLogTests extends AbstractBase {
         page.locator("#test-webui-slider").click();
 
         Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
-        await().untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
         assertAll(
             () -> assertThat(externalPage.locator("#test-tiger-logo")).isVisible(),
             () -> assertThat(externalPage.locator("#routeModalBtn")).isVisible(),
@@ -166,11 +167,12 @@ class XYDynamicRbelLogTests extends AbstractBase {
             .fill("$.DOESNOTEXIST");
         page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
         await()
+            .atMost(10, TimeUnit.SECONDS)
             .untilAsserted(
                 () ->
                     assertThat(
                         page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
-                        .hasText("0 of %s did match the filter criteria.".formatted(TOTAL_MESSAGES)));
+                        .hasText("Filter didn't match any of the %s messages.".formatted(TOTAL_MESSAGES)));
 
         Locator content =
             page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage");
@@ -185,7 +187,7 @@ class XYDynamicRbelLogTests extends AbstractBase {
             () -> assertThat(requestToContent).containsText("no request"),
             () -> assertThat(requestFromContent).containsText("no request"),
             () ->
-                assertThat(content).containsText("0 of %d did match the filter criteria.".formatted(TOTAL_MESSAGES)),
+                assertThat(content).containsText("Filter didn't match any of the %d messages.".formatted(TOTAL_MESSAGES)),
             () -> assertThat(page.frameLocator("#rbellog-details-iframe")
                 .locator("#test-rbel-section .test-msg-body-content")).hasCount(0));
     }
@@ -200,6 +202,7 @@ class XYDynamicRbelLogTests extends AbstractBase {
             .fill("$.body == \"hello=world\"");
         page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
         await()
+            .atMost(10, TimeUnit.SECONDS)
             .untilAsserted(
                 () ->
                     assertThat(
@@ -261,6 +264,7 @@ class XYDynamicRbelLogTests extends AbstractBase {
         // wait for download to complete
         await()
             .pollDelay(100, TimeUnit.MILLISECONDS)
+            .atMost(10, TimeUnit.SECONDS)
             .until(() -> download.page().locator("#test-tiger-logo").isVisible());
         assertAll(
             () -> assertThat(download.page().locator("#test-tiger-logo")).isVisible(),
@@ -301,6 +305,7 @@ class XYDynamicRbelLogTests extends AbstractBase {
         // wait for download to complete
         await()
             .pollDelay(100, TimeUnit.MILLISECONDS)
+            .atMost(10, TimeUnit.SECONDS)
             .until(() -> download.page().locator("#test-tiger-logo").isVisible());
         assertAll(
             () -> assertThat(download.page().locator("#test-tiger-logo")).isVisible(),

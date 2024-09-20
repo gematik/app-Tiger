@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.microsoft.playwright.Page;
+import java.util.concurrent.TimeUnit;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -130,7 +131,7 @@ class XLaterTests extends AbstractBase {
     page.locator("#test-webui-slider").click();
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
-    await().untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
+    await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
     externalPage.locator("#routeModalBtn").click();
     assertAll(
         () -> assertThat(externalPage.locator("#routeModalDialog")).isVisible(),
@@ -151,7 +152,7 @@ class XLaterTests extends AbstractBase {
     page.locator("#test-webui-slider").click();
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
-    await().untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
+    await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
     assertAll(
         () -> assertThat(externalPage.locator("#test-tiger-logo")).isVisible(),
         () -> assertThat(externalPage.locator("#routeModalBtn")).isVisible(),

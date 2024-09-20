@@ -111,7 +111,7 @@ class XDynamicSidebarTests extends AbstractBase {
         Page page1 =
             page.waitForPopup(
                 () -> page.locator("#sidebar-left .test-sidebar-server-url-icon").nth(counter).click());
-        await().until(() -> page1.locator("#test-tiger-logo").isVisible());
+        await().atMost(10, TimeUnit.SECONDS).until(() -> page1.locator("#test-tiger-logo").isVisible());
         assertThat(page1.locator("#test-tiger-logo")).isVisible();
         page1.close();
     }

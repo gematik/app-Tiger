@@ -20,6 +20,7 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -71,6 +72,7 @@ class XDynamicMainContentTests extends AbstractBase {
     assertThat(page.locator(".test-server-log-pane-log-1")).hasCount(5);
     page.locator("#test-server-log-pane-input-text").fill("");
     await()
+        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(page.locator("#test-server-log-pane-input-text"))
@@ -86,6 +88,7 @@ class XDynamicMainContentTests extends AbstractBase {
     assertThat(page.locator(".test-server-log-pane-log-1")).not().isVisible();
     page.locator("#test-server-log-pane-input-text").fill("");
     await()
+        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(page.locator("#test-server-log-pane-input-text"))
@@ -102,6 +105,7 @@ class XDynamicMainContentTests extends AbstractBase {
     assertThat(page.locator(".test-server-log-pane-log-1")).hasCount(2);
     page.locator("#test-server-log-pane-input-text").fill("");
     await()
+        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(page.locator("#test-server-log-pane-input-text"))
@@ -124,6 +128,7 @@ class XDynamicMainContentTests extends AbstractBase {
     assertThat(page.locator(".test-server-log-pane-log-1")).not().isVisible();
     page.locator("#test-server-log-pane-input-text").fill("");
     await()
+        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(page.locator("#test-server-log-pane-input-text")).isEmpty());

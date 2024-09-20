@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import java.time.Duration;
 import org.assertj.core.api.Assertions;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -66,6 +67,7 @@ class ZQuitTests extends AbstractBase {
     String number2 = String.valueOf(Integer.parseInt(allNumbers.get(allNumbers.size() - 1)) + 1);
 
     await()
+        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertNotNull(
@@ -90,6 +92,7 @@ class ZQuitTests extends AbstractBase {
     page.locator(".test-rbel-link").last().click();
     // somehow I need to wait
     await()
+        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertNotNull(
@@ -114,6 +117,7 @@ class ZQuitTests extends AbstractBase {
         .first()
         .click();
     await()
+        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -204,6 +208,7 @@ class ZQuitTests extends AbstractBase {
         .fill("$.body == \"hello=world\"");
     page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
     await()
+        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -217,6 +222,7 @@ class ZQuitTests extends AbstractBase {
             .count();
     page.frameLocator("#rbellog-details-iframe").locator("#resetFilterCriterionBtn").click();
     await()
+        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -244,6 +250,7 @@ class ZQuitTests extends AbstractBase {
         .fill("$.sender == \"put\"");
     page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
     await()
+        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertNotNull(
@@ -262,8 +269,6 @@ class ZQuitTests extends AbstractBase {
         () ->
             assertTrue(
                 filteredMessage.innerText().equals(
-                        "0 of %d did match the filter criteria.".formatted(TOTAL_MESSAGES))
-                    || filteredMessage.innerText().equals(
                         "Filter didn't match any of the %d messages.".formatted(TOTAL_MESSAGES))));
   }
 
@@ -274,11 +279,13 @@ class ZQuitTests extends AbstractBase {
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
     await()
+        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () -> Assertions.assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isPositive());
     Assertions.assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isPositive();
     externalPage.locator("#resetMsgs").click();
     await()
+        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () -> assertThat(externalPage.locator("#rbelmsglist .test-card")).hasCount(0));
     assertThat(externalPage.locator("#rbelmsglist .test-card")).hasCount(0);
@@ -312,6 +319,7 @@ class ZQuitTests extends AbstractBase {
         .first()
         .click();
     await()
+        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -332,6 +340,7 @@ class ZQuitTests extends AbstractBase {
         .last()
         .click();
     await()
+        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -354,6 +363,7 @@ class ZQuitTests extends AbstractBase {
         .first()
         .click();
     await()
+        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(
@@ -374,6 +384,7 @@ class ZQuitTests extends AbstractBase {
         .last()
         .click();
     await()
+        .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(

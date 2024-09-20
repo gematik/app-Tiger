@@ -22,6 +22,7 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -55,7 +56,7 @@ class XDynamicPlaySidebarTest extends AbstractBase {
     void testRunAScenarioThenAbortInSidebar() {
         page.querySelector("#test-tiger-logo").click();
         page.locator(".test-play-small-button").first().click();
-        await().untilAsserted(() -> assertNotNull(page.querySelector("#test-no-cancel")));
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNotNull(page.querySelector("#test-no-cancel")));
         page.querySelector("#test-no-cancel").click();
         assertThat(page.locator("#sidebar-left .test_discovered")).hasCount(5);
         page.querySelector("#test-execution-pane-tab").click();
@@ -69,9 +70,9 @@ class XDynamicPlaySidebarTest extends AbstractBase {
     void testRunAScenarioThenCommitInASidebar() {
         page.querySelector("#test-tiger-logo").click();
         page.locator(".test-play-small-button").first().click();
-        await().untilAsserted(() -> assertNotNull(page.querySelector("#test-yes-play")));
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNotNull(page.querySelector("#test-yes-play")));
         page.querySelector("#test-yes-play").click();
-        await().untilAsserted(() -> assertNull(page.querySelector("#test-yes-play")));
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNull(page.querySelector("#test-yes-play")));
         assertThat(page.locator("#sidebar-left .test_discovered")).hasCount(4);
         assertThat(page.locator("#sidebar-left .test-passed")).hasCount(1);
         page.querySelector("#test-execution-pane-tab").click();
@@ -90,9 +91,9 @@ class XDynamicPlaySidebarTest extends AbstractBase {
     void testRunAScenarioThenCommitInTheExecutionPane() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator(".test-play-button").last().click();
-        await().untilAsserted(() -> assertNotNull(page.querySelector("#test-yes-play")));
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNotNull(page.querySelector("#test-yes-play")));
         page.querySelector("#test-yes-play").click();
-        await().untilAsserted(() -> assertNull(page.querySelector("#test-yes-play")));
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNull(page.querySelector("#test-yes-play")));
         assertThat(page.locator("#sidebar-left .test_discovered")).hasCount(3);
         assertThat(page.locator("#sidebar-left .test-passed")).hasCount(2);
         page.querySelector("#test-execution-pane-tab").click();
@@ -111,13 +112,13 @@ class XDynamicPlaySidebarTest extends AbstractBase {
     void testShouldRunAllPassingTestsFeatureShouldBePassed() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator(".test-play-button").first().click();
-        await().untilAsserted(() -> assertNotNull(page.querySelector("#test-yes-play")));
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNotNull(page.querySelector("#test-yes-play")));
         page.querySelector("#test-yes-play").click();
-        await().untilAsserted(() -> assertNull(page.querySelector("#test-yes-play")));
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNull(page.querySelector("#test-yes-play")));
         page.locator(".test-play-button").first().click();
         await().untilAsserted(() -> assertNotNull(page.querySelector("#test-yes-play")));
         page.querySelector("#test-yes-play").click();
-        await().untilAsserted(() -> assertNull(page.querySelector("#test-yes-play")));
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNull(page.querySelector("#test-yes-play")));
         assertThat(page.locator("#sidebar-left .test_discovered")).hasCount(1);
         assertThat(page.locator("#sidebar-left .test-passed")).hasCount(4);
         page.querySelector("#test-execution-pane-tab").click();
@@ -139,9 +140,9 @@ class XDynamicPlaySidebarTest extends AbstractBase {
     void testXShouldRunLastFailingTestFeatureShouldBeFailed() {
         page.querySelector("#test-execution-pane-tab").click();
         page.locator(".test-play-button").first().click();
-        await().untilAsserted(() -> assertNotNull(page.querySelector("#test-yes-play")));
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNotNull(page.querySelector("#test-yes-play")));
         page.querySelector("#test-yes-play").click();
-        await().untilAsserted(() -> assertNull(page.querySelector("#test-yes-play")));
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNull(page.querySelector("#test-yes-play")));
         assertThat(page.locator("#sidebar-left .test_discovered")).hasCount(0);
         assertThat(page.locator("#sidebar-left .test-passed")).hasCount(4);
         assertThat(page.locator("#sidebar-left .test-failed")).hasCount(1);
