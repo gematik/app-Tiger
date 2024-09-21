@@ -40,7 +40,7 @@ class TestTigerProxyJexlCriterionRoutes extends AbstractTigerProxyTest {
     final String wrongDst = "http://localhost:" + fakeBackendServerPort + "/wrong";
     final String correctDst = "http://localhost:" + fakeBackendServerPort + "/right";
 
-    spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
+    spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration.builder().build());
 
     final BiConsumer<TigerRoute, TigerRoute> testRoutesInOrder =
         (route1, route2) -> {
@@ -77,7 +77,7 @@ class TestTigerProxyJexlCriterionRoutes extends AbstractTigerProxyTest {
 
   @Test
   void testRouteWithJexlCriterion() {
-    spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
+    spawnTigerProxyWith(new TigerProxyConfiguration());
     tigerProxy.addRoute(
         TigerRoute.builder()
             .from("/foobar/")

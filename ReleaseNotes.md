@@ -14,6 +14,15 @@
 
 ## Features
 
+* TGR-1551: Tiger-Proxy: Added configuration-option to add notes to messages in the RbelLog. This can be as follows:
+    ```yaml
+    tigerProxy:
+      notes:
+        - message: "This is a note on the HTTP method"
+          jexlCriterion: "isRequest && path == '$.method'"
+        - message: "Hackers were here..."
+          jexlCriterion: "element.decryptedUsingKeyWithId == 'mySuperSecretKey'"
+    ```
 * TGR-1557: Rbel-Parser: Added support for comma-seperated values in HTTP-Headers. This is useful for headers like `Accept-Language` or `Accept-Encoding`. To look for a specific value in a comma-seperated list, you can use the following syntax: `$.header.Accept-Encoding.. == 'Value1'`.
 * TGR-1567: Added Glue-Code step for selecting a request with a node matching a value regardless of the path: 
 `And TGR find last request with "$.path.foobar.value" matching "22"`

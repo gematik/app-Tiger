@@ -70,9 +70,17 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
 
   public boolean matches(HttpRequest request) {
     return protocolMatches(this.requestPattern.getProtocol(), request.getProtocol())
+        && secureMatches(request)
         && hostMatches(request)
         && pathMatches(this.requestPattern.getPath(), request.getPath())
         && (expectationCallback == null || expectationCallback.matches(request));
+  }
+
+  private boolean secureMatches(HttpRequest request) {
+    if (requestPattern.isSecure() == null || request.isSecure() == null) {
+      return true;
+    }
+    return requestPattern.isSecure().equals(request.isSecure());
   }
 
   private boolean hostMatches(HttpRequest request) {

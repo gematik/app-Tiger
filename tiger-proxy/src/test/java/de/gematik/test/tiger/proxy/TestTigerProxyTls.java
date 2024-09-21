@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.proxy;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -24,7 +23,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static uk.org.webcompere.systemstubs.SystemStubs.restoreSystemProperties;
 
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.util.CryptoLoader;
@@ -50,7 +48,6 @@ import java.security.*;
 import java.security.cert.*;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -71,19 +68,15 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContexts;
 import org.assertj.core.api.InstanceOfAssertFactories;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.tls.*;
-import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsClientProtocol;
-import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -101,14 +94,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   @Test
   void reverseProxy_shouldUseConfiguredAlternativeNameInTlsCertificate()
       throws NoSuchAlgorithmException, KeyManagementException {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
             .tls(TigerTlsConfiguration.builder().domainName("muahaha").build())
             .build());
 
@@ -140,14 +127,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
   @Test
   void useTlsBetweenClientAndProxy_shouldForward() throws UnirestException {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("https://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
             .build());
 
     final HttpResponse<JsonNode> response = proxyRest.get("https://backend/foobar").asJson();
@@ -158,7 +139,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
   @Test
   void forwardProxyWithoutConfiguredServerName_certificateShouldContainCorrectServerName() {
-    spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
+    spawnTigerProxyWith(new TigerProxyConfiguration());
 
     final HttpResponse<JsonNode> response = proxyRest.get("https://google.com").asJson();
     assertThat(response.getStatus()).isEqualTo(200);
@@ -167,7 +148,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   @SneakyThrows
   @Test
   void serverCertificateChainShouldContainMultipleCertificatesIfGiven() throws UnirestException {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
@@ -221,7 +202,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
           System.setProperty(
               "jdk.tls.namedGroups",
               "brainpoolP256r1, brainpoolP384r1, brainpoolP512r1, secp256r1, secp384r1");
-          spawnTigerProxyWith(
+          spawnTigerProxyWithDefaultRoutesAndWith(
               TigerProxyConfiguration.builder()
                   .proxyRoutes(
                       List.of(
@@ -245,14 +226,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
   @Test
   void rsaCaFileInP12File_shouldVerifyConnection() throws UnirestException {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("https://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
             .tls(
                 TigerTlsConfiguration.builder()
                     .serverRootCa(
@@ -286,12 +261,6 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     final TigerProxy tigerProxy =
         new TigerProxy(
             TigerProxyConfiguration.builder()
-                .proxyRoutes(
-                    List.of(
-                        TigerRoute.builder()
-                            .from("https://backend")
-                            .to("http://localhost:" + fakeBackendServerPort)
-                            .build()))
                 .tls(
                     TigerTlsConfiguration.builder()
                         .serverRootCa(
@@ -316,7 +285,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   void blanketReverseProxy_shouldForwardHttpsRequest() {
     AtomicInteger callCounter = new AtomicInteger(0);
 
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .tls(
                 TigerTlsConfiguration.builder()
@@ -358,13 +327,13 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                 .build());
 
     spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("https://localhost:" + secondProxy.getProxyPort())
-                        .build()))
+      TigerProxyConfiguration.builder()
+        .proxyRoutes(
+          List.of(
+            TigerRoute.builder()
+              .from("/")
+              .to("https://localhost:" + secondProxy.getProxyPort())
+              .build()))
             .tls(TigerTlsConfiguration.builder().forwardMutualTlsIdentity(clientIdentity).build())
             .build());
 
@@ -398,14 +367,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
       String serverTlsVersion,
       boolean shouldConnect,
       String assertVersionUsed) {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
             .tls(
                 TigerTlsConfiguration.builder()
                     .serverTlsProtocols(
@@ -447,14 +410,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   @Test
   @Disabled("Waiting for the next mockserver release (>5.15.0)")
   void extractSubjectDnFromClientCertificate_saveInTigerProxy() throws Exception {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("https://localhost:" + fakeBackendServerPort)
-                        .build()))
             .build());
 
     try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
@@ -491,7 +448,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     final TigerConfigurationPkiIdentity serverIdentity =
         new TigerConfigurationPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik");
 
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .tls(TigerTlsConfiguration.builder().serverIdentity(serverIdentity).build())
             .proxyRoutes(
@@ -548,14 +505,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   @ValueSource(
       strings = {"TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA", "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA"})
   void configureServerTslSuites(String configuredSslSuite) {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
             .tls(
                 TigerTlsConfiguration.builder()
                     .serverSslSuites(List.of(configuredSslSuite))
@@ -592,12 +543,12 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("https://localhost:" + serverPort)
-                        .build()))
+        .proxyRoutes(
+          List.of(
+            TigerRoute.builder()
+              .from("http://backend")
+              .to("https://localhost:" + serverPort)
+              .build()))
             .tls(
                 TigerTlsConfiguration.builder()
                     .forwardMutualTlsIdentity(clientIdentity)
@@ -616,14 +567,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
   @Test
   void autoconfigureSslContextUnirest_shouldTrustTigerProxy() {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("https://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
             .build());
 
     var restInstanceWithSslContextConfigured = Unirest.spawnInstance();
@@ -641,14 +586,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   void noConfiguredSslContextUnirest_shouldNotTrustTigerProxy() {
     assertThatThrownBy(
             () -> {
-              spawnTigerProxyWith(
+              spawnTigerProxyWithDefaultRoutesAndWith(
                   TigerProxyConfiguration.builder()
-                      .proxyRoutes(
-                          List.of(
-                              TigerRoute.builder()
-                                  .from("https://backend")
-                                  .to("http://localhost:" + fakeBackendServerPort)
-                                  .build()))
                       .build());
 
               var restInstanceWithoutSslContextConfigured = Unirest.spawnInstance();
@@ -666,15 +605,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
   @Test
   void autoconfigureSslContextOkHttp_shouldTrustTigerProxy() throws IOException {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     OkHttpClient client =
         new OkHttpClient.Builder()
@@ -694,15 +625,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
   @Test
   void autoconfigureSslContextRestAssured_shouldTrustTigerProxy() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("https://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     RestAssured.config =
         RestAssured.config()
@@ -716,15 +639,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
   @Test
   void dynamicallyCreateCaAndEeCertificate_shouldBeValidForOneYear() throws Exception {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     AtomicInteger checkCounter = new AtomicInteger(0);
     final UnirestInstance unirestInstance = Unirest.spawnInstance();
@@ -765,16 +680,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
   @Test
   void changeCertificateDuringRuntime_shouldBeUsedDuringHandshake() throws UnirestException {
-    final TigerProxyConfiguration cfg =
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("https://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build();
-    spawnTigerProxyWith(cfg);
+    final TigerProxyConfiguration cfg = new TigerProxyConfiguration();
+    spawnTigerProxyWithDefaultRoutesAndWith(cfg);
 
     // initial get (force certificate to be used)
     proxyRest.get("https://backend/foobar").asJson();
@@ -835,14 +742,14 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     AtomicInteger checkCounter = new AtomicInteger(0);
 
     spawnTigerProxyWith(
-        proxyConfigurationBuilder
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+      proxyConfigurationBuilder
+        .proxyRoutes(
+          List.of(
+            TigerRoute.builder()
+              .from("/")
+              .to("http://localhost:" + fakeBackendServerPort)
+              .build()))
+        .build());
 
     try (Socket socket = new Socket("127.0.0.1", tigerProxy.getProxyPort())) {
       TlsClientProtocol tlsClientProtocol =
@@ -875,7 +782,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     final Path masterSecretsFile = Paths.get("target/masterSecrets.txt");
     FileUtils.deleteQuietly(masterSecretsFile.toFile());
 
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
       TigerProxyConfiguration.builder()
         .proxyRoutes(
           List.of(
@@ -906,15 +813,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     final TigerPkiIdentity clientIdentity =
         new TigerPkiIdentity("src/test/resources/brainpoolClientTls.p12;00");
 
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     // Initialize SSLContext
     TrustManagerFactory tmf =

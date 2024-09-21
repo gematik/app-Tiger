@@ -146,7 +146,7 @@ class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
 
   @Test
   void addCompetingRouteWithLowerPriorityForwardProxy_shouldWorkOnlyInSpecializedCases() {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
@@ -174,7 +174,7 @@ class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
 
   @Test
   void addCompetingRouteWithLowerPriorityReverseProxy_shouldWorkOnlyInSpecializedCases() {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
@@ -208,7 +208,7 @@ class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
 
   @Test
   void routingDecisionViaHostHeader() {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(

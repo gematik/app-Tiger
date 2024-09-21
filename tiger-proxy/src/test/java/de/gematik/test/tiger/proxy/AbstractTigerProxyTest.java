@@ -31,6 +31,7 @@ import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import de.gematik.rbellogger.data.facet.RbelParsingNotCompleteFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -39,6 +40,7 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -159,6 +161,35 @@ public abstract class AbstractTigerProxyTest {
     }
   }
 
+  public void spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration configuration) {
+    if (configuration.getProxyRoutes() == null) {
+      configuration.setProxyRoutes(new ArrayList<>());
+    } else {
+      configuration.setProxyRoutes(new ArrayList<>(configuration.getProxyRoutes()));
+    }
+
+    configuration
+        .getProxyRoutes()
+        .add(
+            TigerRoute.builder()
+                .from("https://backend")
+                .to("http://localhost:" + fakeBackendServerPort)
+                .build());
+    configuration
+        .getProxyRoutes()
+        .add(
+            TigerRoute.builder()
+                .from("http://backend")
+                .to("http://localhost:" + fakeBackendServerPort)
+                .build());
+    configuration
+        .getProxyRoutes()
+        .add(
+            TigerRoute.builder().from("/").to("http://localhost:" + fakeBackendServerPort).build());
+
+    spawnTigerProxyWith(configuration);
+  }
+
   public void spawnTigerProxyWith(TigerProxyConfiguration configuration) {
     configuration.setProxyLogLevel("ERROR");
     configuration.setName("Primary Tiger Proxy");
@@ -196,10 +227,9 @@ public abstract class AbstractTigerProxyTest {
   AtomicBoolean shouldServerRun = new AtomicBoolean(true);
   ExecutorService threadPool = Executors.newCachedThreadPool();
 
-
   @SneakyThrows
   public int startKonnektorAlikeServerReturningAlways555(
-    Optional<TigerConfigurationPkiIdentity> clientIdentity) {
+      Optional<TigerConfigurationPkiIdentity> clientIdentity) {
     shouldServerRun.set(true);
     SSLContext sslContext = getSSLContext(clientIdentity);
     SSLServerSocketFactory ssf = sslContext.getServerSocketFactory();
@@ -212,52 +242,53 @@ public abstract class AbstractTigerProxyTest {
     clientIdentity.ifPresent(cert -> serverSocket.setNeedClientAuth(true));
 
     threadPool.execute(
-      () -> {
-        while (shouldServerRun.get()) {
-          try {
-            Socket socket = serverSocket.accept();
-            OutputStream out = socket.getOutputStream();
-            out.write("HTTP/1.1 555\r\nContent-Length: 0\r\n\r\n".getBytes());
-            out.flush();
-          } catch (IOException e) {
-            // swallow
+        () -> {
+          while (shouldServerRun.get()) {
+            try {
+              Socket socket = serverSocket.accept();
+              OutputStream out = socket.getOutputStream();
+              out.write("HTTP/1.1 555\r\nContent-Length: 0\r\n\r\n".getBytes());
+              out.flush();
+            } catch (IOException e) {
+              // swallow
+            }
           }
-        }
-      });
+        });
 
     return serverSocket.getLocalPort();
   }
 
   protected SSLContext getSSLContext(Optional<TigerConfigurationPkiIdentity> clientIdentity)
-    throws Exception {
+      throws Exception {
     SSLContext sslContext = SSLContext.getInstance("TLS", new BouncyCastleJsseProvider());
     final TigerConfigurationPkiIdentity serverCert =
-      new TigerConfigurationPkiIdentity("src/test/resources/eccStoreWithChain.jks;gematik");
+        new TigerConfigurationPkiIdentity("src/test/resources/eccStoreWithChain.jks;gematik");
     KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
     kmf.init(serverCert.toKeyStoreWithPassword("00"), "00".toCharArray());
 
     // Initialize the SSLContext to work with our key managers.
     final X509TrustManager x509TrustManager =
-      new X509TrustManager() {
-        @Override
-        public void checkClientTrusted(X509Certificate[] chain, String authType)
-          throws CertificateException {
-          // swallow
-        }
+        new X509TrustManager() {
+          @Override
+          public void checkClientTrusted(X509Certificate[] chain, String authType)
+              throws CertificateException {
+            // swallow
+          }
 
-        @Override
-        public void checkServerTrusted(X509Certificate[] chain, String authType)
-          throws CertificateException {
-          // swallow
-        }
+          @Override
+          public void checkServerTrusted(X509Certificate[] chain, String authType)
+              throws CertificateException {
+            // swallow
+          }
 
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-          return clientIdentity.map(TigerConfigurationPkiIdentity::getCertificate)
-            .map(cert -> new X509Certificate[] {cert})
-            .orElse(new X509Certificate[0]);
-        }
-      };
+          @Override
+          public X509Certificate[] getAcceptedIssuers() {
+            return clientIdentity
+                .map(TigerConfigurationPkiIdentity::getCertificate)
+                .map(cert -> new X509Certificate[] {cert})
+                .orElse(new X509Certificate[0]);
+          }
+        };
     sslContext.init(kmf.getKeyManagers(), new X509TrustManager[] {x509TrustManager}, null);
 
     return sslContext;

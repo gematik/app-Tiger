@@ -180,6 +180,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
           .when(request().setPath(".*"), Integer.MIN_VALUE, List.of())
           .forward(new ForwardAllCallback(this));
     }
+
     addRoutesToTigerProxy();
   }
 

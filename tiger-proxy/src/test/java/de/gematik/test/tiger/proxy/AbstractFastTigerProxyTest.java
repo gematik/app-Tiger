@@ -32,7 +32,7 @@ class AbstractFastTigerProxyTest extends AbstractTigerProxyTest {
 
   @BeforeAll
   public void setupTigerProxy() {
-    spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
+    spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration.builder().build());
   }
 
   @BeforeEach
