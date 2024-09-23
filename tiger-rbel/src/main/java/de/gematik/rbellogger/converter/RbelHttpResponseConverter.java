@@ -17,7 +17,6 @@
 package de.gematik.rbellogger.converter;
 
 import static com.google.common.primitives.Bytes.indexOf;
-import static de.gematik.rbellogger.converter.RbelHttpRequestConverter.findEolInHttpMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.net.MediaType;
@@ -38,11 +37,12 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
-  private Map<String, RbelHttpCodingConverter> httpCodingsMap =
+  private final Map<String, RbelHttpCodingConverter> httpCodingsMap =
       Map.of(
           "chunked", RbelHttpResponseConverter::decodeChunked,
           "deflate", RbelHttpResponseConverter::decodeDeflate,
@@ -95,7 +95,12 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
       return;
     }
 
-    String eol = findEolInHttpMessage(content);
+    Optional<String> eolOpt = findEolInHttpMessage(content);
+    if (eolOpt.isEmpty()) {
+      return;
+    }
+
+    String eol = eolOpt.get();
 
     int endOfHeadIndex = indexOf(targetElement.getRawContent(), (eol + eol).getBytes());
     if (endOfHeadIndex == -1) {
@@ -292,5 +297,15 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
     }
 
     return new SimpleImmutableEntry<>(key, rbelElement);
+  }
+
+  public Optional<String> findEolInHttpMessage(String content) {
+    if (StringUtils.contains(content, "\r\n")) {
+      return Optional.of("\r\n");
+    } else if (StringUtils.contains(content, "\n")) {
+      return Optional.of("\n");
+    } else {
+      return Optional.empty();
+    }
   }
 }

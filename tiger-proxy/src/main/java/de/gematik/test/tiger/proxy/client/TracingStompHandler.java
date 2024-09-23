@@ -66,6 +66,7 @@ class TracingStompHandler implements StompFrameHandler {
             .receiver(tigerTracingDto.getReceiver())
             .sender(tigerTracingDto.getSender())
             .messageFrame(isolani)
+            .unparsedChunk(tigerTracingDto.isUnparsedChunk())
             .transmissionTime(tigerTracingDto.getRequestTransmissionTime())
             .additionalInformation(tigerTracingDto.getAdditionalInformationRequest())
             .build());

@@ -23,6 +23,7 @@ import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
 import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
+import de.gematik.rbellogger.data.facet.UnparsedChunkFacet;
 import de.gematik.rbellogger.file.MessageTimeWriter;
 import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.rbellogger.file.TcpIpMessageFacetWriter;
@@ -140,9 +141,7 @@ public class TracingPushService {
         .orElse("local");
   }
 
-  /**
-   * Retrieves a potentially pending future for a message following the given message.
-   */
+  /** Retrieves a potentially pending future for a message following the given message. */
   private Optional<Runnable> queryAndRemovePendingMessageFuture(
       RbelElement msg, long sequenceNumber) {
     final String remoteUrl = extractRemoteUrl(msg);
@@ -199,6 +198,7 @@ public class TracingPushService {
                       .map(RbelMessageTimingFacet::getTransmissionTime)
                       .orElse(null))
               .additionalInformationRequest(gatherAdditionalInformation(msg))
+              .unparsedChunk(msg.hasFacet(UnparsedChunkFacet.class))
               .sequenceNumberRequest(rbelTcpIpMessageFacet.getSequenceNumber())
               .build());
 

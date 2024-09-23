@@ -12,16 +12,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package de.gematik.rbellogger.data.facet;
+package de.gematik.test.tiger.proxy.data;
 
-import lombok.Data;
+import java.net.SocketAddress;
 
-/** Empty marker: The element is a response. */
-@Data
-public class RbelResponseFacet implements RbelFacet {
-
-  /** Short info string describing this request. Will primarily be displayed in the menu. */
-  private final String menuInfoString;
-}
+public record SenderReceiverPair(SocketAddress sender, SocketAddress receiver) {}

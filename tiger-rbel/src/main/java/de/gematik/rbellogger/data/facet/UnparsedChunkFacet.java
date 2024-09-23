@@ -12,24 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.rbellogger.data.facet;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.SuperBuilder;
-
-/** Empty marker: The element is a request. */
-@Data
-@SuperBuilder
-@RequiredArgsConstructor
-public class RbelRequestFacet implements RbelFacet {
-
-  /** Short info string describing this request. Will primarily be displayed in the menu. */
-  private final String menuInfoString;
-
-  /** Mark this element for the message validation as requiring a matching response */
-  @Builder.Default private final boolean responseRequired = false; // NOSONAR
-}
+/** Marker facet for chunks that are not parsed when the rbel parsing is not active */
+public class UnparsedChunkFacet implements RbelFacet {}

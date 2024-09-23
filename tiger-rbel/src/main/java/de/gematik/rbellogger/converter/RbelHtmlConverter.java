@@ -19,9 +19,9 @@ package de.gematik.rbellogger.converter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelXmlFacet;
-import java.util.Locale;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.*;
 
@@ -31,10 +31,7 @@ class RbelHtmlConverter {
   private static final String XML_TEXT_KEY = "text";
 
   Optional<Document> parseHtml(String text) {
-    final String lowerCase = text.toLowerCase(Locale.ROOT);
-    if (!lowerCase.contains("<html")
-        || !lowerCase.contains("</html>")
-        || !lowerCase.startsWith("<")) {
+    if (!text.startsWith("<") || !StringUtils.containsAnyIgnoreCase(text, "<html", "</html>")) {
       return Optional.empty();
     } else {
       return Optional.of(Jsoup.parse(text));

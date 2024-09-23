@@ -45,7 +45,7 @@ class CharsetTest {
             .convertElement(curlMessage.getBytes(ISO_8859_1), null);
 
     final RbelElement bodyElement = convertedMessage.findElement("$.body").get();
-    assertThat(bodyElement.getRawStringContent()).isEqualTo("àáâãäåæçèéêëìíîï");
+    assertThat(bodyElement.getRawStringContent()).isEqualTo("àáâãäåæçèéêëìíîï\r\n");
     assertThat(bodyElement.getElementCharset()).isEqualTo(ISO_8859_1);
   }
 

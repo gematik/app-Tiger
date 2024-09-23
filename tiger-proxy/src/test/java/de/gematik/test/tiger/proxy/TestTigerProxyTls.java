@@ -69,7 +69,6 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContexts;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-import org.bouncycastle.tls.*;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.tls.TlsAuthentication;
@@ -127,9 +126,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
   @Test
   void useTlsBetweenClientAndProxy_shouldForward() throws UnirestException {
-    spawnTigerProxyWithDefaultRoutesAndWith(
-        TigerProxyConfiguration.builder()
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration.builder().build());
 
     final HttpResponse<JsonNode> response = proxyRest.get("https://backend/foobar").asJson();
 
@@ -317,6 +314,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     TigerProxy secondProxy =
         new TigerProxy(
             TigerProxyConfiguration.builder()
+                .activateRbelParsingFor(List.of("X509"))
                 .proxyRoutes(
                     List.of(
                         TigerRoute.builder()
@@ -327,13 +325,13 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                 .build());
 
     spawnTigerProxyWith(
-      TigerProxyConfiguration.builder()
-        .proxyRoutes(
-          List.of(
-            TigerRoute.builder()
-              .from("/")
-              .to("https://localhost:" + secondProxy.getProxyPort())
-              .build()))
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("https://localhost:" + secondProxy.getProxyPort())
+                        .build()))
             .tls(TigerTlsConfiguration.builder().forwardMutualTlsIdentity(clientIdentity).build())
             .build());
 
@@ -410,9 +408,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   @Test
   @Disabled("Waiting for the next mockserver release (>5.15.0)")
   void extractSubjectDnFromClientCertificate_saveInTigerProxy() throws Exception {
-    spawnTigerProxyWithDefaultRoutesAndWith(
-        TigerProxyConfiguration.builder()
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration.builder().build());
 
     try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
       unirestInstance.config().httpClient(loadSslContextForClientCert());
@@ -543,12 +539,12 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
-        .proxyRoutes(
-          List.of(
-            TigerRoute.builder()
-              .from("http://backend")
-              .to("https://localhost:" + serverPort)
-              .build()))
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("http://backend")
+                        .to("https://localhost:" + serverPort)
+                        .build()))
             .tls(
                 TigerTlsConfiguration.builder()
                     .forwardMutualTlsIdentity(clientIdentity)
@@ -567,9 +563,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
   @Test
   void autoconfigureSslContextUnirest_shouldTrustTigerProxy() {
-    spawnTigerProxyWithDefaultRoutesAndWith(
-        TigerProxyConfiguration.builder()
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration.builder().build());
 
     var restInstanceWithSslContextConfigured = Unirest.spawnInstance();
     restInstanceWithSslContextConfigured.config().proxy("localhost", tigerProxy.getProxyPort());
@@ -586,9 +580,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   void noConfiguredSslContextUnirest_shouldNotTrustTigerProxy() {
     assertThatThrownBy(
             () -> {
-              spawnTigerProxyWithDefaultRoutesAndWith(
-                  TigerProxyConfiguration.builder()
-                      .build());
+              spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration.builder().build());
 
               var restInstanceWithoutSslContextConfigured = Unirest.spawnInstance();
               final SSLContext instance =
@@ -742,14 +734,14 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     AtomicInteger checkCounter = new AtomicInteger(0);
 
     spawnTigerProxyWith(
-      proxyConfigurationBuilder
-        .proxyRoutes(
-          List.of(
-            TigerRoute.builder()
-              .from("/")
-              .to("http://localhost:" + fakeBackendServerPort)
-              .build()))
-        .build());
+        proxyConfigurationBuilder
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .build());
 
     try (Socket socket = new Socket("127.0.0.1", tigerProxy.getProxyPort())) {
       TlsClientProtocol tlsClientProtocol =
@@ -783,28 +775,25 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     FileUtils.deleteQuietly(masterSecretsFile.toFile());
 
     spawnTigerProxyWithDefaultRoutesAndWith(
-      TigerProxyConfiguration.builder()
-        .proxyRoutes(
-          List.of(
-            TigerRoute.builder()
-              .from("https://blub")
-              .to("http://localhost:" + fakeBackendServerPort)
-              .build()))
-        .tls(
-          TigerTlsConfiguration.builder()
-            .masterSecretsFile(masterSecretsFile.toString())
-            .build())
-        .build());
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("https://blub")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .tls(
+                TigerTlsConfiguration.builder()
+                    .masterSecretsFile(masterSecretsFile.toString())
+                    .build())
+            .build());
 
     proxyRest.get("https://blub/foobar").asString();
 
     final String tls1_2sharedSecret = "(CLIENT_RANDOM [0-9a-fA-F]{64} [0-9a-fA-F]{96}\\n)*";
     // "CLIENT_RANDOM" followed by client-random followed by master secret
     // The exact length of the secret might differ in other TLS versions
-    assertThat(masterSecretsFile)
-        .exists()
-        .content()
-        .matches(tls1_2sharedSecret);
+    assertThat(masterSecretsFile).exists().content().matches(tls1_2sharedSecret);
   }
 
   @SneakyThrows

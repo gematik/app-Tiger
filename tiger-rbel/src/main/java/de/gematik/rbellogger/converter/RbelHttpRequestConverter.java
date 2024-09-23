@@ -21,7 +21,10 @@ import static com.google.common.primitives.Bytes.indexOf;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
@@ -34,31 +37,26 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
 
   @Override
   public void consumeElement(final RbelElement targetElement, final RbelConverter converter) {
+
+    if (ArrayUtils.isEmpty(targetElement.getRawContent())
+        || !startsWithHttpVerb(targetElement.getRawContent())) {
+      return;
+    }
     final String content = targetElement.getRawStringContent();
-    if (StringUtils.isEmpty(content) || !content.contains("\n")) {
+    Optional<String> eolOpt = findEolInHttpMessage(content);
+    if (eolOpt.isEmpty()) {
       return;
     }
-    String eol = findEolInHttpMessage(content);
-    if (content.split(eol).length == 0) {
-      return;
-    }
-    String firstLine = content.split(eol)[0].trim();
-    final String[] firstLineParts = firstLine.split(" ");
+    String eol = eolOpt.get();
+    String firstLine = StringUtils.substringBefore(content, eol);
+
+    final String[] firstLineParts = StringUtils.split(firstLine, " ", 3);
 
     if (firstLineParts.length != 3) {
       return;
     }
     final String method = firstLineParts[0];
-    if (!(method.equals("GET")
-            || method.equals("POST")
-            || method.equals("PUT")
-            || method.equals("DELETE")
-            || method.equals("PATCH")
-            || method.equals("HEAD")
-            || method.equals("OPTIONS")
-            || method.equals("TRACE")
-            || method.equals("CONNECT"))
-        || !(firstLineParts[2].startsWith("HTTP/"))) {
+    if (!(firstLineParts[2].startsWith("HTTP/"))) {
       return;
     }
     final String path = firstLineParts[1];
@@ -108,10 +106,19 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
     converter.convertElement(bodyElement);
   }
 
-  public static String findEolInHttpMessage(String content) {
-    if (content.contains("\r\n") && content.indexOf("\r\n") < content.indexOf("\n")) {
-      return "\r\n";
-    }
-    return "\n";
+  public boolean startsWithHttpVerb(byte[] data) {
+
+    String method =
+        new String(
+            ArrayUtils.subarray(data, 0, Math.min(8, data.length)), StandardCharsets.US_ASCII);
+    return method.startsWith("GET ")
+        || method.startsWith("POST ")
+        || method.startsWith("PUT ")
+        || method.startsWith("HEAD ")
+        || method.startsWith("OPTIONS ")
+        || method.startsWith("PATCH ")
+        || method.startsWith("DELETE ")
+        || method.startsWith("TRACE ")
+        || method.startsWith("CONNECT ");
   }
 }

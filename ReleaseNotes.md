@@ -11,6 +11,14 @@
   `RbelMessageValidator(TigerTestEnvMgr, TigerProxy, LocalProxyRbelMessageListener)`. You can initialize it with mock or
   real
   dependencies depending on your testing needs.
+* RbelLogger: the `RbelX509Converter` is no longer active per default. If you need this converter in your project you
+  need to activate it explicitly. This can be done in the tiger yaml:
+
+```yaml
+tigerProxy:
+  activateRbelParsingFor:
+    - X509
+```
 
 ## Features
 
@@ -23,14 +31,18 @@
         - message: "Hackers were here..."
           jexlCriterion: "element.decryptedUsingKeyWithId == 'mySuperSecretKey'"
     ```
-* TGR-1557: Rbel-Parser: Added support for comma-seperated values in HTTP-Headers. This is useful for headers like `Accept-Language` or `Accept-Encoding`. To look for a specific value in a comma-seperated list, you can use the following syntax: `$.header.Accept-Encoding.. == 'Value1'`.
 * TGR-1567: Added Glue-Code step for selecting a request with a node matching a value regardless of the path: 
 `And TGR find last request with "$.path.foobar.value" matching "22"`
+* TGR-1557: Rbel-Parser: Added support for comma-seperated values in HTTP-Headers. This is useful for headers like
+  `Accept-Language` or `Accept-Encoding`. To look for a specific value in a comma-seperated list, you can use the
+  following syntax: `$.header.Accept-Encoding.. == 'Value1'`.
 * TGR-905: WorkflowUI: Rbel-Path Tab in Inspect Modal has now color coding for true/false/invalid rbel path
 
-## Bugs
+## Bugfixes
 
 * TGR-1497: Tiger Proxy Log - filter matching all says that none match
+* TGR-1545: Tiger Proxy: a remote tiger proxy with rbel parsing inactive, now correctly still propagates the unparsed
+  messages to the local tiger proxy. The local tiger proxy can then still parse them.
 
 # Release 3.3.0
 

@@ -44,6 +44,7 @@ public class PartialTracingMessage {
   private final ZonedDateTime receivedTime = ZonedDateTime.now();
   private final List<TracingMessagePart> messageParts = new ArrayList<>();
   @Builder.Default private final Map<String, String> additionalInformation = Map.of();
+  @Builder.Default private final boolean unparsedChunk = false;
 
   public boolean isComplete() {
     return !messageParts.isEmpty()

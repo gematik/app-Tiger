@@ -52,7 +52,11 @@ class RbelHtmlRendererTest {
 
   private static final RbelConverter RBEL_CONVERTER =
       RbelLogger.build(
-              new RbelConfiguration().activateConversionFor("pop3").activateConversionFor("mime").activateConversionFor("asn1"))
+              new RbelConfiguration()
+                  .activateConversionFor("X509")
+                  .activateConversionFor("pop3")
+                  .activateConversionFor("mime")
+                  .activateConversionFor("asn1"))
           .getRbelConverter();
   private static final RbelHtmlRenderer RENDERER = new RbelHtmlRenderer();
 
@@ -217,7 +221,11 @@ class RbelHtmlRendererTest {
     final String convertedHtml = RENDERER.render(List.of(convertedMessage));
     FileUtils.writeStringToFile(new File("target/binary.html"), convertedHtml);
 
-    assertThat(convertedHtml).contains("08 69").contains("06 13 00 13 00 13 00 ff").contains(".i").contains("........");
+    assertThat(convertedHtml)
+        .contains("08 69")
+        .contains("06 13 00 13 00 13 00 ff")
+        .contains(".i")
+        .contains("........");
   }
 
   @Test

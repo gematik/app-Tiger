@@ -36,4 +36,5 @@ public class TigerTracingDto {
   private final Map<String, String> additionalInformationResponse;
   private final Long sequenceNumberRequest;
   private final Long sequenceNumberResponse;
+  @Builder.Default private final boolean unparsedChunk = false;
 }

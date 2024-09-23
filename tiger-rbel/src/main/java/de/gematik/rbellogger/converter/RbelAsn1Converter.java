@@ -19,7 +19,9 @@ package de.gematik.rbellogger.converter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.util.RbelException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
@@ -27,7 +29,9 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.Base64.Decoder;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.input.BoundedInputStream;
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Boolean;
@@ -54,7 +58,8 @@ public class RbelAsn1Converter implements RbelConverterPlugin {
 
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter context) {
-    if (!tryToParseAsn1Structure(rbelElement.getRawContent(), context, rbelElement)
+    if (!tryToParseAsn1Structure(
+            new ByteArrayInputStream(rbelElement.getRawContent()), context, rbelElement)
         && !safeConvertBase64Using(rbelElement, Base64.getDecoder(), context)) {
       safeConvertBase64Using(rbelElement, Base64.getUrlDecoder(), context);
     }
@@ -62,9 +67,10 @@ public class RbelAsn1Converter implements RbelConverterPlugin {
 
   private boolean safeConvertBase64Using(
       RbelElement rbelElement, Decoder decoder, RbelConverter context) {
-    byte[] data;
+    InputStream data;
+
     try {
-      data = decoder.decode(rbelElement.getRawContent());
+      data = decoder.wrap(withoutTrailingNewLine(rbelElement.getRawContent()));
     } catch (IllegalArgumentException e) {
       return false;
     }
@@ -74,8 +80,19 @@ public class RbelAsn1Converter implements RbelConverterPlugin {
     return false;
   }
 
+  @SneakyThrows
+  private InputStream withoutTrailingNewLine(byte[] data) {
+    if (data.length > 0 && data[data.length - 1] == '\n') {
+      if (data.length > 1 && data[data.length - 2] == '\r') {
+        return BoundedInputStream.builder().setBufferSize(data.length - 2).setByteArray(data).get();
+      }
+      return BoundedInputStream.builder().setBufferSize(data.length - 1).setByteArray(data).get();
+    }
+    return new ByteArrayInputStream(data);
+  }
+
   private boolean tryToParseAsn1Structure(
-      byte[] data, RbelConverter converter, RbelElement parentNode) {
+      InputStream data, RbelConverter converter, RbelElement parentNode) {
     try (ASN1InputStream input = new ASN1InputStream(data)) {
       ASN1Primitive primitive;
       while ((primitive = input.readObject()) != null) {
