@@ -333,13 +333,14 @@ public class SerenityReporterCallbacks {
 
   private String getStepDescription(Step step, boolean convertToHtml, boolean resolve) {
     UnaryOperator<String> converter = convertToHtml ? StringEscapeUtils::escapeHtml4 : t -> t;
-    final String resolvedText = resolve ? tryResolvePlaceholders(step.getText()) : "";
+    UnaryOperator<String> resolver = resolve ? this::tryResolvePlaceholders : t -> t;
+    final String resolvedText = resolver.apply(step.getText());
     final StringBuilder stepText =
         new StringBuilder(step.getKeyword()).append(converter.apply(resolvedText));
     if (convertToHtml) {
       step.getDocString()
           .map(DocString::getContent)
-          .map(a -> resolve ? tryResolvePlaceholders(a) : a)
+          .map(resolver)
           .ifPresent(
               resolvedDocStr ->
                   stepText
@@ -357,7 +358,7 @@ public class SerenityReporterCallbacks {
                           stepText.append("<tr>");
                           row.getCells().stream()
                               .map(TableCell::getValue)
-                              .map(a -> resolve ? tryResolvePlaceholders(a) : a)
+                              .map(resolver)
                               .forEach(
                                   resolvedCellText ->
                                       stepText
@@ -379,7 +380,7 @@ public class SerenityReporterCallbacks {
                         row -> {
                           row.getCells().stream()
                               .map(TableCell::getValue)
-                              .map(a -> resolve ? tryResolvePlaceholders(a) : a)
+                              .map(resolver)
                               .forEach(
                                   resolvedCellText ->
                                       stepText

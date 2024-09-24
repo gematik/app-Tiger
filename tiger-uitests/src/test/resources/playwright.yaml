@@ -37,6 +37,7 @@ cfgEditor:
 
 test:
   tracing: true
+  headless: true
 
 example:
   - text: text1
