@@ -245,7 +245,7 @@ class XyFeaturesTest extends AbstractBase {
     void testWhetherTitleContainsOriginal() {
         page.querySelector("#test-execution-pane-tab").click();
         Locator last = page.locator(".test-execution-pane-scenario-title")
-            .last()
+            .first()
             .locator("..")
             .locator("table")
             .locator("tr").last()

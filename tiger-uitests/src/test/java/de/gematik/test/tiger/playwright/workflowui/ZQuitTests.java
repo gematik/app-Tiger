@@ -228,7 +228,7 @@ class ZQuitTests extends AbstractBase {
                 assertThat(
                         page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
                     .hasText(
-                        "Filter didn't match any of the %d messages.".formatted(TOTAL_MESSAGES)));
+                        "Filter matched to all of the %d messages.".formatted(TOTAL_MESSAGES)));
 
     page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionInput").fill("");
     page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
