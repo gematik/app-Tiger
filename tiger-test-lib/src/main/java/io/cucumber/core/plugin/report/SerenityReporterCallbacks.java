@@ -25,6 +25,7 @@ import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import de.gematik.test.tiger.lib.TigerDirector;
@@ -41,6 +42,15 @@ import io.cucumber.core.plugin.report.EvidenceReport.ReportContext;
 import io.cucumber.core.runner.TestCaseDelegate;
 import io.cucumber.messages.types.*;
 import io.cucumber.plugin.event.Event;
+import io.cucumber.plugin.event.HookTestStep;
+import io.cucumber.plugin.event.PickleStepTestStep;
+import io.cucumber.plugin.event.TestCaseFinished;
+import io.cucumber.plugin.event.TestCaseStarted;
+import io.cucumber.plugin.event.TestRunFinished;
+import io.cucumber.plugin.event.TestSourceRead;
+import io.cucumber.plugin.event.TestStep;
+import io.cucumber.plugin.event.TestStepFinished;
+import io.cucumber.plugin.event.TestStepStarted;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
@@ -59,16 +69,6 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import io.cucumber.plugin.event.HookTestStep;
-import io.cucumber.plugin.event.PickleStepTestStep;
-import io.cucumber.plugin.event.TestCaseFinished;
-import io.cucumber.plugin.event.TestCaseStarted;
-import io.cucumber.plugin.event.TestRunFinished;
-import io.cucumber.plugin.event.TestSourceRead;
-import io.cucumber.plugin.event.TestStep;
-import io.cucumber.plugin.event.TestStepFinished;
-import io.cucumber.plugin.event.TestStepStarted;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -86,6 +86,10 @@ import org.json.JSONObject;
 public class SerenityReporterCallbacks {
 
   public static final String TARGET_DIR = "target";
+  private static final TigerTypedConfigurationKey<Integer> MAX_STEP_DESCRIPTION_DISPLAY_LENGTH =
+      new TigerTypedConfigurationKey<>(
+          "tiger.lib.maxStepDescriptionDisplayLengthOnWebUi", Integer.class, 300);
+
   private static final Object startupMutex = new Object();
   private static RuntimeException tigerStartupFailedException;
   @Getter @Setter private static boolean pauseMode;
@@ -300,28 +304,23 @@ public class SerenityReporterCallbacks {
 
   private Map<String, String> getVariantDataMap(ScenarioContextDelegate context) {
     return context.isAScenarioOutline()
-        ? context
-            .getTable()
-            .row(currentScenarioDataVariantIndex)
-            .toStringMap()
-            .entrySet()
-            .stream()
-            .collect(
-                Collectors.toMap(
-                    Entry::getKey, e -> tryResolvePlaceholders(e.getValue())))
+        ? context.getTable().row(currentScenarioDataVariantIndex).toStringMap().entrySet().stream()
+            .collect(Collectors.toMap(Entry::getKey, e -> tryResolvePlaceholders(e.getValue())))
         : Map.of();
   }
 
   private String replaceOutlineParameters(
-      String line, Map<String, String> variantDataMap, boolean escape) {
+      String line, Map<String, String> variantDataMap, boolean convertToHtml) {
     if (variantDataMap == null) {
       return line;
     }
 
+    UnaryOperator<String> converter =
+        convertToHtml ? StringEscapeUtils::escapeHtml4 : UnaryOperator.identity();
     String parsedLine = line;
     for (Entry<String, String> entry : variantDataMap.entrySet()) {
-      String parameterReference = escape? StringEscapeUtils.escapeHtml4("<" + entry.getKey() + ">"): "<" + entry.getKey() + ">";
-      String parameterValue = escape? StringEscapeUtils.escapeHtml4(entry.getValue()): entry.getValue();
+      String parameterReference = converter.apply("<" + entry.getKey() + ">");
+      String parameterValue = converter.apply(entry.getValue());
       parsedLine = parsedLine.replace(parameterReference, parameterValue);
     }
     return parsedLine;
@@ -332,8 +331,10 @@ public class SerenityReporterCallbacks {
   }
 
   private String getStepDescription(Step step, boolean convertToHtml, boolean resolve) {
-    UnaryOperator<String> converter = convertToHtml ? StringEscapeUtils::escapeHtml4 : t -> t;
-    UnaryOperator<String> resolver = resolve ? this::tryResolvePlaceholders : t -> t;
+    UnaryOperator<String> converter =
+        convertToHtml ? StringEscapeUtils::escapeHtml4 : UnaryOperator.identity();
+    UnaryOperator<String> resolver =
+        resolve ? SerenityReporterCallbacks::tryResolvePlaceholders : UnaryOperator.identity();
     final String resolvedText = resolver.apply(step.getText());
     final StringBuilder stepText =
         new StringBuilder(step.getKeyword()).append(converter.apply(resolvedText));
@@ -455,8 +456,7 @@ public class SerenityReporterCallbacks {
       statusUpdateBuilder
           .bannerColor(String.format("#%06X", (0xFFFFFF & col.getRGB())))
           .bannerMessage(
-              tryResolvePlaceholders(
-                  replaceOutlineParameters(m.group(4), variantDataMap, false)));
+              tryResolvePlaceholders(replaceOutlineParameters(m.group(4), variantDataMap, false)));
     }
   }
 
@@ -556,11 +556,12 @@ public class SerenityReporterCallbacks {
             .scenarios(convertToLinkedHashMap(scenarioUniqueId, scenarioUpdate))
             .build();
     TigerDirector.getTigerTestEnvMgr()
-        .receiveTestEnvUpdate(builder.featureMap(convertToLinkedHashMap(featureName, featureUpdate)).build());
+        .receiveTestEnvUpdate(
+            builder.featureMap(convertToLinkedHashMap(featureName, featureUpdate)).build());
     LocalProxyRbelMessageListener.getInstance().getStepRbelMessages().clear();
   }
 
-  private String tryResolvePlaceholders(String input) {
+  private static String tryResolvePlaceholders(String input) {
     try {
       return TigerGlobalConfiguration.resolvePlaceholders(input);
     } catch (JexlException | TigerJexlException | TigerConfigurationException e) {
@@ -570,10 +571,9 @@ public class SerenityReporterCallbacks {
   }
 
   private String getDescriptionWithReplacements(Step step, Map<String, String> variantDataMap) {
-    return replaceOutlineParameters(
-        getStepDescription(step, true, true),
-        variantDataMap,
-        true);
+    return StringUtils.abbreviate(
+        replaceOutlineParameters(getStepDescription(step, true, true), variantDataMap, true),
+        MAX_STEP_DESCRIPTION_DISPLAY_LENGTH.getValueOrDefault());
   }
 
   // -------------------------------------------------------------------------------------------------------------------------------------

@@ -31,12 +31,18 @@ tigerProxy:
         - message: "Hackers were here..."
           jexlCriterion: "element.decryptedUsingKeyWithId == 'mySuperSecretKey'"
     ```
-* TGR-1567: Added Glue-Code step for selecting a request with a node matching a value regardless of the path: 
-`And TGR find last request with "$.path.foobar.value" matching "22"`
+* TGR-1567: Added Glue-Code step for selecting a request with a node matching a value regardless of the path:
+  `And TGR find last request with "$.path.foobar.value" matching "22"`
 * TGR-1557: Rbel-Parser: Added support for comma-seperated values in HTTP-Headers. This is useful for headers like
   `Accept-Language` or `Accept-Encoding`. To look for a specific value in a comma-seperated list, you can use the
   following syntax: `$.header.Accept-Encoding.. == 'Value1'`.
 * TGR-905: WorkflowUI: Rbel-Path Tab in Inspect Modal has now color coding for true/false/invalid rbel path
+* TGR-1573: resolve scenario outline parameters and expressions
+    * in scenario title, outline table, step descriptions
+    * found config/RBel/JEXL expressions are resolved, if possible
+    * original (unreplaced) step description is available as title/tooltip
+    * long step description lines in Web UI are abbreviated
+        * configurable via tiger.lib.maxStepDescriptionDisplayLengthOnWebUi (default 300)
 
 ## Bugfixes
 
@@ -84,8 +90,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+    key = PLUGIN_PROPERTY_NAME,
+    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 }
 ```
