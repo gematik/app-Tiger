@@ -49,6 +49,7 @@ tigerProxy:
 * TGR-1497: Tiger Proxy Log - filter matching all says that none match
 * TGR-1545: Tiger Proxy: a remote tiger proxy with rbel parsing inactive, now correctly still propagates the unparsed
   messages to the local tiger proxy. The local tiger proxy can then still parse them.
+* TGR-1440: Dockerfile of tiger proxy does not set the MANAGEMENT_SERVER_PORT variable 
 
 # Release 3.3.0
 
@@ -90,8 +91,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-    key = PLUGIN_PROPERTY_NAME,
-    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+        key = PLUGIN_PROPERTY_NAME,
+        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 }
 ```

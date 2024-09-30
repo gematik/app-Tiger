@@ -101,14 +101,13 @@ pipeline {
                     IMAGE_NAME = "tiger/${APP}"
                     IMAGE_VERSION = 'latest'
 					VERSION= 'latest'
-                    PREFIX = "${APP}_"
                     BUILD_ARGS = "--build-arg APP=${APP}"
                     DOCKER_TARGET_REGISTRY = dockerGetGematikRegistry('EUWEST3')
                 }
                 stages {
                     stage('Build Docker Image') {
 					       steps {
-                              dockerBuild(IMAGE_NAME, VERSION, IMAGE_VERSION, BUILD_ARGS, 'Dockerfile', DOCKER_TARGET_REGISTRY)
+                              dockerBuild(IMAGE_NAME, VERSION, IMAGE_VERSION, BUILD_ARGS, 'Dockerfile_' + APP, DOCKER_TARGET_REGISTRY)
 
                         }
                     }
