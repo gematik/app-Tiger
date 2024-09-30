@@ -347,11 +347,11 @@ class ZQuitTests extends AbstractBase {
                 assertThat(
                         page.frameLocator("#rbellog-details-iframe")
                             .locator(".test-message-number")
-                            .first()).containsText("41"));
+                            .first()).containsText("61"));
     assertThat(
             page.frameLocator("#rbellog-details-iframe")
                 .locator(".test-message-number")
-                .first()).containsText("41");
+                .first()).containsText("61");
   }
 
   @Test
