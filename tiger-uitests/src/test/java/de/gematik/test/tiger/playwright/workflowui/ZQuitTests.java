@@ -236,8 +236,9 @@ class ZQuitTests extends AbstractBase {
         .isEqualTo("4 of %d did match the filter criteria.".formatted(TOTAL_MESSAGES));
     Assertions.assertThat(count).isEqualTo(3);
     assertThat(
-            page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
-        .hasText("Filter didn't match any of the %d messages.".formatted(TOTAL_MESSAGES));
+        page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
+        .hasText(
+            "Filter matched to all of the %d messages.".formatted(TOTAL_MESSAGES));
   }
 
   @Test
@@ -334,7 +335,7 @@ class ZQuitTests extends AbstractBase {
     page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
     assertThat(
             page.frameLocator("#rbellog-details-iframe")
-                .locator("#pageSelector .dropdown-item")).hasCount(3);
+                .locator("#pageSelector .dropdown-item")).hasCount(4);
     page.frameLocator("#rbellog-details-iframe")
         .locator("#pageSelector .dropdown-item")
         .last()
