@@ -37,7 +37,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
 @ResetTigerConfiguration
-class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
+class TestTigerProxyRouting extends AbstractTigerProxyTest {
 
   @ParameterizedTest
   @CsvSource(
@@ -48,8 +48,9 @@ class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
       http, https, http
       https, http, https
 """)
-  void testHttpsAndHttpCombinations(
+  void twoHopsThroughTigerProxy_secondHopShouldAlwaysHonorToRouteChoiceOfProtocol(
       String routeFromProtocol, String routeToProtocol, String requestProtocol) {
+    spawnTigerProxyWith(new TigerProxyConfiguration());
     tigerProxy.addRoute(
         TigerRoute.builder()
             .from(routeFromProtocol + "://backend/combotest")
@@ -76,6 +77,7 @@ class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
   @MethodSource("nestedAndShallowPathTestCases")
   void forwardProxyToNestedTarget_ShouldAdressCorrectly(
       String fromPath, String requestPath, String actualPath, int expectedReturnCode) {
+    spawnTigerProxyWith(new TigerProxyConfiguration());
     tigerProxy.addRoute(
         TigerRoute.builder()
             .from("http://backend")
@@ -101,6 +103,7 @@ class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
   @MethodSource("nestedAndShallowPathTestCases")
   void reverseProxyToNestedTarget_ShouldAddressCorrectly(
       String fromPath, String requestPath, String actualPath, int expectedReturnCode) {
+    spawnTigerProxyWith(new TigerProxyConfiguration());
     tigerProxy.addRoute(
         TigerRoute.builder()
             .from("/")
@@ -146,7 +149,7 @@ class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
 
   @Test
   void addCompetingRouteWithLowerPriorityForwardProxy_shouldWorkOnlyInSpecializedCases() {
-    spawnTigerProxyWithDefaultRoutesAndWith(
+    spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
@@ -197,18 +200,17 @@ class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
             .build());
 
     assertThat(
-            proxyRest
-                .get("http://localhost:" + tigerProxy.getProxyPort() + "/hallo")
+            Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/hallo")
                 .asJson()
                 .getStatus())
         .isEqualTo(777);
-    assertThat(proxyRest.get("http://localhost:" + tigerProxy.getProxyPort()).asJson().getStatus())
+    assertThat(Unirest.get("http://localhost:" + tigerProxy.getProxyPort()).asJson().getStatus())
         .isEqualTo(666);
   }
 
   @Test
   void routingDecisionViaHostHeader() {
-    spawnTigerProxyWithDefaultRoutesAndWith(
+    spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
@@ -225,14 +227,37 @@ class TestTigerProxyRouting extends AbstractFastTigerProxyTest {
             .build());
 
     assertThat(
-            proxyRest
-                .get("http://localhost:" + tigerProxy.getProxyPort() + "/")
+            Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/")
                 .header("host", "www.google.de")
                 .asJson()
                 .getStatus())
         .isEqualTo(666); // /foobar.*
-    assertThat(proxyRest.get("http://localhost:" + tigerProxy.getProxyPort())
-      .header("host", "www.google.at").asJson().getStatus())
+    assertThat(
+            Unirest.get("http://localhost:" + tigerProxy.getProxyPort())
+                .header("host", "www.google.at")
+                .asJson()
+                .getStatus())
         .isEqualTo(777); // /deep/foobar.*
+  }
+
+  @Test
+  void clashingRoutes() {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort + "/foobar")
+                        .build(),
+                    TigerRoute.builder()
+                        .from("http://ps")
+                        .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar")
+                        .build()))
+            .build());
+
+    assertThat(proxyRest.get("http://ps").asString().getStatus()).isEqualTo(777); // /deep/foobar.*
+    assertThat(Unirest.get("http://localhost:" + tigerProxy.getProxyPort()).asString().getStatus())
+        .isEqualTo(666); // /foobar.*
   }
 }

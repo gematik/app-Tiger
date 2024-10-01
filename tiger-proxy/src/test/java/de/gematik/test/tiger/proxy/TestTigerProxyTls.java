@@ -771,7 +771,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   @SneakyThrows
   @Test
   void masterSecretFileDefined_shouldDumpSecretInCorrectForm() throws UnirestException {
-    final Path masterSecretsFile = Paths.get("target/masterSecrets.txt");
+    final Path masterSecretsFile = Paths.get("target/master-secrets.txt");
     FileUtils.deleteQuietly(masterSecretsFile.toFile());
 
     spawnTigerProxyWithDefaultRoutesAndWith(

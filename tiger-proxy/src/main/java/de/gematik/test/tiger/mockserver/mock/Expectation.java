@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.mockserver.mock;
 
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationCallback;
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import de.gematik.test.tiger.mockserver.model.*;
@@ -23,11 +24,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.PatternSyntaxException;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -41,11 +39,12 @@ import org.apache.http.client.utils.URIBuilder;
 @Accessors(chain = true)
 @Getter
 @Slf4j
+@Builder(toBuilder = true)
+@AllArgsConstructor
 public class Expectation extends ObjectWithJsonToString implements Comparable<Expectation> {
 
-  private static final AtomicInteger EXPECTATION_COUNTER = new AtomicInteger(0);
-  private static final long START_TIME = System.currentTimeMillis();
   @Setter private String id = UUID.randomUUID().toString();
+  @Setter private TigerRoute tigerRoute;
   private final int priority;
   private final HttpRequest requestPattern;
   @Setter private HttpAction httpAction;
@@ -53,8 +52,6 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
   private ExpectationCallback expectationCallback;
 
   public Expectation(HttpRequest requestDefinition, int priority, List<String> hostRegexes) {
-    // ensure created enforces insertion order by relying on system time, and a counter
-    EXPECTATION_COUNTER.compareAndSet(Integer.MAX_VALUE, 0);
     this.requestPattern = requestDefinition;
     this.priority = priority;
     this.hostRegexes = hostRegexes;
@@ -84,11 +81,11 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
   }
 
   private boolean hostMatches(HttpRequest request) {
-    if (!requestPattern.getHeaders().containsEntry("Host")) {
+    if (!requestPattern.getHeaders().containsEntry("Host")
+        && (hostRegexes == null || hostRegexes.isEmpty())) {
       return true;
     }
-    if (StringUtils.equals(
-        requestPattern.getFirstHeader("Host"), request.getFirstHeader("Host"))) {
+    if (StringUtils.equals(requestPattern.getFirstHeader("Host"), request.getFirstHeader("Host"))) {
       return true;
     }
     return hostRegexes.stream().anyMatch(request.getFirstHeader("Host")::matches);

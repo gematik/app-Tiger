@@ -23,13 +23,11 @@ import static de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfigura
 import static java.util.Collections.singletonList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-import de.gematik.test.tiger.mockserver.ExpectationBuilder;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
-import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
@@ -250,14 +248,6 @@ public class MockServer extends LifeCycle {
     return remoteSocket;
   }
 
-  public ExpectationBuilder when(HttpRequest httpRequest, Integer priority, List<String> hostRegexes) {
-    return new ExpectationBuilder(new Expectation(httpRequest, priority, hostRegexes), this);
-  }
-
-  public ExpectationBuilder when(HttpRequest requestDefinition, List<String> hostRegexes) {
-    return new ExpectationBuilder(new Expectation(requestDefinition, 0, hostRegexes), this);
-  }
-
   public void removeExpectation(String expectationId) {
     httpState.clear(expectationId);
   }
@@ -278,6 +268,10 @@ public class MockServer extends LifeCycle {
 
   public synchronized void removeRemoteAddress(SocketAddress socketAddress) {
     connectionStatusMap.remove(socketAddress);
+  }
+
+  public void addRoute(Expectation expectation) {
+    getHttpState().add(expectation);
   }
 
   @RequiredArgsConstructor

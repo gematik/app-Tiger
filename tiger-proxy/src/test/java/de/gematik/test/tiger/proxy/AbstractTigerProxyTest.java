@@ -32,6 +32,7 @@ import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import de.gematik.rbellogger.data.facet.RbelParsingNotCompleteFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -53,6 +54,7 @@ import kong.unirest.UnirestInstance;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.AfterEach;
@@ -193,6 +195,12 @@ public abstract class AbstractTigerProxyTest {
   public void spawnTigerProxyWith(TigerProxyConfiguration configuration) {
     configuration.setProxyLogLevel("ERROR");
     configuration.setName("Primary Tiger Proxy");
+    if (configuration.getTls() == null) {
+      configuration.setTls(new TigerTlsConfiguration());
+    }
+    if (StringUtils.isEmpty(configuration.getTls().getMasterSecretsFile())) {
+      configuration.getTls().setMasterSecretsFile("target/master-secrets.txt");
+    }
     tigerProxy = new TigerProxy(configuration);
 
     proxyRest =

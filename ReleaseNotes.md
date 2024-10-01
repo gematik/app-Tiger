@@ -47,6 +47,7 @@ tigerProxy:
 ## Bugfixes
 
 * TGR-1497: Tiger Proxy Log - filter matching all says that none match
+* TGR-1516: Corrected route-ordering, so that the most specific route is selected first. Forward-Proxy routes are now preferred over Reverse-Proxy routes. They are also always checked for matching hosts, either in the host-header or the target-url.
 * TGR-1545: Tiger Proxy: a remote tiger proxy with rbel parsing inactive, now correctly still propagates the unparsed
   messages to the local tiger proxy. The local tiger proxy can then still parse them.
 * TGR-1440: Dockerfile of tiger proxy does not set the MANAGEMENT_SERVER_PORT variable 

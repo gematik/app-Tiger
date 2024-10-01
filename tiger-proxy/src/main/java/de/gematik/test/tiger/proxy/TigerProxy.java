@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static de.gematik.test.tiger.mockserver.ExpectationBuilder.when;
 import static de.gematik.test.tiger.mockserver.model.HttpRequest.request;
 import static de.gematik.test.tiger.proxy.tls.OcspUtils.buildOcspResponse;
 import static de.gematik.test.tiger.proxy.tls.TlsCertificateGenerator.generateNewCaCertificate;
@@ -36,7 +37,6 @@ import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactorySuppl
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
-import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxySslException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
@@ -176,9 +176,9 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     createNewMockServer();
 
     if (getTigerProxyConfiguration().isActivateForwardAllLogging()) {
-      mockServer
-          .when(request().setPath(".*"), Integer.MIN_VALUE, List.of())
-          .forward(new ForwardAllCallback(this));
+      mockServer.addRoute(
+          when(request().setPath(".*").setForwardProxyRequest(true), Integer.MIN_VALUE, List.of())
+              .forward(new ForwardAllCallback(this)));
     }
 
     addRoutesToTigerProxy();
@@ -278,7 +278,9 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
 
     if (getTigerProxyConfiguration().getTls() != null
         && getTigerProxyConfiguration().getTls().getMasterSecretsFile() != null) {
-      TigerAgent.addListener(new TigerProxyMasterSecretListener(getTigerProxyConfiguration().getTls().getMasterSecretsFile()));
+      TigerAgent.addListener(
+          new TigerProxyMasterSecretListener(
+              getTigerProxyConfiguration().getTls().getMasterSecretsFile()));
     }
   }
 
@@ -424,24 +426,17 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   @Override
   public synchronized TigerRoute addRoute(final TigerRoute tigerRoute) {
     log.info("Adding route {} -> {}", tigerRoute.getFrom(), tigerRoute.getTo());
-    final Expectation[] expectations = buildRouteAndReturnExpectation(tigerRoute);
-    if (expectations.length > 1) {
-      log.warn(
-          "Unexpected number of expectations created! Got {}, expected 1", expectations.length);
-    }
-    if (expectations.length == 0) {
-      throw new TigerProxyConfigurationException(
-          "Error while adding route from '{}' to '{}': Got 0 new expectations");
-    }
+    final Expectation expectation = buildRouteAndReturnExpectation(tigerRoute);
+    expectation.setTigerRoute(tigerRoute);
 
-    final TigerRoute createdTigerRoute = tigerRoute.withId(expectations[0].getId());
-    tigerRouteMap.put(expectations[0].getId(), createdTigerRoute);
+    final TigerRoute createdTigerRoute = tigerRoute.withId(expectation.getId());
+    tigerRouteMap.put(expectation.getId(), createdTigerRoute);
 
     log.debug("Created route from {} to {}", tigerRoute.getFrom(), tigerRoute.getTo());
     return createdTigerRoute;
   }
 
-  private Expectation[] buildRouteAndReturnExpectation(final TigerRoute tigerRoute) {
+  private Expectation buildRouteAndReturnExpectation(final TigerRoute tigerRoute) {
     if (UriUtil.hasScheme(tigerRoute.getFrom())) {
       return buildForwardProxyRoute(tigerRoute);
     } else {
@@ -449,24 +444,33 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     }
   }
 
-  private Expectation[] buildReverseProxyRoute(final TigerRoute tigerRoute) {
-    return mockServer
-        .when(request().setPath(tigerRoute.getFrom() + ".*"), tigerRoute.getHosts())
-        .id(tigerRoute.getId())
-        .forward(new ReverseProxyCallback(this, tigerRoute));
+  private Expectation buildReverseProxyRoute(final TigerRoute tigerRoute) {
+    final Expectation expectation =
+        when(
+                request().setPath(tigerRoute.getFrom() + ".*").setForwardProxyRequest(false),
+                0,
+                tigerRoute.getHosts())
+            .id(tigerRoute.getId())
+            .forward(new ReverseProxyCallback(this, tigerRoute));
+    mockServer.addRoute(expectation);
+    return expectation;
   }
 
-  private Expectation[] buildForwardProxyRoute(final TigerRoute tigerRoute) {
+  private Expectation buildForwardProxyRoute(final TigerRoute tigerRoute) {
     final URL url = buildUrlSafe(tigerRoute);
-    return mockServer
-        .when(
-            request()
-                .withHeader("Host", url.getAuthority())
-                .setSecure(url.getProtocol().equals("https"))
-                .setPath(extractPath(tigerRoute.getFrom()) + ".*"),
-            tigerRoute.getHosts())
-        .id(tigerRoute.getId())
-        .forward(new ForwardProxyCallback(this, tigerRoute));
+    final Expectation expectation =
+        when(
+                request()
+                    .withHeader("Host", url.getAuthority())
+                    .setForwardProxyRequest(true)
+                    .setSecure(url.getProtocol().equals("https"))
+                    .setPath(extractPath(tigerRoute.getFrom()) + ".*"),
+                1_000_000,
+                tigerRoute.getHosts())
+            .id(tigerRoute.getId())
+            .forward(new ForwardProxyCallback(this, tigerRoute));
+    mockServer.addRoute(expectation);
+    return expectation;
   }
 
   @SneakyThrows

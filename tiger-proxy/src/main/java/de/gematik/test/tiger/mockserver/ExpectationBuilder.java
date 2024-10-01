@@ -18,7 +18,8 @@ package de.gematik.test.tiger.mockserver;
 
 import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndResponseCallback;
-import de.gematik.test.tiger.mockserver.netty.MockServer;
+import de.gematik.test.tiger.mockserver.model.HttpRequest;
+import java.util.List;
 import lombok.AllArgsConstructor;
 
 /*
@@ -28,13 +29,11 @@ import lombok.AllArgsConstructor;
 public class ExpectationBuilder {
 
   private final Expectation expectation;
-  private final MockServer mockServer;
 
-  public Expectation[] forward(
+  public Expectation forward(
       final ExpectationForwardAndResponseCallback expectationForwardAndResponseCallback) {
     expectation.thenForward(expectationForwardAndResponseCallback);
-    mockServer.getHttpState().add(expectation);
-    return new Expectation[] {expectation};
+    return expectation;
   }
 
   public ExpectationBuilder id(String id) {
@@ -42,5 +41,13 @@ public class ExpectationBuilder {
       expectation.setId(id);
     }
     return this;
+  }
+
+  public static ExpectationBuilder when(HttpRequest httpRequest, Integer priority, List<String> hostRegexes) {
+    return new ExpectationBuilder(new Expectation(httpRequest, priority, hostRegexes));
+  }
+
+  public static ExpectationBuilder when(HttpRequest requestDefinition, List<String> hostRegexes) {
+    return new ExpectationBuilder(new Expectation(requestDefinition, 0, hostRegexes));
   }
 }
