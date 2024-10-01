@@ -16,9 +16,13 @@
 
 package de.gematik.rbellogger.converter;
 
+import static de.gematik.rbellogger.util.RbelArrayUtils.endsTrimmedWith;
+import static de.gematik.rbellogger.util.RbelArrayUtils.startsTrimmedWith;
+
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.util.RbelException;
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
@@ -34,34 +38,37 @@ import org.dom4j.tree.DefaultComment;
 import org.dom4j.tree.DefaultProcessingInstruction;
 import org.xml.sax.InputSource;
 
-@ConverterInfo(dependsOn={RbelHttpRequestConverter.class, RbelHttpResponseConverter.class})
+@ConverterInfo(dependsOn = {RbelHttpRequestConverter.class, RbelHttpResponseConverter.class})
 @Slf4j
 public class RbelXmlConverter implements RbelConverterPlugin {
 
   private static final String XML_TEXT_KEY = "text";
-  private RbelHtmlConverter htmlConverter = new RbelHtmlConverter();
+  private static final RbelHtmlConverter HTML_CONVERTER = new RbelHtmlConverter();
+  private static final byte[] OPEN_TAG = "<".getBytes();
+  private static final byte[] CLOSE_TAG = ">".getBytes();
 
   @Override
   public void consumeElement(final RbelElement rbel, final RbelConverter context) {
-    final String content = rbel.getRawStringContent();
-    if (content.contains("<") && content.contains(">")) {
-      try {
-        InputSource source = buildInputSource(content.trim(), rbel);
-        final Document parsedXml = parseXml(source);
-        buildXmlElementForNode(parsedXml, rbel, context);
-        setCharset(parsedXml, rbel);
-        rbel.addFacet(new RbelRootFacet<>(rbel.getFacetOrFail(RbelXmlFacet.class)));
-      } catch (DocumentException e) {
-        log.trace(
-            "Exception while trying to parse XML. Trying as HTML (more lenient SAX parsing)", e);
-        htmlConverter
-            .parseHtml(content.trim())
-            .ifPresent(
-                document -> {
-                  htmlConverter.buildXmlElementForNode(document, rbel, context);
-                  rbel.addFacet(new RbelRootFacet<>(rbel.getFacetOrFail(RbelXmlFacet.class)));
-                });
-      }
+    final var rawContent = rbel.getRawContent();
+    if (!(startsTrimmedWith(rawContent, OPEN_TAG) && endsTrimmedWith(rawContent, CLOSE_TAG))) {
+      return;
+    }
+    try {
+      InputSource source = buildInputSource(rbel);
+      final Document parsedXml = parseXml(source);
+      buildXmlElementForNode(parsedXml, rbel, context);
+      setCharset(parsedXml, rbel);
+      rbel.addFacet(new RbelRootFacet<>(rbel.getFacetOrFail(RbelXmlFacet.class)));
+    } catch (DocumentException e) {
+      log.trace(
+          "Exception while trying to parse XML. Trying as HTML (more lenient SAX parsing)", e);
+      HTML_CONVERTER
+          .parseHtml(rbel)
+          .ifPresent(
+              document -> {
+                HTML_CONVERTER.buildXmlElementForNode(document, rbel, context);
+                rbel.addFacet(new RbelRootFacet<>(rbel.getFacetOrFail(RbelXmlFacet.class)));
+              });
     }
   }
 
@@ -77,9 +84,13 @@ public class RbelXmlConverter implements RbelConverterPlugin {
     return reader.read(source);
   }
 
-  private InputSource buildInputSource(String text, RbelElement parentElement) {
+  private InputSource buildInputSource(RbelElement parentElement) {
     if (parentElement.getCharset().isPresent()) {
-      InputSource source = new InputSource(new StringReader(text));
+      String text = parentElement.getRawStringContent();
+      if (text == null) {
+        throw new RbelConversionException("No raw string content available.");
+      }
+      var source = new InputSource(new StringReader(text.trim()));
       // see https://www.ietf.org/rfc/rfc3023 8.5 and 8.20: We always use the http-encoding.
       source.setEncoding(parentElement.getElementCharset().name());
       return source;

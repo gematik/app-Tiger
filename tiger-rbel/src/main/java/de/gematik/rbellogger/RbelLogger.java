@@ -30,15 +30,12 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Data
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(access = AccessLevel.PRIVATE)
 public class RbelLogger {
 
-  private static final Logger log = LoggerFactory.getLogger(RbelLogger.class);
   private final RbelConverter rbelConverter;
   private final RbelCapturer rbelCapturer;
   private final RbelValueShader valueShader;

@@ -24,13 +24,19 @@ import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.key.RbelKey;
 import java.util.Optional;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jose4j.jwa.AlgorithmConstraints;
 import org.jose4j.jwe.JsonWebEncryption;
 import org.jose4j.lang.JoseException;
 
-@ConverterInfo(dependsOn={RbelBase64JsonConverter.class})
+@Slf4j
+@ConverterInfo(dependsOn = {RbelBase64JsonConverter.class})
 public class RbelJweConverter implements RbelConverterPlugin {
+
+  public static final int MAX_JWE_DOT_SEPARATOR_COUNT = 4;
 
   static {
     BrainpoolCurves.init();
@@ -95,17 +101,35 @@ public class RbelJweConverter implements RbelConverterPlugin {
 
   @SneakyThrows
   private Optional<JsonWebEncryption> initializeJwe(RbelElement rbel) {
-    final JsonWebEncryption receiverJwe = new JsonWebEncryption();
-
-    receiverJwe.setDoKeyValidation(false);
-    receiverJwe.setAlgorithmConstraints(AlgorithmConstraints.NO_CONSTRAINTS);
-
-    try {
-      receiverJwe.setCompactSerialization(rbel.getRawStringContent());
-      receiverJwe.getHeaders();
-      return Optional.ofNullable(receiverJwe);
-    } catch (final JoseException e) {
+    var dotIndexes = ArrayUtils.indexesOf(rbel.getRawContent(), (byte) '.');
+    var dotCount = dotIndexes.cardinality();
+    if (dotCount < MAX_JWE_DOT_SEPARATOR_COUNT - 2 || dotCount > MAX_JWE_DOT_SEPARATOR_COUNT) {
+      log.atTrace()
+          .addArgument(dotIndexes)
+          .addArgument(
+              () ->
+                  StringUtils.abbreviate(
+                      rbel.getRawStringContent(),
+                      RbelConverter.RAW_STRING_MAX_TRACE_LENGTH.getValueOrDefault()))
+          .log("Skipping element with dots at indices {}:\n{}");
       return Optional.empty();
+    }
+
+    return Optional.ofNullable(rbel.getRawStringContent())
+        .map(RbelJweConverter::parseJweEncryption);
+  }
+
+  private static JsonWebEncryption parseJweEncryption(String content) {
+    try {
+      final JsonWebEncryption receiverJwe = new JsonWebEncryption();
+
+      receiverJwe.setDoKeyValidation(false);
+      receiverJwe.setAlgorithmConstraints(AlgorithmConstraints.NO_CONSTRAINTS);
+
+      receiverJwe.setCompactSerialization(content);
+      return receiverJwe;
+    } catch (final JoseException e) {
+      return null;
     }
   }
 }

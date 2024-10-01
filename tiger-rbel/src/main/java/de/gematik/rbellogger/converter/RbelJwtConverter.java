@@ -30,13 +30,17 @@ import java.util.Base64;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jose4j.jca.ProviderContext;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.lang.JoseException;
 
-@ConverterInfo(dependsOn={RbelBase64JsonConverter.class})
+@ConverterInfo(dependsOn = {RbelBase64JsonConverter.class})
 @Slf4j
 public class RbelJwtConverter implements RbelConverterPlugin {
+
+  public static final int JWT_DOT_SEPARATOR_COUNT = 2;
 
   static {
     BrainpoolCurves.init();
@@ -45,6 +49,22 @@ public class RbelJwtConverter implements RbelConverterPlugin {
   @Override
   @SuppressWarnings({"java:S1135", "java:S108"})
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
+    var dotIndexes = ArrayUtils.indexesOf(rbelElement.getRawContent(), (byte) '.');
+    if (dotIndexes.cardinality() != JWT_DOT_SEPARATOR_COUNT) {
+      log.atTrace()
+          .addArgument(dotIndexes)
+          .addArgument(
+              () ->
+                  StringUtils.abbreviate(
+                      rbelElement.getRawStringContent(),
+                      RbelConverter.RAW_STRING_MAX_TRACE_LENGTH.getValueOrDefault()))
+          .log("Skipping element with dots at indices {}:\n{}");
+      return;
+    }
+    parseJwt(rbelElement, converter);
+  }
+
+  private void parseJwt(RbelElement rbelElement, RbelConverter converter) {
     try {
       final JsonWebSignature jsonWebSignature = initializeJws(rbelElement);
 

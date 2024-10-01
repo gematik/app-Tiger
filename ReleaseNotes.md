@@ -1,6 +1,6 @@
 # Changelog Tiger Test platform
 
-# Release 3.3.1
+# Release 3.4.0
 
 ## Breaking Changes
 
@@ -43,14 +43,20 @@ tigerProxy:
     * original (unreplaced) step description is available as title/tooltip
     * long step description lines in Web UI are abbreviated
         * configurable via tiger.lib.maxStepDescriptionDisplayLengthOnWebUi (default 300)
+* TGR-1561: performance improvements on Rbel parsing to avoid potentially expensive operations via fast-fail heuristics
+    * Better handling of POP3 NOOP responses without header line
+    * Tracing display of long string content during Rbel parsing can be configured via property
+      tiger.rbel.rawstring.max.trace.length (default set to 1000)
 
 ## Bugfixes
 
 * TGR-1497: Tiger Proxy Log - filter matching all says that none match
-* TGR-1516: Corrected route-ordering, so that the most specific route is selected first. Forward-Proxy routes are now preferred over Reverse-Proxy routes. They are also always checked for matching hosts, either in the host-header or the target-url.
+* TGR-1516: Corrected route-ordering, so that the most specific route is selected first. Forward-Proxy routes are now
+  preferred over Reverse-Proxy routes. They are also always checked for matching hosts, either in the host-header or the
+  target-url.
 * TGR-1545: Tiger Proxy: a remote tiger proxy with rbel parsing inactive, now correctly still propagates the unparsed
   messages to the local tiger proxy. The local tiger proxy can then still parse them.
-* TGR-1440: Dockerfile of tiger proxy does not set the MANAGEMENT_SERVER_PORT variable 
+* TGR-1440: Dockerfile of tiger proxy does not set the MANAGEMENT_SERVER_PORT variable
 
 # Release 3.3.0
 
@@ -92,8 +98,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+    key = PLUGIN_PROPERTY_NAME,
+    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 }
 ```

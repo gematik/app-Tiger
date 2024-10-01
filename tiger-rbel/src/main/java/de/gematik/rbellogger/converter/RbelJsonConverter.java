@@ -20,10 +20,16 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.primitives.Bytes;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 
 public class RbelJsonConverter extends AbstractJacksonConverter<RbelJsonFacet> {
+
+  private static final byte OPEN_OBJECT = '{';
+  private static final byte CLOSE_OBJECT = '}';
+  private static final byte OPEN_LIST = '[';
+  private static final byte CLOSE_LIST = ']';
 
   public RbelJsonConverter() {
     super(
@@ -43,9 +49,13 @@ public class RbelJsonConverter extends AbstractJacksonConverter<RbelJsonFacet> {
 
   @Override
   boolean shouldElementBeConsidered(RbelElement target) {
-    String content = target.getRawStringContent();
-    return content != null
-        && ((content.contains("{") && content.contains("}"))
-            || (content.contains("[") && content.contains("]")));
+    var content = target.getRawContent();
+    return containsInRightOrder(content, OPEN_OBJECT, CLOSE_OBJECT)
+        || containsInRightOrder(content, OPEN_LIST, CLOSE_LIST);
+  }
+
+  private static boolean containsInRightOrder(byte[] content, byte open, byte close) {
+    var openIndex = Bytes.indexOf(content, open);
+    return openIndex >= 0 && Bytes.lastIndexOf(content, close) > openIndex;
   }
 }
