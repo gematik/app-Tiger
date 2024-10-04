@@ -34,7 +34,7 @@ class XyFeaturesTest extends AbstractBase {
 
     @Test
     void testFeaturesAndScenarioAmount() {
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
         assertAll(
             () -> assertThat(page.locator("#test-sidebar-featurelistbox")).isVisible(),
             () ->
@@ -50,7 +50,7 @@ class XyFeaturesTest extends AbstractBase {
 
     @Test
     void testFeaturesNames() {
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
         Locator featureName =
             page.locator("#test-sidebar-featurelistbox .test-sidebar-feature-name").first();
         Locator featureName2 =
@@ -98,7 +98,7 @@ class XyFeaturesTest extends AbstractBase {
                 Test zeige HTML                         | 26 | 0 |
                 """)
     void testScenarioNames(String scenarioName, int counter, int index) {
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
         assertThat(
             page.locator("#test-sidebar-featurelistbox .test-sidebar-scenario-name").nth(counter))
             .containsText(scenarioName);
@@ -180,7 +180,7 @@ class XyFeaturesTest extends AbstractBase {
 
     @Test
     void testScrollingToClickedLastTestFile() {
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
         page.locator(".test-sidebar-scenario-name").last().locator(".scenarioLink").click();
         await()
             .atMost(10, TimeUnit.SECONDS)
@@ -209,7 +209,7 @@ class XyFeaturesTest extends AbstractBase {
 
     @Test
     void testScrollingToClickedFirstTestfile() {
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
         page.locator(".test-sidebar-scenario-name").first().locator(".scenarioLink").click();
         assertThat(page.locator(".test-execution-pane-scenario-title").first()).isVisible();
     }

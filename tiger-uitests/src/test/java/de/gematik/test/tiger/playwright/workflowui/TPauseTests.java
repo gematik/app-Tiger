@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 class TPauseTests extends AbstractBase {
   @Test
   void testPauseButton() {
-    page.querySelector("#test-tiger-logo").click();
+    openSidebar();
     page.querySelector("#test-sidebar-pause-icon").click();
     assertAll(
         () -> assertThat(page.locator("#sidebar-left.test-sidebar-paused")).isVisible()

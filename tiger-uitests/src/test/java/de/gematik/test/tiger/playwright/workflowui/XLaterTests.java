@@ -169,7 +169,7 @@ class XLaterTests extends AbstractBase {
 
   @Test
   void testCServers() {
-    page.querySelector("#test-tiger-logo").click();
+    openSidebar();
     assertAll(
         () -> assertThat(page.locator("#test-sidebar-server-status-box")).isVisible(),
         () ->

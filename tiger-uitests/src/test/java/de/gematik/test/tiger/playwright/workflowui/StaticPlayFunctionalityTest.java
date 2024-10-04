@@ -28,7 +28,7 @@ class StaticPlayFunctionalityTest extends AbstractBase {
 
     @Test
     void testNoPassedStepsInFeatureBoxAndInExecutionPane() {
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
         assertAll(
             () -> assertThat(page.locator("#sidebar-left .test_discovered")).hasCount(5),
             () -> assertThat(page.locator("#sidebar-left .test-passed")).hasCount(0),
@@ -67,7 +67,7 @@ class StaticPlayFunctionalityTest extends AbstractBase {
     @Test
     void testTooltipLargeRunButtonExists() {
         page.querySelector("#test-execution-pane-tab").click();
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
 
         assertAll(
             () -> assertThat(page.locator(".test-play-button").first()).hasAttribute("title", "Run Scenario"),

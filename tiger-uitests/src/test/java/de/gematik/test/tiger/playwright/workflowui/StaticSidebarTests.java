@@ -41,7 +41,7 @@ class StaticSidebarTests extends AbstractBase {
 
   @Test
   void testSidebarOpenIconsAreVisible() {
-    page.querySelector("#test-tiger-logo").click();
+    openSidebar();
     assertAll(
         () -> assertThat(page.locator("#test-sidebar-title")).isVisible(),
         () -> assertThat(page.locator("#test-sidebar-status")).isVisible(),
@@ -59,7 +59,7 @@ class StaticSidebarTests extends AbstractBase {
 
   @Test
   void testStatus() {
-    page.querySelector("#test-tiger-logo").click();
+    openSidebar();
     assertAll(
         () -> assertThat(page.locator("#test-sidebar-statusbox")).isVisible(),
         () ->

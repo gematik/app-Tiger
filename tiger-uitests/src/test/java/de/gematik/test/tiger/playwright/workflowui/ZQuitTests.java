@@ -22,15 +22,15 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
-import java.time.Duration;
-import org.assertj.core.api.Assertions;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.*;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * These tests should run at the very last because the testQuitButton() quits the tiger/workflowui.
@@ -40,7 +40,7 @@ import org.junit.jupiter.api.*;
 class ZQuitTests extends AbstractBase {
   @Test
   void testQuitMessageOnSidebar() {
-    page.querySelector("#test-tiger-logo").click();
+    openSidebar();
     assertThat(page.locator("#test-sidebar-stop-message")).isVisible();
     assertThat(page.locator("#test-sidebar-stop-message")).isVisible();
   }
@@ -295,7 +295,7 @@ class ZQuitTests extends AbstractBase {
 
   @Test
   void testZQuitButton() {
-    page.querySelector("#test-tiger-logo").click();
+    openSidebar();
     page.querySelector("#test-sidebar-quit-icon").click();
     await()
         .atMost(5, TimeUnit.SECONDS)
@@ -305,7 +305,7 @@ class ZQuitTests extends AbstractBase {
             assertThat(page.locator("#sidebar-left.test-sidebar-quit")).isVisible(),
         () ->
             assertThat(page.locator("#workflow-messages.test-messages-quit")).isVisible());
-    page.querySelector("#test-tiger-logo").click();
+    closeSidebar();
     page.screenshot(
         new Page.ScreenshotOptions().setFullPage(false).setPath(getPath("workflowui_quit.png")));
   }

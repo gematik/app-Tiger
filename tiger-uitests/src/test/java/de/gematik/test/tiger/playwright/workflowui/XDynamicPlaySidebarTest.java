@@ -39,7 +39,7 @@ class XDynamicPlaySidebarTest extends AbstractBase {
     @Test
     void testAScreenshotSidebar() {
         page.querySelector("#test-execution-pane-tab").click();
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
         page.evaluate(
             "document.getElementsByClassName(\"test-play-small-button\")[0].style.backgroundColor='yellow'");
         page.evaluate(
@@ -54,7 +54,7 @@ class XDynamicPlaySidebarTest extends AbstractBase {
 
     @Test
     void testRunAScenarioThenAbortInSidebar() {
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
         page.locator(".test-play-small-button").first().click();
         await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNotNull(page.querySelector("#test-no-cancel")));
         page.querySelector("#test-no-cancel").click();
@@ -68,7 +68,7 @@ class XDynamicPlaySidebarTest extends AbstractBase {
 
     @Test
     void testRunAScenarioThenCommitInASidebar() {
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
         page.locator(".test-play-small-button").first().click();
         await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNotNull(page.querySelector("#test-yes-play")));
         page.querySelector("#test-yes-play").click();

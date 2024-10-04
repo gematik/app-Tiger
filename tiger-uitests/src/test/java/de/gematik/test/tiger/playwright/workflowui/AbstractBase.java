@@ -233,6 +233,19 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
     page.screenshot(new Page.ScreenshotOptions().setFullPage(false).setPath(getPath(fileName)));
   }
 
+  void openSidebar() {
+    if (!page.querySelector("#test-sidebar-title").isVisible()) {
+      page.querySelector("#test-tiger-logo").click();
+    }
+  }
+
+  void closeSidebar() {
+    if (page.querySelector("#test-sidebar-title").isVisible()) {
+      page.querySelector("#test-tiger-logo").click();
+    }
+  }
+
+
   @Override
   public void close() {
     log.info("Closing playwright...");

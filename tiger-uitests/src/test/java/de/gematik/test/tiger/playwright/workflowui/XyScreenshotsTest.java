@@ -36,14 +36,14 @@ class XyScreenshotsTest extends AbstractBase {
   void testScreenshotSidebar() {
 
     screenshot(page, "workflowui.png");
-    page.querySelector("#test-tiger-logo").click();
+    openSidebar();
     screenshot(page, "sidebaropen.png");
-    page.querySelector("#test-tiger-logo").click();
+    closeSidebar();
     page.evaluate("document.getElementById(\"sidebar-left\").style.backgroundColor='yellow'");
     page.evaluate(
         "document.getElementById(\"test-tiger-logo\").parentElement.style.backgroundColor='yellow'");
     screenshot(page, "sidebarclosed_highlight.png");
-    page.querySelector("#test-tiger-logo").click();
+    openSidebar();
     screenshot(page, "sidebaropen_highlight.png");
     page.evaluate(
         "document.getElementById(\"sidebar-left\").style.removeProperty(\"background-color\")");
@@ -122,14 +122,14 @@ class XyScreenshotsTest extends AbstractBase {
   @Test
   void screenshotSmallPlayButton() {
 
-    page.querySelector("#test-tiger-logo").click();
+    openSidebar();
     page.evaluate(
         "document.getElementsByClassName(\"small-play-button\")[0].style.backgroundColor='yellow'");
     page.locator("#test-sidebar-featurelistbox")
         .screenshot(new Locator.ScreenshotOptions().setPath(getPath("sidebar_replaybutton.png")));
     page.evaluate(
         "document.getElementsByClassName(\"small-play-button\")[0].style.removeProperty(\"background-color\")");
-    page.querySelector("#test-tiger-logo").click();
+    closeSidebar();
   }
 
   @SuppressWarnings("squid:S2699")

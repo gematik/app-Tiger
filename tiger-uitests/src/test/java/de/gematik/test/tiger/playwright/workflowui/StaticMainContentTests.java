@@ -31,7 +31,7 @@ class StaticMainContentTests extends AbstractBase {
 
   @Test
   void testPassedScenario() {
-    page.querySelector("#test-tiger-logo").click();
+    openSidebar();
     await()
         .atMost(30, TimeUnit.SECONDS)
         .untilAsserted(
@@ -48,7 +48,7 @@ class StaticMainContentTests extends AbstractBase {
 
   @Test
   void testExecutingScenario() {
-    page.querySelector("#test-tiger-logo").click();
+    openSidebar();
     await()
         .pollInterval(200, TimeUnit.MILLISECONDS)
         .atMost(60, TimeUnit.SECONDS)
@@ -65,7 +65,7 @@ class StaticMainContentTests extends AbstractBase {
 
   @Test
   void testFailedScenario() {
-    page.querySelector("#test-tiger-logo").click();
+    openSidebar();
     await()
         .pollInterval(200, TimeUnit.MILLISECONDS)
         .atMost(60, TimeUnit.SECONDS)

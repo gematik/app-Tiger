@@ -41,7 +41,7 @@ class XDynamicSidebarTests extends AbstractBase {
 
     @Test
     void testSidebarIsClosedWhenClickedOnDoubleArrow() {
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
         page.querySelector("#test-sidebar-close-icon").click();
         assertAll(
             () -> assertThat(page.locator("#test-sidebar-title")).not().isVisible(),
@@ -58,7 +58,7 @@ class XDynamicSidebarTests extends AbstractBase {
 
     @Test
     void testFeatureBoxClickOnLastScenario() {
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
         page.locator(".test-sidebar-scenario-name").last().locator(".scenarioLink").click();
         String sidebarTitle = page.locator(".test-sidebar-scenario-name").last().getAttribute("title");
         String featureTitle = page.locator(".test-execution-pane-scenario-title").last().textContent();
@@ -67,7 +67,7 @@ class XDynamicSidebarTests extends AbstractBase {
 
     @Test
     void testPassedStepInFeatureBoxAndInExecutionPane() {
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
         assertAll(
             () -> assertThat(page.locator("#sidebar-left .test-passed").first()).isVisible(),
             () ->
@@ -76,7 +76,7 @@ class XDynamicSidebarTests extends AbstractBase {
 
     @Test
     void testFindFailedStepInFeatureBoxAndInExecutionPane() {
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
         Locator sidebarTitle =
             page.locator("#sidebar-left .test-failed").first().locator("..");
         String featureTitle =
@@ -93,7 +93,7 @@ class XDynamicSidebarTests extends AbstractBase {
 
     @Test
     void ServerBoxAllServerRunning() {
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
         List<Locator> servers =
             page.locator("#test-sidebar-server-status-box .test-sidebar-server-status").all();
         Assertions.assertThat(servers).hasSize(3);
@@ -107,7 +107,7 @@ class XDynamicSidebarTests extends AbstractBase {
     @ParameterizedTest
     @ValueSource(ints = {0, 1})
     void ServerBoxTigerProxyWebUiStarted(int counter) {
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
         Page page1 =
             page.waitForPopup(
                 () -> page.locator("#sidebar-left .test-sidebar-server-url-icon").nth(counter).click());
@@ -126,7 +126,7 @@ class XDynamicSidebarTests extends AbstractBase {
                     httpbin           | 2 |
                 """)
     void ServerBoxLocalTigerProxyLogfiles(String servername, int counter) {
-        page.querySelector("#test-tiger-logo").click();
+        openSidebar();
         log.info("click on " + page.locator("#sidebar-left .test-sidebar-server-log-icon").nth(counter).locator("..").textContent());
         page.locator("#sidebar-left .test-sidebar-server-log-icon").nth(counter).click();
         assertAll(
