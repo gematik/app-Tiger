@@ -137,6 +137,11 @@ public class RbelMessageValidator {
         TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail());
   }
 
+  /**
+   * @deprecated This constructor is due to be removed. Please use the constructor with the
+   *     additional parameter instead.
+   */
+  @SuppressWarnings("java:S1133")
   @Deprecated(forRemoval = true)
   public RbelMessageValidator(TigerTestEnvMgr tigerTestEnvMgr, TigerProxy tigerProxy) {
     this(tigerTestEnvMgr, tigerProxy, LocalProxyRbelMessageListener.getInstance());
