@@ -57,6 +57,8 @@ tigerProxy:
 * TGR-1545: Tiger Proxy: a remote tiger proxy with rbel parsing inactive, now correctly still propagates the unparsed
   messages to the local tiger proxy. The local tiger proxy can then still parse them.
 * TGR-1440: Dockerfile of tiger proxy does not set the MANAGEMENT_SERVER_PORT variable
+* TGR-1566: Workflow UI: fixed an issue where the combination of not running starts automatically on start up and
+  pressing play on a test that uses the tiger glue to pause the execution would wrongly terminate the tiger test
 
 # Release 3.3.0
 

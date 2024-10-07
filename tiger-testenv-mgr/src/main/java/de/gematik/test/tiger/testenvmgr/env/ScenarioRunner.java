@@ -25,6 +25,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import io.cucumber.messages.types.Examples;
 import io.cucumber.messages.types.Location;
 import io.cucumber.messages.types.Scenario;
+import io.cucumber.messages.types.TableRow;
 import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
@@ -33,8 +34,8 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-
-import io.cucumber.messages.types.TableRow;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
@@ -56,6 +57,8 @@ import org.springframework.stereotype.Component;
 public class ScenarioRunner {
 
   private static final Set<TestIdentifier> scenarios = new HashSet<>();
+  private static final ExecutorService scenarioExecutionService =
+      Executors.newSingleThreadExecutor();
 
   public static void addScenarios(Collection<TestIdentifier> newScenarios) {
     var onlyCucumberEngineScenarios =
@@ -122,8 +125,11 @@ public class ScenarioRunner {
     LauncherDiscoveryRequest rerunRequest =
         request().selectors(selector).configurationParameters(initialConfiguration).build();
 
-    Launcher launcher = LauncherFactory.create();
-    launcher.execute(rerunRequest);
+    scenarioExecutionService.execute(
+        () -> {
+          Launcher launcher = LauncherFactory.create();
+          launcher.execute(rerunRequest);
+        });
   }
 
   public static UniqueId findScenarioUniqueId(
