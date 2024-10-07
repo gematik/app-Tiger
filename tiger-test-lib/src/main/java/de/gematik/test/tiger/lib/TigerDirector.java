@@ -66,7 +66,6 @@ import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * The TigerDirector is the public interface of the high level features of the Tiger test framework.
@@ -447,7 +446,7 @@ public class TigerDirector {
     tigerTestEnvMgr = null;
     curlLoggingFilter = null;
 
-    ReflectionTestUtils.setField(RbelMessageValidator.class, "instance", null);
+    RbelMessageValidator.clearInstance(); // NOSONAR - this is only called from test code
 
     LocalProxyRbelMessageListener
         .clearTestingInstance(); // NOSONAR - the method testUninitialize should also only be used

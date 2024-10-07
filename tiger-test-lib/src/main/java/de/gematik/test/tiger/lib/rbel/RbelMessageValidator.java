@@ -75,6 +75,7 @@ import org.xmlunit.diff.Difference;
 @Slf4j
 public class RbelMessageValidator {
 
+  public static final String RBEL_NAMESPACE = "rbel";
   public static final String FOUND_IN_MESSAGES = "' found in messages";
 
   private static final List<String> EMPTY_PATH = List.of("", "/");
@@ -93,21 +94,26 @@ public class RbelMessageValidator {
   private static RbelMessageValidator instance;
 
   public static RbelMessageValidator getInstance() {
-    initializeInstance();
-    instance.registerJexlToolbox();
-    return instance;
-  }
-
-  private static synchronized void initializeInstance() {
     // In unit tests when we reset the tiger test environment ( see
     // de.gematik.test.tiger.lib.TigerDirector.testUninitialize )
     // we set the instance to null, to force the recreation of the RbelMessageValidator. Otherwise
     // the instance will keep references
     // to a discarded tigerTestEnvMgr and tigerProxy and not see the messages of the current
     // environment.
-    if (instance == null) {
-      instance = new RbelMessageValidator();
+    synchronized (RbelMessageValidator.class) {
+      if (instance == null) { // some other thread might be
+        instance = new RbelMessageValidator();
+      }
+      // in case some other entity instantiated a RbelMessageValidator
+      instance.registerJexlToolbox();
     }
+    return instance;
+  }
+
+  @VisibleForTesting
+  public static synchronized void clearInstance() {
+    instance = null;
+    TigerJexlExecutor.deregisterNamespace(RBEL_NAMESPACE);
   }
 
   private final TigerTestEnvMgr tigerTestEnvMgr;
@@ -128,11 +134,14 @@ public class RbelMessageValidator {
   private RbelMessageValidator() {
     this(
         TigerDirector.getTigerTestEnvMgr(),
-        TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail(),
-        LocalProxyRbelMessageListener.getInstance());
+        TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail());
   }
 
-  @VisibleForTesting
+  @Deprecated(forRemoval = true)
+  public RbelMessageValidator(TigerTestEnvMgr tigerTestEnvMgr, TigerProxy tigerProxy) {
+    this(tigerTestEnvMgr, tigerProxy, LocalProxyRbelMessageListener.getInstance());
+  }
+
   public RbelMessageValidator(
       TigerTestEnvMgr tigerTestEnvMgr,
       TigerProxy tigerProxy,
@@ -144,7 +153,7 @@ public class RbelMessageValidator {
   }
 
   private void registerJexlToolbox() {
-    TigerJexlExecutor.registerAdditionalNamespace("rbel", new JexlToolbox());
+    TigerJexlExecutor.registerAdditionalNamespace(RBEL_NAMESPACE, new JexlToolbox());
   }
 
   public List<RbelElement> getRbelMessages() {
@@ -695,9 +704,9 @@ public class RbelMessageValidator {
     final List<RbelElement> elems = currentResponse.findRbelPathMembers(rbelPath);
     if (elems.isEmpty()) {
       throw new AssertionError(
-        "Unable to find element in response for rbel path '"
-        + rbelPath
-        + printMessageTree(currentResponse));
+          "Unable to find element in response for rbel path '"
+              + rbelPath
+              + printMessageTree(currentResponse));
     }
     return elems;
   }
@@ -707,9 +716,9 @@ public class RbelMessageValidator {
     final List<RbelElement> elems = currentRequest.findRbelPathMembers(rbelPath);
     if (elems.isEmpty()) {
       throw new AssertionError(
-        "Unable to find element in request for rbel path '"
-        + rbelPath
-        + printMessageTree(currentRequest));
+          "Unable to find element in request for rbel path '"
+              + rbelPath
+              + printMessageTree(currentRequest));
     }
     return elems;
   }
