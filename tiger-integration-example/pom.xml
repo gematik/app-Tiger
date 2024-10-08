@@ -13,7 +13,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.3.0</version>
+        <version>3.4.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -73,7 +73,6 @@
                             Use separate template file if you have spring boot apps to test
                             or need to do some more fancy set up stuff.
                             -->
-                            <junit5Driver>true</junit5Driver>
                             <!-- optional -->
                             <skip>false</skip>
 
@@ -114,7 +113,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.7.1</version>
+                <version>3.8.0</version>
                 <executions>
                     <execution>
                         <id>copy</id>

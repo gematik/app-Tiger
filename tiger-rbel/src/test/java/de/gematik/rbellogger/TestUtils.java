@@ -41,8 +41,13 @@ public class TestUtils {
 
   public static String readCurlFromFileWithCorrectedLineBreaks(String fileName, Charset charset)
       throws IOException {
-    return FileUtils.readFileToString(new File(fileName), charset)
-        .replaceAll("(?<!\\r)\\n", "\r\n");
+    String fromFile =
+        FileUtils.readFileToString(new File(fileName), charset).replaceAll("(?<!\\r)\\n", "\r\n");
+    if (fromFile.endsWith("\r\n")) {
+      return fromFile;
+    } else {
+      return fromFile + "\r\n";
+    }
   }
 
   public static RbelHostname localhostWithPort(int tcpPort) {

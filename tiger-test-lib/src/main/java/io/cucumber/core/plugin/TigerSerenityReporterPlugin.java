@@ -16,15 +16,18 @@
 
 package io.cucumber.core.plugin;
 
+import static org.awaitility.Awaitility.await;
+
 import de.gematik.test.tiger.exceptions.FailMessageOverrider;
+import de.gematik.test.tiger.lib.TigerDirector;
 import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
 import io.cucumber.core.runner.TestCaseDelegate;
 import io.cucumber.plugin.event.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.reflect.MethodUtils;
 
 /** will be replacing teh TigerCucumberListener once Serenity PR is released */
 @Slf4j
@@ -99,8 +102,12 @@ public class TigerSerenityReporterPlugin extends SerenityReporter {
   protected void handleTestRunFinished(TestRunFinished event) {
     reporterCallbacks.handleTestRunFinished(event, getScenarioContextDelegate());
     if (isDryRun.get()) {
-      log.debug("Dry run detected, skipping Serenity report generation");
-      MethodUtils.invokeMethod(this, true, "assureTestSuiteFinished");
+      log.debug("Dry run detected. Will wait for tiger shutdown");
+      await()
+          .logging(message -> log.atTrace().log(message))
+          .pollInterval(1, TimeUnit.SECONDS)
+          .atMost(TigerDirector.getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
+          .until(() -> TigerDirector.getTigerTestEnvMgr().isShutDown());
     } else {
       super.handleTestRunFinished(event);
     }

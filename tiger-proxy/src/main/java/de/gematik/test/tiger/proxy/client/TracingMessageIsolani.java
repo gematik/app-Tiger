@@ -21,12 +21,12 @@ import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
 import de.gematik.rbellogger.file.RbelFileWriter;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Data;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.json.JSONObject;
 
 @Data
@@ -46,20 +46,17 @@ public class TracingMessageIsolani implements TracingMessageFrame {
   private synchronized void parseAndPropagate() {
     if (remoteProxyClient.messageUuidKnown(message.getTracingDto().getRequestUuid())) {
       log.trace(
-          "{}Skipping parsing of pair with UUIDs ({} and {}) (received from PUSH): UUID already"
+          "{} skipping parsing of pair with UUIDs ({} and {}) (received from PUSH): UUID already"
               + " known",
           remoteProxyClient.proxyName(),
           message.getTracingDto().getRequestUuid(),
           message.getTracingDto().getResponseUuid());
       return;
     }
-    val messageParsed =
-        remoteProxyClient.buildNewRbelMessage(
-            message.getSender(),
-            message.getReceiver(),
-            message.buildCompleteContent(),
-            Optional.ofNullable(message.getTransmissionTime()),
-            message.getTracingDto().getRequestUuid());
+
+    Optional<CompletableFuture<RbelElement>> messageParsed =
+        remoteProxyClient.tryParseMessage(message);
+
     if (messageParsed.isEmpty()) {
       return;
     }
@@ -70,7 +67,6 @@ public class TracingMessageIsolani implements TracingMessageFrame {
             msg -> {
               try {
                 doPostConversion(msg);
-
               } catch (RuntimeException e) {
                 log.error(
                     "{} - Error while processing message with UUID {}",
@@ -103,16 +99,23 @@ public class TracingMessageIsolani implements TracingMessageFrame {
 
     msg.addFacet(new TigerNonPairedMessageFacet());
 
-    if (log.isTraceEnabled()) {
-      log.trace(
-          "{}Received isolani message to {} (UUID {})",
-          remoteProxyClient.proxyName(),
-          Optional.of(msg)
-              .map(RbelElement::getRawStringContent)
-              .map(s -> Stream.of(s.split(" ")).skip(1).limit(1).collect(Collectors.joining(",")))
-              .orElse("<>"),
-          msg.getUuid());
-    }
+    log.atTrace()
+        .log(
+            () ->
+                "%s received isolani message to %s (UUID %s)"
+                    .formatted(
+                        remoteProxyClient.proxyName(),
+                        Optional.of(msg)
+                            .map(RbelElement::getRawStringContent)
+                            .map(
+                                s ->
+                                    Stream.of(s.split(" "))
+                                        .skip(1)
+                                        .limit(1)
+                                        .collect(Collectors.joining(",")))
+                            .orElse("<>"),
+                        msg.getUuid()));
+
     remoteProxyClient.getLastMessageUuid().set(msg.getUuid());
 
     if (remoteProxyClient.messageMatchesFilterCriterion(msg)) {

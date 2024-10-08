@@ -29,21 +29,21 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 @TestMethodOrder(MethodOrderer.MethodName.class)
-class XyScreenshotsTest extends AbstractTests {
+class XyScreenshotsTest extends AbstractBase {
 
   @SuppressWarnings("squid:S2699")
   @Test
   void testScreenshotSidebar() {
 
     screenshot(page, "workflowui.png");
-    page.querySelector("#test-tiger-logo").click();
+    openSidebar();
     screenshot(page, "sidebaropen.png");
-    page.querySelector("#test-tiger-logo").click();
+    closeSidebar();
     page.evaluate("document.getElementById(\"sidebar-left\").style.backgroundColor='yellow'");
     page.evaluate(
         "document.getElementById(\"test-tiger-logo\").parentElement.style.backgroundColor='yellow'");
     screenshot(page, "sidebarclosed_highlight.png");
-    page.querySelector("#test-tiger-logo").click();
+    openSidebar();
     screenshot(page, "sidebaropen_highlight.png");
     page.evaluate(
         "document.getElementById(\"sidebar-left\").style.removeProperty(\"background-color\")");
@@ -122,14 +122,14 @@ class XyScreenshotsTest extends AbstractTests {
   @Test
   void screenshotSmallPlayButton() {
 
-    page.querySelector("#test-tiger-logo").click();
+    openSidebar();
     page.evaluate(
         "document.getElementsByClassName(\"small-play-button\")[0].style.backgroundColor='yellow'");
     page.locator("#test-sidebar-featurelistbox")
         .screenshot(new Locator.ScreenshotOptions().setPath(getPath("sidebar_replaybutton.png")));
     page.evaluate(
         "document.getElementsByClassName(\"small-play-button\")[0].style.removeProperty(\"background-color\")");
-    page.querySelector("#test-tiger-logo").click();
+    closeSidebar();
   }
 
   @SuppressWarnings("squid:S2699")
@@ -152,7 +152,7 @@ class XyScreenshotsTest extends AbstractTests {
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
     await()
-        .untilAsserted(() -> assertNotNull(externalPage.locator(".test-message-number").first()));
+        .atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNotNull(externalPage.locator(".test-message-number").first()));
     externalPage.locator(".test-message-number").first().click();
     screenshot(externalPage, "webui.png");
     screenshotByClassname(externalPage, "webui_inspect_highlight.png", "test-btn-inspect");
@@ -203,7 +203,7 @@ class XyScreenshotsTest extends AbstractTests {
         "document.getElementById(\"jexlTab-name\").style.removeProperty(\"background-color\")");
 
     externalPage.locator("#jexlModalButtonClose").click();
-    await().untilAsserted(() -> assertNotNull(externalPage.locator("#filterModalBtn")));
+    await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNotNull(externalPage.locator("#filterModalBtn")));
 
     externalPage.locator("#filterModalBtn").click();
     screenshot(externalPage, "webui_filter_open.png");

@@ -31,7 +31,7 @@ const {openDialog, onClickConfirm, onClickDismiss, dialogIsOpen} = useConfirmRun
 </script>
 
 <template>
-  <button v-if="props.showPlayButton" @click="openDialog" class="btn btn-outline-secondary btn-sm play-button"
+  <button v-if="props.showPlayButton" @click="openDialog" class="btn btn-outline-secondary btn-sm play-button test-play-button"
           title="Run Scenario"><i
       class="fa fa-play"></i> Run
   </button>

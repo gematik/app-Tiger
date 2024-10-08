@@ -97,15 +97,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void forwardProxy_shouldUseSameTcpConnection() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     final HttpResponse<JsonNode> response = proxyRest.get("http://backend/foobar").asJson();
     final HttpResponse<JsonNode> response2 = proxyRest.get("http://backend/foobar").asJson();
@@ -149,15 +141,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void useAsWebProxyServer_shouldForward() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     final HttpResponse<JsonNode> response = proxyRest.get("http://backend/foobar").asJson();
     awaitMessagesInTiger(2);
@@ -182,15 +166,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void forwardProxy_headersShouldBeUntouchedExceptForHost() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     proxyRest
         .get("http://backend/foobar")
@@ -215,15 +191,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void reverseProxy_headersShouldBeUntouched() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
         .header("foo", "bar")
@@ -257,15 +225,9 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void reverseProxy_shouldRewriteHostHeaderIfConfigured() {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .rewriteHostHeader(true)
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
             .build());
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
@@ -285,7 +247,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void forwardProxy_shouldRewriteHostHeaderIfConfigured() {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .rewriteHostHeader(true)
             .proxyRoutes(
@@ -311,15 +273,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void reverseProxy_shouldGiveReceiverAndSenderInRbelMessage() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
     awaitMessagesInTiger(2);
@@ -347,14 +301,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   @Test
   void reverseProxy_shouldUseConfiguredAlternativeNameInTlsCertificate()
       throws NoSuchAlgorithmException, KeyManagementException {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
             .tls(TigerTlsConfiguration.builder().domainName("muahaha").build())
             .build());
 
@@ -389,7 +337,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void forwardProxy_shouldGiveReceiverAndSenderInRbelMessage() {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
@@ -424,7 +372,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void routeLessTraffic_shouldLogInRbel() {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(List.of(TigerRoute.builder().from("http://foo").to("http://bar").build()))
             .build());
@@ -447,15 +395,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void binaryMessage_shouldGiveBinaryResult(WireMockRuntimeInfo runtimeInfo) {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     runtimeInfo
         .getWireMock()
@@ -477,15 +417,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void requestAndResponseThroughWebProxy_shouldGiveRbelObjects() throws UnirestException {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     proxyRest.get("http://backend/foobar").asString().getBody();
     awaitMessagesInTiger(2);
@@ -497,15 +429,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void registerListenerThenSentRequest_shouldTriggerListener() throws UnirestException {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     final AtomicInteger callCounter = new AtomicInteger(0);
     tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
@@ -520,7 +444,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   void implicitReverseProxy_shouldForwardRequest() {
     final AtomicInteger callCounter = new AtomicInteger(0);
 
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
@@ -546,15 +470,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   void blanketReverseProxy_shouldForwardRequest() {
     final AtomicInteger callCounter = new AtomicInteger(0);
 
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
 
@@ -568,14 +484,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   @Test
   void activateFileSaving_shouldAddRouteTrafficToFile() {
     final String filename = "target/test-log.tgr";
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
             .fileSaveInfo(
                 TigerFileSaveInfo.builder()
                     .writeToFile(true)
@@ -592,7 +502,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   @Test
   void activateFileSaving_shouldAddRoutelessTrafficToFile() {
     final String filename = "target/test-log.tgr";
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .activateForwardAllLogging(true)
             .fileSaveInfo(
@@ -618,7 +528,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                     .withBasicAuth("user", "password")
                     .willReturn(aResponse().withStatus(777).withBody("{\"foo\":\"bar\"}"))));
 
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
@@ -629,7 +539,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                         .build()))
             .build());
 
-    assertThatThrownBy(() -> proxyRest.get("http://backend/authenticatedPath").asJson())
+    assertThatThrownBy(() -> proxyRest.get("/authenticatedPath").asJson())
         .isInstanceOf(UnirestException.class);
     assertThat(proxyRest.get("http://backendWithBasicAuth/authenticatedPath").asJson().getStatus())
         .isEqualTo(777);
@@ -637,7 +547,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void forwardProxyRouteViaAnotherForwardProxy() {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
@@ -660,7 +570,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void reverseProxyRouteViaAnotherForwardProxy() {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(TigerRoute.builder().from("/").to("http://notARealServer").build()))
@@ -685,7 +595,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     final String jwsSerialized =
         "eyJhbGciOiJCUDI1NlIxIn0.Zm9vYmFy.lNinGioEewNWK1IJyBzteAbDRixKemqPYkbYbVj_HOJrxwnyUitcrnB3mrXsFYenetnYTCLCviaMwVW7xA33cw";
 
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
@@ -705,15 +615,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void forwardProxyWithQueryParameters(WireMockRuntimeInfo runtimeInfo) {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     proxyRest.get("http://backend/foobar?foo=bar1&foo=bar2&schmoo").asString();
 
@@ -727,15 +629,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void reverseProxyWithQueryParameters(WireMockRuntimeInfo runtimeInfo) {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     Unirest.get(
             "http://localhost:" + tigerProxy.getProxyPort() + "/foobar?foo=bar1&foo=bar2&schmoo")
@@ -751,15 +645,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void forwardProxy_checkClientAddresses() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     final UnirestInstance unirestInstance = Unirest.spawnInstance();
     unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
@@ -779,15 +665,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void reverseProxy_checkClientAddresses() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     final UnirestInstance unirestInstance = Unirest.spawnInstance();
     unirestInstance.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
@@ -803,7 +681,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void forwardAllRoute_checkClientAddresses() {
-    spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
+    spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration.builder().build());
 
     final UnirestInstance unirestInstance = Unirest.spawnInstance();
     unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
@@ -826,7 +704,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   @Test
   void checkNotSetTigerProxyPort_ShouldImplicitBeSetToTheChosenFreePort() {
     TigerGlobalConfiguration.reset();
-    spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
+    spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration.builder().build());
     assertThat(tigerProxy.getProxyPort()).isBetween(10000, 100000);
   }
 
@@ -835,22 +713,14 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     TigerGlobalConfiguration.reset();
     int availableTcpPort =
         TigerGlobalConfiguration.readIntegerOptional("free.port.100").orElseThrow();
-    spawnTigerProxyWith(TigerProxyConfiguration.builder().proxyPort(availableTcpPort).build());
+    spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration.builder().proxyPort(availableTcpPort).build());
 
     assertThat(tigerProxy.getProxyPort()).isEqualTo(availableTcpPort);
   }
 
   @Test
   void forwardProxy_shouldAddTimingInformation() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     proxyRest.get("http://backend/foobar").asString();
     awaitMessagesInTiger(2);
@@ -873,15 +743,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void reverseProxy_shouldAddTimingInformation() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
     awaitMessagesInTiger(2);
@@ -904,7 +766,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void forwardAllRoute_shouldAddTimingInformation() {
-    spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
+    spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration.builder().build());
 
     final UnirestInstance unirestInstance = Unirest.spawnInstance();
     unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
@@ -933,16 +795,12 @@ class TestTigerProxy extends AbstractTigerProxyTest {
    */
   @Test
   void querySecondBackendServer_timingInformationShouldBeCorrect(WireMockRuntimeInfo runtimeInfo) {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
                     TigerRoute.builder()
                         .from("http://server")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build(),
-                    TigerRoute.builder()
-                        .from("/")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
             .build());
@@ -990,15 +848,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
       throws UnirestException {
     final byte[] rawContent = "hellö\uD83D\uDC4C\uD83C\uDFFB".getBytes(StandardCharsets.UTF_8);
 
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     final HttpResponse<byte[]> response =
         proxyRest
@@ -1019,15 +869,9 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void emptyBuffer_shouldNotRetainMessages() {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .rbelBufferSizeInMb(0)
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
             .build());
 
     proxyRest
@@ -1041,14 +885,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void limitMaxMessageSize_shouldSkipParsing() {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
             .skipParsingWhenMessageLargerThanKb(1)
             .build());
 
@@ -1062,15 +900,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void queryParametersStartWithExclamationMark_shouldTransmitUnaltered() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar?foo=!bar&!foo=bar")
         .asString();
@@ -1168,7 +998,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void forwardProxy_queryParamsWithSpaces_shouldNotBeRewritten() {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
@@ -1191,15 +1021,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void emptyStatusMessageFromBackend_shouldBeEmptyAfterTigerProxyAsWell() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     final HttpResponse<String> response =
         proxyRest.post("http://backend/echo").body("Hello World!").asString();
@@ -1215,15 +1037,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   @SneakyThrows
   @Test
   void connectionReset_shouldKeepRequestInLog() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     proxyRest.config().automaticRetries(false);
     assertThatThrownBy(() -> proxyRest.get("http://backend/error").asString())
@@ -1240,7 +1054,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   @SneakyThrows
   @Test
   void noRoutes_unkownHost_shouldCloseConnection() {
-    spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
+    spawnTigerProxyWith(new TigerProxyConfiguration());
 
     val request = proxyRest.get("http://foobar/");
     assertThatThrownBy(request::asEmpty).hasRootCauseInstanceOf(NoHttpResponseException.class);
@@ -1249,7 +1063,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   @SneakyThrows
   @Test
   void noRoutes_reverseProxyRequest_shouldCloseConnection() {
-    spawnTigerProxyWith(TigerProxyConfiguration.builder().build());
+    spawnTigerProxyWith(new TigerProxyConfiguration());
 
     val request = Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/");
     assertThatThrownBy(request::asEmpty).hasRootCauseInstanceOf(NoHttpResponseException.class);

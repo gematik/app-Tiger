@@ -31,6 +31,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.web.TigerBrowserUtil;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
+import de.gematik.test.tiger.lib.rbel.RbelMessageValidator;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
 import de.gematik.test.tiger.lib.serenityrest.SerenityRestUtils;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -54,6 +55,7 @@ import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.rest.SerenityRest;
 import org.apache.commons.io.IOUtils;
@@ -438,10 +440,14 @@ public class TigerDirector {
   }
 
   @VisibleForTesting
+  @SneakyThrows
   public static synchronized void testUninitialize() {
     initialized = false;
     tigerTestEnvMgr = null;
     curlLoggingFilter = null;
+
+    RbelMessageValidator.clearInstance(); // NOSONAR - this is only called from test code
+
     LocalProxyRbelMessageListener
         .clearTestingInstance(); // NOSONAR - the method testUninitialize should also only be used
     // for testing

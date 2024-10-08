@@ -9,7 +9,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.3.0</version>
+        <version>3.4.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -70,7 +70,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.2.1-jre</version>
+            <version>33.3.0-jre</version>
         </dependency>
         <dependency>
             <artifactId>jose4j</artifactId>

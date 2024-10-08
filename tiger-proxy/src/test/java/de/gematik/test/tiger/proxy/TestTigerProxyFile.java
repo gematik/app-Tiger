@@ -191,7 +191,7 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
       Runnable generateTraffic,
       String tgrFilename) {
     FileUtils.deleteQuietly(new File(tgrFilename));
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(

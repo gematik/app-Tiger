@@ -23,13 +23,12 @@ import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
-import org.junit.Assert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
-class RbelMessageValidatorGlueTest extends AbstractRbelMessageValidatorTest {
+class RbelMessageValidatorGlueTest {
 
   public static final String TESTENV_CFG_LOCATION_PROPERTY =
       TigerConfigurationKeys.TIGER_TESTENV_CFGFILE_LOCATION.getKey().downsampleKey();
@@ -37,7 +36,6 @@ class RbelMessageValidatorGlueTest extends AbstractRbelMessageValidatorTest {
   @BeforeEach
   public void setUp() {
     System.setProperty(TESTENV_CFG_LOCATION_PROPERTY, "src/test/resources/minimal_tiger.yaml");
-    super.setUp();
     TigerDirector.testUninitialize();
     TigerDirector.start();
   }
@@ -49,7 +47,6 @@ class RbelMessageValidatorGlueTest extends AbstractRbelMessageValidatorTest {
       tigerTestEnvMgr.shutDown();
     }
     TigerDirector.testUninitialize();
-    AbstractRbelMessageValidatorTest.tearDown();
     System.clearProperty(TESTENV_CFG_LOCATION_PROPERTY);
   }
 
@@ -57,8 +54,8 @@ class RbelMessageValidatorGlueTest extends AbstractRbelMessageValidatorTest {
   void testSharedValidatorInstance() {
     RBelValidatorGlue glue1 = new RBelValidatorGlue();
     RBelValidatorGlue glue2 = new RBelValidatorGlue();
-    Assertions.assertThat(glue1.getRbelValidator()).isEqualTo(glue2.getRbelValidator());
-    Assertions.assertThat(glue1.getRbelValidator()).isEqualTo(RbelMessageValidator.getInstance());
+    Assertions.assertThat(glue1.getRbelValidator()).isSameAs(glue2.getRbelValidator());
+    Assertions.assertThat(glue1.getRbelValidator()).isSameAs(RbelMessageValidator.getInstance());
     Assertions.assertThat(RbelMessageValidator.getInstance()).isNotNull();
   }
 }

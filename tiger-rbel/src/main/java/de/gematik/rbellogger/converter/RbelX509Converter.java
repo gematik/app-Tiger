@@ -28,6 +28,7 @@ import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@ConverterInfo(onlyActivateFor = "X509")
 public class RbelX509Converter implements RbelConverterPlugin {
 
   private static final ZoneId utcZone = ZoneId.of("UTC");

@@ -16,8 +16,6 @@
 
 package de.gematik.rbellogger.data.facet;
 
-import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelMultiMap;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -34,9 +32,4 @@ public class RbelRequestFacet implements RbelFacet {
 
   /** Mark this element for the message validation as requiring a matching response */
   @Builder.Default private final boolean responseRequired = false; // NOSONAR
-
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<>();
-  }
 }

@@ -33,3 +33,23 @@ To rerun trace archives
 ```
 mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="show-trace target/playwright-artifacts/XXXXXXXXXXXXXXXX.zip"
 ```
+
+In order to run the discovered tests (tests that are only displayed but have not run yet) use the following commands:
+
+mvn call first to compile test code
+
+```
+mvn test-compile -P start-tiger-dummy-for-unstarted-tests
+```
+
+Wait and then run the dummy for unstarted tests
+
+```
+mvn --no-transfer-progress  -P start-tiger-dummy-for-unstarted-tests failsafe:integration-test | tee mvn-playwright-log.txt
+```
+
+then with no delay do in a second window to run the playwright tests
+
+```
+mvn -P run-playwright-test-for-unstarted-tests failsafe:integration-test failsafe:verify
+```

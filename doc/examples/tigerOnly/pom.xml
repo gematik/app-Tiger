@@ -25,7 +25,7 @@
           https://nexus.prod.ccs.gematik.solutions/#browse/search=keyword%3Dtiger-test-lib
         -->
         <version.tiger>3.1.1</version.tiger>
-        <version.logback>1.5.6</version.logback>
+        <version.logback>1.5.7</version.logback>
     </properties>
 
     <dependencyManagement>

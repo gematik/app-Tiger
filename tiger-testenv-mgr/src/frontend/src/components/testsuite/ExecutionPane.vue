@@ -28,8 +28,10 @@
         <div v-else class="w-100">
           <div v-for="(feature, key) in featureUpdateMap" :key="key">
             <h3 class="featuretitle test-execution-pane-feature-title">
-              <TestStatusBadge :test-status="feature[1].status" :highlight-text="true"
-                               :text="`Feature: ${feature[1].description}`"></TestStatusBadge>
+              <TestStatusBadge :test-status="feature[1].status"
+                               :highlight-text="true"
+                               :text="`Feature: ${feature[1].description}`"
+                               :link="feature[1].getLink(feature[1].description)"></TestStatusBadge>
             </h3>
             <div v-for="(scenario, key) in feature[1].scenarios" :key="key">
               <h4 class="scenariotitle test-execution-pane-scenario-title">
@@ -44,27 +46,29 @@
                     :show-play-button="scenario[1].isDryRun"></large-play-button>
               </h4>
               <div v-if="scenario[1].variantIndex !== -1">
-                <div v-for="anzahl in getTableCountForScenarioOutlineKeysLength(scenario[1].exampleKeys)"
-                     :key="anzahl"
-                     class="d-inline-block">
-                  <table class="table table-sm table-data-variant" aria-label="Data used when executing this scenario">
-                    <thead>
-                    <tr>
-                      <th v-for="(key, index) in getScenarioOutlineKeysParts(scenario[1].exampleKeys, anzahl)"
-                          :key="index">
-                        {{ key }}
-                      </th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr>
-                      <td v-for="(key, index) in getScenarioOutlineKeysParts(scenario[1].exampleKeys, anzahl)"
-                          :key="index">
-                        {{ scenario[1].exampleList.get(key) }}
-                      </td>
-                    </tr>
-                    </tbody>
-                  </table>
+                <div class="test-scenario-outline-example">
+                  <div v-for="anzahl in getTableCountForScenarioOutlineKeysLength(scenario[1].exampleKeys)"
+                       :key="anzahl"
+                       class="d-inline-block">
+                    <table class="table table-sm table-data-variant" aria-label="Data used when executing this scenario">
+                      <thead>
+                      <tr>
+                        <th v-for="(key, index) in getScenarioOutlineKeysParts(scenario[1].exampleKeys, anzahl)"
+                            :key="index">
+                          {{ key }}
+                        </th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                      <tr>
+                        <td v-for="(key, index) in getScenarioOutlineKeysParts(scenario[1].exampleKeys, anzahl)"
+                            :key="index">
+                          {{ scenario[1].exampleList.get(key) }}
+                        </td>
+                      </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
               <table class="table table-borderless" aria-label="Test steps performed when executing this scenario">
@@ -75,7 +79,8 @@
                        :title="`${step[1].status}`"></i>
                   </td>
                   <td :class="`step_text step_index_${index}`">
-                    <div v-html="step[1].description"></div>
+                    <div v-html="step[1].description"
+                         :title="step[1].tooltip"/>
                     <div v-for="rbelmsg in step[1].rbelMetaData" :key="rbelmsg.uuid">
                       <div v-if="rbelmsg.method" class="rbelmessage">
                         <a v-on:click="ui.showRbelLogDetails(rbelmsg.uuid, '' + rbelmsg.sequenceNumber, $event)"
@@ -176,6 +181,10 @@ h4.scenariotitle {
   color: var(--gem-primary-400);
 }
 
+.test-scenario-outline-example {
+  width: auto;
+  max-width: 100%;
+}
 
 .table-data-variant {
   font-size: 90%;

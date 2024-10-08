@@ -775,6 +775,16 @@ tigerProxy:
     sourceFile: "sourceFile.tgr"
     # filter messages read from file (JEXL expression)
     readFilter: "message.statusCode == '200'"
+    # List of notes that should be added to the traffic
+    notes:
+        # The message to be added as a note
+      - message: "This is a note on the HTTP method"
+        # Only add this note to elements that EXACTLY match the given JEXL expression.
+        # This will be checked for every message and every node in every message.
+        jexlCriterion: "isRequest && path == '$.method'"
+      - message: "Hackers were here..."
+        jexlCriterion: "element.decryptedUsingKeyWithId == 'mySuperSecretKey'"
+
   # a list of routing entries the proxy should apply to traffic
   proxyRoutes:
       # defines a forward-proxy-route from this server...

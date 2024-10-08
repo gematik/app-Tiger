@@ -718,14 +718,26 @@ async function testRbelExpression() {
         document.getElementById("rbelTestTree").innerHTML =
             "<h3 class='is-size-4'>Rbel Tree</h3>"
             + "<pre id='shell'>" + responseBody.rbelTreeHtml + "</pre>";
-        let rbelResultTree = "<h3 class='is-size-4'>Matching Elements</h3>";
+        let rbelResultTree = "";
         if (responseBody.elements) {
+            document.getElementById("rbelResult").setAttribute("class", "box bg-success");
+            rbelResultTree += "<h3 class='is-size-4'>Matching Elements</h3>"
             responseBody.elements.forEach(key => {
                 rbelResultTree += "<div >" + key + "</div>";
                 formerResultValue = key;
             });
         } else {
-            rbelResultTree += "<div>No matching elements for " + rbelPath + "</div>";
+            if (responseBody.errorMessage) {
+                document.getElementById("rbelResult").setAttribute("class",
+                    "box bg-danger");
+                rbelResultTree += "<h3 class='is-size-4'>Invalid query: "
+                    + responseBody.errorMessage + "</h3>";
+            } else {
+                document.getElementById("rbelResult").setAttribute("class",
+                    "box bg-info");
+                rbelResultTree += "<h3 class='is-size-4'>No matching elements for "
+                    + rbelPath + "</h3>";
+            }
         }
         document.getElementById("rbelResult").innerHTML =
             rbelResultTree;
@@ -734,8 +746,7 @@ async function testRbelExpression() {
         console.log("ERROR " + response.status + " " + response.statusText);
         document.getElementById("rbelResult").innerHTML =
             "<div>" + response.statusText + "</div>";
-        document.getElementById(
-            "rbelTestTree").innerHTML = "<div>Invalid query</div>";
+        document.getElementById("rbelTestTree").innerHTML = "<div>Invalid query</div>";
     }
 }
 
@@ -875,11 +886,11 @@ function filterAtLeastN(frequencyMap, atLeastN) {
 function setFilterMessage() {
     const element = document.getElementById("filteredMessage");
     if (allMessagesAmount === filteredMessagesAmount) {
-        element.textContent = "Filter didn't match any of the " + allMessagesAmount
-            + " messages.";
+        element.textContent = `Filter matched to all of the ${allMessagesAmount} messages.`;
+    } else if (filteredMessagesAmount === 0) {
+        element.textContent = `Filter didn't match any of the ${allMessagesAmount} messages.`;
     } else {
-        element.textContent = filteredMessagesAmount + " of " + allMessagesAmount
-            + " did match the filter criteria.";
+        element.textContent = `${filteredMessagesAmount} of ${allMessagesAmount} did match the filter criteria.`;
     }
 }
 

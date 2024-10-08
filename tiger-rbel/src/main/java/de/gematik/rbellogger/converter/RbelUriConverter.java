@@ -20,15 +20,17 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.data.facet.RbelUriFacet.RbelUriFacetBuilder;
 import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
-import de.gematik.rbellogger.exceptions.RbelConversionException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Stream;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
+@Slf4j
 public class RbelUriConverter implements RbelConverterPlugin {
 
   public List<RbelElement> extractParameterMap(
@@ -70,25 +72,40 @@ public class RbelUriConverter implements RbelConverterPlugin {
         .toList();
   }
 
-  public boolean canConvertElement(final RbelElement rbel) {
+  private static URI parseUri(String rawStringContent) {
     try {
-      final URI uri = new URI(rbel.getRawStringContent());
+      final URI uri = new URI(rawStringContent);
       final boolean hasQuery = uri.getQuery() != null;
       final boolean hasProtocol = uri.getScheme() != null;
-      return hasQuery || hasProtocol || rbel.getRawStringContent().startsWith("/");
+      if (hasQuery || hasProtocol || rawStringContent.startsWith("/")) {
+        return uri;
+      }
     } catch (URISyntaxException e) {
-      return false;
+      log.atTrace()
+          .addArgument(
+              () ->
+                  StringUtils.abbreviate(
+                      rawStringContent,
+                      RbelConverter.RAW_STRING_MAX_TRACE_LENGTH.getValueOrDefault()))
+          .log("Unable to convert Path-Element '{}'", e);
     }
+    return null;
   }
 
   @Override
   public void consumeElement(final RbelElement rbel, final RbelConverter context) {
-    if (!canConvertElement(rbel)) {
+    if (ArrayUtils.indexOf(rbel.getRawContent(), (byte) '\n') >= 0) {
       return;
     }
-    final URI uri = convertToUri(rbel);
-
-    final String[] pathParts = rbel.getRawStringContent().split("\\?", 2);
+    var content = rbel.getRawStringContent();
+    if (content == null) {
+      return;
+    }
+    URI uri = parseUri(content);
+    if (uri == null) {
+      return;
+    }
+    final String[] pathParts = content.split("\\?", 2);
     final RbelUriFacetBuilder uriFacetBuilder =
         RbelUriFacet.builder().basicPath(RbelElement.wrap(rbel, pathParts[0]));
     if (pathParts.length > 1) {
@@ -98,14 +115,5 @@ public class RbelUriConverter implements RbelConverterPlugin {
       uriFacetBuilder.queryParameters(List.of());
     }
     rbel.addFacet(uriFacetBuilder.build());
-  }
-
-  private URI convertToUri(RbelElement target) {
-    try {
-      return new URI(target.getRawStringContent());
-    } catch (URISyntaxException e) {
-      throw new RbelConversionException(
-          "Unable to convert Path-Element '" + target.getRawStringContent() + "'", e);
-    }
   }
 }

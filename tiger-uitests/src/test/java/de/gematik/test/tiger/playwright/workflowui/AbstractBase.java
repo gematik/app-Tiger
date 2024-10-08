@@ -69,16 +69,16 @@ import org.junit.jupiter.api.extension.TestWatcher;
  */
 @Slf4j
 @SuppressWarnings("java:S2187")
-@ExtendWith(AbstractTests.SaveArtifactsOnTestFailed.class)
-public class AbstractTests implements ExtensionContext.Store.CloseableResource {
+@ExtendWith(AbstractBase.SaveArtifactsOnTestFailed.class)
+public class AbstractBase implements ExtensionContext.Store.CloseableResource {
 
   static String port;
   private static final String doc = "doc";
   private static final String user_manual = "user_manual";
   private static final String screenshots = "screenshots";
   protected static final int NUMBER_OF_FEATURES = 2;
-  protected static final int NUMBER_OF_SCENARIOS = 26;
-  protected static final int TOTAL_MESSAGES = 60;
+  protected static final int NUMBER_OF_SCENARIOS = 27;
+  protected static final int TOTAL_MESSAGES = 62;
   private static BrowserContext context;
 
   private static boolean tracingEnabled =
@@ -145,8 +145,8 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
     activateTracing();
     log.info("Browser launched at http://localhost:{}", port);
     page = context.newPage();
-    page.setDefaultTimeout(30000D);
-    page.setDefaultNavigationTimeout(30000D);
+    page.setDefaultTimeout(60000D);
+    page.setDefaultNavigationTimeout(60000D);
     page.navigate("http://localhost:" + port);
 
     File artefactsFolder =
@@ -233,6 +233,19 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
     page.screenshot(new Page.ScreenshotOptions().setFullPage(false).setPath(getPath(fileName)));
   }
 
+  void openSidebar() {
+    if (!page.querySelector("#test-sidebar-title").isVisible()) {
+      page.querySelector("#test-tiger-logo").click();
+    }
+  }
+
+  void closeSidebar() {
+    if (page.querySelector("#test-sidebar-title").isVisible()) {
+      page.querySelector("#test-tiger-logo").click();
+    }
+  }
+
+
   @Override
   public void close() {
     log.info("Closing playwright...");
@@ -249,7 +262,7 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
     @Override
     public void testFailed(ExtensionContext context, Throwable cause) {
       log.error("FAILED");
-      AbstractTests testInstance = getTestInstance(context);
+      AbstractBase testInstance = getTestInstance(context);
       String fileName = getFileName(context);
       saveScreenshot(fileName);
       testInstance.setBackToNormalState();
@@ -258,12 +271,12 @@ public class AbstractTests implements ExtensionContext.Store.CloseableResource {
     @Override
     public void testSuccessful(ExtensionContext context) {
       log.info("PASS");
-      AbstractTests testInstance = getTestInstance(context);
+      AbstractBase testInstance = getTestInstance(context);
       testInstance.setBackToNormalState();
     }
 
-    private AbstractTests getTestInstance(ExtensionContext context) {
-      return (AbstractTests) context.getRequiredTestInstance();
+    private AbstractBase getTestInstance(ExtensionContext context) {
+      return (AbstractBase) context.getRequiredTestInstance();
     }
 
     private String getFileName(ExtensionContext context) {

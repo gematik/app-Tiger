@@ -28,6 +28,7 @@ import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
+import de.gematik.test.tiger.proxy.handler.BinaryChunksBuffer;
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.WebSocketContainer;
 import java.time.Duration;
@@ -73,6 +74,10 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
 
   @Getter
   private final Map<String, PartialTracingMessage> partiallyReceivedMessageMap = new HashMap<>();
+
+  @Getter
+  private final BinaryChunksBuffer binaryChunksBuffer =
+      new BinaryChunksBuffer(getRbelLogger().getRbelConverter(), getTigerProxyConfiguration());
 
   @Getter private final TigerStompSessionHandler tigerStompSessionHandler;
   @Nullable private final TigerProxy masterTigerProxy;
@@ -295,6 +300,25 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         sender, receiver, messageBytes, Optional.empty(), transmissionTime, uuid);
   }
 
+  Optional<CompletableFuture<RbelElement>> tryParseMessage(PartialTracingMessage message) {
+    if (message.isUnparsedChunk()) {
+      return getBinaryChunksBuffer()
+          .tryToConvertMessageAndBufferUnusedBytes(
+              message.buildCompleteContent(),
+              message.getSender().asSocketAddress(),
+              message.getReceiver().asSocketAddress())
+          .map(CompletableFuture::completedFuture);
+
+    } else {
+      return buildNewRbelMessage(
+          message.getSender(),
+          message.getReceiver(),
+          message.buildCompleteContent(),
+          Optional.ofNullable(message.getTransmissionTime()),
+          message.getTracingDto().getRequestUuid());
+    }
+  }
+
   Optional<CompletableFuture<RbelElement>> buildNewRbelResponse(
       RbelHostname sender,
       RbelHostname receiver,
@@ -422,7 +446,6 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   public boolean isConnected() {
     return Optional.ofNullable(stompSession)
         .map(AtomicReference::get)
-        .filter(Objects::nonNull)
         .map(StompSession::isConnected)
         .orElse(false);
   }

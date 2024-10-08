@@ -16,16 +16,11 @@
 
 package de.gematik.test.tiger.lib.rbel;
 
-import static de.gematik.test.tiger.lib.rbel.TestsuiteUtils.addSomeMessagesToTigerTestHooks;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
-import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.util.IRbelMessageListener;
-import de.gematik.rbellogger.util.RbelMessagesSupplier;
 import de.gematik.rbellogger.writer.RbelContentType;
-import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.glue.TigerParameterTypeDefinitions;
 import de.gematik.test.tiger.lib.enums.ModeType;
@@ -33,8 +28,6 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import io.restassured.http.Method;
 import java.net.URI;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import lombok.SneakyThrows;
 import org.apache.commons.jexl3.JexlException;
 import org.junit.jupiter.api.AfterAll;
@@ -46,42 +39,27 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 public class InlineJexlTest {
 
-  { // We need this so that the static instance from RbelMessageValidator actually
-    // gets initialized and registers its namespace in the TigerJexlExecutor
-    new RbelMessageValidator(mock(TigerTestEnvMgr.class), mock(TigerProxy.class));
-  }
-
-  private static final Deque<RbelElement> validatableMessagesMock = new ArrayDeque<>();
+  private static LocalProxyRbelMessageListenerTestAdapter localProxyRbelMessageListenerTestAdapter;
 
   @BeforeAll
   public static void addSomeMessages() {
     TigerGlobalConfiguration.reset();
-    validatableMessagesMock.clear();
-    LocalProxyRbelMessageListener.setTestingInstance(
-        new LocalProxyRbelMessageListener(
-            new RbelMessagesSupplier() {
-              @Override
-              public void addRbelMessageListener(IRbelMessageListener listener) {
-                // do nothing
-              }
-
-              @Override
-              public Deque<RbelElement> getRbelMessages() {
-                return validatableMessagesMock;
-              }
-            }));
+    localProxyRbelMessageListenerTestAdapter = new LocalProxyRbelMessageListenerTestAdapter();
+    // Calling the constructor will register the JexlToolbox
+    new RbelMessageValidator(
+        mock(TigerTestEnvMgr.class),
+        mock(TigerProxy.class),
+        localProxyRbelMessageListenerTestAdapter.getLocalProxyRbelMessageListener());
   }
 
   @AfterAll
   public static void resetTiger() {
     TigerGlobalConfiguration.reset();
-    LocalProxyRbelMessageListener.clearTestingInstance();
   }
 
   @BeforeEach
   public void reset() {
-    LocalProxyRbelMessageListener.getInstance().clearValidatableRbelMessages();
-    addSomeMessagesToTigerTestHooks(validatableMessagesMock);
+    localProxyRbelMessageListenerTestAdapter.addSomeMessagesToTigerTestHooks();
   }
 
   @ParameterizedTest

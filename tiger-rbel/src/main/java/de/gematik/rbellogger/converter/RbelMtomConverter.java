@@ -20,6 +20,7 @@ import com.google.common.net.MediaType;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.util.MtomPart;
+import de.gematik.rbellogger.util.RbelArrayUtils;
 import de.gematik.rbellogger.util.RbelException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -33,11 +34,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.dom4j.*;
 
-@ConverterInfo(dependsOn={RbelXmlConverter.class})
+@ConverterInfo(dependsOn = {RbelXmlConverter.class})
 @Slf4j
 public class RbelMtomConverter implements RbelConverterPlugin {
 
   public static final String CONTENT_ID = "Content-ID";
+  private static final byte[] DOUBLE_DASH = "--".getBytes();
 
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
@@ -48,16 +50,17 @@ public class RbelMtomConverter implements RbelConverterPlugin {
   }
 
   private boolean stringStartIsMtom(RbelElement rbelElement) {
-    return rbelElement.getRawStringContent().trim().startsWith("--");
+    var rawContent = rbelElement.getRawContent();
+    return RbelArrayUtils.startsTrimmedWith(rawContent, DOUBLE_DASH);
   }
 
   @RequiredArgsConstructor
-  private class RbelMtomConverterExecutor {
+  private static class RbelMtomConverterExecutor {
 
     private final RbelElement parentNode;
     private final RbelConverter converter;
     private List<MtomPart> mtomParts;
-    private Map<String, String> dataParts = new HashMap<>();
+    private final Map<String, String> dataParts = new HashMap<>();
     private MtomPart rootPart;
 
     public void execute() {
@@ -198,7 +201,7 @@ public class RbelMtomConverter implements RbelConverterPlugin {
                   .getRawStringContent()
                   .split("(\r\n|\n)--" + Pattern.quote(boundary.get(0))))
           .map(MtomPart::new)
-          .filter(mtomPart -> mtomPart.getMessageHeader().size() > 0)
+          .filter(mtomPart -> !mtomPart.getMessageHeader().isEmpty())
           .toList();
     }
 

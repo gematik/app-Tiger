@@ -38,15 +38,7 @@ class TestTigerProxyLogging extends AbstractTigerProxyTest {
 
   @Test
   void useAsWebProxyServer_shouldForward() throws Exception {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("http://backend")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     checkForLogMessage(
         () -> proxyRest.get("http://backend/foobar"),

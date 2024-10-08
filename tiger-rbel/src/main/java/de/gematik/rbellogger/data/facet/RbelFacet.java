@@ -31,7 +31,9 @@ public interface RbelFacet {
    *
    * @return A map containing all child elements along with their name (key)
    */
-  RbelMultiMap<RbelElement> getChildElements();
+  default RbelMultiMap<RbelElement> getChildElements() {
+    return new RbelMultiMap<>();
+  }
 
   /**
    * When parsing a message this gives feedback if we can expect a paired response-message to be

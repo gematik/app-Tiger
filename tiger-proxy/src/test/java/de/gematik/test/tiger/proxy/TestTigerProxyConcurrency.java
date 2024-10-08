@@ -45,7 +45,7 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
 
   @Test
   void doALotOfRequests_OrderOfResponsesShouldMatchExactly() {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
@@ -84,15 +84,7 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
 
   @Test
   void reverseProxy_parsingShouldNotBlockCommunication() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
     AtomicBoolean messageWasReceivedInTheClient = new AtomicBoolean(false);
     AtomicBoolean allowMessageParsingToComplete = new AtomicBoolean(false);
 
@@ -125,7 +117,7 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
   @Test
   @SuppressWarnings("java:S2925")
   void reverseProxy_parsingShouldBlockCommunicationIfConfigured() throws InterruptedException {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
@@ -165,15 +157,7 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
   @Test
   @SuppressWarnings("java:S2925")
   void timestampOfTheMessagesShouldBeBeforeParsing() throws InterruptedException {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerRoute.builder()
-                        .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort)
-                        .build()))
-            .build());
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
     AtomicBoolean messageWasReceivedInTheClient = new AtomicBoolean(false);
 
     AtomicReference<ZonedDateTime> responseLatestTimestamp = new AtomicReference<>();

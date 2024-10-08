@@ -21,7 +21,6 @@ import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelHttpFormDataFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpHeaderFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
@@ -47,7 +46,6 @@ public class RbelHttpFormDataConverter implements RbelConverterPlugin {
   private boolean isBodyOfFormDataRequest(RbelElement rbelElement) {
     return Optional.ofNullable(rbelElement)
         .map(RbelElement::getParentNode)
-        .filter(Objects::nonNull)
         .flatMap(el -> el.getFacet(RbelHttpMessageFacet.class))
         .map(RbelHttpMessageFacet::getHeader)
         .flatMap(el -> el.getFacet(RbelHttpHeaderFacet.class))

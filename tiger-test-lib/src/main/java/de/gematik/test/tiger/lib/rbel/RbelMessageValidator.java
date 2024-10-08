@@ -61,7 +61,6 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.collections4.iterators.ReverseListIterator;
-import org.apache.commons.collections4.list.UnmodifiableList;
 import org.apache.commons.lang3.StringUtils;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
@@ -76,11 +75,12 @@ import org.xmlunit.diff.Difference;
 @Slf4j
 public class RbelMessageValidator {
 
+  public static final String RBEL_NAMESPACE = "rbel";
   public static final String FOUND_IN_MESSAGES = "' found in messages";
 
   private static final List<String> EMPTY_PATH = List.of("", "/");
   public static final TigerTypedConfigurationKey<Integer> RBEL_REQUEST_TIMEOUT =
-      new TigerTypedConfigurationKey<>("tiger.rbel.request.timeout", Integer.class);
+      new TigerTypedConfigurationKey<>("tiger.rbel.request.timeout", Integer.class, 5);
 
   private static final Map<String, UnaryOperator<DiffBuilder>> DIFF_OPTIONS = new HashMap<>();
 
@@ -91,16 +91,36 @@ public class RbelMessageValidator {
     DIFF_OPTIONS.put("txtnormalize", DiffBuilder::normalizeWhitespace);
   }
 
-  private static final class InstanceHolder {
-    private static final RbelMessageValidator instance = new RbelMessageValidator();
-  }
+  private static RbelMessageValidator instance;
 
   public static RbelMessageValidator getInstance() {
-    return InstanceHolder.instance;
+    // In unit tests when we reset the tiger test environment ( see
+    // de.gematik.test.tiger.lib.TigerDirector.testUninitialize )
+    // we set the instance to null, to force the recreation of the RbelMessageValidator. Otherwise
+    // the instance will keep references
+    // to a discarded tigerTestEnvMgr and tigerProxy and not see the messages of the current
+    // environment.
+    synchronized (RbelMessageValidator.class) {
+      if (instance == null) { // some other thread might be
+        instance = new RbelMessageValidator();
+      }
+      // in case some other entity instantiated a RbelMessageValidator
+      instance.registerJexlToolbox();
+    }
+    return instance;
+  }
+
+  @VisibleForTesting
+  public static synchronized void clearInstance() {
+    instance = null;
+    TigerJexlExecutor.deregisterNamespace(RBEL_NAMESPACE);
   }
 
   private final TigerTestEnvMgr tigerTestEnvMgr;
   private final TigerProxy tigerProxy;
+
+  @Getter(AccessLevel.PRIVATE)
+  private final LocalProxyRbelMessageListener localProxyRbelMessageListener;
 
   @Setter @Getter protected RbelElement currentRequest;
 
@@ -111,27 +131,43 @@ public class RbelMessageValidator {
   @Getter
   protected RbelElement currentResponse;
 
-  public RbelMessageValidator() {
+  private RbelMessageValidator() {
     this(
         TigerDirector.getTigerTestEnvMgr(),
         TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail());
   }
 
-  @VisibleForTesting
+  /**
+   * @deprecated This constructor is due to be removed. Please use the constructor with the
+   *     additional parameter instead.
+   */
+  @SuppressWarnings("java:S1133")
+  @Deprecated(forRemoval = true)
   public RbelMessageValidator(TigerTestEnvMgr tigerTestEnvMgr, TigerProxy tigerProxy) {
-    TigerJexlExecutor.registerAdditionalNamespace("rbel", new JexlToolbox());
+    this(tigerTestEnvMgr, tigerProxy, LocalProxyRbelMessageListener.getInstance());
+  }
+
+  public RbelMessageValidator(
+      TigerTestEnvMgr tigerTestEnvMgr,
+      TigerProxy tigerProxy,
+      LocalProxyRbelMessageListener localProxyRbelMessageListener) {
+    registerJexlToolbox();
     this.tigerTestEnvMgr = tigerTestEnvMgr;
     this.tigerProxy = tigerProxy;
+    this.localProxyRbelMessageListener = localProxyRbelMessageListener;
+  }
+
+  private void registerJexlToolbox() {
+    TigerJexlExecutor.registerAdditionalNamespace(RBEL_NAMESPACE, new JexlToolbox());
   }
 
   public List<RbelElement> getRbelMessages() {
     tigerProxy.waitForAllCurrentMessagesToBeParsed();
-    return new UnmodifiableList<>(
-        new ArrayList<>(LocalProxyRbelMessageListener.getInstance().getValidatableRbelMessages()));
+    return localProxyRbelMessageListener.getValidatableRbelMessages().stream().toList();
   }
 
   public void clearRbelMessages() {
-    LocalProxyRbelMessageListener.getInstance().clearValidatableRbelMessages();
+    localProxyRbelMessageListener.clearValidatableRbelMessages();
   }
 
   @SuppressWarnings("java:S1135")
@@ -175,7 +211,7 @@ public class RbelMessageValidator {
         .filter(RbelRequestFacet::isResponseRequired)
         .isPresent()) {
       try {
-        final int requestTimeout = RBEL_REQUEST_TIMEOUT.getValue().orElse(5);
+        final int requestTimeout = RBEL_REQUEST_TIMEOUT.getValueOrDefault();
         await("Waiting for matching request")
             .atMost(requestTimeout, TimeUnit.SECONDS)
             .pollInterval(500, TimeUnit.MILLISECONDS)
@@ -244,7 +280,7 @@ public class RbelMessageValidator {
   }
 
   protected RbelElement findMessageByDescription(final RequestParameter requestParameter) {
-    final int waitsec = RBEL_REQUEST_TIMEOUT.getValue().orElse(5);
+    final int waitsec = RBEL_REQUEST_TIMEOUT.getValueOrDefault();
 
     Optional<RbelElement> initialElement = getInitialElement(requestParameter);
 
@@ -293,8 +329,7 @@ public class RbelMessageValidator {
   }
 
   private Optional<RbelElement> getInitialElement(RequestParameter requestParameter) {
-    var validatableRbelMessages =
-        LocalProxyRbelMessageListener.getInstance().getValidatableRbelMessages();
+    var validatableRbelMessages = localProxyRbelMessageListener.getValidatableRbelMessages();
     if (requestParameter.isStartFromLastMessage()) {
       var markerMessage =
           requestParameter.isRequireRequestMessage() ? currentRequest : lastFoundMessage;
@@ -670,31 +705,27 @@ public class RbelMessageValidator {
   }
 
   public List<RbelElement> findElementsInCurrentResponse(final String rbelPath) {
-    try {
-      assertCurrentResponseFound();
-      final List<RbelElement> elems = currentResponse.findRbelPathMembers(rbelPath);
-      assertThat(elems).isNotEmpty();
-      return elems;
-    } catch (final Exception e) {
+    assertCurrentResponseFound();
+    final List<RbelElement> elems = currentResponse.findRbelPathMembers(rbelPath);
+    if (elems.isEmpty()) {
       throw new AssertionError(
-          "Unable to find element in last response for rbel path '"
+          "Unable to find element in response for rbel path '"
               + rbelPath
               + printMessageTree(currentResponse));
     }
+    return elems;
   }
 
   public List<RbelElement> findElementsInCurrentRequest(final String rbelPath) {
-    try {
-      assertCurrentRequestFound();
-      final List<RbelElement> elems = currentRequest.findRbelPathMembers(rbelPath);
-      assertThat(elems).isNotEmpty();
-      return elems;
-    } catch (final Exception e) {
+    assertCurrentRequestFound();
+    final List<RbelElement> elems = currentRequest.findRbelPathMembers(rbelPath);
+    if (elems.isEmpty()) {
       throw new AssertionError(
           "Unable to find element in request for rbel path '"
               + rbelPath
               + printMessageTree(currentRequest));
     }
+    return elems;
   }
 
   private void assertCurrentRequestFound() {
@@ -742,7 +773,7 @@ public class RbelMessageValidator {
 
   public void readTgrFile(String filePath) {
     List<RbelElement> readElements = tigerProxy.readTrafficFromTgrFile(filePath);
-    readElements.forEach(LocalProxyRbelMessageListener.getInstance()::triggerNewReceivedMessage);
+    readElements.forEach(localProxyRbelMessageListener::triggerNewReceivedMessage);
   }
 
   public class JexlToolbox {
@@ -790,9 +821,7 @@ public class RbelMessageValidator {
 
     private RbelElement lastMessageMatching(Predicate<RbelElement> testMessage) {
       final Iterator<RbelElement> backwardsIterator =
-          LocalProxyRbelMessageListener.getInstance()
-              .getValidatableRbelMessages()
-              .descendingIterator();
+          localProxyRbelMessageListener.getValidatableRbelMessages().descendingIterator();
       while (backwardsIterator.hasNext()) {
         final RbelElement element = backwardsIterator.next();
         if (testMessage.test(element)) {

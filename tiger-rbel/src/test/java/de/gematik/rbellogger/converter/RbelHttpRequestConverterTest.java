@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class RbelHttpRequestConverterTest {
 
@@ -55,38 +57,55 @@ class RbelHttpRequestConverterTest {
         .hasFacet(RbelHttpMessageFacet.class);
   }
 
-  @Test
-  void doubleHeaderValueRequest() {
+  @ParameterizedTest
+  @CsvSource({
+    "'User-Agent: Value1\r\nUser-Agent: Value2', 2", // 2 weil 2x User-Agent
+    "'User-Agent: Value1, Value2\r\n', 3" // 3 weil 2x User-Agent und 1x User-Agent: Value1, Value2
+  })
+  void doubleHeaderValueRequest(String userAgentHeader, int expectedSize) {
     final RbelElement rbelElement =
         new RbelElement(
             ("GET /auth/realms/idp/.well-known/openid-configuration HTTP/1.1\r\n"
-                    + "User-Agent: Value1\r\n"
-                    + "User-Agent: Value2\r\n\r\n")
+                    + userAgentHeader
+                    + "\r\n\r\n")
                 .getBytes(StandardCharsets.UTF_8),
             null);
 
     rbelConverter.convertElement(rbelElement);
 
-    assertThat(rbelElement.findRbelPathMembers("$.header.User-Agent")).hasSize(2);
-    assertThat(rbelElement.findRbelPathMembers("$.header.*"))
+    assertThat(rbelElement).getChildrenWithPath("$.header.User-Agent..").hasSize(expectedSize);
+    assertThat(rbelElement)
+        .getChildrenWithPath("$.header..")
         .extracting(RbelElement::getRawStringContent)
-        .containsExactly("Value1", "Value2");
+        .contains("Value1", "Value2");
+    assertThat(rbelElement)
+        .matchesJexlExpression("$.header.User-Agent.. == 'Value1'")
+        .matchesJexlExpression("$.header.User-Agent.. == 'Value2'");
   }
 
-  @Test
-  void doubleHeaderValueResponse() {
+  @ParameterizedTest
+  @CsvSource(
+      textBlock =
+          """
+'User-Agent: Value1\r\nUser-Agent: Value2', 2
+'User-Agent: Value1, Value2\r\n', 3
+""")
+  void doubleHeaderValueResponse(String userAgentHeader, int expectedSize) {
     final RbelElement rbelElement =
         new RbelElement(
-            ("HTTP/1.1 200\r\n" + "User-Agent: Value1\r\n" + "User-Agent: Value2\r\n\r\n")
-                .getBytes(StandardCharsets.UTF_8),
+            ("HTTP/1.1 200\r\n" + userAgentHeader + "\r\n\r\n").getBytes(StandardCharsets.UTF_8),
             null);
 
     rbelConverter.convertElement(rbelElement);
 
-    assertThat(rbelElement.findRbelPathMembers("$.header.User-Agent")).hasSize(2);
-    assertThat(rbelElement.findRbelPathMembers("$.header.*"))
+    assertThat(rbelElement).getChildrenWithPath("$.header.User-Agent..").hasSize(expectedSize);
+    assertThat(rbelElement)
+        .getChildrenWithPath("$.header..")
         .extracting(RbelElement::getRawStringContent)
-        .containsExactly("Value1", "Value2");
+        .contains("Value1", "Value2");
+    assertThat(rbelElement)
+        .matchesJexlExpression("$.header.User-Agent.. == 'Value1'")
+        .matchesJexlExpression("$.header.User-Agent.. == 'Value2'");
   }
 
   @Test
@@ -115,16 +134,20 @@ class RbelHttpRequestConverterTest {
 
   @Test
   void httpVersionShouldBeParsed() {
-    assertThat(rbelConverter.convertElement("HTTP/1.0 200\r\n" + "Some-Header: Value\r\n\r\n", null))
-      .extractChildWithPath("$.httpVersion")
-      .hasStringContentEqualTo("HTTP/1.0");
+    assertThat(
+            rbelConverter.convertElement("HTTP/1.0 200\r\n" + "Some-Header: Value\r\n\r\n", null))
+        .extractChildWithPath("$.httpVersion")
+        .hasStringContentEqualTo("HTTP/1.0");
 
-    assertThat(rbelConverter.convertElement("HTTP/1.1 200\r\n" + "Some-Header: Value\r\n\r\n", null))
-      .extractChildWithPath("$.httpVersion")
-      .hasStringContentEqualTo("HTTP/1.1");
+    assertThat(
+            rbelConverter.convertElement("HTTP/1.1 200\r\n" + "Some-Header: Value\r\n\r\n", null))
+        .extractChildWithPath("$.httpVersion")
+        .hasStringContentEqualTo("HTTP/1.1");
 
-    assertThat(rbelConverter.convertElement("GET /foo/bar HTTP/1.0\r\n" + "Some-Header: Value\r\n\r\n", null))
-      .extractChildWithPath("$.httpVersion")
-      .hasStringContentEqualTo("HTTP/1.0");
+    assertThat(
+            rbelConverter.convertElement(
+                "GET /foo/bar HTTP/1.0\r\n" + "Some-Header: Value\r\n\r\n", null))
+        .extractChildWithPath("$.httpVersion")
+        .hasStringContentEqualTo("HTTP/1.0");
   }
 }

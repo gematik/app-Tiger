@@ -127,7 +127,7 @@ public class HttpActionHandler {
                 clonedRequest,
                 httpClient.sendRequest(
                     new HttpRequestInfo(ctx.channel(), clonedRequest, remoteAddress),
-                  configuration.socketConnectionTimeoutInMillis()),
+                    configuration.socketConnectionTimeoutInMillis()),
                 null,
                 remoteAddress);
         scheduler.submit(
@@ -145,7 +145,7 @@ public class HttpActionHandler {
                     httpStateHandler.getUniqueLoopPreventionHeaderName(),
                     httpStateHandler.getUniqueLoopPreventionHeaderValue())) {
                   response.removeHeader(httpStateHandler.getUniqueLoopPreventionHeaderName());
-                  log.debug("no expectation for:{}returning response:{}", request, response);
+                  log.debug("no expectation for: {} returning response: {}", request, response);
                 } else {
                   log.debug(
                       "returning response:{}\nfor forwarded request"
@@ -183,7 +183,7 @@ public class HttpActionHandler {
                   returnNotFound(
                       responseWriter,
                       request,
-                      "connection closed while proxying request to remote address"
+                      "connection closed while proxying request to remote address "
                           + remoteAddress);
                 } else {
                   log.error("Exception while proxying request", throwable);
@@ -224,13 +224,13 @@ public class HttpActionHandler {
                     .get(configuration.maxFutureTimeoutInMillis(), MILLISECONDS);
             responseWriter.writeResponse(request, response);
             log.debug(
-                "returning response:{}for forwarded request"
+                "returning response: {} for forwarded request"
                     + NEW_LINE
                     + NEW_LINE
-                    + " in json:{}"
+                    + " in json: {}"
                     + NEW_LINE
                     + NEW_LINE
-                    + "\nfor action:{}from expectation:{}",
+                    + "\nfor action: {} from expectation: {}",
                 response,
                 responseFuture.getHttpRequest(),
                 action,
@@ -256,7 +256,7 @@ public class HttpActionHandler {
     try {
       responseWriter.writeResponse(request, response);
       log.debug(
-          "returning response:{}for forwarded request" + NEW_LINE + NEW_LINE + " in json:{}",
+          "returning response: {} for forwarded request" + NEW_LINE + NEW_LINE + " in json:{}",
           response,
           request);
     } catch (Exception exception) {
@@ -304,12 +304,15 @@ public class HttpActionHandler {
       response.withHeader(
           httpStateHandler.getUniqueLoopPreventionHeaderName(),
           httpStateHandler.getUniqueLoopPreventionHeaderValue());
-      log.trace("no expectation for:{}returning response:{}", request, notFoundResponse());
+      log.trace("no expectation for: {} returning response: {}", request, notFoundResponse());
     } else if (isNotBlank(error)) {
       log.debug(
-          "error:{}handling request:{}returning response:{}", error, request, notFoundResponse());
+          "error: {} handling request: {} returning response: {}",
+          error,
+          request,
+          notFoundResponse());
     } else {
-      log.debug("no expectation for:{}returning response:{}", request, notFoundResponse());
+      log.debug("no expectation for: {} returning response: {}", request, notFoundResponse());
     }
     responseWriter.writeResponse(request, response);
   }

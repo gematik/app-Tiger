@@ -48,11 +48,11 @@ defineEmits(['click-confirm', 'click-dismiss'])
             <div class="modal-footer flex-nowrap p-0">
               <button type="button"
                       @click="$emit('click-confirm')"
-                      class="btn btn-lg btn-link fs-6 text-decoration-none col-6 py-3 m-0 rounded-0 border-end">
+                      class="btn btn-lg btn-link fs-6 text-decoration-none col-6 py-3 m-0 rounded-0 border-end" id="test-yes-play">
                 <strong>{{
                     props.labelConfirmButton
                   }}</strong></button>
-              <button type="button" class="btn btn-lg btn-link fs-6 text-decoration-none col-6 py-3 m-0 rounded-0"
+              <button type="button" class="btn btn-lg btn-link fs-6 text-decoration-none col-6 py-3 m-0 rounded-0" id="test-no-cancel"
                       @click="$emit('click-dismiss')">
                 {{ props.labelDismissButton }}
               </button>

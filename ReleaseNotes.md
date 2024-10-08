@@ -1,5 +1,65 @@
 # Changelog Tiger Test platform
 
+# Release 3.4.0
+
+## Breaking Changes
+
+* TGR-1547: Tiger-Test-Lib: the no-args constructor of the class RbelMessageValidator is no longer public. Use
+  `de.gematik.test.tiger.lib.rbel.RbelMessageValidator.getInstance` if you need to get a reference to the default
+  instance. You want to use the same instance across the code base, so that all validation actions operate in the same
+  messages list. If you require a separate instance (e.g.: for Unit Tests), then use the constructor
+  `RbelMessageValidator(TigerTestEnvMgr, TigerProxy, LocalProxyRbelMessageListener)`. You can initialize it with mock or
+  real
+  dependencies depending on your testing needs.
+* RbelLogger: the `RbelX509Converter` is no longer active per default. If you need this converter in your project you
+  need to activate it explicitly. This can be done in the tiger yaml:
+
+```yaml
+tigerProxy:
+  activateRbelParsingFor:
+    - X509
+```
+
+## Features
+
+* TGR-1551: Tiger-Proxy: Added configuration-option to add notes to messages in the RbelLog. This can be as follows:
+    ```yaml
+    tigerProxy:
+      notes:
+        - message: "This is a note on the HTTP method"
+          jexlCriterion: "isRequest && path == '$.method'"
+        - message: "Hackers were here..."
+          jexlCriterion: "element.decryptedUsingKeyWithId == 'mySuperSecretKey'"
+    ```
+* TGR-1567: Added Glue-Code step for selecting a request with a node matching a value regardless of the path:
+  `And TGR find last request with "$.path.foobar.value" matching "22"`
+* TGR-1557: Rbel-Parser: Added support for comma-seperated values in HTTP-Headers. This is useful for headers like
+  `Accept-Language` or `Accept-Encoding`. To look for a specific value in a comma-seperated list, you can use the
+  following syntax: `$.header.Accept-Encoding.. == 'Value1'`.
+* TGR-905: WorkflowUI: Rbel-Path Tab in Inspect Modal has now color coding for true/false/invalid rbel path
+* TGR-1573: resolve scenario outline parameters and expressions
+    * in scenario title, outline table, step descriptions
+    * found config/RBel/JEXL expressions are resolved, if possible
+    * original (unreplaced) step description is available as title/tooltip
+    * long step description lines in Web UI are abbreviated
+        * configurable via tiger.lib.maxStepDescriptionDisplayLengthOnWebUi (default 300)
+* TGR-1561: performance improvements on Rbel parsing to avoid potentially expensive operations via fast-fail heuristics
+    * Better handling of POP3 NOOP responses without header line
+    * Tracing display of long string content during Rbel parsing can be configured via property
+      tiger.rbel.rawstring.max.trace.length (default set to 1000)
+
+## Bugfixes
+
+* TGR-1497: Tiger Proxy Log - filter matching all says that none match
+* TGR-1516: Corrected route-ordering, so that the most specific route is selected first. Forward-Proxy routes are now
+  preferred over Reverse-Proxy routes. They are also always checked for matching hosts, either in the host-header or the
+  target-url.
+* TGR-1545: Tiger Proxy: a remote tiger proxy with rbel parsing inactive, now correctly still propagates the unparsed
+  messages to the local tiger proxy. The local tiger proxy can then still parse them.
+* TGR-1440: Dockerfile of tiger proxy does not set the MANAGEMENT_SERVER_PORT variable
+* TGR-1566: Workflow UI: fixed an issue where the combination of not running starts automatically on start up and
+  pressing play on a test that uses the tiger glue to pause the execution would wrongly terminate the tiger test
+
 # Release 3.3.0
 
 * TGR-1469: improve responses of UITests for true/false queries
@@ -40,8 +100,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+    key = PLUGIN_PROPERTY_NAME,
+    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 }
 ```

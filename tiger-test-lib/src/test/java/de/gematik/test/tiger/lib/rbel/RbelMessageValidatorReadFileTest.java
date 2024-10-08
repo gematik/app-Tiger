@@ -43,8 +43,10 @@ class RbelMessageValidatorReadFileTest {
     executeWithSecureShutdown(
         () -> {
           TigerDirector.start();
+
           LocalProxyRbelMessageListener.getInstance().clearValidatableRbelMessages();
-          new RbelMessageValidator().readTgrFile("src/test/resources/testdata/rezepsFiltered.tgr");
+          RbelMessageValidator.getInstance()
+              .readTgrFile("src/test/resources/testdata/rezepsFiltered.tgr");
 
           assertThat(LocalProxyRbelMessageListener.getInstance().getValidatableRbelMessages())
               .hasSize(96);

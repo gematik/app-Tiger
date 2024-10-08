@@ -66,7 +66,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         .and("https_proxy", null)
         .execute(
             () -> {
-              spawnTigerProxyWith(
+              spawnTigerProxyWithDefaultRoutesAndWith(
                   TigerProxyConfiguration.builder()
                       .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
                       .build());
@@ -92,7 +92,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         .and("https_proxy", null)
         .execute(
             () -> {
-              spawnTigerProxyWith(
+              spawnTigerProxyWithDefaultRoutesAndWith(
                   TigerProxyConfiguration.builder()
                       .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
                       .build());
@@ -143,7 +143,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
     System.setProperty("http.proxyHost", proxyHost);
     setOrClearProperty("http.proxyPort", proxyPort);
 
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
             .build());
@@ -174,7 +174,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
     System.setProperty("http.proxyUser", proxyUser);
     System.setProperty("http.proxyPassword", proxyPassword);
 
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
             .build());
@@ -257,7 +257,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         .and("http_proxy", null)
         .execute(
             () -> {
-              spawnTigerProxyWith(
+              spawnTigerProxyWithDefaultRoutesAndWith(
                   TigerProxyConfiguration.builder()
                       .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
                       .build());
@@ -284,7 +284,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
         .and("http_proxy", null)
         .execute(
             () -> {
-              spawnTigerProxyWith(
+              spawnTigerProxyWithDefaultRoutesAndWith(
                   TigerProxyConfiguration.builder()
                       .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
                       .build());
@@ -335,7 +335,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
     System.setProperty("https.proxyHost", proxyHost);
     setOrClearProperty("https.proxyPort", proxyPort);
 
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
             .build());
@@ -366,7 +366,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
     System.setProperty("https.proxyUser", proxyUser);
     System.setProperty("https.proxyPassword", proxyPassword);
 
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .forwardToProxy(ForwardProxyInfo.builder().hostname("$SYSTEM").build())
             .build());
@@ -444,7 +444,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
   @SneakyThrows
   @Test
   void httpProxyWithParameters_shouldBeSet(CapturedOutput capturedOutput) {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .forwardToProxy(
                 ForwardProxyInfo.builder()
@@ -471,7 +471,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
   @SneakyThrows
   @Test
   void httpsProxyWithParameters_shouldBeSet(CapturedOutput capturedOutput) {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .forwardToProxy(
                 ForwardProxyInfo.builder()
@@ -498,7 +498,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
   @SneakyThrows
   @Test
   void httpProxyWithParametersWithoutPort_shouldBeSet(CapturedOutput capturedOutput) {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .forwardToProxy(
                 ForwardProxyInfo.builder()
@@ -524,7 +524,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
   @SneakyThrows
   @Test
   void httpsProxyWithParametersWithoutPort_shouldBeSet(CapturedOutput capturedOutput) {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .forwardToProxy(
                 ForwardProxyInfo.builder()
@@ -551,7 +551,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
   @Test
   void httpProxyWithParametersWithoutUsernamePasswordPort_shouldBeSet(
       CapturedOutput capturedOutput) {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .forwardToProxy(
                 ForwardProxyInfo.builder().type(TigerProxyType.HTTP).hostname("localhost").build())
@@ -570,7 +570,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
   @Test
   void httpsProxyWithParametersWithoutUsernamePasswordPort_shouldBeSet(
       CapturedOutput capturedOutput) {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .forwardToProxy(
                 ForwardProxyInfo.builder().type(TigerProxyType.HTTPS).hostname("localhost").build())
@@ -627,7 +627,7 @@ class TigerProxyConfigurationTest extends AbstractTigerProxyTest {
   @SneakyThrows
   @Test
   void emptyProxy_shouldNotBeSet(CapturedOutput capturedOutput) {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .forwardToProxy(ForwardProxyInfo.builder().build())
             .build());
