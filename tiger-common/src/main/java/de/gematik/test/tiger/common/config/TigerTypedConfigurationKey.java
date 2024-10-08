@@ -35,24 +35,21 @@ public class TigerTypedConfigurationKey<T> {
   private final Constructor<T> typeConstructor;
 
   public TigerTypedConfigurationKey(String key, Class<T> type) {
-    this(new TigerConfigurationKey(key), type);
-  }
-
-  @SneakyThrows
-  public TigerTypedConfigurationKey(TigerConfigurationKey key, Class<T> type) {
-    this.key = key;
-    typeConstructor = type.getConstructor(String.class);
-    this.defaultValue = Optional.empty();
+    this(key, type, null);
   }
 
   public TigerTypedConfigurationKey(String key, Class<T> type, T defaultValue) {
     this(new TigerConfigurationKey(key), type, defaultValue);
   }
 
+  public TigerTypedConfigurationKey(TigerConfigurationKey key, Class<T> type) {
+    this(key, type, null);
+  }
+
   @SneakyThrows
   public TigerTypedConfigurationKey(TigerConfigurationKey key, Class<T> type, T defaultValue) {
     this.key = key;
-    typeConstructor = type.getConstructor(String.class);
+    this.typeConstructor = type.getConstructor(String.class);
     this.defaultValue = Optional.ofNullable(defaultValue);
   }
 
@@ -84,7 +81,7 @@ public class TigerTypedConfigurationKey<T> {
     TigerGlobalConfiguration.putValue(key.downsampleKey(), value, precedence);
   }
 
-  public void clearValue(){
+  public void clearValue() {
     TigerGlobalConfiguration.deleteFromAllSources(this.key);
   }
 }

@@ -19,11 +19,13 @@ package de.gematik.test.tiger.testenvmgr.env;
 import static io.cucumber.core.options.Constants.EXECUTION_DRY_RUN_PROPERTY_NAME;
 import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.request;
 
+import com.google.common.collect.Streams;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import io.cucumber.messages.types.Examples;
 import io.cucumber.messages.types.Location;
 import io.cucumber.messages.types.Scenario;
+import io.cucumber.messages.types.TableRow;
 import java.net.URI;
 import java.util.Collection;
 import java.util.HashSet;
@@ -32,8 +34,11 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.platform.engine.TestSource;
 import org.junit.platform.engine.UniqueId;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
@@ -52,6 +57,8 @@ import org.springframework.stereotype.Component;
 public class ScenarioRunner {
 
   private static final Set<TestIdentifier> scenarios = new HashSet<>();
+  private static final ExecutorService scenarioExecutionService =
+      Executors.newSingleThreadExecutor();
 
   public static void addScenarios(Collection<TestIdentifier> newScenarios) {
     var onlyCucumberEngineScenarios =
@@ -118,8 +125,11 @@ public class ScenarioRunner {
     LauncherDiscoveryRequest rerunRequest =
         request().selectors(selector).configurationParameters(initialConfiguration).build();
 
-    Launcher launcher = LauncherFactory.create();
-    launcher.execute(rerunRequest);
+    scenarioExecutionService.execute(
+        () -> {
+          Launcher launcher = LauncherFactory.create();
+          launcher.execute(rerunRequest);
+        });
   }
 
   public static UniqueId findScenarioUniqueId(
@@ -127,12 +137,14 @@ public class ScenarioRunner {
     ScenarioRunner.ScenarioLocation scenarioLocation;
     if (isOutline) {
       var exampleLocation =
-          scenario.getExamples().stream()
-              .map(Examples::getTableBody)
-              .flatMap(List::stream)
-              .toList()
-              .get(scenarioDataVariantIndex)
-              .getLocation();
+          Streams.mapWithIndex(
+                  scenario.getExamples().stream().map(Examples::getTableBody).flatMap(List::stream),
+                  Pair::of) // (tableRow, index)
+              .filter(pair -> pair.getRight() == scenarioDataVariantIndex)
+              .map(Pair::getLeft)
+              .map(TableRow::getLocation)
+              .findFirst()
+              .orElseThrow();
       scenarioLocation = new ScenarioRunner.ScenarioLocation(featurePath, exampleLocation);
     } else {
       scenarioLocation = new ScenarioRunner.ScenarioLocation(featurePath, scenario.getLocation());

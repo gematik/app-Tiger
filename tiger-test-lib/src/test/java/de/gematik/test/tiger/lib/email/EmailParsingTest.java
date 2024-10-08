@@ -22,6 +22,8 @@ import static org.awaitility.Awaitility.await;
 import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.GreenMailUtil;
 import com.icegreen.greenmail.util.ServerSetup;
+import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelSmtpCommandFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
@@ -29,6 +31,10 @@ import jakarta.mail.Folder;
 import jakarta.mail.Message;
 import jakarta.mail.Session;
 import jakarta.mail.Store;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeBodyPart;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.MimeMultipart;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import lombok.SneakyThrows;
@@ -44,6 +50,8 @@ class EmailParsingTest {
   ServerSetup smtpsAddress;
   ServerSetup pop3Address;
   GreenMail greenMail;
+  private int smtpsProxyPort;
+  private int pop3sProxyPort;
 
   void startGreenMail() {
     val smtpsPort =
@@ -54,6 +62,14 @@ class EmailParsingTest {
         Integer.parseInt(
             TigerGlobalConfiguration.resolvePlaceholders(
                 "${tiger.config_ports.pop3s.greenmailServerPort}"));
+
+    smtpsProxyPort =
+        Integer.parseInt(
+            TigerGlobalConfiguration.resolvePlaceholders("${tiger.config_ports.smtps.proxy}"));
+
+    pop3sProxyPort =
+        Integer.parseInt(
+            TigerGlobalConfiguration.resolvePlaceholders("${tiger.config_ports.pop3s.proxy}"));
 
     val tigerGreenmailSetup = createGreenMailServerSetup(smtpsPort, pop3sPort);
     smtpsAddress = tigerGreenmailSetup[0];
@@ -75,11 +91,13 @@ class EmailParsingTest {
       tigerYaml =
           """
    config_ports:
-     pop3s:
+      pop3s:
        admin: ${free.port.0}
        proxy: ${free.port.1}
        greenmailServerPort: ${free.port.2}
-     smtps:
+      smtps:
+       admin: ${free.port.4}
+       proxy: ${free.port.5}
        greenmailServerPort: ${free.port.3}
    tigerProxy:
      proxyPort: ${tiger.config_ports.pop3s.proxy}
@@ -99,12 +117,8 @@ class EmailParsingTest {
         "here the body of the email\r\n",
         smtpsAddress);
 
-    // retrieve directly
-    retrieveByPopSecure(pop3Address.getPort());
-    // retrieve over the proxy
-    retrieveByPopSecure(
-        Integer.parseInt(
-            TigerGlobalConfiguration.resolvePlaceholders("${tiger.config_ports.pop3s.proxy}")));
+    var message = retrieveByPopSecure(pop3sProxyPort);
+    assertEqual(message, ExpectedMail.smallMessage());
 
     expectReceivedMessages(tigerTestEnvMgr, 15);
   }
@@ -141,8 +155,8 @@ class EmailParsingTest {
         "here the body of the email\r\n",
         smtpProxy);
 
-    // retrieve directly
-    retrieveByPopSecure(pop3Address.getPort());
+    var message = retrieveByPopSecure(pop3Address.getPort());
+    assertEqual(message, ExpectedMail.smallMessage());
 
     expectReceivedMessages(tigerTestEnvMgr, 12);
   }
@@ -200,14 +214,107 @@ class EmailParsingTest {
         "here the body of the email\r\n",
         smtpProxy);
 
-    // retrieve directly
-    retrieveByPopSecure(pop3Address.getPort());
-    // retrieve over the proxy
-    retrieveByPopSecure(
-        Integer.parseInt(
-            TigerGlobalConfiguration.resolvePlaceholders("${tiger.config_ports.pop3s.proxy}")));
+    var message = retrieveByPopSecure(pop3sProxyPort);
+    assertEqual(message, ExpectedMail.smallMessage());
 
     expectReceivedMessages(tigerTestEnvMgr, 27);
+  }
+
+  @SneakyThrows
+  @TigerTest(
+      tigerYaml =
+          """
+           config_ports:
+             pop3s:
+               admin: ${free.port.0}
+               proxy: ${free.port.1}
+               greenmailServerPort: ${free.port.2}
+             smtps:
+               admin: ${free.port.4}
+               proxy: ${free.port.5}
+               greenmailServerPort: ${free.port.3}
+           tigerProxy:
+             trafficEndpoints:
+                - http://localhost:${tiger.config_ports.pop3s.admin}
+                - http://localhost:${tiger.config_ports.smtps.admin}
+             activateRbelParsingFor:
+                - pop3
+                - smtp
+                - mime
+           servers:
+             smtpsProxy:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${tiger.config_ports.smtps.admin}
+                proxyPort: ${tiger.config_ports.smtps.proxy}
+                directReverseProxy:
+                   hostname: 127.0.0.1
+                   port: ${tiger.config_ports.smtps.greenmailServerPort}
+                rbelBufferSizeInMb: 0
+                activateRbelParsing: false
+             pop3sProxy:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${tiger.config_ports.pop3s.admin}
+                proxyPort: ${tiger.config_ports.pop3s.proxy}
+                directReverseProxy:
+                   hostname: 127.0.0.1
+                   port: ${tiger.config_ports.pop3s.greenmailServerPort}
+                activateRbelParsing: false
+                rbelBufferSizeInMb: 0
+           """)
+  @Test
+  void testSendAndReceiveEmailOverMeshTigerProxy_bigAttachment(TigerTestEnvMgr tigerTestEnvMgr) {
+    startGreenMail();
+    ServerSetup smtpProxy = getSmtpProxy();
+
+    String to = "to@localhost";
+    String from = "from@localhost";
+    String subject = "Test Large Email";
+    String body = "A".repeat(3 * 1024 * 1024); // 3 MB body
+
+    MimeMessage message = new MimeMessage(GreenMailUtil.getSession(smtpProxy));
+    message.setFrom(new InternetAddress(from));
+    message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
+    message.setSubject(subject);
+
+    MimeBodyPart textPart = new MimeBodyPart();
+    textPart.setText(body);
+
+    MimeMultipart multipart = new MimeMultipart();
+    multipart.addBodyPart(textPart);
+
+    message.setContent(multipart);
+
+    GreenMailUtil.sendMimeMessage(message);
+    MimeMessage messageRetrieved = (MimeMessage) retrieveByPopSecure(pop3sProxyPort);
+    var extractedBody = GreenMailUtil.getWholeMessage(messageRetrieved);
+    assertThat(extractedBody)
+        .contains("Content-Type: multipart/mixed;")
+        .contains("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
+        .hasSizeGreaterThan(3 * 1024 * 1024);
+
+    await()
+        .atMost(1, TimeUnit.MINUTES)
+        .until(
+            () ->
+                tigerTestEnvMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageList().stream()
+                    .filter(EmailParsingTest::hasSmtpData)
+                    .map(EmailParsingTest::extractSmtpBody)
+                    // we compare with endsWith because the extractedBody contains two extra initial
+                    // lines added by the greenmail client
+                    .anyMatch(extractedBody::endsWith));
+  }
+
+  private static boolean hasSmtpData(RbelElement e) {
+    return e.getFacet(RbelSmtpCommandFacet.class)
+        .map(RbelSmtpCommandFacet::getCommand)
+        .filter(cmd -> "DATA".equals(cmd.getRawStringContent()))
+        .isPresent();
+  }
+
+  private static String extractSmtpBody(RbelElement e) {
+    return e.findElement("$.smtpBody").orElseThrow().getRawStringContent();
   }
 
   private static void expectReceivedMessages(
@@ -215,20 +322,19 @@ class EmailParsingTest {
     await()
         .atMost(10, TimeUnit.SECONDS)
         .until(
-            () ->
-                tigerTestEnvMgr
-                        .getLocalTigerProxyOrFail()
-                        .getRbelLogger()
-                        .getMessageHistory()
-                        .size()
-                    == expectedMessages);
+            () -> {
+              var size =
+                  tigerTestEnvMgr
+                      .getLocalTigerProxyOrFail()
+                      .getRbelLogger()
+                      .getMessageHistory()
+                      .size();
+              log.debug("currently so many messages: " + size);
+              return size == expectedMessages;
+            });
   }
 
-  private static @NotNull ServerSetup getSmtpProxy() {
-    val smtpsProxyPort =
-        Integer.parseInt(
-            TigerGlobalConfiguration.resolvePlaceholders("${tiger.config_ports.smtps.proxy}"));
-
+  private @NotNull ServerSetup getSmtpProxy() {
     return new ServerSetup(smtpsProxyPort, null, ServerSetup.PROTOCOL_SMTPS);
   }
 
@@ -240,7 +346,7 @@ class EmailParsingTest {
   }
 
   @SneakyThrows
-  void retrieveByPopSecure(int portNumber) {
+  Message retrieveByPopSecure(int portNumber) {
     // in order to go through the tiger proxy, we need to make a request using directly the java
     // mail
     // api instead of green mail. in this way we can use a custom port
@@ -270,13 +376,27 @@ class EmailParsingTest {
 
     // Print each message
     assertThat(messages).hasSize(1);
-    val theMessage = messages[0];
-    assertThat(theMessage.getSubject()).isEqualTo("test subject");
-    assertThat(theMessage.getFrom()[0].toString()).isEqualTo("from@localhost");
-    assertThat(theMessage.getContent().toString()).isEqualTo("here the body of the email\r\n");
+    // copies the message so that we can safely close the folder before making assertions
+    val messageCopy = new MimeMessage((MimeMessage) messages[0]);
 
     // Close the folder and store
     folder.close(false);
     store.close();
+    return messageCopy;
+  }
+
+  @SneakyThrows
+  void assertEqual(Message actual, ExpectedMail expected) {
+    assertThat(actual.getSubject()).isEqualTo(expected.subject);
+    assertThat(actual.getFrom()[0]).hasToString(expected.from);
+    assertThat(actual.getRecipients(Message.RecipientType.TO)[0]).hasToString(expected.to);
+    assertThat(actual.getContent()).hasToString(expected.body);
+  }
+
+  record ExpectedMail(String from, String to, String subject, String body) {
+    static ExpectedMail smallMessage() {
+      return new ExpectedMail(
+          "from@localhost", "to@localhost", "test subject", "here the body of the email\r\n");
+    }
   }
 }

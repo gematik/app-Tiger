@@ -28,9 +28,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.util.*;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.Accessors;
 import org.apache.commons.lang3.StringUtils;
 
@@ -41,6 +39,9 @@ import org.apache.commons.lang3.StringUtils;
 @Setter
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
 public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRequest, Body> {
   private String method = "";
   private String path = "";
@@ -59,7 +60,7 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
   private SocketAddress socketAddress;
   private String localAddress;
   private String remoteAddress;
-  private Boolean forwardProxyRequest = true;
+  private Boolean forwardProxyRequest = false;
   private RbelElement parsedRbelMessage = null;
 
   public static HttpRequest request() {

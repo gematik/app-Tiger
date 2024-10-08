@@ -17,7 +17,6 @@
 package de.gematik.rbellogger.converter;
 
 import static com.google.common.primitives.Bytes.indexOf;
-import static de.gematik.rbellogger.converter.RbelHttpRequestConverter.findEolInHttpMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.net.MediaType;
@@ -36,20 +35,26 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 @Slf4j
 public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
-  private Map<String, RbelHttpCodingConverter> httpCodingsMap =
+  private static final String CRLF = "\r\n";
+  private static final byte[] CRLF_BYTES = CRLF.getBytes(UTF_8);
+  private static final String HTTP_PREFIX = "HTTP";
+  private static final byte[] HTTP_PREFIX_BYTES = HTTP_PREFIX.getBytes(UTF_8);
+
+  public static final Map<String, RbelHttpCodingConverter> HTTP_CODINGS_MAP =
       Map.of(
           "chunked", RbelHttpResponseConverter::decodeChunked,
           "deflate", RbelHttpResponseConverter::decodeDeflate,
           "gzip", RbelHttpResponseConverter::decodeGzip);
 
   private static byte[] decodeGzip(byte[] bytes, String eol, Charset charset) {
-    log.atTrace()
-        .log(() -> "Decoding data with gzip");
+    log.atTrace().log(() -> "Decoding data with gzip");
     try (final InputStream inputStream = new GZIPInputStream(new ByteArrayInputStream(bytes))) {
       return inputStream.readAllBytes();
     } catch (Exception e) {
@@ -58,8 +63,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
   }
 
   private static byte[] decodeDeflate(byte[] bytes, String eol, Charset charset) {
-    log.atTrace()
-        .log(() -> "Decoding data with deflate");
+    log.atTrace().log(() -> "Decoding data with deflate");
     try (final InputStream inputStream = new InflaterInputStream(new ByteArrayInputStream(bytes))) {
       return inputStream.readAllBytes();
     } catch (Exception e) {
@@ -68,8 +72,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
   }
 
   private static byte[] decodeChunked(byte[] inputData, String eol, Charset charset) {
-    log.atTrace()
-      .log(() -> "Decoding data with chunked encoding");
+    log.atTrace().log(() -> "Decoding data with chunked encoding");
     int chunkSeparator = new String(inputData, charset).indexOf(eol) + eol.length();
 
     final int indexOfChunkTerminator =
@@ -92,70 +95,95 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
   @Override
   public void consumeElement(RbelElement targetElement, final RbelConverter converter) {
-    final String content = targetElement.getRawStringContent();
-    if (content == null || !content.startsWith("HTTP")) {
+    var rawContent = targetElement.getRawContent();
+    if (!RbelArrayUtils.startsWith(rawContent, HTTP_PREFIX_BYTES)) {
       return;
     }
 
-    String eol = findEolInHttpMessage(content);
+    new Parser(targetElement, converter, rawContent).parse();
+  }
 
-    int endOfHeadIndex = indexOf(targetElement.getRawContent(), (eol + eol).getBytes());
-    if (endOfHeadIndex == -1) {
-      return;
+  @AllArgsConstructor
+  private class Parser {
+    private final RbelElement targetElement;
+    private final RbelConverter converter;
+    private final byte[] rawContent;
+
+    private void parse() {
+      var eolOpt = findEolInHttpMessage(rawContent);
+      if (eolOpt.isEmpty()) {
+        return;
+      }
+      var eol = eolOpt.get();
+      var endOfHeaderIndexOpt = findEndOfHeaderIndex(eol);
+      if (endOfHeaderIndexOpt.isEmpty()) {
+        return;
+      }
+      var endOfHeaderIndex = endOfHeaderIndexOpt.get();
+      var content = targetElement.getRawStringContent();
+      if (content == null) {
+        return;
+      }
+
+      RbelElement headerElement = extractHeaderFromMessage(targetElement, converter, eol, content);
+      RbelHttpHeaderFacet httpHeaderFacet = headerElement.getFacetOrFail(RbelHttpHeaderFacet.class);
+      final byte[] rawBodyData =
+          extractBodyData(targetElement, endOfHeaderIndex, httpHeaderFacet, eol);
+      final RbelElement bodyElement =
+          new RbelElement(rawBodyData, targetElement, findCharsetInHeader(httpHeaderFacet));
+      final RbelElement responseCode = extractResponseCodeFromMessage(content);
+      final RbelHttpResponseFacet rbelHttpResponse =
+          RbelHttpResponseFacet.builder()
+              .responseCode(responseCode)
+              .reasonPhrase(extractReasonPhraseFromMessage(content))
+              .build();
+
+      targetElement.addFacet(rbelHttpResponse);
+      targetElement.addFacet(new RbelResponseFacet(responseCode.getRawStringContent()));
+      final var httpVersion =
+          new RbelElement(content.substring(0, content.indexOf(" ")).getBytes(), targetElement);
+      targetElement.addFacet(
+          RbelHttpMessageFacet.builder()
+              .header(headerElement)
+              .body(bodyElement)
+              .httpVersion(httpVersion)
+              .build());
+
+      converter.convertElement(bodyElement);
     }
-    endOfHeadIndex += 2 * eol.length();
 
-    final RbelElement headerElement = extractHeaderFromMessage(targetElement, converter, eol);
+    private Optional<Integer> findEndOfHeaderIndex(String eol) {
+      int endOfHeadIndex = indexOf(rawContent, (eol + eol).getBytes());
+      if (endOfHeadIndex == -1) {
+        return Optional.empty();
+      }
+      endOfHeadIndex += 2 * eol.length();
+      return Optional.of(endOfHeadIndex);
+    }
 
-    final byte[] rawBodyData =
-        extractBodyData(
-            targetElement,
-            endOfHeadIndex,
-            headerElement.getFacetOrFail(RbelHttpHeaderFacet.class),
-            eol);
-    final RbelElement bodyElement =
-        new RbelElement(
-            rawBodyData,
-            targetElement,
-            findCharsetInHeader(headerElement.getFacetOrFail(RbelHttpHeaderFacet.class)));
-    final RbelElement responseCode = extractResponseCodeFromMessage(targetElement, content);
-    final RbelHttpResponseFacet rbelHttpResponse =
-        RbelHttpResponseFacet.builder()
-            .responseCode(responseCode)
-            .reasonPhrase(extractReasonPhraseFromMessage(targetElement, content))
-            .build();
-
-    targetElement.addFacet(rbelHttpResponse);
-    targetElement.addFacet(new RbelResponseFacet(responseCode.getRawStringContent()));
-    final var httpVersion = new RbelElement(content.substring(0, content.indexOf(" ")).getBytes(), targetElement);
-    targetElement.addFacet(
-        RbelHttpMessageFacet.builder().header(headerElement).body(bodyElement).httpVersion(httpVersion).build());
-
-    converter.convertElement(bodyElement);
-  }
-
-  private RbelElement extractResponseCodeFromMessage(RbelElement targetElement, String content) {
-    return RbelElement.builder()
-        .parentNode(targetElement)
-        .rawContent(content.split("\\s")[1].getBytes(UTF_8))
-        .build();
-  }
-
-  private RbelElement extractReasonPhraseFromMessage(RbelElement targetElement, String content) {
-    String[] responseStatusLineSplit = content.split("\\r\\n")[0].trim().split("\\s", 3);
-    if (responseStatusLineSplit.length == 2) {
-      return RbelElement.builder().parentNode(targetElement).build();
-    } else {
+    private RbelElement extractResponseCodeFromMessage(String content) {
       return RbelElement.builder()
           .parentNode(targetElement)
-          .rawContent(responseStatusLineSplit[2].trim().getBytes(targetElement.getElementCharset()))
+          .rawContent(content.split("\\s")[1].getBytes(UTF_8))
           .build();
+    }
+
+    private RbelElement extractReasonPhraseFromMessage(String content) {
+      String[] responseStatusLineSplit = content.split("\\r\\n")[0].trim().split("\\s", 3);
+      if (responseStatusLineSplit.length == 2) {
+        return RbelElement.builder().parentNode(targetElement).build();
+      } else {
+        return RbelElement.builder()
+            .parentNode(targetElement)
+            .rawContent(
+                responseStatusLineSplit[2].trim().getBytes(targetElement.getElementCharset()))
+            .build();
+      }
     }
   }
 
   public RbelElement extractHeaderFromMessage(
-      RbelElement rbel, RbelConverter converter, String eol) {
-    final String content = rbel.getRawStringContent();
+      RbelElement rbel, RbelConverter converter, String eol, String content) {
     int endOfBodyPosition = content.indexOf(eol + eol);
     int endOfFirstLine = content.indexOf(eol) + eol.length();
 
@@ -167,7 +195,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
     final List<String> headerList =
         Arrays.stream(content.substring(endOfFirstLine, endOfBodyPosition).split(eol))
-            .filter(line -> !line.isEmpty() && !line.startsWith("HTTP"))
+            .filter(line -> !line.isEmpty() && !line.startsWith(HTTP_PREFIX))
             .toList();
 
     RbelElement headerElement =
@@ -181,10 +209,23 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
     return headerElement;
   }
 
+  private Optional<Charset> strictParsingOfCharset(String s) {
+    try {
+      return Optional.ofNullable(s)
+          .map(MediaType::parse)
+          .map(MediaType::charset)
+          .filter(com.google.common.base.Optional::isPresent)
+          .map(com.google.common.base.Optional::get);
+    } catch (RuntimeException e) {
+      return Optional.empty();
+    }
+  }
+
   Optional<Charset> findCharsetInHeader(RbelHttpHeaderFacet headerMap) {
     return headerMap
         .getCaseInsensitiveMatches("Content-Type")
         .map(RbelElement::getRawStringContent)
+        .filter(Objects::nonNull)
         .map(str -> strictParsingOfCharset(str).orElse(guessCharset(str)))
         .findFirst();
   }
@@ -202,32 +243,29 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
         .orElse(StandardCharsets.UTF_8);
   }
 
-  private Optional<Charset> strictParsingOfCharset(String s) {
-    try {
-      return Optional.ofNullable(s)
-          .map(MediaType::parse)
-          .map(MediaType::charset)
-          .filter(com.google.common.base.Optional::isPresent)
-          .map(com.google.common.base.Optional::get);
-    } catch (RuntimeException e) {
-      return Optional.empty();
+  protected SimpleImmutableEntry<String, RbelElement> parseStringToKeyValuePair(
+      final String line, final RbelConverter context, RbelElement headerElement) {
+    final int colon = line.indexOf(':');
+    if (colon == -1) {
+      throw new IllegalArgumentException("Header malformed: '" + line + "'");
     }
-  }
+    val key = line.substring(0, colon).trim();
+    val value = line.substring(colon + 1).trim();
+    Charset elementCharset = headerElement.getElementCharset();
+    val rbelElement =
+        context.convertElement(new RbelElement(value.getBytes(elementCharset), headerElement));
 
-  public byte[] extractBodyData(
-      final RbelElement rbel,
-      final int offset,
-      final RbelHttpHeaderFacet headerMap,
-      final String eol) {
-    byte[] inputData =
-        Arrays.copyOfRange(rbel.getRawContent(), offset, rbel.getRawContent().length);
+    if (value.contains(",")) {
+      val childNodes = new ArrayList<RbelElement>();
+      rbelElement.addFacet(new RbelListFacet(childNodes));
+      for (String part : value.split(",")) {
+        childNodes.add(
+            context.convertElement(
+                new RbelElement(part.trim().getBytes(elementCharset), rbelElement)));
+      }
+    }
 
-    return applyCodings(
-        applyCodings(inputData, headerMap, eol, rbel.getElementCharset(), "Content-Encoding"),
-        headerMap,
-        eol,
-        rbel.getElementCharset(),
-        "Transfer-Encoding");
+    return new SimpleImmutableEntry<>(key, rbelElement);
   }
 
   public byte[] applyCodings(
@@ -247,12 +285,12 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
             .map(String::trim)
             .map(
                 encoding -> {
-                  if (!httpCodingsMap.containsKey(encoding)) {
+                  if (!HTTP_CODINGS_MAP.containsKey(encoding)) {
                     throw new RbelConversionException(
                         "Unsupported encoding found in HTTP header: " + encoding);
                   }
                   log.info("Adding decoder for encoding: {}", encoding);
-                  return httpCodingsMap.get(encoding);
+                  return HTTP_CODINGS_MAP.get(encoding);
                 })
             .toList();
 
@@ -265,18 +303,30 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
     return data;
   }
 
-  protected SimpleImmutableEntry<String, RbelElement> parseStringToKeyValuePair(
-      final String line, final RbelConverter context, RbelElement headerElement) {
-    final int colon = line.indexOf(':');
-    if (colon == -1) {
-      throw new IllegalArgumentException("Header malformed: '" + line + "'");
-    }
-    final String key = line.substring(0, colon).trim();
-    final RbelElement el =
-        new RbelElement(
-            line.substring(colon + 1).trim().getBytes(headerElement.getElementCharset()),
-            headerElement);
+  public byte[] extractBodyData(
+      RbelElement targetElement,
+      final int offset,
+      final RbelHttpHeaderFacet headerMap,
+      final String eol) {
+    var rawContent = targetElement.getRawContent();
+    byte[] inputData = Arrays.copyOfRange(rawContent, offset, rawContent.length);
 
-    return new SimpleImmutableEntry<>(key, context.convertElement(el));
+    Charset elementCharset = targetElement.getElementCharset();
+    return applyCodings(
+        applyCodings(inputData, headerMap, eol, elementCharset, "Content-Encoding"),
+        headerMap,
+        eol,
+        elementCharset,
+        "Transfer-Encoding");
+  }
+
+  public Optional<String> findEolInHttpMessage(byte[] content) {
+    if (indexOf(content, CRLF_BYTES) >= 0) {
+      return Optional.of(CRLF);
+    } else if (indexOf(content, (byte) '\n') >= 0) {
+      return Optional.of("\n");
+    } else {
+      return Optional.empty();
+    }
   }
 }

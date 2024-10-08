@@ -108,12 +108,21 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
     addFixVauKey();
     initializeFileWriter();
     this.tigerProxyConfiguration = configuration;
+    addNoteCriterions();
     if (configuration.getFileSaveInfo() != null
         && StringUtils.isNotEmpty(configuration.getFileSaveInfo().getSourceFile())) {
       readTrafficFromSourceFile(configuration.getFileSaveInfo().getSourceFile());
     } else {
       fileParsedCompletely.set(true);
     }
+  }
+
+  private void addNoteCriterions() {
+    if (tigerProxyConfiguration.getNotes() == null) {
+      return;
+    }
+    tigerProxyConfiguration.getNotes()
+      .forEach(note -> rbelLogger.getValueShader().addJexlNoteCriterion(note.getJexlCriterion(), note.getMessage()));
   }
 
   private void initializeFileWriter() {

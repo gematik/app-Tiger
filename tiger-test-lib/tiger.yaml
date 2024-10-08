@@ -8,6 +8,8 @@ tigerProxy:
     - http://localhost:${free.port.2}
   keyFolders:
     - .
+  activateRbelParsingFor:
+    - X509
 
 servers:
   httpbin:

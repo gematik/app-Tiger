@@ -25,6 +25,7 @@ import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.util.RbelMessagesDequeFacade;
+import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
@@ -66,6 +67,10 @@ public class RbelConverter {
 
   @Builder.Default private volatile boolean shallInitializeConverters = true;
 
+  public static final TigerTypedConfigurationKey<Integer> RAW_STRING_MAX_TRACE_LENGTH =
+      new TigerTypedConfigurationKey<>(
+          "tiger.rbel.rawstring.max.trace.length", Integer.class, 1000);
+
   public void initializeConverters() {
     if (shallInitializeConverters) {
       // the outside check is done to avoid the synchronized overhead for most calls
@@ -101,7 +106,7 @@ public class RbelConverter {
         skipParsingWhenMessageLargerThanKb > -1
             && (convertedInput.getRawContent().length > skipParsingWhenMessageLargerThanKb * 1024);
     for (RbelConverterPlugin plugin : converterPlugins) {
-      if (!plugin.ignoreOversize() && elementIsOversized) {
+      if (elementIsOversized && !plugin.ignoreOversize()) {
         continue;
       }
       try {

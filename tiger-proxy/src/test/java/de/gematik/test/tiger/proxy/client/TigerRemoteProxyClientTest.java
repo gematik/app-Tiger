@@ -218,7 +218,7 @@ class TigerRemoteProxyClientTest {
     tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
 
     final String body =
-        RandomStringUtils.randomAlphanumeric(TracingPushService.MAX_MESSAGE_SIZE * 2);
+        RandomStringUtils.insecure().nextAlphanumeric(TracingPushService.MAX_MESSAGE_SIZE * 2);
     unirestInstance
         .post("http://myserv.er/foo")
         .body(body)

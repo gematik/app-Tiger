@@ -43,7 +43,8 @@ import org.junit.jupiter.params.provider.CsvSource;
 class RbelPathExecutorTest {
 
   private static final RbelConverter RBEL_CONVERTER =
-      RbelLogger.build(new RbelConfiguration().activateConversionFor("asn1"))
+      RbelLogger.build(
+              new RbelConfiguration().activateConversionFor("X509").activateConversionFor("asn1"))
           .getRbelConverter();
   private static RbelElement jwtMessage;
   private static RbelElement xmlMessage;
@@ -106,7 +107,8 @@ class RbelPathExecutorTest {
     "$.body.*.nbf, $.body.body.nbf.content", // wildcard
     "$.body..nbf, $.body.body.nbf.content", // recursive descent
     "$..[?(path=~'.*scopes_supported\\.\\d')], $.body.body.scopes_supported.*", // complex JEXL
-    "$.body.body..[?(path=~'.*scopes_supported\\.\\d')], $.body.body.scopes_supported.*", // complex JEXL
+    "$.body.body..[?(path=~'.*scopes_supported\\.\\d')], $.body.body.scopes_supported.*", // complex
+                                                                                          // JEXL
     "$.body.body.['nbf'|'foobar'], $.body.body.nbf", // alternate keys
     "$.body.body.['foobar'|'nbf'], $.body.body.nbf" // alternate keys
   })
@@ -124,10 +126,10 @@ class RbelPathExecutorTest {
   })
   void testRecursiveDescent(String recursivePath) {
     final List<RbelElement> pathResults = jwtMessage.findRbelPathMembers(recursivePath);
-    final List<RbelElement> referenceResults = List.of(
-      jwtMessage.findElement("$.header.nbf").get(),
-      jwtMessage.findElement("$.body.body.nbf").get()
-    );
+    final List<RbelElement> referenceResults =
+        List.of(
+            jwtMessage.findElement("$.header.nbf").get(),
+            jwtMessage.findElement("$.body.body.nbf").get());
     assertThat(pathResults).containsAll(referenceResults).isNotEmpty();
     assertThat(referenceResults).containsAll(pathResults).isNotEmpty();
   }

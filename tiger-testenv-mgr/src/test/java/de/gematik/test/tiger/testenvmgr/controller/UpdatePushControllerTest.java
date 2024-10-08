@@ -57,11 +57,10 @@ class UpdatePushControllerTest {
   @Autowired private TigerTestEnvMgr tigerTestEnvMgr;
 
   @Test
-  @Disabled(
-      "Failed auf dem Jenkins, lokal läuft er grün. Am ende der timebox keine lösung, master grün,"
-          + " gogo")
   void displayMessage_shouldPushToClient() throws ExecutionException, InterruptedException {
     AtomicReference<String> receivedMessage = new AtomicReference<>("");
+
+    tigerTestEnvMgr.setWorkflowUiSentFetch(true);
 
     connectToSocketUsingHandler(
         new StompSessionHandlerAdapter() {
@@ -77,8 +76,9 @@ class UpdatePushControllerTest {
 
                   @Override
                   public void handleFrame(StompHeaders headers, Object payload) {
-                    log.info("Received Frame");
-                    receivedMessage.set(((TestEnvStatusDto) payload).getFeatureMap().toString());
+                    log.info("Received Frame {}", payload);
+                    var received = ((TestEnvStatusDto)payload).getFeatureMap();
+                    receivedMessage.set(received.toString());
                   }
                 };
             session.subscribe("/topic/envStatus", handler);
@@ -104,6 +104,7 @@ class UpdatePushControllerTest {
                                                     "step",
                                                     StepUpdate.builder()
                                                         .description("step")
+                                                        .tooltip("tooltip")
                                                         .build()))
                                             .build())))
                             .build())))
@@ -114,7 +115,7 @@ class UpdatePushControllerTest {
     await()
         .atMost(2, TimeUnit.SECONDS)
         .pollInterval(100, TimeUnit.MILLISECONDS)
-        .until(() -> receivedMessage.get().equals(update.toString()));
+        .until(() -> receivedMessage.get().equals(update.getFeatureMap().toString()));
   }
 
   private void connectToSocketUsingHandler(StompSessionHandlerAdapter handler)

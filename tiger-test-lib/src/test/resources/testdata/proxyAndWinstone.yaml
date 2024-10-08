@@ -1,3 +1,6 @@
+lib:
+  activateWorkflowUi: false
+
 servers:
   testExternalJar:
     type: externalJar

@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
 class RbelBuilderGlueCodeTests {
 
   RbelBuilderGlueCode glueCode = new RbelBuilderGlueCode();
-  String blub =
+  String nestedObjectAsJsonString =
       """
             {
             	"blub": {
@@ -60,15 +60,15 @@ class RbelBuilderGlueCodeTests {
 
   @Test
   void createFromContentTestWithStringValue() {
-    RbelBuilder expectedBuilder = RbelBuilder.fromString(blub);
+    RbelBuilder expectedBuilder = RbelBuilder.fromString(nestedObjectAsJsonString);
     RbelSerializationAssertion.assertEquals(
-        expectedBuilder.serialize(), blub, RbelContentType.JSON);
+        expectedBuilder.serialize(), nestedObjectAsJsonString, RbelContentType.JSON);
 
     Assertions.assertDoesNotThrow(
         () -> {
-          glueCode.createFromContent("blub", blub);
+          glueCode.createFromContent("blub", nestedObjectAsJsonString);
           glueCode.assertJexlOutputEquals(
-              resolve("!{rbelObject:serialize(\"blub\")}"), blub, RbelContentType.JSON);
+              resolve("!{rbelObject:serialize(\"blub\")}"), nestedObjectAsJsonString, RbelContentType.JSON);
         });
   }
 
@@ -103,7 +103,7 @@ class RbelBuilderGlueCodeTests {
             }
                 """;
 
-    RbelBuilder expectedBuilder = RbelBuilder.fromString(blub);
+    RbelBuilder expectedBuilder = RbelBuilder.fromString(nestedObjectAsJsonString);
     expectedBuilder.setValueAt("$.blib", "{ \"new\": \"entry\" }");
     Assertions.assertEquals(
         "entry",
@@ -115,7 +115,7 @@ class RbelBuilderGlueCodeTests {
     RbelSerializationAssertion.assertEquals(
         expectedBlub, expectedBuilder.serialize(), RbelContentType.JSON);
 
-    glueCode.createFromContent("blub", blub);
+    glueCode.createFromContent("blub", nestedObjectAsJsonString);
     glueCode.setValueAt("blub", "$.blib", "{ \"new\": \"entry\" }");
     glueCode.assertValueAtEquals("blub", "$.blib.new", "entry");
     glueCode.assertJexlOutputEquals(
@@ -266,7 +266,7 @@ class RbelBuilderGlueCodeTests {
     listAppender.start();
     loggerInGlueCode.addAppender(listAppender);
 
-    glueCode.createFromContent("test", blub);
+    glueCode.createFromContent("test", nestedObjectAsJsonString);
     glueCode.setValueAt("test", "$.blub", valueToSet);
     // isListTypeNode() does not work -> attributeMap does not contain
     glueCode.addEntryAt("test", "$.blub.array", "blub");

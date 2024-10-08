@@ -23,9 +23,7 @@ import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.scheduler.Scheduler;
 import de.gematik.test.tiger.mockserver.uuid.UUIDService;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,9 +37,8 @@ public class HttpState {
   private static final ThreadLocal<Integer> LOCAL_PORT = new ThreadLocal<>(); // NOSONAR
   private final String uniqueLoopPreventionHeaderValue = "MockServer_" + UUIDService.getUUID();
   private final Scheduler scheduler;
-  // mockserver
   private final MockServerConfiguration configuration;
-  private List<Expectation> expectations = new ArrayList<>();
+  private final List<Expectation> expectations = new ArrayList<>();
 
   public static void setPort(final HttpRequest request) {
     if (request != null && request.getSocketAddress() != null) {
@@ -79,27 +76,23 @@ public class HttpState {
     this.scheduler = scheduler;
   }
 
-  public void reset() {
-    log.info("resetting all expectations and request logs");
-  }
+  public void add(Expectation expectation) {
+    this.expectations.add(expectation);
 
-  public List<Expectation> add(Expectation... expectations) {
-    for (Expectation expectation : expectations) {
-      this.expectations.add(expectation);
-
-      final String hostHeader = expectation.getRequestPattern().getFirstHeader(HOST.toString());
-      if (isNotBlank(hostHeader)) {
-        scheduler.submit(() -> configuration.addSubjectAlternativeName(hostHeader));
-      }
+    final String hostHeader = expectation.getRequestPattern().getFirstHeader(HOST.toString());
+    if (isNotBlank(hostHeader)) {
+      scheduler.submit(() -> configuration.addSubjectAlternativeName(hostHeader));
     }
-    return List.of();
   }
 
   public Expectation firstMatchingExpectation(HttpRequest request) {
-    return expectations.stream()
-        .filter(expectation -> expectation.matches(request))
-        .min(Comparator.naturalOrder())
-        .orElse(null);
+    for (Expectation expectation : expectations.stream().sorted().toList()) {
+      Expectation apply = expectation;
+      if (apply.matches(request)) {
+        return apply;
+      }
+    }
+    return null;
   }
 
   public boolean handle(HttpRequest request) {
@@ -116,7 +109,7 @@ public class HttpState {
   }
 
   public List<Expectation> retrieveActiveExpectations() {
-    return expectations;
+    return expectations.stream().toList();
   }
 
   public void clear(String expectationId) {

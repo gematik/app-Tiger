@@ -23,15 +23,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.microsoft.playwright.Locator;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
-class ConfigurationEditorTest extends AbstractTests {
+class ConfigurationEditorTest extends AbstractBase {
 
     protected static final String ENV_MULTILINE_CHECK_KEY = "tgr.testenv.cfg.multiline.check.mode";
     private final String ENV_ICON = ".fa.fa-lg.fa-server";
@@ -179,6 +181,7 @@ class ConfigurationEditorTest extends AbstractTests {
 
     private void assertMultilineView(List<Locator> row, String expectedText) {
         await()
+            .atMost(10, TimeUnit.SECONDS)
             .untilAsserted(
                 () ->
                     assertTrue(
@@ -211,6 +214,7 @@ class ConfigurationEditorTest extends AbstractTests {
 
     private void assertSimpleView(List<Locator> row, String expectedText) {
         await()
+            .atMost(10, TimeUnit.SECONDS)
             .untilAsserted(
                 () ->
                     assertTrue(
@@ -300,7 +304,7 @@ class ConfigurationEditorTest extends AbstractTests {
         page.locator(xpathToValue).dblclick();
         page.waitForSelector("#test-tg-config-editor-text-area");
         page.locator("#test-tg-config-editor-text-area").fill(oldValue + newValue);
-        await().untilAsserted(() -> page.locator("#test-tg-config-editor-btn-save").isVisible());
+        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> page.locator("#test-tg-config-editor-btn-save").isVisible());
         page.locator("#test-tg-config-editor-btn-save").click();
     }
 
@@ -347,6 +351,7 @@ class ConfigurationEditorTest extends AbstractTests {
             .click();
 
         await()
+            .atMost(10, TimeUnit.SECONDS)
             .untilAsserted(
                 () -> findRowBySourceTypeKey(key));
     }

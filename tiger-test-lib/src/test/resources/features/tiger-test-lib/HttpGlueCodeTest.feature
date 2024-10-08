@@ -178,5 +178,11 @@ Feature: HTTP/HTTPS GlueCode Test feature
     And TGR send empty GET request to "http://httpbin/anything?foobar=22"
     And TGR send POST request to "http://httpbin/post" with body "{'foobar': '4'}"
     Given TGR reset request method filter
-    Then TGR find last request to path ".*"
+    Then TGR find the last request
     Then TGR current response with attribute "$.body.data.foobar" matches "4"
+
+  Scenario: Test check filter POST request
+    Given TGR send empty GET request to "http://httpbin/anything?foobar=66"
+    When TGR find last request with "$.path.foobar.value" matching "66"
+    Then TGR current response with attribute "$.body.args.foobar.content" matches "66"
+

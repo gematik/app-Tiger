@@ -23,10 +23,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 /** Test class for test the pause button. */
-class TPauseTests extends AbstractTests {
+class TPauseTests extends AbstractBase {
   @Test
   void testPauseButton() {
-    page.querySelector("#test-tiger-logo").click();
+    openSidebar();
     page.querySelector("#test-sidebar-pause-icon").click();
     assertAll(
         () -> assertThat(page.locator("#sidebar-left.test-sidebar-paused")).isVisible()

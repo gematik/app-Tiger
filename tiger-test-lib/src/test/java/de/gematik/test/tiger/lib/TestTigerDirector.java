@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.lib;
@@ -35,6 +36,7 @@ import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Path;
@@ -43,13 +45,14 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import kong.unirest.Unirest;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.rest.SerenityRest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -60,10 +63,17 @@ import uk.org.webcompere.systemstubs.ThrowingRunnable;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
 @ExtendWith(OutputCaptureExtension.class)
+@Slf4j
 class TestTigerDirector {
 
   @BeforeEach
-  void init() {
+  void init(TestInfo testInfo) {
+    log.info(
+        "Now executing test '{}' ({}:{})",
+        testInfo.getDisplayName(),
+        testInfo.getTestClass().map(Class::getName).orElse("<>"),
+        testInfo.getTestMethod().map(Method::getName).orElse("<>"));
+
     TigerDirector.testUninitialize();
   }
 

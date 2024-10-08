@@ -19,7 +19,7 @@ package de.gematik.rbellogger.converter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelXmlFacet;
-import java.util.Locale;
+import de.gematik.rbellogger.util.RbelArrayUtils;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -29,16 +29,14 @@ import org.jsoup.nodes.*;
 class RbelHtmlConverter {
 
   private static final String XML_TEXT_KEY = "text";
+  private static final byte[] HTML_END_TAG = "</html>".getBytes();
 
-  Optional<Document> parseHtml(String text) {
-    final String lowerCase = text.toLowerCase(Locale.ROOT);
-    if (!lowerCase.contains("<html")
-        || !lowerCase.contains("</html>")
-        || !lowerCase.startsWith("<")) {
+  Optional<Document> parseHtml(RbelElement element) {
+    var rawContent = element.getRawContent();
+    if (!RbelArrayUtils.endsTrimmedWith(rawContent, HTML_END_TAG, true)) {
       return Optional.empty();
-    } else {
-      return Optional.of(Jsoup.parse(text));
     }
+    return Optional.ofNullable(element.getRawStringContent()).map(String::trim).map(Jsoup::parse);
   }
 
   void buildXmlElementForNode(Node branch, RbelElement parentElement, RbelConverter converter) {

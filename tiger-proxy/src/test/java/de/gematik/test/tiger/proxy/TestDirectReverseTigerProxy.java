@@ -54,7 +54,7 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
   @Test
   void directForward_shouldForwardBinaryContent() throws IOException {
     try (ServerSocket backendServer = new ServerSocket(0)) {
-      spawnTigerProxyWith(
+      spawnTigerProxyWithDefaultRoutesAndWith(
           TigerProxyConfiguration.builder()
               .directReverseProxy(
                   DirectReverseProxyInfo.builder()
@@ -157,7 +157,7 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void directForward_shouldForwardHttpContent() {
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .directReverseProxy(
                 DirectReverseProxyInfo.builder()
@@ -212,7 +212,7 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
             .forwardToProxy(ForwardProxyInfo.builder().hostname("localhost").port(1234).build())
             .build();
 
-    assertThatThrownBy(() -> spawnTigerProxyWith(proxyConfiguration))
+    assertThatThrownBy(() -> spawnTigerProxyWithDefaultRoutesAndWith(proxyConfiguration))
         .isInstanceOf(RuntimeException.class);
   }
 
@@ -220,7 +220,7 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
   void forwardWithoutTlsTermination_shouldNotTerminateTls() throws Exception {
     int serverPort = startKonnektorAlikeServerReturningAlways555(Optional.empty());
 
-    spawnTigerProxyWith(
+    spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .directReverseProxy(
                 DirectReverseProxyInfo.builder().hostname("localhost").port(serverPort).build())

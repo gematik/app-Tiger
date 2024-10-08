@@ -34,6 +34,8 @@ import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.codec.http2.HttpConversionUtil;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.cert.Certificate;
 import java.util.List;
 import java.util.Set;
@@ -95,6 +97,8 @@ public class FullHttpRequestToMockServerHttpRequest {
         setCookies(httpRequest, fullHttpRequest);
         setBody(httpRequest, fullHttpRequest);
         setSocketAddress(httpRequest, fullHttpRequest, isSecure, port, localAddress, remoteAddress);
+        setForwardProxyRequest(httpRequest, fullHttpRequest);
+
         jdkCertificateToMockServerX509Certificate.setClientCertificates(
             httpRequest, clientCertificates);
 
@@ -104,6 +108,17 @@ public class FullHttpRequestToMockServerHttpRequest {
       log.error("exception decoding request{}", fullHttpRequest, e);
     }
     return httpRequest;
+  }
+
+  private void setForwardProxyRequest(HttpRequest httpRequest, FullHttpRequest fullHttpRequest) {
+    try {
+      final String host = new URI(fullHttpRequest.uri()).getHost();
+      if (StringUtils.isNotBlank(host)) {
+        httpRequest.setForwardProxyRequest(true);
+      }
+    } catch (URISyntaxException e) {
+      httpRequest.setForwardProxyRequest(false);
+    }
   }
 
   private void tryToSetTlsParameter(HttpRequest httpRequest, SSLSession sslSession) {

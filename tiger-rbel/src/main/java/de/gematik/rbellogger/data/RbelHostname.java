@@ -17,6 +17,8 @@
 package de.gematik.rbellogger.data;
 
 import de.gematik.rbellogger.exceptions.RbelHostnameFormatException;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.URI;
 import java.util.Optional;
 import lombok.AccessLevel;
@@ -53,6 +55,10 @@ public class RbelHostname {
     } else {
       return Optional.ofNullable(RbelHostname.builder().hostname(value).build());
     }
+  }
+
+  public SocketAddress asSocketAddress() {
+    return new InetSocketAddress(hostname, port);
   }
 
   public static Optional<Object> generateFromUrl(String url) {

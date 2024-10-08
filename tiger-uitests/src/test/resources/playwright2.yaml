@@ -1,0 +1,28 @@
+tigerProxy:
+  skipTrafficEndpointsSubscription: false
+  # adminPort: 8080
+  trafficEndpoints:
+    - http://localhost:${free.port.2}
+
+servers:
+  httpbin:
+    type: httpbin
+    serverPort: ${free.port.0}
+    healthcheckUrl: http://localhost:${free.port.0}/status/200
+  remoteTigerProxy:
+    dependsUpon: httpbin
+    type: tigerProxy
+    tigerProxyConfiguration:
+      adminPort: ${free.port.2}
+      activateRbelParsing: false
+      rbelBufferSizeInMb: 0
+      proxyPort: ${free.port.1}
+      proxyRoutes:
+        - from: http://httpbin
+          to: http://localhost:${free.port.0}
+
+lib:
+  rbelPathDebugging: false
+  activateWorkflowUi: true
+  startBrowser: false
+  runTestsOnStart: false

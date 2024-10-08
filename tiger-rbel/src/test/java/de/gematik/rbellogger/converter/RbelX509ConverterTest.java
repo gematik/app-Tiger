@@ -20,6 +20,7 @@ import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineB
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.IOException;
@@ -37,7 +38,8 @@ class RbelX509ConverterTest {
   @BeforeEach
   public void setUp() throws IOException {
     xmlMessage =
-        RbelLogger.build()
+        RbelLogger.build(
+                RbelConfiguration.builder().activateRbelParsingFor(List.of("X509")).build())
             .getRbelConverter()
             .parseMessage(
                 readCurlFromFileWithCorrectedLineBreaks(

@@ -16,11 +16,11 @@
 
 package de.gematik.test.tiger.lib.rbel;
 
+import static de.gematik.test.tiger.lib.rbel.RbelMessageValidator.RBEL_REQUEST_TIMEOUT;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.gematik.rbellogger.data.pop3.RbelPop3Command;
 import java.util.List;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,11 +35,6 @@ public class RbelMessageValidatorFindMessageStepsTest extends AbstractRbelMessag
     } else {
       rbelMessageValidator.clearCurrentMessages();
     }
-  }
-
-  @AfterAll
-  public static void tearDown() {
-    AbstractRbelMessageValidatorTest.tearDown();
   }
 
   private void readPop3Messages() {
@@ -162,11 +157,16 @@ public class RbelMessageValidatorFindMessageStepsTest extends AbstractRbelMessag
 
   @Test
   void testFindMessageWithNode_findNoNextAfterLastResponse() {
-    glue.findLastMessageWithNode("$.pop3Body.mimeBody");
-    glue.currentRequestMessageContainsNode("$.pop3Arguments");
-    glue.currentRequestMessageAttributeMatches("$.pop3Command", RbelPop3Command.RETR.name());
+    RBEL_REQUEST_TIMEOUT.putValue(1); // don't wait so long before giving up
+    try {
+      glue.findLastMessageWithNode("$.pop3Body.mimeBody");
+      glue.currentRequestMessageContainsNode("$.pop3Arguments");
+      glue.currentRequestMessageAttributeMatches("$.pop3Command", RbelPop3Command.RETR.name());
 
-    assertThatThrownBy(() -> glue.findNextMessageWithNode("$.pop3Body.mimeBody"))
-        .isInstanceOf(AssertionError.class);
+      assertThatThrownBy(() -> glue.findNextMessageWithNode("$.pop3Body.mimeBody"))
+          .isInstanceOf(AssertionError.class);
+    } finally {
+      RBEL_REQUEST_TIMEOUT.clearValue();
+    }
   }
 }
