@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.18">
+<meta name="generator" content="Asciidoctor 2.0.20">
 <meta name="description" content="User Manual for Tiger">
 <meta name="author" content="TIGER@gematik.de">
 <title>Tiger User Manual</title>
@@ -165,7 +165,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 3.3.0 - 2024-09-05</span>
+<span id="revdate">Version 3.4.2 - 2024-10-08</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -643,7 +643,7 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
           https://nexus.prod.ccs.gematik.solutions/#browse/search=keyword%3Dtiger-test-lib
         --&gt;
         &lt;version.tiger&gt;3.1.1&lt;/version.tiger&gt;
-        &lt;version.logback&gt;1.5.6&lt;/version.logback&gt;
+        &lt;version.logback&gt;1.5.7&lt;/version.logback&gt;
     &lt;/properties&gt;
 
     &lt;dependencyManagement&gt;
@@ -1291,7 +1291,7 @@ If none of these files exist it will fail the start-up.</p>
 <div class="ulist">
 <ul>
 <li>
-<p><code>tiger-$+{hostname}+.yaml</code> and <code>tiger-$+{hostname}+.yml</code> are read and give the possibility to make computer-dependent configuration.<br>
+<p><code>tiger-${hostname}.yaml</code> and <code>tiger-${hostname}.yml</code> are read and give the possibility to make computer-dependent configuration.<br>
 The hostname is the name of your own computer in the network (on Windows-machines typically the computername).</p>
 </li>
 <li>
@@ -2252,6 +2252,16 @@ tigerProxy:
     sourceFile: "sourceFile.tgr"
     # filter messages read from file (JEXL expression)
     readFilter: "message.statusCode == '200'"
+    # List of notes that should be added to the traffic
+    notes:
+        # The message to be added as a note
+      - message: "This is a note on the HTTP method"
+        # Only add this note to elements that EXACTLY match the given JEXL expression.
+        # This will be checked for every message and every node in every message.
+        jexlCriterion: "isRequest &amp;&amp; path == '$.method'"
+      - message: "Hackers were here..."
+        jexlCriterion: "element.decryptedUsingKeyWithId == 'mySuperSecretKey'"
+
   # a list of routing entries the proxy should apply to traffic
   proxyRoutes:
       # defines a forward-proxy-route from this server...
@@ -4150,6 +4160,21 @@ memorize it in the {<strong>link</strong> #rbelValidator} instance.</p>
 </div>
 </div>
 <div class="sect4">
+<h5 id="tgr-finde-die-letzte-anfrage-mit-knoten-string-der-mit-string-übereinstimmt"><a class="anchor" href="#tgr-finde-die-letzte-anfrage-mit-knoten-string-der-mit-string-übereinstimmt"></a>TGR finde die letzte Anfrage mit Knoten {string} der mit {string}" + " übereinstimmt</h5>
+
+</div>
+<div class="sect4">
+<h5 id="tgr-find-last-request-with-string-matching-string"><a class="anchor" href="#tgr-find-last-request-with-string-matching-string"></a>TGR find last request with {string} matching {string}</h5>
+<div class="paragraph indent">
+<p>find the LAST request where the node value equal or match as regex and memorize it in the<br>
+{<strong>link</strong> #rbelValidator} instance.</p>
+</div>
+<div class="paragraph indent">
+<p><strong>param</strong> rbelPath rbel path to node/attribute<br>
+<strong>param</strong> value value to match at given node/attribute</p>
+</div>
+</div>
+<div class="sect4">
 <h5 id="tgr-finde-die-letzte-anfrage"><a class="anchor" href="#tgr-finde-die-letzte-anfrage"></a>TGR finde die letzte Anfrage</h5>
 
 </div>
@@ -4567,7 +4592,7 @@ match, this step succeeds</p>
 
 </div>
 <div class="sect4">
-<h5 id="tgr-die-benutzerdefinierte-fehlermeldung-ist-auf-tigerresolvedstring-gesetzt"><a class="anchor" href="#tgr-die-benutzerdefinierte-fehlermeldung-ist-auf-tigerresolvedstring-gesetzt"></a>TGR die benutzerdefinierte Fehlermeldung ist auf {tigerResolvedString} gesetzt</h5>
+<h5 id="tgr-die-fehlermeldung-wird-gesetzt-auf-tigerresolvedstring"><a class="anchor" href="#tgr-die-fehlermeldung-wird-gesetzt-auf-tigerresolvedstring"></a>TGR die Fehlermeldung wird gesetzt auf: {tigerResolvedString}</h5>
 <div class="paragraph indent">
 <p>Sets a custom failure message that will be displayed in the logs if a following step in the<br>
 test fails.</p>
@@ -4944,8 +4969,13 @@ certain value</p>
     And TGR send empty GET request to "http://httpbin/anything?foobar=22"
     And TGR send POST request to "http://httpbin/post" with body "{'foobar': '4'}"
     Given TGR reset request method filter
-    Then TGR find last request to path ".*"
-    Then TGR current response with attribute "$.body.data.foobar" matches "4"</code></pre>
+    Then TGR find the last request
+    Then TGR current response with attribute "$.body.data.foobar" matches "4"
+
+  Scenario: Test check filter POST request
+    Given TGR send empty GET request to "http://httpbin/anything?foobar=66"
+    When TGR find last request with "$.path.foobar.value" matching "66"
+    Then TGR current response with attribute "$.body.args.foobar.content" matches "66"</code></pre>
 </div>
 </div>
 <div class="sect3">
@@ -7439,7 +7469,7 @@ For example:</p>
 </div>
 <div class="paragraph">
 <p>Here we have two nested responses in the <code>/users</code> path.<br>
-One will match GET requests to the path <code>/users/+{userId}+</code> and the other will match POST-Requests to the path <code>/users</code>.</p>
+One will match GET requests to the path <code>/users/{userId}</code> and the other will match POST-Requests to the path <code>/users</code>.</p>
 </div>
 </div>
 <div class="sect2">
@@ -8170,7 +8200,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-09-05 13:59:28 +0200
+Last updated 2024-10-08 13:53:49 +0200
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
