@@ -17,8 +17,8 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.gematik.test</groupId>
@@ -116,6 +116,7 @@
              https://service.gematik.de/browse/DEVOPS-1233
         -->
         <yarnAuditAnalyzerEnabled>false</yarnAuditAnalyzerEnabled>
+        <mycila.license-maven-plugin.version>4.5</mycila.license-maven-plugin.version>
 
     </properties>
 
@@ -774,6 +775,54 @@
                         </excludes>
                     </markdown>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>${mycila.license-maven-plugin.version}</version>
+                <configuration>
+                    <licenseSets>
+                        <licenseSet>
+                            <header>license.header.txt</header>
+                            <includes>
+                                <include>**/target/**</include>
+                                <include>**/src/**</include>
+                                <include>**/target/generated-*/**</include>
+                            </includes>
+                            <excludes>
+                                <exclude>**/*.properties</exclude>
+                                <exclude>**/*.yaml</exclude>
+                                <exclude>**/*.yml</exclude>
+                                <exclude>**/*.xml</exclude>
+                                <exclude>**/*.txt</exclude>
+                                <exclude>**/*.factories</exclude>
+                                <exclude>**/bootstrap.min.css</exclude>
+                                <exclude>**/bootstrap.bundle.min.js</exclude>
+                            </excludes>
+                            <useDefaultExcludes>true</useDefaultExcludes>
+                        </licenseSet>
+                    </licenseSets>
+                    <skipExistingHeaders>true</skipExistingHeaders>
+                    <mapping>
+                        <vue>XML_STYLE</vue>
+                    </mapping>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>license headers for sources</id>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                    </execution>
+                    <execution>
+                        <id>license headers for test sources</id>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                        <phase>generate-test-sources</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
