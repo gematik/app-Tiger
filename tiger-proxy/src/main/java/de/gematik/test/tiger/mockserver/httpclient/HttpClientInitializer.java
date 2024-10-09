@@ -23,7 +23,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import de.gematik.test.tiger.mockserver.codec.MockServerBinaryClientCodec;
 import de.gematik.test.tiger.mockserver.codec.MockServerHttpClientCodec;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
-import de.gematik.test.tiger.mockserver.model.Protocol;
+import de.gematik.test.tiger.mockserver.model.HttpProtocol;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import io.netty.channel.*;
@@ -37,6 +37,7 @@ import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import lombok.extern.slf4j.Slf4j;
@@ -48,9 +49,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
 
-  private final Protocol httpProtocol;
+  private final HttpProtocol httpProtocol;
   private final HttpClientConnectionErrorHandler httpClientConnectionHandler;
-  private final CompletableFuture<Protocol> protocolFuture;
+  private final CompletableFuture<HttpProtocol> protocolFuture;
   private final HttpClientHandler httpClientHandler;
   private final Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations;
   private final NettySslContextFactory nettySslContextFactory;
@@ -60,7 +61,7 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
       MockServerConfiguration configuration,
       Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations,
       NettySslContextFactory nettySslContextFactory,
-      Protocol httpProtocol) {
+      HttpProtocol httpProtocol) {
     this.proxyConfigurations = proxyConfigurations;
     this.httpProtocol = httpProtocol;
     this.protocolFuture = new CompletableFuture<>();
@@ -70,7 +71,7 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
     this.nettySslContextFactory = nettySslContextFactory;
   }
 
-  public void whenComplete(BiConsumer<? super Protocol, ? super Throwable> action) {
+  public void whenComplete(BiConsumer<? super HttpProtocol, ? super Throwable> action) {
     protocolFuture.whenComplete(action);
   }
 
@@ -118,7 +119,7 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
       InetSocketAddress remoteAddress = channel.attr(REMOTE_SOCKET).get();
       pipeline.addLast(
           nettySslContextFactory
-              .createClientSslContext(httpProtocol != null && httpProtocol.equals(Protocol.HTTP_2))
+              .createClientSslContext(Optional.ofNullable(httpProtocol))
               .newHandler(channel.alloc(), remoteAddress.getHostName(), remoteAddress.getPort()));
     }
 
@@ -141,7 +142,7 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
     pipeline.addLast(new HttpObjectAggregator(Integer.MAX_VALUE));
     pipeline.addLast(new MockServerHttpClientCodec(proxyConfigurations));
     pipeline.addLast(httpClientHandler);
-    protocolFuture.complete(Protocol.HTTP_1_1);
+    protocolFuture.complete(HttpProtocol.HTTP_1_1);
   }
 
   private void configureHttp2Pipeline(ChannelPipeline pipeline) {

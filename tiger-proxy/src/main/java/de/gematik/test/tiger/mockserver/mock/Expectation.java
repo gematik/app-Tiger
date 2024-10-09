@@ -91,7 +91,7 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
     return hostRegexes.stream().anyMatch(request.getFirstHeader("Host")::matches);
   }
 
-  private boolean protocolMatches(Protocol protocol, Protocol otherProtocol) {
+  private boolean protocolMatches(HttpProtocol protocol, HttpProtocol otherProtocol) {
     if (protocol == null) {
       return true;
     } else {

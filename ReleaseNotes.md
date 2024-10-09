@@ -1,5 +1,21 @@
 # Changelog Tiger Test platform
 
+# Release 3.4.3
+
+## Features
+
+* TGR-1475: Allow the configuration of multiple TLS-server-certificates. The Tiger-Proxy will automatically select 
+the most appropriate one: 
+
+
+```yaml
+tigerProxy:
+    tls:
+        serverIdentities:
+            - "someIdentity.p12;00"
+            - "anotherIdentity.p12;changeit"
+```
+
 # Release 3.4.0
 
 ## Breaking Changes

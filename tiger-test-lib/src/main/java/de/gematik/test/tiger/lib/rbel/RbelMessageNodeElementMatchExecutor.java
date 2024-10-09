@@ -62,9 +62,7 @@ public class RbelMessageNodeElementMatchExecutor {
     if (shouldMatch && !foundMatchingNode) {
       if (elements.size() == 1) {
         throw new AssertionError(
-            String.format(
-                "Element value:%n%s%nExpected:%n%s",
-                elements.get(0).getRawStringContent(), oracle));
+            "Element value:\n" + elements.get(0).getRawStringContent() + "\nExpected:\n" + oracle);
       } else {
         throw new AssertionError(
             String.format(

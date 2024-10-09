@@ -404,7 +404,7 @@ public class TigerConfigurationLoader {
   /**
    * Generates a tree containing all key/value pairs. Placeholders in the values are NOT resolved.
    */
-  private JsonNode convertToTreeUnresolved() {
+    private JsonNode convertToTreeUnresolved() {
     return convertMapToTree(retrieveMapUnresolved());
   }
 

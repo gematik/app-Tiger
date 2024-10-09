@@ -18,12 +18,16 @@ package de.gematik.test.tiger.mockserver.netty.proxy.relay;
 
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.connectionClosedException;
 import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.getRemoteAddress;
-import static de.gematik.test.tiger.mockserver.model.Protocol.HTTP_2;
+import static de.gematik.test.tiger.mockserver.model.HttpProtocol.HTTP_1_1;
+import static de.gematik.test.tiger.mockserver.model.HttpProtocol.HTTP_2;
 import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.*;
-import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.getALPNProtocol;
+import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.SERVER_IDENTITY;
+import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.getAlpnProtocol;
 
+import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
-import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
+import de.gematik.test.tiger.mockserver.model.HttpRequest;
+import de.gematik.test.tiger.mockserver.netty.MockServer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
@@ -36,10 +40,13 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http2.*;
 import io.netty.handler.logging.LogLevel;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.apache.commons.lang3.tuple.Pair;
 
 /*
  * @author jamesdbloom
@@ -52,11 +59,11 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
   public static final String PROXIED_SECURE = PROXIED + "SECURE_";
   public static final String PROXIED_RESPONSE = "PROXIED_RESPONSE_";
   private final MockServerConfiguration configuration;
-  private final LifeCycle server;
+  private final MockServer server;
   protected final String host;
   protected final int port;
 
-  public RelayConnectHandler(MockServerConfiguration configuration, LifeCycle server, String host, int port) {
+  public RelayConnectHandler(MockServerConfiguration configuration, MockServer server, String host, int port) {
     this.configuration = configuration;
     this.server = server;
     this.host = host;
@@ -100,10 +107,7 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
                                 (ChannelFutureListener)
                                     channelFuture -> {
                                       removeCodecSupport(proxyClientCtx);
-                                      // TODO(jamesdbloom) this is never true - probably due to race
-                                      // condition
-                                      boolean http2EnabledDownstream =
-                                          HTTP_2.equals(getALPNProtocol(proxyClientCtx));
+                                      val httpProtocol = getAlpnProtocol(proxyClientCtx).orElse(HTTP_1_1);
 
                                       // upstream (to MockServer)
                                       ChannelPipeline pipelineToMockServer =
@@ -111,8 +115,8 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
 
                                       if (isSslEnabledDownstream(proxyClientCtx.channel())) {
                                         pipelineToMockServer.addLast(
-                                            nettySslContextFactory(proxyClientCtx.channel())
-                                                .createClientSslContext(http2EnabledDownstream)
+                                          server.getClientSslContextFactory()
+                                                .createClientSslContext(httpProtocol, ((HttpRequest) request).socketAddressFromHostHeader().getHostName())
                                                 .newHandler(mockServerCtx.alloc(), host, port));
                                       }
 
@@ -135,13 +139,14 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
 
                                       if (isSslEnabledUpstream(proxyClientCtx.channel())
                                           && pipelineToProxyClient.get(SslHandler.class) == null) {
+                                        final Pair<SslContext, TigerPkiIdentity> serverSslContext = server.getServerSslContextFactory()
+                                          .createServerSslContext(host);
+                                        channelFuture.channel().attr(SERVER_IDENTITY).set(serverSslContext.getValue());
                                         pipelineToProxyClient.addLast(
-                                            nettySslContextFactory(proxyClientCtx.channel())
-                                                .createServerSslContext()
-                                                .newHandler(proxyClientCtx.alloc()));
+                                            serverSslContext.getKey().newHandler(proxyClientCtx.alloc()));
                                       }
 
-                                      if (http2EnabledDownstream) {
+                                      if (httpProtocol == HTTP_2) {
                                         final Http2Connection connection =
                                             new DefaultHttp2Connection(true);
                                         final HttpToHttp2ConnectionHandlerBuilder
@@ -179,7 +184,7 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
                                       }
 
                                       pipelineToProxyClient.addLast(
-                                          new UpstreamProxyRelayHandler(
+                                          new UpstreamProxyRelayHandler(server,
                                               proxyClientCtx.channel(), mockServerCtx.channel()));
                                     });
                       } else {

@@ -69,6 +69,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContexts;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
+import org.bouncycastle.tls.*;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.tls.TlsAuthentication;
@@ -329,7 +330,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             .proxyRoutes(
                 List.of(
                     TigerRoute.builder()
-                        .from("/")
+                        .from("http://backend")
                         .to("https://localhost:" + secondProxy.getProxyPort())
                         .build()))
             .tls(TigerTlsConfiguration.builder().forwardMutualTlsIdentity(clientIdentity).build())
@@ -821,5 +822,64 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     mutualTlsInstance.config().sslContext(sslContext);
 
     mutualTlsInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+  }
+
+  @Test
+  void reverseProxyWithMultipleServers_shouldSelectCorrectCertificate() throws UnirestException {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .tls(
+                TigerTlsConfiguration.builder()
+                    .serverIdentities(
+                        List.of(
+                            new TigerConfigurationPkiIdentity("src/test/resources/rsa.p12;00"),
+                            new TigerConfigurationPkiIdentity(
+                                "src/test/resources/eccServerCertificate.p12;00")))
+                    .build())
+            .proxyRoutes(
+                List.of(
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort + "/foobar")
+                        .hosts(List.of("kon-instanz2.titus.ti-dienste.de"))
+                        .build(),
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar")
+                        .hosts(List.of("CGMAG-IM-FDSIM.ts-ttcn3.sig-test.telematik-test"))
+                        .build()))
+            .build());
+    final UnirestInstance kon2Unirest = Unirest.spawnInstance();
+    kon2Unirest
+        .config()
+        .sslContext(
+            buildSslContextTrustingOnly(
+                new TigerConfigurationPkiIdentity("src/test/resources/rsa.p12;00")));
+    kon2Unirest
+        .get("https://127.0.0.1:" + tigerProxy.getProxyPort() + "/")
+        .header("host", "kon-instanz2.titus.ti-dienste.de")
+        .asJson();
+    final UnirestInstance cmagUnirest = Unirest.spawnInstance();
+    cmagUnirest
+        .config()
+        .sslContext(
+            buildSslContextTrustingOnly(
+                new TigerConfigurationPkiIdentity(
+                    "src/test/resources/eccServerCertificate.p12;00")));
+    cmagUnirest
+        .get("https://127.0.0.1:" + tigerProxy.getProxyPort() + "/")
+        .header("host", "CGMAG-IM-FDSIM.ts-ttcn3.sig-test.telematik-test")
+        .asJson();
+
+    awaitMessagesInTiger(4);
+
+    assertThatThrownBy(
+            () ->
+                kon2Unirest
+                    .get("https://127.0.0.1:" + tigerProxy.getProxyPort() + "/")
+                    .header("host", "CGMAG-IM-FDSIM.ts-ttcn3.sig-test.telematik-test")
+                    .asString())
+        .isInstanceOf(UnirestException.class)
+        .hasRootCauseInstanceOf(CertPathBuilderException.class);
   }
 }

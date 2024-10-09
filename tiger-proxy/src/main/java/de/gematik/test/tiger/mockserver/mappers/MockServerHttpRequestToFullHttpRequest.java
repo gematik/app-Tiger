@@ -25,7 +25,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import de.gematik.test.tiger.mockserver.codec.BodyDecoderEncoder;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
-import de.gematik.test.tiger.mockserver.model.Protocol;
+import de.gematik.test.tiger.mockserver.model.HttpProtocol;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.*;
@@ -152,7 +152,7 @@ public class MockServerHttpRequestToFullHttpRequest {
       request.headers().add(HOST, httpRequest.getFirstHeader(HOST.toString()));
     }
     request.headers().set(ACCEPT_ENCODING, GZIP + "," + DEFLATE);
-    if (Protocol.HTTP_2.equals(httpRequest.getProtocol())) {
+    if (HttpProtocol.HTTP_2.equals(httpRequest.getProtocol())) {
       HttpScheme scheme =
           Boolean.TRUE.equals(httpRequest.isSecure()) ? HttpScheme.HTTPS : HttpScheme.HTTP;
       request.headers().add(HttpConversionUtil.ExtensionHeaderNames.SCHEME.text(), scheme.name());
@@ -168,10 +168,10 @@ public class MockServerHttpRequestToFullHttpRequest {
       request.headers().set(CONNECTION, CLOSE);
     }
 
-    if (!request.headers().contains(CONTENT_TYPE)) {
-      if (httpRequest.getBody() != null && httpRequest.getBody().getContentType() != null) {
-        request.headers().set(CONTENT_TYPE, httpRequest.getBody().getContentType());
-      }
+    if (!request.headers().contains(CONTENT_TYPE)
+        && httpRequest.getBody() != null
+        && httpRequest.getBody().getContentType() != null) {
+      request.headers().set(CONTENT_TYPE, httpRequest.getBody().getContentType());
     }
   }
 }

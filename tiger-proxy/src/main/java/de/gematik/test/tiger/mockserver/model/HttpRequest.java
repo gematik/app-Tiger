@@ -52,7 +52,7 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
   private Cookies cookies;
   private Boolean keepAlive = null;
   private Boolean secure = null;
-  private Protocol protocol = null;
+  private HttpProtocol protocol = null;
   private Integer streamId = null;
   private List<MockserverX509CertificateWrapper> clientCertificateChain;
   private String tlsVersion = null;

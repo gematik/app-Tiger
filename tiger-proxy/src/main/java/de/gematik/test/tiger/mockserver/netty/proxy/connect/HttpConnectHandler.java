@@ -20,8 +20,8 @@ import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 
 import de.gematik.test.tiger.mockserver.codec.MockServerHttpServerCodec;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
-import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
+import de.gematik.test.tiger.mockserver.netty.MockServer;
 import de.gematik.test.tiger.mockserver.netty.proxy.relay.RelayConnectHandler;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -37,7 +37,7 @@ import io.netty.handler.codec.http.HttpServerCodec;
 @ChannelHandler.Sharable
 public final class HttpConnectHandler extends RelayConnectHandler<HttpRequest> {
 
-  public HttpConnectHandler(MockServerConfiguration configuration, LifeCycle server, String host, int port) {
+  public HttpConnectHandler(MockServerConfiguration configuration, MockServer server, String host, int port) {
     super(configuration, server, host, port);
   }
 

@@ -19,7 +19,7 @@ package de.gematik.test.tiger.mockserver.model;
 /*
  * @author jamesdbloom
  */
-public enum Protocol {
+public enum HttpProtocol {
   HTTP_1_1,
   HTTP_2
 }

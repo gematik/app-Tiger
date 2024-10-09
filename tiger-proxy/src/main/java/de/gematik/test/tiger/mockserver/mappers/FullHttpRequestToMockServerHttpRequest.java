@@ -25,7 +25,7 @@ import de.gematik.test.tiger.mockserver.codec.ExpandedParameterDecoder;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.model.Cookies;
-import de.gematik.test.tiger.mockserver.model.Protocol;
+import de.gematik.test.tiger.mockserver.model.HttpProtocol;
 import de.gematik.test.tiger.mockserver.url.URLParser;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
@@ -38,6 +38,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.cert.Certificate;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import javax.net.ssl.SSLSession;
 import lombok.extern.slf4j.Slf4j;
@@ -75,7 +76,7 @@ public class FullHttpRequestToMockServerHttpRequest {
       List<Header> preservedHeaders,
       SocketAddress localAddress,
       SocketAddress remoteAddress,
-      Protocol protocol,
+      Optional<HttpProtocol> protocol,
       SSLSession sslSession) {
     HttpRequest httpRequest = new HttpRequest();
     try {
@@ -89,7 +90,7 @@ public class FullHttpRequestToMockServerHttpRequest {
         setMethod(httpRequest, fullHttpRequest);
         httpRequest.setKeepAlive(isKeepAlive(fullHttpRequest));
         httpRequest.setSecure(isSecure);
-        httpRequest.setProtocol(protocol == null ? Protocol.HTTP_1_1 : protocol);
+        httpRequest.setProtocol(protocol.orElse(HttpProtocol.HTTP_1_1));
 
         setPath(httpRequest, fullHttpRequest);
         setQueryString(httpRequest, fullHttpRequest);
@@ -174,7 +175,7 @@ public class FullHttpRequestToMockServerHttpRequest {
         httpRequest.withHeader(preservedHeader);
       }
     }
-    if (Protocol.HTTP_2.equals(httpRequest.getProtocol())) {
+    if (HttpProtocol.HTTP_2.equals(httpRequest.getProtocol())) {
       Integer streamId =
           fullHttpResponse
               .headers()

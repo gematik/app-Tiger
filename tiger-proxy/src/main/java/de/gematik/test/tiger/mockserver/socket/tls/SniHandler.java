@@ -18,8 +18,9 @@ package de.gematik.test.tiger.mockserver.socket.tls;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
-import de.gematik.test.tiger.mockserver.model.Protocol;
+import de.gematik.test.tiger.mockserver.model.HttpProtocol;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.ssl.*;
@@ -28,10 +29,12 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.internal.PlatformDependent;
 import java.security.cert.Certificate;
+import java.util.Optional;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 /*
  * @author jamesdbloom
@@ -46,13 +49,16 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
   public static final AttributeKey<Certificate[]> UPSTREAM_CLIENT_CERTIFICATES =
       AttributeKey.valueOf("UPSTREAM_CLIENT_CERTIFICATES");
   public static final AttributeKey<SSLSession> SSL_SESSION = AttributeKey.valueOf("SSL_SESSION");
-  public static final AttributeKey<Protocol> NEGOTIATED_APPLICATION_PROTOCOL =
+  public static final AttributeKey<HttpProtocol> NEGOTIATED_APPLICATION_PROTOCOL =
       AttributeKey.valueOf("NEGOTIATED_APPLICATION_PROTOCOL");
+  public static final AttributeKey<TigerPkiIdentity> SERVER_IDENTITY =
+      AttributeKey.valueOf("SERVER_IDENTITY");
 
   private final MockServerConfiguration configuration;
   private final NettySslContextFactory nettySslContextFactory;
 
-  public SniHandler(MockServerConfiguration configuration, NettySslContextFactory nettySslContextFactory) {
+  public SniHandler(
+      MockServerConfiguration configuration, NettySslContextFactory nettySslContextFactory) {
     this.configuration = configuration;
     this.nettySslContextFactory = nettySslContextFactory;
   }
@@ -62,7 +68,9 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
     if (isNotBlank(hostname)) {
       configuration.addSubjectAlternativeName(hostname);
     }
-    return ctx.executor().newSucceededFuture(nettySslContextFactory.createServerSslContext());
+    val serverContextAndIdentity = nettySslContextFactory.createServerSslContext(hostname);
+    ctx.channel().attr(SERVER_IDENTITY).set(serverContextAndIdentity.getValue());
+    return ctx.executor().newSucceededFuture(serverContextAndIdentity.getKey());
   }
 
   @Override
@@ -83,21 +91,17 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
     }
   }
 
-  private void replaceHandler(ChannelHandlerContext ctx, Future<SslContext> sslContext) {
+  private void replaceHandler(ChannelHandlerContext ctx, Future<SslContext> sslContextFuture) {
     SslHandler sslHandler = null;
     try {
-      sslHandler = sslContext.getNow().newHandler(ctx.alloc());
+      final SslContext sslContext = sslContextFuture.getNow();
+      sslHandler = sslContext.newHandler(ctx.alloc());
       if (sslHandler.engine() instanceof OpenSslEngine openSslEngine
           && configuration.ocspResponseSupplier() != null) {
         try {
-          final KeyAndCertificateFactory keyAndCertificateFactory =
-              ((NettySslContextFactory)
-                      ctx.channel().attr(AttributeKey.valueOf("NETTY_SSL_CONTEXT_FACTORY")).get())
-                  .createKeyAndCertificateFactory();
+          val serverIdentity = ctx.channel().attr(SERVER_IDENTITY).get();
           openSslEngine.setOcspResponse(
-              configuration
-                  .ocspResponseSupplier()
-                  .apply(keyAndCertificateFactory.x509Certificate()));
+              configuration.ocspResponseSupplier().apply(serverIdentity.getCertificate()));
         } catch (Exception e) {
           log.warn("Failed to set OCSP response", e);
         }
@@ -118,6 +122,7 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
   }
 
   public static Certificate[] retrieveClientCertificates(ChannelHandlerContext ctx) {
+    log.info("retrieving client certificates");
     Certificate[] clientCertificates = null;
     if (ctx.channel().attr(UPSTREAM_CLIENT_CERTIFICATES).get() != null) {
       clientCertificates = ctx.channel().attr(UPSTREAM_CLIENT_CERTIFICATES).get();
@@ -140,30 +145,34 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
     return clientCertificates;
   }
 
-  public static Protocol getALPNProtocol(ChannelHandlerContext ctx) {
-    Protocol protocol = null;
+  public static Optional<HttpProtocol> getAlpnProtocol(ChannelHandlerContext ctx) {
     try {
-      if (ctx != null && ctx.channel() != null) {
-        if (ctx.channel().attr(NEGOTIATED_APPLICATION_PROTOCOL).get() != null) {
-          return ctx.channel().attr(NEGOTIATED_APPLICATION_PROTOCOL).get();
-        } else if (ctx.channel().attr(UPSTREAM_SSL_HANDLER).get() != null) {
-          SslHandler sslHandler = ctx.channel().attr(UPSTREAM_SSL_HANDLER).get();
-          String negotiatedApplicationProtocol = sslHandler.applicationProtocol();
-          if (isNotBlank(negotiatedApplicationProtocol)) {
-            if (negotiatedApplicationProtocol.equalsIgnoreCase(ApplicationProtocolNames.HTTP_2)) {
-              protocol = Protocol.HTTP_2;
-            } else if (negotiatedApplicationProtocol.equalsIgnoreCase(
-                ApplicationProtocolNames.HTTP_1_1)) {
-              protocol = Protocol.HTTP_1_1;
-            }
-            ctx.channel().attr(NEGOTIATED_APPLICATION_PROTOCOL).set(protocol);
-            log.trace("found ALPN protocol:{}", negotiatedApplicationProtocol);
-          }
-        }
+      if (ctx == null || ctx.channel() == null) {
+        return Optional.empty();
       }
+      if (ctx.channel().attr(NEGOTIATED_APPLICATION_PROTOCOL).get() != null) {
+        return Optional.ofNullable(ctx.channel().attr(NEGOTIATED_APPLICATION_PROTOCOL).get());
+      }
+      if (ctx.channel().attr(UPSTREAM_SSL_HANDLER).get() == null) {
+        return Optional.empty();
+      }
+      HttpProtocol protocol = null;
+      SslHandler sslHandler = ctx.channel().attr(UPSTREAM_SSL_HANDLER).get();
+      String negotiatedApplicationProtocol = sslHandler.applicationProtocol();
+      if (isNotBlank(negotiatedApplicationProtocol)) {
+        if (negotiatedApplicationProtocol.equalsIgnoreCase(ApplicationProtocolNames.HTTP_2)) {
+          protocol = HttpProtocol.HTTP_2;
+        } else if (negotiatedApplicationProtocol.equalsIgnoreCase(
+            ApplicationProtocolNames.HTTP_1_1)) {
+          protocol = HttpProtocol.HTTP_1_1;
+        }
+        ctx.channel().attr(NEGOTIATED_APPLICATION_PROTOCOL).set(protocol);
+        log.trace("found ALPN protocol:{}", negotiatedApplicationProtocol);
+      }
+      return Optional.ofNullable(protocol);
     } catch (RuntimeException throwable) {
       log.warn("exception reading ALPN protocol", throwable);
+      return Optional.empty();
     }
-    return protocol;
   }
 }

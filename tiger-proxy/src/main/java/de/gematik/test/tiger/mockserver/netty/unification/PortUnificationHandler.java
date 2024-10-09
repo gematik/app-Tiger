@@ -67,8 +67,6 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
       AttributeKey.valueOf("TLS_ENABLED_UPSTREAM");
   public static final AttributeKey<Boolean> TLS_ENABLED_DOWNSTREAM =
       AttributeKey.valueOf("TLS_ENABLED_DOWNSTREAM");
-  public static final AttributeKey<NettySslContextFactory> NETTY_SSL_CONTEXT_FACTORY =
-      AttributeKey.valueOf("NETTY_SSL_CONTEXT_FACTORY");
   private static final Map<PortBinding, Set<String>> localAddressesCache =
       new ConcurrentHashMap<>();
   private final HttpContentLengthRemover httpContentLengthRemover = new HttpContentLengthRemover();
@@ -76,19 +74,16 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   private final MockServer server;
   private final HttpState httpState;
   private final HttpActionHandler actionHandler;
-  private final NettySslContextFactory nettySslContextFactory;
 
   public PortUnificationHandler(
       MockServerConfiguration configuration,
       MockServer server,
       HttpState httpState,
-      HttpActionHandler actionHandler,
-      NettySslContextFactory nettySslContextFactory) {
+      HttpActionHandler actionHandler) {
     this.configuration = configuration;
     this.server = server;
     this.httpState = httpState;
     this.actionHandler = actionHandler;
-    this.nettySslContextFactory = nettySslContextFactory;
   }
 
   private void performConnectionToRemote(ChannelHandlerContext ctx) {
@@ -127,12 +122,11 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
             });
   }
 
-  public static NettySslContextFactory nettySslContextFactory(Channel channel) {
-    if (channel.attr(NETTY_SSL_CONTEXT_FACTORY).get() != null) {
-      return channel.attr(NETTY_SSL_CONTEXT_FACTORY).get();
+  public NettySslContextFactory nettySslContextFactory(boolean forServer) {
+    if (forServer) {
+      return server.getServerSslContextFactory();
     } else {
-      throw new RuntimeException(
-          "NettySslContextFactory not yet initialised for channel " + channel);
+      return server.getClientSslContextFactory();
     }
   }
 
@@ -159,7 +153,6 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
 
   @Override
   protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) {
-    ctx.channel().attr(NETTY_SSL_CONTEXT_FACTORY).set(nettySslContextFactory);
     if (isTls(msg) && configuration.enableTlsTermination()) {
       logStage(ctx, "adding TLS decoders");
       enableTls(ctx, msg);
@@ -199,7 +192,7 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   private void enableTls(ChannelHandlerContext ctx, ByteBuf msg) {
     ChannelPipeline pipeline = ctx.pipeline();
     server.addConnectionWithStatus(ctx.channel().remoteAddress(), TigerConnectionStatus.OPEN_TLS);
-    pipeline.addFirst(new SniHandler(configuration, nettySslContextFactory));
+    pipeline.addFirst(new SniHandler(configuration, nettySslContextFactory(true)));
     enableSslUpstreamAndDownstream(ctx.channel());
 
     // re-unify (with SSL enabled)

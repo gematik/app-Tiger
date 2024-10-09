@@ -18,57 +18,55 @@ package de.gematik.test.tiger.proxy.tls;
 
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
-import de.gematik.test.tiger.mockserver.socket.tls.bouncycastle.AbstractKeyAndCertificateFactory;
-import java.security.PrivateKey;
+import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import javax.security.auth.x500.X500Principal;
 import lombok.Builder;
-import org.apache.commons.collections.ListUtils;
 
-public class StaticTigerKeyAndCertificateFactory extends AbstractKeyAndCertificateFactory {
+public class StaticTigerKeyAndCertificateFactory implements KeyAndCertificateFactory {
 
   static {
     TigerSecurityProviderInitialiser.initialize();
   }
 
-  private final TigerPkiIdentity identity;
+  private final List<TigerPkiIdentity> availableIdentities;
 
   @Builder
   public StaticTigerKeyAndCertificateFactory(TigerPkiIdentity eeIdentity) {
-    this.identity = eeIdentity;
+    this.availableIdentities = List.of(eeIdentity);
+  }
+
+  public StaticTigerKeyAndCertificateFactory(List<TigerPkiIdentity> eeIdentities) {
+    this.availableIdentities = eeIdentities;
   }
 
   @Override
-  public X509Certificate certificateAuthorityX509Certificate() {
-    if (!identity.getCertificateChain().isEmpty()) {
-      return identity.getCertificateChain().get(identity.getCertificateChain().size() - 1);
+  public TigerPkiIdentity buildAndSavePrivateKeyAndX509Certificate(String hostname) {
+    return availableIdentities.stream()
+        .filter(id -> matchesHostname(id.getCertificate(), hostname))
+        .findAny()
+        .orElseGet(() -> availableIdentities.get(0));
+  }
+
+  private boolean matchesHostname(X509Certificate certificate, String hostname) {
+    try {
+      return subjectMatches(certificate.getSubjectX500Principal(), hostname)
+          || certificate.getSubjectAlternativeNames().stream()
+              .anyMatch(name -> name.toString().equalsIgnoreCase(hostname));
+    } catch (CertificateParsingException e) {
+      return false;
     }
-    return identity
-        .getCertificate(); // necessary because of missing null check in NettySslContextFactory
   }
 
-  @Override
-  public PrivateKey privateKey() {
-    return identity.getPrivateKey();
-  }
-
-  @Override
-  public X509Certificate x509Certificate() {
-    return identity.getCertificate();
-  }
-
-  @Override
-  public void buildAndSavePrivateKeyAndX509Certificate() {
-    // empty
-  }
-
-  @Override
-  public List<X509Certificate> certificateChain() {
-    return ListUtils.sum(List.of(identity.getCertificate()), identity.getCertificateChain());
-  }
-
-  @Override
-  public boolean certificateNotYetCreated() {
+  private boolean subjectMatches(X500Principal subjectX500Principal, String hostname) {
+    String dn = subjectX500Principal.getName();
+    for (String part : dn.split(",")) {
+      if (part.startsWith("CN=")) {
+        return part.substring(3).equalsIgnoreCase(hostname);
+      }
+    }
     return false;
   }
 }
