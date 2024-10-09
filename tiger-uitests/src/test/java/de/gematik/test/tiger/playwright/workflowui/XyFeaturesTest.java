@@ -189,17 +189,17 @@ class XyFeaturesTest extends AbstractBase {
                     org.assertj.core.api.Assertions.assertThat(
                             ((Double)
                                 page.evaluate(
-                                    "document.getElementsByClassName('test-execution-pane-scenario-title')[24].getBoundingClientRect().bottom")))
+                                    "document.getElementsByClassName('test-execution-pane-scenario-title')[NUMBER_OF_SCENARIOS-1].getBoundingClientRect().bottom")))
                         .isLessThan(800));
 
         Double bottom =
             (Double)
                 page.evaluate(
-                    "document.getElementsByClassName('test-execution-pane-scenario-title')[24].getBoundingClientRect().bottom");
+                    "document.getElementsByClassName('test-execution-pane-scenario-title')[NUMBER_OF_SCENARIOS-1].getBoundingClientRect().bottom");
         Double top =
             (Double)
                 page.evaluate(
-                    "document.getElementsByClassName('test-execution-pane-scenario-title')[24].getBoundingClientRect().top");
+                    "document.getElementsByClassName('test-execution-pane-scenario-title')[NUMBER_OF_SCENARIOS-1].getBoundingClientRect().top");
         Integer clientHeight = (Integer) page.evaluate("document.documentElement.clientHeight");
         Integer innerHeight = (Integer) page.evaluate("window.innerHeight");
         var viewHeight = Math.max(clientHeight, innerHeight);

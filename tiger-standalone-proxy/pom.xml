@@ -39,6 +39,13 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
             <!-- no tests need to run as its just repackaging -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
