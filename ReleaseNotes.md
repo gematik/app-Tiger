@@ -16,7 +16,19 @@ tigerProxy:
             - "anotherIdentity.p12;changeit"
 ```
 
-# Release 3.4.0
+## Bugfixes
+
+* TGR-1593: Rollback of TGR-1440, as it introduced a breaking change for tiger proxies configured in mesh setup
+    * ENV variable SERVER_MANAGEMENT_PORT is set to 8081 in the docker file and healthcheck uses that internal port
+
+# Release 3.4.2
+
+## Bugfixes
+
+* TGR-1593: Rollback of TGR-1440, as it introduced a breaking change for tiger proxies configured in mesh setup
+    * ENV variable SERVER_MANAGEMENT_PORT is set to 8081 in the docker file and healthcheck uses that internal port
+
+# Release 3.4.2
 
 ## Breaking Changes
 

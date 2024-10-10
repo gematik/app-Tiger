@@ -34,15 +34,13 @@ ARG GROUPID=10000
 # Run as User (not root)
 USER $USERID:$GROUPID
 
-ENV TIGERPROXY_ADMINPORT = 8080
-ENV TIGERPROXY_PROXYPORT = 3128
-EXPOSE 8080 3128
+ENV MANAGEMENT_SERVER_PORT=8081
 
 HEALTHCHECK --interval=1s \
             --timeout=1s \
             --start-period=1s \
             --retries=100 \
-            CMD wget -T5 -qO- -Y off http://localhost:${TIGERPROXY_ADMINPORT}/actuator/health | grep UP || exit 1
+            CMD wget -T5 -qO- -Y off http://localhost:8081/actuator/health | grep UP || exit 1
 
 # Copy the resource to the destination folder and assign permissions
 COPY --chown=$USERID:$GROUPID $APP/target/*docker.jar /app/app.jar
