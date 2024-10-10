@@ -795,7 +795,30 @@
                                 <exclude>**/*.yml</exclude>
                                 <exclude>**/*.xml</exclude>
                                 <exclude>**/*.txt</exclude>
+                                <exclude>**/*.cert</exclude>
+                                <exclude>**/*.tgr</exclude>
+                                <exclude>**/*.mjs</exclude>
+                                <exclude>**/*.bks</exclude>
+                                <exclude>**/*.crt</exclude>
+                                <exclude>**/*.browserslistrc</exclude>
                                 <exclude>**/*.factories</exclude>
+                                <exclude>**/*.feature</exclude>
+                                <exclude>**/*.jtmpl</exclude>
+                                <exclude>**/*.ansi</exclude>
+                                <exclude>**/*.curl</exclude>
+                                <exclude>**/*.map</exclude>
+                                <exclude>**/*.env</exclude>
+                                <exclude>**/*.pem</exclude>
+                                <exclude>**/*.eml</exclude>
+                                <exclude>**/*.bin</exclude>
+                                <exclude>**/*.b64</exclude>
+                                <exclude>**/*.p8</exclude>
+                                <exclude>**/*.encrypted</exclude>
+                                <exclude>**/*.base64</exclude>
+                                <exclude>**/*.pkcs8</exclude>
+                                <exclude>**/*.conf</exclude>
+                                <exclude>**/*.key</exclude>
+                                <exclude>**/dist/assets/*</exclude>
                                 <exclude>**/bootstrap.min.css</exclude>
                                 <exclude>**/bootstrap.bundle.min.js</exclude>
                             </excludes>
