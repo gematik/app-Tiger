@@ -17,13 +17,14 @@
 package de.gematik.rbellogger.util;
 
 import de.gematik.rbellogger.data.RbelElement;
-
+import de.gematik.rbellogger.exceptions.RbelConversionException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import org.apache.commons.lang3.ArrayUtils;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class EmailConversionUtils {
@@ -62,4 +63,35 @@ public class EmailConversionUtils {
         .collect(Collectors.joining("\r\n"));
   }
 
+  public static boolean hasCompleteLines(byte[] content, int requiredCount) {
+    if (requiredCount < 0) {
+      throw new RbelConversionException(
+          "hasCompleteLines needs non-negative requiredCount, but got: " + requiredCount);
+    }
+    int linesEndingInCrLf = 0;
+    // searchIndex is the next index from which to search for the next
+    // occurrence of CRLF in content
+    int searchIndex = 0;
+    // searchIndex == content.length - 1 ==> CRLF not possible anymore
+    while (searchIndex + 1 < content.length) {
+      int crIndex = ArrayUtils.indexOf(content, (byte) '\r', searchIndex);
+      if (crIndex < 0) {
+        // No CR found, so no more CRLF possible after searchIndex
+        break;
+      }
+      // After finding a CR, we check for following LF and if found, increase
+      // the searchIndex to the index after the found CRLF
+      if (crIndex + 1 < content.length && content[crIndex + 1] == '\n') {
+        ++linesEndingInCrLf;
+        if (linesEndingInCrLf > requiredCount) {
+          return false;
+        }
+        searchIndex = crIndex + 2;
+      } else {
+        // CR found, but no following LF ==> not a proper line ending
+        ++searchIndex;
+      }
+    }
+    return linesEndingInCrLf == requiredCount;
+  }
 }

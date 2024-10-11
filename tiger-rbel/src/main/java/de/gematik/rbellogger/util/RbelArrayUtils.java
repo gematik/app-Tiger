@@ -132,4 +132,18 @@ public class RbelArrayUtils {
     }
     return false;
   }
+
+  public static boolean endsWith(byte[] content, byte[] postfix) {
+    if (postfix.length > content.length) {
+      return false;
+    }
+    for (int postfixIndex = postfix.length - 1, contentIndex = content.length - 1;
+        postfixIndex >= 0;
+        --postfixIndex, --contentIndex) {
+      if (postfix[postfixIndex] != content[contentIndex]) {
+        return false;
+      }
+    }
+    return true;
+  }
 }

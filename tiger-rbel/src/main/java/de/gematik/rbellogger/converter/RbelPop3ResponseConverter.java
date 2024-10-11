@@ -16,12 +16,17 @@
 
 package de.gematik.rbellogger.converter;
 
-import static de.gematik.rbellogger.util.EmailConversionUtils.*;
-
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.facet.RbelPop3CommandFacet;
+import de.gematik.rbellogger.data.facet.RbelPop3ResponseFacet;
+import de.gematik.rbellogger.data.facet.RbelPop3StatOrListHeaderFacet;
+import de.gematik.rbellogger.data.facet.RbelResponseFacet;
+import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
+import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.rbellogger.data.pop3.RbelPop3Command;
 import de.gematik.rbellogger.util.EmailConversionUtils;
+import de.gematik.rbellogger.util.RbelArrayUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.Set;
@@ -37,6 +42,7 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
 
   private static final Set<RbelPop3Command> MIME_BODY_RESPONSE_COMMANDS =
       Set.of(RbelPop3Command.RETR, RbelPop3Command.TOP);
+  private static final byte[] CRLF_DOT_CRLF_BYTES = EmailConversionUtils.CRLF_DOT_CRLF.getBytes();
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
@@ -75,9 +81,9 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
         .filter(c -> c.length > 4)
         .filter(this::startsWithOkOrErr)
         .filter(EmailConversionUtils::endsWithCrLf)
-        .map(c -> new String(c, StandardCharsets.UTF_8))
         .filter(this::isCompleteResponse)
-        .map(s -> s.split(CRLF, -1))
+        .map(c -> new String(c, StandardCharsets.UTF_8))
+        .map(s -> s.split(EmailConversionUtils.CRLF, -1))
         .flatMap(lines -> parseLines(lines, element, context));
   }
 
@@ -89,8 +95,9 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
         || (c[0] == '-' && c[1] == 'E' && c[2] == 'R' && c[3] == 'R' && c[4] == ' ');
   }
 
-  private boolean isCompleteResponse(String response) {
-    return response.endsWith(CRLF_DOT_CRLF) || response.indexOf(CRLF) == response.length() - 2;
+  private boolean isCompleteResponse(byte[] content) {
+    return RbelArrayUtils.endsWith(content, CRLF_DOT_CRLF_BYTES)
+        || EmailConversionUtils.hasCompleteLines(content, 1);
   }
 
   private Optional<RbelPop3ResponseFacet> parseLines(
