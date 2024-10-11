@@ -52,9 +52,13 @@ public class StaticTigerKeyAndCertificateFactory implements KeyAndCertificateFac
 
   private boolean matchesHostname(X509Certificate certificate, String hostname) {
     try {
-      return subjectMatches(certificate.getSubjectX500Principal(), hostname)
-          || certificate.getSubjectAlternativeNames().stream()
-              .anyMatch(name -> name.toString().equalsIgnoreCase(hostname));
+      if (subjectMatches(certificate.getSubjectX500Principal(), hostname)) {
+        return true;
+      }
+      var alternativeNames = certificate.getSubjectAlternativeNames();
+      return alternativeNames != null
+          && hostname != null
+          && alternativeNames.stream().map(Object::toString).anyMatch(hostname::equalsIgnoreCase);
     } catch (CertificateParsingException e) {
       return false;
     }
