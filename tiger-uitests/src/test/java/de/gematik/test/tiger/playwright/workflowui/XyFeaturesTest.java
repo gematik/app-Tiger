@@ -182,6 +182,7 @@ class XyFeaturesTest extends AbstractBase {
     void testScrollingToClickedLastTestFile() {
         openSidebar();
         page.locator(".test-sidebar-scenario-name").last().locator(".scenarioLink").click();
+        int lastArray = NUMBER_OF_SCENARIOS-1;
         await()
             .atMost(10, TimeUnit.SECONDS)
             .untilAsserted(
@@ -189,17 +190,17 @@ class XyFeaturesTest extends AbstractBase {
                     org.assertj.core.api.Assertions.assertThat(
                             ((Double)
                                 page.evaluate(
-                                    "document.getElementsByClassName('test-execution-pane-scenario-title')[NUMBER_OF_SCENARIOS-1].getBoundingClientRect().bottom")))
+                                    "document.getElementsByClassName('test-execution-pane-scenario-title')[\"" + lastArray + "\"].getBoundingClientRect().bottom")))
                         .isLessThan(800));
 
         Double bottom =
             (Double)
                 page.evaluate(
-                    "document.getElementsByClassName('test-execution-pane-scenario-title')[NUMBER_OF_SCENARIOS-1].getBoundingClientRect().bottom");
+                    "document.getElementsByClassName('test-execution-pane-scenario-title')[\"" + lastArray + "\"].getBoundingClientRect().bottom");
         Double top =
             (Double)
                 page.evaluate(
-                    "document.getElementsByClassName('test-execution-pane-scenario-title')[NUMBER_OF_SCENARIOS-1].getBoundingClientRect().top");
+                    "document.getElementsByClassName('test-execution-pane-scenario-title')[\"" + lastArray + "\"].getBoundingClientRect().top");
         Integer clientHeight = (Integer) page.evaluate("document.documentElement.clientHeight");
         Integer innerHeight = (Integer) page.evaluate("window.innerHeight");
         var viewHeight = Math.max(clientHeight, innerHeight);
