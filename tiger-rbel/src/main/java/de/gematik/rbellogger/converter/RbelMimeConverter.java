@@ -23,7 +23,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Optional;
@@ -48,7 +47,7 @@ public class RbelMimeConverter implements RbelConverterPlugin {
 
   private static final Pattern AUTHENTICATED_ENVELOPED_DATA =
       Pattern.compile(
-          "application/pkcs7-mime\\s*;\\s*smime-type=authenticated-enveloped-data.*",
+          "application/pkcs7-mime\\s*;.*smime-type=authenticated-enveloped-data.*",
           Pattern.DOTALL);
 
   private static final String TRANSFER_ENCODING_7_BIT = "7bit";

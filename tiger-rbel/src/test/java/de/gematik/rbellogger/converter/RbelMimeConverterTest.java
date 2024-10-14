@@ -34,6 +34,8 @@ import org.assertj.core.api.AbstractStringAssert;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class RbelMimeConverterTest extends AbstractResponseConverterTest {
 
@@ -85,9 +87,10 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
     return "+OK message follows\r\n" + new String(mimeMessage) + "\r\n.\r\n";
   }
 
-  @Test
-  void shouldDecryptMessageBody() {
-    final byte[] encryptedMessage = readMimeMessage("example_mail/05_msgReceived-00.eml");
+  @ParameterizedTest
+  @ValueSource(strings = {"05_msgReceived-00.eml", "05_msgReceived-01.eml"})
+  void shouldDecryptMessageBody(String mailName) {
+    final byte[] encryptedMessage = readMimeMessage("example_mail/" + mailName);
     final String encryptedPop3Response = getPop3Response(encryptedMessage);
     final byte[] origMessage = readMimeMessage("example_mail/01_origMessage_VERIFY.eml");
     final String origPop3Response = getPop3Response(origMessage);

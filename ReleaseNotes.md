@@ -17,6 +17,7 @@ tigerProxy:
 
 ## Bugfixes
 
+* TGR-1460: Allow different ordering of parameters smime-type and name in content-type header of encrypted mail
 * TGR-1593: Rollback of TGR-1440, as it introduced a breaking change for tiger proxies configured in mesh setup
     * ENV variable SERVER_MANAGEMENT_PORT is set to 8081 in the docker file and healthcheck uses that internal port
 
