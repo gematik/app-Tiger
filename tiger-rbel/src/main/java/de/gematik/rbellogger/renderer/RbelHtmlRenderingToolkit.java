@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.rbellogger.renderer;
@@ -49,7 +50,6 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -379,12 +379,12 @@ public class RbelHtmlRenderingToolkit {
                         .withSrc(
                             localRessources
                                 ? "../webjars/highlightjs/highlight.min.js"
-                                : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/highlight.min.js"),
+                                : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/highlight.min.js"),
                     script()
                         .withSrc(
                             localRessources
                                 ? "../webjars/highlightjs/languages/xml.min.js"
-                                : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/languages/xml.min.js"),
+                                : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/languages/xml.min.js"),
                     script()
                         .withSrc(
                             localRessources
@@ -397,7 +397,7 @@ public class RbelHtmlRenderingToolkit {
                     link2CSS(
                         localRessources
                             ? "../webjars/highlightjs/styles/stackoverflow-dark.min.css"
-                            : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.7.0/build/styles/stackoverflow-dark.min.css"),
+                            : "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.10.0/build/styles/stackoverflow-dark.min.css"),
                     link2CSS(
                         localRessources
                             ? "../webjars/font-awesome/css/all.min.css"

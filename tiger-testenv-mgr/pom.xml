@@ -30,7 +30,7 @@
     </parent>
 
     <properties>
-        <version.frontend-maven-plugin>1.15.0</version.frontend-maven-plugin>
+        <version.frontend-maven-plugin>1.15.1</version.frontend-maven-plugin>
         <version.node>v20.11.1</version.node>
         <version.npm>10.2.4</version.npm>
         <version.httpbin>1.4.0</version.httpbin>
@@ -189,7 +189,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>24.1.0</version>
+            <version>25.0.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
