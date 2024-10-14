@@ -38,4 +38,24 @@ public class TigerRoute implements Serializable {
   private TigerBasicAuthConfiguration basicAuth;
   private List<String> criterions;
   @Builder.Default private List<String> hosts = new ArrayList<>();
+
+  public String createShortDescription() {
+    final StringBuilder resultBuilder = new StringBuilder();
+    resultBuilder.append("{from='");
+    resultBuilder.append(from);
+    resultBuilder.append('\'');
+    resultBuilder.append(", to='");
+    resultBuilder.append(to);
+    resultBuilder.append('\'');
+    if (criterions != null && !criterions.isEmpty()) {
+      resultBuilder.append(", criterions=");
+      resultBuilder.append(criterions);
+    }
+    if (hosts != null && !hosts.isEmpty()) {
+      resultBuilder.append(", hosts=");
+      resultBuilder.append(hosts);
+    }
+    resultBuilder.append('}');
+    return resultBuilder.toString();
+  }
 }

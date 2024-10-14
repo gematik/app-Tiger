@@ -4,9 +4,7 @@
 
 ## Features
 
-* TGR-1475: Allow the configuration of multiple TLS-server-certificates. The Tiger-Proxy will automatically select
-  the most appropriate one:
-
+* TGR-1475: Allow the configuration of multiple TLS-server-certificates. The Tiger-Proxy will automatically select the most appropriate one: 
 ```yaml
 tigerProxy:
   tls:
@@ -14,6 +12,7 @@ tigerProxy:
       - "someIdentity.p12;00"
       - "anotherIdentity.p12;changeit"
 ```
+* TGR-1598: Improved logging of routing decisions in Tiger-Proxy
 
 ## Bugfixes
 

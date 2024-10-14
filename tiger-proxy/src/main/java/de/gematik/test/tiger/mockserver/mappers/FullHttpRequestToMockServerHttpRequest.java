@@ -24,7 +24,6 @@ import de.gematik.test.tiger.mockserver.codec.BodyDecoderEncoder;
 import de.gematik.test.tiger.mockserver.codec.ExpandedParameterDecoder;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.*;
-import de.gematik.test.tiger.mockserver.model.Cookies;
 import de.gematik.test.tiger.mockserver.model.HttpProtocol;
 import de.gematik.test.tiger.mockserver.url.URLParser;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -41,6 +40,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.net.ssl.SSLSession;
+import kong.unirest.Cookies;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -95,7 +95,6 @@ public class FullHttpRequestToMockServerHttpRequest {
         setPath(httpRequest, fullHttpRequest);
         setQueryString(httpRequest, fullHttpRequest);
         setHeaders(httpRequest, fullHttpRequest, preservedHeaders);
-        setCookies(httpRequest, fullHttpRequest);
         setBody(httpRequest, fullHttpRequest);
         setSocketAddress(httpRequest, fullHttpRequest, isSecure, port, localAddress, remoteAddress);
         setForwardProxyRequest(httpRequest, fullHttpRequest);
@@ -184,25 +183,7 @@ public class FullHttpRequestToMockServerHttpRequest {
     }
   }
 
-  private void setCookies(HttpRequest httpRequest, FullHttpRequest fullHttpResponse) {
-    List<String> cookieHeaders = fullHttpResponse.headers().getAll(COOKIE);
-    if (!cookieHeaders.isEmpty()) {
-      Cookies cookies = new Cookies();
-      for (String cookieHeader : cookieHeaders) {
-        Set<Cookie> decodedCookies = ServerCookieDecoder.LAX.decode(cookieHeader);
-        for (Cookie decodedCookie : decodedCookies) {
-          cookies.withEntry(
-              new de.gematik.test.tiger.mockserver.model.Cookie(
-                  decodedCookie.name(), decodedCookie.value()));
-        }
-      }
-      httpRequest.withCookies(cookies);
-    }
-  }
-
   private void setBody(HttpRequest httpRequest, FullHttpRequest fullHttpRequest) {
-    httpRequest.withBody(
-        bodyDecoderEncoder.byteBufToBody(
-            fullHttpRequest.content(), fullHttpRequest.headers().get(CONTENT_TYPE)));
+    httpRequest.withBody(bodyDecoderEncoder.byteBufToBody(fullHttpRequest.content()));
   }
 }

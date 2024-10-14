@@ -38,10 +38,10 @@ import lombok.extern.slf4j.Slf4j;
 @Accessors(chain = true)
 public class HttpAction {
 
-  private final Action<?> action;
+  private final Action action;
   private ExpectationForwardAndResponseCallback expectationForwardAndResponseCallback;
 
-  public static HttpAction of(Action<?> actionToTake) {
+  public static HttpAction of(Action actionToTake) {
     return new HttpAction(actionToTake);
   }
 

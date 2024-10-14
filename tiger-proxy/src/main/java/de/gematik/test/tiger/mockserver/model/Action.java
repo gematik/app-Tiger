@@ -16,24 +16,20 @@
 
 package de.gematik.test.tiger.mockserver.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
-import lombok.Data;
 
 /*
  * @author jamesdbloom
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-@Data
-public abstract class Action<T extends Action> extends ObjectWithJsonToString {
-  private String expectationId;
+public interface Action {
+  Type getType();
 
-  @JsonIgnore
-  public abstract Type getType();
+  void write(NettyResponseWriter nettyResponseWriter, HttpRequest request);
 
-  public abstract void write(NettyResponseWriter nettyResponseWriter, HttpRequest request);
+  String getExpectationId();
 
-  public enum Type {
+  enum Type {
     FORWARD(Direction.FORWARD),
     FORWARD_TEMPLATE(Direction.FORWARD),
     FORWARD_CLASS_CALLBACK(Direction.FORWARD),
@@ -52,7 +48,7 @@ public abstract class Action<T extends Action> extends ObjectWithJsonToString {
     }
   }
 
-  public enum Direction {
+  enum Direction {
     FORWARD,
     RESPONSE
   }

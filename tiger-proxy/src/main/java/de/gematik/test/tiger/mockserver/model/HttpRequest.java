@@ -28,8 +28,10 @@ import de.gematik.rbellogger.data.RbelElement;
 import java.net.InetSocketAddress;
 import java.nio.charset.Charset;
 import java.util.*;
+import kong.unirest.Cookies;
 import lombok.*;
 import lombok.experimental.Accessors;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /*
@@ -42,14 +44,12 @@ import org.apache.commons.lang3.StringUtils;
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRequest, Body> {
+public class HttpRequest extends HttpMessage<HttpRequest> {
   private String method = "";
   private String path = "";
   private Parameters pathParameters;
   private Parameters queryStringParameters;
-  private Body body = null;
   private Headers headers;
-  private Cookies cookies;
   private Boolean keepAlive = null;
   private Boolean secure = null;
   private HttpProtocol protocol = null;
@@ -62,6 +62,7 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
   private String remoteAddress;
   private Boolean forwardProxyRequest = false;
   private RbelElement parsedRbelMessage = null;
+  private String logCorrelationId;
 
   public static HttpRequest request() {
     return new HttpRequest();
@@ -136,25 +137,12 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
     return matches;
   }
 
-  public Parameters getPathParameters() {
-    return this.pathParameters;
-  }
-
   public List<Parameter> getQueryStringParameterList() {
     if (getQueryStringParameters() == null || getQueryStringParameters().isEmpty()) {
       return List.of();
     } else {
       return getQueryStringParameters().getEntries();
     }
-  }
-
-  public HttpRequest withPathParameters(Parameters parameters) {
-    if (parameters == null || parameters.isEmpty()) {
-      this.pathParameters = null;
-    } else {
-      this.pathParameters = parameters;
-    }
-    return this;
   }
 
   private Parameters getOrCreateQueryStringParameters() {
@@ -169,40 +157,9 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
     return this;
   }
 
-  public HttpRequest withBody(String body) {
-    this.body = new StringBody(body);
-    return this;
-  }
-
-  public HttpRequest withBody(String body, Charset charset) {
-    if (body != null) {
-      this.body = new StringBody(body, charset);
-    }
-    return this;
-  }
-
   public HttpRequest withBody(byte[] body) {
-    this.body = new BinaryBody(body);
+    setBody(body);
     return this;
-  }
-
-  public HttpRequest withBody(Body body) {
-    this.body = body;
-    return this;
-  }
-
-  @JsonIgnore
-  public byte[] getBodyAsRawBytes() {
-    return this.body != null ? this.body.getRawBytes() : new byte[0];
-  }
-
-  @JsonIgnore
-  public String getBodyAsString() {
-    if (body != null) {
-      return body.toString();
-    } else {
-      return null;
-    }
   }
 
   @Override
@@ -279,23 +236,6 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
     return this;
   }
 
-  public HttpRequest withCookies(Cookies cookies) {
-    if (cookies == null || cookies.isEmpty()) {
-      this.cookies = null;
-    } else {
-      this.cookies = cookies;
-    }
-    return this;
-  }
-
-  public List<Cookie> getCookieList() {
-    if (this.cookies != null) {
-      return this.cookies.getEntries();
-    } else {
-      return Collections.emptyList();
-    }
-  }
-
   public InetSocketAddress socketAddressFromHostHeader() {
     if (socketAddress != null && socketAddress.getHost() != null) {
       boolean isSsl =
@@ -319,52 +259,51 @@ public class HttpRequest extends RequestDefinition implements HttpMessage<HttpRe
     }
   }
 
-  public HttpRequest shallowClone() {
-    return request()
-        .setMethod(method)
-        .setPath(path)
-        .setPathParameters(pathParameters)
-        .setQueryStringParameters(queryStringParameters)
-        .setBody(body)
-        .setHeaders(headers)
-        .setCookies(cookies)
-        .setKeepAlive(keepAlive)
-        .setSecure(secure)
-        .setProtocol(protocol)
-        .setStreamId(streamId)
-        .setClientCertificateChain(clientCertificateChain)
-        .setSocketAddress(socketAddress)
-        .setLocalAddress(localAddress)
-        .setRemoteAddress(remoteAddress);
-  }
-
-  @SuppressWarnings("MethodDoesntCallSuperMethod")
-  public HttpRequest clone() {
-    return request()
-        .setMethod(method)
-        .setPath(path)
-        .setPathParameters(pathParameters != null ? pathParameters.clone() : null)
-        .setQueryStringParameters(
-            queryStringParameters != null ? queryStringParameters.clone() : null)
-        .withBody(body)
-        .withHeaders(headers != null ? headers.clone() : null)
-        .withCookies(cookies != null ? cookies.clone() : null)
-        .setKeepAlive(keepAlive)
-        .setSecure(secure)
-        .setProtocol(protocol)
-        .setStreamId(streamId)
-        .setClientCertificateChain(
-            clientCertificateChain != null && !clientCertificateChain.isEmpty()
-                ? clientCertificateChain.stream()
-                    .map(c -> MockserverX509CertificateWrapper.with(c.certificate()))
-                    .toList()
-                : null)
-        .setSocketAddress(socketAddress)
-        .setLocalAddress(localAddress)
-        .setRemoteAddress(remoteAddress);
-  }
-
   public String getMethodOrDefault(String fallback) {
     return Optional.ofNullable(method).filter(StringUtils::isNotEmpty).orElse(fallback);
+  }
+
+  public String printLogLineDescription() {
+    return createProtocolString()
+        + " "
+        + getMethod()
+        + " "
+        + getPath()
+        + " "
+        + createHostHeaderString()
+        + " "
+        + createUserAgentString()
+        + " Request-Length: "
+        + createMessageSizeString();
+  }
+
+  private String createProtocolString() {
+    if (Boolean.TRUE.equals(isSecure())) {
+      return "HTTPS";
+    } else {
+      return "HTTP";
+    }
+  }
+
+  private String createHostHeaderString() {
+    return Optional.ofNullable(getFirstHeader("host"))
+        .filter(StringUtils::isNotEmpty)
+        .map(agent -> "Host: '" + agent + "'")
+        .orElse("");
+  }
+
+  private String createUserAgentString() {
+    return Optional.ofNullable(getFirstHeader("User-Agent"))
+        .filter(StringUtils::isNotEmpty)
+        .map(agent -> "User-Agent: '" + agent + "'")
+        .orElse("");
+  }
+
+  private String createMessageSizeString() {
+    if (getBody() == null) {
+      return "0 bytes";
+    } else {
+      return FileUtils.byteCountToDisplaySize(getBody().length);
+    }
   }
 }

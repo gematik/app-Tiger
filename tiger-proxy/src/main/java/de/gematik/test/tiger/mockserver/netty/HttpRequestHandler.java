@@ -142,7 +142,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
     } catch (Exception ex) {
       log.error("exception processing ", request, ex);
       responseWriter.writeResponse(
-          request, response().withStatusCode(BAD_REQUEST.code()).withBody(ex.getMessage()));
+          request, response().withStatusCode(BAD_REQUEST.code()).withBody(ex.getMessage().getBytes(StandardCharsets.UTF_8)));
     }
   }
 

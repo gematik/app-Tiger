@@ -52,13 +52,11 @@ public class MockServerToRbelConverter {
       String receiverUrl,
       CompletableFuture<RbelElement> pairedParsedRequest,
       Optional<ZonedDateTime> timestamp) {
-    if (log.isTraceEnabled()) {
-      log.trace(
-          "Converting response {}, headers {}, body {}",
-          response,
-          response.getHeaders(),
-          response.getBodyAsString());
-    }
+    log.atTrace()
+        .addArgument(response)
+        .addArgument(response.getHeaders())
+        .addArgument(() -> new String(response.getBody()))
+        .log("Converting response {}, headers {}, body {}");
 
     return rbelConverter
         .parseMessageAsync(
@@ -89,13 +87,7 @@ public class MockServerToRbelConverter {
     if (request.getParsedRbelMessage() != null) {
       return CompletableFuture.completedFuture(request.getParsedRbelMessage());
     }
-    if (log.isTraceEnabled()) {
-      log.trace(
-          "Converting request {}, headers {}, body {}",
-          request,
-          request.getHeaders(),
-          request.getBodyAsString());
-    }
+    log.atTrace().addArgument(request::printLogLineDescription).log("Converting request {}");
 
     return rbelConverter
         .parseMessageAsync(
@@ -156,7 +148,7 @@ public class MockServerToRbelConverter {
                 + "\r\n\r\n")
             .getBytes();
 
-    return Arrays.concatenate(httpRequestHeader, request.getBodyAsRawBytes());
+    return Arrays.concatenate(httpRequestHeader, request.getBody());
   }
 
   private byte[] responseToRawMessage(HttpResponse response) {
@@ -170,7 +162,7 @@ public class MockServerToRbelConverter {
                 + "\r\n\r\n")
             .getBytes(StandardCharsets.US_ASCII);
 
-    return Arrays.concatenate(httpResponseHeader, response.getBodyAsRawBytes());
+    return Arrays.concatenate(httpResponseHeader, response.getBody());
   }
 
   private String formatHeaderList(List<Header> headerList) {

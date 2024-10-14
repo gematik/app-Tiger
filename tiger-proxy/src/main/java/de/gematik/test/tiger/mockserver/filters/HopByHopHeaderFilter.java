@@ -48,11 +48,10 @@ public class HopByHopHeaderFilter {
           headers.withEntry(header);
         }
       }
-      HttpRequest clonedRequest = request.clone();
       if (!headers.isEmpty()) {
-        clonedRequest.withHeaders(headers);
+        request.withHeaders(headers);
       }
-      return clonedRequest;
+      return request;
     } else {
       return null;
     }

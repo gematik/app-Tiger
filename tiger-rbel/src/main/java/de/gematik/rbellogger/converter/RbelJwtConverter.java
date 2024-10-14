@@ -51,14 +51,6 @@ public class RbelJwtConverter implements RbelConverterPlugin {
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
     var dotIndexes = ArrayUtils.indexesOf(rbelElement.getRawContent(), (byte) '.');
     if (dotIndexes.cardinality() != JWT_DOT_SEPARATOR_COUNT) {
-      log.atTrace()
-          .addArgument(dotIndexes)
-          .addArgument(
-              () ->
-                  StringUtils.abbreviate(
-                      rbelElement.getRawStringContent(),
-                      RbelConverter.RAW_STRING_MAX_TRACE_LENGTH.getValueOrDefault()))
-          .log("Skipping element with dots at indices {}:\n{}");
       return;
     }
     parseJwt(rbelElement, converter);

@@ -65,9 +65,6 @@ public class MockServerHttpRequestToFullHttpRequest {
       // headers
       setHeader(httpRequest, request);
 
-      // cookies
-      setCookies(httpRequest, request);
-
       return request;
     } catch (RuntimeException throwable) {
       log.error("exception encoding request {}", httpRequest, throwable);
@@ -114,22 +111,6 @@ public class MockServerHttpRequestToFullHttpRequest {
     return bodyDecoderEncoder.bodyToByteBuf(httpRequest.getBody());
   }
 
-  private void setCookies(HttpRequest httpRequest, FullHttpRequest request) {
-    if (!httpRequest.getCookieList().isEmpty()) {
-      List<io.netty.handler.codec.http.cookie.Cookie> cookies = new ArrayList<>();
-      for (de.gematik.test.tiger.mockserver.model.Cookie cookie : httpRequest.getCookieList()) {
-        cookies.add(
-            new io.netty.handler.codec.http.cookie.DefaultCookie(
-                cookie.getName(), cookie.getValue()));
-      }
-      request
-          .headers()
-          .set(
-              COOKIE.toString(),
-              io.netty.handler.codec.http.cookie.ClientCookieEncoder.LAX.encode(cookies));
-    }
-  }
-
   private void setHeader(HttpRequest httpRequest, FullHttpRequest request) {
     for (Header header : httpRequest.getHeaderList()) {
       String headerName = header.getName();
@@ -166,12 +147,6 @@ public class MockServerHttpRequestToFullHttpRequest {
       request.headers().set(CONNECTION, KEEP_ALIVE);
     } else {
       request.headers().set(CONNECTION, CLOSE);
-    }
-
-    if (!request.headers().contains(CONTENT_TYPE)
-        && httpRequest.getBody() != null
-        && httpRequest.getBody().getContentType() != null) {
-      request.headers().set(CONTENT_TYPE, httpRequest.getBody().getContentType());
     }
   }
 }

@@ -104,14 +104,6 @@ public class RbelJweConverter implements RbelConverterPlugin {
     var dotIndexes = ArrayUtils.indexesOf(rbel.getRawContent(), (byte) '.');
     var dotCount = dotIndexes.cardinality();
     if (dotCount < MAX_JWE_DOT_SEPARATOR_COUNT - 2 || dotCount > MAX_JWE_DOT_SEPARATOR_COUNT) {
-      log.atTrace()
-          .addArgument(dotIndexes)
-          .addArgument(
-              () ->
-                  StringUtils.abbreviate(
-                      rbel.getRawStringContent(),
-                      RbelConverter.RAW_STRING_MAX_TRACE_LENGTH.getValueOrDefault()))
-          .log("Skipping element with dots at indices {}:\n{}");
       return Optional.empty();
     }
 

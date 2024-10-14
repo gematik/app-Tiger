@@ -70,13 +70,6 @@ public class MockServerHttpResponseToFullHttpResponse {
           .forEach(entry -> response.headers().add(entry.getKey(), entry.getValue()));
     }
 
-    // Content-Type
-    if (isBlank(httpResponse.getFirstHeader(CONTENT_TYPE.toString()))) {
-      if (httpResponse.getBody() != null && httpResponse.getBody().getContentType() != null) {
-        response.headers().set(CONTENT_TYPE, httpResponse.getBody().getContentType());
-      }
-    }
-
     // Content-Length
     if (isBlank(httpResponse.getFirstHeader(CONTENT_LENGTH.toString()))) {
       boolean chunkedEncoding = response.headers().contains(HttpHeaderNames.TRANSFER_ENCODING);

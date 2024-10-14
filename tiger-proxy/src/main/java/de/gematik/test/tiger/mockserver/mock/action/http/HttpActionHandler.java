@@ -196,7 +196,7 @@ public class HttpActionHandler {
       }
 
     } else {
-      log.error("Returning not found!");
+      log.error("Returning not found for {}", request.printLogLineDescription());
       returnNotFound(responseWriter, request, null);
     }
   }
