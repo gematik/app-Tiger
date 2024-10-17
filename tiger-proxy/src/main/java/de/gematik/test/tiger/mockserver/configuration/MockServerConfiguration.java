@@ -24,6 +24,8 @@ import io.netty.handler.ssl.SslContextBuilder;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -93,8 +95,8 @@ public class MockServerConfiguration {
 
   // inbound - dynamic private key & x509
   private String sslCertificateDomainName = "localhost";
-  private Set<String> sslSubjectAlternativeNameDomains = new HashSet<>(Set.of("localhost"));
-  private Set<String> sslSubjectAlternativeNameIps = new HashSet<>(Set.of("127.0.0.1", "0.0.0.0"));
+  private Set<String> sslSubjectAlternativeNameDomains = new ConcurrentSkipListSet<>(Set.of("localhost"));
+  private Set<String> sslSubjectAlternativeNameIps = new ConcurrentSkipListSet<>(Set.of("127.0.0.1", "0.0.0.0"));
 
   public void addSubjectAlternativeName(String newSubjectAlternativeName) {
     sslSubjectAlternativeNameDomains.add(newSubjectAlternativeName);

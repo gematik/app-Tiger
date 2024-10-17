@@ -31,6 +31,9 @@ import java.security.interfaces.RSAPrivateKey;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -63,9 +66,8 @@ public class DynamicTigerKeyAndCertificateFactory implements KeyAndCertificateFa
   private static final Duration MAXIMUM_VALIDITY = Duration.ofDays(397);
 
   private final TigerPkiIdentity caIdentity;
-  private final List<X509Certificate> certificateChain;
   private final String serverName;
-  private final List<String> serverAlternativeNames;
+  private final Set<String> serverAlternativeNames;
   private TigerPkiIdentity eeIdentity;
   private List<String> hostsCoveredByGeneratedIdentity = List.of();
   private final MockServerConfiguration mockServerConfiguration;
@@ -75,11 +77,10 @@ public class DynamicTigerKeyAndCertificateFactory implements KeyAndCertificateFa
       TigerProxyConfiguration tigerProxyConfiguration,
       TigerPkiIdentity caIdentity,
       MockServerConfiguration mockServerConfiguration) {
-    this.certificateChain = new ArrayList<>();
     this.caIdentity = caIdentity;
     this.eeIdentity = null;
     this.serverName = tigerProxyConfiguration.getTls().getDomainName();
-    this.serverAlternativeNames = new ArrayList<>();
+    this.serverAlternativeNames = new ConcurrentSkipListSet<>();
     if (tigerProxyConfiguration.getTls().getAlternativeNames() != null) {
       serverAlternativeNames.addAll(tigerProxyConfiguration.getTls().getAlternativeNames());
     }
@@ -146,7 +147,7 @@ public class DynamicTigerKeyAndCertificateFactory implements KeyAndCertificateFa
         Extension.subjectKeyIdentifier, false, createNewSubjectKeyIdentifier(publicKey));
     builder.addExtension(Extension.basicConstraints, false, new BasicConstraints(false));
 
-    hostsCoveredByGeneratedIdentity = new ArrayList<>();
+    hostsCoveredByGeneratedIdentity = new CopyOnWriteArrayList<>();
     hostsCoveredByGeneratedIdentity.addAll(serverAlternativeNames);
     hostsCoveredByGeneratedIdentity.addAll(
         mockServerConfiguration.sslSubjectAlternativeNameDomains());
