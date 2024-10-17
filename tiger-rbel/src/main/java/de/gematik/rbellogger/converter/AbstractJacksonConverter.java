@@ -62,14 +62,13 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet> implements R
 
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
-    final Optional<JsonNode> jsonOptional = convertToJacksonNode(rbelElement);
-    if (jsonOptional.isEmpty()) {
-      return;
-    }
-    if (jsonOptional.get().isContainerNode()) {
-      augmentRbelElementWithFacet(jsonOptional.get(), converter, rbelElement);
-      rbelElement.addFacet(new RbelRootFacet<>(rbelElement.getFacetOrFail(facetClass)));
-    }
+    convertToJacksonNode(rbelElement)
+        .filter(json -> json.isContainerNode() && !json.isEmpty())
+        .ifPresent(
+            json -> {
+              augmentRbelElementWithFacet(json, converter, rbelElement);
+              rbelElement.addFacet(new RbelRootFacet<>(rbelElement.getFacetOrFail(facetClass)));
+            });
   }
 
   @SneakyThrows

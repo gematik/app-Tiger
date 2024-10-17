@@ -27,6 +27,7 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelBinaryFacet;
+import de.gematik.rbellogger.data.facet.RbelCborFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
 import java.util.Base64;
@@ -196,5 +197,13 @@ public class RbelCborConverterTest {
     final RbelElement rbelElement = rbelLogger.getRbelConverter().convertElement(cborBytes, null);
 
     assertThat(rbelElement).extractChildWithPath(rbelPath).hasStringContentEqualTo(result);
+  }
+
+  @Test
+  void avoidEmptyCborFragments() {
+    final RbelElement convertMessage =
+        rbelLogger.getRbelConverter().convertElement(Base64.getDecoder().decode("oA=="), null);
+
+    assertThat(convertMessage).andPrintTree().doesNotHaveFacet(RbelCborFacet.class);
   }
 }

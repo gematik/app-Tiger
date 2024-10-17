@@ -17,6 +17,7 @@
 package de.gematik.rbellogger.converter;
 
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
@@ -26,6 +27,7 @@ import de.gematik.rbellogger.data.facet.RbelJsonFacet;
 import de.gematik.rbellogger.data.facet.RbelJwtFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -43,7 +45,22 @@ class JsonConverterTest {
     final RbelElement convertedMessage =
         RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
 
-    assertThat(convertedMessage.getFirst("body").get().hasFacet(RbelJsonFacet.class)).isTrue();
+    assertThat(convertedMessage).extractChildWithPath("$.body").hasFacet(RbelJsonFacet.class);
+  }
+
+  @Test
+  void convertTrivialJsons_shouldNotAddFacet() {
+    final String myMessage = "<html><head>[]</head><body>{}</body></html>";
+
+    final RbelElement convertedMessage =
+        RbelLogger.build().getRbelConverter().convertElement(myMessage, null);
+
+    assertThat(convertedMessage)
+        .extractChildWithPath("$.html.head.text")
+        .doesNotHaveFacet(RbelJsonFacet.class)
+        .andTheInitialElement()
+        .extractChildWithPath("$.html.body.text")
+        .doesNotHaveFacet(RbelJsonFacet.class);
   }
 
   @Test

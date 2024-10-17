@@ -21,6 +21,7 @@ tigerProxy:
     * ENV variable SERVER_MANAGEMENT_PORT is set to 8081 in the docker file and healthcheck uses that internal port
 
 * TGR-1561: Improved performance of fast-fail checks of SMTP/POP3 converters
+* TGR-1496: RbelLogger: Empty standalone JSON- and CBOR-Elements are no longer converted
 * TIMTS-656: Fixed race condition on TLS connections with dynamic server identities
 * TGR-1606: Fixed openSidebar for the UI-Tests
 
