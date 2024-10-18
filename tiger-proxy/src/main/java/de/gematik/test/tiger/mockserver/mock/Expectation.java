@@ -49,12 +49,19 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
   private final HttpRequest requestPattern;
   @Setter private HttpAction httpAction;
   private final List<String> hostRegexes;
+  private final boolean ignorePortsInHostHeader;
   private ExpectationCallback expectationCallback;
 
   public Expectation(HttpRequest requestDefinition, int priority, List<String> hostRegexes) {
     this.requestPattern = requestDefinition;
     this.priority = priority;
-    this.hostRegexes = hostRegexes;
+    if (hostRegexes == null) {
+      this.hostRegexes = List.of();
+      this.ignorePortsInHostHeader = true;
+    } else {
+      this.hostRegexes = hostRegexes.stream().map(String::trim).toList();
+      this.ignorePortsInHostHeader = hostRegexes.stream().noneMatch(h -> h.contains(":"));
+    }
   }
 
   public Expectation thenForward(ExpectationForwardAndResponseCallback callback) {
@@ -92,16 +99,29 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
         && (hostRegexes == null || hostRegexes.isEmpty())) {
       return true;
     }
-    if (StringUtils.equals(requestPattern.getFirstHeader("Host"), request.getFirstHeader("Host"))) {
+    final String cleanedHostHeader =
+        ignorePortsInHostHeader
+            ? request.getFirstHeader("Host").trim().split(":")[0]
+            : request.getFirstHeader("Host").trim();
+    final String cleanedPatternHostHeader =
+        ignorePortsInHostHeader
+            ? requestPattern.getFirstHeader("Host").split(":")[0]
+            : requestPattern.getFirstHeader("Host");
+    if (StringUtils.equals(cleanedPatternHostHeader, cleanedHostHeader)) {
       return true;
     }
     final boolean anyHostHeaderMatch =
-        hostRegexes.stream().anyMatch(request.getFirstHeader("Host")::matches);
+        hostRegexes.stream()
+            .anyMatch(
+                hostMatchCriterion ->
+                    cleanedHostHeader.equals(hostMatchCriterion)
+                        || cleanedHostHeader.matches(hostMatchCriterion));
     if (!anyHostHeaderMatch) {
       log.atTrace()
-          .addArgument(() -> request.getFirstHeader("Host"))
+          .addArgument(() -> cleanedHostHeader)
           .addArgument(tigerRoute::createShortDescription)
-          .log("host [{}] is not matching for route {}");
+          .addArgument(ignorePortsInHostHeader)
+          .log("host [{}] is not matching for route {} ({})");
     }
     return anyHostHeaderMatch;
   }

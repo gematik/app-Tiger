@@ -12,6 +12,7 @@ tigerProxy:
       - "someIdentity.p12;00"
       - "anotherIdentity.p12;changeit"
 ```
+* TGR-1590: Host-Header matching is now Port-aware: If no ports are given, ports are ignored, if ports are given, they are matched.
 * TGR-1598: Improved logging of routing decisions in Tiger-Proxy
 
 ## Bugfixes

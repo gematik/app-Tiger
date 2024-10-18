@@ -86,7 +86,7 @@ public class HttpState {
   }
 
   public Expectation firstMatchingExpectation(HttpRequest request) {
-    log.atDebug().addArgument(request::printLogLineDescription).log("Trying to find route for {}");
+    log.atTrace().addArgument(request::printLogLineDescription).log("Trying to find route for {}");
     for (Expectation expectation : expectations.stream().sorted().toList()) {
       if (expectation.matches(request)) {
         log.atDebug()

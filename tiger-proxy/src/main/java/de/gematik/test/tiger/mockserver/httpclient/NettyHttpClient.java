@@ -32,9 +32,7 @@ import io.netty.util.AttributeKey;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -59,6 +57,7 @@ public class NettyHttpClient {
   private final EventLoopGroup eventLoopGroup;
   private final Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations;
   private final NettySslContextFactory nettySslContextFactory;
+  private final Set<Integer> clientPorts = Collections.synchronizedSet(new HashSet<>());
 
   @Getter private final ClientBootstrapFactory clientBootstrapFactory;
 
@@ -278,5 +277,17 @@ public class NettyHttpClient {
             })
         .filter(Objects::nonNull)
         .noneMatch(remoteAddress.getAddress()::equals);
+  }
+
+  public void addClientPort(int port) {
+    clientPorts.add(port);
+  }
+
+  public void removeClientPort(int port) {
+    clientPorts.remove(port);
+  }
+
+  public boolean hasClientPort(int port) {
+    return clientPorts.contains(port);
   }
 }

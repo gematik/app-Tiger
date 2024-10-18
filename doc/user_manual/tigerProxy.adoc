@@ -113,7 +113,7 @@ tigerProxy:
         - ".*.bing.com"
 ----
 
-The entries are matched as regular expressions.
+The entries are matched first as a total match, failing that as regular expressions. If you want to add ports you are free to do so: "myHost:80". This however will necessitate that the ports on all entries in this specific list are given (this does not apply to other routes).
 
 ==== criterions
 

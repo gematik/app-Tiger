@@ -5,7 +5,7 @@
         </encoder>
     </appender>
 
-    <logger name="de.gematik" level="INFO" />
+    <logger name="de.gematik" level="TRACE" />
 
     <root level="INFO">
         <appender-ref ref="STDOUT" />
