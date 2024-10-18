@@ -20,10 +20,9 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import org.junit.jupiter.api.BeforeEach;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 
 public class AbstractResponseConverterTest {
   protected RbelConverter converter;

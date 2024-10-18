@@ -21,12 +21,10 @@ import de.gematik.rbellogger.data.facet.RbelDecryptedEmailFacet;
 import de.gematik.rbellogger.data.facet.RbelMimeMessageFacet;
 import de.gematik.rbellogger.util.email_crypto.EmailDecryption;
 import de.gematik.rbellogger.util.email_crypto.RbelDecryptionException;
-
+import eu.europa.esig.dss.spi.DSSUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Optional;
-
-import eu.europa.esig.dss.spi.DSSUtils;
 import lombok.SneakyThrows;
 import org.apache.james.mime4j.dom.SingleBody;
 import org.bouncycastle.cms.CMSException;

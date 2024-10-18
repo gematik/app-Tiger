@@ -27,7 +27,6 @@ import de.gematik.rbellogger.data.facet.RbelJsonFacet;
 import de.gematik.rbellogger.data.facet.RbelJwtFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;

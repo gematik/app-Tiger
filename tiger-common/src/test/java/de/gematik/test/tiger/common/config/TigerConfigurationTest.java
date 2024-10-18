@@ -652,7 +652,8 @@ public class TigerConfigurationTest { // NOSONAR
         "foo.value",
         TigerConfigurationTest.NestedBean.builder().bar(42).build(),
         ConfigurationValuePrecedence.RUNTIME_EXPORT);
-    TigerGlobalConfiguration.putValue("foo.value.bar", "schmoo", ConfigurationValuePrecedence.RUNTIME_EXPORT);
+    TigerGlobalConfiguration.putValue(
+        "foo.value.bar", "schmoo", ConfigurationValuePrecedence.RUNTIME_EXPORT);
     assertThat(TigerGlobalConfiguration.readString("foo.value.bar")).isEqualTo("schmoo");
   }
 

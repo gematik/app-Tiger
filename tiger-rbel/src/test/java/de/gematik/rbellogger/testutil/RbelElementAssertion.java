@@ -141,7 +141,9 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
   public RbelElementAssertion doesNotHaveFacet(Class<? extends RbelFacet> facetToTest) {
     if (actual.hasFacet(facetToTest)) {
       failWithMessage(
-          "Expecting element to have NOT facet of type %s, but it was found along with %s\nat element:\n$.%s",
+          "Expecting element to have NOT facet of type %s, but it was found along with %s\n"
+              + "at element:\n"
+              + "$.%s",
           facetToTest.getSimpleName(), new ArrayList<>(actual.getFacets()), actual.findNodePath());
     }
     return this.myself;

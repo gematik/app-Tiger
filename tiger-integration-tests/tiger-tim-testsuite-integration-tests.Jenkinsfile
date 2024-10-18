@@ -64,7 +64,7 @@ pipeline {
         stage('Set Tiger version in TI-M') {
             steps {
                 sh "grep -q tiger.version ${POM}"
-                sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM}"
+                sh "sed -i -e 's@<tiger.version>.*</tiger.version>@<tiger.version>${TIGER_VERSION}</tiger.version>@' ${POM}"
             }
         }
 

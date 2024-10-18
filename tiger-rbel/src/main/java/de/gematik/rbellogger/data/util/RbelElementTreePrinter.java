@@ -45,12 +45,13 @@ public class RbelElementTreePrinter {
 
   public String execute() {
     final RbelElement position = new RbelElement(null, null);
-    position.addFacet( new RbelFacet() {
-      @Override
-      public RbelMultiMap<RbelElement> getChildElements() {
-        return new RbelMultiMap<RbelElement>().with(findKeyOfRootElement(), rootElement);
-      }
-    });
+    position.addFacet(
+        new RbelFacet() {
+          @Override
+          public RbelMultiMap<RbelElement> getChildElements() {
+            return new RbelMultiMap<RbelElement>().with(findKeyOfRootElement(), rootElement);
+          }
+        });
     return executeRecursive(
         position, "", Math.max(maximumLevels, maximumLevels + 1) // avoid overflow problems
         );

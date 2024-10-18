@@ -47,8 +47,7 @@ public class RbelMimeConverter implements RbelConverterPlugin {
 
   private static final Pattern AUTHENTICATED_ENVELOPED_DATA =
       Pattern.compile(
-          "application/pkcs7-mime\\s*;.*smime-type=authenticated-enveloped-data.*",
-          Pattern.DOTALL);
+          "application/pkcs7-mime\\s*;.*smime-type=authenticated-enveloped-data.*", Pattern.DOTALL);
 
   private static final String TRANSFER_ENCODING_7_BIT = "7bit";
   public static final String CONTENT_TRANSFER_ENCODING = "content-transfer-encoding";

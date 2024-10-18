@@ -284,11 +284,16 @@ public class TigerConfigurationLoader {
     readFromYaml(yamlSource, ConfigurationValuePrecedence.ADDITIONAL_YAML, baseKeys);
   }
 
-  public void readFromYaml(String yamlSource, ConfigurationValuePrecedence precedence, String... baseKeys) {
+  public void readFromYaml(
+      String yamlSource, ConfigurationValuePrecedence precedence, String... baseKeys) {
     readConfigurationFile(yamlSource, precedence, ConfigurationFileType.YAML, baseKeys);
   }
 
-  public void readConfigurationFile(String yamlSource, ConfigurationValuePrecedence precedence, ConfigurationFileType configurationFileType, String... baseKeys) {
+  public void readConfigurationFile(
+      String yamlSource,
+      ConfigurationValuePrecedence precedence,
+      ConfigurationFileType configurationFileType,
+      String... baseKeys) {
     initialize();
 
     val values = configurationFileType.loadFromString(yamlSource);
@@ -329,7 +334,9 @@ public class TigerConfigurationLoader {
                       TigerTemplateSource.builder()
                           .templateName(m.get("templateName").toString())
                           .targetPath(new TigerConfigurationKey(baseKeys))
-                          .values(addConfigurationFileToMap(m, new TigerConfigurationKey(), new HashMap<>()))
+                          .values(
+                              addConfigurationFileToMap(
+                                  m, new TigerConfigurationKey(), new HashMap<>()))
                           .build()));
     } else {
       throw new TigerConfigurationException(
@@ -404,7 +411,7 @@ public class TigerConfigurationLoader {
   /**
    * Generates a tree containing all key/value pairs. Placeholders in the values are NOT resolved.
    */
-    private JsonNode convertToTreeUnresolved() {
+  private JsonNode convertToTreeUnresolved() {
     return convertMapToTree(retrieveMapUnresolved());
   }
 
@@ -565,7 +572,8 @@ public class TigerConfigurationLoader {
     putValue(new TigerConfigurationKey(key), value, precedence);
   }
 
-  public void putValue(TigerConfigurationKey key, Object value, ConfigurationValuePrecedence precedence) {
+  public void putValue(
+      TigerConfigurationKey key, Object value, ConfigurationValuePrecedence precedence) {
     if (value == null) {
       throw new TigerConfigurationException(
           "Trying to store null-value. Only non-values are allowed!");
@@ -593,7 +601,8 @@ public class TigerConfigurationLoader {
     }
   }
 
-  private AbstractTigerConfigurationSource generateNewConfigurationSource(ConfigurationValuePrecedence precedence) {
+  private AbstractTigerConfigurationSource generateNewConfigurationSource(
+      ConfigurationValuePrecedence precedence) {
     final AbstractTigerConfigurationSource newSource =
         new BasicTigerConfigurationSource(precedence);
     sourcesManager.addNewSource(newSource);

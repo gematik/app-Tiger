@@ -22,12 +22,11 @@ import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelMessageRenderer;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Data
 @Builder(toBuilder = true)

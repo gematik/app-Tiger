@@ -64,7 +64,6 @@ public class TigerProxyConfiguration {
   @Builder.Default private boolean activateTrafficLogging = true;
   @Builder.Default private List<TigerProxyNoteCommand> notes = new ArrayList<>();
 
-
   @Builder.Default
   private TrafficEndpointConfiguration trafficEndpointConfiguration =
       new TrafficEndpointConfiguration();
