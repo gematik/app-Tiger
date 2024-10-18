@@ -24,7 +24,8 @@ import lombok.Data;
  */
 @SuppressWarnings("rawtypes")
 @Data
-public abstract class HttpMessage<T extends HttpMessage> extends ObjectWithJsonToString implements Message {
+public abstract class HttpMessage<T extends HttpMessage> extends ObjectWithJsonToString
+    implements Message {
   private byte[] body = null;
 
   public abstract T withBody(byte[] body);
@@ -46,5 +47,4 @@ public abstract class HttpMessage<T extends HttpMessage> extends ObjectWithJsonT
   public abstract String getFirstHeader(String name);
 
   public abstract T removeHeader(String name);
-
 }

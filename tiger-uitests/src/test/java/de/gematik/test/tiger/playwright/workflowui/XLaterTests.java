@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.playwright.workflowui;
 
-
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -43,28 +42,23 @@ class XLaterTests extends AbstractBase {
     assertAll(
         () -> assertThat(page.locator("#rbellog_details_pane")).isVisible(),
         () ->
+            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#webui-navbar"))
+                .isVisible(),
+        () ->
             assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#webui-navbar")
-                        ).isVisible(),
+                    page.frameLocator("#rbellog-details-iframe").locator("#dropdown-hide-button"))
+                .isVisible(),
+        () ->
+            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filterModalBtn"))
+                .isVisible(),
+        () ->
+            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#exportMsgs"))
+                .isVisible(),
         () ->
             assertThat(
                     page.frameLocator("#rbellog-details-iframe")
-                        .locator("#dropdown-hide-button")
-                        ).isVisible(),
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#filterModalBtn")
-                        ).isVisible(),
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe").locator("#exportMsgs")).isVisible(),
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#dropdown-page-selection")
-                        ).isVisible(),
+                        .locator("#dropdown-page-selection"))
+                .isVisible(),
         () ->
             Assertions.assertThat(
                     page.frameLocator("#rbellog-details-iframe")
@@ -78,26 +72,24 @@ class XLaterTests extends AbstractBase {
                         .textContent())
                 .endsWith("20"),
         () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#dropdown-page-size")
-                        ).isVisible(),
+            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-size"))
+                .isVisible(),
         () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#routeModalBtn")
-                        ).not().isVisible(),
+            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#routeModalBtn"))
+                .not()
+                .isVisible(),
         () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#scrollLockBtn")
-                        ).not().isVisible(),
+            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#scrollLockBtn"))
+                .not()
+                .isVisible(),
         () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe").locator("#resetMsgs")).not().isVisible(),
+            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#resetMsgs"))
+                .not()
+                .isVisible(),
         () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe").locator("#importMsgs")).not().isVisible());
+            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#importMsgs"))
+                .not()
+                .isVisible());
   }
 
   @Test
@@ -131,7 +123,9 @@ class XLaterTests extends AbstractBase {
     page.locator("#test-webui-slider").click();
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
-    await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
     externalPage.locator("#routeModalBtn").click();
     assertAll(
         () -> assertThat(externalPage.locator("#routeModalDialog")).isVisible(),
@@ -152,7 +146,9 @@ class XLaterTests extends AbstractBase {
     page.locator("#test-webui-slider").click();
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
-    await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
     assertAll(
         () -> assertThat(externalPage.locator("#test-tiger-logo")).isVisible(),
         () -> assertThat(externalPage.locator("#routeModalBtn")).isVisible(),
@@ -173,22 +169,24 @@ class XLaterTests extends AbstractBase {
     assertAll(
         () -> assertThat(page.locator("#test-sidebar-server-status-box")).isVisible(),
         () ->
-            assertThat(
-                    page.locator("#test-sidebar-server-status-box .test-sidebar-serverbox")).hasCount(3),
+            assertThat(page.locator("#test-sidebar-server-status-box .test-sidebar-serverbox"))
+                .hasCount(3),
+        () ->
+            assertThat(page.locator("#test-sidebar-server-status-box .test-sidebar-server-name"))
+                .hasCount(3),
+        () ->
+            assertThat(page.locator("#test-sidebar-server-status-box .test-sidebar-server-status"))
+                .hasCount(3),
+        () ->
+            assertThat(page.locator("#test-sidebar-server-status-box .test-sidebar-server-url"))
+                .hasCount(2),
         () ->
             assertThat(
-                    page.locator("#test-sidebar-server-status-box .test-sidebar-server-name")).hasCount(3),
+                    page.locator("#test-sidebar-server-status-box .test-sidebar-server-url-icon"))
+                .hasCount(2),
         () ->
             assertThat(
-                    page.locator("#test-sidebar-server-status-box .test-sidebar-server-status")).hasCount(3),
-        () ->
-            assertThat(
-                    page.locator("#test-sidebar-server-status-box .test-sidebar-server-url")).hasCount(2),
-        () ->
-            assertThat(
-                    page.locator("#test-sidebar-server-status-box .test-sidebar-server-url-icon")).hasCount(2),
-        () ->
-            assertThat(
-                    page.locator("#test-sidebar-server-status-box .test-sidebar-server-log-icon")).hasCount(3));
+                    page.locator("#test-sidebar-server-status-box .test-sidebar-server-log-icon"))
+                .hasCount(3));
   }
 }

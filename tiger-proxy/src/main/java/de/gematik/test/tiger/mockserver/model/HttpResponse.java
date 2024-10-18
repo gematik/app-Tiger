@@ -17,15 +17,12 @@
 package de.gematik.test.tiger.mockserver.model;
 
 import static de.gematik.test.tiger.mockserver.model.HttpStatusCode.NOT_FOUND_404;
-import static de.gematik.test.tiger.mockserver.model.HttpStatusCode.OK_200;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Multimap;
 import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
-import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
-import kong.unirest.Cookies;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

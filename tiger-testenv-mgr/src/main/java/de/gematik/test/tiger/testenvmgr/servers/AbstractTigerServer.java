@@ -276,7 +276,8 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
               kvp[1] = kvp[1].replace("${NAME}", getHostname());
 
               log.info("Setting global property {}={}", kvp[0], kvp[1]);
-              TigerGlobalConfiguration.putValue(kvp[0], kvp[1], ConfigurationValuePrecedence.RUNTIME_EXPORT);
+              TigerGlobalConfiguration.putValue(
+                  kvp[0], kvp[1], ConfigurationValuePrecedence.RUNTIME_EXPORT);
             });
   }
 

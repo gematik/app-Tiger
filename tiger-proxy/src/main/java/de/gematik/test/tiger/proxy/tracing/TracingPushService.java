@@ -124,7 +124,8 @@ public class TracingPushService {
     propagateRbelMessage(msg);
     this.nextSequenceNumberToBePushed.put(extractRemoteUrl(msg), sequenceNumber + 1);
     log.trace(
-        "Pushed message with sequence number {}. Now treating waiting messages (sequence numbers are {})",
+        "Pushed message with sequence number {}. Now treating waiting messages (sequence numbers"
+            + " are {})",
         sequenceNumber,
         nextSequenceNumberToBePushed);
     queryAndRemovePendingMessageFuture(msg, sequenceNumber)

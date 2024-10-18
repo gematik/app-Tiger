@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger;
@@ -21,10 +22,10 @@ import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.matcher.ElementMatchers;
 
-//NOSONAR
+// NOSONAR
 public class TigerAgent {
 
-  public static TigerMasterSecretListeners listener = s-> {};
+  public static TigerMasterSecretListeners listener = s -> {};
 
   public static void main(String[] args) {
     System.err.println("This is a Java Agent and should be attached to a running JVM process.");
@@ -34,11 +35,14 @@ public class TigerAgent {
     System.out.println("Tiger Agent loaded! TLS master secrets can now be stored to file 🐯");
 
     new AgentBuilder.Default()
-      .ignore(ElementMatchers.none())
-      .type(ElementMatchers.named("org.bouncycastle.tls.AbstractTlsContext"))
-      .transform((builder, typeDescription, classLoader, module, o) -> builder
-        .visit(Advice.to(HandshakeCompleteInterceptor.class).on(ElementMatchers.hasMethodName("handshakeComplete"))))
-      .installOn(inst);
+        .ignore(ElementMatchers.none())
+        .type(ElementMatchers.named("org.bouncycastle.tls.AbstractTlsContext"))
+        .transform(
+            (builder, typeDescription, classLoader, module, o) ->
+                builder.visit(
+                    Advice.to(HandshakeCompleteInterceptor.class)
+                        .on(ElementMatchers.hasMethodName("handshakeComplete"))))
+        .installOn(inst);
   }
 
   public static class HandshakeCompleteInterceptor {

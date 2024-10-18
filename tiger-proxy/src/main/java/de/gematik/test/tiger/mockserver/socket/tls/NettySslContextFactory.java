@@ -64,7 +64,8 @@ public class NettySslContextFactory {
     return createClientSslContext(protocol, null);
   }
 
-  public synchronized SslContext createClientSslContext(Optional<HttpProtocol> protocol, String hostName) {
+  public synchronized SslContext createClientSslContext(
+      Optional<HttpProtocol> protocol, String hostName) {
     return createClientSslContext(protocol.orElse(HttpProtocol.HTTP_1_1), hostName);
   }
 
@@ -79,12 +80,14 @@ public class NettySslContextFactory {
 
   private SslContext buildFreshClientSslContext(HttpProtocol protocol, String hostName) {
     try {
-      val clientIdentity = keyAndCertificateFactory.buildAndSavePrivateKeyAndX509Certificate(hostName);
+      val clientIdentity =
+          keyAndCertificateFactory.buildAndSavePrivateKeyAndX509Certificate(hostName);
       // create x509 and private key if none exist yet
       SslContextBuilder sslContextBuilder =
           SslContextBuilder.forClient()
               .protocols(configuration.tlsProtocols().split(","))
-              .keyManager(clientIdentity.getPrivateKey(), clientIdentity.buildChainWithCertificate());
+              .keyManager(
+                  clientIdentity.getPrivateKey(), clientIdentity.buildChainWithCertificate());
       if (protocol == HttpProtocol.HTTP_2) {
         configureALPN(sslContextBuilder);
       }
@@ -126,8 +129,7 @@ public class NettySslContextFactory {
           .log("Using Server Certificate '{}', issued by '{}'");
       final SslContextBuilder sslContextBuilder =
           SslContextBuilder.forServer(
-                  serverIdentity.getPrivateKey(),
-                  serverIdentity.buildChainWithCertificate())
+                  serverIdentity.getPrivateKey(), serverIdentity.buildChainWithCertificate())
               .protocols(configuration.tlsProtocols().split(","))
               .clientAuth(ClientAuth.OPTIONAL);
       configureALPN(sslContextBuilder);

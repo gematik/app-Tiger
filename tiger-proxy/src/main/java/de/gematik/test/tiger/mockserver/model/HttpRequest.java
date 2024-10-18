@@ -23,12 +23,9 @@ import static de.gematik.test.tiger.mockserver.model.SocketAddress.Scheme.HTTPS;
 import static io.netty.handler.codec.http.HttpHeaderNames.HOST;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.gematik.rbellogger.data.RbelElement;
 import java.net.InetSocketAddress;
-import java.nio.charset.Charset;
 import java.util.*;
-import kong.unirest.Cookies;
 import lombok.*;
 import lombok.experimental.Accessors;
 import org.apache.commons.io.FileUtils;

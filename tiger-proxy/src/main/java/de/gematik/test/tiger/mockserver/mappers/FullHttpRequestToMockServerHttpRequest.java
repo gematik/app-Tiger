@@ -16,8 +16,6 @@
 
 package de.gematik.test.tiger.mockserver.mappers;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
-import static io.netty.handler.codec.http.HttpHeaderNames.COOKIE;
 import static io.netty.handler.codec.http.HttpUtil.isKeepAlive;
 
 import de.gematik.test.tiger.mockserver.codec.BodyDecoderEncoder;
@@ -28,8 +26,6 @@ import de.gematik.test.tiger.mockserver.model.HttpProtocol;
 import de.gematik.test.tiger.mockserver.url.URLParser;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
-import io.netty.handler.codec.http.cookie.Cookie;
-import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import io.netty.handler.codec.http2.HttpConversionUtil;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -38,9 +34,7 @@ import java.net.URISyntaxException;
 import java.security.cert.Certificate;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import javax.net.ssl.SSLSession;
-import kong.unirest.Cookies;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 

@@ -99,9 +99,7 @@ class TigerStompSessionHandler extends StompSessionHandlerAdapter {
       }
     } else {
       log.error(
-          "handle transport error from url '{}'",
-          remoteProxyClient.getRemoteProxyUrl(),
-          exception);
+          "handle transport error from url '{}'", remoteProxyClient.getRemoteProxyUrl(), exception);
       throw new TigerRemoteProxyClientException(exception);
     }
   }

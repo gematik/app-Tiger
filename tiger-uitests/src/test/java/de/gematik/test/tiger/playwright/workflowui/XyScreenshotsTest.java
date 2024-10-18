@@ -152,7 +152,8 @@ class XyScreenshotsTest extends AbstractBase {
 
     Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
     await()
-        .atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNotNull(externalPage.locator(".test-message-number").first()));
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> assertNotNull(externalPage.locator(".test-message-number").first()));
     externalPage.locator(".test-message-number").first().click();
     screenshot(externalPage, "webui.png");
     screenshotByClassname(externalPage, "webui_inspect_highlight.png", "test-btn-inspect");
@@ -203,7 +204,9 @@ class XyScreenshotsTest extends AbstractBase {
         "document.getElementById(\"jexlTab-name\").style.removeProperty(\"background-color\")");
 
     externalPage.locator("#jexlModalButtonClose").click();
-    await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> assertNotNull(externalPage.locator("#filterModalBtn")));
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> assertNotNull(externalPage.locator("#filterModalBtn")));
 
     externalPage.locator("#filterModalBtn").click();
     screenshot(externalPage, "webui_filter_open.png");

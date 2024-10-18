@@ -43,7 +43,8 @@ public class ExpectationBuilder {
     return this;
   }
 
-  public static ExpectationBuilder when(HttpRequest httpRequest, Integer priority, List<String> hostRegexes) {
+  public static ExpectationBuilder when(
+      HttpRequest httpRequest, Integer priority, List<String> hostRegexes) {
     return new ExpectationBuilder(new Expectation(httpRequest, priority, hostRegexes));
   }
 

@@ -16,16 +16,11 @@
 
 package de.gematik.test.tiger.mockserver.mappers;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
-
 import de.gematik.test.tiger.mockserver.codec.BodyDecoderEncoder;
 import de.gematik.test.tiger.mockserver.model.*;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
-import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import java.util.Set;
-import kong.unirest.Cookies;
 import lombok.extern.slf4j.Slf4j;
 
 /*

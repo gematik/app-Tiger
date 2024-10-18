@@ -51,11 +51,13 @@ public class HttpAction {
       HttpActionHandler actionHandler,
       NettyResponseWriter responseWriter,
       boolean synchronous) {
-    final Optional<Action> cannedResponse = expectationForwardAndResponseCallback.cannedResponse(request);
+    final Optional<Action> cannedResponse =
+        expectationForwardAndResponseCallback.cannedResponse(request);
     if (cannedResponse.isPresent()) {
       cannedResponse.get().write(responseWriter, request);
     } else {
-      performActualRequestAndWriteResponse(request, incomingChannel, actionHandler, responseWriter, synchronous);
+      performActualRequestAndWriteResponse(
+          request, incomingChannel, actionHandler, responseWriter, synchronous);
     }
   }
 
@@ -64,7 +66,7 @@ public class HttpAction {
       Channel incomingChannel,
       HttpActionHandler actionHandler,
       NettyResponseWriter responseWriter,
-    boolean synchronous) {
+      boolean synchronous) {
     final HttpRequest overriddenRequest = getOverridenRequest(request);
 
     if (action instanceof HttpOverrideForwardedRequest) {

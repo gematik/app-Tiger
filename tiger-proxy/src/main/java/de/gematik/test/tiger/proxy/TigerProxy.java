@@ -311,7 +311,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
       val tlsConfiguration = Optional.ofNullable(getTigerProxyConfiguration().getTls());
       if (isServerInstance) {
         if (tlsConfiguration.map(TigerTlsConfiguration::getServerIdentity).isPresent()) {
-          return new StaticTigerKeyAndCertificateFactory(tlsConfiguration.get().getServerIdentity());
+          return new StaticTigerKeyAndCertificateFactory(
+              tlsConfiguration.get().getServerIdentity());
         } else if (tlsConfiguration.map(TigerTlsConfiguration::getServerIdentities).isPresent()) {
           return new StaticTigerKeyAndCertificateFactory(
               tlsConfiguration.get().getServerIdentities().stream()

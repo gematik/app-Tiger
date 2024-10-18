@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.mockserver.codec;
 
-
 import de.gematik.test.tiger.mockserver.model.*;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;

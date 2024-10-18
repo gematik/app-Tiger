@@ -460,11 +460,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
 
   public void doIncomingRequestLogging(HttpRequest req) {
     if (log.isInfoEnabled() && tigerProxy.getTigerProxyConfiguration().isActivateTrafficLogging()) {
-      log.info(
-          "Received "
-              + req.printLogLineDescription()
-              + " => "
-              + printTrafficTarget(req));
+      log.info("Received " + req.printLogLineDescription() + " => " + printTrafficTarget(req));
     }
   }
 
@@ -492,10 +488,10 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
               final boolean matches =
                   TigerJexlExecutor.matchesAsJexlExpression(convertedRequest, criterion);
               log.atTrace()
-                .addArgument(criterion)
-                .addArgument(convertedRequest::printHttpDescription)
-                .addArgument(() -> matches)
-                .log("Matching {} for {}: {}");
+                  .addArgument(criterion)
+                  .addArgument(convertedRequest::printHttpDescription)
+                  .addArgument(() -> matches)
+                  .log("Matching {} for {}: {}");
               return matches;
             });
   }

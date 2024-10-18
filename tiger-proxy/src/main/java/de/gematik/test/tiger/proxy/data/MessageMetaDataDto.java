@@ -89,21 +89,28 @@ public class MessageMetaDataDto {
 
     if (el.hasFacet(RbelHttpRequestFacet.class)) {
       RbelHttpRequestFacet req = el.getFacetOrFail(RbelHttpRequestFacet.class);
-        builder.path(req.getPath().getRawStringContent())
-              .method(req.getMethod().getRawStringContent())
-              .responseCode(null);
+      builder
+          .path(req.getPath().getRawStringContent())
+          .method(req.getMethod().getRawStringContent())
+          .responseCode(null);
 
       List<Optional<RbelRequestFacet>> requestFacets = new ArrayList<>();
-      el.getChildNodes().forEach(child -> {
-        List<RbelElement> nestedElements = RbelElement.findAllNestedElementsWithFacet(child, RbelRequestFacet.class);
-        requestFacets.addAll(nestedElements.stream()
-            .map(e -> e.getFacet(RbelRequestFacet.class))
-            .filter(Optional::isPresent)
-            .toList());
-      });
-      builder.additionalInformation(requestFacets.stream()
-          .flatMap(Optional::stream)
-          .map(a -> a.getMenuInfoString()).toList());
+      el.getChildNodes()
+          .forEach(
+              child -> {
+                List<RbelElement> nestedElements =
+                    RbelElement.findAllNestedElementsWithFacet(child, RbelRequestFacet.class);
+                requestFacets.addAll(
+                    nestedElements.stream()
+                        .map(e -> e.getFacet(RbelRequestFacet.class))
+                        .filter(Optional::isPresent)
+                        .toList());
+              });
+      builder.additionalInformation(
+          requestFacets.stream()
+              .flatMap(Optional::stream)
+              .map(a -> a.getMenuInfoString())
+              .toList());
 
     } else if (el.hasFacet(RbelHttpResponseFacet.class)) {
       builder.responseCode(
@@ -113,17 +120,23 @@ public class MessageMetaDataDto {
                   .getRawStringContent()));
 
       List<Optional<RbelResponseFacet>> responseFacets = new ArrayList<>();
-      el.getChildNodes().forEach(child -> {
-        List<RbelElement> nestedElements = RbelElement.findAllNestedElementsWithFacet(child, RbelResponseFacet.class);
-        responseFacets.addAll(nestedElements.stream()
-            .map(e -> e.getFacet(RbelResponseFacet.class))
-            .filter(Optional::isPresent)
-            .toList());
-      });
+      el.getChildNodes()
+          .forEach(
+              child -> {
+                List<RbelElement> nestedElements =
+                    RbelElement.findAllNestedElementsWithFacet(child, RbelResponseFacet.class);
+                responseFacets.addAll(
+                    nestedElements.stream()
+                        .map(e -> e.getFacet(RbelResponseFacet.class))
+                        .filter(Optional::isPresent)
+                        .toList());
+              });
 
-      builder.additionalInformation(responseFacets.stream()
-          .flatMap(Optional::stream)
-          .map(a -> a.getMenuInfoString()).toList());
+      builder.additionalInformation(
+          responseFacets.stream()
+              .flatMap(Optional::stream)
+              .map(a -> a.getMenuInfoString())
+              .toList());
     }
 
     builder.isRequest(el.hasFacet(RbelRequestFacet.class));

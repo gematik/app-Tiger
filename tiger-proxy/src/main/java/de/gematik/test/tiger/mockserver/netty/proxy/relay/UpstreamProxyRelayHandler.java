@@ -40,7 +40,8 @@ public class UpstreamProxyRelayHandler extends SimpleChannelInboundHandler<FullH
   private final Channel downstreamChannel;
   private final MockServer server;
 
-  public UpstreamProxyRelayHandler(MockServer server, Channel upstreamChannel, Channel downstreamChannel) {
+  public UpstreamProxyRelayHandler(
+      MockServer server, Channel upstreamChannel, Channel downstreamChannel) {
     super(false);
     this.server = server;
     this.upstreamChannel = upstreamChannel;
@@ -60,7 +61,8 @@ public class UpstreamProxyRelayHandler extends SimpleChannelInboundHandler<FullH
       downstreamChannel
           .pipeline()
           .addFirst(
-            server.getClientSslContextFactory()
+              server
+                  .getClientSslContextFactory()
                   .createClientSslContext(getAlpnProtocol(ctx))
                   .newHandler(ctx.alloc()));
     }

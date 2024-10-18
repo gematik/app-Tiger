@@ -171,7 +171,6 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
     log.info("Running test: {}", testInfo.getDisplayName());
   }
 
-
   @AfterAll
   static synchronized void saveTracing(TestInfo testInfo) {
     String clzName =
@@ -247,7 +246,6 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
       page.querySelector("#test-tiger-logo").click();
     }
   }
-
 
   @Override
   public void close() {

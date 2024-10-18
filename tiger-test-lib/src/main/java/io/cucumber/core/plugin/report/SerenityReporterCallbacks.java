@@ -593,9 +593,10 @@ public class SerenityReporterCallbacks {
     switch (scenarioStatus) {
       case "PASSED" -> scPassed++;
       case "ERROR", "FAILED" -> scFailed++;
-      case "UNDEFINED" -> { /* ignore */ }
-      default ->
-          log.warn("Unsupported scenario state: %s".formatted(scenarioStatus));
+      case "UNDEFINED" -> {
+        /* ignore */
+      }
+      default -> log.warn("Unsupported scenario state: %s".formatted(scenarioStatus));
     }
     log.info(
         "------------ STATUS: {} passed {}",

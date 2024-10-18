@@ -133,8 +133,8 @@ class TestZionServer {
       await().until(() -> tigerProxy.getRbelMessagesList().size() == 2);
 
       assertThat(tigerProxy.getRbelMessagesList().get(1))
-        .extractChildWithPath("$.header.[~'content-encoding']")
-        .hasStringContentEqualTo("gzip");
+          .extractChildWithPath("$.header.[~'content-encoding']")
+          .hasStringContentEqualTo("gzip");
 
       assertThat(bytes.getBody()).isEqualTo(body);
     }

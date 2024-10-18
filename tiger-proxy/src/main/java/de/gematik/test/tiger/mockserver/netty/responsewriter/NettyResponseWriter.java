@@ -80,11 +80,9 @@ public class NettyResponseWriter {
   protected HttpResponse addConnectionHeader(
       final HttpRequest request, final HttpResponse response) {
     if (Boolean.TRUE.equals(request.getKeepAlive())) {
-      response.replaceHeader(
-          new Header(CONNECTION.toString(), KEEP_ALIVE.toString()));
+      response.replaceHeader(new Header(CONNECTION.toString(), KEEP_ALIVE.toString()));
     } else {
-      response.replaceHeader(
-          new Header(CONNECTION.toString(), CLOSE.toString()));
+      response.replaceHeader(new Header(CONNECTION.toString(), CLOSE.toString()));
     }
 
     return response;

@@ -158,13 +158,17 @@ os.version: '10.0'
   void prefillTigerGlobalConfiguration() {
     TigerGlobalConfiguration.dangerouslyDeleteAllProperties();
     TigerGlobalConfiguration.putValue("java.version", 11, ConfigurationValuePrecedence.DEFAULTS);
-    TigerGlobalConfiguration.putValue("java.version.date", "2021-04-20", ConfigurationValuePrecedence.MAIN_YAML);
+    TigerGlobalConfiguration.putValue(
+        "java.version.date", "2021-04-20", ConfigurationValuePrecedence.MAIN_YAML);
     TigerGlobalConfiguration.putValue("os", "Windows NT", ConfigurationValuePrecedence.HOST_YAML);
-    TigerGlobalConfiguration.putValue("os.arch", "amd64", ConfigurationValuePrecedence.ADDITIONAL_YAML);
+    TigerGlobalConfiguration.putValue(
+        "os.arch", "amd64", ConfigurationValuePrecedence.ADDITIONAL_YAML);
     TigerGlobalConfiguration.putValue("os.version", "10.0", ConfigurationValuePrecedence.TEST_YAML);
 
-    TigerGlobalConfiguration.putValue("dummy.string", "stringValue", ConfigurationValuePrecedence.ENV);
-    TigerGlobalConfiguration.putValue("dummy.nestedbean.foo", "nestedFoo", ConfigurationValuePrecedence.PROPERTIES);
+    TigerGlobalConfiguration.putValue(
+        "dummy.string", "stringValue", ConfigurationValuePrecedence.ENV);
+    TigerGlobalConfiguration.putValue(
+        "dummy.nestedbean.foo", "nestedFoo", ConfigurationValuePrecedence.PROPERTIES);
     TigerGlobalConfiguration.putValue(
         "dummy.nestedbean.inner.foo", "nestedInnerFoo", ConfigurationValuePrecedence.CLI);
   }

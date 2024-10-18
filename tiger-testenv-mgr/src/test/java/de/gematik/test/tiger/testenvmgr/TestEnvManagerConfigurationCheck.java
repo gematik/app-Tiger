@@ -147,7 +147,8 @@ additionalYamls:
     assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
         .isInstanceOf(TigerConfigurationException.class)
         .hasMessageContaining(
-          "The key ('additionalYamls') in yaml file should not be used anymore, use 'additionalConfigurationFiles' instead!");
+            "The key ('additionalYamls') in yaml file should not be used anymore, use"
+                + " 'additionalConfigurationFiles' instead!");
   }
 
   @Test

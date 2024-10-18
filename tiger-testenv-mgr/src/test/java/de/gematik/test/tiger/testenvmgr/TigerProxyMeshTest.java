@@ -467,7 +467,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
       var tracingFacet = r.getFacet(TracingMessagePairFacet.class).orElseThrow();
 
       var requestPathFromFacetRequest =
-        httpFacet.getRequest().findElement("$.path").orElseThrow().getRawStringContent();
+          httpFacet.getRequest().findElement("$.path").orElseThrow().getRawStringContent();
       var responsePath = r.findElement("$.body.url").orElseThrow().getRawStringContent();
 
       assertThat(tracingFacet.getRequest())

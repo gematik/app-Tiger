@@ -63,7 +63,8 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
   protected final String host;
   protected final int port;
 
-  public RelayConnectHandler(MockServerConfiguration configuration, MockServer server, String host, int port) {
+  public RelayConnectHandler(
+      MockServerConfiguration configuration, MockServer server, String host, int port) {
     this.configuration = configuration;
     this.server = server;
     this.host = host;
@@ -107,7 +108,8 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
                                 (ChannelFutureListener)
                                     channelFuture -> {
                                       removeCodecSupport(proxyClientCtx);
-                                      val httpProtocol = getAlpnProtocol(proxyClientCtx).orElse(HTTP_1_1);
+                                      val httpProtocol =
+                                          getAlpnProtocol(proxyClientCtx).orElse(HTTP_1_1);
 
                                       // upstream (to MockServer)
                                       ChannelPipeline pipelineToMockServer =
@@ -115,8 +117,13 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
 
                                       if (isSslEnabledDownstream(proxyClientCtx.channel())) {
                                         pipelineToMockServer.addLast(
-                                          server.getClientSslContextFactory()
-                                                .createClientSslContext(httpProtocol, ((HttpRequest) request).socketAddressFromHostHeader().getHostName())
+                                            server
+                                                .getClientSslContextFactory()
+                                                .createClientSslContext(
+                                                    httpProtocol,
+                                                    ((HttpRequest) request)
+                                                        .socketAddressFromHostHeader()
+                                                        .getHostName())
                                                 .newHandler(mockServerCtx.alloc(), host, port));
                                       }
 
@@ -139,11 +146,18 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
 
                                       if (isSslEnabledUpstream(proxyClientCtx.channel())
                                           && pipelineToProxyClient.get(SslHandler.class) == null) {
-                                        final Pair<SslContext, TigerPkiIdentity> serverSslContext = server.getServerSslContextFactory()
-                                          .createServerSslContext(host);
-                                        channelFuture.channel().attr(SERVER_IDENTITY).set(serverSslContext.getValue());
+                                        final Pair<SslContext, TigerPkiIdentity> serverSslContext =
+                                            server
+                                                .getServerSslContextFactory()
+                                                .createServerSslContext(host);
+                                        channelFuture
+                                            .channel()
+                                            .attr(SERVER_IDENTITY)
+                                            .set(serverSslContext.getValue());
                                         pipelineToProxyClient.addLast(
-                                            serverSslContext.getKey().newHandler(proxyClientCtx.alloc()));
+                                            serverSslContext
+                                                .getKey()
+                                                .newHandler(proxyClientCtx.alloc()));
                                       }
 
                                       if (httpProtocol == HTTP_2) {
@@ -184,8 +198,10 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
                                       }
 
                                       pipelineToProxyClient.addLast(
-                                          new UpstreamProxyRelayHandler(server,
-                                              proxyClientCtx.channel(), mockServerCtx.channel()));
+                                          new UpstreamProxyRelayHandler(
+                                              server,
+                                              proxyClientCtx.channel(),
+                                              mockServerCtx.channel()));
                                     });
                       } else {
                         mockServerCtx.fireChannelRead(msg);

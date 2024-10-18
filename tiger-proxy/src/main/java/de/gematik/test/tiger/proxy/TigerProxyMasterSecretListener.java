@@ -38,21 +38,21 @@ public class TigerProxyMasterSecretListener implements TigerMasterSecretListener
 
       log.info("Intercepted master secret, writing to file {}", masterSecretsFile);
       dumpToMasterSecretsFile(
-        "CLIENT_RANDOM "
-        + HexFormat.of().formatHex(securityParametersConnection.getClientRandom())
-        + " "
-        + HexFormat.of().formatHex(securityParametersConnection.getMasterSecret().extract())
-        + "\n");
+          "CLIENT_RANDOM "
+              + HexFormat.of().formatHex(securityParametersConnection.getClientRandom())
+              + " "
+              + HexFormat.of().formatHex(securityParametersConnection.getMasterSecret().extract())
+              + "\n");
     }
   }
 
   private void dumpToMasterSecretsFile(String line) {
     try {
       Files.write(
-        Path.of(masterSecretsFile),
-        line.getBytes(),
-        StandardOpenOption.APPEND,
-        StandardOpenOption.CREATE);
+          Path.of(masterSecretsFile),
+          line.getBytes(),
+          StandardOpenOption.APPEND,
+          StandardOpenOption.CREATE);
     } catch (Exception e) {
       log.error("Failed to write master secret to file {}", masterSecretsFile, e);
     }

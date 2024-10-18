@@ -317,9 +317,7 @@ public class RBelValidatorGlue {
    * @param rbelPath rbel path to node/attribute
    * @param value value to match at given node/attribute
    */
-  @Wenn(
-      "TGR finde die letzte Anfrage mit Knoten {string} der mit {string}"
-          + " übereinstimmt")
+  @Wenn("TGR finde die letzte Anfrage mit Knoten {string} der mit {string}" + " übereinstimmt")
   @When("TGR find last request with {string} matching {string}")
   public void findLastRequestWithNodeMatching(final String rbelPath, final String value) {
     rbelValidator.filterRequestsAndStoreInContext(

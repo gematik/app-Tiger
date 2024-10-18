@@ -61,7 +61,9 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
     assertThat(httpResponse.getBody().trim())
         .withFailMessage(
             MessageFormat.format(
-                "Expected to receive folder index page from Winstone server, but got HTTP {0} with body \n{1}",
+                "Expected to receive folder index page from Winstone server, but got HTTP {0} with"
+                    + " body \n"
+                    + "{1}",
                 httpResponse.getStatus(), httpResponse.getBody()))
         .startsWith("<!DOCTYPE html>")
         .endsWith("</html>");
@@ -81,7 +83,9 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
     assertThat(httpResponse.getBody().trim())
         .withFailMessage(
             MessageFormat.format(
-                "Expected to receive folder index page from Winstone server, but got HTTP {0} with body \n{1}",
+                "Expected to receive folder index page from Winstone server, but got HTTP {0} with"
+                    + " body \n"
+                    + "{1}",
                 httpResponse.getStatus(), httpResponse.getBody()))
         .startsWith("<!DOCTYPE html>")
         .endsWith("</html>")

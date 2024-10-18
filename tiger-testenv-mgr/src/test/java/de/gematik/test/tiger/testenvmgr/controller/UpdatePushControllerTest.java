@@ -31,7 +31,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -77,7 +76,7 @@ class UpdatePushControllerTest {
                   @Override
                   public void handleFrame(StompHeaders headers, Object payload) {
                     log.info("Received Frame {}", payload);
-                    var received = ((TestEnvStatusDto)payload).getFeatureMap();
+                    var received = ((TestEnvStatusDto) payload).getFeatureMap();
                     receivedMessage.set(received.toString());
                   }
                 };

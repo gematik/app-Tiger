@@ -23,7 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 
 /** Signifies a graceful channel close. */
 @Slf4j
-@Getter @Setter
+@Getter
+@Setter
 public class CloseChannel implements Action {
 
   private String expectationId;

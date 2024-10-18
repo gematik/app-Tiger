@@ -216,7 +216,7 @@ public class MockServer extends LifeCycle {
             getEventLoopGroup(),
             httpState,
             proxyConfigurations,
-          clientSslContextFactory);
+            clientSslContextFactory);
     serverServerBootstrap =
         new ServerBootstrap()
             .group(bossGroup, workerGroup)
@@ -229,8 +229,7 @@ public class MockServer extends LifeCycle {
                 ChannelOption.WRITE_BUFFER_WATER_MARK,
                 new WriteBufferWaterMark(8 * 1024, 32 * 1024))
             .childHandler(
-                new MockServerChannelInitializer(
-                    configuration, this, httpState, actionHandler))
+                new MockServerChannelInitializer(configuration, this, httpState, actionHandler))
             .childAttr(REMOTE_SOCKET, remoteSocket)
             .childAttr(PROXYING, remoteSocket != null);
 
@@ -288,12 +287,7 @@ public class MockServer extends LifeCycle {
       ch.pipeline().addLast(new ConnectionCounterHandler(mockServer));
 
       ch.pipeline()
-          .addLast(
-              new PortUnificationHandler(
-                  configuration,
-                  mockServer,
-                  httpState,
-                  actionHandler));
+          .addLast(new PortUnificationHandler(configuration, mockServer, httpState, actionHandler));
     }
   }
 }
