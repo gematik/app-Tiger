@@ -445,7 +445,7 @@ public class RbelHtmlRenderingToolkit {
                                                     new UnescapedText(
                                                         rbelHtmlRenderer.getSubTitle()))))),
                         section()
-                            .withClass("row is-fullheight")
+                            .withClass("row is-fullheight mainsection")
                             .withId("test-rbel-section")
                             .with(
                                 renderMenu(),
@@ -460,6 +460,7 @@ public class RbelHtmlRenderingToolkit {
                                                     + isSize(6)
                                                     + " float-end me-6"),
                                         div()
+                                            .withClass("rbel-main-content")
                                             .with(
                                                 elements.stream()
                                                     //

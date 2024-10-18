@@ -25,6 +25,7 @@ tigerProxy:
 * TGR-1496: RbelLogger: Empty standalone JSON- and CBOR-Elements are no longer converted
 * TIMTS-656: Fixed race condition on TLS connections with dynamic server identities
 * TGR-1606: Fixed openSidebar for the UI-Tests
+* TGR-1550: Rbel-Log messages are now displayed next to the sidebar correctly even when screen is small
 
 # Release 3.4.2
 
