@@ -57,7 +57,6 @@ class RbelMessageValidatorReadFileTest {
     try {
       test.run();
     } finally {
-
       TigerDirector.getTigerTestEnvMgr().shutDown();
     }
   }
