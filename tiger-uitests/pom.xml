@@ -59,20 +59,9 @@
             <version>2.12.2</version>
         </dependency>
         <dependency>
-            <groupId>org.junit.vintage</groupId>
-            <artifactId>junit-vintage-engine</artifactId>
-            <version>${version.junit5}</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-model</artifactId>
             <version>3.9.9</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-junit-platform-engine</artifactId>
-            <version>7.18.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -131,7 +120,6 @@
                                     <glues>
                                         <glue>de.gematik.test.tiger.glue</glue>
                                     </glues>
-                                    <junit5Driver>true</junit5Driver>
                                     <!-- optional -->
                                     <featuresDir>${project.basedir}/src/test/resources/features</featuresDir>
                                 </configuration>
@@ -256,7 +244,6 @@
                                     <glues>
                                         <glue>de.gematik.test.tiger.glue</glue>
                                     </glues>
-                                    <junit5Driver>true</junit5Driver>
                                     <!-- optional -->
                                     <featuresDir>${project.basedir}/src/test/resources/features</featuresDir>
                                 </configuration>
