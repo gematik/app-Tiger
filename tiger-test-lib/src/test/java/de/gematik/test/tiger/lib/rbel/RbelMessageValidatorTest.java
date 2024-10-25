@@ -125,7 +125,7 @@ class RbelMessageValidatorTest extends AbstractRbelMessageValidatorTest {
   }
 
   private RbelElement buildRequestWithPath(final String path) {
-    final RbelElement rbelElement = new RbelElement(null, null);
+    final RbelElement rbelElement = new RbelElement();
     rbelElement.addFacet(
         RbelHttpRequestFacet.builder().path(new RbelElement(path.getBytes(), null)).build());
     return rbelElement;
@@ -570,7 +570,8 @@ class RbelMessageValidatorTest extends AbstractRbelMessageValidatorTest {
 
   @Test
   void testCurrentRequestMatchesJsonSchemaWithPlaceholdersReplacement() {
-    val responseToCheck = """
+    val responseToCheck =
+        """
       HTTP/1.1 200 OK
 
       ["hello", "world"]

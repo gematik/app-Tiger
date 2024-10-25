@@ -25,6 +25,7 @@ import de.gematik.rbellogger.data.facet.RbelVauErpFacet;
 import de.gematik.rbellogger.exceptions.RbelPkiException;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.util.CryptoUtils;
+import de.gematik.rbellogger.util.RbelContent;
 import java.math.BigInteger;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -33,7 +34,6 @@ import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.InvalidKeySpecException;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
 import javax.crypto.SecretKey;
@@ -70,17 +70,19 @@ public class RbelErpVauDecrpytionConverter implements RbelConverterPlugin {
 
   private Optional<RbelVauErpFacet> tryToDecipherWithKey(
       RbelElement element, RbelConverter converter, RbelKey rbelKey) {
-    final Optional<byte[]> decryptedBytes = decrypt(element.getRawContent(), rbelKey.getKey());
+    var content = element.getContent();
+    final Optional<byte[]> decryptedBytes = decrypt(content, rbelKey.getKey());
     if (decryptedBytes.isPresent()) {
       try {
         log.trace(
             "Succesfully deciphered VAU message! ({})", new String(decryptedBytes.get(), UTF_8));
+        byte[] rawContent = content.toByteArray();
         if (isVauResponse(decryptedBytes)) {
           return buildVauMessageFromCleartextResponse(
-              converter, decryptedBytes.get(), element.getRawContent(), rbelKey, element);
+              converter, decryptedBytes.get(), rawContent, rbelKey, element);
         } else {
           return buildVauMessageFromCleartextRequest(
-              converter, decryptedBytes.get(), element.getRawContent(), rbelKey, element);
+              converter, decryptedBytes.get(), rawContent, rbelKey, element);
         }
       } catch (RuntimeException e) {
         log.error("Exception while deciphering VAU message:", e);
@@ -90,9 +92,9 @@ public class RbelErpVauDecrpytionConverter implements RbelConverterPlugin {
     return Optional.empty();
   }
 
-  private Optional<byte[]> decrypt(byte[] encMessage, ECPrivateKey secretKey) {
+  private Optional<byte[]> decrypt(RbelContent encMessage, ECPrivateKey secretKey) {
     try {
-      if (encMessage.length < 1 || encMessage[0] != 1) {
+      if (encMessage.isEmpty() || encMessage.get(0) != 1) {
         return Optional.empty();
       }
       ECPublicKey otherSidePublicKey = extractPublicKeyFromVauMessage(encMessage);
@@ -100,25 +102,25 @@ public class RbelErpVauDecrpytionConverter implements RbelConverterPlugin {
       byte[] aesKeyBytes = CryptoUtils.hkdf(sharedSecret, "ecies-vau-transport", 16);
       SecretKey aesKey = new SecretKeySpec(aesKeyBytes, "AES");
 
-      final byte[] ciphertext = Arrays.copyOfRange(encMessage, 1 + 32 + 32, encMessage.length);
+      final byte[] ciphertext = encMessage.subArray(1 + 32 + 32, encMessage.size());
 
       log.trace(
           "Decrypting. AesKey '{}' and ciphertext {}",
           Base64.getEncoder().encodeToString(aesKeyBytes),
           Base64.getEncoder().encodeToString(ciphertext));
 
-      return CryptoUtils.decrypt(ciphertext, aesKey);
+      return CryptoUtils.decrypt(RbelContent.of(ciphertext), aesKey);
     } catch (Exception e) {
       return Optional.empty();
     }
   }
 
-  private ECPublicKey extractPublicKeyFromVauMessage(byte[] encMessage)
+  private ECPublicKey extractPublicKeyFromVauMessage(RbelContent encMessage)
       throws NoSuchAlgorithmException, InvalidKeySpecException {
     final java.security.spec.ECPoint ecPoint =
         new java.security.spec.ECPoint(
-            new BigInteger(1, Arrays.copyOfRange(encMessage, 1, 1 + 32)),
-            new BigInteger(1, Arrays.copyOfRange(encMessage, 1 + 32, 1 + 32 + 32)));
+            new BigInteger(1, encMessage.subArray( 1, 1 + 32)),
+            new BigInteger(1, encMessage.subArray(1 + 32, 1 + 32 + 32)));
     final ECPublicKeySpec keySpec = new ECPublicKeySpec(ecPoint, BrainpoolCurves.BP256);
     return (ECPublicKey) KeyFactory.getInstance("EC").generatePublic(keySpec);
   }
@@ -131,7 +133,7 @@ public class RbelErpVauDecrpytionConverter implements RbelConverterPlugin {
         .orElse(false);
   }
 
-  private Optional<byte[]> decrypt(byte[] content, Key key) {
+  private Optional<byte[]> decrypt(RbelContent content, Key key) {
     if (key instanceof ECPrivateKey ecPrivateKey) {
       return decrypt(content, ecPrivateKey);
     } else if (key instanceof SecretKey) {

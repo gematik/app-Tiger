@@ -26,7 +26,7 @@ import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
 import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.rbellogger.data.pop3.RbelPop3Command;
 import de.gematik.rbellogger.util.EmailConversionUtils;
-import de.gematik.rbellogger.util.RbelArrayUtils;
+import de.gematik.rbellogger.util.RbelContent;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.Set;
@@ -77,17 +77,18 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
 
   private Optional<RbelPop3ResponseFacet> buildPop3ResponseFacet(
       RbelElement element, final RbelConverter context) {
-    return Optional.ofNullable(element.getRawContent())
-        .filter(c -> c.length > 4)
+    return Optional.of(element.getContent())
+        .filter(c -> c.size() > 4)
         .filter(this::startsWithOkOrErr)
         .filter(EmailConversionUtils::endsWithCrLf)
         .filter(this::isCompleteResponse)
-        .map(c -> new String(c, StandardCharsets.UTF_8))
+        .map(c -> new String(c.toByteArray(), StandardCharsets.UTF_8))
         .map(s -> s.split(EmailConversionUtils.CRLF, -1))
         .flatMap(lines -> parseLines(lines, element, context));
   }
 
-  private boolean startsWithOkOrErr(byte[] c) {
+  private boolean startsWithOkOrErr(RbelContent array) {
+    var c = array.subArray(0, 5);
     return (c[0] == '+'
             && c[1] == 'O'
             && c[2] == 'K'
@@ -95,8 +96,8 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
         || (c[0] == '-' && c[1] == 'E' && c[2] == 'R' && c[3] == 'R' && c[4] == ' ');
   }
 
-  private boolean isCompleteResponse(byte[] content) {
-    return RbelArrayUtils.endsWith(content, CRLF_DOT_CRLF_BYTES)
+  private boolean isCompleteResponse(RbelContent content) {
+    return content.endsWith(CRLF_DOT_CRLF_BYTES)
         || EmailConversionUtils.hasCompleteLines(content, 1);
   }
 
@@ -110,12 +111,14 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
           .flatMap(
               command ->
                   switch (command) {
-                    case CAPA, RETR, TOP, LIST, UIDL -> lines.length < 3
-                        ? Optional.empty()
-                        : Optional.of(buildResponseFacet(element, status, null, lines));
-                    case USER, PASS, NOOP -> lines.length > 2
-                        ? Optional.empty()
-                        : Optional.of(buildResponseFacet(element, status, null, lines));
+                    case CAPA, RETR, TOP, LIST, UIDL ->
+                        lines.length < 3
+                            ? Optional.empty()
+                            : Optional.of(buildResponseFacet(element, status, null, lines));
+                    case USER, PASS, NOOP ->
+                        lines.length > 2
+                            ? Optional.empty()
+                            : Optional.of(buildResponseFacet(element, status, null, lines));
                     default -> Optional.empty();
                   });
     }

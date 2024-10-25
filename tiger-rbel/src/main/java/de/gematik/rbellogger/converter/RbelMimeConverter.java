@@ -19,9 +19,9 @@ package de.gematik.rbellogger.converter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -60,7 +60,7 @@ public class RbelMimeConverter implements RbelConverterPlugin {
                 parent.hasFacet(RbelPop3ResponseFacet.class)
                     || parent.hasFacet(RbelDecryptedEmailFacet.class)
                     || parent.hasFacet(RbelSmtpCommandFacet.class))
-        .map(facet -> element.getRawContent())
+        .map(facet -> element.getContent().toInputStream())
         .ifPresent(content -> new Parser(context).parseEntity(element, parseMimeMessage(content)));
   }
 
@@ -183,15 +183,15 @@ public class RbelMimeConverter implements RbelConverterPlugin {
       var element = createChildNode(parentElement);
       var parts = new ArrayList<RbelElement>(multipart.getCount());
       multipart.getBodyParts().stream()
-          .map(part -> parseEntity(new RbelElement(null, element), part))
+          .map(part -> parseEntity(new RbelElement(element), part))
           .forEach(parts::add);
       return element.addFacet(new RbelListFacet(parts));
     }
   }
 
   @SneakyThrows
-  public static Message parseMimeMessage(byte[] bytes) {
-    return new DefaultMessageBuilder().parseMessage(new ByteArrayInputStream(bytes));
+  public static Message parseMimeMessage(InputStream input) {
+    return new DefaultMessageBuilder().parseMessage(input);
   }
 
   private static RbelElement createChildNode(RbelElement element) {

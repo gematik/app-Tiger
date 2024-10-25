@@ -46,10 +46,14 @@ class RbelSmtpCommandConverterTest {
 
   @BeforeEach
   void init() {
-    converter =
-        RbelLogger.build(
-                new RbelConfiguration().activateConversionFor("smtp").activateConversionFor("mime"))
-            .getRbelConverter();
+    if (converter == null) {
+      converter =
+          RbelLogger.build(
+                  new RbelConfiguration()
+                      .activateConversionFor("smtp")
+                      .activateConversionFor("mime"))
+              .getRbelConverter();
+    }
   }
 
   @ParameterizedTest

@@ -61,12 +61,12 @@ public class CryptoUtils {
     return okm;
   }
 
-  public static Optional<byte[]> decrypt(byte[] encMessage, Key secretKey) {
+  public static Optional<byte[]> decrypt(RbelContent encMessage, Key secretKey) {
     return decrypt(encMessage, secretKey, GCM_IV_LENGTH_IN_BYTES, GCM_TAG_LENGTH_IN_BYTES);
   }
 
   public static Optional<byte[]> decrypt(
-      byte[] encMessage, Key secretKey, int gcmIvLengthInBytes, int gcmTagLengthInBytes) {
+      RbelContent encMessage, Key secretKey, int gcmIvLengthInBytes, int gcmTagLengthInBytes) {
     try {
       return Optional.ofNullable(
           decryptUnsafe(encMessage, secretKey, gcmIvLengthInBytes, gcmTagLengthInBytes));
@@ -76,10 +76,10 @@ public class CryptoUtils {
   }
 
   public static byte[] decryptUnsafe(
-      byte[] encMessage, Key secretKey, int gcmIvLengthInBytes, int gcmTagLengthInBytes)
+      RbelContent encMessage, Key secretKey, int gcmIvLengthInBytes, int gcmTagLengthInBytes)
       throws GeneralSecurityException {
-    byte[] iv = Arrays.copyOfRange(encMessage, 0, gcmIvLengthInBytes);
-    byte[] cipherText = Arrays.copyOfRange(encMessage, GCM_IV_LENGTH_IN_BYTES, encMessage.length);
+    byte[] iv = encMessage.subArray(0, gcmIvLengthInBytes);
+    byte[] cipherText = encMessage.subArray(GCM_IV_LENGTH_IN_BYTES, encMessage.size());
     Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", BOUNCY_CASTLE_PROVIDER); // NOSONAR
 
     cipher.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(gcmTagLengthInBytes * 8, iv));

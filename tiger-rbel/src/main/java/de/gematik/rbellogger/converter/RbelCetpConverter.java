@@ -18,30 +18,26 @@ package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelCetpFacet;
-import java.util.Objects;
-import org.apache.commons.lang3.ArrayUtils;
 
 public class RbelCetpConverter implements RbelConverterPlugin {
 
   private static final byte[] CETP_INTRO_MARKER = "CETP".getBytes();
+  public static final int MIN_CETP_MESSAGE_LENGTH = CETP_INTRO_MARKER.length + 4;
 
   @Override
   public void consumeElement(final RbelElement targetElement, final RbelConverter converter) {
-    if (targetElement.getSize() <= 8 || !startsWithCetpMarker(targetElement.getRawContent())) {
+    var content = targetElement.getContent();
+    var contentSize = targetElement.getSize();
+    if (contentSize < MIN_CETP_MESSAGE_LENGTH || !content.startsWith(CETP_INTRO_MARKER)) {
       return;
     }
-    byte[] messageLengthBytes = new byte[CETP_INTRO_MARKER.length];
-    System.arraycopy(
-        targetElement.getRawContent(), 4, messageLengthBytes, 0, CETP_INTRO_MARKER.length);
-
+    byte[] messageLengthBytes = content.subArray(CETP_INTRO_MARKER.length, MIN_CETP_MESSAGE_LENGTH);
     int messageLength = java.nio.ByteBuffer.wrap(messageLengthBytes).getInt();
-    if (targetElement.getSize() != 8 + messageLength) {
+    if (contentSize != MIN_CETP_MESSAGE_LENGTH + messageLength) {
       return;
     }
 
-    byte[] messageBody = new byte[targetElement.getRawContent().length - 8];
-    System.arraycopy(
-        targetElement.getRawContent(), 8, messageBody, 0, targetElement.getRawContent().length - 8);
+    byte[] messageBody = content.subArray(MIN_CETP_MESSAGE_LENGTH, (int) contentSize);
 
     final RbelCetpFacet cetpFacet =
         RbelCetpFacet.builder()
@@ -51,10 +47,5 @@ public class RbelCetpConverter implements RbelConverterPlugin {
             .build();
 
     targetElement.addFacet(cetpFacet);
-  }
-
-  private boolean startsWithCetpMarker(byte[] rawContent) {
-    byte[] actualIntro = ArrayUtils.subarray(rawContent, 0, 4);
-    return Objects.deepEquals(CETP_INTRO_MARKER, actualIntro);
   }
 }

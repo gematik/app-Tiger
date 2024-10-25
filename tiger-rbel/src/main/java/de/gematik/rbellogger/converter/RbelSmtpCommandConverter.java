@@ -16,22 +16,19 @@
 
 package de.gematik.rbellogger.converter;
 
-import static de.gematik.rbellogger.util.RbelArrayUtils.endsWith;
-import static de.gematik.rbellogger.util.RbelArrayUtils.startsWith;
-
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.data.facet.RbelSmtpCommandFacet;
 import de.gematik.rbellogger.data.smtp.RbelSmtpCommand;
 import de.gematik.rbellogger.util.EmailConversionUtils;
+import de.gematik.rbellogger.util.RbelContent;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 
 @Slf4j
 @ConverterInfo(onlyActivateFor = "smtp")
@@ -65,23 +62,23 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
   }
 
   private Optional<RbelSmtpCommandFacet> buildSmtpCommandFacet(RbelElement element) {
-    return Optional.ofNullable(element.getRawContent())
-        .filter(c -> c.length >= MIN_SMTP_COMMAND_LINE_LENGTH)
+    return Optional.of(element.getContent())
+        .filter(c -> c.size() >= MIN_SMTP_COMMAND_LINE_LENGTH)
         .filter(EmailConversionUtils::endsWithCrLf)
         .flatMap(this::parseCommand)
         .flatMap(
             command ->
-                Optional.of(element.getRawContent())
+                Optional.of(element.getContent())
                     .filter(this::isCompleteCommand)
-                    .map(c -> new String(c, StandardCharsets.UTF_8))
+                    .map(c -> new String(c.toByteArray(), StandardCharsets.UTF_8))
                     .map(s -> buildSmtpCommandFacet(command, s, element)));
   }
 
-  private boolean isCompleteCommand(byte[] content) {
-    if (startsWith(content, DATA_PREFIX_BYTES)) {
-      return endsWith(content, CRLF_DOT_CRLF_BYTES);
-    } else if (startsWith(content, AUTH_COMMAND_PREFIX_BYTES)
-        && !startsWith(content, AUTH_PLAIN_PREFIX_BYTES)) {
+  private boolean isCompleteCommand(RbelContent content) {
+    if (content.startsWith(DATA_PREFIX_BYTES)) {
+      return content.endsWith(CRLF_DOT_CRLF_BYTES);
+    } else if (content.startsWith(AUTH_COMMAND_PREFIX_BYTES)
+        && !content.startsWith(AUTH_PLAIN_PREFIX_BYTES)) {
       // AUTH (without PLAIN) needs another 2 lines with the credentials
       return EmailConversionUtils.hasCompleteLines(content, 3);
     } else {
@@ -89,9 +86,9 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
     }
   }
 
-  private Optional<RbelSmtpCommand> parseCommand(byte[] c) {
+  private Optional<RbelSmtpCommand> parseCommand(RbelContent content) {
     var shortPrefix =
-        new String(ArrayUtils.subarray(c, 0, MIN_SMTP_COMMAND_LINE_LENGTH), StandardCharsets.UTF_8);
+        new String(content.subArray(0, MIN_SMTP_COMMAND_LINE_LENGTH), StandardCharsets.UTF_8);
     var command = new StringTokenizer(shortPrefix).nextToken();
     try {
       return Optional.of(RbelSmtpCommand.valueOf(command));
@@ -115,14 +112,15 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
 
   private RbelElement buildSmtpBody(RbelSmtpCommand command, RbelElement element, String[] lines) {
     return switch (command) {
-      case AUTH -> lines.length > 2
-          ? EmailConversionUtils.createChildElement(
-              element,
-              Arrays.stream(lines)
-                  .skip(1)
-                  .limit(lines.length - 2L)
-                  .collect(Collectors.joining(EmailConversionUtils.CRLF)))
-          : null;
+      case AUTH ->
+          lines.length > 2
+              ? EmailConversionUtils.createChildElement(
+                  element,
+                  Arrays.stream(lines)
+                      .skip(1)
+                      .limit(lines.length - 2L)
+                      .collect(Collectors.joining(EmailConversionUtils.CRLF)))
+              : null;
       case DATA -> EmailConversionUtils.parseMailBody(element, lines);
       default -> null;
     };

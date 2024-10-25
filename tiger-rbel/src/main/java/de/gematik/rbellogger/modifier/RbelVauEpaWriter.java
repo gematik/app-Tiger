@@ -70,11 +70,8 @@ public class RbelVauEpaWriter implements RbelElementWriter {
       throw new RbelPkiException(
           "Error while trying to write VAU Erp Message: No decryption-key found!");
     }
-    final byte[] oldEncryptedMessage =
-        oldTargetElement
-            .getFacetOrFail(RbelVauEpaFacet.class)
-            .getEncryptedMessage()
-            .getRawContent();
+    final var oldEncryptedMessage =
+        oldTargetElement.getFacetOrFail(RbelVauEpaFacet.class).getEncryptedMessage().getContent();
     final byte[] oldCleartext =
         CryptoUtils.decrypt(
                 oldEncryptedMessage,
@@ -84,7 +81,7 @@ public class RbelVauEpaWriter implements RbelElementWriter {
     int headerLength =
         java.nio.ByteBuffer.wrap((Arrays.copyOfRange(oldCleartext, 1 + 8, 1 + 8 + 4))).getInt();
     int introLength = 1 + 8 + 4 + headerLength;
-    byte[] oldIv = Arrays.copyOfRange(oldEncryptedMessage, 0, 12);
+    byte[] oldIv = oldEncryptedMessage.subArray(0, 12);
     final byte[] newCleartext =
         ArrayUtils.addAll(Arrays.copyOfRange(oldCleartext, 0, introLength), newContent);
 

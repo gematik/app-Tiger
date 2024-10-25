@@ -36,7 +36,7 @@ class AddBundledServerNamesModifierTest {
   @BeforeEach
   void setUp() {
     TRAFFIC_VISUALIZATION_ACTIVE.putValue(true);
-    messageWithTcpFacet = new RbelElement(null, null);
+    messageWithTcpFacet = new RbelElement();
     messageWithTcpFacet.addFacet(
         RbelTcpIpMessageFacet.builder()
             .receiver(

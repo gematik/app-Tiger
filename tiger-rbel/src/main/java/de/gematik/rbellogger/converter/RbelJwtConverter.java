@@ -30,7 +30,6 @@ import java.util.Base64;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 import org.jose4j.jca.ProviderContext;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.lang.JoseException;
@@ -48,8 +47,9 @@ public class RbelJwtConverter implements RbelConverterPlugin {
   @Override
   @SuppressWarnings({"java:S1135", "java:S108"})
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
-    var dotIndexes = ArrayUtils.indexesOf(rbelElement.getRawContent(), (byte) '.');
-    if (dotIndexes.cardinality() != JWT_DOT_SEPARATOR_COUNT) {
+    int dotCount =
+        rbelElement.getContent().countOccurrencesUpTo((byte) '.', JWT_DOT_SEPARATOR_COUNT + 1);
+    if (dotCount != JWT_DOT_SEPARATOR_COUNT) {
       return;
     }
     parseJwt(rbelElement, converter);
@@ -101,7 +101,7 @@ public class RbelJwtConverter implements RbelConverterPlugin {
                   () ->
                       RbelJwtSignature.builder()
                           .isValid(
-                              new RbelElement(null, signatureElement)
+                              new RbelElement(signatureElement)
                                   .addFacet(new RbelValueFacet<>(false)))
                           .verifiedUsing(null)
                           .build()));
@@ -142,10 +142,9 @@ public class RbelJwtConverter implements RbelConverterPlugin {
       if (jsonWebSignature.verifySignature()) {
         return Optional.of(
             RbelJwtSignature.builder()
-                .isValid(
-                    new RbelElement(null, signatureElement).addFacet(new RbelValueFacet<>(true)))
+                .isValid(new RbelElement(signatureElement).addFacet(new RbelValueFacet<>(true)))
                 .verifiedUsing(
-                    new RbelElement(null, signatureElement).addFacet(new RbelValueFacet<>(keyId)))
+                    new RbelElement(signatureElement).addFacet(new RbelValueFacet<>(keyId)))
                 .build());
       } else {
         return Optional.empty();

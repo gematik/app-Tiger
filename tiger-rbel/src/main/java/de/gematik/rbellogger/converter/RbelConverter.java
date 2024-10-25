@@ -104,7 +104,7 @@ public class RbelConverter {
     log.trace("Converting {}...", convertedInput);
     boolean elementIsOversized =
         skipParsingWhenMessageLargerThanKb > -1
-            && (convertedInput.getRawContent().length > skipParsingWhenMessageLargerThanKb * 1024);
+            && (convertedInput.getSize() > skipParsingWhenMessageLargerThanKb * 1024L);
     for (RbelConverterPlugin plugin : converterPlugins) {
       if (elementIsOversized && !plugin.ignoreOversize()) {
         continue;
@@ -204,6 +204,9 @@ public class RbelConverter {
       final Optional<ZonedDateTime> transmissionTime,
       final Optional<Long> sequenceNumber) {
     final var messageElement = messagePair.getMessage();
+    if (messageElement.getContent().isNull()) {
+      throw new RbelConversionException("content is empty");
+    }
     addMessageToHistory(messageElement);
 
     messageElement.addFacet(

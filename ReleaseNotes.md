@@ -4,7 +4,9 @@
 
 ## Features
 
-* TGR-1475: Allow the configuration of multiple TLS-server-certificates. The Tiger-Proxy will automatically select the most appropriate one: 
+* TGR-1475: Allow the configuration of multiple TLS-server-certificates. The Tiger-Proxy will automatically select the
+  most appropriate one:
+
 ```yaml
 tigerProxy:
   tls:
@@ -12,8 +14,14 @@ tigerProxy:
       - "someIdentity.p12;00"
       - "anotherIdentity.p12;changeit"
 ```
-* TGR-1590: Host-Header matching is now Port-aware: If no ports are given, ports are ignored, if ports are given, they are matched.
+
+* TGR-1590: Host-Header matching is now Port-aware: If no ports are given, ports are ignored, if ports are given, they
+  are matched.
 * TGR-1598: Improved logging of routing decisions in Tiger-Proxy
+* TGR-1612: binary content data is now stored in a chunked manner
+  (via a new utility class ChunkedByteArray, available at RbelElement.getContent()),
+  so that for accumulating large TCP messages that come in as many chunks,
+  fast-fail checks for different converters can be done with less copying overhead.
 
 ## Bugfixes
 

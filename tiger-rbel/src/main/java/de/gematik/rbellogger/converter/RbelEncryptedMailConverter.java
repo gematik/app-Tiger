@@ -22,6 +22,7 @@ import de.gematik.rbellogger.data.facet.RbelMimeMessageFacet;
 import de.gematik.rbellogger.util.email_crypto.EmailDecryption;
 import de.gematik.rbellogger.util.email_crypto.RbelDecryptionException;
 import eu.europa.esig.dss.spi.DSSUtils;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Optional;
@@ -55,7 +56,7 @@ public class RbelEncryptedMailConverter implements RbelConverterPlugin {
     var keyManager = context.getRbelKeyManager();
 
     final byte[] decryptedMessage =
-        EmailDecryption.decrypt(body.getRawContent(), keyManager)
+        EmailDecryption.decrypt(body.getContent(), keyManager)
             .orElseThrow(EmailDecryptionFailedException::new);
 
     final byte[] signedMessageContent = extractContentFromMessage(decryptedMessage);
@@ -75,7 +76,7 @@ public class RbelEncryptedMailConverter implements RbelConverterPlugin {
   }
 
   private static byte[] extractContentFromMessage(final byte[] data) throws IOException {
-    var message = RbelMimeConverter.parseMimeMessage(data);
+    var message = RbelMimeConverter.parseMimeMessage(new ByteArrayInputStream(data));
     var body = message.getBody();
     if (body instanceof SingleBody singleBody) {
       return singleBody.getInputStream().readAllBytes();

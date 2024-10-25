@@ -44,7 +44,7 @@ public class RbelElementTreePrinter {
   @Builder.Default private final boolean printColors = true;
 
   public String execute() {
-    final RbelElement position = new RbelElement(null, null);
+    final RbelElement position = new RbelElement();
     position.addFacet(
         new RbelFacet() {
           @Override

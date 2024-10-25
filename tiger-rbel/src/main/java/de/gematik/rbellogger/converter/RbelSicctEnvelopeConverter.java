@@ -19,8 +19,8 @@ package de.gematik.rbellogger.converter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.sicct.SicctMessageType;
+import de.gematik.rbellogger.util.RbelContent;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 import org.bouncycastle.util.encoders.Hex;
 
 @ConverterInfo(onlyActivateFor = "sicct")
@@ -31,7 +31,7 @@ public class RbelSicctEnvelopeConverter implements RbelConverterPlugin {
   public void consumeElement(final RbelElement element, final RbelConverter context) {
     if (element.getParentNode() != null
         || element.hasFacet(RbelHttpMessageFacet.class)
-        || element.getRawContent().length < 11) {
+        || element.getSize() < 11) {
       return;
     }
     try {
@@ -56,10 +56,10 @@ public class RbelSicctEnvelopeConverter implements RbelConverterPlugin {
                       .addFacet(
                           new RbelResponseFacet(
                               Hex.toHexString(
-                                  ArrayUtils.subarray(
-                                      element.getRawContent(),
-                                      element.getRawContent().length - 2,
-                                      element.getRawContent().length))));
+                                  element
+                                      .getContent()
+                                      .subArray(
+                                          (int) element.getSize() - 2, (int) element.getSize()))));
                 }
               });
     } catch (RuntimeException e) {
@@ -79,23 +79,18 @@ public class RbelSicctEnvelopeConverter implements RbelConverterPlugin {
 
   private RbelSicctEnvelopeFacet buildEnvelopeFacet(RbelElement element) {
     // compare SICCT-specification, chapter 6.1.4.2
+    RbelContent content = element.getContent();
     final RbelElement commandElement =
-        new RbelElement(
-            ArrayUtils.subarray(element.getRawContent(), 10, element.getRawContent().length),
-            element);
+        new RbelElement(content.subArray(10, (int) element.getSize()), element);
     commandElement.addFacet(new RbelBinaryFacet());
     return RbelSicctEnvelopeFacet.builder()
         .messageType(
             RbelElement.wrap(
-                new byte[] {element.getRawContent()[0]},
-                element,
-                SicctMessageType.of(element.getRawContent()[0])))
-        .srcOrDesAddress(
-            new RbelElement(ArrayUtils.subarray(element.getRawContent(), 1, 3), element))
-        .sequenceNumber(
-            new RbelElement(ArrayUtils.subarray(element.getRawContent(), 3, 5), element))
-        .abRfu(new RbelElement(ArrayUtils.subarray(element.getRawContent(), 5, 6), element))
-        .length(new RbelElement(ArrayUtils.subarray(element.getRawContent(), 6, 10), element))
+                new byte[] {content.get(0)}, element, SicctMessageType.of(content.get(0))))
+        .srcOrDesAddress(new RbelElement(content.subArray(1, 3), element))
+        .sequenceNumber(new RbelElement(content.subArray(3, 5), element))
+        .abRfu(new RbelElement(content.subArray(5, 6), element))
+        .length(new RbelElement(content.subArray(6, 10), element))
         .command(commandElement)
         .build();
   }

@@ -24,15 +24,19 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.apache.commons.lang3.ArrayUtils;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class EmailConversionUtils {
   public static final String CRLF = "\r\n";
+  private static final byte[] CRLF_BYTES = CRLF.getBytes();
   public static final String CRLF_DOT_CRLF = CRLF + "." + CRLF;
 
   public static RbelElement createChildElement(RbelElement parent, String value) {
     return new RbelElement(value.getBytes(StandardCharsets.UTF_8), parent);
+  }
+
+  public static boolean endsWithCrLf(RbelContent content) {
+    return content.endsWith(CRLF_BYTES);
   }
 
   public static boolean endsWithCrLf(byte[] c) {
@@ -63,7 +67,7 @@ public class EmailConversionUtils {
         .collect(Collectors.joining("\r\n"));
   }
 
-  public static boolean hasCompleteLines(byte[] content, int requiredCount) {
+  public static boolean hasCompleteLines(RbelContent content, int requiredCount) {
     if (requiredCount < 0) {
       throw new RbelConversionException(
           "hasCompleteLines needs non-negative requiredCount, but got: " + requiredCount);
@@ -73,15 +77,15 @@ public class EmailConversionUtils {
     // occurrence of CRLF in content
     int searchIndex = 0;
     // searchIndex == content.length - 1 ==> CRLF not possible anymore
-    while (searchIndex + 1 < content.length) {
-      int crIndex = ArrayUtils.indexOf(content, (byte) '\r', searchIndex);
+    while (searchIndex + 1 < content.size()) {
+      int crIndex = content.indexOf((byte) '\r', searchIndex);
       if (crIndex < 0) {
         // No CR found, so no more CRLF possible after searchIndex
         break;
       }
       // After finding a CR, we check for following LF and if found, increase
       // the searchIndex to the index after the found CRLF
-      if (crIndex + 1 < content.length && content[crIndex + 1] == '\n') {
+      if (crIndex + 1 < content.size() && content.get(crIndex + 1) == '\n') {
         ++linesEndingInCrLf;
         if (linesEndingInCrLf > requiredCount) {
           return false;

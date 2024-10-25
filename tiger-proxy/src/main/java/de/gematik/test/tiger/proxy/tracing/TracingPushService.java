@@ -29,7 +29,6 @@ import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.rbellogger.file.TcpIpMessageFacetWriter;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.*;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -292,13 +291,10 @@ public class TracingPushService {
       return;
     }
 
-    final int numberOfParts = rbelMessage.getRawContent().length / MAX_MESSAGE_SIZE + 1;
+    var content = rbelMessage.getContent();
+    final int numberOfParts = content.size() / MAX_MESSAGE_SIZE + 1;
     for (int i = 0; i < numberOfParts; i++) {
-      byte[] partContent =
-          Arrays.copyOfRange(
-              rbelMessage.getRawContent(),
-              i * MAX_MESSAGE_SIZE,
-              Math.min((i + 1) * MAX_MESSAGE_SIZE, rbelMessage.getRawContent().length));
+      byte[] partContent = content.subArray(i * MAX_MESSAGE_SIZE, Math.min((i + 1) * MAX_MESSAGE_SIZE, content.size()));
 
       log.trace(
           "sending part {} of {} for UUID {}...", i + 1, numberOfParts, rbelMessage.getUuid());
