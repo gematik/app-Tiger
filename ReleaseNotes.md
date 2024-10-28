@@ -18,6 +18,7 @@ tigerProxy:
 * TGR-1590: Host-Header matching is now Port-aware: If no ports are given, ports are ignored, if ports are given, they
   are matched.
 * TGR-1598: Improved logging of routing decisions in Tiger-Proxy
+* TGR-1561: Improved performance of fast-fail checks of SMTP/POP3 converters
 * TGR-1612: binary content data is now stored in a chunked manner
   (via a new utility class ChunkedByteArray, available at RbelElement.getContent()),
   so that for accumulating large TCP messages that come in as many chunks,
@@ -26,21 +27,10 @@ tigerProxy:
 ## Bugfixes
 
 * TGR-1460: Allow different ordering of parameters smime-type and name in content-type header of encrypted mail
-* TGR-1593: Rollback of TGR-1440, as it introduced a breaking change for tiger proxies configured in mesh setup
-    * ENV variable SERVER_MANAGEMENT_PORT is set to 8081 in the docker file and healthcheck uses that internal port
-
-* TGR-1561: Improved performance of fast-fail checks of SMTP/POP3 converters
 * TGR-1496: RbelLogger: Empty standalone JSON- and CBOR-Elements are no longer converted
-* TIMTS-656: Fixed race condition on TLS connections with dynamic server identities
-* TGR-1606: Fixed openSidebar for the UI-Tests
 * TGR-1550: Rbel-Log messages are now displayed next to the sidebar correctly even when screen is small
-
-# Release 3.4.2
-
-## Bugfixes
-
-* TGR-1593: Rollback of TGR-1440, as it introduced a breaking change for tiger proxies configured in mesh setup
-    * ENV variable SERVER_MANAGEMENT_PORT is set to 8081 in the docker file and healthcheck uses that internal port
+* TGR-1606: Fixed openSidebar for the UI-Tests
+* TIMTS-656: Fixed race condition on TLS connections with dynamic server identities
 
 # Release 3.4.2
 
@@ -64,6 +54,7 @@ tigerProxy:
 
 ## Features
 
+* TGR-905: WorkflowUI: Rbel-Path Tab in Inspect Modal has now color coding for true/false/invalid rbel path
 * TGR-1551: Tiger-Proxy: Added configuration-option to add notes to messages in the RbelLog. This can be as follows:
     ```yaml
     tigerProxy:
@@ -73,34 +64,35 @@ tigerProxy:
         - message: "Hackers were here..."
           jexlCriterion: "element.decryptedUsingKeyWithId == 'mySuperSecretKey'"
     ```
-* TGR-1567: Added Glue-Code step for selecting a request with a node matching a value regardless of the path:
-  `And TGR find last request with "$.path.foobar.value" matching "22"`
 * TGR-1557: Rbel-Parser: Added support for comma-seperated values in HTTP-Headers. This is useful for headers like
   `Accept-Language` or `Accept-Encoding`. To look for a specific value in a comma-seperated list, you can use the
   following syntax: `$.header.Accept-Encoding.. == 'Value1'`.
-* TGR-905: WorkflowUI: Rbel-Path Tab in Inspect Modal has now color coding for true/false/invalid rbel path
+* TGR-1561: performance improvements on Rbel parsing to avoid potentially expensive operations via fast-fail heuristics
+    * Better handling of POP3 NOOP responses without header line
+    * Tracing display of long string content during Rbel parsing can be configured via property
+      tiger.rbel.rawstring.max.trace.length (default set to 1000)
+* TGR-1567: Added Glue-Code step for selecting a request with a node matching a value regardless of the path:
+  `And TGR find last request with "$.path.foobar.value" matching "22"`
 * TGR-1573: resolve scenario outline parameters and expressions
     * in scenario title, outline table, step descriptions
     * found config/RBel/JEXL expressions are resolved, if possible
     * original (unreplaced) step description is available as title/tooltip
     * long step description lines in Web UI are abbreviated
         * configurable via tiger.lib.maxStepDescriptionDisplayLengthOnWebUi (default 300)
-* TGR-1561: performance improvements on Rbel parsing to avoid potentially expensive operations via fast-fail heuristics
-    * Better handling of POP3 NOOP responses without header line
-    * Tracing display of long string content during Rbel parsing can be configured via property
-      tiger.rbel.rawstring.max.trace.length (default set to 1000)
 
 ## Bugfixes
 
+* TGR-1440: Dockerfile of tiger proxy does not set the MANAGEMENT_SERVER_PORT variable
 * TGR-1497: Tiger Proxy Log - filter matching all says that none match
 * TGR-1516: Corrected route-ordering, so that the most specific route is selected first. Forward-Proxy routes are now
   preferred over Reverse-Proxy routes. They are also always checked for matching hosts, either in the host-header or the
   target-url.
 * TGR-1545: Tiger Proxy: a remote tiger proxy with rbel parsing inactive, now correctly still propagates the unparsed
   messages to the local tiger proxy. The local tiger proxy can then still parse them.
-* TGR-1440: Dockerfile of tiger proxy does not set the MANAGEMENT_SERVER_PORT variable
 * TGR-1566: Workflow UI: fixed an issue where the combination of not running starts automatically on start up and
   pressing play on a test that uses the tiger glue to pause the execution would wrongly terminate the tiger test
+* TGR-1593: Rollback of TGR-1440, as it introduced a breaking change for tiger proxies configured in mesh setup
+    * ENV variable SERVER_MANAGEMENT_PORT is set to 8081 in the docker file and healthcheck uses that internal port
 
 # Release 3.3.0
 
