@@ -72,6 +72,7 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
       "Decrypted AEAD_ct_key_confirmation. This is the server's transcript hash. Decryption for"
           + " clarification purposes only. In a real-life implementation, this would be done by the"
           + " client.";
+  public static final String CONTENT = "content";
 
   @Override
   public void consumeElement(RbelElement element, RbelConverter context) {
@@ -188,14 +189,15 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
       final Optional<RbelElement> messageType = element.getFirst("MessageType");
       if (messageType.isPresent()) {
         String messageTypeContent =
-            messageType.get().getFirst("content").map(RbelElement::getRawStringContent).orElse("");
+            messageType.get().getFirst(CONTENT).map(RbelElement::getRawStringContent).orElse("");
         switch (messageTypeContent) {
           case "M1" -> parseM1(element, context);
           case "M2" -> parseM2(element, context);
           case "M3" -> parseM3(element, context);
           case "M4" -> parseM4(element, context);
-          default -> element.addFacet(
-              new RbelNoteFacet("Unknown VAU EPA3 message type: " + messageTypeContent));
+          default ->
+              element.addFacet(
+                  new RbelNoteFacet("Unknown VAU EPA3 message type: " + messageTypeContent));
         }
       }
     } catch (RuntimeException e) {
@@ -245,12 +247,12 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
     final RbelElement ctKeyConfirmation =
         element.getFirst("AEAD_ct_key_confirmation").orElseThrow();
 
-    final byte[] rawEncodedHashBytes =
-        ctKeyConfirmation.getFirst("content").map(RbelElement::getRawContent).orElseThrow();
+    final var encodedHashBytes =
+        ctKeyConfirmation.getFirst(CONTENT).map(RbelElement::getContent).orElseThrow();
 
     extractKeyFromHttpHeader(element, "VAU-DEBUG-S_K2_s2c_keyConfirmation", K1_S2C_NOTE)
         .map(key -> new SecretKeySpec(key, "AES"))
-        .flatMap(key -> CryptoUtils.decrypt(rawEncodedHashBytes, key))
+        .flatMap(key -> CryptoUtils.decrypt(encodedHashBytes, key))
         .ifPresent(
             decrypted -> {
               final var printableHashFacet =
@@ -275,12 +277,12 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
 
   private boolean tryToDecipherAeadCt(
       RbelElement rbelElement, RbelConverter context, SecretKeySpec aesKey) {
-    final Optional<RbelElement> contentNode = rbelElement.getFirst("content");
+    final Optional<RbelElement> contentNode = rbelElement.getFirst(CONTENT);
     if (contentNode.isEmpty()) {
       return false;
     }
     final Optional<byte[]> decrypt =
-        CryptoUtils.decrypt(contentNode.get().getRawContent(), aesKey, 12, 16);
+        CryptoUtils.decrypt(contentNode.get().getContent(), aesKey, 12, 16);
     if (decrypt.isEmpty()) {
       return false;
     }

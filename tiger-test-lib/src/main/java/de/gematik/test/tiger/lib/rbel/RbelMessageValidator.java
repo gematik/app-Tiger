@@ -546,11 +546,11 @@ public class RbelMessageValidator {
     for (RbelElement element : elements) {
       try {
         switch (mode) {
-          case JSON ->
-              new JsonChecker().compareJsonStrings(getAsJsonString(element), oracle, false);
+          case JSON -> new JsonChecker()
+              .compareJsonStrings(getAsJsonString(element), oracle, false);
           case XML -> compareXMLStructureOfRbelElement(element, oracle, diffOptionCSV);
-          case JSON_SCHEMA ->
-              new JsonSchemaChecker().compareJsonToSchema(getAsJsonString(element), oracle);
+          case JSON_SCHEMA -> new JsonSchemaChecker()
+              .compareJsonToSchema(getAsJsonString(element), oracle);
         }
         log.debug("Found matching element: \n{}", element.printTreeStructure());
         return;

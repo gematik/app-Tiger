@@ -94,4 +94,11 @@ public class TigerPkiIdentity {
       throw new TigerPkiIdentityLoaderException("Error while creating keystore", e);
     }
   }
+
+  public List<X509Certificate> buildChainWithCertificate() {
+    final List<X509Certificate> certificateWithChain = new ArrayList<>();
+    certificateWithChain.add(getCertificate());
+    certificateWithChain.addAll(certificateChain);
+    return certificateWithChain;
+  }
 }

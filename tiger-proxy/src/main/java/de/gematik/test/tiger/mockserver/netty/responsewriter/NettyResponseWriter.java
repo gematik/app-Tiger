@@ -44,7 +44,7 @@ public class NettyResponseWriter {
     this.ctx = ctx;
   }
 
-  public void writeResponse(final HttpRequest request, Action<?> response) {
+  public void writeResponse(final HttpRequest request, Action response) {
     if (response == null) {
       response = new CloseChannel();
     }
@@ -56,12 +56,12 @@ public class NettyResponseWriter {
     if (isNotBlank(contentLengthHeader)) {
       try {
         int contentLength = Integer.parseInt(contentLengthHeader);
-        if (response.getBodyAsRawBytes().length > contentLength) {
+        if (response.getBody().length > contentLength) {
           log.info(
               "returning response with content-length header {} which is smaller then response body"
                   + " length {}, body will likely be truncated by client receiving request",
               contentLength,
-              response.getBodyAsRawBytes().length);
+              response.getBody().length);
         }
       } catch (NumberFormatException ignore) {
         log.trace("NumberFormatException while parsing content-length header", ignore);
@@ -79,17 +79,13 @@ public class NettyResponseWriter {
 
   protected HttpResponse addConnectionHeader(
       final HttpRequest request, final HttpResponse response) {
-    HttpResponse responseWithConnectionHeader = response.clone();
-
     if (Boolean.TRUE.equals(request.getKeepAlive())) {
-      responseWithConnectionHeader.replaceHeader(
-          new Header(CONNECTION.toString(), KEEP_ALIVE.toString()));
+      response.replaceHeader(new Header(CONNECTION.toString(), KEEP_ALIVE.toString()));
     } else {
-      responseWithConnectionHeader.replaceHeader(
-          new Header(CONNECTION.toString(), CLOSE.toString()));
+      response.replaceHeader(new Header(CONNECTION.toString(), CLOSE.toString()));
     }
 
-    return responseWithConnectionHeader;
+    return response;
   }
 
   public void sendResponse(HttpRequest request, HttpResponse response) {

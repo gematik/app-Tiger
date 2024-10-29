@@ -24,14 +24,12 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import de.gematik.test.tiger.mockserver.codec.BodyDecoderEncoder;
 import de.gematik.test.tiger.mockserver.model.*;
+import de.gematik.test.tiger.mockserver.model.HttpProtocol;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
-import de.gematik.test.tiger.mockserver.model.Protocol;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.HttpConversionUtil;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
@@ -64,9 +62,6 @@ public class MockServerHttpRequestToFullHttpRequest {
 
       // headers
       setHeader(httpRequest, request);
-
-      // cookies
-      setCookies(httpRequest, request);
 
       return request;
     } catch (RuntimeException throwable) {
@@ -114,22 +109,6 @@ public class MockServerHttpRequestToFullHttpRequest {
     return bodyDecoderEncoder.bodyToByteBuf(httpRequest.getBody());
   }
 
-  private void setCookies(HttpRequest httpRequest, FullHttpRequest request) {
-    if (!httpRequest.getCookieList().isEmpty()) {
-      List<io.netty.handler.codec.http.cookie.Cookie> cookies = new ArrayList<>();
-      for (de.gematik.test.tiger.mockserver.model.Cookie cookie : httpRequest.getCookieList()) {
-        cookies.add(
-            new io.netty.handler.codec.http.cookie.DefaultCookie(
-                cookie.getName(), cookie.getValue()));
-      }
-      request
-          .headers()
-          .set(
-              COOKIE.toString(),
-              io.netty.handler.codec.http.cookie.ClientCookieEncoder.LAX.encode(cookies));
-    }
-  }
-
   private void setHeader(HttpRequest httpRequest, FullHttpRequest request) {
     for (Header header : httpRequest.getHeaderList()) {
       String headerName = header.getName();
@@ -152,7 +131,7 @@ public class MockServerHttpRequestToFullHttpRequest {
       request.headers().add(HOST, httpRequest.getFirstHeader(HOST.toString()));
     }
     request.headers().set(ACCEPT_ENCODING, GZIP + "," + DEFLATE);
-    if (Protocol.HTTP_2.equals(httpRequest.getProtocol())) {
+    if (HttpProtocol.HTTP_2.equals(httpRequest.getProtocol())) {
       HttpScheme scheme =
           Boolean.TRUE.equals(httpRequest.isSecure()) ? HttpScheme.HTTPS : HttpScheme.HTTP;
       request.headers().add(HttpConversionUtil.ExtensionHeaderNames.SCHEME.text(), scheme.name());
@@ -166,12 +145,6 @@ public class MockServerHttpRequestToFullHttpRequest {
       request.headers().set(CONNECTION, KEEP_ALIVE);
     } else {
       request.headers().set(CONNECTION, CLOSE);
-    }
-
-    if (!request.headers().contains(CONTENT_TYPE)) {
-      if (httpRequest.getBody() != null && httpRequest.getBody().getContentType() != null) {
-        request.headers().set(CONTENT_TYPE, httpRequest.getBody().getContentType());
-      }
     }
   }
 }

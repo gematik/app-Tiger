@@ -72,7 +72,7 @@ class ServernameFromProcessAndPortSupplierTest {
   @Test
   void testApply_whenPortExtractionFails_shouldThrowException() {
     // setup a rbel element that is not really a RbelHostnameFacet
-    RbelElement hostnameFacet = new RbelElement(null, null);
+    RbelElement hostnameFacet = new RbelElement();
 
     ServernameFromProcessAndPortSupplier supplier = new ServernameFromProcessAndPortSupplier();
 

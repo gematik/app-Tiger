@@ -20,7 +20,6 @@ import com.google.common.net.MediaType;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.util.MtomPart;
-import de.gematik.rbellogger.util.RbelArrayUtils;
 import de.gematik.rbellogger.util.RbelException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -50,8 +49,7 @@ public class RbelMtomConverter implements RbelConverterPlugin {
   }
 
   private boolean stringStartIsMtom(RbelElement rbelElement) {
-    var rawContent = rbelElement.getRawContent();
-    return RbelArrayUtils.startsTrimmedWith(rawContent, DOUBLE_DASH);
+    return rbelElement.getContent().startsTrimmedWith(DOUBLE_DASH);
   }
 
   @RequiredArgsConstructor
@@ -71,7 +69,8 @@ public class RbelMtomConverter implements RbelConverterPlugin {
         return;
       }
 
-      mtomParts = divideMessageIntoMtomParts(parentNode, vauContentType.get());
+      mtomParts =
+          divideMessageIntoMtomParts(parentNode.getRawStringContent(), vauContentType.get());
       if (mtomParts.isEmpty()) {
         return;
       }
@@ -151,7 +150,7 @@ public class RbelMtomConverter implements RbelConverterPlugin {
       if (dataParts.isEmpty()) {
         return null;
       }
-      RbelElement dataPartsElement = new RbelElement(null, parentNode);
+      RbelElement dataPartsElement = new RbelElement(parentNode);
       final RbelListFacet dataListFacet =
           new RbelListFacet(
               dataParts.entrySet().stream()
@@ -166,7 +165,7 @@ public class RbelMtomConverter implements RbelConverterPlugin {
     }
 
     private RbelElement buildDataEntry(String content, String xpath, RbelElement parentNode) {
-      final RbelElement result = new RbelElement(null, parentNode);
+      final RbelElement result = new RbelElement(parentNode);
       final RbelElement contentElement = converter.convertElement(content, result);
       contentElement.addFacet(new RbelBinaryFacet());
       result.addFacet(new RbelMtomDataPartFacet(contentElement, RbelElement.wrap(result, xpath)));
@@ -190,16 +189,12 @@ public class RbelMtomConverter implements RbelConverterPlugin {
       }
     }
 
-    private List<MtomPart> divideMessageIntoMtomParts(
-        RbelElement rbelElement, MediaType mediaType) {
+    private List<MtomPart> divideMessageIntoMtomParts(String stringContent, MediaType mediaType) {
       final List<String> boundary = mediaType.parameters().get("boundary");
       if (boundary.isEmpty()) {
         return List.of();
       }
-      return Stream.of(
-              rbelElement
-                  .getRawStringContent()
-                  .split("(\r\n|\n)--" + Pattern.quote(boundary.get(0))))
+      return Stream.of(stringContent.split("(\r\n|\n)--" + Pattern.quote(boundary.get(0))))
           .map(MtomPart::new)
           .filter(mtomPart -> !mtomPart.getMessageHeader().isEmpty())
           .toList();

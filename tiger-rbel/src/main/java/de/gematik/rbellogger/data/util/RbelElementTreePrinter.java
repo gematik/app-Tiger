@@ -44,13 +44,14 @@ public class RbelElementTreePrinter {
   @Builder.Default private final boolean printColors = true;
 
   public String execute() {
-    final RbelElement position = new RbelElement(null, null);
-    position.addFacet( new RbelFacet() {
-      @Override
-      public RbelMultiMap<RbelElement> getChildElements() {
-        return new RbelMultiMap<RbelElement>().with(findKeyOfRootElement(), rootElement);
-      }
-    });
+    final RbelElement position = new RbelElement();
+    position.addFacet(
+        new RbelFacet() {
+          @Override
+          public RbelMultiMap<RbelElement> getChildElements() {
+            return new RbelMultiMap<RbelElement>().with(findKeyOfRootElement(), rootElement);
+          }
+        });
     return executeRecursive(
         position, "", Math.max(maximumLevels, maximumLevels + 1) // avoid overflow problems
         );

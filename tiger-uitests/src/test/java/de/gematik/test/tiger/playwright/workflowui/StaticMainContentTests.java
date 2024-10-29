@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.playwright.workflowui;
 
 import static org.awaitility.Awaitility.await;
+
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
@@ -43,7 +44,7 @@ class StaticMainContentTests extends AbstractBase {
                             .locator("xpath=..")
                             .locator(".test-passed")
                             .first())
-                            .isVisible());
+                    .isVisible());
   }
 
   @Test
@@ -58,7 +59,7 @@ class StaticMainContentTests extends AbstractBase {
                         page.locator("#test-sidebar-featurelistbox")
                             .locator(".test-pending")
                             .first())
-                            .isVisible());
+                    .isVisible());
 
     page.locator("#workflow-messages").locator(".btn-success").first().click();
   }
@@ -75,6 +76,6 @@ class StaticMainContentTests extends AbstractBase {
                         page.locator("#test-sidebar-featurelistbox")
                             .locator(".test-failed")
                             .first())
-                            .isVisible());
+                    .isVisible());
   }
 }

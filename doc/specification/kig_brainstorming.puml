@@ -1,0 +1,45 @@
+@startuml
+@startmindmap
++ KIG Prozess
+++ PS Kommunikation
++++ PS-Meetup (halbjährlich)
++++ Roadmap
+++++ Produkte (gibts schon, aber muss extern)
+++++ Detailliertere Timeline
+++++ Tiger Prozess bekannt geben
++++++ Titus Ablöse
++++++ Kops Ablöse
+
+++ Tiger Schulungen externalisieren
+
+++ KOB Testsuiten
++++ Interne Kommunikation an die PTs
++++ Konzeption am Anfang unter Einbindung Tiger-Team
++++ Releaseprozess von KOB Testsuiten
+++++ Zuständigkeit/Verantwortung
+++++ Interne Abnahme der Testsuite
+++++ Review/Merge Prozess der gemeinsamen Testsuite (KIG?)
+++++ Bekanntgabe?
+++++ Frequenz?
++++ Wartung (Produktteams, in Ausnahmefällen beim Tiger-Team)
+
+-- Test Prozess von KOB
+--- PT übergreifender 1st Lvl Support durch ?
+--- KOB Testsuiten per Github
+--- Eigenverantwortliche Durchführung
+--- Report hochladen
+--- Hochladen zusätzlicher Testartefakte
+--- voll/halbautomatische Zulassung/Bestätigung
+
+-- Testtreiberschnittstelle
+--- Review durch Tiger-Team mit Testarchitekt:innen
+--- Verpflichtend? (Diskussion mit Josephine)
+--- Konzept vgl [[https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/ps-testdriver-api/-/blob/main/README.md Readme]]
+---- Use-case basierte Steps
+---- PT übergreifend
+
+-- Operative Abwicklung (Release, Bestätigung...)
+--- Sollte über Zulassung / KIG abgewickelt werden
+
+@endmindmap
+@enduml

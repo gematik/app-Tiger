@@ -67,6 +67,29 @@ td {
     bottom: 0;
     left: 0;
     right: 0;
+    float: left;
+}
+
+.rbel-main-content {
+    margin-left: 20%;
+}
+
+.mainsection {
+   flex-wrap: wrap-reverse;
+}
+
+/* Layout für große Bildschirme */
+@media (min-width: 1700px) and (max-width: 1920px) {
+    .sidebar {
+        width: 100%;
+        float: none;
+        display: block;
+    }
+
+    .rbel-main-content {
+        margin-left: 0;
+        display: block;
+    }
 }
 
 .full-width {

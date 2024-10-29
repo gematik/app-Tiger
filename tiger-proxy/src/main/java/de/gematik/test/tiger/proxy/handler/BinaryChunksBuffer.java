@@ -24,6 +24,7 @@ import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.RbelNoteFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.UnparsedChunkFacet;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.rbellogger.util.RbelException;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.data.SenderReceiverPair;
@@ -33,13 +34,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.util.Arrays;
 
 /** Buffers incomplete messages and tries to convert them to RbelElements if they are parsable */
 @Slf4j
 public class BinaryChunksBuffer {
   private final BundledServerNamesAdder bundledServerNamesAdder = new BundledServerNamesAdder();
-  private final Map<SenderReceiverPair, byte[]> bufferedParts = new ConcurrentHashMap<>();
+  private final Map<SenderReceiverPair, RbelContent> bufferedParts = new ConcurrentHashMap<>();
   private final Map<SenderReceiverPair, Long> currentSequenceNumber = new ConcurrentHashMap<>();
   private final RbelConverter rbelConverter;
   private final TigerProxyConfiguration proxyConfiguration;
@@ -55,14 +55,15 @@ public class BinaryChunksBuffer {
   }
 
   /** returns the complete message for this key with the given part appended to it */
-  private byte[] addToBuffer(SenderReceiverPair key, byte[] part) {
-    byte[] bufferedBytes = bufferedParts.get(key);
-    var resultMessage = part;
+  private RbelContent addToBuffer(SenderReceiverPair key, byte[] part) {
+    RbelContent bufferedBytes = bufferedParts.get(key);
     if (bufferedBytes != null) {
-      resultMessage = Arrays.concatenate(bufferedBytes, resultMessage);
+      bufferedBytes.append(part);
+    } else {
+      bufferedBytes = RbelContent.of(part);
+      bufferedParts.put(key, bufferedBytes);
     }
-    bufferedParts.put(key, resultMessage);
-    return resultMessage;
+    return bufferedBytes;
   }
 
   public Optional<RbelElement> tryToConvertMessageAndBufferUnusedBytes(
@@ -78,8 +79,8 @@ public class BinaryChunksBuffer {
   }
 
   private Optional<RbelElement> tryToConvertMessage(
-      byte[] messageContent, SenderReceiverPair connectionKey) {
-    var messageElement = new RbelElement(messageContent, null);
+      RbelContent messageContent, SenderReceiverPair connectionKey) {
+    var messageElement = new RbelElement(messageContent);
     final RbelElement result =
         rbelConverter.parseMessage(
             new RbelElementConvertionPair(messageElement),

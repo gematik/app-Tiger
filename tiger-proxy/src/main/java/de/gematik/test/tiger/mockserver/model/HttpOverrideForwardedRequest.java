@@ -27,7 +27,9 @@ import lombok.Getter;
  */
 @EqualsAndHashCode(callSuper = false)
 @Getter
-public class HttpOverrideForwardedRequest extends Action<HttpOverrideForwardedRequest> {
+public class HttpOverrideForwardedRequest implements Action {
+  private String expectationId;
+
   @JsonAlias("httpRequest")
   private HttpRequest requestOverride;
 

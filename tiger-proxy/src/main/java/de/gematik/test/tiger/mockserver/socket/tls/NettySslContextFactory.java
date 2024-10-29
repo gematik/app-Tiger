@@ -16,17 +16,20 @@
 
 package de.gematik.test.tiger.mockserver.socket.tls;
 
+import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
+import de.gematik.test.tiger.mockserver.model.HttpProtocol;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxySslException;
 import io.netty.handler.codec.http2.Http2SecurityUtil;
 import io.netty.handler.ssl.*;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import java.security.*;
-import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import javax.net.ssl.SSLException;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
+import org.apache.commons.lang3.tuple.Pair;
 
 /*
  * @author jamesdbloom
@@ -36,8 +39,8 @@ public class NettySslContextFactory {
 
   private final MockServerConfiguration configuration;
   private final KeyAndCertificateFactory keyAndCertificateFactory;
-  private final Map<String, SslContext> clientSslContexts = new ConcurrentHashMap<>();
-  private SslContext serverSslContext = null;
+  private final Map<HttpProtocol, SslContext> clientSslContexts = new ConcurrentHashMap<>();
+  private Pair<SslContext, TigerPkiIdentity> serverSslContextAndIdentity = null;
   private final boolean forServer;
 
   public NettySslContextFactory(MockServerConfiguration configuration, boolean forServer) {
@@ -49,43 +52,50 @@ public class NettySslContextFactory {
   }
 
   public KeyAndCertificateFactory createKeyAndCertificateFactory() {
-    if (configuration.customKeyAndCertificateFactorySupplier() != null) {
-      return configuration
-          .customKeyAndCertificateFactorySupplier()
-          .buildKeyAndCertificateFactory(forServer, configuration);
-    } else {
-      throw new RuntimeException("No KeyAndCertificateFactorySupplier supplied!");
+    if (configuration.customKeyAndCertificateFactorySupplier() == null) {
+      throw new TigerProxySslException("No KeyAndCertificateFactorySupplier supplied!");
     }
+    return configuration
+        .customKeyAndCertificateFactorySupplier()
+        .buildKeyAndCertificateFactory(forServer, configuration);
   }
 
-  public synchronized SslContext createClientSslContext(boolean enableHttp2) {
-    String key = "enableHttp2=" + enableHttp2;
-    SslContext clientSslContext = clientSslContexts.get(key);
+  public synchronized SslContext createClientSslContext(Optional<HttpProtocol> protocol) {
+    return createClientSslContext(protocol, null);
+  }
+
+  public synchronized SslContext createClientSslContext(
+      Optional<HttpProtocol> protocol, String hostName) {
+    return createClientSslContext(protocol.orElse(HttpProtocol.HTTP_1_1), hostName);
+  }
+
+  public synchronized SslContext createClientSslContext(HttpProtocol protocol, String hostName) {
+    SslContext clientSslContext = clientSslContexts.get(protocol);
     if (clientSslContext != null) {
       return clientSslContext;
     } else {
-      return buildFreshClientSslContext(enableHttp2);
+      return buildFreshClientSslContext(protocol, hostName);
     }
   }
 
-  private SslContext buildFreshClientSslContext(boolean enableHttp2) {
+  private SslContext buildFreshClientSslContext(HttpProtocol protocol, String hostName) {
     try {
+      val clientIdentity =
+          keyAndCertificateFactory.buildAndSavePrivateKeyAndX509Certificate(hostName);
       // create x509 and private key if none exist yet
-      if (keyAndCertificateFactory.certificateNotYetCreated()) {
-        keyAndCertificateFactory.buildAndSavePrivateKeyAndX509Certificate();
-      }
       SslContextBuilder sslContextBuilder =
           SslContextBuilder.forClient()
               .protocols(configuration.tlsProtocols().split(","))
-              .keyManager(forwardProxyPrivateKey(), forwardProxyCertificateChain());
-      if (enableHttp2) {
+              .keyManager(
+                  clientIdentity.getPrivateKey(), clientIdentity.buildChainWithCertificate());
+      if (protocol == HttpProtocol.HTTP_2) {
         configureALPN(sslContextBuilder);
       }
       sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
       var clientSslContext =
           buildClientSslContext(
               configuration.sslClientContextBuilderCustomizer().apply(sslContextBuilder));
-      clientSslContexts.put("enableHttp2=" + enableHttp2, clientSslContext);
+      clientSslContexts.put(protocol, clientSslContext);
       return clientSslContext;
     } catch (Exception e) {
       throw new RuntimeException("Exception creating SSL context for client", e);
@@ -100,49 +110,38 @@ public class NettySslContextFactory {
     }
   }
 
-  private PrivateKey forwardProxyPrivateKey() {
-    return keyAndCertificateFactory.privateKey();
-  }
-
-  private X509Certificate[] forwardProxyCertificateChain() {
-    return keyAndCertificateFactory.certificateChain().toArray(new X509Certificate[0]);
-  }
-
-  public synchronized SslContext createServerSslContext() {
-    if (serverSslContext != null
-        // create x509 and private key if none exist yet
-        && !keyAndCertificateFactory.certificateNotYetCreated()
+  public synchronized Pair<SslContext, TigerPkiIdentity> createServerSslContext(String hostname) {
+    if (serverSslContextAndIdentity != null
         // re-create x509 and private key if SAN list has been updated and dynamic update has not
         // been disabled
         && (!configuration.rebuildServerTlsContext())) {
-      return serverSslContext;
+      log.info("Using existing server SSL context for {}", hostname);
+      return serverSslContextAndIdentity;
     }
+    log.info("Creating new server SSL context for {}", hostname);
     try {
-      keyAndCertificateFactory.buildAndSavePrivateKeyAndX509Certificate();
-      log.debug(
-          "using certificate authority serial:{}issuer:{}subject:{}and certificate"
-              + " serial:{}issuer:{}subject:{}",
-          keyAndCertificateFactory.certificateAuthorityX509Certificate().getSerialNumber(),
-          keyAndCertificateFactory.certificateAuthorityX509Certificate().getIssuerX500Principal(),
-          keyAndCertificateFactory.certificateAuthorityX509Certificate().getSubjectX500Principal(),
-          keyAndCertificateFactory.x509Certificate().getSerialNumber(),
-          keyAndCertificateFactory.x509Certificate().getIssuerX500Principal(),
-          keyAndCertificateFactory.x509Certificate().getSubjectX500Principal());
+      val serverIdentity =
+          keyAndCertificateFactory.buildAndSavePrivateKeyAndX509Certificate(hostname);
+
+      log.atInfo()
+          .addArgument(() -> serverIdentity.getCertificate().getSubjectX500Principal())
+          .addArgument(() -> serverIdentity.getCertificate().getIssuerX500Principal())
+          .log("Using Server Certificate '{}', issued by '{}'");
       final SslContextBuilder sslContextBuilder =
           SslContextBuilder.forServer(
-                  keyAndCertificateFactory.privateKey(),
-                  keyAndCertificateFactory.certificateChain())
+                  serverIdentity.getPrivateKey(), serverIdentity.buildChainWithCertificate())
               .protocols(configuration.tlsProtocols().split(","))
               .clientAuth(ClientAuth.OPTIONAL);
       configureALPN(sslContextBuilder);
       sslContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
-      serverSslContext =
+      val serverContext =
           configuration.sslServerContextBuilderCustomizer().apply(sslContextBuilder).build();
+      serverSslContextAndIdentity = Pair.of(serverContext, serverIdentity);
       configuration.rebuildServerTlsContext(false);
-      return serverSslContext;
+      return serverSslContextAndIdentity;
     } catch (RuntimeException | SSLException e) {
       log.error("Exception creating SSL context for server", e);
-      throw new RuntimeException("exception creating SSL context for server", e);
+      throw new TigerProxySslException("exception creating SSL context for server", e);
     }
   }
 

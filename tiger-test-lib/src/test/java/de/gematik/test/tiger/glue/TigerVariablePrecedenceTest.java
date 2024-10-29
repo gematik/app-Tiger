@@ -29,7 +29,8 @@ class TigerVariablePrecedenceTest {
   @Test
   void settingLocalTestVariable_shouldBeAvailableInsteadOfGlobal() {
     // we pretend the variable is read from an yaml.
-    TigerGlobalConfiguration.putValue("test.hello", "global", ConfigurationValuePrecedence.MAIN_YAML);
+    TigerGlobalConfiguration.putValue(
+        "test.hello", "global", ConfigurationValuePrecedence.MAIN_YAML);
     assertThat(TigerGlobalConfiguration.readString("test.hello")).isEqualTo("global");
     // We set a local variable
     tigerGlue.ctxtISetLocalVariableTo("test.hello", "local");
@@ -43,7 +44,8 @@ class TigerVariablePrecedenceTest {
   @Test
   void settingLocalVariable_shouldBeAvailableInsteadOfGlobal() {
     // we pretend the variable is read from an yaml.
-    TigerGlobalConfiguration.putValue("test.hello", "global", ConfigurationValuePrecedence.MAIN_YAML);
+    TigerGlobalConfiguration.putValue(
+        "test.hello", "global", ConfigurationValuePrecedence.MAIN_YAML);
     assertThat(TigerGlobalConfiguration.readString("test.hello")).isEqualTo("global");
     // We set a local variable
     tigerGlue.setFeatureVariable("test.hello", "local feature");

@@ -113,7 +113,7 @@ tigerProxy:
         - ".*.bing.com"
 ----
 
-The entries are matched as regular expressions.
+The entries are matched first as a total match, failing that as regular expressions. If you want to add ports you are free to do so: "myHost:80". This however will necessitate that the ports on all entries in this specific list are given (this does not apply to other routes).
 
 ==== criterions
 
@@ -254,6 +254,19 @@ This identity will be used for all routes.
 tigerProxy:
     tls:
       serverIdentity: "certificateAndKeyAndChain.p12;Password"
+----
+
+==== Multiple server identities
+
+Sometimes you might want to use different server-identities for different hosts that are proxied. This can be achieved by using the `serverIdentities`-property. Simply list the properties, the proxy will automatically try to choose the correct one.
+
+[source,yaml]
+----
+tigerProxy:
+    tls:
+      serverIdentities:
+        - "someIdentity.p12;00"
+        - "anotherIdentity.p12;changeit"
 ----
 
 ==== OCSP stapling

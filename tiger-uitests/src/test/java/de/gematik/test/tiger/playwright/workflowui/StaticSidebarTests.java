@@ -63,13 +63,11 @@ class StaticSidebarTests extends AbstractBase {
     assertAll(
         () -> assertThat(page.locator("#test-sidebar-statusbox")).isVisible(),
         () ->
-            assertThat(
-                    page.locator("#test-sidebar-statusbox .test-sidebar-status-features"))
-                        .isVisible(),
+            assertThat(page.locator("#test-sidebar-statusbox .test-sidebar-status-features"))
+                .isVisible(),
         () ->
-            assertThat(
-                    page.locator("#test-sidebar-statusbox .test-sidebar-status-scenarios"))
-                        .isVisible(),
+            assertThat(page.locator("#test-sidebar-statusbox .test-sidebar-status-scenarios"))
+                .isVisible(),
         () -> assertThat(page.locator("#test-sidebar-status-started")).isVisible());
   }
 }

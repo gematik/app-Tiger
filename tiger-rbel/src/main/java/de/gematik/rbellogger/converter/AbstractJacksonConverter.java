@@ -22,6 +22,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.*;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -53,7 +54,8 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet> implements R
   }
 
   JsonNode convertContentUsingJackson(RbelElement target) throws IOException {
-    return mapper.readTree(target.getRawContent());
+    return mapper.readTree(
+        new InputStreamReader(target.getContent().toInputStream(), target.getElementCharset()));
   }
 
   boolean shouldElementBeConsidered(RbelElement target) {
@@ -62,14 +64,13 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet> implements R
 
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
-    final Optional<JsonNode> jsonOptional = convertToJacksonNode(rbelElement);
-    if (jsonOptional.isEmpty()) {
-      return;
-    }
-    if (jsonOptional.get().isContainerNode()) {
-      augmentRbelElementWithFacet(jsonOptional.get(), converter, rbelElement);
-      rbelElement.addFacet(new RbelRootFacet<>(rbelElement.getFacetOrFail(facetClass)));
-    }
+    convertToJacksonNode(rbelElement)
+        .filter(json -> json.isContainerNode() && !json.isEmpty())
+        .ifPresent(
+            json -> {
+              augmentRbelElementWithFacet(json, converter, rbelElement);
+              rbelElement.addFacet(new RbelRootFacet<>(rbelElement.getFacetOrFail(facetClass)));
+            });
   }
 
   @SneakyThrows

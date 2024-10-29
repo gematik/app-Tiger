@@ -20,4 +20,8 @@ public class TigerProxySslException extends RuntimeException {
   public TigerProxySslException(String s, Exception e) {
     super(s, e);
   }
+
+  public TigerProxySslException(String s) {
+    super(s);
+  }
 }

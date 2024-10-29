@@ -24,9 +24,7 @@ import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import java.util.Objects;
 import lombok.val;
 
-@ConverterInfo(
-  addAutomatically=false
-)
+@ConverterInfo(addAutomatically = false)
 public class HttpPairingInBinaryChannelConverter implements RbelConverterPlugin {
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {

@@ -85,7 +85,8 @@ public class TigerGlue {
   @When("TGR set local variable {tigerResolvedString} to {tigerResolvedString}")
   public void ctxtISetLocalVariableTo(final String key, final String value) {
     log.debug("Setting local variable {} to '{}'", key, value);
-    TigerGlobalConfiguration.putValue(key, value, ConfigurationValuePrecedence.LOCAL_TEST_CASE_CONTEXT);
+    TigerGlobalConfiguration.putValue(
+        key, value, ConfigurationValuePrecedence.LOCAL_TEST_CASE_CONTEXT);
   }
 
   @Wenn("TGR setze lokale Feature Variable {tigerResolvedString} auf {tigerResolvedString}")
@@ -180,7 +181,8 @@ public class TigerGlue {
 
   /**
    * Pauses the validation test suite with a message. Please note, these steps are only modified for
-   * the Workflow UI and don't work on a regular console (no failure, there is just no popup / pause).
+   * the Workflow UI and don't work on a regular console (no failure, there is just no popup /
+   * pause).
    *
    * @param message message to be displayed in the Workflow UI.
    */

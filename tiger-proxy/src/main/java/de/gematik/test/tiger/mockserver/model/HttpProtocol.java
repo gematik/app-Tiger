@@ -19,9 +19,7 @@ package de.gematik.test.tiger.mockserver.model;
 /*
  * @author jamesdbloom
  */
-public class Cookie extends KeyAndValue {
-
-  public Cookie(String name, String value) {
-    super(name, value);
-  }
+public enum HttpProtocol {
+  HTTP_1_1,
+  HTTP_2
 }

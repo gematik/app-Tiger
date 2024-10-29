@@ -210,7 +210,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
     if (shouldLogTraffic()) {
       parseMessages(req, resp);
     }
-    return resp.withBody(resp.getBodyAsRawBytes());
+    return resp.withBody(resp.getBody());
   }
 
   private void rewriteLocationHeaderIfApplicable(HttpResponse resp) {
@@ -438,7 +438,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
   HttpRequest cloneRequest(HttpRequest req) {
     final HttpOverrideForwardedRequest clonedRequest = forwardOverriddenRequest(req);
     if (req.getBody() != null) {
-      return clonedRequest.getRequestOverride().withBody(req.getBodyAsRawBytes());
+      return clonedRequest.getRequestOverride().withBody(req.getBody());
     } else {
       return clonedRequest.getRequestOverride();
     }
@@ -450,7 +450,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
           "Returning HTTP "
               + resp.getStatusCode()
               + " Response-Length: "
-              + getMessageSize(resp.getBodyAsRawBytes()));
+              + getMessageSize(resp.getBody()));
     }
   }
 
@@ -460,38 +460,11 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
 
   public void doIncomingRequestLogging(HttpRequest req) {
     if (log.isInfoEnabled() && tigerProxy.getTigerProxyConfiguration().isActivateTrafficLogging()) {
-      log.info(
-          "Received "
-              + getProtocol(req)
-              + " "
-              + req.getMethod()
-              + " "
-              + req.getPath()
-              + " "
-              + getUserAgentString(req)
-              + " Request-Length: "
-              + getMessageSize(req.getBodyAsRawBytes())
-              + " => "
-              + printTrafficTarget(req));
+      log.info("Received " + req.printLogLineDescription() + " => " + printTrafficTarget(req));
     }
   }
 
   protected abstract String printTrafficTarget(HttpRequest req);
-
-  private static String getProtocol(HttpRequest req) {
-    if (Boolean.TRUE.equals(req.isSecure())) {
-      return "HTTPS";
-    } else {
-      return "HTTP";
-    }
-  }
-
-  private static String getUserAgentString(HttpRequest req) {
-    return Optional.ofNullable(req.getFirstHeader("User-Agent"))
-        .filter(StringUtils::isNotEmpty)
-        .map(agent -> "User-Agent: '" + agent + "'")
-        .orElse("");
-  }
 
   @Override
   public boolean matches(HttpRequest request) {
@@ -515,10 +488,10 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
               final boolean matches =
                   TigerJexlExecutor.matchesAsJexlExpression(convertedRequest, criterion);
               log.atTrace()
-                .addArgument(criterion)
-                .addArgument(convertedRequest::printHttpDescription)
-                .addArgument(() -> matches)
-                .log("Matching {} for {}: {}");
+                  .addArgument(criterion)
+                  .addArgument(convertedRequest::printHttpDescription)
+                  .addArgument(() -> matches)
+                  .log("Matching {} for {}: {}");
               return matches;
             });
   }

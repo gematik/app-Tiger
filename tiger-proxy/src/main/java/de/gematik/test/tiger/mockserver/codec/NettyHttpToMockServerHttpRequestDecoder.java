@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.mockserver.codec;
 
-import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.getALPNProtocol;
+import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.getAlpnProtocol;
 
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.mappers.FullHttpRequestToMockServerHttpRequest;
@@ -67,7 +67,7 @@ public class NettyHttpToMockServerHttpRequestDecoder
             preservedHeaders,
             localAddress,
             remoteAddress,
-            getALPNProtocol(ctx),
+            getAlpnProtocol(ctx),
             sslSession));
   }
 }

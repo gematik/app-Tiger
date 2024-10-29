@@ -77,8 +77,13 @@ class StaticMainContentTest extends AbstractBase {
   @Test
   void testExecutionPaneActive() {
     assertAll(
-        () -> PlaywrightAssertions.assertThat(page.locator("#test-execution-pane-tab.active")).isVisible(),
-        () -> PlaywrightAssertions.assertThat(page.locator("#test-server-log-tab.active")).not().isVisible());
+        () ->
+            PlaywrightAssertions.assertThat(page.locator("#test-execution-pane-tab.active"))
+                .isVisible(),
+        () ->
+            PlaywrightAssertions.assertThat(page.locator("#test-server-log-tab.active"))
+                .not()
+                .isVisible());
   }
 
   @Test
@@ -102,16 +107,19 @@ class StaticMainContentTest extends AbstractBase {
             PlaywrightAssertions.assertThat(
                     page.locator("#test-server-log-pane-buttons")
                         .locator("#test-server-log-pane-server-all.active"))
-                        .isVisible());
+                .isVisible());
   }
 
   @Test
   void testServerPanInputTextIsEmpty() {
     page.querySelector("#test-server-log-tab").click();
     assertAll(
-        () -> PlaywrightAssertions.assertThat(page.locator("#test-server-log-pane-input-text")).isVisible(),
         () ->
-            PlaywrightAssertions.assertThat(page.locator("#test-server-log-pane-input-text")).isEmpty());
+            PlaywrightAssertions.assertThat(page.locator("#test-server-log-pane-input-text"))
+                .isVisible(),
+        () ->
+            PlaywrightAssertions.assertThat(page.locator("#test-server-log-pane-input-text"))
+                .isEmpty());
   }
 
   @ParameterizedTest
@@ -121,6 +129,7 @@ class StaticMainContentTest extends AbstractBase {
     PlaywrightAssertions.assertThat(
             page.locator("#test-server-log-pane-buttons")
                 .locator(".test-server-log-pane-server-" + server))
-                .not().isVisible();
+        .not()
+        .isVisible();
   }
 }

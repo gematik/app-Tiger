@@ -18,8 +18,8 @@ package de.gematik.test.tiger.playwright.workflowui;
 
 import static de.gematik.test.tiger.playwright.workflowui.ConfigurationEditorTest.ENV_MULTILINE_CHECK_KEY;
 import static org.awaitility.Awaitility.await;
+
 import com.microsoft.playwright.assertions.PlaywrightAssertions;
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +27,8 @@ class ConfigEditorScreenshotsTest extends AbstractBase {
 
   @Test
   void testScreenshotsConfigEditor() {
-    PlaywrightAssertions.assertThat(page.locator("#test-sidebar-tg-config-editor-icon")).isVisible();
+    PlaywrightAssertions.assertThat(page.locator("#test-sidebar-tg-config-editor-icon"))
+        .isVisible();
     page.locator("#test-sidebar-tg-config-editor-icon").hover();
     screenshotElementById(page, "sidebar_config_editor.png", "test-sidebar-tg-config-editor-icon");
 
@@ -41,7 +42,9 @@ class ConfigEditorScreenshotsTest extends AbstractBase {
     page.locator(".vsp__header").click();
     screenshotByClassname(page, "tg_global_config_editor.png", "vsp__header");
 
-    await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> page.locator("#test-tg-config-editor-btn-delete").nth(1).hover());
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> page.locator("#test-tg-config-editor-btn-delete").nth(1).hover());
     screenshotElementById(
         page, "config_editor_delete_button.png", "test-tg-config-editor-btn-delete");
     String xpathToValue =

@@ -30,7 +30,7 @@ class RbelHostnameFacetTest {
   void generateRbelHostnameFacet(String url, String hostname, String port) {
     RbelElement element =
         RbelHostnameFacet.buildRbelHostnameFacet(
-            new RbelElement(null, null), (RbelHostname) RbelHostname.generateFromUrl(url).get());
+            new RbelElement(), (RbelHostname) RbelHostname.generateFromUrl(url).get());
     assertThat(element.hasFacet(RbelHostnameFacet.class)).isTrue();
     assertThat(element.getFacetOrFail(RbelHostnameFacet.class).getDomain().getRawStringContent())
         .isEqualTo(hostname);

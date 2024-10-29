@@ -52,12 +52,14 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.net.ssl.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.SneakyThrows;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.buf.UriUtil;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
@@ -306,11 +308,16 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
 
   private KeyAndCertificateFactorySupplier buildKeyAndCertificateFactory() {
     return (isServerInstance, mockServerConfiguration) -> {
+      val tlsConfiguration = Optional.ofNullable(getTigerProxyConfiguration().getTls());
       if (isServerInstance) {
-        if (getTigerProxyConfiguration().getTls() != null
-            && getTigerProxyConfiguration().getTls().getServerIdentity() != null) {
+        if (tlsConfiguration.map(TigerTlsConfiguration::getServerIdentity).isPresent()) {
           return new StaticTigerKeyAndCertificateFactory(
-              getTigerProxyConfiguration().getTls().getServerIdentity());
+              tlsConfiguration.get().getServerIdentity());
+        } else if (tlsConfiguration.map(TigerTlsConfiguration::getServerIdentities).isPresent()) {
+          return new StaticTigerKeyAndCertificateFactory(
+              tlsConfiguration.get().getServerIdentities().stream()
+                  .map(TigerPkiIdentity.class::cast)
+                  .toList());
         } else {
           final DynamicTigerKeyAndCertificateFactory dynamicTigerKeyAndCertificateFactory =
               new DynamicTigerKeyAndCertificateFactory(
@@ -323,10 +330,9 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
           return dynamicTigerKeyAndCertificateFactory;
         }
       } else {
-        if (getTigerProxyConfiguration().getTls() != null
-            && getTigerProxyConfiguration().getTls().getForwardMutualTlsIdentity() != null) {
+        if (tlsConfiguration.map(TigerTlsConfiguration::getForwardMutualTlsIdentity).isPresent()) {
           return new StaticTigerKeyAndCertificateFactory(
-              getTigerProxyConfiguration().getTls().getForwardMutualTlsIdentity());
+              tlsConfiguration.get().getForwardMutualTlsIdentity());
         } else {
           return new DynamicTigerKeyAndCertificateFactory(
               getTigerProxyConfiguration(),
@@ -502,7 +508,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
 
     for (final DynamicTigerKeyAndCertificateFactory tlsFactory : tlsFactories) {
       tlsFactory.addAlternativeName(host);
-      tlsFactory.resetEeCertificate();
     }
   }
 
@@ -586,30 +591,33 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     try {
       final KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
       ks.load(null);
-      final TigerPkiIdentity serverIdentity =
-          Optional.ofNullable(getTigerProxyConfiguration().getTls())
-              .map(TigerTlsConfiguration::getServerIdentity)
-              .map(TigerPkiIdentity.class::cast)
-              .or(this::determineServerRootCa)
-              .orElseThrow(
-                  () ->
-                      new TigerProxyTrustManagerBuildingException(
-                          "Unrecoverable state: Server-Identity null and Server-CA empty"));
-
-      ks.setCertificateEntry(CA_CERT_ALIAS, serverIdentity.getCertificate());
-      int chainCertCtr = 0;
-      for (final X509Certificate chainCert : serverIdentity.getCertificateChain()) {
-        ks.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);
+      storeCertificate(ks, determineServerRootCa().get(), 99);
+      val tlsConfiguration = Optional.ofNullable(getTigerProxyConfiguration().getTls());
+      if (tlsConfiguration.map(TigerTlsConfiguration::getServerIdentity).isPresent()) {
+        storeCertificate(ks, tlsConfiguration.get().getServerIdentity(), 0);
+      } else if (tlsConfiguration.map(TigerTlsConfiguration::getServerIdentities).isPresent()) {
+        val certCounter = new AtomicInteger(0);
+        tlsConfiguration.map(TigerTlsConfiguration::getServerIdentities).stream()
+            .flatMap(Collection::stream)
+            .forEach(id -> storeCertificate(ks, id, certCounter.getAndIncrement()));
       }
-      if (getTigerProxyConfiguration().getTls().getOcspSignerIdentity() != null) {
+      if (tlsConfiguration.map(TigerTlsConfiguration::getOcspSignerIdentity).isPresent()) {
         ks.setCertificateEntry(
-            "ocspSignerCert",
-            getTigerProxyConfiguration().getTls().getOcspSignerIdentity().getCertificate());
+            "ocspSignerCert", tlsConfiguration.get().getOcspSignerIdentity().getCertificate());
       }
       return ks;
     } catch (final Exception e) {
       throw new TigerProxyTrustManagerBuildingException(
           "Error while building SSL-Context for Tiger Proxy", e);
+    }
+  }
+
+  @SneakyThrows
+  private void storeCertificate(KeyStore ks, TigerPkiIdentity identity, int counter) {
+    ks.setCertificateEntry(CA_CERT_ALIAS + "_" + counter, identity.getCertificate());
+    int chainCertCtr = 0;
+    for (final X509Certificate chainCert : identity.getCertificateChain()) {
+      ks.setCertificateEntry("chainCert_" + counter + "_" + chainCertCtr++, chainCert);
     }
   }
 

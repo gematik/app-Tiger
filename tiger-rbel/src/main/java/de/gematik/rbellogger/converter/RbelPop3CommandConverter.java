@@ -20,11 +20,11 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.pop3.RbelPop3Command;
 import de.gematik.rbellogger.util.EmailConversionUtils;
+import de.gematik.rbellogger.util.RbelContent;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.StringTokenizer;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 
 @ConverterInfo(onlyActivateFor = "pop3")
 @Slf4j
@@ -45,8 +45,8 @@ public class RbelPop3CommandConverter implements RbelConverterPlugin {
   }
 
   private Optional<RbelPop3CommandFacet> buildPop3CommandFacet(RbelElement element) {
-    return Optional.ofNullable(element.getRawContent())
-        .filter(c -> c.length > 4)
+    return Optional.of(element.getContent())
+        .filter(c -> c.size() > 4)
         .filter(EmailConversionUtils::endsWithCrLf)
         .flatMap(this::parseCommand)
         .map(command -> getRbelPop3CommandFacet(element, command));
@@ -61,10 +61,9 @@ public class RbelPop3CommandConverter implements RbelConverterPlugin {
         .build();
   }
 
-  private Optional<RbelPop3Command> parseCommand(byte[] c) {
+  private Optional<RbelPop3Command> parseCommand(RbelContent c) {
     var shortPrefix =
-        new String(
-            ArrayUtils.subarray(c, 0, RbelPop3Command.MAX_LENGTH + 1), StandardCharsets.UTF_8);
+        new String(c.subArray(0, RbelPop3Command.MAX_LENGTH + 1), StandardCharsets.UTF_8);
     var command = new StringTokenizer(shortPrefix).nextToken();
     try {
       return Optional.of(RbelPop3Command.valueOf(command));
@@ -75,9 +74,9 @@ public class RbelPop3CommandConverter implements RbelConverterPlugin {
   }
 
   private RbelElement parseArguments(RbelElement element, int argumentsOffset) {
-    var rawContent = element.getRawContent();
-    if (rawContent.length > argumentsOffset + 2) {
-      var argumentBytes = ArrayUtils.subarray(rawContent, argumentsOffset, rawContent.length - 2);
+    var content = element.getContent();
+    if (content.size() > argumentsOffset + 2) {
+      var argumentBytes = content.subArray(argumentsOffset, content.size() - 2);
       return new RbelElement(argumentBytes, element);
     } else {
       return null;

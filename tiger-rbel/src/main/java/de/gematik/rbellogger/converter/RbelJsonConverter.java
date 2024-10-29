@@ -17,12 +17,13 @@
 package de.gematik.rbellogger.converter;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.primitives.Bytes;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.util.RbelContent;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 public class RbelJsonConverter extends AbstractJacksonConverter<RbelJsonFacet> {
 
@@ -38,8 +39,10 @@ public class RbelJsonConverter extends AbstractJacksonConverter<RbelJsonFacet> {
   }
 
   @Override
-  JsonNode convertContentUsingJackson(RbelElement target) throws JsonProcessingException {
-    return getMapper().readTree(target.getRawStringContent());
+  JsonNode convertContentUsingJackson(RbelElement target) throws IOException {
+    return getMapper()
+        .readTree(
+            new InputStreamReader(target.getContent().toInputStream(), target.getElementCharset()));
   }
 
   @Override
@@ -49,13 +52,13 @@ public class RbelJsonConverter extends AbstractJacksonConverter<RbelJsonFacet> {
 
   @Override
   boolean shouldElementBeConsidered(RbelElement target) {
-    var content = target.getRawContent();
+    var content = target.getContent();
     return containsInRightOrder(content, OPEN_OBJECT, CLOSE_OBJECT)
         || containsInRightOrder(content, OPEN_LIST, CLOSE_LIST);
   }
 
-  private static boolean containsInRightOrder(byte[] content, byte open, byte close) {
-    var openIndex = Bytes.indexOf(content, open);
-    return openIndex >= 0 && Bytes.lastIndexOf(content, close) > openIndex;
+  private static boolean containsInRightOrder(RbelContent content, byte open, byte close) {
+    var openIndex = content.indexOf(open);
+    return openIndex >= 0 && content.indexOf(close, openIndex) >= 0;
   }
 }

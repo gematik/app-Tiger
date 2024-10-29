@@ -27,10 +27,8 @@ import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
-
 import java.util.Optional;
 import javax.annotation.Nullable;
-
 import lombok.Builder;
 import lombok.Data;
 

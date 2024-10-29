@@ -152,7 +152,8 @@ public class TigerRemoteTrafficDownloader {
       int pageSize, Optional<String> currentLastUuid) {
     final String downloadUrl = getRemoteProxyUrl() + "/webui/trafficLog.tgr";
     log.debug(
-        "Downloading missed traffic from '{}', starting from {}. page-size {} (currently cached {} messages)",
+        "Downloading missed traffic from '{}', starting from {}. page-size {} (currently cached {}"
+            + " messages)",
         currentLastUuid,
         downloadUrl,
         pageSize,

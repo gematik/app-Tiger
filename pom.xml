@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
   ~ Copyright 2024 gematik GmbH
   ~
@@ -17,13 +18,13 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>3.4.2</version>
+    <version>3.4.3</version>
 
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
@@ -42,19 +43,19 @@
         <version.commons-lang3>3.17.0</version.commons-lang3>
         <version.commons-text>1.12.0</version.commons-text>
         <version.commons-codec>1.17.1</version.commons-codec>
-        <version.commons-io>2.16.1</version.commons-io>
+        <version.commons-io>2.17.0</version.commons-io>
         <version.commons-jexl3>3.4.0</version.commons-jexl3>
         <version.commons-collections>3.2.2</version.commons-collections>
         <version.commons-collections4>4.4</version.commons-collections4>
-        <version.cucumber>7.18.1</version.cucumber>
-        <version.datatable>7.18.1</version.datatable>
-        <version.groovy>4.0.22</version.groovy>
+        <version.cucumber>7.19.0</version.cucumber>
+        <version.datatable>7.19.0</version.datatable>
+        <version.groovy>4.0.23</version.groovy>
         <version.gson>2.11.0</version.gson>
         <version.hamcrest>2.2</version.hamcrest>
         <version.htmlunit>3.55.0</version.htmlunit>
         <version.jacoco-maven-plugin>0.8.12</version.jacoco-maven-plugin>
         <version.jackson>2.17.2</version.jackson>
-        <version.jakarta.xml.bind>3.0.1</version.jakarta.xml.bind>
+        <version.jakarta.xml.bind>4.0.2</version.jakarta.xml.bind>
         <version.javaparser>3.26.2</version.javaparser>
         <version.jose4j>0.9.6</version.jose4j>
         <version.json>20230618</version.json>
@@ -62,33 +63,33 @@
         <version.json-unit>3.4.1</version.json-unit>
         <version.junit5>5.10.3</version.junit5>
         <version.junit-platform>1.10.3</version.junit-platform>
-        <version.logback>1.5.7</version.logback>
+        <version.logback>1.5.8</version.logback>
         <version.lombok>1.18.34</version.lombok>
         <version.maven>3.9.9</version.maven>
         <version.maven-deploy-plugin>3.1.3</version.maven-deploy-plugin>
         <version.maven.failsafe>3.5.0</version.maven.failsafe>
         <version.maven.surefire>3.5.0</version.maven.surefire>
-        <version.maven.javadoc>3.10.0</version.maven.javadoc>
+        <version.maven.javadoc>3.10.1</version.maven.javadoc>
         <version.maven-plugin-tools>3.15.0</version.maven-plugin-tools>
-        <version.mockito>5.13.0</version.mockito>
+        <version.mockito>5.14.1</version.mockito>
         <version.mockserver>5.15.0</version.mockserver>
         <version.io.rest-assured>5.5.0</version.io.rest-assured>
-        <version.serenity.core>4.1.14</version.serenity.core>
-        <version.serenity.maven.plugin>4.1.14</version.serenity.maven.plugin>
+        <version.serenity.core>4.2.3</version.serenity.core>
+        <version.serenity.maven.plugin>4.2.3</version.serenity.maven.plugin>
         <version.slf4j>2.0.16</version.slf4j>
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
         <spotless-maven-plugin.version>2.43.0</spotless-maven-plugin.version>
         <spotless.google-java-format.version>1.18.1</spotless.google-java-format.version>
-        <version.spring-boot>3.3.3</version.spring-boot>
+        <version.spring-boot>3.3.4</version.spring-boot>
         <version.spring>5.3.20</version.spring>
-        <version.system-stubs>2.1.6</version.system-stubs>
+        <version.system-stubs>2.1.7</version.system-stubs>
         <version.unirest>3.14.5</version.unirest>
         <version.velocity>2.3</version.velocity>
         <version.netty>4.1.110.Final</version.netty>
         <version.xmlunit>2.9.0</version.xmlunit>
         <version.winstone>6.21</version.winstone>
         <version.wiremock>3.3.1</version.wiremock>
-        <version.org.glassfish.jaxb>3.0.2</version.org.glassfish.jaxb>
+        <version.org.glassfish.jaxb>4.0.5</version.org.glassfish.jaxb>
 
         <!-- frontend -->
         <!-- when changing the webjar version here make sure to adapt the web ui links too -->
@@ -96,11 +97,11 @@
         <version.webjars-locator-core>0.59</version.webjars-locator-core>
         <version.bootstrap>5.3.3</version.bootstrap>
         <version.jquery>3.7.1</version.jquery>
-        <version.jquery-ui>1.13.3</version.jquery-ui>
+        <version.jquery-ui>1.14.0</version.jquery-ui>
         <version.font-awesome>6.5.2</version.font-awesome>
         <version.sockjs-client>1.5.1</version.sockjs-client>
         <version.stomp-websocket>2.3.4</version.stomp-websocket>
-        <version.highlightjs>11.5.0</version.highlightjs>
+        <version.highlightjs>11.10.0</version.highlightjs>
 
         <sonar.language>java</sonar.language>
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
@@ -226,7 +227,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>3.2.5</version>
+                        <version>3.2.7</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -795,7 +796,30 @@
                                 <exclude>**/*.yml</exclude>
                                 <exclude>**/*.xml</exclude>
                                 <exclude>**/*.txt</exclude>
+                                <exclude>**/*.cert</exclude>
+                                <exclude>**/*.tgr</exclude>
+                                <exclude>**/*.mjs</exclude>
+                                <exclude>**/*.bks</exclude>
+                                <exclude>**/*.crt</exclude>
+                                <exclude>**/*.browserslistrc</exclude>
                                 <exclude>**/*.factories</exclude>
+                                <exclude>**/*.feature</exclude>
+                                <exclude>**/*.jtmpl</exclude>
+                                <exclude>**/*.ansi</exclude>
+                                <exclude>**/*.curl</exclude>
+                                <exclude>**/*.map</exclude>
+                                <exclude>**/*.env</exclude>
+                                <exclude>**/*.pem</exclude>
+                                <exclude>**/*.eml</exclude>
+                                <exclude>**/*.bin</exclude>
+                                <exclude>**/*.b64</exclude>
+                                <exclude>**/*.p8</exclude>
+                                <exclude>**/*.encrypted</exclude>
+                                <exclude>**/*.base64</exclude>
+                                <exclude>**/*.pkcs8</exclude>
+                                <exclude>**/*.conf</exclude>
+                                <exclude>**/*.key</exclude>
+                                <exclude>**/dist/assets/*</exclude>
                                 <exclude>**/bootstrap.min.css</exclude>
                                 <exclude>**/bootstrap.bundle.min.js</exclude>
                             </excludes>

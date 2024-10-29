@@ -106,8 +106,10 @@ public final class DeprecatedKeysUsageChecker {
     StringJoiner joiner = new StringJoiner("\n");
     for (DeprecatedKeyDescriptor deprecatedKey : deprecatedKeysMap) {
       valueMap.keySet().stream()
-          .filter(key -> key.containsKey(deprecatedKey.getCompareKey())
-                         || key.isBelow(new TigerConfigurationKey(deprecatedKey.getCompareKey())))
+          .filter(
+              key ->
+                  key.containsKey(deprecatedKey.getCompareKey())
+                      || key.isBelow(new TigerConfigurationKey(deprecatedKey.getCompareKey())))
           .findFirst()
           .ifPresent(
               a -> {

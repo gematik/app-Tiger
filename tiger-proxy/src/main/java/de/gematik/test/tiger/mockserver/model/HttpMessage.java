@@ -16,53 +16,35 @@
 
 package de.gematik.test.tiger.mockserver.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.nio.charset.Charset;
 import java.util.List;
+import lombok.Data;
 
 /*
  * @author jamesdbloom
  */
 @SuppressWarnings("rawtypes")
-public interface HttpMessage<T extends HttpMessage, B extends Body> extends Message {
+@Data
+public abstract class HttpMessage<T extends HttpMessage> extends ObjectWithJsonToString
+    implements Message {
+  private byte[] body = null;
 
-  T withBody(String body);
+  public abstract T withBody(byte[] body);
 
-  T withBody(String body, Charset charset);
+  public abstract Headers getHeaders();
 
-  T withBody(byte[] body);
+  public abstract T withHeaders(Headers headers);
 
-  T withBody(B body);
+  public abstract T withHeader(Header header);
 
-  B getBody();
+  public abstract T withHeader(String name, String... values);
 
-  @JsonIgnore
-  byte[] getBodyAsRawBytes();
+  public abstract T replaceHeader(Header header);
 
-  @JsonIgnore
-  String getBodyAsString();
+  public abstract List<Header> getHeaderList();
 
-  Headers getHeaders();
+  public abstract List<String> getHeader(String name);
 
-  T withHeaders(Headers headers);
+  public abstract String getFirstHeader(String name);
 
-  T withHeader(Header header);
-
-  T withHeader(String name, String... values);
-
-  T replaceHeader(Header header);
-
-  List<Header> getHeaderList();
-
-  List<String> getHeader(String name);
-
-  String getFirstHeader(String name);
-
-  T removeHeader(String name);
-
-  Cookies getCookies();
-
-  T withCookies(Cookies cookies);
-
-  List<Cookie> getCookieList();
+  public abstract T removeHeader(String name);
 }

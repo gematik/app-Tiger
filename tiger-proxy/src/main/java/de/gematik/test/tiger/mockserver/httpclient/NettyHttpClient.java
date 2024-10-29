@@ -21,7 +21,7 @@ import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
-import de.gematik.test.tiger.mockserver.model.Protocol;
+import de.gematik.test.tiger.mockserver.model.HttpProtocol;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import io.netty.buffer.ByteBufUtil;
@@ -32,9 +32,7 @@ import io.netty.util.AttributeKey;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -59,6 +57,7 @@ public class NettyHttpClient {
   private final EventLoopGroup eventLoopGroup;
   private final Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations;
   private final NettySslContextFactory nettySslContextFactory;
+  private final Set<Integer> clientPorts = Collections.synchronizedSet(new HashSet<>());
 
   @Getter private final ClientBootstrapFactory clientBootstrapFactory;
 
@@ -98,20 +97,20 @@ public class NettyHttpClient {
         requestInfo.setRemoteServerAddress(
             requestInfo.getDataToSend().socketAddressFromHostHeader());
       }
-      if (Protocol.HTTP_2.equals(requestInfo.getDataToSend().getProtocol())
+      if (HttpProtocol.HTTP_2.equals(requestInfo.getDataToSend().getProtocol())
           && !Boolean.TRUE.equals(requestInfo.getDataToSend().isSecure())) {
         log.warn(
             "HTTP2 requires ALPN but request is not secure (i.e. TLS) so protocol changed"
                 + " to HTTP1");
-        requestInfo.getDataToSend().setProtocol(Protocol.HTTP_1_1);
+        requestInfo.getDataToSend().setProtocol(HttpProtocol.HTTP_1_1);
       }
 
       final CompletableFuture<HttpResponse> httpResponseFuture = new CompletableFuture<>();
       final CompletableFuture<Message> responseFuture = new CompletableFuture<>();
-      final Protocol httpProtocol =
+      final HttpProtocol httpProtocol =
           requestInfo.getDataToSend().getProtocol() != null
               ? requestInfo.getDataToSend().getProtocol()
-              : Protocol.HTTP_1_1;
+              : HttpProtocol.HTTP_1_1;
 
       final HttpClientInitializer clientInitializer = createClientInitializer(httpProtocol);
 
@@ -189,7 +188,7 @@ public class NettyHttpClient {
     return sendRequest(requestInfo, configuration.socketConnectionTimeoutInMillis());
   }
 
-  public HttpClientInitializer createClientInitializer(Protocol httpProtocol) {
+  public HttpClientInitializer createClientInitializer(HttpProtocol httpProtocol) {
     return new HttpClientInitializer(
         configuration, proxyConfigurations, nettySslContextFactory, httpProtocol);
   }
@@ -278,5 +277,17 @@ public class NettyHttpClient {
             })
         .filter(Objects::nonNull)
         .noneMatch(remoteAddress.getAddress()::equals);
+  }
+
+  public void addClientPort(int port) {
+    clientPorts.add(port);
+  }
+
+  public void removeClientPort(int port) {
+    clientPorts.remove(port);
+  }
+
+  public boolean hasClientPort(int port) {
+    return clientPorts.contains(port);
   }
 }

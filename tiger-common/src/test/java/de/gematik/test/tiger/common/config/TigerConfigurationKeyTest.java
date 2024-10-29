@@ -20,6 +20,8 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 class TigerConfigurationKeyTest {
   @Test
@@ -34,5 +36,17 @@ class TigerConfigurationKeyTest {
 
     assertThat(combinedKey.downsampleKey())
         .isEqualTo("mockresponses.testresponse.nestedresponses.login.nestedresponses");
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "PS_KOBURL, PS_KOBURL",
+    "PS_KOBURL, ps.koburl",
+    "PS_KOBURL, ps.kobUrl",
+    "ps.koburl, ps.kobUrl"
+  })
+  void testDifferentKeys_shouldMatch(String value1, String value2) {
+    assertThat(new TigerConfigurationKey(value1))
+        .isEqualTo(new TigerConfigurationKey(value2));
   }
 }

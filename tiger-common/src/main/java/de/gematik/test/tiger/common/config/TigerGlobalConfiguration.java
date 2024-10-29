@@ -46,7 +46,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * Central configuration store. All sources (Environment-variables, YAML-files, local exports) end
- * up here and all configuration is loaded from here (Testenv-mgr, local tiger-proxy, test-lib
+ * up here, and all configuration is loaded from here (Testenv-mgr, local tiger-proxy, test-lib
  * configuration and also user-defined values).
  */
 @Slf4j

@@ -64,6 +64,8 @@ public class MockServer extends LifeCycle {
   private InetSocketAddress remoteSocket;
   private HttpActionHandler actionHandler;
   private Map<SocketAddress, TigerConnectionStatus> connectionStatusMap = new ConcurrentHashMap<>();
+  private NettySslContextFactory serverSslContextFactory;
+  private NettySslContextFactory clientSslContextFactory;
 
   /**
    * Start the instance using the ports provided
@@ -205,10 +207,8 @@ public class MockServer extends LifeCycle {
       portBindings = Arrays.asList(localPorts);
     }
 
-    final NettySslContextFactory nettyServerSslContextFactory =
-        new NettySslContextFactory(configuration, true);
-    final NettySslContextFactory nettyClientSslContextFactory =
-        new NettySslContextFactory(configuration, false);
+    serverSslContextFactory = new NettySslContextFactory(configuration, true);
+    clientSslContextFactory = new NettySslContextFactory(configuration, false);
 
     actionHandler =
         new HttpActionHandler(
@@ -216,7 +216,7 @@ public class MockServer extends LifeCycle {
             getEventLoopGroup(),
             httpState,
             proxyConfigurations,
-            nettyClientSslContextFactory);
+            clientSslContextFactory);
     serverServerBootstrap =
         new ServerBootstrap()
             .group(bossGroup, workerGroup)
@@ -229,8 +229,7 @@ public class MockServer extends LifeCycle {
                 ChannelOption.WRITE_BUFFER_WATER_MARK,
                 new WriteBufferWaterMark(8 * 1024, 32 * 1024))
             .childHandler(
-                new MockServerChannelInitializer(
-                    configuration, this, httpState, actionHandler, nettyServerSslContextFactory))
+                new MockServerChannelInitializer(configuration, this, httpState, actionHandler))
             .childAttr(REMOTE_SOCKET, remoteSocket)
             .childAttr(PROXYING, remoteSocket != null);
 
@@ -281,7 +280,6 @@ public class MockServer extends LifeCycle {
     private final MockServer mockServer;
     private final HttpState httpState;
     private final HttpActionHandler actionHandler;
-    private final NettySslContextFactory nettyServerSslContextFactory;
 
     @Override
     public void initChannel(SocketChannel ch) {
@@ -289,13 +287,7 @@ public class MockServer extends LifeCycle {
       ch.pipeline().addLast(new ConnectionCounterHandler(mockServer));
 
       ch.pipeline()
-          .addLast(
-              new PortUnificationHandler(
-                  configuration,
-                  mockServer,
-                  httpState,
-                  actionHandler,
-                  nettyServerSslContextFactory));
+          .addLast(new PortUnificationHandler(configuration, mockServer, httpState, actionHandler));
     }
   }
 }

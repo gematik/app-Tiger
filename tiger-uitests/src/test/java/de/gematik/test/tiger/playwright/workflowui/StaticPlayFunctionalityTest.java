@@ -18,59 +18,65 @@ package de.gematik.test.tiger.playwright.workflowui;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+
 import org.junit.jupiter.api.Test;
 
-/**
- * Test class for testing the unstarted test statically.
- */
+/** Test class for testing the unstarted test statically. */
 class StaticPlayFunctionalityTest extends AbstractBase {
 
+  @Test
+  void testNoPassedStepsInFeatureBoxAndInExecutionPane() {
+    openSidebar();
+    assertAll(
+        () -> assertThat(page.locator("#sidebar-left .test_discovered")).hasCount(5),
+        () -> assertThat(page.locator("#sidebar-left .test-passed")).hasCount(0),
+        () -> assertThat(page.locator("#execution_table .test-passed")).hasCount(0));
+  }
 
-    @Test
-    void testNoPassedStepsInFeatureBoxAndInExecutionPane() {
-        openSidebar();
-        assertAll(
-            () -> assertThat(page.locator("#sidebar-left .test_discovered")).hasCount(5),
-            () -> assertThat(page.locator("#sidebar-left .test-passed")).hasCount(0),
-            () -> assertThat(page.locator("#execution_table .test-passed")).hasCount(0));
-    }
-
-    @Test
-    void testExecutionPaneUnstartedScenariosExists() {
-        page.querySelector("#test-execution-pane-tab").click();
-        assertAll(
-            () -> assertThat(page.locator(".test-execution-pane-feature-title")).hasCount(1),
-            () -> assertThat(page.locator(".test-execution-pane-feature-title").locator(".test-feature-status-word")).hasText("TEST_DISCOVERED"),
-            () -> assertThat(page.locator(".test-execution-pane-scenario-title")).hasCount(5),
-            () ->
-                assertThat(
+  @Test
+  void testExecutionPaneUnstartedScenariosExists() {
+    page.querySelector("#test-execution-pane-tab").click();
+    assertAll(
+        () -> assertThat(page.locator(".test-execution-pane-feature-title")).hasCount(1),
+        () ->
+            assertThat(
                     page.locator(".test-execution-pane-feature-title")
-                        .locator(".test-status-failed")
-                ).hasCount(0),
-            () ->
-                assertThat(
+                        .locator(".test-feature-status-word"))
+                .hasText("TEST_DISCOVERED"),
+        () -> assertThat(page.locator(".test-execution-pane-scenario-title")).hasCount(5),
+        () ->
+            assertThat(
+                    page.locator(".test-execution-pane-feature-title")
+                        .locator(".test-status-failed"))
+                .hasCount(0),
+        () ->
+            assertThat(
                     page.locator(".test-execution-pane-scenario-title")
-                        .locator(".test-status-skipped")
-                ).hasCount(0),
-            () ->
-                assertThat(
+                        .locator(".test-status-skipped"))
+                .hasCount(0),
+        () ->
+            assertThat(
                     page.locator(".test-execution-pane-scenario-title")
-                        .locator(".test-status-test_discovered")
-                ).hasCount(5),
-            () ->
-                assertThat(
+                        .locator(".test-status-test_discovered"))
+                .hasCount(5),
+        () ->
+            assertThat(
                     page.locator(".test-execution-pane-scenario-title")
-                        .locator(".test-status-passed")
-                ).hasCount(0));
-    }
+                        .locator(".test-status-passed"))
+                .hasCount(0));
+  }
 
-    @Test
-    void testTooltipLargeRunButtonExists() {
-        page.querySelector("#test-execution-pane-tab").click();
-        openSidebar();
+  @Test
+  void testTooltipLargeRunButtonExists() {
+    page.querySelector("#test-execution-pane-tab").click();
+    openSidebar();
 
-        assertAll(
-            () -> assertThat(page.locator(".test-play-button").first()).hasAttribute("title", "Run Scenario"),
-            () -> assertThat(page.locator(".test-play-small-button").first()).hasAttribute("title", "Run Scenario"));
-    }
+    assertAll(
+        () ->
+            assertThat(page.locator(".test-play-button").first())
+                .hasAttribute("title", "Run Scenario"),
+        () ->
+            assertThat(page.locator(".test-play-small-button").first())
+                .hasAttribute("title", "Run Scenario"));
+  }
 }

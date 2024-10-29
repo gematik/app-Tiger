@@ -16,18 +16,16 @@
 
 package de.gematik.rbellogger.converter;
 
-import static com.google.common.primitives.Bytes.indexOf;
-
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
+import de.gematik.rbellogger.util.RbelContent;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
@@ -38,24 +36,20 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
 
   @Override
   public void consumeElement(final RbelElement targetElement, final RbelConverter converter) {
-    byte[] rawContent = targetElement.getRawContent();
-    if (!startsWithHttpVerb(rawContent)) {
+    var content = targetElement.getContent();
+    if (!startsWithHttpVerb(content)) {
       return;
     }
-    var eolOpt = findEolInHttpMessage(rawContent);
+    var eolOpt = findEolInHttpMessage(content);
     if (eolOpt.isEmpty()) {
       return;
     }
     var eol = eolOpt.get();
-    var firstLineOpt = extractFirstLine(targetElement, eol, rawContent);
+    var firstLineOpt = extractFirstLine(targetElement, eol, content);
     if (firstLineOpt.isEmpty()) {
       return;
     }
-    int endOfHeadIndex = findEndOfHeadIndex(rawContent, eol);
-    var content = targetElement.getRawStringContent();
-    if (content == null) {
-      return;
-    }
+    int endOfHeadIndex = findEndOfHeadIndex(content, eol);
 
     var firstLineParts = firstLineOpt.get();
     var path = firstLineParts.path;
@@ -67,8 +61,13 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
       throw new RbelConversionException("Encountered ill-formatted path: " + path);
     }
 
+    var stringContent = targetElement.getRawStringContent();
+    if (stringContent == null) {
+      return;
+    }
+
     final RbelElement headerElement =
-        extractHeaderFromMessage(targetElement, converter, eol, content);
+        extractHeaderFromMessage(targetElement, converter, eol, stringContent);
     RbelHttpHeaderFacet httpHeader = headerElement.getFacetOrFail(RbelHttpHeaderFacet.class);
 
     final byte[] bodyData =
@@ -105,11 +104,11 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
   }
 
   private static Optional<RequestFirstLineParts> extractFirstLine(
-      RbelElement targetElement, String eol, byte[] rawContent) {
-    var firstEndLineIndex = indexOf(rawContent, eol.getBytes());
+      RbelElement targetElement, String eol, RbelContent content) {
+    var firstEndLineIndex = content.indexOf(eol.getBytes());
 
     String firstLine =
-        new String(rawContent, 0, firstEndLineIndex, targetElement.getElementCharset());
+        new String(content.subArray(0, firstEndLineIndex), targetElement.getElementCharset());
 
     final String[] firstLineParts = StringUtils.split(firstLine, " ", 3);
 
@@ -128,24 +127,23 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
         RequestFirstLineParts.builder().method(method).path(path).version(httpVersion).build());
   }
 
-  private static int findEndOfHeadIndex(byte[] rawContent, String eol) {
-    int endOfHeadIndex = indexOf(rawContent, (eol + eol).getBytes());
+  private static int findEndOfHeadIndex(RbelContent content, String eol) {
+    int endOfHeadIndex = content.indexOf((eol + eol).getBytes());
     if (endOfHeadIndex < 0) {
-      endOfHeadIndex = rawContent.length;
+      endOfHeadIndex = content.size();
     }
     return endOfHeadIndex;
   }
 
-  public boolean startsWithHttpVerb(byte[] data) {
-    if (ArrayUtils.isEmpty(data)) {
+  public boolean startsWithHttpVerb(RbelContent data) {
+    if (data.isEmpty()) {
       return false;
     }
     String firstLine =
-        new String(
-            ArrayUtils.subarray(data, 0, Math.min(8, data.length)), StandardCharsets.US_ASCII);
+        new String(data.subArray(0, Math.min(8, data.size())), StandardCharsets.US_ASCII);
     String method = firstLine.split(" ", 2)[0];
     return HTTP_METHODS.contains(method)
-        && data.length > method.length()
-        && data[method.length()] == ' ';
+        && data.size() > method.length()
+        && data.get(method.length()) == ' ';
   }
 }

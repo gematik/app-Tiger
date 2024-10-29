@@ -68,7 +68,9 @@ class RbelBuilderGlueCodeTests {
         () -> {
           glueCode.createFromContent("blub", nestedObjectAsJsonString);
           glueCode.assertJexlOutputEquals(
-              resolve("!{rbelObject:serialize(\"blub\")}"), nestedObjectAsJsonString, RbelContentType.JSON);
+              resolve("!{rbelObject:serialize(\"blub\")}"),
+              nestedObjectAsJsonString,
+              RbelContentType.JSON);
         });
   }
 
