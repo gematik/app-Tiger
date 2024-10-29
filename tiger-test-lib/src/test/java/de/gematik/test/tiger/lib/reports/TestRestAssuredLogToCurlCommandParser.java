@@ -60,7 +60,7 @@ class TestRestAssuredLogToCurlCommandParser {
   }
 
   @AfterAll
-  public static void tearDown(){
+  public static void tearDown() {
     TigerDirector.testUninitialize();
   }
 

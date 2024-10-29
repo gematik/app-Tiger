@@ -109,7 +109,8 @@ public class TigerGlobalConfigurationController {
     var oldConfiguration = getGlobalConfiguration();
     try {
       TigerGlobalConfiguration.dangerouslyDeleteAllProperties();
-      TigerGlobalConfiguration.readFromYaml(configurationAsYaml, ConfigurationValuePrecedence.RUNTIME_EXPORT, "");
+      TigerGlobalConfiguration.readFromYaml(
+          configurationAsYaml, ConfigurationValuePrecedence.RUNTIME_EXPORT, "");
     } catch (Exception e) {
       TigerGlobalConfiguration.dangerouslyDeleteAllProperties();
       oldConfiguration.forEach(

@@ -182,7 +182,10 @@ public class ZionRequestExecutor {
     return responseBuilder.body(
         serializationResult
             .map(RbelSerializationResult::getContent)
-            .map(content -> applyEncodingIfAny(content, response.getResponse().getEncoding(), responseBuilder))
+            .map(
+                content ->
+                    applyEncodingIfAny(
+                        content, response.getResponse().getEncoding(), responseBuilder))
             .orElse(null));
   }
 

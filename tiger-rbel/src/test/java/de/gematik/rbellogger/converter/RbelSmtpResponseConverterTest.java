@@ -42,7 +42,8 @@ class RbelSmtpResponseConverterTest {
 
   @BeforeEach
   void init() {
-    converter = RbelLogger.build(new RbelConfiguration().activateConversionFor("smtp")).getRbelConverter();
+    converter =
+        RbelLogger.build(new RbelConfiguration().activateConversionFor("smtp")).getRbelConverter();
   }
 
   @Test
@@ -75,8 +76,7 @@ class RbelSmtpResponseConverterTest {
 
   @Test
   void shouldConvertMultilineSmtpResponse() {
-    String body =
-        """
+    String body = """
         line1\r
         line2\r
         line3\r

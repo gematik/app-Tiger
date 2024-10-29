@@ -21,37 +21,36 @@ import de.gematik.rbellogger.data.facet.RbelBase64Facet;
 import de.gematik.rbellogger.data.facet.RbelJsonFacet;
 import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.data.facet.RbelXmlFacet;
+import de.gematik.rbellogger.util.RbelContent;
 import java.util.Base64;
-import java.util.Base64.Decoder;
 import java.util.Optional;
 
 public class RbelBase64JsonConverter extends RbelJsonConverter {
 
   @Override
   public void consumeElement(RbelElement rbel, RbelConverter context) {
-    if (rbel.getRawContent().length == 0) {
+    if (rbel.getSize() == 0) {
       return;
     }
-    safeConvertBase64Using(rbel.getRawContent(), Base64.getDecoder(), context, rbel)
-        .or(
-            () ->
-                safeConvertBase64Using(rbel.getRawContent(), Base64.getUrlDecoder(), context, rbel))
+    var content = rbel.getContent();
+    safeConvertBase64Using(Base64.getDecoder(), content, context, rbel)
+        .or(() -> safeConvertBase64Using(Base64.getUrlDecoder(), content, context, rbel))
         .ifPresent(rbel::addFacet);
   }
 
   private Optional<RbelBase64Facet> safeConvertBase64Using(
-      byte[] input, Decoder decoder, RbelConverter context, RbelElement parentNode) {
+      Base64.Decoder decoder, RbelContent input, RbelConverter context, RbelElement parentNode) {
     final Optional<RbelElement> rawElement =
         Optional.ofNullable(input)
             .map(
                 i -> {
                   try {
-                    return decoder.decode(i);
-                  } catch (IllegalArgumentException e) {
+                    return RbelContent.from(decoder.wrap(input.toInputStream()));
+                  } catch (Exception e) {
                     return null;
                   }
                 })
-            .map(data -> new RbelElement(data, parentNode));
+            .map(data -> RbelElement.builder().content(data).parentNode(parentNode).build());
     if (rawElement.isEmpty()) {
       return Optional.empty();
     }

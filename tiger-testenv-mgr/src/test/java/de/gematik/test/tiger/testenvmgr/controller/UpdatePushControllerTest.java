@@ -31,7 +31,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -42,6 +41,7 @@ import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
@@ -50,6 +50,7 @@ import org.springframework.web.socket.sockjs.client.WebSocketTransport;
 
 @Slf4j
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@DirtiesContext
 @ResetTigerConfiguration
 class UpdatePushControllerTest {
 
@@ -77,7 +78,7 @@ class UpdatePushControllerTest {
                   @Override
                   public void handleFrame(StompHeaders headers, Object payload) {
                     log.info("Received Frame {}", payload);
-                    var received = ((TestEnvStatusDto)payload).getFeatureMap();
+                    var received = ((TestEnvStatusDto) payload).getFeatureMap();
                     receivedMessage.set(received.toString());
                   }
                 };

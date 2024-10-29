@@ -18,7 +18,9 @@ package de.gematik.rbellogger.converter;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.dataformat.cbor.databind.CBORMapper;
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
+import java.io.IOException;
 
 /**
  * Converter for CBOR(Concise Binary Object Representation) format.
@@ -34,5 +36,10 @@ public class RbelCborConverter extends AbstractJacksonConverter<RbelCborFacet> {
   @Override
   RbelCborFacet buildFacetForNode(JsonNode node) {
     return RbelCborFacet.builder().node(node).build();
+  }
+
+  @Override
+  JsonNode convertContentUsingJackson(RbelElement target) throws IOException {
+    return getMapper().readTree(target.getContent().toInputStream());
   }
 }

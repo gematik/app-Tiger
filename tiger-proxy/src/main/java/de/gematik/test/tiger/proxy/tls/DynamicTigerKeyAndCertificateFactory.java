@@ -16,11 +16,11 @@
 
 package de.gematik.test.tiger.proxy.tls;
 
-import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
-import de.gematik.test.tiger.mockserver.socket.tls.bouncycastle.AbstractKeyAndCertificateFactory;
+import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -31,6 +31,8 @@ import java.security.interfaces.RSAPrivateKey;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -54,7 +56,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.IPAddress;
 
 @Slf4j
-public class DynamicTigerKeyAndCertificateFactory extends AbstractKeyAndCertificateFactory {
+public class DynamicTigerKeyAndCertificateFactory implements KeyAndCertificateFactory {
 
   static {
     TigerSecurityProviderInitialiser.initialize();
@@ -63,9 +65,8 @@ public class DynamicTigerKeyAndCertificateFactory extends AbstractKeyAndCertific
   private static final Duration MAXIMUM_VALIDITY = Duration.ofDays(397);
 
   private final TigerPkiIdentity caIdentity;
-  private final List<X509Certificate> certificateChain;
   private final String serverName;
-  private final List<String> serverAlternativeNames;
+  private final Set<String> serverAlternativeNames;
   private TigerPkiIdentity eeIdentity;
   private List<String> hostsCoveredByGeneratedIdentity = List.of();
   private final MockServerConfiguration mockServerConfiguration;
@@ -75,11 +76,10 @@ public class DynamicTigerKeyAndCertificateFactory extends AbstractKeyAndCertific
       TigerProxyConfiguration tigerProxyConfiguration,
       TigerPkiIdentity caIdentity,
       MockServerConfiguration mockServerConfiguration) {
-    this.certificateChain = new ArrayList<>();
     this.caIdentity = caIdentity;
     this.eeIdentity = null;
     this.serverName = tigerProxyConfiguration.getTls().getDomainName();
-    this.serverAlternativeNames = new ArrayList<>();
+    this.serverAlternativeNames = new ConcurrentSkipListSet<>();
     if (tigerProxyConfiguration.getTls().getAlternativeNames() != null) {
       serverAlternativeNames.addAll(tigerProxyConfiguration.getTls().getAlternativeNames());
     }
@@ -87,46 +87,30 @@ public class DynamicTigerKeyAndCertificateFactory extends AbstractKeyAndCertific
   }
 
   @Override
-  public X509Certificate certificateAuthorityX509Certificate() {
-    buildAndSavePrivateKeyAndX509Certificate();
-    return this.caIdentity.getCertificate();
-  }
-
-  @Override
-  public PrivateKey privateKey() {
-    buildAndSavePrivateKeyAndX509Certificate();
-    return eeIdentity.getPrivateKey();
-  }
-
-  @Override
-  public X509Certificate x509Certificate() {
-    buildAndSavePrivateKeyAndX509Certificate();
-    return eeIdentity.getCertificate();
-  }
-
-  @Override
-  public void buildAndSavePrivateKeyAndX509Certificate() {
+  public TigerPkiIdentity buildAndSavePrivateKeyAndX509Certificate(String hostname) {
     assureCurrentCertificateCoversAllNecessaryHosts();
     if (eeIdentity == null) {
-      try {
-        KeyPair keyPair = this.generateRsaKeyPair(2048);
-        X509Certificate x509Certificate =
-            this.createCertificateSignedByCa(
-                keyPair.getPublic(),
-                this.caIdentity.getCertificate(),
-                this.caIdentity.getPrivateKey());
+      generateNewIdentity();
+    }
+    return eeIdentity;
+  }
 
-        eeIdentity = new TigerPkiIdentity(x509Certificate, keyPair.getPrivate());
+  private void generateNewIdentity() {
+    try {
+      KeyPair keyPair = this.generateRsaKeyPair(2048);
+      X509Certificate x509Certificate =
+          this.createCertificateSignedByCa(
+              keyPair.getPublic(),
+              this.caIdentity.getCertificate(),
+              this.caIdentity.getPrivateKey());
 
-        certificateChain.clear();
-        certificateChain.add(x509Certificate);
-        certificateChain.add(caIdentity.getCertificate());
-      } catch (RuntimeException
-          | GeneralSecurityException
-          | IOException
-          | OperatorCreationException e) {
-        log.warn("exception while generating private key and X509 certificate", e);
-      }
+      eeIdentity = new TigerPkiIdentity(x509Certificate, keyPair.getPrivate());
+    } catch (RuntimeException
+        | GeneralSecurityException
+        | IOException
+        | OperatorCreationException e) {
+      throw new IllegalArgumentException(
+          "exception while generating private key and X509 certificate", e);
     }
   }
 
@@ -138,12 +122,6 @@ public class DynamicTigerKeyAndCertificateFactory extends AbstractKeyAndCertific
         return;
       }
     }
-  }
-
-  @Override
-  public List<X509Certificate> certificateChain() {
-    buildAndSavePrivateKeyAndX509Certificate();
-    return certificateChain;
   }
 
   private X509Certificate createCertificateSignedByCa(
@@ -168,7 +146,7 @@ public class DynamicTigerKeyAndCertificateFactory extends AbstractKeyAndCertific
         Extension.subjectKeyIdentifier, false, createNewSubjectKeyIdentifier(publicKey));
     builder.addExtension(Extension.basicConstraints, false, new BasicConstraints(false));
 
-    hostsCoveredByGeneratedIdentity = new ArrayList<>();
+    hostsCoveredByGeneratedIdentity = new CopyOnWriteArrayList<>();
     hostsCoveredByGeneratedIdentity.addAll(serverAlternativeNames);
     hostsCoveredByGeneratedIdentity.addAll(
         mockServerConfiguration.sslSubjectAlternativeNameDomains());
@@ -225,15 +203,6 @@ public class DynamicTigerKeyAndCertificateFactory extends AbstractKeyAndCertific
       SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(seq);
       return new BcX509ExtensionUtils().createSubjectKeyIdentifier(info);
     }
-  }
-
-  @Override
-  public boolean certificateNotYetCreated() {
-    return eeIdentity == null;
-  }
-
-  public void resetEeCertificate() {
-    eeIdentity = null;
   }
 
   public void addAlternativeName(String host) {

@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 import de.gematik.rbellogger.key.IdentityBackedRbelKey;
 import de.gematik.rbellogger.key.RbelKeyManager;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -50,9 +51,9 @@ class EmailDecryptionTest {
 
     var encData = Files.readAllBytes(Paths.get("src/test/resources/crypto/encrypted0.encrypted"));
 
-    byte[] decData1 = EmailDecryption.decrypt(encData, keys1).orElse(null);
+    byte[] decData1 = EmailDecryption.decrypt(RbelContent.of(encData), keys1).orElse(null);
 
-    byte[] decData2 = EmailDecryption.decrypt(encData, keys2).orElse(null);
+    byte[] decData2 = EmailDecryption.decrypt(RbelContent.of(encData), keys2).orElse(null);
 
     assertArrayEquals(message, decData1);
     assertArrayEquals(message, decData2);
@@ -64,7 +65,7 @@ class EmailDecryptionTest {
 
     var enc = Files.readAllBytes(Paths.get("src/test/resources/crypto/encrypted1.encrypted"));
 
-    var decryptData = EmailDecryption.decrypt(enc, keys).orElse(null);
+    var decryptData = EmailDecryption.decrypt(RbelContent.of(enc), keys).orElse(null);
 
     assertArrayEquals(
         BYTES,
@@ -78,7 +79,7 @@ class EmailDecryptionTest {
 
     var enc = Files.readAllBytes(Paths.get("src/test/resources/crypto/encrypted2.encrypted"));
 
-    var decryptData = EmailDecryption.decrypt(enc, signer).orElse(null);
+    var decryptData = EmailDecryption.decrypt(RbelContent.of(enc), signer).orElse(null);
 
     assertArrayEquals(
         BYTES,

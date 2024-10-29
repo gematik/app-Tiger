@@ -208,36 +208,42 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
         .isEqualTo(666);
   }
 
-  @Test
-  void routingDecisionViaHostHeader() {
+  @ParameterizedTest
+  @CsvSource(
+      value = {
+        ".*.google.de; .*.google.at; www.google.de",
+        "myHost; anotherHost; myHost",
+        "myHost:80; myHost:443; myHost:80",
+        "myHost; myHost:80; myHost",
+        "myHost; myHost:443; myHost:80",
+        "anotherHost, myHost:80; myHost:443; myHost:80",
+        "myHost; myHost, anotherHost:80; myHost:80"
+      },
+      delimiter = ';')
+  void routingDecisionViaHostHeader(String hostsRoute1, String hostsRoute2, String hostHeader) {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
+            .activateForwardAllLogging(false)
             .proxyRoutes(
                 List.of(
                     TigerRoute.builder()
                         .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort + "/foobar")
-                        .criterions(List.of("$.header.host =~ '.*.google.de'"))
+                        .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar")
+                        .hosts(List.of(hostsRoute2.split("\\,")))
                         .build(),
                     TigerRoute.builder()
                         .from("/")
-                        .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar")
-                        .hosts(List.of(".*.google.at"))
+                        .to("http://localhost:" + fakeBackendServerPort + "/foobar")
+                        .hosts(List.of(hostsRoute1.split("\\,")))
                         .build()))
             .build());
 
     assertThat(
             Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/")
-                .header("host", "www.google.de")
+                .header("host", hostHeader)
                 .asJson()
                 .getStatus())
         .isEqualTo(666); // /foobar.*
-    assertThat(
-            Unirest.get("http://localhost:" + tigerProxy.getProxyPort())
-                .header("host", "www.google.at")
-                .asJson()
-                .getStatus())
-        .isEqualTo(777); // /deep/foobar.*
   }
 
   @Test

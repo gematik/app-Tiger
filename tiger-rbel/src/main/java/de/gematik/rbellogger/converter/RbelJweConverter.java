@@ -25,8 +25,6 @@ import de.gematik.rbellogger.key.RbelKey;
 import java.util.Optional;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jose4j.jwa.AlgorithmConstraints;
 import org.jose4j.jwe.JsonWebEncryption;
@@ -101,17 +99,9 @@ public class RbelJweConverter implements RbelConverterPlugin {
 
   @SneakyThrows
   private Optional<JsonWebEncryption> initializeJwe(RbelElement rbel) {
-    var dotIndexes = ArrayUtils.indexesOf(rbel.getRawContent(), (byte) '.');
-    var dotCount = dotIndexes.cardinality();
-    if (dotCount < MAX_JWE_DOT_SEPARATOR_COUNT - 2 || dotCount > MAX_JWE_DOT_SEPARATOR_COUNT) {
-      log.atTrace()
-          .addArgument(dotIndexes)
-          .addArgument(
-              () ->
-                  StringUtils.abbreviate(
-                      rbel.getRawStringContent(),
-                      RbelConverter.RAW_STRING_MAX_TRACE_LENGTH.getValueOrDefault()))
-          .log("Skipping element with dots at indices {}:\n{}");
+    int dotCount =
+        rbel.getContent().countOccurrencesUpTo((byte) '.', MAX_JWE_DOT_SEPARATOR_COUNT + 1);
+    if (!(MAX_JWE_DOT_SEPARATOR_COUNT - 2 <= dotCount && dotCount <= MAX_JWE_DOT_SEPARATOR_COUNT)) {
       return Optional.empty();
     }
 

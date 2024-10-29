@@ -23,7 +23,10 @@ import java.security.spec.ECFieldFp;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.EllipticCurve;
+import java.util.List;
+import org.jose4j.jwa.AlgorithmFactory;
 import org.jose4j.jwa.AlgorithmFactoryFactory;
+import org.jose4j.jws.JsonWebSignatureAlgorithm;
 import org.jose4j.keys.EllipticCurves;
 
 public class BrainpoolCurves {
@@ -107,21 +110,29 @@ public class BrainpoolCurves {
     if (initialized) {
       return;
     }
+    synchronized (BrainpoolCurves.class) {
+      if (initialized) {
+        return;
+      }
 
-    addCurve(BP_256, BP256);
-    addCurve(BP_384, BP384);
-    addCurve(BP_512, BP512);
+      try {
+        addCurve(BP_256, BP256);
+        addCurve(BP_384, BP384);
+        addCurve(BP_512, BP512);
 
-    AlgorithmFactoryFactory.getInstance()
-        .getJwsAlgorithmFactory()
-        .registerAlgorithm(new BrainpoolAlgorithmSuites.EcdsaBP256R1UsingSha256());
-    AlgorithmFactoryFactory.getInstance()
-        .getJwsAlgorithmFactory()
-        .registerAlgorithm(new BrainpoolAlgorithmSuites.EcdsaBP384R1UsingSha384());
-    AlgorithmFactoryFactory.getInstance()
-        .getJwsAlgorithmFactory()
-        .registerAlgorithm(new BrainpoolAlgorithmSuites.EcdsaBP512R1UsingSha512());
+        AlgorithmFactory<JsonWebSignatureAlgorithm> jwsAlgorithmFactory =
+            AlgorithmFactoryFactory.getInstance().getJwsAlgorithmFactory();
+        List.of(
+                new BrainpoolAlgorithmSuites.EcdsaBP256R1UsingSha256(),
+                new BrainpoolAlgorithmSuites.EcdsaBP384R1UsingSha384(),
+                new BrainpoolAlgorithmSuites.EcdsaBP512R1UsingSha512())
+            .forEach(jwsAlgorithmFactory::registerAlgorithm);
 
-    initialized = true;
+        initialized = true;
+      } catch (final Exception e) {
+        initialized = false;
+        throw e;
+      }
+    }
   }
 }

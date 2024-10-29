@@ -41,7 +41,8 @@ public class ProxyConfigurationConverter {
         .flatMap(ProxyConfigurationConverter::createMockServerProxyConfiguration);
   }
 
-  public static MockServerConfiguration convertToMockServerConfiguration(TigerProxyConfiguration tpConfig) {
+  public static MockServerConfiguration convertToMockServerConfiguration(
+      TigerProxyConfiguration tpConfig) {
     MockServerConfiguration config = MockServerConfiguration.configuration();
     convertForwardProxyConfigurationToMockServerConfiguration(tpConfig)
         .ifPresent(

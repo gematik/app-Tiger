@@ -108,7 +108,7 @@ class RbelPathExecutorTest {
     "$.body..nbf, $.body.body.nbf.content", // recursive descent
     "$..[?(path=~'.*scopes_supported\\.\\d')], $.body.body.scopes_supported.*", // complex JEXL
     "$.body.body..[?(path=~'.*scopes_supported\\.\\d')], $.body.body.scopes_supported.*", // complex
-                                                                                          // JEXL
+    // JEXL
     "$.body.body.['nbf'|'foobar'], $.body.body.nbf", // alternate keys
     "$.body.body.['foobar'|'nbf'], $.body.body.nbf" // alternate keys
   })

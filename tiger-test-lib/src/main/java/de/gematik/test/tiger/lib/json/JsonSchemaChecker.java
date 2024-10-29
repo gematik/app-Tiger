@@ -60,8 +60,8 @@ public class JsonSchemaChecker {
     public JsonSchemaAssertionError(String message) {
       super(message);
     }
-
   }
+
   public static class JsonSchemaProcessingError extends RuntimeException {
 
     public JsonSchemaProcessingError(String message, Throwable cause) {

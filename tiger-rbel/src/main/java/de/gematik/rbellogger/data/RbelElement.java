@@ -41,36 +41,117 @@ public class RbelElement extends RbelPathAble {
   }
 
   private final String uuid;
-  private final byte[] rawContent;
+  private final RbelContent content;
+
   private final RbelElement parentNode;
   private final Queue<RbelFacet> facets = new ConcurrentLinkedQueue<>();
   @Setter private Optional<Charset> charset;
 
   private final long size;
 
+  public byte[] getRawContent() {
+    return content.isNull() ? null : content.toByteArray();
+  }
+
+  public RbelElement() {
+    this(null, null);
+  }
+
+  public RbelElement(RbelElement parentNode) {
+    this(null, parentNode);
+  }
+
   public RbelElement(byte[] rawContent, RbelElement parentNode) {
     this(null, rawContent, parentNode, Optional.empty());
+  }
+
+  public RbelElement(RbelContent rawContent) {
+    this(null, rawContent, null, Optional.empty());
   }
 
   public RbelElement(byte[] rawContent, RbelElement parentNode, Optional<Charset> charset) {
     this(null, rawContent, parentNode, charset);
   }
 
-  @Builder(toBuilder = true)
   public RbelElement(
-      @Nullable String uuid, byte[] rawContent, RbelElement parentNode, Optional<Charset> charset) {
+      String uuid, byte[] rawContent, RbelElement parentNode, Optional<Charset> charset) {
+    this(uuid, RbelContent.of(rawContent), parentNode, charset);
+  }
+
+  public RbelElement(
+      @Nullable String uuid,
+      RbelContent content,
+      RbelElement parentNode,
+      Optional<Charset> charset) {
     if (StringUtils.isNotEmpty(uuid)) {
       this.uuid = uuid;
     } else {
       this.uuid = UUID.randomUUID().toString();
     }
-    this.rawContent = rawContent;
+    this.content = content;
     this.parentNode = parentNode;
     this.charset = Objects.requireNonNullElseGet(charset, Optional::empty);
-    if (rawContent != null) {
-      this.size = rawContent.length;
-    } else {
-      this.size = 0L;
+    this.size = content.size();
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public Builder toBuilder() {
+    return new Builder()
+        .uuid(uuid)
+        .content(content)
+        .parentNode(parentNode)
+        .charset(charset.orElse(null));
+  }
+
+  public static class Builder {
+    String uuid;
+    RbelContent content = RbelContent.builder().build();
+    RbelElement parentNode;
+    Optional<Charset> charset;
+
+    public Builder uuid(String uuid) {
+      this.uuid = uuid;
+      return this;
+    }
+
+    public Builder rawContent(byte[] rawContent) {
+      if (rawContent != null) {
+        this.content = RbelContent.of(rawContent);
+      } else {
+        this.content = RbelContent.builder().build();
+      }
+      return this;
+    }
+
+    public Builder content(RbelContent content) {
+      if (content != null) {
+        this.content = content;
+      } else {
+        this.content = RbelContent.builder().build();
+      }
+      return this;
+    }
+
+    public Builder parentNode(RbelElement parentNode) {
+      this.parentNode = parentNode;
+      return this;
+    }
+
+    public Builder charset(Charset charset) {
+      this.charset = Optional.ofNullable(charset);
+      return this;
+    }
+
+    public Builder charset(Optional<Charset> charset) {
+      this.charset = charset;
+      return this;
+    }
+
+    public RbelElement build() {
+      return new RbelElement(uuid, content, parentNode, charset);
     }
   }
 
@@ -184,10 +265,10 @@ public class RbelElement extends RbelPathAble {
   @Override
   @Nullable
   public String getRawStringContent() {
-    if (rawContent == null) {
+    if (content.isNull()) {
       return null;
     } else {
-      return new String(rawContent, getElementCharset());
+      return new String(getRawContent(), getElementCharset());
     }
   }
 
@@ -372,8 +453,8 @@ public class RbelElement extends RbelPathAble {
     }
   }
 
-  public static List<RbelElement>  findAllNestedElementsWithFacet(RbelElement el,
-      Class<? extends RbelFacet> rbelFacetClass) {
+  public static List<RbelElement> findAllNestedElementsWithFacet(
+      RbelElement el, Class<? extends RbelFacet> rbelFacetClass) {
     List<RbelElement> result = new ArrayList<>();
     if (el.hasFacet(rbelFacetClass)) {
       result.add(el);

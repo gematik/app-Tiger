@@ -43,7 +43,6 @@ import java.util.stream.Stream;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
@@ -101,7 +100,9 @@ class TracingResilienceTest {
       // in WHILE aggregating and receiving proxy are trying to catch up.
       giveAggregatingProxyTimeToCatchUpIfRunning(testEnvMgr, i);
       for (int j = 0; j < MESSAGES_PER_ROUND; j++) {
-        var randomMarker = "messageNumber" + (i*MESSAGES_PER_ROUND + j);//RandomStringUtils.randomAlphanumeric(20);
+        var randomMarker =
+            "messageNumber"
+                + (i * MESSAGES_PER_ROUND + j); // RandomStringUtils.randomAlphanumeric(20);
         log.info("Sending message {}", randomMarker);
         instance
             .get(

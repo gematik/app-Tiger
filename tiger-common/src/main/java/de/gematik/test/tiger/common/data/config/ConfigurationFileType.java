@@ -42,7 +42,7 @@ public enum ConfigurationFileType {
       final Properties properties = new Properties();
       properties.load(new StringReader(str));
       return properties.entrySet().stream()
-        .collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().toString()));
+          .collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().toString()));
     } catch (IOException e) {
       throw new TigerConfigurationException("Error while loading properties file", e);
     }

@@ -16,8 +16,8 @@
 
 package de.gematik.rbellogger.converter;
 
-import static de.gematik.rbellogger.util.EmailConversionUtils.CRLF;
 import static de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet.findAndPairMatchingRequest;
+import static de.gematik.rbellogger.util.EmailConversionUtils.CRLF;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelResponseFacet;
@@ -70,9 +70,20 @@ public class RbelSmtpResponseConverter implements RbelConverterPlugin {
     return Optional.ofNullable(element.getRawContent())
         .filter(c -> c.length > MIN_SMTP_RESPONSE_LENGTH)
         .filter(EmailConversionUtils::endsWithCrLf)
+        .filter(this::startsWithResponseCode)
         .map(c -> new String(c, StandardCharsets.UTF_8))
         .filter(s -> SMTP_RESPONSE.matcher(s).matches())
         .flatMap(s -> parseSmtpResponse(element, s));
+  }
+
+  private boolean startsWithResponseCode(byte[] content) {
+    if (!(Character.isDigit(content[0])
+        && Character.isDigit(content[1])
+        && Character.isDigit(content[2]))) {
+      return false;
+    }
+    int c = content[3];
+    return c == ' ' || c == '\r' || c == '-';
   }
 
   private Optional<RbelSmtpResponseFacet> parseSmtpResponse(RbelElement element, String response) {

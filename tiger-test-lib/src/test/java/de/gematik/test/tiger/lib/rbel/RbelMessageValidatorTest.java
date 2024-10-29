@@ -125,7 +125,7 @@ class RbelMessageValidatorTest extends AbstractRbelMessageValidatorTest {
   }
 
   private RbelElement buildRequestWithPath(final String path) {
-    final RbelElement rbelElement = new RbelElement(null, null);
+    final RbelElement rbelElement = new RbelElement();
     rbelElement.addFacet(
         RbelHttpRequestFacet.builder().path(new RbelElement(path.getBytes(), null)).build());
     return rbelElement;

@@ -19,7 +19,6 @@ package de.gematik.rbellogger.converter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelXmlFacet;
-import de.gematik.rbellogger.util.RbelArrayUtils;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -32,8 +31,9 @@ class RbelHtmlConverter {
   private static final byte[] HTML_END_TAG = "</html>".getBytes();
 
   Optional<Document> parseHtml(RbelElement element) {
-    var rawContent = element.getRawContent();
-    if (!RbelArrayUtils.endsTrimmedWith(rawContent, HTML_END_TAG, true)) {
+    if (!element
+        .getContent()
+        .endsTrimmedWithIgnoreCase(HTML_END_TAG, element.getElementCharset())) {
       return Optional.empty();
     }
     return Optional.ofNullable(element.getRawStringContent()).map(String::trim).map(Jsoup::parse);

@@ -21,10 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelPop3ResponseFacet;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
-
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;

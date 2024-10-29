@@ -18,11 +18,10 @@ package de.gematik.test.tiger.mockserver.netty.proxy.relay;
 
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.closeOnFlush;
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.connectionClosedException;
-import static de.gematik.test.tiger.mockserver.model.Protocol.HTTP_2;
 import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.isSslEnabledDownstream;
-import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.nettySslContextFactory;
-import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.getALPNProtocol;
+import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.getAlpnProtocol;
 
+import de.gematik.test.tiger.mockserver.netty.MockServer;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -39,9 +38,12 @@ public class UpstreamProxyRelayHandler extends SimpleChannelInboundHandler<FullH
 
   private final Channel upstreamChannel;
   private final Channel downstreamChannel;
+  private final MockServer server;
 
-  public UpstreamProxyRelayHandler(Channel upstreamChannel, Channel downstreamChannel) {
+  public UpstreamProxyRelayHandler(
+      MockServer server, Channel upstreamChannel, Channel downstreamChannel) {
     super(false);
+    this.server = server;
     this.upstreamChannel = upstreamChannel;
     this.downstreamChannel = downstreamChannel;
   }
@@ -59,8 +61,9 @@ public class UpstreamProxyRelayHandler extends SimpleChannelInboundHandler<FullH
       downstreamChannel
           .pipeline()
           .addFirst(
-              nettySslContextFactory(ctx.channel())
-                  .createClientSslContext(HTTP_2.equals(getALPNProtocol(ctx)))
+              server
+                  .getClientSslContextFactory()
+                  .createClientSslContext(getAlpnProtocol(ctx))
                   .newHandler(ctx.alloc()));
     }
     downstreamChannel

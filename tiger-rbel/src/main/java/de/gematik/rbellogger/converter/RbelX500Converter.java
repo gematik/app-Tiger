@@ -22,30 +22,32 @@ import de.gematik.rbellogger.data.facet.RbelMapFacet;
 import de.gematik.rbellogger.data.facet.RbelValueFacet;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.x500.style.X500NameTokenizer;
-import org.bouncycastle.jce.X509Principal;
+import org.bouncycastle.asn1.x509.X509Name;
 
 @Slf4j
+@SuppressWarnings("java:S1874")
 public class RbelX500Converter implements RbelConverterPlugin {
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
-    try {
-      if (element.getFacets().isEmpty()) {
-        var rdnMap = new RbelMultiMap<RbelElement>();
-        final X500NameTokenizer nameTokenizer =
-            new X500NameTokenizer(new X509Principal(element.getRawContent()).toString());
+    if (element.getFacets().isEmpty()) {
+      var rdnMap = new RbelMultiMap<RbelElement>();
+      try (var asnInput = new ASN1InputStream(element.getContent().toInputStream())) {
+        String principal = new X509Name(ASN1Sequence.getInstance(asnInput.readObject())).toString();
+        final X500NameTokenizer nameTokenizer = new X500NameTokenizer(principal);
         while (nameTokenizer.hasMoreTokens()) {
           var token = nameTokenizer.nextToken().split("=");
           rdnMap.put(token[0], context.convertElement(token[1], element));
         }
         if (!rdnMap.isEmpty()) {
           element.addFacet(new RbelMapFacet(rdnMap));
-          element.addFacet(
-              new RbelValueFacet<>(new X509Principal(element.getRawContent()).toString()));
+          element.addFacet(new RbelValueFacet<>(principal));
         }
+      } catch (RuntimeException | IOException e) {
+        // swallow
       }
-    } catch (RuntimeException | IOException e) {
-      // swallow
     }
   }
 }

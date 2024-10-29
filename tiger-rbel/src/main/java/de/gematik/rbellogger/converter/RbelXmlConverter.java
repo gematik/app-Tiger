@@ -16,9 +16,6 @@
 
 package de.gematik.rbellogger.converter;
 
-import static de.gematik.rbellogger.util.RbelArrayUtils.endsTrimmedWith;
-import static de.gematik.rbellogger.util.RbelArrayUtils.startsTrimmedWith;
-
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.*;
@@ -49,8 +46,8 @@ public class RbelXmlConverter implements RbelConverterPlugin {
 
   @Override
   public void consumeElement(final RbelElement rbel, final RbelConverter context) {
-    final var rawContent = rbel.getRawContent();
-    if (!(startsTrimmedWith(rawContent, OPEN_TAG) && endsTrimmedWith(rawContent, CLOSE_TAG))) {
+    final var content = rbel.getContent();
+    if (!(content.startsTrimmedWith(OPEN_TAG) && content.endsTrimmedWith(CLOSE_TAG))) {
       return;
     }
     try {

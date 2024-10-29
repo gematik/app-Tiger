@@ -50,12 +50,13 @@ public class GenericSymmetricKey {
         String.format(
             "AES_CBC: encKey: %s encrypt: %s cryptogramLength: %s",
             Arrays.toString(encKey), encrypt, cryptogram.length));
-    var alg = switch (encKey.length) {
-      case 16 -> EncryptionAlgorithmIdentifier.AES128;
-      case 24 -> EncryptionAlgorithmIdentifier.AES192;
-      case 32 -> EncryptionAlgorithmIdentifier.AES256;
-      default -> throw new UnsupportedOperationException("Unexpected encryption key length");
-    };
+    var alg =
+        switch (encKey.length) {
+          case 16 -> EncryptionAlgorithmIdentifier.AES128;
+          case 24 -> EncryptionAlgorithmIdentifier.AES192;
+          case 32 -> EncryptionAlgorithmIdentifier.AES256;
+          default -> throw new UnsupportedOperationException("Unexpected encryption key length");
+        };
 
     resultValue =
         BCSymmetric.cipherOperation(

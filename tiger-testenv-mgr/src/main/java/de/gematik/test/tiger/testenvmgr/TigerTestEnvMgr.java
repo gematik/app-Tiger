@@ -202,7 +202,9 @@ public class TigerTestEnvMgr
 
   private static void addDefaults() {
     TigerGlobalConfiguration.putValue(
-        "tiger.tigerProxy.parsingShouldBlockCommunication", "true", ConfigurationValuePrecedence.DEFAULTS);
+        "tiger.tigerProxy.parsingShouldBlockCommunication",
+        "true",
+        ConfigurationValuePrecedence.DEFAULTS);
   }
 
   public void startLocalTigerProxyIfActivated() {

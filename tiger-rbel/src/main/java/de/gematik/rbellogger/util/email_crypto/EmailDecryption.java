@@ -19,10 +19,12 @@ package de.gematik.rbellogger.util.email_crypto;
 import de.gematik.rbellogger.key.IdentityBackedRbelKey;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.key.RbelKeyManager;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.rbellogger.util.email_crypto.elliptic_curve.BcException;
 import de.gematik.rbellogger.util.email_crypto.elliptic_curve.ParseException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.security.*;
@@ -65,17 +67,17 @@ public class EmailDecryption {
 
   private static final String OID_AES256_GCM = "2.16.840.1.101.3.4.1.46";
 
-  public static Optional<byte[]> decrypt(byte[] message, RbelKeyManager keyManager)
+  public static Optional<byte[]> decrypt(RbelContent message, RbelKeyManager keyManager)
       throws CMSException {
-    var oAuthEnv = new CMSAuthEnvelopedData(message);
+    var oAuthEnv = new CMSAuthEnvelopedData(message.toInputStream());
     AlgorithmIdentifier algCms = getAlgorithm(oAuthEnv);
     if (algCms.getAlgorithm().getId().equals(OID_AES256_GCM)) {
       return decryptOidAes256Gcm(oAuthEnv, algCms, keyManager);
     }
-    return decryptDefault(message, keyManager);
+    return decryptDefault(message.toInputStream(), keyManager);
   }
 
-  private static Optional<byte[]> decryptDefault(byte[] message, RbelKeyManager keyManager)
+  private static Optional<byte[]> decryptDefault(InputStream message, RbelKeyManager keyManager)
       throws CMSException {
     CMSEnvelopedData cmsEnvelopedData = new CMSEnvelopedData(message);
     Collection<RecipientInformation> recipients =

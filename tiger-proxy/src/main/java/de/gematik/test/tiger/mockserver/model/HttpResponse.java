@@ -17,12 +17,10 @@
 package de.gematik.test.tiger.mockserver.model;
 
 import static de.gematik.test.tiger.mockserver.model.HttpStatusCode.NOT_FOUND_404;
-import static de.gematik.test.tiger.mockserver.model.HttpStatusCode.OK_200;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Multimap;
 import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
-import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.List;
 import lombok.Data;
@@ -33,31 +31,17 @@ import lombok.EqualsAndHashCode;
  */
 @EqualsAndHashCode(callSuper = false)
 @Data
-public class HttpResponse extends Action<HttpResponse>
-    implements HttpMessage<HttpResponse, BodyWithContentType> {
+public class HttpResponse extends HttpMessage<HttpResponse> implements Action {
   private int hashCode;
   private Integer statusCode;
   private String reasonPhrase;
-  private BodyWithContentType body;
   private Headers headers;
-  private Cookies cookies;
   private Integer streamId = null;
+  private String expectationId;
 
   /** Static builder to create a response. */
   public static HttpResponse response() {
     return new HttpResponse();
-  }
-
-  /**
-   * Static builder to create a response with a 200 status code and the string response body.
-   *
-   * @param body a string
-   */
-  public static HttpResponse response(String body) {
-    return new HttpResponse()
-        .withStatusCode(OK_200.code())
-        .withReasonPhrase(OK_200.reasonPhrase())
-        .withBody(body);
   }
 
   /** Static builder to create a not found response. */
@@ -92,111 +76,18 @@ public class HttpResponse extends Action<HttpResponse>
     return this;
   }
 
-  /**
-   * Set response body to return as a string response body. The character set will be determined by
-   * the Content-Type header on the response. To force the character set, use {@link
-   * #withBody(String, Charset)}.
-   *
-   * @param body a string
-   */
-  public HttpResponse withBody(String body) {
-    if (body != null) {
-      this.body = new StringBody(body);
-      this.hashCode = 0;
-    }
-    return this;
-  }
-
-  /**
-   * Set response body to return a string response body with the specified encoding. <b>Note:</b>
-   * The character set of the response will be forced to the specified charset, even if the
-   * Content-Type header specifies otherwise.
-   *
-   * @param body a string
-   * @param charset character set the string will be encoded in
-   */
-  public HttpResponse withBody(String body, Charset charset) {
-    if (body != null) {
-      this.body = new StringBody(body, charset);
-      this.hashCode = 0;
-    }
-    return this;
-  }
-
-  /**
-   * Set response body to return a string response body with the specified encoding. <b>Note:</b>
-   * The character set of the response will be forced to the specified charset, even if the
-   * Content-Type header specifies otherwise.
-   *
-   * @param body a string
-   * @param contentType media type, if charset is included this will be used for encoding string
-   */
-  public HttpResponse withBody(String body, MediaType contentType) {
-    if (body != null) {
-      this.body = new StringBody(body, contentType);
-      this.hashCode = 0;
-    }
-    return this;
-  }
-
-  /**
-   * Set response body to return as binary such as a pdf or image
-   *
-   * @param body a byte array
-   */
-  public HttpResponse withBody(byte[] body) {
-    this.body = new BinaryBody(body);
-    this.hashCode = 0;
-    return this;
-  }
-
-  /**
-   * Set the body to return for example:
-   *
-   * <p>string body: - exact("<html><head/><body><div>a simple string body</div></body></html>");
-   *
-   * <p>or
-   *
-   * <p>- new StringBody("<html><head/><body><div>a simple string body</div></body></html>")
-   *
-   * <p>binary body: -
-   * binary(IOUtils.readFully(getClass().getClassLoader().getResourceAsStream("example.pdf"),
-   * 1024));
-   *
-   * <p>or
-   *
-   * <p>- new
-   * BinaryBody(IOUtils.readFully(getClass().getClassLoader().getResourceAsStream("example.pdf"),
-   * 1024));
-   *
-   * @param body an instance of one of the Body subclasses including StringBody or BinaryBody
-   */
-  public HttpResponse withBody(BodyWithContentType body) {
-    this.body = body;
-    this.hashCode = 0;
-    return this;
-  }
-
-  @JsonIgnore
-  public byte[] getBodyAsRawBytes() {
-    return this.body != null ? this.body.getRawBytes() : new byte[0];
-  }
-
-  @JsonIgnore
-  public String getBodyAsString() {
-    if (body != null) {
-      return body.toString();
-    } else {
-      return null;
-    }
-  }
-
   private Headers getOrCreateHeaders() {
     if (this.headers == null) {
       this.headers = new Headers();
       this.hashCode = 0;
     }
     return this.headers;
+  }
+
+  @Override
+  public HttpResponse withBody(byte[] body) {
+    setBody(body);
+    return this;
   }
 
   public HttpResponse withHeaders(Headers headers) {
@@ -296,24 +187,6 @@ public class HttpResponse extends Action<HttpResponse>
     }
   }
 
-  public HttpResponse withCookies(Cookies cookies) {
-    if (cookies == null || cookies.isEmpty()) {
-      this.cookies = null;
-    } else {
-      this.cookies = cookies;
-    }
-    this.hashCode = 0;
-    return this;
-  }
-
-  public List<Cookie> getCookieList() {
-    if (this.cookies != null) {
-      return this.cookies.getEntries();
-    } else {
-      return Collections.emptyList();
-    }
-  }
-
   public HttpResponse withStreamId(Integer streamId) {
     this.streamId = streamId;
     this.hashCode = 0;
@@ -329,17 +202,6 @@ public class HttpResponse extends Action<HttpResponse>
   @Override
   public void write(NettyResponseWriter nettyResponseWriter, HttpRequest request) {
     nettyResponseWriter.writeHttpResponse(request, this);
-  }
-
-  @SuppressWarnings("MethodDoesntCallSuperMethod")
-  public HttpResponse clone() {
-    return response()
-        .withStatusCode(statusCode)
-        .withReasonPhrase(reasonPhrase)
-        .withBody(body)
-        .withHeaders(headers != null ? headers.clone() : null)
-        .withCookies(cookies != null ? cookies.clone() : null)
-        .withStreamId(streamId);
   }
 
   public Multimap<String, String> getHeaderMultimap() {

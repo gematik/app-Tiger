@@ -16,12 +16,12 @@
 
 package de.gematik.test.tiger.playwright.workflowui;
 
-
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import java.util.List;
@@ -79,12 +79,15 @@ class ZQuitTests extends AbstractBase {
             assertThat(
                     page.frameLocator("#rbellog-details-iframe")
                         .locator(".test-message-number")
-                        .first()).containsText(number1),
+                        .first())
+                .containsText(number1),
         () ->
             assertThat(
                     page.frameLocator("#rbellog-details-iframe")
                         .locator(".test-message-number")
-                        .last()).not().containsText(number2));
+                        .last())
+                .not()
+                .containsText(number2));
     String pageNo =
         page.frameLocator("#rbellog-details-iframe").locator("#pageNumberDisplay").textContent();
     page.locator("#test-webui-slider").click();
@@ -105,12 +108,15 @@ class ZQuitTests extends AbstractBase {
             assertThat(
                     page.frameLocator("#rbellog-details-iframe")
                         .locator(".test-message-number")
-                        .first()).not().equals(number1),
+                        .first())
+                .not()
+                .equals(number1),
         () ->
             assertThat(
                     page.frameLocator("#rbellog-details-iframe")
                         .locator(".test-message-number")
-                        .last()).equals(number2));
+                        .last())
+                .equals(number2));
     page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
     page.frameLocator("#rbellog-details-iframe")
         .locator("#pageSelector .dropdown-item")
@@ -123,7 +129,8 @@ class ZQuitTests extends AbstractBase {
                 assertThat(
                         page.frameLocator("#rbellog-details-iframe")
                             .locator(".test-message-number")
-                            .last()).containsText("20"));
+                            .last())
+                    .containsText("20"));
   }
 
   @Test
@@ -134,15 +141,13 @@ class ZQuitTests extends AbstractBase {
     page.frameLocator("#rbellog-details-iframe").locator("#resetFilterCriterionBtn").click();
     assertAll(
         () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#filterModalDialog")
-                        ).isVisible(),
+            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filterModalDialog"))
+                .isVisible(),
         () ->
             assertThat(
                     page.frameLocator("#rbellog-details-iframe")
-                        .locator("#setFilterCriterionInput")
-            ).isVisible(),
+                        .locator("#setFilterCriterionInput"))
+                .isVisible(),
         () ->
             Assertions.assertThat(
                     page.frameLocator("#rbellog-details-iframe")
@@ -150,52 +155,40 @@ class ZQuitTests extends AbstractBase {
                         .textContent())
                 .isEmpty(),
         () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#requestFromContent")
-            ).isVisible(),
+            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#requestFromContent"))
+                .isVisible(),
+        () ->
+            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#requestToContent"))
+                .isVisible(),
+        () ->
+            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#requestToContent"))
+                .containsText("no request"),
+        () ->
+            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#requestFromContent"))
+                .containsText("no request"),
         () ->
             assertThat(
                     page.frameLocator("#rbellog-details-iframe")
-                        .locator("#requestToContent")
-            ).isVisible(),
+                        .locator("#resetFilterCriterionBtn"))
+                .isVisible(),
         () ->
             assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#requestToContent")
-            ).containsText("no request"),
+                    page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn"))
+                .isVisible(),
+        () ->
+            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
+                .isVisible(),
         () ->
             assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#requestFromContent")
-            ).containsText("no request"),
+                    page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose"))
+                .isVisible(),
         () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#resetFilterCriterionBtn")
-            ).isVisible(),
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#setFilterCriterionBtn")
-            ).isVisible(),
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#filteredMessage")
-            ).isVisible(),
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#filterModalButtonClose")
-            ).isVisible(),
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
+            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
                 .hasText("Filter matched to all of the %d messages.".formatted(TOTAL_MESSAGES)));
     page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
-    assertThat(
-            page.frameLocator("#rbellog-details-iframe").locator("#filterModalDialog")).not().isVisible();
+    assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filterModalDialog"))
+        .not()
+        .isVisible();
   }
 
   @Test
@@ -211,8 +204,7 @@ class ZQuitTests extends AbstractBase {
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
-                assertThat(
-                        page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
+                assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
                     .hasText("4 of %d did match the filter criteria.".formatted(TOTAL_MESSAGES)));
     String filteredMessage =
         page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent();
@@ -225,8 +217,7 @@ class ZQuitTests extends AbstractBase {
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
-                assertThat(
-                        page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
+                assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
                     .hasText(
                         "Filter matched to all of the %d messages.".formatted(TOTAL_MESSAGES)));
 
@@ -235,10 +226,8 @@ class ZQuitTests extends AbstractBase {
     Assertions.assertThat(filteredMessage)
         .isEqualTo("4 of %d did match the filter criteria.".formatted(TOTAL_MESSAGES));
     Assertions.assertThat(count).isEqualTo(3);
-    assertThat(
-        page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
-        .hasText(
-            "Filter matched to all of the %d messages.".formatted(TOTAL_MESSAGES));
+    assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
+        .hasText("Filter matched to all of the %d messages.".formatted(TOTAL_MESSAGES));
   }
 
   @Test
@@ -269,7 +258,9 @@ class ZQuitTests extends AbstractBase {
         () -> assertThat(requestFromContent).containsText("no request"),
         () ->
             assertTrue(
-                filteredMessage.innerText().equals(
+                filteredMessage
+                    .innerText()
+                    .equals(
                         "Filter matched to all of the %d messages.".formatted(TOTAL_MESSAGES))));
   }
 
@@ -282,7 +273,9 @@ class ZQuitTests extends AbstractBase {
     await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
-            () -> Assertions.assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isPositive());
+            () ->
+                Assertions.assertThat(externalPage.locator("#rbelmsglist .test-card").count())
+                    .isPositive());
     Assertions.assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isPositive();
     externalPage.locator("#resetMsgs").click();
     await()
@@ -301,10 +294,8 @@ class ZQuitTests extends AbstractBase {
         .atMost(5, TimeUnit.SECONDS)
         .until(() -> page.querySelector("#workflow-messages.test-messages-quit") != null);
     assertAll(
-        () ->
-            assertThat(page.locator("#sidebar-left.test-sidebar-quit")).isVisible(),
-        () ->
-            assertThat(page.locator("#workflow-messages.test-messages-quit")).isVisible());
+        () -> assertThat(page.locator("#sidebar-left.test-sidebar-quit")).isVisible(),
+        () -> assertThat(page.locator("#workflow-messages.test-messages-quit")).isVisible());
     closeSidebar();
     page.screenshot(
         new Page.ScreenshotOptions().setFullPage(false).setPath(getPath("workflowui_quit.png")));
@@ -326,16 +317,14 @@ class ZQuitTests extends AbstractBase {
                 assertThat(
                         page.frameLocator("#rbellog-details-iframe")
                             .locator(".test-message-number")
-                            .last()).containsText("20"));
+                            .last())
+                    .containsText("20"));
 
-    assertThat(
-            page.frameLocator("#rbellog-details-iframe")
-                .locator(".test-message-number")
-                .first()).containsText("1");
+    assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").first())
+        .containsText("1");
     page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
-    assertThat(
-            page.frameLocator("#rbellog-details-iframe")
-                .locator("#pageSelector .dropdown-item")).hasCount(4);
+    assertThat(page.frameLocator("#rbellog-details-iframe").locator("#pageSelector .dropdown-item"))
+        .hasCount(4);
     page.frameLocator("#rbellog-details-iframe")
         .locator("#pageSelector .dropdown-item")
         .last()
@@ -347,11 +336,10 @@ class ZQuitTests extends AbstractBase {
                 assertThat(
                         page.frameLocator("#rbellog-details-iframe")
                             .locator(".test-message-number")
-                            .first()).containsText("61"));
-    assertThat(
-            page.frameLocator("#rbellog-details-iframe")
-                .locator(".test-message-number")
-                .first()).containsText("61");
+                            .first())
+                    .containsText("61"));
+    assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").first())
+        .containsText("61");
   }
 
   @Test
@@ -370,16 +358,14 @@ class ZQuitTests extends AbstractBase {
                 assertThat(
                         page.frameLocator("#rbellog-details-iframe")
                             .locator(".test-message-number")
-                            .last()).containsText("20"));
+                            .last())
+                    .containsText("20"));
 
-    assertThat(
-            page.frameLocator("#rbellog-details-iframe")
-                .locator(".test-message-number")
-                .last()).containsText("20");
+    assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last())
+        .containsText("20");
     page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-size").click();
-    assertThat(
-            page.frameLocator("#rbellog-details-iframe")
-                .locator("#sizeSelector .dropdown-item")).hasCount(4);
+    assertThat(page.frameLocator("#rbellog-details-iframe").locator("#sizeSelector .dropdown-item"))
+        .hasCount(4);
     page.frameLocator("#rbellog-details-iframe")
         .locator("#sizeSelector .dropdown-item")
         .last()
@@ -393,10 +379,8 @@ class ZQuitTests extends AbstractBase {
                             .locator(".test-message-number")
                             .last())
                     .hasText(String.valueOf(TOTAL_MESSAGES)));
-    assertThat(
-            page.frameLocator("#rbellog-details-iframe")
-                .locator(".test-message-number")
-                .last()).containsText(String.valueOf(TOTAL_MESSAGES));
+    assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last())
+        .containsText(String.valueOf(TOTAL_MESSAGES));
     page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-size").click();
     page.frameLocator("#rbellog-details-iframe")
         .locator("#sizeSelector .dropdown-item")

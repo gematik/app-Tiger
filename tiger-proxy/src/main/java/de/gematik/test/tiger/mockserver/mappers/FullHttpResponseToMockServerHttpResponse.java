@@ -16,15 +16,10 @@
 
 package de.gematik.test.tiger.mockserver.mappers;
 
-import static io.netty.handler.codec.http.HttpHeaderNames.CONTENT_TYPE;
-
 import de.gematik.test.tiger.mockserver.codec.BodyDecoderEncoder;
 import de.gematik.test.tiger.mockserver.model.*;
-import de.gematik.test.tiger.mockserver.model.Cookies;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.cookie.ClientCookieDecoder;
-import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -45,7 +40,6 @@ public class FullHttpResponseToMockServerHttpResponse {
         }
         setStatusCode(httpResponse, fullHttpResponse);
         setHeaders(httpResponse, fullHttpResponse);
-        setCookies(httpResponse);
         setBody(httpResponse, fullHttpResponse);
       }
     } catch (RuntimeException e) {
@@ -71,37 +65,7 @@ public class FullHttpResponseToMockServerHttpResponse {
     }
   }
 
-  private void setCookies(HttpResponse httpResponse) {
-    Cookies cookies = new Cookies();
-    for (Header header : httpResponse.getHeaderList()) {
-      if (header.getName().equalsIgnoreCase("Set-Cookie")) {
-        for (String cookieHeader : header.getValues()) {
-          io.netty.handler.codec.http.cookie.Cookie httpCookie =
-              ClientCookieDecoder.LAX.decode(cookieHeader);
-          String name = httpCookie.name().trim();
-          String value = httpCookie.value() != null ? httpCookie.value().trim() : "";
-          cookies.withEntry(new Cookie(name, value));
-        }
-      }
-      if (header.getName().equalsIgnoreCase("Cookie")) {
-        for (String cookieHeader : header.getValues()) {
-          for (io.netty.handler.codec.http.cookie.Cookie httpCookie :
-              ServerCookieDecoder.LAX.decode(cookieHeader)) {
-            String name = httpCookie.name().trim();
-            String value = httpCookie.value() != null ? httpCookie.value().trim() : "";
-            cookies.withEntry(new Cookie(name, value));
-          }
-        }
-      }
-    }
-    if (!cookies.isEmpty()) {
-      httpResponse.withCookies(cookies);
-    }
-  }
-
   private void setBody(HttpResponse httpResponse, FullHttpResponse fullHttpResponse) {
-    httpResponse.withBody(
-        bodyDecoderEncoder.byteBufToBody(
-            fullHttpResponse.content(), fullHttpResponse.headers().get(CONTENT_TYPE)));
+    httpResponse.withBody(bodyDecoderEncoder.byteBufToBody(fullHttpResponse.content()));
   }
 }

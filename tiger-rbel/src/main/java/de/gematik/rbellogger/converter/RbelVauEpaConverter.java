@@ -24,6 +24,8 @@ import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.util.CryptoUtils;
+import de.gematik.rbellogger.util.RbelContent;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.*;
@@ -33,7 +35,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 
-@ConverterInfo(onlyActivateFor = "epa-vau", dependsOn = {RbelVauEpaKeyDeriver.class})
+@ConverterInfo(
+    onlyActivateFor = "epa-vau",
+    dependsOn = {RbelVauEpaKeyDeriver.class})
 @Slf4j
 public class RbelVauEpaConverter implements RbelConverterPlugin {
 
@@ -56,8 +60,9 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
   private Optional<byte[]> tryToExtractRawVauContent(RbelElement element) {
     if (element.getParentNode() != null && element.getParentNode().hasFacet(RbelJsonFacet.class)) {
       try {
-        return Optional.ofNullable(Base64.getDecoder().decode(element.getRawContent()));
-      } catch (IllegalArgumentException e) {
+        return Optional.ofNullable(
+            Base64.getDecoder().wrap(element.getContent().toInputStream()).readAllBytes());
+      } catch (IllegalArgumentException | IOException e) {
         return Optional.empty();
       }
     } else {
@@ -87,7 +92,7 @@ public class RbelVauEpaConverter implements RbelConverterPlugin {
         decryptedBytes =
             Optional.ofNullable(
                 decryptUnsafe(
-                    splitVauMessage.getValue(),
+                    RbelContent.of(splitVauMessage.getValue()),
                     rbelKey.getKey(),
                     CryptoUtils.GCM_IV_LENGTH_IN_BYTES,
                     CryptoUtils.GCM_TAG_LENGTH_IN_BYTES));

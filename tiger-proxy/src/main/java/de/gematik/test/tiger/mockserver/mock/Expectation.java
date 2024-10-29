@@ -49,12 +49,19 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
   private final HttpRequest requestPattern;
   @Setter private HttpAction httpAction;
   private final List<String> hostRegexes;
+  private final boolean ignorePortsInHostHeader;
   private ExpectationCallback expectationCallback;
 
   public Expectation(HttpRequest requestDefinition, int priority, List<String> hostRegexes) {
     this.requestPattern = requestDefinition;
     this.priority = priority;
-    this.hostRegexes = hostRegexes;
+    if (hostRegexes == null) {
+      this.hostRegexes = List.of();
+      this.ignorePortsInHostHeader = true;
+    } else {
+      this.hostRegexes = hostRegexes.stream().map(String::trim).toList();
+      this.ignorePortsInHostHeader = hostRegexes.stream().noneMatch(h -> h.contains(":"));
+    }
   }
 
   public Expectation thenForward(ExpectationForwardAndResponseCallback callback) {
@@ -77,7 +84,14 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
     if (requestPattern.isSecure() == null || request.isSecure() == null) {
       return true;
     }
-    return requestPattern.isSecure().equals(request.isSecure());
+    final boolean equals = requestPattern.isSecure().equals(request.isSecure());
+    if (!equals) {
+      log.atTrace()
+          .addArgument(request::isSecure)
+          .addArgument(tigerRoute::createShortDescription)
+          .log("secure [{}] is not matching for route {}");
+    }
+    return equals;
   }
 
   private boolean hostMatches(HttpRequest request) {
@@ -85,53 +99,85 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
         && (hostRegexes == null || hostRegexes.isEmpty())) {
       return true;
     }
-    if (StringUtils.equals(requestPattern.getFirstHeader("Host"), request.getFirstHeader("Host"))) {
+    final String cleanedHostHeader =
+        ignorePortsInHostHeader
+            ? request.getFirstHeader("Host").trim().split(":")[0]
+            : request.getFirstHeader("Host").trim();
+    final String cleanedPatternHostHeader =
+        ignorePortsInHostHeader
+            ? requestPattern.getFirstHeader("Host").split(":")[0]
+            : requestPattern.getFirstHeader("Host");
+    if (StringUtils.equals(cleanedPatternHostHeader, cleanedHostHeader)) {
       return true;
     }
-    return hostRegexes.stream().anyMatch(request.getFirstHeader("Host")::matches);
+    final boolean anyHostHeaderMatch =
+        hostRegexes.stream()
+            .anyMatch(
+                hostMatchCriterion ->
+                    cleanedHostHeader.equals(hostMatchCriterion)
+                        || cleanedHostHeader.matches(hostMatchCriterion));
+    if (!anyHostHeaderMatch) {
+      log.atTrace()
+          .addArgument(() -> cleanedHostHeader)
+          .addArgument(tigerRoute::createShortDescription)
+          .addArgument(ignorePortsInHostHeader)
+          .log("host [{}] is not matching for route {} ({})");
+    }
+    return anyHostHeaderMatch;
   }
 
-  private boolean protocolMatches(Protocol protocol, Protocol otherProtocol) {
+  private boolean protocolMatches(HttpProtocol protocol, HttpProtocol otherProtocol) {
     if (protocol == null) {
       return true;
     } else {
-      return protocol.equals(otherProtocol);
+      if (protocol.equals(otherProtocol)) {
+        return true;
+      } else {
+        log.atTrace()
+            .addArgument(protocol)
+            .addArgument(otherProtocol)
+            .addArgument(tigerRoute::createShortDescription)
+            .log("protocol [{}] is not matching [{}] for route {}");
+        return false;
+      }
     }
   }
 
-  public static boolean pathMatches(String matcherValue, String matchedValue) {
-    if (matcherValue == null) {
+  public boolean pathMatches(String blueprint, String actualValue) {
+    if (blueprint == null) {
       return true;
     }
-    if (StringUtils.isBlank(matcherValue)) {
+    if (StringUtils.isBlank(blueprint)) {
       return true;
     } else {
-      if (matchedValue != null) {
+      if (actualValue != null) {
         // match as exact string
-        if (matchedValue.equals(matcherValue) || matchedValue.equalsIgnoreCase(matcherValue)) {
+        if (actualValue.equalsIgnoreCase(blueprint)) {
           return true;
         }
 
         // match as regex - matcher -> matched (data plane or control plane)
         try {
-          if (matchedValue.matches(matcherValue)) {
+          if (actualValue.matches(blueprint)) {
             return true;
           }
         } catch (PatternSyntaxException pse) {
-          log.debug(
-              "error while matching regex [{}] for string [{}]", matcherValue, matchedValue, pse);
+          log.debug("error while matching regex [{}] for string [{}]", blueprint, actualValue, pse);
         }
         // match as regex - matched -> matcher (control plane only)
         try {
-          if (matcherValue.matches(matchedValue)) {
+          if (blueprint.matches(actualValue)) {
             return true;
           }
         } catch (PatternSyntaxException pse) {
-          log.trace(
-              "error while matching regex [{}] for string [{}]", matchedValue, matcherValue, pse);
+          log.debug("error while matching regex [{}] for string [{}]", actualValue, blueprint, pse);
         }
       }
     }
+    log.atTrace()
+        .addArgument(actualValue)
+        .addArgument(tigerRoute::createShortDescription)
+        .log("path [{}] is not matching for route {}");
     return false;
   }
 
@@ -167,6 +213,14 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
       return !uri1.relativize(uri2WithUri1Scheme).equals(uri2WithUri1Scheme);
     } catch (final URISyntaxException e) {
       return false;
+    }
+  }
+
+  public String createShortDescription() {
+    if (tigerRoute != null) {
+      return tigerRoute.createShortDescription();
+    } else {
+      return requestPattern.printLogLineDescription();
     }
   }
 }

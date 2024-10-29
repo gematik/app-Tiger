@@ -16,7 +16,6 @@
 
 package de.gematik.rbellogger.converter;
 
-import static com.google.common.primitives.Bytes.indexOf;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.net.MediaType;
@@ -26,6 +25,7 @@ import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.util.RbelArrayUtils;
+import de.gematik.rbellogger.util.RbelContent;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.Charset;
@@ -95,22 +95,22 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
   @Override
   public void consumeElement(RbelElement targetElement, final RbelConverter converter) {
-    var rawContent = targetElement.getRawContent();
-    if (!RbelArrayUtils.startsWith(rawContent, HTTP_PREFIX_BYTES)) {
+    var content = targetElement.getContent();
+    if (!content.startsWith(HTTP_PREFIX_BYTES)) {
       return;
     }
 
-    new Parser(targetElement, converter, rawContent).parse();
+    new Parser(targetElement, converter, content).parse();
   }
 
   @AllArgsConstructor
   private class Parser {
     private final RbelElement targetElement;
     private final RbelConverter converter;
-    private final byte[] rawContent;
+    private final RbelContent content;
 
     private void parse() {
-      var eolOpt = findEolInHttpMessage(rawContent);
+      var eolOpt = findEolInHttpMessage(content);
       if (eolOpt.isEmpty()) {
         return;
       }
@@ -120,28 +120,30 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
         return;
       }
       var endOfHeaderIndex = endOfHeaderIndexOpt.get();
-      var content = targetElement.getRawStringContent();
-      if (content == null) {
+      var stringContent = targetElement.getRawStringContent();
+      if (stringContent == null) {
         return;
       }
 
-      RbelElement headerElement = extractHeaderFromMessage(targetElement, converter, eol, content);
+      RbelElement headerElement =
+          extractHeaderFromMessage(targetElement, converter, eol, stringContent);
       RbelHttpHeaderFacet httpHeaderFacet = headerElement.getFacetOrFail(RbelHttpHeaderFacet.class);
       final byte[] rawBodyData =
           extractBodyData(targetElement, endOfHeaderIndex, httpHeaderFacet, eol);
       final RbelElement bodyElement =
           new RbelElement(rawBodyData, targetElement, findCharsetInHeader(httpHeaderFacet));
-      final RbelElement responseCode = extractResponseCodeFromMessage(content);
+      final RbelElement responseCode = extractResponseCodeFromMessage(stringContent);
       final RbelHttpResponseFacet rbelHttpResponse =
           RbelHttpResponseFacet.builder()
               .responseCode(responseCode)
-              .reasonPhrase(extractReasonPhraseFromMessage(content))
+              .reasonPhrase(extractReasonPhraseFromMessage(stringContent))
               .build();
 
       targetElement.addFacet(rbelHttpResponse);
       targetElement.addFacet(new RbelResponseFacet(responseCode.getRawStringContent()));
       final var httpVersion =
-          new RbelElement(content.substring(0, content.indexOf(" ")).getBytes(), targetElement);
+          new RbelElement(
+              stringContent.substring(0, stringContent.indexOf(" ")).getBytes(), targetElement);
       targetElement.addFacet(
           RbelHttpMessageFacet.builder()
               .header(headerElement)
@@ -153,7 +155,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
     }
 
     private Optional<Integer> findEndOfHeaderIndex(String eol) {
-      int endOfHeadIndex = indexOf(rawContent, (eol + eol).getBytes());
+      int endOfHeadIndex = content.indexOf((eol + eol).getBytes());
       if (endOfHeadIndex == -1) {
         return Optional.empty();
       }
@@ -308,8 +310,8 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
       final int offset,
       final RbelHttpHeaderFacet headerMap,
       final String eol) {
-    var rawContent = targetElement.getRawContent();
-    byte[] inputData = Arrays.copyOfRange(rawContent, offset, rawContent.length);
+    var content = targetElement.getContent();
+    byte[] inputData = content.subArray(offset, content.size());
 
     Charset elementCharset = targetElement.getElementCharset();
     return applyCodings(
@@ -320,10 +322,10 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
         "Transfer-Encoding");
   }
 
-  public Optional<String> findEolInHttpMessage(byte[] content) {
-    if (indexOf(content, CRLF_BYTES) >= 0) {
+  public Optional<String> findEolInHttpMessage(RbelContent content) {
+    if (content.indexOf(CRLF_BYTES) >= 0) {
       return Optional.of(CRLF);
-    } else if (indexOf(content, (byte) '\n') >= 0) {
+    } else if (content.indexOf((byte) '\n') >= 0) {
       return Optional.of("\n");
     } else {
       return Optional.empty();

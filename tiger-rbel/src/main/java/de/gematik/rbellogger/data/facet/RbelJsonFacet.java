@@ -46,7 +46,8 @@ public class RbelJsonFacet implements RbelFacet {
         new RbelHtmlFacetRenderer() {
           @Override
           public boolean checkForRendering(RbelElement element) {
-            return element.getFacet(RbelJsonFacet.class)
+            return element
+                .getFacet(RbelJsonFacet.class)
                 .filter(
                     jsonFacet ->
                         element.getFacets().stream()

@@ -226,9 +226,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   @Test
   void reverseProxy_shouldRewriteHostHeaderIfConfigured() {
     spawnTigerProxyWithDefaultRoutesAndWith(
-        TigerProxyConfiguration.builder()
-            .rewriteHostHeader(true)
-            .build());
+        TigerProxyConfiguration.builder().rewriteHostHeader(true).build());
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
         .header("Host", "RandomStuffShouldBeOverwritten")
@@ -713,7 +711,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     TigerGlobalConfiguration.reset();
     int availableTcpPort =
         TigerGlobalConfiguration.readIntegerOptional("free.port.100").orElseThrow();
-    spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration.builder().proxyPort(availableTcpPort).build());
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder().proxyPort(availableTcpPort).build());
 
     assertThat(tigerProxy.getProxyPort()).isEqualTo(availableTcpPort);
   }
@@ -870,9 +869,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   @Test
   void emptyBuffer_shouldNotRetainMessages() {
     spawnTigerProxyWithDefaultRoutesAndWith(
-        TigerProxyConfiguration.builder()
-            .rbelBufferSizeInMb(0)
-            .build());
+        TigerProxyConfiguration.builder().rbelBufferSizeInMb(0).build());
 
     proxyRest
         .get("http://backend/foobar")
@@ -886,9 +883,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   @Test
   void limitMaxMessageSize_shouldSkipParsing() {
     spawnTigerProxyWithDefaultRoutesAndWith(
-        TigerProxyConfiguration.builder()
-            .skipParsingWhenMessageLargerThanKb(1)
-            .build());
+        TigerProxyConfiguration.builder().skipParsingWhenMessageLargerThanKb(1).build());
 
     Unirest.post("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
         .body("{'foobar':'" + RandomStringUtils.randomAlphanumeric(2_000) + "'}")

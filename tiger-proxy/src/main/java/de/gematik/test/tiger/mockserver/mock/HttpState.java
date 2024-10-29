@@ -86,20 +86,25 @@ public class HttpState {
   }
 
   public Expectation firstMatchingExpectation(HttpRequest request) {
+    log.atTrace().addArgument(request::printLogLineDescription).log("Trying to find route for {}");
     for (Expectation expectation : expectations.stream().sorted().toList()) {
-      Expectation apply = expectation;
-      if (apply.matches(request)) {
-        return apply;
+      if (expectation.matches(request)) {
+        log.atDebug()
+            .addArgument(expectation::createShortDescription)
+            .addArgument(request::printLogLineDescription)
+            .log("Route {} matched request {}");
+        return expectation;
       }
     }
+    log.atWarn()
+        .addArgument(request::printLogLineDescription)
+        .log("No matching route found for request {}");
     return null;
   }
 
   public boolean handle(HttpRequest request) {
-    request.withLogCorrelationId(UUIDService.getUUID());
+    request.setLogCorrelationId(UUIDService.getUUID());
     setPort(request);
-
-    log.trace("received request:{}", request);
 
     return false;
   }

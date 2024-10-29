@@ -24,7 +24,6 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
 import j2html.tags.specialized.H2Tag;
-
 import java.util.Optional;
 
 public class RbelMimeBodyFacet extends RbelValueFacet<String> {

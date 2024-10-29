@@ -49,7 +49,8 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
   private final NettyHttpClient httpClient;
   private final BinaryProxyListener binaryExchangeCallback;
 
-  public BinaryHandler(final MockServerConfiguration configuration, final NettyHttpClient httpClient) {
+  public BinaryHandler(
+      final MockServerConfiguration configuration, final NettyHttpClient httpClient) {
     super(true);
     this.httpClient = httpClient;
     this.binaryExchangeCallback = configuration.binaryProxyListener();

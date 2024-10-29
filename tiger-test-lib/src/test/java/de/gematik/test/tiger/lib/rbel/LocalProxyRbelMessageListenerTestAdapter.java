@@ -41,7 +41,7 @@ import lombok.val;
 import org.apache.commons.io.FileUtils;
 
 /**
- * For unit tests that want to test the RbelMessageValidator without starting a full blown tiger
+ * For unit tests that want to test the RbelMessageValidator without starting a full-blown tiger
  * environment. This classes provides a LocalProxyRbelMessageListener with an internal queue of
  * messages that does not require the tiger proxy.
  */

@@ -17,6 +17,7 @@
 package de.gematik.rbellogger.converter;
 
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
@@ -43,7 +44,22 @@ class JsonConverterTest {
     final RbelElement convertedMessage =
         RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
 
-    assertThat(convertedMessage.getFirst("body").get().hasFacet(RbelJsonFacet.class)).isTrue();
+    assertThat(convertedMessage).extractChildWithPath("$.body").hasFacet(RbelJsonFacet.class);
+  }
+
+  @Test
+  void convertTrivialJsons_shouldNotAddFacet() {
+    final String myMessage = "<html><head>[]</head><body>{}</body></html>";
+
+    final RbelElement convertedMessage =
+        RbelLogger.build().getRbelConverter().convertElement(myMessage, null);
+
+    assertThat(convertedMessage)
+        .extractChildWithPath("$.html.head.text")
+        .doesNotHaveFacet(RbelJsonFacet.class)
+        .andTheInitialElement()
+        .extractChildWithPath("$.html.body.text")
+        .doesNotHaveFacet(RbelJsonFacet.class);
   }
 
   @Test

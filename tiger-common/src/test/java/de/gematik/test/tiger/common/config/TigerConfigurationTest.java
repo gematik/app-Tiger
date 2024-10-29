@@ -41,6 +41,7 @@ import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -48,6 +49,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
 
+@Slf4j
 public class TigerConfigurationTest { // NOSONAR
 
   @BeforeEach
@@ -652,7 +654,8 @@ public class TigerConfigurationTest { // NOSONAR
         "foo.value",
         TigerConfigurationTest.NestedBean.builder().bar(42).build(),
         ConfigurationValuePrecedence.RUNTIME_EXPORT);
-    TigerGlobalConfiguration.putValue("foo.value.bar", "schmoo", ConfigurationValuePrecedence.RUNTIME_EXPORT);
+    TigerGlobalConfiguration.putValue(
+        "foo.value.bar", "schmoo", ConfigurationValuePrecedence.RUNTIME_EXPORT);
     assertThat(TigerGlobalConfiguration.readString("foo.value.bar")).isEqualTo("schmoo");
   }
 
@@ -992,6 +995,28 @@ public class TigerConfigurationTest { // NOSONAR
 
     TigerGlobalConfiguration.putValue("testkey", b2);
     assertThat(TigerGlobalConfiguration.readByteArray("testkey")).get().isEqualTo(b2);
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+"NESTEDBEAN_FOO, nestedBean.foo",
+"nestedBean.foo, nestedBean.foo",
+"Nestedbean.foo, nestedBean.foo",
+"nestedBean.foo, NESTEDBEAN_FOO",
+"nestedBean.foo, nestedBean.foo",
+"nestedBean.foo, Nestedbean.foo"
+})
+  void differentNamesForSameField_envShouldAlwaysBeatYaml(String envName, String yamlName) throws Exception {
+    new EnvironmentVariables(envName, "blub")
+      .execute(
+        () -> {
+          TigerGlobalConfiguration.reset();
+          TigerGlobalConfiguration.putValue(yamlName, "schmar", ConfigurationValuePrecedence.MAIN_YAML);
+          var dummyBean =
+            TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class).get();
+          assertThat(dummyBean.getNestedBean())
+            .hasFieldOrPropertyWithValue("foo", "blub");
+        });
   }
 
   @Data

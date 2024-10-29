@@ -74,9 +74,7 @@ class XDynamicMainContentTests extends AbstractBase {
     await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
-            () ->
-                assertThat(page.locator("#test-server-log-pane-input-text"))
-                    .isEmpty());
+            () -> assertThat(page.locator("#test-server-log-pane-input-text")).isEmpty());
   }
 
   @Test
@@ -90,9 +88,7 @@ class XDynamicMainContentTests extends AbstractBase {
     await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
-            () ->
-                assertThat(page.locator("#test-server-log-pane-input-text"))
-                    .isEmpty());
+            () -> assertThat(page.locator("#test-server-log-pane-input-text")).isEmpty());
   }
 
   @Test
@@ -107,9 +103,7 @@ class XDynamicMainContentTests extends AbstractBase {
     await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
-            () ->
-                assertThat(page.locator("#test-server-log-pane-input-text"))
-                    .isEmpty());
+            () -> assertThat(page.locator("#test-server-log-pane-input-text")).isEmpty());
   }
 
   @Test
@@ -130,7 +124,6 @@ class XDynamicMainContentTests extends AbstractBase {
     await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
-            () ->
-                assertThat(page.locator("#test-server-log-pane-input-text")).isEmpty());
+            () -> assertThat(page.locator("#test-server-log-pane-input-text")).isEmpty());
   }
 }

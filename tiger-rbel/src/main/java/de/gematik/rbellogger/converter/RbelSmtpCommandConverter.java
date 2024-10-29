@@ -16,27 +16,29 @@
 
 package de.gematik.rbellogger.converter;
 
-import static de.gematik.rbellogger.util.EmailConversionUtils.CRLF;
-import static de.gematik.rbellogger.util.EmailConversionUtils.CRLF_DOT_CRLF;
-
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.facet.RbelRequestFacet;
+import de.gematik.rbellogger.data.facet.RbelRootFacet;
+import de.gematik.rbellogger.data.facet.RbelSmtpCommandFacet;
 import de.gematik.rbellogger.data.smtp.RbelSmtpCommand;
 import de.gematik.rbellogger.util.EmailConversionUtils;
+import de.gematik.rbellogger.util.RbelContent;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
-
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 
 @Slf4j
 @ConverterInfo(onlyActivateFor = "smtp")
 public class RbelSmtpCommandConverter implements RbelConverterPlugin {
 
   public static final int MIN_SMTP_COMMAND_LINE_LENGTH = 6;
+  private static final byte[] CRLF_DOT_CRLF_BYTES = EmailConversionUtils.CRLF_DOT_CRLF.getBytes();
+  private static final byte[] AUTH_COMMAND_PREFIX_BYTES = "AUTH ".getBytes();
+  private static final byte[] AUTH_PLAIN_PREFIX_BYTES = "AUTH PLAIN".getBytes();
+  private static final byte[] DATA_PREFIX_BYTES = "DATA\r\n".getBytes();
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
@@ -60,32 +62,33 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
   }
 
   private Optional<RbelSmtpCommandFacet> buildSmtpCommandFacet(RbelElement element) {
-    return Optional.ofNullable(element.getRawContent())
-        .filter(c -> c.length >= MIN_SMTP_COMMAND_LINE_LENGTH)
+    return Optional.of(element.getContent())
+        .filter(c -> c.size() >= MIN_SMTP_COMMAND_LINE_LENGTH)
         .filter(EmailConversionUtils::endsWithCrLf)
         .flatMap(this::parseCommand)
         .flatMap(
             command ->
-                Optional.of(element.getRawContent())
-                    .map(c -> new String(c, StandardCharsets.UTF_8))
+                Optional.of(element.getContent())
                     .filter(this::isCompleteCommand)
+                    .map(c -> new String(c.toByteArray(), StandardCharsets.UTF_8))
                     .map(s -> buildSmtpCommandFacet(command, s, element)));
   }
 
-  private boolean isCompleteCommand(String command) {
-    if (command.startsWith("DATA\r\n")) {
-      return command.endsWith(CRLF_DOT_CRLF);
-    } else if (command.startsWith("AUTH ") && !command.startsWith("AUTH PLAIN")) {
+  private boolean isCompleteCommand(RbelContent content) {
+    if (content.startsWith(DATA_PREFIX_BYTES)) {
+      return content.endsWith(CRLF_DOT_CRLF_BYTES);
+    } else if (content.startsWith(AUTH_COMMAND_PREFIX_BYTES)
+        && !content.startsWith(AUTH_PLAIN_PREFIX_BYTES)) {
       // AUTH (without PLAIN) needs another 2 lines with the credentials
-      return command.split(CRLF).length == 3;
+      return EmailConversionUtils.hasCompleteLines(content, 3);
     } else {
-      return command.indexOf(CRLF) == command.length() - CRLF.length();
+      return EmailConversionUtils.hasCompleteLines(content, 1);
     }
   }
 
-  private Optional<RbelSmtpCommand> parseCommand(byte[] c) {
+  private Optional<RbelSmtpCommand> parseCommand(RbelContent content) {
     var shortPrefix =
-        new String(ArrayUtils.subarray(c, 0, MIN_SMTP_COMMAND_LINE_LENGTH), StandardCharsets.UTF_8);
+        new String(content.subArray(0, MIN_SMTP_COMMAND_LINE_LENGTH), StandardCharsets.UTF_8);
     var command = new StringTokenizer(shortPrefix).nextToken();
     try {
       return Optional.of(RbelSmtpCommand.valueOf(command));
@@ -97,7 +100,7 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
 
   private RbelSmtpCommandFacet buildSmtpCommandFacet(
       RbelSmtpCommand command, String content, RbelElement element) {
-    String[] lines = content.split(CRLF, -1);
+    String[] lines = content.split(EmailConversionUtils.CRLF, -1);
     RbelElement body = buildSmtpBody(command, element, lines);
     return RbelSmtpCommandFacet.builder()
         .command(
@@ -116,7 +119,7 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
                   Arrays.stream(lines)
                       .skip(1)
                       .limit(lines.length - 2L)
-                      .collect(Collectors.joining(CRLF)))
+                      .collect(Collectors.joining(EmailConversionUtils.CRLF)))
               : null;
       case DATA -> EmailConversionUtils.parseMailBody(element, lines);
       default -> null;

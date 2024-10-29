@@ -68,9 +68,9 @@ public class JsonChecker {
     }
     if (!jsonValue.getClass().equals(oracleValue.getClass())) {
       throw new JsonCheckerMismatchException(
-              String.format(
-                      "Could not compare %s to %s: Different types!",
-                      jsonValue.getClass().getSimpleName(), oracleValue.getClass().getSimpleName()));
+          String.format(
+              "Could not compare %s to %s: Different types!",
+              jsonValue.getClass().getSimpleName(), oracleValue.getClass().getSimpleName()));
     }
 
     if (jsonValue instanceof JSONObject jsonObject) {
@@ -133,11 +133,11 @@ public class JsonChecker {
       for (String oracleKey : oracle.keySet()) {
         if (keyNotContainedInSetOrOptional(oracleKey, json.keySet())) {
           throw new JsonCheckerMismatchException(
-                  "Expected JSON to have key '"
-                          + oracleKey
-                          + "', but only found keys '"
-                          + json.keySet()
-                          + "'");
+              "Expected JSON to have key '"
+                  + oracleKey
+                  + "', but only found keys '"
+                  + json.keySet()
+                  + "'");
         }
       }
 
@@ -149,8 +149,8 @@ public class JsonChecker {
                 .findAny()
                 .map(
                     key ->
-                            new JsonCheckerMismatchException(
-                                    "EXTRA Key " + key + " detected in received in JSON"));
+                        new JsonCheckerMismatchException(
+                            "EXTRA Key " + key + " detected in received in JSON"));
         if (checkerMismatchException.isPresent()) {
           throw checkerMismatchException.get();
         }
@@ -159,10 +159,10 @@ public class JsonChecker {
       compareAllAttributes(json, oracle);
     } catch (final NoSuchMethodError nsme) {
       throw new JsonCheckerMismatchException(
-              dumpComparisonBetween(
-                      "JSON does not match!\nExpected:\n%s\n\n--------\n\nReceived:\n%s",
-                      oracle.toString(2), json.toString(2)),
-              nsme);
+          dumpComparisonBetween(
+              "JSON does not match!\nExpected:\n%s\n\n--------\n\nReceived:\n%s",
+              oracle.toString(2), json.toString(2)),
+          nsme);
     }
   }
 
@@ -207,13 +207,13 @@ public class JsonChecker {
       final Object jsonTarget =
           jsonTargetOptional.orElseThrow(
               () ->
-                      new JsonCheckerMismatchException(
-                              "Could not find attribute by key '" + oracleKey + "' in '" + json + "'"));
+                  new JsonCheckerMismatchException(
+                      "Could not find attribute by key '" + oracleKey + "' in '" + json + "'"));
       final Object oracleTarget =
           oracleTargetOptional.orElseThrow(
               () ->
-                      new JsonCheckerMismatchException(
-                              "Could not find attribute by key '" + oracleKey + "' in '" + oracle + "'"));
+                  new JsonCheckerMismatchException(
+                      "Could not find attribute by key '" + oracleKey + "' in '" + oracle + "'"));
       try {
         compareValues(jsonTarget, oracleTarget);
       } catch (AssertionError e) {
@@ -233,11 +233,11 @@ public class JsonChecker {
     if (!(oracleTarget instanceof String)
         && !jsonTarget.getClass().equals(oracleTarget.getClass())) {
       throw new JsonCheckerMismatchException(
-              "Expected an '"
-                      + oracleTarget.getClass().getSimpleName()
-                      + "', but found '"
-                      + jsonTarget.getClass().getSimpleName()
-                      + "'");
+          "Expected an '"
+              + oracleTarget.getClass().getSimpleName()
+              + "', but found '"
+              + jsonTarget.getClass().getSimpleName()
+              + "'");
     }
 
     if (oracleTarget instanceof JSONObject) {
@@ -253,7 +253,8 @@ public class JsonChecker {
               .withFailMessage(dumpComparisonAtKeyDiffer(oracleTarget.toString(), jsoValue))
               .matches(oracleTarget.toString());
         } catch (final RuntimeException ex) {
-          throw new JsonCheckerMismatchException(dumpComparisonAtKeyDiffer(oracleTarget.toString(), jsoValue));
+          throw new JsonCheckerMismatchException(
+              dumpComparisonAtKeyDiffer(oracleTarget.toString(), jsoValue));
         }
       }
     }

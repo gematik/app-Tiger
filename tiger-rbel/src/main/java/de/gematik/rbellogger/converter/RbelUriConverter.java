@@ -80,14 +80,8 @@ public class RbelUriConverter implements RbelConverterPlugin {
       if (hasQuery || hasProtocol || rawStringContent.startsWith("/")) {
         return uri;
       }
-    } catch (URISyntaxException e) {
-      log.atTrace()
-          .addArgument(
-              () ->
-                  StringUtils.abbreviate(
-                      rawStringContent,
-                      RbelConverter.RAW_STRING_MAX_TRACE_LENGTH.getValueOrDefault()))
-          .log("Unable to convert Path-Element '{}'", e);
+    } catch (URISyntaxException ignored) {
+      // ignore
     }
     return null;
   }

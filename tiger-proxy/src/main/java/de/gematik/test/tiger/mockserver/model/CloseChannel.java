@@ -17,11 +17,17 @@
 package de.gematik.test.tiger.mockserver.model;
 
 import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /** Signifies a graceful channel close. */
 @Slf4j
-public class CloseChannel extends Action {
+@Getter
+@Setter
+public class CloseChannel implements Action {
+
+  private String expectationId;
 
   @Override
   public Type getType() {

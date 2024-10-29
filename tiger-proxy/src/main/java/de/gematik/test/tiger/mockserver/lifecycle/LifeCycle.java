@@ -59,13 +59,11 @@ public abstract class LifeCycle {
     this.configuration = configuration != null ? configuration : configuration();
     this.bossGroup =
         new NioEventLoopGroup(
-            5,
-            new Scheduler.SchedulerThreadFactory(getMockServerName() + "-bossGroup"));
+            5, new Scheduler.SchedulerThreadFactory(getMockServerName() + "-bossGroup"));
     this.workerGroup =
         new NioEventLoopGroup(
             this.configuration.nioEventLoopThreadCount(),
-            new Scheduler.SchedulerThreadFactory(
-                getMockServerName() + "-workerEventLoop"));
+            new Scheduler.SchedulerThreadFactory(getMockServerName() + "-workerEventLoop"));
     this.scheduler = new Scheduler(this.configuration);
     this.httpState = new HttpState(this.configuration, this.scheduler);
   }
@@ -221,7 +219,8 @@ public abstract class LifeCycle {
       try {
         final CompletableFuture<Channel> channelOpened = new CompletableFuture<>();
         channelFutures.add(channelOpened);
-        new Scheduler.SchedulerThreadFactory(getMockServerName() + " thread for port: " + portToBind, false)
+        new Scheduler.SchedulerThreadFactory(
+                getMockServerName() + " thread for port: " + portToBind, false)
             .newThread(
                 () -> {
                   try {

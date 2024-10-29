@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.playwright.workflowui;
 
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import com.microsoft.playwright.*;
@@ -234,17 +235,17 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
   }
 
   void openSidebar() {
-    if (!page.querySelector("#test-sidebar-title").isVisible()) {
+    if (page.locator(".test-sidebar-collapsed").isVisible()) {
       page.querySelector("#test-tiger-logo").click();
     }
+    assertThat(page.locator(".test-sidebar-open")).isVisible();
   }
 
   void closeSidebar() {
-    if (page.querySelector("#test-sidebar-title").isVisible()) {
+    if (page.locator(".test-sidebar-open").isVisible()) {
       page.querySelector("#test-tiger-logo").click();
     }
   }
-
 
   @Override
   public void close() {
