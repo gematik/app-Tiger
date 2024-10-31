@@ -235,6 +235,10 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort + "/foobar")
                         .hosts(List.of(hostsRoute1.split("\\,")))
+                        .build(),
+                    TigerRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort + "/")
                         .build()))
             .build());
 

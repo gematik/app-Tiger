@@ -1,5 +1,13 @@
 # Changelog Tiger Test platform
 
+# Release 3.4.4
+
+## Bugfixes
+
+* KOB-8: The ordering of Proxy-Routes now also takes into consideration the amount of hosts in the route. This means
+  that a route with more hosts is now preferred over a route with fewer hosts (since it is considered to be more
+  specific).
+
 # Release 3.4.3
 
 ## Features
@@ -134,9 +142,10 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-    key = PLUGIN_PROPERTY_NAME,
-    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+  key = PLUGIN_PROPERTY_NAME,
+  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
+
 }
 ```
 

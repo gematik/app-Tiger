@@ -16,13 +16,18 @@
 
 package de.gematik.test.tiger.mockserver.mock;
 
+import com.google.common.net.InternetDomainName;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationCallback;
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import de.gematik.test.tiger.mockserver.model.*;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.PatternSyntaxException;
 import lombok.*;
@@ -186,32 +191,38 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
     if (o == null) {
       return 1;
     }
-    if (priority == o.priority) {
-      if (requestPattern == null
-          || o.requestPattern == null
-          || requestPattern.getPath() == null
-          || o.requestPattern.getPath() == null) {
-        return 0;
-      }
-      final String thisPath = requestPattern.getPath();
-      final String otherPath = o.requestPattern.getPath();
-      if (uriTwoIsBelowUriOne(thisPath, otherPath)) {
-        return -1;
-      } else if (uriTwoIsBelowUriOne(otherPath, thisPath)) {
-        return 1;
-      } else {
-        return 0;
-      }
+    if (priority != o.priority) {
+      return Integer.compare(o.priority, priority);
     }
-    return Integer.compare(o.priority, priority);
+    if (requestPattern == null
+        || o.requestPattern == null
+        || requestPattern.getPath() == null
+        || o.requestPattern.getPath() == null) {
+      return 0;
+    }
+    final String thisPath = requestPattern.getPath();
+    final String otherPath = o.requestPattern.getPath();
+    if (uriTwoIsBelowUriOne(thisPath, otherPath)) {
+      return -1;
+    } else if (uriTwoIsBelowUriOne(otherPath, thisPath)) {
+      return 1;
+    } else {
+      val otherHostSize = Optional.ofNullable(o.hostRegexes).map(List::size).orElse(0);
+      val thisHostSize = Optional.ofNullable(this.hostRegexes).map(List::size).orElse(0);
+      return Integer.compare(otherHostSize, thisHostSize);
+    }
   }
 
-  private static boolean uriTwoIsBelowUriOne(final String value1, final String value2) {
+  private static boolean uriTwoIsBelowUriOne(final String uri1, final String uri2) {
     try {
-      final URI uri1 = new URI(value1);
-      final URI uri2WithUri1Scheme = new URIBuilder(value2).setScheme(uri1.getScheme()).build();
-      return !uri1.relativize(uri2WithUri1Scheme).equals(uri2WithUri1Scheme);
-    } catch (final URISyntaxException e) {
+      URIBuilder base = new URIBuilder(uri2);
+      URIBuilder sub = new URIBuilder(uri1);
+
+      URI baseUri = base.build().normalize();
+      URI subUri = sub.build().normalize();
+
+      return subUri.getPath().startsWith(baseUri.getPath()) && !baseUri.equals(subUri);
+    } catch (URISyntaxException e) {
       return false;
     }
   }
