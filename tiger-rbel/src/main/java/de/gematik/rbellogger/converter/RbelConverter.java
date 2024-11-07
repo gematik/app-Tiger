@@ -28,6 +28,7 @@ import de.gematik.rbellogger.util.RbelMessagesDequeFacade;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
 import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -112,13 +113,11 @@ public class RbelConverter {
         plugin.consumeElement(convertedInput, this);
       } catch (RuntimeException e) {
         final String msg =
-            "Exception during conversion with plugin '"
-                + plugin.getClass().getName()
-                + "' ("
-                + e.getMessage()
-                + ")\n"
-                + ExceptionUtils.getStackTrace(e);
-        log.info(msg, e);
+            MessageFormat.format(
+                "Exception during conversion with plugin '{0}' ({1})",
+                plugin.getClass().getName(), e.getMessage());
+        log.info(msg);
+        log.debug("Stack trace", e);
         if (log.isDebugEnabled()) {
           log.debug(
               "Content in failed conversion-attempt was (B64-encoded) {}",
@@ -129,7 +128,9 @@ public class RbelConverter {
                 Base64.getEncoder().encodeToString(convertedInput.getParentNode().getRawContent()));
           }
         }
-        convertedInput.addFacet(new RbelNoteFacet(msg, RbelNoteFacet.NoteStyling.ERROR));
+        convertedInput.addFacet(
+            new RbelNoteFacet(
+                msg + "\n" + ExceptionUtils.getStackTrace(e), RbelNoteFacet.NoteStyling.ERROR));
       }
     }
     return convertedInput;
