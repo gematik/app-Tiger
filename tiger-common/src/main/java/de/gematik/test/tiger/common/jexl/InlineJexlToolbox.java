@@ -158,7 +158,7 @@ public class InlineJexlToolbox {
    * @return array of random hex chars of given size
    */
   public String randomHex(int size) {
-    return RandomStringUtils.insecure().random(size, "abcdef9876543210"); // NOSONAR
+    return RandomStringUtils.insecure().next(size, "abcdef9876543210"); // NOSONAR
     // as test platform we are safe to use any pseudo random string return here
   }
 

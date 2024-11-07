@@ -103,7 +103,7 @@ class TracingResilienceTest {
         var randomMarker =
             "messageNumber"
                 + (i * MESSAGES_PER_ROUND
-                    + j); // RandomStringUtils.insecure().randomAlphanumeric(20);
+                    + j); // RandomStringUtils.insecure().nextAlphanumeric(20);
         log.info("Sending message {}", randomMarker);
         instance
             .get(

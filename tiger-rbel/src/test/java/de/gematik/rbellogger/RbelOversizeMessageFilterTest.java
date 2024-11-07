@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,7 +39,7 @@ class RbelOversizeMessageFilterTest {
     final String oversizedRequest =
         readCurlFromFileWithCorrectedLineBreaks("src/test/resources/sampleMessages/getRequest.curl")
             + "{\"foo\":\""
-            + RandomStringUtils.insecure().randomAlphabetic(50_000_000)
+            + RandomStringUtils.insecure().nextAlphabetic(50_000_000)
             + "\"}\r\n";
     rbelLogger = RbelLogger.build();
     rbelLogger

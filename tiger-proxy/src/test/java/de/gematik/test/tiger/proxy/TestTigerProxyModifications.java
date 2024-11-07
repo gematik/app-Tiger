@@ -215,7 +215,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
 
   @Test
   void forwardProxyWithModifiedQueryParameters(WireMockRuntimeInfo runtimeInfo) {
-    String specialCaseParameter = "blub" + RandomStringUtils.insecure().randomPrint(300);
+    String specialCaseParameter = "blub" + RandomStringUtils.insecure().nextPrint(300);
     spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(

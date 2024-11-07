@@ -886,7 +886,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder().skipParsingWhenMessageLargerThanKb(1).build());
 
     Unirest.post("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
-        .body("{'foobar':'" + RandomStringUtils.insecure().randomAlphanumeric(2_000) + "'}")
+        .body("{'foobar':'" + RandomStringUtils.insecure().nextAlphanumeric(2_000) + "'}")
         .asString();
     awaitMessagesInTiger(2);
 

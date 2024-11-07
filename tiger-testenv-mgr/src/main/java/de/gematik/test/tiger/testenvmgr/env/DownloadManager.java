@@ -86,7 +86,7 @@ public class DownloadManager {
                       workingDir,
                       jarName
                           + "_"
-                          + RandomStringUtils.insecure().randomAlphanumeric(10)) // NOSONAR
+                          + RandomStringUtils.insecure().nextAlphanumeric(10)) // NOSONAR
                   .toFile());
         } while (streamOfCandidateFiles(workingDir, jarName)
             .anyMatch(path -> path.getFileName().equals(candidateFile.get().toPath())));

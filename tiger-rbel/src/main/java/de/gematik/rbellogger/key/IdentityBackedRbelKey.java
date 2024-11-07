@@ -34,7 +34,7 @@ public class IdentityBackedRbelKey extends RbelKey {
     final String keyId =
         identity
             .getKeyId()
-            .orElseGet(() -> RandomStringUtils.insecure().randomAlphabetic(8)); // NOSONAR
+            .orElseGet(() -> RandomStringUtils.insecure().nextAlphabetic(8)); // NOSONAR
     final IdentityBackedRbelKey pubKey =
         new IdentityBackedRbelKey(
             identity.getCertificate().getPublicKey(),

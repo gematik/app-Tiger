@@ -97,7 +97,7 @@ class RbelHtmlRendererTest {
               for (int i = 0; i < RandomUtils.nextInt(0, 4); i++) {
                 element.addFacet(
                     new RbelNoteFacet(
-                        "some note " + RandomStringUtils.insecure().randomAlphanumeric(30),
+                        "some note " + RandomStringUtils.insecure().nextAlphanumeric(30),
                         RbelNoteFacet.NoteStyling.values()[RandomUtils.nextInt(0, 3)]));
               }
             });

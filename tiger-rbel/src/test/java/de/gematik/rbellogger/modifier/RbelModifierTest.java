@@ -380,7 +380,7 @@ class RbelModifierTest extends AbstractModifierTest {
 
   @Test
   void modifyRequestPath() throws IOException {
-    String specialCaseParameter = RandomStringUtils.insecure().randomPrint(300);
+    String specialCaseParameter = RandomStringUtils.insecure().nextPrint(300);
     final RbelElement message =
         readAndConvertCurlMessage(
             "src/test/resources/sampleMessages/getRequest.curl",
