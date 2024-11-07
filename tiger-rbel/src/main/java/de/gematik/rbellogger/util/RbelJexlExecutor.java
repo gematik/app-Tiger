@@ -147,7 +147,8 @@ public class RbelJexlExecutor {
     }
     for (String pathResult : pathResults) {
       final String id =
-          "replacedPath_" + RandomStringUtils.randomAlphabetic(20).toLowerCase(); // NOSONAR
+          "replacedPath_"
+              + RandomStringUtils.insecure().randomAlphabetic(20).toLowerCase(); // NOSONAR
       mapContext.put(id, pathResult);
       newPaths.add(expression.replace(potentialPath, id));
     }

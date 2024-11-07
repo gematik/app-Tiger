@@ -296,7 +296,7 @@ class TigerWebUiControllerTest {
 
     val proxyRest = Unirest.spawnInstance();
     proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());
-    final String longString = RandomStringUtils.randomAlphanumeric(2_000);
+    final String longString = RandomStringUtils.insecure().randomAlphanumeric(2_000);
     proxyRest
         .post("http://localhost:" + fakeBackendServerPort + "/foobar")
         .body("{'randomStringForLulz':'" + longString + "'}")

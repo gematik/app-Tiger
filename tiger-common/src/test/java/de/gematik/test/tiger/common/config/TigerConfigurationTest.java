@@ -999,24 +999,25 @@ public class TigerConfigurationTest { // NOSONAR
 
   @ParameterizedTest
   @CsvSource({
-"NESTEDBEAN_FOO, nestedBean.foo",
-"nestedBean.foo, nestedBean.foo",
-"Nestedbean.foo, nestedBean.foo",
-"nestedBean.foo, NESTEDBEAN_FOO",
-"nestedBean.foo, nestedBean.foo",
-"nestedBean.foo, Nestedbean.foo"
-})
-  void differentNamesForSameField_envShouldAlwaysBeatYaml(String envName, String yamlName) throws Exception {
+    "NESTEDBEAN_FOO, nestedBean.foo",
+    "nestedBean.foo, nestedBean.foo",
+    "Nestedbean.foo, nestedBean.foo",
+    "nestedBean.foo, NESTEDBEAN_FOO",
+    "nestedBean.foo, nestedBean.foo",
+    "nestedBean.foo, Nestedbean.foo"
+  })
+  void differentNamesForSameField_envShouldAlwaysBeatYaml(String envName, String yamlName)
+      throws Exception {
     new EnvironmentVariables(envName, "blub")
-      .execute(
-        () -> {
-          TigerGlobalConfiguration.reset();
-          TigerGlobalConfiguration.putValue(yamlName, "schmar", ConfigurationValuePrecedence.MAIN_YAML);
-          var dummyBean =
-            TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class).get();
-          assertThat(dummyBean.getNestedBean())
-            .hasFieldOrPropertyWithValue("foo", "blub");
-        });
+        .execute(
+            () -> {
+              TigerGlobalConfiguration.reset();
+              TigerGlobalConfiguration.putValue(
+                  yamlName, "schmar", ConfigurationValuePrecedence.MAIN_YAML);
+              var dummyBean =
+                  TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class).get();
+              assertThat(dummyBean.getNestedBean()).hasFieldOrPropertyWithValue("foo", "blub");
+            });
   }
 
   @Data

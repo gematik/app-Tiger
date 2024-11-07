@@ -110,7 +110,7 @@ class RbelUriConverterTest {
 
   @Test
   void longSpecialCaseParameter() {
-    final String sourceParameter = RandomStringUtils.randomPrint(3000);
+    final String sourceParameter = RandomStringUtils.insecure().randomPrint(3000);
     String specialCaseParameter = URLEncoder.encode(sourceParameter, StandardCharsets.UTF_8);
 
     final String basePath = "http://redirect.gematik.de/foo/bar";

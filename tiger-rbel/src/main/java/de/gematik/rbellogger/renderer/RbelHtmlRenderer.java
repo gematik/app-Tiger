@@ -96,7 +96,7 @@ public class RbelHtmlRenderer {
     if (el.getRawContent() == null) {
       return div();
     }
-    final String id = "dialog" + RandomStringUtils.randomAlphanumeric(20); // NOSONAR
+    final String id = "dialog" + RandomStringUtils.insecure().randomAlphanumeric(20); // NOSONAR
     return span()
         .with(
             a().withClass("btn modal-button modal-button-details float-end mx-2 test-modal-content")

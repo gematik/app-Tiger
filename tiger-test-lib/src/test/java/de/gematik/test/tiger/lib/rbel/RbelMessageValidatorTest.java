@@ -570,8 +570,7 @@ class RbelMessageValidatorTest extends AbstractRbelMessageValidatorTest {
 
   @Test
   void testCurrentRequestMatchesJsonSchemaWithPlaceholdersReplacement() {
-    val responseToCheck =
-        """
+    val responseToCheck = """
       HTTP/1.1 200 OK
 
       ["hello", "world"]

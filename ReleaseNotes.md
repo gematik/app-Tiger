@@ -4,9 +4,8 @@
 
 ## Bugfixes
 
-* KOB-8: The ordering of Proxy-Routes now also takes into consideration the amount of hosts in the route. This means
-  that a route with more hosts is now preferred over a route with fewer hosts (since it is considered to be more
-  specific).
+* KOB-8: The ordering of Proxy-Routes now also takes into consideration the amount of hosts in the route. This means that a route with more hosts is now preferred over a route with fewer hosts (since it is considered to be more specific).
+* TGR-1632: Fixed an issue which prevented Cucumber-error-messages to be thrown. (the `Failed to transform configuration parameter with key 'cucumber.snippet-type' and initial value 'UNDERSCORE'` message)
 
 # Release 3.4.3
 
