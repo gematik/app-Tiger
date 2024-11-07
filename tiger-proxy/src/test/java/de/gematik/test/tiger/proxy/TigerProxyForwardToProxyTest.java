@@ -18,33 +18,30 @@ package de.gematik.test.tiger.proxy;
 
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import de.gematik.rbellogger.data.RbelElementAssertion;
-import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Supplier;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.Ignore;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.TestSocketUtils;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.Network;
 import org.testcontainers.utility.MountableFile;
 
 /** UnirestClient --> TigerProxy --> Squid Proxy (Docker) --> fakebackend */
 @TestInstance(Lifecycle.PER_CLASS)
 @ResetTigerConfiguration
 @Slf4j
+@Disabled("The host.docker.internal is not working in the CI pipeline")
 class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
 
   private static GenericContainer<?> squidContainer;
@@ -67,7 +64,10 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
 
     squidContainer.setPortBindings(
         List.of(SQUID_PROXY_PORT_NO_AUTH + ":3128", SQUID_PROXY_PORT_AUTH_REQUIRED + ":3129"));
-    log.info("Starting squid container with port bindings {}:3128 and {}:3129", SQUID_PROXY_PORT_NO_AUTH, SQUID_PROXY_PORT_AUTH_REQUIRED);
+    log.info(
+        "Starting squid container with port bindings {}:3128 and {}:3129",
+        SQUID_PROXY_PORT_NO_AUTH,
+        SQUID_PROXY_PORT_AUTH_REQUIRED);
     squidContainer.start();
   }
 
@@ -119,7 +119,7 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("withOrWithoutTlsParams")
-  @Disabled
+  //  @Disabled
   void sendRequestToFakebackend_WithOrWithoutTls(
       String description,
       String protocol,
@@ -135,6 +135,48 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
                     .build())
             .proxyRoutes(List.of(TigerRoute.builder().from("https://maHost").to(toRoute).build()))
             .forwardToProxy(forwardProxyInfo.get())
+            .build());
+
+    log.info("Routing traffic to {}", toRoute);
+
+    proxyRest.get("https://maHost/ok").asString();
+    awaitMessagesInTiger(2);
+
+    assertThat(tigerProxy.getRbelMessagesList().get(1))
+        .extractChildWithPath("$.responseCode")
+        .hasStringContentEqualTo("200")
+        .andTheInitialElement()
+        .extractChildWithPath("$.body.request")
+        .hasStringContentEqualTo("body");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"http", "https"})
+  void noProxyHostInVariousSettings(String protocol) {
+    executeNoProxyTestWithProtocolAndNoProxyHosts(protocol, List.of("localhost"));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"http", "https"})
+  void nonMatchingNoProxyHostInVariousSettings(String protocol) {
+    assertThatThrownBy(() -> executeNoProxyTestWithProtocolAndNoProxyHosts(protocol, List.of("somethingElse")))
+      .isNotNull();
+  }
+
+  void executeNoProxyTestWithProtocolAndNoProxyHosts(String protocol, List<String> noProxyHosts) {
+    final String serverPort =
+        String.valueOf(protocol.equals("http") ? fakeBackendServerPort : fakeBackendServerTlsPort);
+    final String toRoute = protocol + "://localhost:" + serverPort;
+    final ForwardProxyInfo proxyInfo =
+        ForwardProxyInfo.builder()
+            .hostname("localhost")
+            .port(SQUID_PROXY_PORT_NO_AUTH)
+            .noProxyHosts(noProxyHosts)
+            .build();
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(List.of(TigerRoute.builder().from("https://maHost").to(toRoute).build()))
+            .forwardToProxy(proxyInfo)
             .build());
 
     log.info("Routing traffic to {}", toRoute);

@@ -35,7 +35,10 @@ import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
@@ -80,13 +83,15 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
         channel.attr(SECURE) != null
             && channel.attr(SECURE).get() != null
             && channel.attr(SECURE).get();
+    InetSocketAddress remoteAddress = channel.attr(REMOTE_SOCKET).get();
 
     pipeline.addFirst(new LoggingHandler(LogLevel.DEBUG));
-    addProxyHandlerIfApplicable(pipeline, secure);
+    if (isHostNotOnNoProxyHostList(remoteAddress)) {
+      addProxyHandlerIfApplicable(pipeline, secure);
+    }
     pipeline.addLast(httpClientConnectionHandler);
 
     if (secure) {
-      InetSocketAddress remoteAddress = channel.attr(REMOTE_SOCKET).get();
       log.info("Adding SSL Handler in HttpClientInitializer.initChannel");
       pipeline.addLast(
           nettySslContextFactory
@@ -189,5 +194,23 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
     pipeline.addLast(new MockServerBinaryClientCodec());
     pipeline.addLast(binaryBridgeHandler);
     protocolFuture.complete(null);
+  }
+
+  private boolean isHostNotOnNoProxyHostList(InetSocketAddress remoteAddress) {
+    if (remoteAddress == null || proxyConfiguration == null) {
+      return true;
+    }
+    return proxyConfiguration.getNoProxyHosts().stream()
+      .map(String::trim)
+      .map(
+        host -> {
+          try {
+            return InetAddress.getByName(host);
+          } catch (UnknownHostException e) {
+            return null;
+          }
+        })
+      .filter(Objects::nonNull)
+      .noneMatch(a -> remoteAddress.getHostName().equals(a.getHostName()));
   }
 }

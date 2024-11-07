@@ -83,7 +83,11 @@ public class NettyHttpClient {
               + " not possible to send a request");
     }
 
-    modifyProxyInformation(requestInfo);
+    if (isHostOnNoProxyHostList(requestInfo.getRemoteServerAddress())) {
+//      requestInfo.setAssureNoProxying(true);
+    } else {
+      modifyProxyInformation(requestInfo);
+    }
 
     if (HttpProtocol.HTTP_2.equals(requestInfo.getDataToSend().getProtocol())
         && Boolean.FALSE.equals(requestInfo.getDataToSend().isSecure())) {
@@ -170,7 +174,6 @@ public class NettyHttpClient {
 
   private void modifyProxyInformation(HttpRequestInfo requestInfo) {
     if (proxyConfiguration != null
-        && isHostNotOnNoProxyHostList(requestInfo.getRemoteServerAddress())
         && Boolean.FALSE.equals(requestInfo.getDataToSend().isSecure())) {
       requestInfo.setRemoteServerAddress(proxyConfiguration.getProxyAddress());
       final String remoteAddress =
@@ -257,11 +260,11 @@ public class NettyHttpClient {
     }
   }
 
-  private boolean isHostNotOnNoProxyHostList(InetSocketAddress remoteAddress) {
-    if (remoteAddress == null || StringUtils.isBlank(configuration.noProxyHosts())) {
+  private boolean isHostOnNoProxyHostList(InetSocketAddress remoteAddress) {
+    if (remoteAddress == null || proxyConfiguration == null) {
       return true;
     }
-    return Stream.of(configuration.noProxyHosts().split(","))
+    return proxyConfiguration.getNoProxyHosts().stream()
         .map(String::trim)
         .map(
             host -> {
@@ -272,6 +275,6 @@ public class NettyHttpClient {
               }
             })
         .filter(Objects::nonNull)
-        .noneMatch(remoteAddress.getAddress()::equals);
+        .anyMatch(a -> remoteAddress.getHostName().equals(a.getHostName()));
   }
 }

@@ -19,6 +19,7 @@ package de.gematik.test.tiger.common.data.config.tigerproxy;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import de.gematik.test.tiger.common.exceptions.TigerUnknownProtocolException;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -35,6 +36,7 @@ public class ForwardProxyInfo {
   @Builder.Default private TigerProxyType type = TigerProxyType.HTTP;
   private String username;
   private String password;
+  private List<String> noProxyHosts;
 
   public TigerProxyType getProxyProtocol(String proxyProtocol) {
     if (proxyProtocol.equalsIgnoreCase("http")) {

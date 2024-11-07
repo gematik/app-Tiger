@@ -26,6 +26,7 @@ import de.gematik.test.tiger.common.exceptions.TigerProxyToForwardProxyException
 import de.gematik.test.tiger.common.exceptions.TigerUnknownProtocolException;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 
@@ -59,14 +60,17 @@ public class ProxyConfigurationConverter {
     if (StringUtils.equals(forwardProxyInfo.getHostname(), "$SYSTEM")) {
       return convertSystemProxyConfig(forwardProxyInfo);
     } else {
-      return Optional.of(
-          proxyConfiguration(
-              Optional.ofNullable(forwardProxyInfo.getType())
-                  .map(ProxyConfigurationConverter::toMockServerType)
-                  .orElse(ProxyConfiguration.Type.HTTP),
-              forwardProxyInfo.getHostname() + ":" + forwardProxyInfo.calculateProxyPort(),
-              forwardProxyInfo.getUsername(),
-              forwardProxyInfo.getPassword()));
+      final ProxyConfiguration result = proxyConfiguration(
+        Optional.ofNullable(forwardProxyInfo.getType())
+          .map(ProxyConfigurationConverter::toMockServerType)
+          .orElse(HTTP),
+        forwardProxyInfo.getHostname() + ":" + forwardProxyInfo.calculateProxyPort(),
+        forwardProxyInfo.getUsername(),
+        forwardProxyInfo.getPassword());
+      if (forwardProxyInfo.getNoProxyHosts() != null) {
+        result.getNoProxyHosts().addAll(forwardProxyInfo.getNoProxyHosts());
+      }
+      return Optional.of(result);
     }
   }
 
@@ -121,8 +125,8 @@ public class ProxyConfigurationConverter {
 
     URI proxyAsUri = URI.create(httpProxyHostFromEnv);
 
-    if (proxyAsUri.getHost() == null || proxyAsUri.getScheme() == null) {
-      throw new TigerProxyToForwardProxyException("No proxy host or no proxy protocol specified.");
+    if (proxyAsUri.getHost() == null) {
+      throw new TigerProxyToForwardProxyException("No proxy host specified.");
     }
 
     ProxyConfiguration.Type proxyType =
@@ -134,7 +138,8 @@ public class ProxyConfigurationConverter {
             forwardProxyInfo.getProxyProtocol(proxyAsUri.getScheme()));
 
     if (proxyUsernamePassword == null) {
-      return Optional.of(proxyConfiguration(proxyType, proxyAsUri.getHost() + ":" + proxyPort));
+      return Optional.of(proxyConfiguration(proxyType, proxyAsUri.getHost() + ":" + proxyPort))
+        .map(ProxyConfigurationConverter::addNoProxyHostsFromEnv);
     } else if (!proxyUsernamePassword.contains(":")) {
       throw new TigerProxyToForwardProxyException(
           "Could not convert proxy configuration: either username or password are not present in"
@@ -145,8 +150,17 @@ public class ProxyConfigurationConverter {
               proxyType,
               proxyAsUri.getHost() + ":" + proxyPort,
               proxyUsernamePassword.split(":")[0],
-              proxyUsernamePassword.split(":")[1]));
+              proxyUsernamePassword.split(":")[1]))
+        .map(ProxyConfigurationConverter::addNoProxyHostsFromEnv);
     }
+  }
+
+  private static ProxyConfiguration addNoProxyHostsFromEnv(ProxyConfiguration proxyConfiguration) {
+    String noProxyHosts = System.getenv("no_proxy");
+    if (noProxyHosts != null) {
+      proxyConfiguration.getNoProxyHosts().addAll(List.of(noProxyHosts.split(",")));
+    }
+    return proxyConfiguration;
   }
 
   public static Optional<ProxyConfiguration> convertSystemProxyConfig(

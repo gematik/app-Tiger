@@ -28,16 +28,19 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 
 /*
  * @author jamesdbloom
  */
+@Getter
 public class ProxyConfiguration extends ObjectWithJsonToString {
 
   private final Type type;
   private final InetSocketAddress proxyAddress;
   private final String username;
   private final String password;
+  private final List<String> noProxyHosts = new ArrayList<>();
 
   private ProxyConfiguration(
       Type type, InetSocketAddress proxyAddress, String username, String password) {
@@ -79,22 +82,6 @@ public class ProxyConfiguration extends ObjectWithJsonToString {
   public static ProxyConfiguration proxyConfiguration(
       Type type, InetSocketAddress address, String username, String password) {
     return new ProxyConfiguration(type, address, username, password);
-  }
-
-  public Type getType() {
-    return type;
-  }
-
-  public InetSocketAddress getProxyAddress() {
-    return proxyAddress;
-  }
-
-  public String getUsername() {
-    return username;
-  }
-
-  public String getPassword() {
-    return password;
   }
 
   @SuppressWarnings("UnusedReturnValue")

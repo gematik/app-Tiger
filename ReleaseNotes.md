@@ -2,6 +2,19 @@
 
 # Release 3.4.4
 
+## Features
+
+* TGR-538: NoProxyHosts can now be configured for the forwardToProxy-configuration of a TigerProxy:
+```yaml
+tigerProxy:
+  forwardToProxy:
+    hostname: 192.168.110.10
+    port: 3128
+    noProxyHosts:
+      - "localhost"
+```
+In this example the TigerProxy will not use the forwardToProxy-configuration for requests to localhost (instead sending the messages directly).
+
 ## Bugfixes
 
 * TGR-1616: ForwardToProxy now correctly works when tunneling HTTPS traffic through an HTTP-Proxy
