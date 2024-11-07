@@ -119,6 +119,9 @@ public class MockServerToRbelConverter {
   }
 
   private RbelHostname convertUri(String protocolAndHost) {
+    if (protocolAndHost == null) {
+      return null;
+    }
     try {
       new URI(protocolAndHost);
       return (RbelHostname) RbelHostname.generateFromUrl(protocolAndHost).orElse(null);

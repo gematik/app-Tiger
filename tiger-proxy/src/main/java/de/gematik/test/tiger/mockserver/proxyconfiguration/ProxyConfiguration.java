@@ -47,39 +47,6 @@ public class ProxyConfiguration extends ObjectWithJsonToString {
     this.password = password;
   }
 
-  public static List<ProxyConfiguration> proxyConfiguration(MockServerConfiguration configuration) {
-    List<ProxyConfiguration> proxyConfigurations = new ArrayList<>();
-    String username = configuration.forwardProxyAuthenticationUsername();
-    String password = configuration.forwardProxyAuthenticationPassword();
-
-    InetSocketAddress httpProxySocketAddress = configuration.forwardHttpProxy();
-    if (httpProxySocketAddress != null) {
-      proxyConfigurations.add(
-          proxyConfiguration(Type.HTTP, httpProxySocketAddress, username, password));
-    }
-
-    InetSocketAddress httpsProxySocketAddress = configuration.forwardHttpsProxy();
-    if (httpsProxySocketAddress != null) {
-      proxyConfigurations.add(
-          proxyConfiguration(Type.HTTPS, httpsProxySocketAddress, username, password));
-    }
-
-    InetSocketAddress socksProxySocketAddress = configuration.forwardSocksProxy();
-    if (socksProxySocketAddress != null) {
-      if (proxyConfigurations.isEmpty()) {
-        proxyConfigurations.add(
-            proxyConfiguration(Type.SOCKS5, socksProxySocketAddress, username, password));
-      } else {
-        throw new IllegalArgumentException(
-            "Invalid proxy configuration it is not possible to configure HTTP or HTTPS proxy at the"
-                + " same time as a SOCKS proxy, please choose either HTTP(S) proxy OR a SOCKS"
-                + " proxy");
-      }
-    }
-
-    return proxyConfigurations;
-  }
-
   public static ProxyConfiguration proxyConfiguration(Type type, String address) {
     return proxyConfiguration(type, address, null, null);
   }

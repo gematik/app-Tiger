@@ -55,7 +55,7 @@ public class NettyHttpClient {
       AttributeKey.valueOf("ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE");
   private final MockServerConfiguration configuration;
   private final EventLoopGroup eventLoopGroup;
-  private final Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations;
+  private final ProxyConfiguration proxyConfiguration;
   private final NettySslContextFactory nettySslContextFactory;
   private final Set<Integer> clientPorts = Collections.synchronizedSet(new HashSet<>());
 
@@ -64,17 +64,10 @@ public class NettyHttpClient {
   public NettyHttpClient(
       MockServerConfiguration configuration,
       EventLoopGroup eventLoopGroup,
-      List<ProxyConfiguration> proxyConfigurations,
       NettySslContextFactory nettySslContextFactory) {
     this.configuration = configuration;
     this.eventLoopGroup = eventLoopGroup;
-    this.proxyConfigurations =
-        proxyConfigurations != null
-            ? proxyConfigurations.stream()
-                .collect(
-                    Collectors.toMap(
-                        ProxyConfiguration::getType, proxyConfiguration -> proxyConfiguration))
-            : Map.of();
+    this.proxyConfiguration = configuration.proxyConfiguration();
     this.nettySslContextFactory = nettySslContextFactory;
     this.clientBootstrapFactory = new ClientBootstrapFactory(configuration, eventLoopGroup);
   }
@@ -84,102 +77,115 @@ public class NettyHttpClient {
     if (requestInfo.getRemoteServerAddress() == null) {
       requestInfo.setRemoteServerAddress(requestInfo.getDataToSend().socketAddressFromHostHeader());
     }
-    if (!eventLoopGroup.isShuttingDown()) {
-      if (proxyConfigurations != null
-          && !Boolean.TRUE.equals(requestInfo.getDataToSend().isSecure())
-          && proxyConfigurations.containsKey(ProxyConfiguration.Type.HTTP)
-          && isHostNotOnNoProxyHostList(requestInfo.getRemoteServerAddress())) {
-        ProxyConfiguration proxyConfiguration =
-            proxyConfigurations.get(ProxyConfiguration.Type.HTTP);
-        requestInfo.setRemoteServerAddress(proxyConfiguration.getProxyAddress());
-        proxyConfiguration.addProxyAuthenticationHeader(requestInfo.getDataToSend());
-      } else if (requestInfo.getRemoteServerAddress() == null) {
-        requestInfo.setRemoteServerAddress(
-            requestInfo.getDataToSend().socketAddressFromHostHeader());
-      }
-      if (HttpProtocol.HTTP_2.equals(requestInfo.getDataToSend().getProtocol())
-          && !Boolean.TRUE.equals(requestInfo.getDataToSend().isSecure())) {
-        log.warn(
-            "HTTP2 requires ALPN but request is not secure (i.e. TLS) so protocol changed"
-                + " to HTTP1");
-        requestInfo.getDataToSend().setProtocol(HttpProtocol.HTTP_1_1);
-      }
-
-      final CompletableFuture<HttpResponse> httpResponseFuture = new CompletableFuture<>();
-      final CompletableFuture<Message> responseFuture = new CompletableFuture<>();
-      final HttpProtocol httpProtocol =
-          requestInfo.getDataToSend().getProtocol() != null
-              ? requestInfo.getDataToSend().getProtocol()
-              : HttpProtocol.HTTP_1_1;
-
-      final HttpClientInitializer clientInitializer = createClientInitializer(httpProtocol);
-
-      var isSecure =
-          requestInfo.getDataToSend().isSecure() != null && requestInfo.getDataToSend().isSecure();
-
-      var onCreationListener =
-          (ChannelFutureListener)
-              future -> {
-                if (future.isSuccess()) {
-                  // ensure if HTTP2 is used then settings have been received from server
-
-                  clientInitializer.whenComplete(
-                      (protocol, throwable) -> {
-                        if (throwable != null) {
-                          httpResponseFuture.completeExceptionally(throwable);
-                        } else {
-                          // send the HTTP request
-                          log.trace("sending request: {}", requestInfo.getDataToSend());
-                          future.channel().writeAndFlush(requestInfo.getDataToSend());
-                        }
-                      });
-                } else {
-                  httpResponseFuture.completeExceptionally(future.cause());
-                }
-              };
-
-      var onReuseListener =
-          (ChannelFutureListener)
-              future -> {
-                if (future.isSuccess()) {
-                  // send the HTTP request
-                  log.trace("sending request: {}", requestInfo.getDataToSend());
-                  future.channel().writeAndFlush(requestInfo.getDataToSend());
-                } else {
-                  httpResponseFuture.completeExceptionally(future.cause());
-                }
-              };
-
-      clientBootstrapFactory
-          .configureChannel()
-          .isSecure(isSecure)
-          .requestInfo(requestInfo)
-          .clientInitializer(clientInitializer)
-          .errorIfChannelClosedWithoutResponse(true)
-          .responseFuture(responseFuture)
-          .timeoutInMilliseconds(customTimeout)
-          .onCreationListener(onCreationListener)
-          .onReuseListener(onReuseListener)
-          .connectToChannel();
-
-      responseFuture.whenComplete(
-          (message, throwable) -> {
-            if (throwable == null) {
-              if (message != null) {
-                httpResponseFuture.complete((HttpResponse) message);
-              } else {
-                httpResponseFuture.complete(response());
-              }
-            } else {
-              httpResponseFuture.completeExceptionally(throwable);
-            }
-          });
-
-      return httpResponseFuture;
-    } else {
+    if (eventLoopGroup.isShuttingDown()) {
       throw new IllegalStateException(
           "Request sent after client has been stopped - the event loop has been shutdown so it is"
               + " not possible to send a request");
+    }
+
+    modifyProxyInformation(requestInfo);
+
+    if (HttpProtocol.HTTP_2.equals(requestInfo.getDataToSend().getProtocol())
+        && Boolean.FALSE.equals(requestInfo.getDataToSend().isSecure())) {
+      log.warn(
+          "HTTP2 requires ALPN but request is not secure (i.e. TLS) so protocol changed"
+              + " to HTTP1");
+      requestInfo.getDataToSend().setProtocol(HttpProtocol.HTTP_1_1);
+    }
+
+    final CompletableFuture<HttpResponse> httpResponseFuture = new CompletableFuture<>();
+    final CompletableFuture<Message> responseFuture = new CompletableFuture<>();
+    final HttpProtocol httpProtocol =
+        requestInfo.getDataToSend().getProtocol() != null
+            ? requestInfo.getDataToSend().getProtocol()
+            : HttpProtocol.HTTP_1_1;
+
+    final HttpClientInitializer clientInitializer = createClientInitializer(httpProtocol);
+
+    var isSecure = Optional.ofNullable(requestInfo.getDataToSend().isSecure()).orElse(false);
+
+    var onCreationListener =
+        (ChannelFutureListener)
+            future -> {
+              if (future.isSuccess()) {
+                // ensure if HTTP2 is used then settings have been received from server
+
+                clientInitializer.whenComplete(
+                    (protocol, throwable) -> {
+                      if (throwable != null) {
+                        httpResponseFuture.completeExceptionally(throwable);
+                      } else {
+                        // send the HTTP request
+                        log.trace(
+                            "sending request: {}",
+                            requestInfo.getDataToSend().printLogLineDescription());
+                        future.channel().writeAndFlush(requestInfo.getDataToSend());
+                      }
+                    });
+              } else {
+                httpResponseFuture.completeExceptionally(future.cause());
+              }
+            };
+
+    var onReuseListener =
+        (ChannelFutureListener)
+            future -> {
+              if (future.isSuccess()) {
+                // send the HTTP request
+                log.trace(
+                    "sending request: {}", requestInfo.getDataToSend().printLogLineDescription());
+                future.channel().writeAndFlush(requestInfo.getDataToSend());
+              } else {
+                httpResponseFuture.completeExceptionally(future.cause());
+              }
+            };
+
+    clientBootstrapFactory
+        .configureChannel()
+        .isSecure(isSecure)
+        .requestInfo(requestInfo)
+        .clientInitializer(clientInitializer)
+        .errorIfChannelClosedWithoutResponse(true)
+        .responseFuture(responseFuture)
+        .timeoutInMilliseconds(customTimeout)
+        .onCreationListener(onCreationListener)
+        .onReuseListener(onReuseListener)
+        .connectToChannel();
+
+    responseFuture.whenComplete(
+        (message, throwable) -> {
+          if (throwable == null) {
+            if (message != null) {
+              httpResponseFuture.complete((HttpResponse) message);
+            } else {
+              httpResponseFuture.complete(response());
+            }
+          } else {
+            httpResponseFuture.completeExceptionally(throwable);
+          }
+        });
+
+    return httpResponseFuture;
+  }
+
+  private void modifyProxyInformation(HttpRequestInfo requestInfo) {
+    if (proxyConfiguration != null
+        && isHostNotOnNoProxyHostList(requestInfo.getRemoteServerAddress())
+        && Boolean.FALSE.equals(requestInfo.getDataToSend().isSecure())) {
+      requestInfo.setRemoteServerAddress(proxyConfiguration.getProxyAddress());
+      final String remoteAddress =
+          requestInfo.getRemoteServerAddress().getHostString()
+              + ":"
+              + requestInfo.getRemoteServerAddress().getPort();
+
+      requestInfo.getDataToSend().setRemoteAddress(remoteAddress);
+
+      proxyConfiguration.addProxyAuthenticationHeader(requestInfo.getDataToSend());
+    } else if (requestInfo.getRemoteServerAddress() == null) {
+      log.info(
+          "Setting remote server address to {}",
+          requestInfo.getDataToSend().socketAddressFromHostHeader());
+      requestInfo.setRemoteServerAddress(requestInfo.getDataToSend().socketAddressFromHostHeader());
     }
   }
 
@@ -189,23 +195,13 @@ public class NettyHttpClient {
   }
 
   public HttpClientInitializer createClientInitializer(HttpProtocol httpProtocol) {
-    return new HttpClientInitializer(
-        configuration, proxyConfigurations, nettySslContextFactory, httpProtocol);
+    return new HttpClientInitializer(configuration, nettySslContextFactory, httpProtocol);
   }
 
   public CompletableFuture<BinaryMessage> sendRequest(
       BinaryRequestInfo binaryRequestInfo, final boolean isSecure)
       throws SocketConnectionException {
     if (!eventLoopGroup.isShuttingDown()) {
-      if (proxyConfigurations != null
-          && !isSecure
-          && proxyConfigurations.containsKey(ProxyConfiguration.Type.HTTP)) {
-        binaryRequestInfo.setRemoteServerAddress(
-            proxyConfigurations.get(ProxyConfiguration.Type.HTTP).getProxyAddress());
-      } else if (binaryRequestInfo.getRemoteServerAddress() == null) {
-        throw new IllegalArgumentException("Remote address cannot be null");
-      }
-
       final CompletableFuture<BinaryMessage> binaryResponseFuture = new CompletableFuture<>();
       final CompletableFuture<Message> responseFuture = new CompletableFuture<>();
 
@@ -277,17 +273,5 @@ public class NettyHttpClient {
             })
         .filter(Objects::nonNull)
         .noneMatch(remoteAddress.getAddress()::equals);
-  }
-
-  public void addClientPort(int port) {
-    clientPorts.add(port);
-  }
-
-  public void removeClientPort(int port) {
-    clientPorts.remove(port);
-  }
-
-  public boolean hasClientPort(int port) {
-    return clientPorts.contains(port);
   }
 }

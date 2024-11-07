@@ -23,6 +23,7 @@ import de.gematik.test.tiger.mockserver.model.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.PatternSyntaxException;
@@ -85,11 +86,18 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
     if (requestPattern.isSecure() == null || request.isSecure() == null) {
       return true;
     }
-    final boolean equals = requestPattern.isSecure().equals(request.isSecure());
+    final boolean equals = Objects.equals(requestPattern.isSecure(), request.isSecure());
     if (!equals) {
       log.atTrace()
           .addArgument(request::isSecure)
-          .addArgument(tigerRoute::createShortDescription)
+          .addArgument(
+              () -> {
+                if (tigerRoute == null) {
+                  return null;
+                } else {
+                  return tigerRoute.createShortDescription();
+                }
+              })
           .log("secure [{}] is not matching for route {}");
     }
     return equals;

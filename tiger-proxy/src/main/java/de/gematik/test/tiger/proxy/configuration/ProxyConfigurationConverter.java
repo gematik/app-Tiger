@@ -19,13 +19,11 @@ package de.gematik.test.tiger.proxy.configuration;
 import static de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration.Type.HTTP;
 import static de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration.proxyConfiguration;
 
-import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyType;
 import de.gematik.test.tiger.common.exceptions.TigerProxyToForwardProxyException;
 import de.gematik.test.tiger.common.exceptions.TigerUnknownProtocolException;
-import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import java.net.URI;
 import java.util.Optional;
@@ -39,27 +37,6 @@ public class ProxyConfigurationConverter {
       convertForwardProxyConfigurationToMockServerConfiguration(TigerProxyConfiguration tpConfig) {
     return Optional.ofNullable(tpConfig.getForwardToProxy())
         .flatMap(ProxyConfigurationConverter::createMockServerProxyConfiguration);
-  }
-
-  public static MockServerConfiguration convertToMockServerConfiguration(
-      TigerProxyConfiguration tpConfig) {
-    MockServerConfiguration config = MockServerConfiguration.configuration();
-    convertForwardProxyConfigurationToMockServerConfiguration(tpConfig)
-        .ifPresent(
-            proxyCfg -> {
-              switch (proxyCfg.getType()) {
-                case HTTP:
-                  config.forwardHttpProxy(proxyCfg.getProxyAddress());
-                  break;
-                case HTTPS:
-                  config.forwardHttpsProxy(proxyCfg.getProxyAddress());
-                  break;
-                case SOCKS5:
-                  throw new TigerConfigurationException(
-                      "Socks Proxies are not currently supported!");
-              }
-            });
-    return config;
   }
 
   public static ProxyConfiguration.Type toMockServerType(TigerProxyType type)
@@ -86,7 +63,7 @@ public class ProxyConfigurationConverter {
           proxyConfiguration(
               Optional.ofNullable(forwardProxyInfo.getType())
                   .map(ProxyConfigurationConverter::toMockServerType)
-                  .orElse(ProxyConfiguration.Type.HTTPS),
+                  .orElse(ProxyConfiguration.Type.HTTP),
               forwardProxyInfo.getHostname() + ":" + forwardProxyInfo.calculateProxyPort(),
               forwardProxyInfo.getUsername(),
               forwardProxyInfo.getPassword()));

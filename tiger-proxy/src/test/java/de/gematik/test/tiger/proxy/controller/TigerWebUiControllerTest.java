@@ -73,11 +73,9 @@ class TigerWebUiControllerTest {
     runtimeInfo
         .getWireMock()
         .register(
-            stubFor(
-                get("/foobar")
-                    .willReturn(aResponse().withStatus(666).withBody("{\"foo\":\"bar\"}"))));
+            get("/foobar").willReturn(aResponse().withStatus(666).withBody("{\"foo\":\"bar\"}")));
 
-    runtimeInfo.getWireMock().register(stubFor(post("/foobar").willReturn(ok().withBody(""))));
+    runtimeInfo.getWireMock().register(post("/foobar").willReturn(ok().withBody("")));
 
     RestAssured.proxy = null;
 

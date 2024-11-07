@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.mockserver.configuration;
 
 import de.gematik.test.tiger.mockserver.model.BinaryProxyListener;
+import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactorySupplier;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import io.netty.handler.ssl.SslContext;
@@ -68,14 +69,8 @@ public class MockServerConfiguration {
   private boolean enableTlsTermination = true;
 
   // proxy
-  private InetSocketAddress forwardHttpProxy = null;
-  private InetSocketAddress forwardHttpsProxy = null;
-  private InetSocketAddress forwardSocksProxy = null;
-  private String forwardProxyAuthenticationUsername = "";
-  private String forwardProxyAuthenticationPassword = "";
-  private String proxyAuthenticationRealm = "";
-  private String proxyAuthenticationUsername = "";
-  private String proxyAuthenticationPassword = "";
+  private ProxyConfiguration proxyConfiguration = null;
+  private InetSocketAddress directForwarding = null;
   private String noProxyHosts = "";
 
   // TLS

@@ -49,6 +49,9 @@ pipeline {
         }
 
         stage('Test') {
+            environment {
+                TIGER_DOCKER_HOST = dockerGetCurrentHostname()
+            }
             steps {
                 withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
                     mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -P=NoLongrunner,dev")
@@ -88,7 +91,7 @@ pipeline {
             }
         }
 
-		stage('Docker Images') {
+        stage('Docker Images') {
             matrix {
 
                 axes {
@@ -100,20 +103,20 @@ pipeline {
                 environment {
                     IMAGE_NAME = "tiger/${APP}"
                     IMAGE_VERSION = 'latest'
-					VERSION= 'latest'
+                    VERSION = 'latest'
                     BUILD_ARGS = "--build-arg APP=${APP}"
                     DOCKER_TARGET_REGISTRY = dockerGetGematikRegistry('EUWEST3')
                 }
                 stages {
                     stage('Build Docker Image') {
-					       steps {
-                              dockerBuild(IMAGE_NAME, VERSION, IMAGE_VERSION, BUILD_ARGS, 'Dockerfile_' + APP, DOCKER_TARGET_REGISTRY)
+                        steps {
+                            dockerBuild(IMAGE_NAME, VERSION, IMAGE_VERSION, BUILD_ARGS, 'Dockerfile_' + APP, DOCKER_TARGET_REGISTRY)
 
                         }
                     }
 
                     stage('Push Docker Image') {
-					   when {
+                        when {
                             branch BRANCH
                         }
                         steps {

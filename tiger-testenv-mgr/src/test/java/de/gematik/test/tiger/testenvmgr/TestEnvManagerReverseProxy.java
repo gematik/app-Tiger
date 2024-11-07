@@ -63,7 +63,7 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
             MessageFormat.format(
                 "Expected to receive folder index page from Winstone server, but got HTTP {0} with"
                     + " body \n"
-                    + "{1}",
+                    + "'{1}'",
                 httpResponse.getStatus(), httpResponse.getBody()))
         .startsWith("<!DOCTYPE html>")
         .endsWith("</html>");

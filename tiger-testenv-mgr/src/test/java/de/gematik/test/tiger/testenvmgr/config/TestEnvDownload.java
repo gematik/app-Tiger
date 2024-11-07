@@ -61,13 +61,12 @@ class TestEnvDownload {
     }
     runtimeInfo
         .getWireMock()
-        .register(stubFor(get("/download").willReturn(ok().withBody(winstoneBytes))));
+        .register(get("/download").willReturn(ok().withBody(winstoneBytes)));
     runtimeInfo
         .getWireMock()
         .register(
-            stubFor(
                 get("/tiger/download")
-                    .willReturn(ok().withBody(tigerProxyBytes).withFixedDelay(2000))));
+                    .willReturn(ok().withBody(tigerProxyBytes).withFixedDelay(2000)));
   }
 
   @BeforeAll
@@ -138,9 +137,8 @@ class TestEnvDownload {
     runtimeInfo
         .getWireMock()
         .register(
-            stubFor(
                 get("/failDownload")
-                    .willReturn(ok().withBody("not a jar".getBytes(StandardCharsets.UTF_8)))));
+                    .willReturn(ok().withBody("not a jar".getBytes(StandardCharsets.UTF_8))));
 
     loadConfigurationWithJarsLoadedFromUrls(
         "http://localhost:" + runtimeInfo.getHttpPort() + "/failDownload");

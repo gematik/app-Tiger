@@ -89,7 +89,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
     awaitMessagesInTiger(2);
     final RbelElement request = tigerProxy.getRbelMessagesList().get(0);
 
-    // the extractChildWithPath will return an element inside of the original to asserted element,
+    // the extractChildWithPath will return an element inside the original to asserted element,
     // consecutive calls in an assertion chain would fail as they wouldn't start from the root
     // element but from
     // the child extracted by the first assertion
@@ -145,6 +145,66 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
         Arguments.of("", "/", "/", 888),
         Arguments.of("/", "", "/", 888),
         Arguments.of("/", "/", "/", 888));
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+      value = {
+        "/foo, /, /foo/bar, /bar",
+        "/foo/bar, /, /foo/bar/schmah, /schmah",
+
+        "/foo, /holla, /foo/bar, /holla/bar",
+        "/foo/bar, /holla, /foo/bar/schmah, /holla/schmah"
+      },
+      delimiter = ',')
+  void patternWithPathReverse_matchingPartOfRequestShouldBeStripped(
+      String fromPath, String toPath, String requestPath, String shouldBecomePath) {
+    spawnTigerProxyWith(new TigerProxyConfiguration());
+    tigerProxy.addRoute(
+        TigerRoute.builder()
+            .from(fromPath)
+            .to("http://localhost:" + tigerProxy.getProxyPort() + toPath)
+            .build());
+    tigerProxy.addRoute(
+        TigerRoute.builder()
+            .from(shouldBecomePath)
+            .to("http://localhost:" + fakeBackendServerPort + "/foobar")
+            .build());
+
+    assertThat(
+            Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + requestPath)
+                .asString()
+                .getStatus())
+        .isEqualTo(666);
+    awaitMessagesInTiger(4);
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+      value = {
+        "/foo, /, /foo/bar, /bar",
+        "/foo/bar, /, /foo/bar/schmah, /schmah",
+
+        "/foo, /holla, /foo/bar, /holla/bar",
+        "/foo/bar, /holla, /foo/bar/schmah, /holla/schmah"
+      },
+      delimiter = ',')
+  void patternWithPathForward_matchingPartOfRequestShouldBeStripped(
+      String fromPath, String toPath, String requestPath, String shouldBecomePath) {
+    spawnTigerProxyWith(new TigerProxyConfiguration());
+    tigerProxy.addRoute(
+        TigerRoute.builder()
+            .from("http://backend" + fromPath)
+            .to("http://localhost:" + tigerProxy.getProxyPort() + toPath)
+            .build());
+    tigerProxy.addRoute(
+        TigerRoute.builder()
+            .from(shouldBecomePath)
+            .to("http://localhost:" + fakeBackendServerPort + "/foobar")
+            .build());
+
+    assertThat(proxyRest.get("http://backend" + requestPath).asString().getStatus()).isEqualTo(666);
+    awaitMessagesInTiger(4);
   }
 
   @Test

@@ -53,6 +53,7 @@ import kong.unirest.Config;
 import kong.unirest.UnirestInstance;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
@@ -62,10 +63,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 
 @Slf4j
-@WireMockTest
+@WireMockTest(httpsEnabled = true)
 public abstract class AbstractTigerProxyTest {
 
   public static int fakeBackendServerPort = 0;
+  public static int fakeBackendServerTlsPort = 0;
   public static byte[] binaryMessageContent = new byte[100];
   public TigerProxy tigerProxy;
   public UnirestInstance proxyRest;
@@ -73,76 +75,81 @@ public abstract class AbstractTigerProxyTest {
   @BeforeEach
   public void setupBackendServer(WireMockRuntimeInfo runtimeInfo) {
     fakeBackendServerPort = runtimeInfo.getHttpPort();
-    final MappingBuilder foobar =
-        get(urlMatching("/foobar.*"))
-            .willReturn(
-                ok().withStatus(666)
-                    .withStatusMessage("EVIL")
-                    .withHeader("foo", "bar1", "bar2")
-                    .withHeader("Some-Header-Field", "complicated-value §$%&/((=)(/(/&$()=§$§")
-                    .withHeader("fooValue", "{{request.query.foo}}")
-                    .withBody("{\"foo\":\"bar\"}")
-                    .withTransformers("response-template"));
-    runtimeInfo.getWireMock().register(stubFor(foobar));
-
-    final MappingBuilder deepFoobar =
-        get(urlMatching("/deep/foobar.*"))
-            .willReturn(
-                ok().withStatus(777)
-                    .withStatusMessage("DEEPEREVIL")
-                    .withHeader("foo", "bar1", "bar2")
-                    .withBody("{\"foo\":\"bar\"}"));
-    runtimeInfo.getWireMock().register(stubFor(deepFoobar));
-
+    fakeBackendServerTlsPort = runtimeInfo.getHttpsPort();
+    log.info("Fake backend server started on ports {} (http) and {} (https)", fakeBackendServerPort, fakeBackendServerTlsPort);
     runtimeInfo
         .getWireMock()
         .register(
-            stubFor(get("/").willReturn(ok().withStatus(888).withBody("{\"home\":\"page\"}"))));
+            get(urlMatching("/foobar.*"))
+                .willReturn(
+                    ok().withStatus(666)
+                        .withStatusMessage("EVIL")
+                        .withHeader("foo", "bar1", "bar2")
+                        .withHeader("Some-Header-Field", "complicated-value §$%&/((=)(/(/&$()=§$§")
+                        .withHeader("fooValue", "{{request.query.foo}}")
+                        .withBody("{\"foo\":\"bar\"}")
+                        .withTransformers("response-template")));
+    runtimeInfo
+        .getWireMock()
+        .register(
+            get(urlMatching("/deep/foobar.*"))
+                .willReturn(
+                    ok().withStatus(777)
+                        .withStatusMessage("DEEPEREVIL")
+                        .withHeader("foo", "bar1", "bar2")
+                        .withBody("{\"foo\":\"bar\"}")));
 
     runtimeInfo
         .getWireMock()
-        .register(stubFor(get(urlMatching("/forward.*")).willReturn(permanentRedirect("/foobar"))));
+        .register(get("/").willReturn(ok().withStatus(888).withBody("{\"home\":\"page\"}")));
+
+    runtimeInfo
+        .getWireMock()
+        .register(get(urlMatching("/forward.*")).willReturn(permanentRedirect("/foobar")));
     runtimeInfo
         .getWireMock()
         .register(
-            stubFor(
-                get(urlMatching("/deep/forward.*")).willReturn(permanentRedirect("/deep/foobar"))));
+            get(urlMatching("/deep/forward.*")).willReturn(permanentRedirect("/deep/foobar")));
     runtimeInfo
         .getWireMock()
         .register(
-            stubFor(
-                get("/redirect/withAdditionalHeaders")
-                    .willReturn(
-                        temporaryRedirect("/redirect/foobar")
-                            .withHeader("additional-header", "test_value"))));
+            get("/redirect/withAdditionalHeaders")
+                .willReturn(
+                    temporaryRedirect("/redirect/foobar")
+                        .withHeader("additional-header", "test_value")));
 
     binaryMessageContent =
         Arrays.concatenate(
             "This is a meaningless string which will be binary content. And some more test chars: "
                 .getBytes(StandardCharsets.UTF_8),
             RandomUtils.nextBytes(100));
-
     runtimeInfo
         .getWireMock()
-        .register(stubFor(post("/foobar").willReturn(ok().withBody(binaryMessageContent))));
-
-    runtimeInfo
-        .getWireMock()
-        .register(
-            stubFor(
-                post("/echo")
-                    .willReturn(
-                        status(200)
-                            .withStatusMessage("")
-                            .withBody("{{request.body}}")
-                            .withTransformers("response-template"))));
+        .register(post("/foobar").willReturn(ok().withBody(binaryMessageContent)));
 
     runtimeInfo
         .getWireMock()
         .register(
-            stubFor(
-                get("/error")
-                    .willReturn(responseDefinition().withFault(Fault.CONNECTION_RESET_BY_PEER))));
+            post("/echo")
+                .willReturn(
+                    status(200)
+                        .withStatusMessage("")
+                        .withBody("{{request.body}}")
+                        .withTransformers("response-template")));
+    runtimeInfo
+        .getWireMock()
+        .register(
+            get("/ok")
+                .willReturn(
+                    status(200)
+                        .withStatusMessage("")
+                        .withBody("{'request':'body'}")));
+
+    runtimeInfo
+        .getWireMock()
+        .register(
+            get("/error")
+                .willReturn(responseDefinition().withFault(Fault.CONNECTION_RESET_BY_PEER)));
   }
 
   @BeforeEach
@@ -211,6 +218,12 @@ public abstract class AbstractTigerProxyTest {
                 .connectTimeout(1000 * 1000)
                 .socketTimeout(1000 * 1000)
                 .automaticRetries(false));
+
+    log.info(
+      "WIRESHARK filter | | (http or tls) && (tcp.port in { {} {} {} })",
+      tigerProxy.getProxyPort(),
+      fakeBackendServerTlsPort,
+      fakeBackendServerPort);
   }
 
   public void awaitMessagesInTiger(int numberOfMessagesExpected) {

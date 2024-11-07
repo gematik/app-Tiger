@@ -36,7 +36,6 @@ import io.netty.handler.logging.LoggingHandler;
 import io.netty.handler.proxy.HttpProxyHandler;
 import io.netty.handler.proxy.Socks5ProxyHandler;
 import java.net.InetSocketAddress;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
@@ -53,16 +52,15 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
   private final HttpClientConnectionErrorHandler httpClientConnectionHandler;
   private final CompletableFuture<HttpProtocol> protocolFuture;
   private final HttpClientHandler httpClientHandler;
-  private final Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations;
+  private final ProxyConfiguration proxyConfiguration;
   private final NettySslContextFactory nettySslContextFactory;
   private final BinaryBridgeHandler binaryBridgeHandler;
 
   HttpClientInitializer(
       MockServerConfiguration configuration,
-      Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations,
       NettySslContextFactory nettySslContextFactory,
       HttpProtocol httpProtocol) {
-    this.proxyConfigurations = proxyConfigurations;
+    this.proxyConfiguration = configuration.proxyConfiguration();
     this.httpProtocol = httpProtocol;
     this.protocolFuture = new CompletableFuture<>();
     this.httpClientHandler = new HttpClientHandler();
@@ -84,39 +82,12 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
             && channel.attr(SECURE).get();
 
     pipeline.addFirst(new LoggingHandler(LogLevel.DEBUG));
-    if (proxyConfigurations != null) {
-      if (secure && proxyConfigurations.containsKey(ProxyConfiguration.Type.HTTPS)) {
-        ProxyConfiguration proxyConfiguration =
-            proxyConfigurations.get(ProxyConfiguration.Type.HTTPS);
-        if (isNotBlank(proxyConfiguration.getUsername())
-            && isNotBlank(proxyConfiguration.getPassword())) {
-          pipeline.addLast(
-              new HttpProxyHandler(
-                  proxyConfiguration.getProxyAddress(),
-                  proxyConfiguration.getUsername(),
-                  proxyConfiguration.getPassword()));
-        } else {
-          pipeline.addLast(new HttpProxyHandler(proxyConfiguration.getProxyAddress()));
-        }
-      } else if (proxyConfigurations.containsKey(ProxyConfiguration.Type.SOCKS5)) {
-        ProxyConfiguration proxyConfiguration =
-            proxyConfigurations.get(ProxyConfiguration.Type.SOCKS5);
-        if (isNotBlank(proxyConfiguration.getUsername())
-            && isNotBlank(proxyConfiguration.getPassword())) {
-          pipeline.addLast(
-              new Socks5ProxyHandler(
-                  proxyConfiguration.getProxyAddress(),
-                  proxyConfiguration.getUsername(),
-                  proxyConfiguration.getPassword()));
-        } else {
-          pipeline.addLast(new Socks5ProxyHandler(proxyConfiguration.getProxyAddress()));
-        }
-      }
-    }
+    addProxyHandlerIfApplicable(pipeline, secure);
     pipeline.addLast(httpClientConnectionHandler);
 
     if (secure) {
       InetSocketAddress remoteAddress = channel.attr(REMOTE_SOCKET).get();
+      log.info("Adding SSL Handler in HttpClientInitializer.initChannel");
       pipeline.addLast(
           nettySslContextFactory
               .createClientSslContext(Optional.ofNullable(httpProtocol))
@@ -137,10 +108,55 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
     }
   }
 
+  private void addProxyHandlerIfApplicable(ChannelPipeline pipeline, boolean secure) {
+    if (proxyConfiguration != null) {
+      if (proxyConfiguration.getType() == ProxyConfiguration.Type.HTTP && secure) {
+        if (isNotBlank(proxyConfiguration.getUsername())
+            && isNotBlank(proxyConfiguration.getPassword())) {
+          log.atTrace()
+              .addArgument(proxyConfiguration.getProxyAddress())
+              .addArgument(proxyConfiguration.getUsername())
+              .addArgument(proxyConfiguration.getPassword())
+              .log("Adding HTTP Proxy Handler with authentication {} with {}:{}");
+          pipeline.addLast(
+              new HttpProxyHandler(
+                  proxyConfiguration.getProxyAddress(),
+                  proxyConfiguration.getUsername(),
+                  proxyConfiguration.getPassword()));
+        } else {
+          log.atTrace()
+              .addArgument(proxyConfiguration.getProxyAddress())
+              .log("Adding HTTP Proxy Handler without authentication {}");
+          pipeline.addLast(new HttpProxyHandler(proxyConfiguration.getProxyAddress()));
+        }
+      } else if (proxyConfiguration.getType() == ProxyConfiguration.Type.SOCKS5) {
+        if (isNotBlank(proxyConfiguration.getUsername())
+            && isNotBlank(proxyConfiguration.getPassword())) {
+          log.atTrace()
+              .addArgument(proxyConfiguration.getProxyAddress())
+              .addArgument(proxyConfiguration.getUsername())
+              .addArgument(proxyConfiguration.getPassword())
+              .log("Adding SOCKS5 Proxy Handler with authentication {} with {}:{}");
+          pipeline.addLast(
+              new Socks5ProxyHandler(
+                  proxyConfiguration.getProxyAddress(),
+                  proxyConfiguration.getUsername(),
+                  proxyConfiguration.getPassword()));
+        } else {
+          log.atTrace()
+              .addArgument(proxyConfiguration.getProxyAddress())
+              .log("Adding SOCKS Proxy Handler without authentication {}");
+          pipeline.addLast(new Socks5ProxyHandler(proxyConfiguration.getProxyAddress()));
+        }
+      }
+    }
+  }
+
   private void configureHttp1Pipeline(ChannelPipeline pipeline) {
+    pipeline.addLast(new LoggingHandler(LogLevel.DEBUG));
     pipeline.addLast(new HttpClientCodec());
     pipeline.addLast(new HttpObjectAggregator(Integer.MAX_VALUE));
-    pipeline.addLast(new MockServerHttpClientCodec(proxyConfigurations));
+    pipeline.addLast(new MockServerHttpClientCodec(proxyConfiguration));
     pipeline.addLast(httpClientHandler);
     protocolFuture.complete(HttpProtocol.HTTP_1_1);
   }
@@ -165,7 +181,7 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
     }
     pipeline.addLast(http2ConnectionHandlerBuilder.build());
     pipeline.addLast(new Http2SettingsHandler(protocolFuture));
-    pipeline.addLast(new MockServerHttpClientCodec(proxyConfigurations));
+    pipeline.addLast(new MockServerHttpClientCodec(proxyConfiguration));
     pipeline.addLast(httpClientHandler);
   }
 

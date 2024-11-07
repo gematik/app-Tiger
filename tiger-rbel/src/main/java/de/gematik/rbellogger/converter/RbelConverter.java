@@ -101,7 +101,6 @@ public class RbelConverter {
 
   public RbelElement convertElement(final RbelElement convertedInput) {
     initializeConverters();
-    log.trace("Converting {}...", convertedInput);
     boolean elementIsOversized =
         skipParsingWhenMessageLargerThanKb > -1
             && (convertedInput.getSize() > skipParsingWhenMessageLargerThanKb * 1024L);

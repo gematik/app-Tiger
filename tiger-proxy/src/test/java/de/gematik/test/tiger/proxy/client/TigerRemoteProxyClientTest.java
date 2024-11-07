@@ -143,11 +143,9 @@ class TigerRemoteProxyClientTest {
           new UnirestInstance(new Config().proxy("localhost", tigerProxy.getProxyPort()));
     }
 
-    runtimeInfo.getWireMock().register(stubFor(get("/foo").willReturn(ok().withBody("bar"))));
-    runtimeInfo.getWireMock().register(stubFor(post("/foo").willReturn(ok().withBody("bar"))));
-    runtimeInfo
-        .getWireMock()
-        .register(stubFor(get("/").willReturn(badRequest().withBody("emptyPath!!!"))));
+    runtimeInfo.getWireMock().register(get("/foo").willReturn(ok().withBody("bar")));
+    runtimeInfo.getWireMock().register(post("/foo").willReturn(ok().withBody("bar")));
+    runtimeInfo.getWireMock().register(get("/").willReturn(badRequest().withBody("emptyPath!!!")));
 
     log.info("Configuring routes...");
     new ArrayList<>(tigerRemoteProxyClient.getRbelMessageListeners())
@@ -189,9 +187,7 @@ class TigerRemoteProxyClientTest {
   void rawBytesInMessage_shouldSurviveReconstruction(WireMockRuntimeInfo runtimeInfo) {
     runtimeInfo
         .getWireMock()
-        .register(
-            stubFor(
-                post("/binary").willReturn(ok().withBody(DigestUtils.sha256("helloResponse")))));
+        .register(post("/binary").willReturn(ok().withBody(DigestUtils.sha256("helloResponse"))));
 
     unirestInstance
         .post("http://myserv.er/binary")

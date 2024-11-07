@@ -85,13 +85,16 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @BeforeEach
   public void setupForwardProxy(WireMockRuntimeInfo runtimeInfo) {
-    if (forwardProxy != null) {
+    if (!forwardProxy.getStubMappings().isEmpty()) {
       return;
     }
-    log.info("Started Forward-Proxy-Server on port {}", forwardProxy.getPort());
+    log.info(
+        "Started Forward-Proxy-Server on port {} (fake backend on {})",
+        forwardProxy.getPort(),
+        runtimeInfo.getHttpPort());
 
     forwardProxy.stubFor(
-        get(urlMatching(".*"))
+        any(anyUrl())
             .willReturn(aResponse().proxiedFrom("http://localhost:" + runtimeInfo.getHttpPort())));
   }
 
@@ -545,7 +548,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @Test
   void forwardProxyRouteViaAnotherForwardProxy() {
-    spawnTigerProxyWithDefaultRoutesAndWith(
+    spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
@@ -561,11 +564,12 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                     .build())
             .build());
 
-    final HttpResponse<JsonNode> response = proxyRest.get("http://backend/foobar").asJson();
+    final HttpResponse<JsonNode> response = proxyRest.get("http://backend/deep/foobar").asJson();
 
-    assertThat(response.getStatus()).isEqualTo(666);
+    assertThat(response.getStatus()).isEqualTo(777);
   }
 
+  @SneakyThrows
   @Test
   void reverseProxyRouteViaAnotherForwardProxy() {
     spawnTigerProxyWithDefaultRoutesAndWith(
@@ -576,14 +580,13 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 ForwardProxyInfo.builder()
                     .port(forwardProxy.getPort())
                     .hostname("localhost")
-                    .type(TigerProxyType.HTTP)
                     .build())
             .build());
 
     final HttpResponse<JsonNode> response =
-        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
+        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/deep/foobar").asJson();
 
-    assertThat(response.getStatus()).isEqualTo(666);
+    assertThat(response.getStatus()).isEqualTo(777);
   }
 
   @SneakyThrows

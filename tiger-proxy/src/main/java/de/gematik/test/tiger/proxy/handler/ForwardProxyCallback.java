@@ -21,6 +21,7 @@ import static de.gematik.test.tiger.mockserver.model.Header.header;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import java.net.URI;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,19 +44,29 @@ public class ForwardProxyCallback extends AbstractRouteProxyCallback {
       req.replaceHeader(
           header("Authorization", getTigerRoute().getBasicAuth().toAuthorizationHeaderValue()));
     }
-    String patchedPath = getTargetUrl().getPath();
-    if (patchedPath.endsWith("/")) {
-      patchedPath = patchedPath.substring(0, patchedPath.length() - 1);
+    String getTargetUrl = getTargetUrl().getPath();
+    if (getTargetUrl.endsWith("/")) {
+      getTargetUrl = getTargetUrl.substring(0, getTargetUrl.length() - 1);
     }
-    String requestPath = req.getPath();
+    String requestPath = stripRoutePattern(req.getPath());
     if (requestPath.equals("/") && !isAddTrailingSlash()) {
       requestPath = "";
     }
-    final String path = patchedPath + requestPath;
+    final String path = getTargetUrl + requestPath;
     return cloneRequest(req)
         .setPath(path)
         .setSecure(getTigerRoute().getTo().startsWith("https://"))
         .setQueryStringParameters(req.getQueryStringParameters());
+  }
+
+  @SneakyThrows
+  private String stripRoutePattern(String requestUri) {
+    final URI routeFromUri = new URI(getTigerRoute().getFrom());
+    log.atInfo()
+      .addArgument(requestUri)
+      .addArgument(routeFromUri::getPath)
+      .log("Stripping route pattern from request path: {} will delete {}");
+    return requestUri.substring(routeFromUri.getPath().length());
   }
 
   @Override

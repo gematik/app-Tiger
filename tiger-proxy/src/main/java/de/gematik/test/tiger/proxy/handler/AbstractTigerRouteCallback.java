@@ -498,7 +498,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
 
   @Override
   public Action handleException(Throwable exception, HttpRequest request) {
-    log.info("Exception during handling of request", exception);
+    log.info("Exception during handling of request {}", request.printLogLineDescription(), exception);
     final RbelElement errorResponse =
         tigerProxy
             .getMockServerToRbelConverter()

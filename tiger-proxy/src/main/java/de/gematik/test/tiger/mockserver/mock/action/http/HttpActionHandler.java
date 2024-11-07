@@ -70,14 +70,13 @@ public class HttpActionHandler {
       MockServerConfiguration configuration,
       EventLoopGroup eventLoopGroup,
       HttpState httpStateHandler,
-      List<ProxyConfiguration> proxyConfigurations,
       NettySslContextFactory nettySslContextFactory) {
     this.configuration = configuration;
     this.httpStateHandler = httpStateHandler;
     this.scheduler = httpStateHandler.getScheduler();
     this.httpClient =
         new NettyHttpClient(
-            configuration, eventLoopGroup, proxyConfigurations, nettySslContextFactory);
+            configuration, eventLoopGroup, nettySslContextFactory);
   }
 
   public void processAction(

@@ -195,26 +195,15 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     mockServerConfiguration.enableTlsTermination(
         getTigerProxyConfiguration().isActivateTlsTermination());
 
-    final Optional<ProxyConfiguration> forwardProxyConfig =
-        ProxyConfigurationConverter.convertForwardProxyConfigurationToMockServerConfiguration(
-            getTigerProxyConfiguration());
-    outputForwardProxyConfigLogs(forwardProxyConfig);
+    final Optional<ProxyConfiguration> proxyConfiguration = ProxyConfigurationConverter.convertForwardProxyConfigurationToMockServerConfiguration(
+      getTigerProxyConfiguration());
+    outputForwardProxyConfigLogs(proxyConfiguration);
+    proxyConfiguration.ifPresent(mockServerConfiguration::proxyConfiguration);
 
     if (getTigerProxyConfiguration().getDirectReverseProxy() == null) {
-      mockServer =
-          forwardProxyConfig
-              .map(
-                  proxyConfiguration ->
-                      new MockServer(
-                          mockServerConfiguration,
-                          List.of(proxyConfiguration),
-                          getTigerProxyConfiguration().getPortAsArray()))
-              .orElseGet(
-                  () ->
-                      new MockServer(
-                          mockServerConfiguration, getTigerProxyConfiguration().getPortAsArray()));
+      mockServer = new MockServer(mockServerConfiguration, getTigerProxyConfiguration().getPortAsArray());
     } else {
-      mockServer = spawnDirectInverseTigerProxy(mockServerConfiguration, forwardProxyConfig);
+      mockServer = spawnDirectInverseTigerProxy(mockServerConfiguration);
     }
     String proxyName = getName().orElse("?");
     log.info("Proxy '{}' started on port {}", proxyName, mockServer.getLocalPort());
@@ -229,19 +218,20 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   }
 
   private MockServer spawnDirectInverseTigerProxy(
-      MockServerConfiguration mockServerConfiguration,
-      Optional<ProxyConfiguration> forwardProxyConfig) {
+      MockServerConfiguration mockServerConfiguration) {
     mockServerConfiguration.binaryProxyListener(new BinaryExchangeHandler(this));
-    if (forwardProxyConfig.isPresent()) {
+    if (mockServerConfiguration.proxyConfiguration() != null) {
       throw new TigerProxyStartupException(
           "DirectForwardProxy configured with additional forwardProxy: Not possible! (forwardProxy"
               + " is always HTTP!)");
     }
+    mockServerConfiguration.directForwarding(InetSocketAddress.createUnresolved(
+        getTigerProxyConfiguration().getDirectReverseProxy().getHostname(),
+        getTigerProxyConfiguration().getDirectReverseProxy().getPort()));
+
     MockServer newMockServer =
         new MockServer(
             mockServerConfiguration,
-            getTigerProxyConfiguration().getDirectReverseProxy().getPort(),
-            getTigerProxyConfiguration().getDirectReverseProxy().getHostname(),
             getTigerProxyConfiguration().getPortAsArray());
     addReverseProxyRouteIfNotPresent();
 
@@ -646,19 +636,19 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     } else {
       final ProxyConfiguration configNotEmpty = forwardProxyConfig.get();
       if (configNotEmpty.getUsername() == null) {
-        log.info(
-            "Forward proxy is set to {}://{}:{}",
-            configNotEmpty.getType(),
-            configNotEmpty.getProxyAddress().getHostName(),
-            configNotEmpty.getProxyAddress().getPort());
+        log.atInfo()
+            .addArgument(() -> configNotEmpty.getType().toString().toLowerCase())
+            .addArgument(() -> configNotEmpty.getProxyAddress().getAddress())
+            .addArgument(() -> configNotEmpty.getProxyAddress().getPort())
+            .log("Forward proxy is set to {}://{}:{}");
       } else if (configNotEmpty.getUsername() != null) {
-        log.info(
-            "Forward proxy is set to {}://{}:{}@{}:{}",
-            configNotEmpty.getType(),
-            configNotEmpty.getProxyAddress().getHostName(),
-            configNotEmpty.getProxyAddress().getPort(),
-            configNotEmpty.getUsername(),
-            configNotEmpty.getPassword());
+        log.atInfo()
+            .addArgument(() -> configNotEmpty.getType().toString().toLowerCase())
+            .addArgument(() -> configNotEmpty.getProxyAddress().getAddress())
+            .addArgument(() -> configNotEmpty.getProxyAddress().getPort())
+            .addArgument(configNotEmpty::getUsername)
+            .addArgument(configNotEmpty::getPassword)
+            .log("Forward proxy is set to {}://{}:{}@{}:{}");
       }
     }
   }
