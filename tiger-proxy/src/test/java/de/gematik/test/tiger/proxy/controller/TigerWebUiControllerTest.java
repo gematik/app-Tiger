@@ -73,11 +73,9 @@ class TigerWebUiControllerTest {
     runtimeInfo
         .getWireMock()
         .register(
-            stubFor(
-                get("/foobar")
-                    .willReturn(aResponse().withStatus(666).withBody("{\"foo\":\"bar\"}"))));
+            get("/foobar").willReturn(aResponse().withStatus(666).withBody("{\"foo\":\"bar\"}")));
 
-    runtimeInfo.getWireMock().register(stubFor(post("/foobar").willReturn(ok().withBody(""))));
+    runtimeInfo.getWireMock().register(post("/foobar").willReturn(ok().withBody("")));
 
     RestAssured.proxy = null;
 
@@ -296,7 +294,7 @@ class TigerWebUiControllerTest {
 
     val proxyRest = Unirest.spawnInstance();
     proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());
-    final String longString = RandomStringUtils.randomAlphanumeric(2_000);
+    final String longString = RandomStringUtils.insecure().nextAlphanumeric(2_000);
     proxyRest
         .post("http://localhost:" + fakeBackendServerPort + "/foobar")
         .body("{'randomStringForLulz':'" + longString + "'}")

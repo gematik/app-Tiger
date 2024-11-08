@@ -70,7 +70,7 @@ public class CryptoUtils {
     try {
       return Optional.ofNullable(
           decryptUnsafe(encMessage, secretKey, gcmIvLengthInBytes, gcmTagLengthInBytes));
-    } catch (GeneralSecurityException | IllegalArgumentException e) {
+    } catch (GeneralSecurityException | RuntimeException e) {
       return Optional.empty();
     }
   }

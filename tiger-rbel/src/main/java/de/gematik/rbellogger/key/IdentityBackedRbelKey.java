@@ -32,7 +32,9 @@ public class IdentityBackedRbelKey extends RbelKey {
   public static List<IdentityBackedRbelKey> generateRbelKeyPairForIdentity(
       TigerPkiIdentity identity) {
     final String keyId =
-        identity.getKeyId().orElseGet(() -> RandomStringUtils.randomAlphabetic(8)); // NOSONAR
+        identity
+            .getKeyId()
+            .orElseGet(() -> RandomStringUtils.insecure().nextAlphabetic(8)); // NOSONAR
     final IdentityBackedRbelKey pubKey =
         new IdentityBackedRbelKey(
             identity.getCertificate().getPublicKey(),

@@ -138,7 +138,8 @@ public class TigerCucumberRunner {
             uuidGeneratorClass ->
                 map.put(UUID_GENERATOR_PROPERTY_NAME, uuidGeneratorClass.getName()));
     Optional.ofNullable(runtimeOptions.getSnippetType())
-        .ifPresent(snippetType -> map.put(SNIPPET_TYPE_PROPERTY_NAME, snippetType.name()));
+        .ifPresent(
+            snippetType -> map.put(SNIPPET_TYPE_PROPERTY_NAME, snippetType.name().toLowerCase()));
 
     map.put(
         PLUGIN_PROPERTY_NAME,

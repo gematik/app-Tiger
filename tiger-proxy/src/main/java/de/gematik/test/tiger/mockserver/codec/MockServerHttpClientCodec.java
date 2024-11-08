@@ -28,9 +28,9 @@ public class MockServerHttpClientCodec
         NettyHttpToMockServerHttpResponseDecoder, MockServerHttpToNettyHttpRequestEncoder> {
 
   public MockServerHttpClientCodec(
-      Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations) {
+      ProxyConfiguration proxyConfiguration) {
     init(
         new NettyHttpToMockServerHttpResponseDecoder(),
-        new MockServerHttpToNettyHttpRequestEncoder(proxyConfigurations));
+        new MockServerHttpToNettyHttpRequestEncoder(proxyConfiguration));
   }
 }

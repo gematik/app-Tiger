@@ -39,12 +39,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MockServerHttpRequestToFullHttpRequest {
 
-  private final Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations;
+  private final ProxyConfiguration proxyConfiguration;
   private final BodyDecoderEncoder bodyDecoderEncoder;
 
-  public MockServerHttpRequestToFullHttpRequest(
-      Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations) {
-    this.proxyConfigurations = proxyConfigurations;
+  public MockServerHttpRequestToFullHttpRequest(ProxyConfiguration proxyConfiguration) {
+    this.proxyConfiguration = proxyConfiguration;
     this.bodyDecoderEncoder = new BodyDecoderEncoder();
   }
 
@@ -57,7 +56,7 @@ public class MockServerHttpRequestToFullHttpRequest {
           new DefaultFullHttpRequest(
               HttpVersion.HTTP_1_1,
               httpMethod,
-              getURI(httpRequest, proxyConfigurations),
+              getURI(httpRequest, proxyConfiguration),
               getBody(httpRequest));
 
       // headers
@@ -67,14 +66,13 @@ public class MockServerHttpRequestToFullHttpRequest {
     } catch (RuntimeException throwable) {
       log.error("exception encoding request {}", httpRequest, throwable);
       return new DefaultFullHttpRequest(
-          HttpVersion.HTTP_1_1, httpMethod, getURI(httpRequest, proxyConfigurations));
+          HttpVersion.HTTP_1_1, httpMethod, getURI(httpRequest, proxyConfiguration));
     }
   }
 
   @SuppressWarnings("HttpUrlsUsage")
   public String getURI(
-      HttpRequest httpRequest,
-      Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations) {
+      HttpRequest httpRequest, ProxyConfiguration proxyConfiguration) {
     String uri = "";
     if (httpRequest.getPath() != null) {
       if (httpRequest.getQueryStringParameters() != null
@@ -93,8 +91,8 @@ public class MockServerHttpRequestToFullHttpRequest {
         uri = queryStringEncoder.toString();
       }
     }
-    if (proxyConfigurations != null
-        && proxyConfigurations.get(ProxyConfiguration.Type.HTTP) != null
+    if (proxyConfiguration != null
+        && proxyConfiguration.getType() == ProxyConfiguration.Type.HTTP
         && !Boolean.TRUE.equals(httpRequest.isSecure())) {
       if (isNotBlank(httpRequest.getFirstHeader(HOST.toString()))) {
         uri = "http://" + httpRequest.getFirstHeader(HOST.toString()) + uri;
@@ -140,7 +138,9 @@ public class MockServerHttpRequestToFullHttpRequest {
         request.headers().add(HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text(), streamId);
       }
     }
-    request.headers().set(CONTENT_LENGTH, request.content().readableBytes());
+    if (request.content().readableBytes() > 0) {
+      request.headers().set(CONTENT_LENGTH, request.content().readableBytes());
+    }
     if (isKeepAlive(request)) {
       request.headers().set(CONNECTION, KEEP_ALIVE);
     } else {

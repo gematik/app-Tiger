@@ -195,9 +195,8 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
           case "M2" -> parseM2(element, context);
           case "M3" -> parseM3(element, context);
           case "M4" -> parseM4(element, context);
-          default ->
-              element.addFacet(
-                  new RbelNoteFacet("Unknown VAU EPA3 message type: " + messageTypeContent));
+          default -> element.addFacet(
+              new RbelNoteFacet("Unknown VAU EPA3 message type: " + messageTypeContent));
         }
       }
     } catch (RuntimeException e) {

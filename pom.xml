@@ -24,7 +24,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>3.4.3</version>
+    <version>3.4.4</version>
 
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
@@ -88,7 +88,7 @@
         <version.netty>4.1.110.Final</version.netty>
         <version.xmlunit>2.9.0</version.xmlunit>
         <version.winstone>6.21</version.winstone>
-        <version.wiremock>3.3.1</version.wiremock>
+        <version.wiremock>3.9.2</version.wiremock>
         <version.org.glassfish.jaxb>4.0.5</version.org.glassfish.jaxb>
 
         <!-- frontend -->

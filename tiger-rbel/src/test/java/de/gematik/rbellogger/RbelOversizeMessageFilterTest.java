@@ -38,7 +38,7 @@ class RbelOversizeMessageFilterTest {
     final String oversizedRequest =
         readCurlFromFileWithCorrectedLineBreaks("src/test/resources/sampleMessages/getRequest.curl")
             + "{\"foo\":\""
-            + RandomStringUtils.randomAlphabetic(50_000_000)
+            + RandomStringUtils.insecure().nextAlphabetic(50_000_000)
             + "\"}\r\n";
     rbelLogger = RbelLogger.build();
     rbelLogger

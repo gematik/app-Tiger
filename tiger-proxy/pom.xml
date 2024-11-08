@@ -27,7 +27,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.4.3</version>
+        <version>3.4.4</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -291,6 +291,12 @@
             <groupId>io.rest-assured</groupId>
             <artifactId>xml-path</artifactId>
             <version>${version.io.rest-assured}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <version>1.20.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>

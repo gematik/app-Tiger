@@ -46,7 +46,6 @@ class TigerConfigurationKeyTest {
     "ps.koburl, ps.kobUrl"
   })
   void testDifferentKeys_shouldMatch(String value1, String value2) {
-    assertThat(new TigerConfigurationKey(value1))
-        .isEqualTo(new TigerConfigurationKey(value2));
+    assertThat(new TigerConfigurationKey(value1)).isEqualTo(new TigerConfigurationKey(value2));
   }
 }

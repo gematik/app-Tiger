@@ -122,7 +122,6 @@ public class SniHandler extends AbstractSniHandler<SslContext> {
   }
 
   public static Certificate[] retrieveClientCertificates(ChannelHandlerContext ctx) {
-    log.info("retrieving client certificates");
     Certificate[] clientCertificates = null;
     if (ctx.channel().attr(UPSTREAM_CLIENT_CERTIFICATES).get() != null) {
       clientCertificates = ctx.channel().attr(UPSTREAM_CLIENT_CERTIFICATES).get();

@@ -23,6 +23,8 @@ import de.gematik.test.tiger.mockserver.model.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.PatternSyntaxException;
 import lombok.*;
@@ -84,11 +86,18 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
     if (requestPattern.isSecure() == null || request.isSecure() == null) {
       return true;
     }
-    final boolean equals = requestPattern.isSecure().equals(request.isSecure());
+    final boolean equals = Objects.equals(requestPattern.isSecure(), request.isSecure());
     if (!equals) {
       log.atTrace()
           .addArgument(request::isSecure)
-          .addArgument(tigerRoute::createShortDescription)
+          .addArgument(
+              () -> {
+                if (tigerRoute == null) {
+                  return null;
+                } else {
+                  return tigerRoute.createShortDescription();
+                }
+              })
           .log("secure [{}] is not matching for route {}");
     }
     return equals;
@@ -186,32 +195,38 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
     if (o == null) {
       return 1;
     }
-    if (priority == o.priority) {
-      if (requestPattern == null
-          || o.requestPattern == null
-          || requestPattern.getPath() == null
-          || o.requestPattern.getPath() == null) {
-        return 0;
-      }
-      final String thisPath = requestPattern.getPath();
-      final String otherPath = o.requestPattern.getPath();
-      if (uriTwoIsBelowUriOne(thisPath, otherPath)) {
-        return -1;
-      } else if (uriTwoIsBelowUriOne(otherPath, thisPath)) {
-        return 1;
-      } else {
-        return 0;
-      }
+    if (priority != o.priority) {
+      return Integer.compare(o.priority, priority);
     }
-    return Integer.compare(o.priority, priority);
+    if (requestPattern == null
+        || o.requestPattern == null
+        || requestPattern.getPath() == null
+        || o.requestPattern.getPath() == null) {
+      return 0;
+    }
+    final String thisPath = requestPattern.getPath();
+    final String otherPath = o.requestPattern.getPath();
+    if (uriTwoIsBelowUriOne(thisPath, otherPath)) {
+      return -1;
+    } else if (uriTwoIsBelowUriOne(otherPath, thisPath)) {
+      return 1;
+    } else {
+      val otherHostSize = Optional.ofNullable(o.hostRegexes).map(List::size).orElse(0);
+      val thisHostSize = Optional.ofNullable(this.hostRegexes).map(List::size).orElse(0);
+      return Integer.compare(otherHostSize, thisHostSize);
+    }
   }
 
-  private static boolean uriTwoIsBelowUriOne(final String value1, final String value2) {
+  private static boolean uriTwoIsBelowUriOne(final String uri1, final String uri2) {
     try {
-      final URI uri1 = new URI(value1);
-      final URI uri2WithUri1Scheme = new URIBuilder(value2).setScheme(uri1.getScheme()).build();
-      return !uri1.relativize(uri2WithUri1Scheme).equals(uri2WithUri1Scheme);
-    } catch (final URISyntaxException e) {
+      URIBuilder base = new URIBuilder(uri2);
+      URIBuilder sub = new URIBuilder(uri1);
+
+      URI baseUri = base.build().normalize();
+      URI subUri = sub.build().normalize();
+
+      return subUri.getPath().startsWith(baseUri.getPath()) && !baseUri.equals(subUri);
+    } catch (URISyntaxException e) {
       return false;
     }
   }

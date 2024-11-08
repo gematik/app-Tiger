@@ -69,7 +69,7 @@ public abstract class AbstractTestTigerTestEnvMgr {
     TigerGlobalConfiguration.reset();
     runtimeInfo
         .getWireMock()
-        .register(stubFor(get("/download").willReturn(ok().withBody(winstoneBytes))));
+        .register(get("/download").willReturn(ok().withBody(winstoneBytes)));
   }
 
   // -----------------------------------------------------------------------------------------------------------------

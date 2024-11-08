@@ -269,8 +269,8 @@ public abstract class LifeCycle {
 
   protected void startedServer(List<Integer> ports) {
     final String message =
-        "started on port" + (ports.size() == 1 ? ": " + ports.get(0) : "s: " + ports);
+        "started mockserver on port" + (ports.size() == 1 ? ": " + ports.get(0) : "s: " + ports);
     setPort(ports);
-    log.info(message);
+    log.trace(message);
   }
 }

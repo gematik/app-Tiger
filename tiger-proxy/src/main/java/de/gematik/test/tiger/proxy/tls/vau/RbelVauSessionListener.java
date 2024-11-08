@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.proxy.vau;
+package de.gematik.test.tiger.proxy.tls.vau;
 
 import de.gematik.rbellogger.converter.*;
 import de.gematik.rbellogger.data.RbelElement;

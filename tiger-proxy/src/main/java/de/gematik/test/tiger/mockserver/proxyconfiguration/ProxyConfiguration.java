@@ -28,16 +28,19 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 
 /*
  * @author jamesdbloom
  */
+@Getter
 public class ProxyConfiguration extends ObjectWithJsonToString {
 
   private final Type type;
   private final InetSocketAddress proxyAddress;
   private final String username;
   private final String password;
+  private final List<String> noProxyHosts = new ArrayList<>();
 
   private ProxyConfiguration(
       Type type, InetSocketAddress proxyAddress, String username, String password) {
@@ -45,39 +48,6 @@ public class ProxyConfiguration extends ObjectWithJsonToString {
     this.proxyAddress = proxyAddress;
     this.username = username;
     this.password = password;
-  }
-
-  public static List<ProxyConfiguration> proxyConfiguration(MockServerConfiguration configuration) {
-    List<ProxyConfiguration> proxyConfigurations = new ArrayList<>();
-    String username = configuration.forwardProxyAuthenticationUsername();
-    String password = configuration.forwardProxyAuthenticationPassword();
-
-    InetSocketAddress httpProxySocketAddress = configuration.forwardHttpProxy();
-    if (httpProxySocketAddress != null) {
-      proxyConfigurations.add(
-          proxyConfiguration(Type.HTTP, httpProxySocketAddress, username, password));
-    }
-
-    InetSocketAddress httpsProxySocketAddress = configuration.forwardHttpsProxy();
-    if (httpsProxySocketAddress != null) {
-      proxyConfigurations.add(
-          proxyConfiguration(Type.HTTPS, httpsProxySocketAddress, username, password));
-    }
-
-    InetSocketAddress socksProxySocketAddress = configuration.forwardSocksProxy();
-    if (socksProxySocketAddress != null) {
-      if (proxyConfigurations.isEmpty()) {
-        proxyConfigurations.add(
-            proxyConfiguration(Type.SOCKS5, socksProxySocketAddress, username, password));
-      } else {
-        throw new IllegalArgumentException(
-            "Invalid proxy configuration it is not possible to configure HTTP or HTTPS proxy at the"
-                + " same time as a SOCKS proxy, please choose either HTTP(S) proxy OR a SOCKS"
-                + " proxy");
-      }
-    }
-
-    return proxyConfigurations;
   }
 
   public static ProxyConfiguration proxyConfiguration(Type type, String address) {
@@ -112,22 +82,6 @@ public class ProxyConfiguration extends ObjectWithJsonToString {
   public static ProxyConfiguration proxyConfiguration(
       Type type, InetSocketAddress address, String username, String password) {
     return new ProxyConfiguration(type, address, username, password);
-  }
-
-  public Type getType() {
-    return type;
-  }
-
-  public InetSocketAddress getProxyAddress() {
-    return proxyAddress;
-  }
-
-  public String getUsername() {
-    return username;
-  }
-
-  public String getPassword() {
-    return password;
   }
 
   @SuppressWarnings("UnusedReturnValue")

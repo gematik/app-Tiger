@@ -153,6 +153,15 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
 
   @Override
   protected void decode(ChannelHandlerContext ctx, ByteBuf msg, List<Object> out) {
+    try {
+      decodeSafe(ctx, msg);
+    } catch (RuntimeException e) {
+      log.error("Exception caught in port unification handler", e);
+      throw e;
+    }
+  }
+
+  private void decodeSafe(ChannelHandlerContext ctx, ByteBuf msg) {
     if (isTls(msg) && configuration.enableTlsTermination()) {
       logStage(ctx, "adding TLS decoders");
       enableTls(ctx, msg);

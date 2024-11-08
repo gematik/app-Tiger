@@ -64,7 +64,6 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
         .log("received binary request: {}");
     final InetSocketAddress remoteAddress = getRemoteAddress(ctx);
     if (remoteAddress != null) {
-      // binary protocol is only supported for proxies request and not mocking
       sendMessage(new BinaryRequestInfo(ctx.channel(), binaryRequest, remoteAddress));
     } else {
       log.info(

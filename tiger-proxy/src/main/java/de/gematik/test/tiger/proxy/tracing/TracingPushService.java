@@ -294,7 +294,9 @@ public class TracingPushService {
     var content = rbelMessage.getContent();
     final int numberOfParts = content.size() / MAX_MESSAGE_SIZE + 1;
     for (int i = 0; i < numberOfParts; i++) {
-      byte[] partContent = content.subArray(i * MAX_MESSAGE_SIZE, Math.min((i + 1) * MAX_MESSAGE_SIZE, content.size()));
+      byte[] partContent =
+          content.subArray(
+              i * MAX_MESSAGE_SIZE, Math.min((i + 1) * MAX_MESSAGE_SIZE, content.size()));
 
       log.trace(
           "sending part {} of {} for UUID {}...", i + 1, numberOfParts, rbelMessage.getUuid());
