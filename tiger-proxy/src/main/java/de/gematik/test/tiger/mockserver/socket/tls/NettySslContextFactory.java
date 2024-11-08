@@ -39,7 +39,7 @@ public class NettySslContextFactory {
 
   private final MockServerConfiguration configuration;
   private final KeyAndCertificateFactory keyAndCertificateFactory;
-  private final Map<HttpProtocol, SslContext> clientSslContexts = new ConcurrentHashMap<>();
+  private final Map<Pair<HttpProtocol, String>, SslContext> clientSslContexts = new ConcurrentHashMap<>();
   private Pair<SslContext, TigerPkiIdentity> serverSslContextAndIdentity = null;
   private final boolean forServer;
 
@@ -70,7 +70,7 @@ public class NettySslContextFactory {
   }
 
   public synchronized SslContext createClientSslContext(HttpProtocol protocol, String hostName) {
-    SslContext clientSslContext = clientSslContexts.get(protocol);
+    SslContext clientSslContext = clientSslContexts.get(Pair.of(protocol, hostName));
     if (clientSslContext != null) {
       return clientSslContext;
     } else {
@@ -95,7 +95,7 @@ public class NettySslContextFactory {
       var clientSslContext =
           buildClientSslContext(
               configuration.sslClientContextBuilderCustomizer().apply(sslContextBuilder));
-      clientSslContexts.put(protocol, clientSslContext);
+      clientSslContexts.put(Pair.of(protocol, hostName), clientSslContext);
       return clientSslContext;
     } catch (Exception e) {
       throw new RuntimeException("Exception creating SSL context for client", e);

@@ -242,7 +242,7 @@ public class HttpRequest extends HttpMessage<HttpRequest> {
           socketAddress.getHost(),
           socketAddress.getPort() != null ? socketAddress.getPort() : isSsl ? 443 : 80);
     } else if (isNotBlank(getFirstHeader(HOST.toString()))) {
-      boolean isSsl = isSecure() != null && isSecure();
+      boolean isSsl = Optional.ofNullable(isSecure()).orElse(false);
       String[] hostHeaderParts = getFirstHeader(HOST.toString()).split(":");
       return new InetSocketAddress(
           hostHeaderParts[0],

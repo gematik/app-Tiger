@@ -49,33 +49,30 @@ class TigerProxyExamplesTest {
   @SneakyThrows
   @BeforeEach
   public void beforeEachLifecyleMethod(WireMockRuntimeInfo runtimeInfo) {
-    runtimeInfo.getWireMock().register(stubFor(get("/foo").willReturn(ok().withBody("bar"))));
+    runtimeInfo.getWireMock().register(get("/foo").willReturn(ok().withBody("bar")));
     runtimeInfo
         .getWireMock()
         .register(
-            stubFor(
-                get(urlMatching("/foo.*"))
-                    .willReturn(
-                        ok().withBody("bar{{request.query.echo}}")
-                            .withTransformers("response-template"))));
+            get(urlMatching("/foo.*"))
+                .willReturn(
+                    ok().withBody("bar{{request.query.echo}}")
+                        .withTransformers("response-template")));
     runtimeInfo
         .getWireMock()
         .register(
-            stubFor(
-                get("/read/test.json")
-                    .willReturn(
-                        ok().withBody(
-                                FileUtils.readFileToByteArray(
-                                    new File("src/test/resources/test.json"))))));
+            get("/read/test.json")
+                .willReturn(
+                    ok().withBody(
+                            FileUtils.readFileToByteArray(
+                                new File("src/test/resources/test.json")))));
     runtimeInfo
         .getWireMock()
         .register(
-            stubFor(
-                get("/read/combined.json")
-                    .willReturn(
-                        ok().withBody(
-                                FileUtils.readFileToByteArray(
-                                    new File("src/test/resources/combined.json"))))));
+            get("/read/combined.json")
+                .willReturn(
+                    ok().withBody(
+                            FileUtils.readFileToByteArray(
+                                new File("src/test/resources/combined.json")))));
   }
 
   @Test

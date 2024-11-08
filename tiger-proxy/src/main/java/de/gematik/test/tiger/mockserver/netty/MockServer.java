@@ -72,132 +72,18 @@ public class MockServer extends LifeCycle {
    *
    * @param localPorts the local port(s) to use, use 0 or no vararg values to specify any free port
    */
-  public MockServer(final Integer... localPorts) {
-    this(null, proxyConfiguration(configuration()), localPorts);
-  }
-
-  /**
-   * Start the instance using the ports provided
-   *
-   * @param localPorts the local port(s) to use, use 0 or no vararg values to specify any free port
-   */
   public MockServer(final MockServerConfiguration configuration, final Integer... localPorts) {
-    this(configuration, proxyConfiguration(configuration), localPorts);
-  }
-
-  /**
-   * Start the instance using the ports provided configuring forwarded or proxied requests to go via
-   * an additional proxy
-   *
-   * @param proxyConfiguration the proxy configuration to send requests forwarded or proxied by
-   *     MockServer via another proxy
-   * @param localPorts the local port(s) to use, use 0 or no vararg values to specify any free port
-   */
-  public MockServer(final ProxyConfiguration proxyConfiguration, final Integer... localPorts) {
-    this(null, List.of(proxyConfiguration), localPorts);
-  }
-
-  /**
-   * Start the instance using the ports provided configuring forwarded or proxied requests to go via
-   * an additional proxy
-   *
-   * @param proxyConfigurations the proxy configuration to send requests forwarded or proxied by
-   *     MockServer via another proxy
-   * @param localPorts the local port(s) to use, use 0 or no vararg values to specify any free port
-   */
-  public MockServer(
-      final MockServerConfiguration configuration,
-      final List<ProxyConfiguration> proxyConfigurations,
-      final Integer... localPorts) {
     super(configuration);
-    createServerBootstrap(configuration, proxyConfigurations, localPorts);
+    remoteSocket = configuration.directForwarding();
 
-    // wait to start
-    getLocalPort();
-  }
-
-  /**
-   * Start the instance using the ports provided
-   *
-   * @param remotePort the port of the remote server to connect to
-   * @param remoteHost the hostname of the remote server to connect to (if null defaults to
-   *     "localhost")
-   * @param localPorts the local port(s) to use
-   */
-  public MockServer(
-      final Integer remotePort, @Nullable final String remoteHost, final Integer... localPorts) {
-    this(null, proxyConfiguration(configuration()), remoteHost, remotePort, localPorts);
-  }
-
-  /**
-   * Start the instance using the ports provided
-   *
-   * @param remotePort the port of the remote server to connect to
-   * @param remoteHost the hostname of the remote server to connect to (if null defaults to
-   *     "localhost")
-   * @param localPorts the local port(s) to use
-   */
-  public MockServer(
-      final MockServerConfiguration configuration,
-      final Integer remotePort,
-      @Nullable final String remoteHost,
-      final Integer... localPorts) {
-    this(configuration, proxyConfiguration(configuration), remoteHost, remotePort, localPorts);
-  }
-
-  /**
-   * Start the instance using the ports provided configuring forwarded or proxied requests to go via
-   * an additional proxy
-   *
-   * @param localPorts the local port(s) to use
-   * @param remoteHost the hostname of the remote server to connect to (if null defaults to
-   *     "localhost")
-   * @param remotePort the port of the remote server to connect to
-   */
-  public MockServer(
-      final MockServerConfiguration configuration,
-      final ProxyConfiguration proxyConfiguration,
-      @Nullable String remoteHost,
-      final Integer remotePort,
-      final Integer... localPorts) {
-    this(configuration, List.of(proxyConfiguration), remoteHost, remotePort, localPorts);
-  }
-
-  /**
-   * Start the instance using the ports provided configuring forwarded or proxied requests to go via
-   * an additional proxy
-   *
-   * @param localPorts the local port(s) to use
-   * @param remoteHost the hostname of the remote server to connect to (if null defaults to
-   *     "localhost")
-   * @param remotePort the port of the remote server to connect to
-   */
-  public MockServer(
-      final MockServerConfiguration configuration,
-      final List<ProxyConfiguration> proxyConfigurations,
-      @Nullable String remoteHost,
-      final Integer remotePort,
-      final Integer... localPorts) {
-    super(configuration);
-    if (remotePort == null) {
-      throw new IllegalArgumentException("You must specify a remote hostname");
-    }
-    if (isBlank(remoteHost)) {
-      remoteHost = "localhost";
-    }
-
-    remoteSocket = new InetSocketAddress(remoteHost, remotePort);
-    log.info("using proxy configuration for forwarded requests:{}", proxyConfigurations);
-    createServerBootstrap(configuration, proxyConfigurations, localPorts);
+    createServerBootstrap(configuration, localPorts);
 
     // wait to start
     getLocalPort();
   }
 
   private void createServerBootstrap(
-      MockServerConfiguration configuration,
-      final List<ProxyConfiguration> proxyConfigurations,
-      final Integer... localPorts) {
+      MockServerConfiguration configuration, final Integer... localPorts) {
     if (configuration == null) {
       configuration = configuration();
     }
@@ -212,11 +98,7 @@ public class MockServer extends LifeCycle {
 
     actionHandler =
         new HttpActionHandler(
-            configuration,
-            getEventLoopGroup(),
-            httpState,
-            proxyConfigurations,
-            clientSslContextFactory);
+            configuration, getEventLoopGroup(), httpState, clientSslContextFactory);
     serverServerBootstrap =
         new ServerBootstrap()
             .group(bossGroup, workerGroup)

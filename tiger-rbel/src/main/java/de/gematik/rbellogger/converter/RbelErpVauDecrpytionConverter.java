@@ -119,7 +119,7 @@ public class RbelErpVauDecrpytionConverter implements RbelConverterPlugin {
       throws NoSuchAlgorithmException, InvalidKeySpecException {
     final java.security.spec.ECPoint ecPoint =
         new java.security.spec.ECPoint(
-            new BigInteger(1, encMessage.subArray( 1, 1 + 32)),
+            new BigInteger(1, encMessage.subArray(1, 1 + 32)),
             new BigInteger(1, encMessage.subArray(1 + 32, 1 + 32 + 32)));
     final ECPublicKeySpec keySpec = new ECPublicKeySpec(ecPoint, BrainpoolCurves.BP256);
     return (ECPublicKey) KeyFactory.getInstance("EC").generatePublic(keySpec);

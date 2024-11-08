@@ -31,10 +31,9 @@ public class MockServerHttpToNettyHttpRequestEncoder extends MessageToMessageEnc
 
   private final MockServerHttpRequestToFullHttpRequest mockServerHttpRequestToFullHttpRequest;
 
-  MockServerHttpToNettyHttpRequestEncoder(
-      Map<ProxyConfiguration.Type, ProxyConfiguration> proxyConfigurations) {
+  MockServerHttpToNettyHttpRequestEncoder(ProxyConfiguration proxyConfiguration) {
     mockServerHttpRequestToFullHttpRequest =
-        new MockServerHttpRequestToFullHttpRequest(proxyConfigurations);
+        new MockServerHttpRequestToFullHttpRequest(proxyConfiguration);
   }
 
   @Override

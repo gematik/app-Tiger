@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.proxy.vau;
+package de.gematik.test.tiger.proxy.tls.vau;
 
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
 import static j2html.TagCreator.div;

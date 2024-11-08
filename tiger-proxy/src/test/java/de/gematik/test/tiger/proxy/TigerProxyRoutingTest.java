@@ -57,7 +57,7 @@ class TigerProxyRoutingTest {
             .to("http://localhost:" + runtimeInfo.getHttpPort())
             .build());
 
-    runtimeInfo.getWireMock().register(stubFor(get("/foo").willReturn(ok().withBody("bar"))));
+    runtimeInfo.getWireMock().register(get("/foo").willReturn(ok().withBody("bar")));
 
     backendServerPort = runtimeInfo.getHttpPort();
 

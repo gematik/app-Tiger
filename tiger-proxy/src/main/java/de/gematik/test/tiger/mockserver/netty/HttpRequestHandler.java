@@ -84,65 +84,38 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
 
       if (!httpState.handle(request)) {
         if (request.getMethod().equals("CONNECT")) {
-
-          String username = configuration.proxyAuthenticationUsername();
-          String password = configuration.proxyAuthenticationPassword();
-          if (isNotBlank(username)
-              && isNotBlank(password)
-              && !request.containsHeader(
-                  PROXY_AUTHORIZATION.toString(),
-                  "Basic "
-                      + Base64.getEncoder()
-                          .encodeToString(
-                              (username + ':' + password).getBytes(StandardCharsets.UTF_8)))) {
-            HttpResponse response =
-                response()
-                    .withStatusCode(PROXY_AUTHENTICATION_REQUIRED.code())
-                    .withHeader(
-                        PROXY_AUTHENTICATE.toString(),
-                        "Basic realm=\""
-                            + StringEscapeUtils.escapeJava(configuration.proxyAuthenticationRealm())
-                            + "\", charset=\"UTF-8\"");
-            ctx.writeAndFlush(response);
-            log.info(
-                "proxy authentication failed so returning response:{}\n"
-                    + "for forwarded request:{}",
-                response,
-                request);
-          } else {
-            ctx.channel().attr(PROXYING).set(Boolean.TRUE);
-            // assume SSL for CONNECT request
-            enableSslUpstreamAndDownstream(ctx.channel());
-            // add Subject Alternative Name for SSL certificate
-            if (isNotBlank(request.getPath())) {
-              server
-                  .getScheduler()
-                  .submit(() -> configuration.addSubjectAlternativeName(request.getPath()));
-            }
-            String[] hostParts = request.getPath().split(":");
-            final int port = determinePort(ctx, hostParts);
-            ctx.pipeline()
-                .addLast(new HttpConnectHandler(configuration, server, hostParts[0], port));
-            ctx.pipeline().remove(this);
-            ctx.fireChannelRead(request);
-          }
+          openProxyChannel(ctx, request);
         } else {
-          try {
-            httpActionHandler.processAction(
-                request, responseWriter, ctx, isProxyingRequest(ctx), false);
-          } catch (RuntimeException e) {
-            log.error("exception processing request '{}'", request, e);
-          }
+          httpActionHandler.processAction(
+              request, responseWriter, ctx, isProxyingRequest(ctx), false);
         }
       }
     } catch (Exception ex) {
-      log.error("exception processing ", request, ex);
+      log.error("exception processing {}", request, ex);
       responseWriter.writeResponse(
           request,
           response()
               .withStatusCode(BAD_REQUEST.code())
               .withBody(ex.getMessage().getBytes(StandardCharsets.UTF_8)));
     }
+  }
+
+  private void openProxyChannel(ChannelHandlerContext ctx, HttpRequest request) {
+    ctx.channel().attr(PROXYING).set(Boolean.TRUE);
+    // assume SSL for CONNECT request
+    enableSslUpstreamAndDownstream(ctx.channel());
+    // add Subject Alternative Name for SSL certificate
+    log.info("Opening Proxy Channel, enabling SSL for {}", request.getPath());
+    if (isNotBlank(request.getPath())) {
+      server
+          .getScheduler()
+          .submit(() -> configuration.addSubjectAlternativeName(request.getPath()));
+    }
+    String[] hostParts = request.getPath().split(":");
+    final int port = determinePort(ctx, hostParts);
+    ctx.pipeline().addLast(new HttpConnectHandler(configuration, server, hostParts[0], port));
+    ctx.pipeline().remove(this);
+    ctx.fireChannelRead(request);
   }
 
   private static int determinePort(ChannelHandlerContext ctx, String[] hostParts) {

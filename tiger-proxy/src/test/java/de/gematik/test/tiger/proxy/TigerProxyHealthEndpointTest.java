@@ -18,7 +18,6 @@ package de.gematik.test.tiger.proxy;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -98,7 +97,7 @@ class TigerProxyHealthEndpointTest {
             .to("http://localhost:" + runtimeInfo.getHttpPort())
             .build());
 
-    runtimeInfo.getWireMock().register(stubFor(get("/foo").willReturn(ok().withBody("bar"))));
+    runtimeInfo.getWireMock().register(get("/foo").willReturn(ok().withBody("bar")));
 
     unirestInstance =
         new UnirestInstance(new Config().proxy("localhost", tigerProxy.getProxyPort()));

@@ -51,7 +51,7 @@ class RbelConverterBufferTest {
 
   @Test
   void triggerBufferOverflow_shouldRemoveOldestMessages() {
-    final String curlMessage = RandomStringUtils.randomAlphanumeric(5000);
+    final String curlMessage = RandomStringUtils.insecure().nextAlphanumeric(5000);
     final RbelLogger rbelLogger =
         RbelLogger.build(
             RbelConfiguration.builder().manageBuffer(true).rbelBufferSizeInMb(1).build());

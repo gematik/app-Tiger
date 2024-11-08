@@ -1,5 +1,27 @@
 # Changelog Tiger Test platform
 
+# Release 3.4.4
+
+## Features
+
+* TGR-538: NoProxyHosts can now be configured for the forwardToProxy-configuration of a TigerProxy:
+```yaml
+tigerProxy:
+  forwardToProxy:
+    hostname: 192.168.110.10
+    port: 3128
+    noProxyHosts:
+      - "localhost"
+```
+In this example the TigerProxy will not use the forwardToProxy-configuration for requests to localhost (instead sending the messages directly).
+
+## Bugfixes
+
+* TGR-1616: ForwardToProxy now correctly works when tunneling HTTPS traffic through an HTTP-Proxy
+* TGR-1616: Reverse-Proxy-Routes now correctly delete the matching part from the path before forwarding the request. (`/foo/bar` which matches the route `/foo` will now be forwarded to `/bar` only)
+* KOB-8: The ordering of Proxy-Routes now also takes into consideration the amount of hosts in the route. This means that a route with more hosts is now preferred over a route with fewer hosts (since it is considered to be more specific).
+* TGR-1632: Fixed an issue which prevented Cucumber-error-messages to be thrown. (the `Failed to transform configuration parameter with key 'cucumber.snippet-type' and initial value 'UNDERSCORE'` message)
+
 # Release 3.4.3
 
 ## Features
@@ -134,9 +156,10 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-    key = PLUGIN_PROPERTY_NAME,
-    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+  key = PLUGIN_PROPERTY_NAME,
+  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
+
 }
 ```
 

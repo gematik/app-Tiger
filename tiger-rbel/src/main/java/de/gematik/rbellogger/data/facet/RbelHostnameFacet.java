@@ -19,20 +19,22 @@ package de.gematik.rbellogger.data.facet;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMultiMap;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Data
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder(toBuilder = true)
 public class RbelHostnameFacet implements RbelFacet {
 
+  private static final Logger log = LoggerFactory.getLogger(RbelHostnameFacet.class);
   private final RbelElement port;
   private final RbelElement domain;
   @Builder.Default private Optional<RbelElement> bundledServerName = Optional.empty();
@@ -113,7 +115,30 @@ public class RbelHostnameFacet implements RbelFacet {
   }
 
   public boolean domainAndPortEquals(RbelHostnameFacet other) {
-    return Objects.equals(this.getDomain().seekValue(), other.getDomain().seekValue())
-        && Objects.equals(this.getPort().seekValue(), other.getPort().seekValue());
+    return Objects.equals(this.getPort().seekValue(), other.getPort().seekValue())
+        && domainMatches(this.getDomain().printValue(), other.getDomain().printValue());
+  }
+
+  private boolean domainMatches(Optional<String> thisDomain, Optional<String> otherDomain) {
+    return thisDomain
+        .map(Object::toString)
+        .map(RbelHostnameFacet::canonicalize)
+        .map(
+            thisHost ->
+                otherDomain
+                    .map(Object::toString)
+                    .map(RbelHostnameFacet::canonicalize)
+                    .map(thisHost::equals)
+                    .orElse(false))
+        .orElse(false);
+  }
+
+  @SneakyThrows
+  private static String canonicalize(String hostname) {
+    try {
+      return InetAddress.getByName(hostname).getCanonicalHostName();
+    } catch (UnknownHostException e) {
+      return hostname;
+    }
   }
 }

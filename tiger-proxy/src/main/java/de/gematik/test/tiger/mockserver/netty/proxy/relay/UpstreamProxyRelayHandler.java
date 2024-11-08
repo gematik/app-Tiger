@@ -58,6 +58,7 @@ public class UpstreamProxyRelayHandler extends SimpleChannelInboundHandler<FullH
   public void channelRead0(final ChannelHandlerContext ctx, final FullHttpRequest request) {
     if (isSslEnabledDownstream(upstreamChannel)
         && downstreamChannel.pipeline().get(SslHandler.class) == null) {
+      log.info("Adding SSL Handler in UpstreamProxyRelayHandler.channelRead0");
       downstreamChannel
           .pipeline()
           .addFirst(

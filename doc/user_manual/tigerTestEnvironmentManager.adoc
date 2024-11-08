@@ -832,8 +832,9 @@ tigerProxy:
   forwardToProxy:
     hostname: 192.168.110.10
     port: 3128
-    # for https based traffic you will have to adapt the type to HTTPS
     type: HTTP
+    noProxyHosts:
+      - "localhost"
   # The Tiger Proxy will route google.com to google.com even if no route is set.
   # The traffic routed via this "forwardAll"-routing will be logged by default
   # (meaning it will show up in the Rbel-Logs and be forwarded to tracing-clients)
