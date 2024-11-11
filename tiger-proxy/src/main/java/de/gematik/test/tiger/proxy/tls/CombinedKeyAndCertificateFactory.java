@@ -14,15 +14,24 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.mockserver.socket.tls;
+package de.gematik.test.tiger.proxy.tls;
 
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
-import java.util.Optional;
+import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
+import java.security.*;
+import java.util.*;
+import lombok.Data;
 
-/*
- * @author jamesdbloom
- */
-public interface KeyAndCertificateFactory {
+@Data
+public class CombinedKeyAndCertificateFactory implements KeyAndCertificateFactory {
 
-  Optional<TigerPkiIdentity> buildAndSavePrivateKeyAndX509Certificate(String hostname);
+  private final KeyAndCertificateFactory supplier;
+  private final KeyAndCertificateFactory fallback;
+
+  @Override
+  public Optional<TigerPkiIdentity> buildAndSavePrivateKeyAndX509Certificate(String hostname) {
+    return supplier
+        .buildAndSavePrivateKeyAndX509Certificate(hostname)
+        .or(() -> fallback.buildAndSavePrivateKeyAndX509Certificate(hostname));
+  }
 }

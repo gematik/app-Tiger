@@ -247,7 +247,7 @@ tigerProxy:
 ==== Fixed server identity
 
 The final, easiest and most unflexible way to solve TLS-issues is to simply give a fixed server-identity.
-This identity will be used for all routes.
+This identity will be used for all routes, but only if it matches the domain-name given by the client during the handshake. As a fallback (if the domain-name does not match) the dynamic server-identity will be used.
 
 [source,yaml]
 ----

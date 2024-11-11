@@ -83,9 +83,7 @@ public class NettyHttpClient {
               + " not possible to send a request");
     }
 
-    if (isHostOnNoProxyHostList(requestInfo.getRemoteServerAddress())) {
-//      requestInfo.setAssureNoProxying(true);
-    } else {
+    if (isHostNotOnNoProxyHostList(requestInfo.getRemoteServerAddress())) {
       modifyProxyInformation(requestInfo);
     }
 
@@ -260,9 +258,9 @@ public class NettyHttpClient {
     }
   }
 
-  private boolean isHostOnNoProxyHostList(InetSocketAddress remoteAddress) {
+  private boolean isHostNotOnNoProxyHostList(InetSocketAddress remoteAddress) {
     if (remoteAddress == null || proxyConfiguration == null) {
-      return true;
+      return false;
     }
     return proxyConfiguration.getNoProxyHosts().stream()
         .map(String::trim)
@@ -275,6 +273,6 @@ public class NettyHttpClient {
               }
             })
         .filter(Objects::nonNull)
-        .anyMatch(a -> remoteAddress.getHostName().equals(a.getHostName()));
+        .noneMatch(a -> remoteAddress.getHostName().equals(a.getHostName()));
   }
 }

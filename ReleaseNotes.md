@@ -4,6 +4,7 @@
 
 ## Features
 
+* KOB-4: Support fallback static identities for TLS server. This means you can configure a one or many server identities, and in case that the SNI during the TLS-handshake does match none of the given identities a matching, dynamic certificate will be generated either from a given or a generic Root-CA.
 * TGR-1549: Configuration Editor has a refresh button now
 
 # Release 3.4.4
