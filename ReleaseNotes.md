@@ -25,6 +25,7 @@ In this example the TigerProxy will not use the forwardToProxy-configuration for
 
 * TGR-1616: ForwardToProxy now correctly works when tunneling HTTPS traffic through an HTTP-Proxy
 * TGR-1616: Reverse-Proxy-Routes now correctly delete the matching part from the path before forwarding the request. (`/foo/bar` which matches the route `/foo` will now be forwarded to `/bar` only)
+* TGR-1061: Behavior of different RbelElements in WebUi fixed
 * KOB-8: The ordering of Proxy-Routes now also takes into consideration the amount of hosts in the route. This means that a route with more hosts is now preferred over a route with fewer hosts (since it is considered to be more specific).
 * TGR-1632: Fixed an issue which prevented Cucumber-error-messages to be thrown. (the `Failed to transform configuration parameter with key 'cucumber.snippet-type' and initial value 'UNDERSCORE'` message)
 
