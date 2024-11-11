@@ -43,6 +43,8 @@ const editorGrid: Ref<typeof AgGridVue | null> = ref(null);
 const gridApi: Ref<GridApi | null | undefined> = ref(undefined);
 const importFileStatus = ref('');
 
+const isImportButtonDisabled = ref(false);
+const isRefreshButtonDisabled = ref(false);
 
 onMounted(async () => {
   configurationProperties.value = await loadConfigurationProperties();
@@ -84,6 +86,7 @@ function onClearFilters() {
 
 
 function onClickImport() {
+  isImportButtonDisabled.value = true;
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
   fileInput.accept = '.yaml';
@@ -106,6 +109,13 @@ function onClickImport() {
     }
   };
   fileInput.click();
+  isImportButtonDisabled.value = false;
+}
+
+async function onClickRefresh() {
+  isRefreshButtonDisabled.value = true;
+  configurationProperties.value = await loadConfigurationProperties();
+  isRefreshButtonDisabled.value = false;
 }
 
 async function deleteRow(data: TigerConfigurationPropertyDto) {
@@ -188,7 +198,11 @@ const columnDefs: ColDef[] = [
       </a>
 
       <button class="btn btn-outline-secondary btn-sm me-1" type="button" id="test-tg-config-editor-btn-import"
-              @click.prevent="onClickImport" title="import a configuration file">Import
+              @click.prevent="onClickImport" :disabled="isImportButtonDisabled" title="import a configuration file">Import
+      </button>
+
+      <button class="btn btn-outline-secondary btn-sm me-1" type="button" id="test-tg-config-editor-btn-refresh"
+              @click.prevent="onClickRefresh" :disabled="isRefreshButtonDisabled" title="refresh the configuration">Refresh
       </button>
     </div>
     <div v-if="importFileStatus" class="alert alert-danger" role="alert">

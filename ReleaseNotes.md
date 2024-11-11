@@ -1,5 +1,11 @@
 # Changelog Tiger Test platform
 
+# Release 3.4.5
+
+## Features
+
+* TGR-1549: Configuration Editor has a refresh button now
+
 # Release 3.4.4
 
 ## Features
