@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.testenvmgr.servers;
@@ -113,6 +114,9 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
 
     Map<String, Object> properties = TigerTestEnvMgr.getConfiguredLoggingLevels();
     properties.putAll(TigerSerializationUtil.toMap(standaloneCfg));
+    properties.put("spring.mustache.enabled", false); // TGR-875 avoid warning in console
+    properties.put("spring.mustache.check-template-location", false);
+
     log.info("Actually performing startup of tiger-proxy {}", getServerId());
     statusMessage(
         "Starting Tiger Proxy "

@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.testenvmgr;
@@ -342,6 +343,8 @@ public class TigerTestEnvMgr
       LOCALPROXY_ADMIN_RESERVED_PORT.putValue(configuration.getTigerProxy().getAdminPort());
     }
     properties.putAll(getConfiguredLoggingLevels());
+    properties.put("spring.mustache.enabled", false); // TGR-875 avoid warning in console
+    properties.put("spring.mustache.check-template-location", false);
     log.info("Starting with port {}", properties.get(SERVER_PORT));
 
     localTigerProxyApplicationContext =

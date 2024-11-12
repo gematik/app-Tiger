@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.testenvmgr;
@@ -20,6 +21,7 @@ import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import jakarta.servlet.ServletContextListener;
+import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -32,8 +34,12 @@ import org.springframework.context.annotation.Bean;
 public class TigerTestEnvMgrApplication implements ServletContextListener {
 
   public static void main(String[] args) {
+    Map<String, Object> properties = TigerTestEnvMgr.getConfiguredLoggingLevels();
+    properties.put("spring.mustache.enabled", false); // TGR-875 avoid warning in console
+    properties.put("spring.mustache.check-template-location", false);
     new SpringApplicationBuilder()
         .bannerMode(Mode.OFF)
+        .properties(properties)
         .sources(TigerTestEnvMgrApplication.class)
         .initializers()
         .run(args);

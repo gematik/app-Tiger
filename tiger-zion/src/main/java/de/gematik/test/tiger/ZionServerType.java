@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger;
@@ -66,6 +67,8 @@ public class ZionServerType extends AbstractExternalTigerServer {
             TigerSerializationUtil.toMap(zionConfiguration.getZionConfiguration(), "zion"));
     final int serverPort = getServerPort();
     propertyMap.put("server.port", serverPort);
+    propertyMap.put("spring.mustache.enabled", false); // TGR-875 avoid warning in console
+    propertyMap.put("spring.mustache.check-template-location", false);
 
     if (getTigerTestEnvMgr().isShuttingDown()) {
       log.debug("Skipping startup, already shutting down...");
