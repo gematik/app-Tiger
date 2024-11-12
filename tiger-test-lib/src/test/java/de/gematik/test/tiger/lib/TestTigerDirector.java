@@ -322,7 +322,7 @@ class TestTigerDirector {
               TigerDirector.start();
               assertThatThrownBy(TigerDirector::pauseExecution)
                   .isInstanceOf(TigerTestEnvException.class);
-              assertThat(TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedOnWorkflowUi())
+              assertThat(TigerDirector.getTigerTestEnvMgr().getUserAcknowledgedOnWorkflowUi().get())
                   .isFalse();
             });
   }
@@ -356,7 +356,8 @@ class TestTigerDirector {
                         .until(
                             () ->
                                 TigerDirector.getTigerTestEnvMgr()
-                                    .isUserAcknowledgedOnWorkflowUi());
+                                    .getUserAcknowledgedOnWorkflowUi()
+                                    .get());
                   });
         });
   }
@@ -391,7 +392,7 @@ class TestTigerDirector {
         .atMost(5000, TimeUnit.MILLISECONDS)
         .until(
             () ->
-                TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedOnWorkflowUi()
+                TigerDirector.getTigerTestEnvMgr().getUserConfirmQuit().get()
                     && TigerDirector.getTigerTestEnvMgr().isShutDown());
   }
 

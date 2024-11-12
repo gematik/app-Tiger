@@ -59,6 +59,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -120,7 +121,8 @@ public class TigerTestEnvMgr
   @Getter(AccessLevel.PRIVATE)
   private ServletWebServerApplicationContext localTigerProxyApplicationContext;
 
-  private boolean userAcknowledgedOnWorkflowUi = false;
+  private final AtomicBoolean userAcknowledgedOnWorkflowUi = new AtomicBoolean(false);
+  private final AtomicBoolean userConfirmQuit = new AtomicBoolean(false);
   private boolean shouldAbortTestExecution = false;
   @Getter private boolean userPressedFailTestExecution = false;
   private boolean isShuttingDown = false;
@@ -725,11 +727,12 @@ public class TigerTestEnvMgr
 
   public void receivedConfirmationFromWorkflowUi(boolean executionShouldFail) {
     userPressedFailTestExecution = executionShouldFail;
-    userAcknowledgedOnWorkflowUi = true;
+    userAcknowledgedOnWorkflowUi.set(true);
   }
 
-  public void resetConfirmationFromWorkflowUi() {
-    userAcknowledgedOnWorkflowUi = false;
+  public void receivedQuitConfirmationFromWorkflowUi() {
+    userPressedFailTestExecution = false;
+    userConfirmQuit.set(true);
   }
 
   @Override

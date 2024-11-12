@@ -177,7 +177,7 @@ public class EnvStatusController implements TigerUpdateListener {
   @GetMapping(path = "/confirmShutdown")
   public void getConfirmShutdown() {
     log.trace("Received shutdown confirmation");
-    tigerTestEnvMgr.receivedConfirmationFromWorkflowUi(false);
+    tigerTestEnvMgr.receivedQuitConfirmationFromWorkflowUi();
   }
 
   @GetMapping(path = "/continueExecution")

@@ -238,14 +238,14 @@ public class TigerDirector {
                 .atMost(getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
                 .until(
                     () ->
-                        tigerTestEnvMgr.isUserAcknowledgedOnWorkflowUi()
+                        tigerTestEnvMgr.getUserConfirmQuit().get()
                             || tigerTestEnvMgr.isShouldAbortTestExecution());
           } finally {
             tigerTestEnvMgr.shutDown();
           }
         }
       } else if (tigerTestEnvMgr != null) {
-        tigerTestEnvMgr.receivedConfirmationFromWorkflowUi(false);
+        tigerTestEnvMgr.receivedQuitConfirmationFromWorkflowUi();
         System.out.println("TGR Shutting down test env..."); // NOSONAR
         tigerTestEnvMgr.shutDown();
       }
@@ -497,8 +497,8 @@ public class TigerDirector {
       await()
           .pollInterval(1, TimeUnit.SECONDS)
           .atMost(getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
-          .until(() -> tigerTestEnvMgr.isUserAcknowledgedOnWorkflowUi());
-      tigerTestEnvMgr.resetConfirmationFromWorkflowUi();
+          .until(
+              () -> tigerTestEnvMgr.getUserAcknowledgedOnWorkflowUi().compareAndSet(true, false));
     } else {
       throw new TigerTestEnvException(
           "The step 'TGR pause test run execution with message \"{}\"' is not supported "
@@ -522,8 +522,8 @@ public class TigerDirector {
       await()
           .pollInterval(1, TimeUnit.SECONDS)
           .atMost(getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
-          .until(() -> tigerTestEnvMgr.isUserAcknowledgedOnWorkflowUi());
-      tigerTestEnvMgr.resetConfirmationFromWorkflowUi();
+          .until(
+              () -> tigerTestEnvMgr.getUserAcknowledgedOnWorkflowUi().compareAndSet(true, false));
       if (tigerTestEnvMgr.isUserPressedFailTestExecution()) {
         Fail.fail(errorMessage);
       }
