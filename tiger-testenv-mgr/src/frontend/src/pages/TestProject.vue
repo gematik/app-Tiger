@@ -145,7 +145,7 @@
               :ui="ui"
               :started="started"
               :quitTestrunOngoing="quitTestrunOngoing"
-              :shutdownTestrunOngoing="shutdownTestrunOngoing"/>
+              :quit-reason="quitReason"/>
           <ServerLog :serverLogs="serverLogList" :logServers="logServers" :selectedServers="selectedServers"
                      :selectedLoglevel="LogLevel.ALL.toString()" :selected-text="''"/>
           <traffic-visualization
@@ -214,6 +214,7 @@ import TrafficVisualization from "@/components/sequence_diagram/TrafficVisualiza
 import {useConfigurationLoader} from "@/components/global_configuration/ConfigurationLoader";
 import {Features} from "@/types/Features";
 import RbelLogDetailsPane from "@/components/testsuite/RbelLogDetailsPane.vue";
+import QuitReason from "@/types/QuitReason";
 
 
 const {loadSubsetOfProperties} = useConfigurationLoader();
@@ -271,8 +272,8 @@ const build: Ref<string> = ref("");
 let ui = ref();
 
 const quitTestrunOngoing: Ref<boolean> = ref(false);
-const shutdownTestrunOngoing: Ref<boolean> = ref(false);
 const pauseTestrunOngoing: Ref<boolean> = ref(false);
+const quitReason: Ref<QuitReason> = ref({message: '', details: ''});
 
 const sideBarCollapsed: Ref<boolean> = ref(true);
 
@@ -289,16 +290,13 @@ async function loadFeaturesFlags() {
 
 onMounted(() => {
   ui = ref(new Ui());
-  emitter.on('confirmShutdownPressed', () => {
-    quitTestrunOngoing.value = true;
-    shutdownTestrunOngoing.value = true;
-  });
   connectToWebSocket();
   fetchInitialServerStatus();
   fetchTigerVersion();
   fetchTigerBuild();
   loadFeaturesFlags()
 });
+
 
 const DEBUG = true;
 
@@ -367,6 +365,7 @@ function checkMessageOrderAndProcessAccordingly(pushedMessage: TestEnvStatusDto)
 /** process any incoming messages. */
 function connectToWebSocket() {
   socket = new SockJS(baseURL + "testEnv");
+
   stompClient = Stomp.over(socket, {debug: false});
   stompClient.connect(
       {},
@@ -418,6 +417,12 @@ function connectToWebSocket() {
         });
       },
       (error: Frame | CloseEvent) => {
+        if (error?.type === 'close') {
+          shutdownWorkflowUi({
+            message: "Backend of Workflow UI no longer active",
+            details: 'Connection to backend closed. \nRbelLog details pane has no more filtering / search support!'
+          });
+        }
         console.error("Websocket error: " + JSON.stringify(error));
       }
   );
@@ -614,8 +619,7 @@ function quitTestrun(ev: MouseEvent) {
               alert("Failed to abort test execution! " + response.statusText);
               return false;
             }
-            quitTestrunOngoing.value = true;
-            shutdownTestrunOngoing.value = false;
+            shutdownWorkflowUi({message: 'Quit on user request!', details: ''});
           },
           error => {
             console.log("ERR: " + JSON.stringify(error))
@@ -646,8 +650,18 @@ function pauseTestrun(ev: MouseEvent) {
   return false;
 }
 
-function confirmShutdownPressed() {
-  emitter.emit('confirmShutdownPressed');
+function shutdownWorkflowUi(reason: QuitReason) {
+  quitTestrunOngoing.value = true;
+  setReasonWithoutReplacing(reason);
+}
+
+function setReasonWithoutReplacing(reason: QuitReason) {
+  //if the quitReason has already something set, we do not overwrite it. So that if the user explicitly quit,
+  //this reason is not overwritten by the subsequent loss of websocket connection.
+  quitReason.value = {
+    message: quitReason.value.message ? quitReason.value.message : reason.message,
+    details: quitReason.value.details ? quitReason.value.details : reason.details
+  };
 }
 
 </script>
