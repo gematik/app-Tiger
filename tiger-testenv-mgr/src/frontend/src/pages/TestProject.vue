@@ -501,7 +501,12 @@ function fetchInitialServerStatus() {
         if (fetchedServerStatus.has("local_tiger_proxy")) {
           const url = fetchedServerStatus.get("local_tiger_proxy")?.baseUrl;
           if (url) {
-            localProxyWebUiUrl.value = url;
+            const originalUrl = new URL(url);
+            const originalPort = originalUrl.port;
+            const winUrl = window.location.host;
+            const myArray = winUrl.split(":");
+            const newHostname = myArray[0];
+            localProxyWebUiUrl.value = `http://${newHostname}:${originalPort}`;
           }
         }
 

@@ -26,6 +26,7 @@ The old configuration with a single target is still supported. In that case no h
 
 * TGR-1634: Workflow UI: when the backend shuts down, the frontend displays a message informing the user that the
   backend is no longer active.
+* TGR-1636: TigerProxy IP from WorkflowUI is found dynamically
 
 ## Bugfixes
 
