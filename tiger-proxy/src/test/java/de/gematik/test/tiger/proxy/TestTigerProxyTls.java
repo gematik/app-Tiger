@@ -28,7 +28,7 @@ import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration.TigerProxyConfigurationBuilder;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
@@ -151,7 +151,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("https://authn.aktor.epa.telematik-test")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -205,7 +205,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
               TigerProxyConfiguration.builder()
                   .proxyRoutes(
                       List.of(
-                          TigerRoute.builder()
+                          TigerConfigurationRoute.builder()
                               .from("https://authn.aktor.epa.telematik-test")
                               .to("http://localhost:" + fakeBackendServerPort)
                               .build()))
@@ -294,7 +294,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                     .build())
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -319,7 +319,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                 .activateRbelParsingFor(List.of("X509"))
                 .proxyRoutes(
                     List.of(
-                        TigerRoute.builder()
+                        TigerConfigurationRoute.builder()
                             .from("/")
                             .to("http://localhost:" + fakeBackendServerPort)
                             .build()))
@@ -330,7 +330,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://backend")
                         .to("https://localhost:" + secondProxy.getProxyPort())
                         .build()))
@@ -451,12 +451,12 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             .tls(TigerTlsConfiguration.builder().serverIdentity(serverIdentity).build())
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         // aktor-gateway.gematik.de ist der DN des obigen zertifikats
                         .from("https://authn.aktor.epa.telematik-test")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build(),
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("https://falsche-url")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -543,7 +543,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://backend")
                         .to("https://localhost:" + serverPort)
                         .build()))
@@ -739,7 +739,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         proxyConfigurationBuilder
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -780,7 +780,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("https://blub")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -842,17 +842,17 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                     .build())
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort + "/foobar")
                         .hosts(List.of("kon-instanz2.titus.ti-dienste.de"))
                         .build(),
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar")
                         .hosts(List.of("CGMAG-IM-FDSIM.ts-ttcn3.sig-test.telematik-test"))
                         .build(),
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort + "/foobar")
                         .hosts(List.of("some.other.server"))

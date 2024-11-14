@@ -33,10 +33,11 @@ import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
+import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
@@ -98,7 +99,7 @@ public class TigerTestEnvMgr
 
   private final Configuration configuration;
   private final Map<String, Object> environmentVariables;
-  private final List<TigerRoute> routesList = new ArrayList<>();
+  private final List<TigerConfigurationRoute> routesList = new ArrayList<>();
   private final Map<String, AbstractTigerServer> servers = new HashMap<>();
 
   /**
@@ -667,7 +668,7 @@ public class TigerTestEnvMgr
   }
 
   @SuppressWarnings("unused")
-  public List<TigerRoute> getRoutes() {
+  public List<TigerProxyRoute> getRoutes() {
     return servers.values().stream()
         .map(AbstractTigerServer::getServerRoutes)
         .flatMap(List::stream)

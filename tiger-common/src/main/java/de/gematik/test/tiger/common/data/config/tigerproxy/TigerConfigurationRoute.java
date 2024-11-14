@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.common.data.config.tigerproxy;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.io.Serializable;
@@ -28,34 +29,14 @@ import lombok.*;
 @Builder(toBuilder = true)
 @Data
 @JsonInclude(Include.NON_NULL)
-public class TigerRoute implements Serializable {
+public class TigerConfigurationRoute {
 
-  @With private String id;
   private String from;
-  private String to;
-  @Builder.Default private boolean internalRoute = false;
+  @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+  @Singular("to")
+  private List<String> to = new ArrayList<>();
   private boolean disableRbelLogging;
   private TigerBasicAuthConfiguration basicAuth;
   private List<String> criterions;
   @Builder.Default private List<String> hosts = new ArrayList<>();
-
-  public String createShortDescription() {
-    final StringBuilder resultBuilder = new StringBuilder();
-    resultBuilder.append("{from='");
-    resultBuilder.append(from);
-    resultBuilder.append('\'');
-    resultBuilder.append(", to='");
-    resultBuilder.append(to);
-    resultBuilder.append('\'');
-    if (criterions != null && !criterions.isEmpty()) {
-      resultBuilder.append(", criterions=");
-      resultBuilder.append(criterions);
-    }
-    if (hosts != null && !hosts.isEmpty()) {
-      resultBuilder.append(", hosts=");
-      resultBuilder.append(hosts);
-    }
-    resultBuilder.append('}');
-    return resultBuilder.toString();
-  }
 }

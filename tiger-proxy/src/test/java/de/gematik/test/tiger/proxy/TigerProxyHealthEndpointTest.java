@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.mockserver.netty.MockServer;
 import java.time.LocalDateTime;
@@ -92,7 +92,7 @@ class TigerProxyHealthEndpointTest {
         .forEach(tigerRoute -> tigerProxy.removeRoute(tigerRoute.getId()));
 
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from("http://myserv.er")
             .to("http://localhost:" + runtimeInfo.getHttpPort())
             .build());

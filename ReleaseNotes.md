@@ -8,6 +8,22 @@
   identities, and in case that the SNI during the TLS-handshake does match none of the given identities a matching,
   dynamic certificate will be generated either from a given or a generic Root-CA.
 * TGR-1549: Configuration Editor has a refresh button now
+* TGR-1635: A route in a Tiger-Proxy can have multiple "to"-targets. On startup the Tiger-Proxy will choose the first
+  healthy target of the list. The configuration looks like this:
+
+```yaml
+tigerProxy:
+  proxyRoutes:
+    - from: /multiple/targets
+      to:
+        - http://example.com
+        - http://example2.com
+    - from: /only/one/target
+      to: http://example.com
+```
+
+The old configuration with a single target is still supported. In that case no health checks are performed.
+
 * TGR-1634: Workflow UI: when the backend shuts down, the frontend displays a message informing the user that the
   backend is no longer active.
 
@@ -179,8 +195,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+  key = PLUGIN_PROPERTY_NAME,
+  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

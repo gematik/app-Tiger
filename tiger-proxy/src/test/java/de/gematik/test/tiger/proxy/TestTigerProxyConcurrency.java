@@ -49,7 +49,7 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://foo.bar")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -121,7 +121,7 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))

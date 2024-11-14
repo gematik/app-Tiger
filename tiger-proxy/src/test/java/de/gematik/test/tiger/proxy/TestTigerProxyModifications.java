@@ -23,7 +23,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.util.List;
 import kong.unirest.HttpResponse;
@@ -48,7 +48,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://backend")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -112,7 +112,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -149,7 +149,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -220,7 +220,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://backend")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -252,7 +252,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -286,7 +286,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -311,7 +311,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -336,7 +336,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))

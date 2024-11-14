@@ -26,7 +26,7 @@ import de.gematik.rbellogger.util.RbelMessagesSupplier;
 import de.gematik.test.tiger.TigerAgent;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
@@ -38,6 +38,7 @@ import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactorySuppl
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
+import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxySslException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
@@ -73,7 +74,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   private final List<KeyAndCertificateFactory> tlsFactories = new ArrayList<>();
   private final List<Consumer<Throwable>> exceptionListeners = new ArrayList<>();
   @Getter private final MockServerToRbelConverter mockServerToRbelConverter;
-  private final Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
+  private final Map<String, TigerProxyRoute> tigerRouteMap = new HashMap<>();
   private final List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
 
   /**
@@ -139,14 +140,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
           builder.sslProvider(SslProvider.JDK);
           return builder;
         });
-  }
-
-  private static URL buildUrlSafe(TigerRoute tigerRoute) {
-    try {
-      return new URL(tigerRoute.getFrom());
-    } catch (MalformedURLException e) {
-      throw new TigerProxyStartupException("Error while building route", e);
-    }
   }
 
   /**
@@ -215,7 +208,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
 
   private void addRoutesToTigerProxy() {
     if (getTigerProxyConfiguration().getProxyRoutes() != null) {
-      for (final TigerRoute tigerRoute : getTigerProxyConfiguration().getProxyRoutes()) {
+      for (final TigerConfigurationRoute tigerRoute : getTigerProxyConfiguration().getProxyRoutes()) {
         addRoute(tigerRoute);
       }
     }
@@ -251,13 +244,13 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     getTigerProxyConfiguration()
         .getProxyRoutes()
         .add(
-            TigerRoute.builder()
+            TigerConfigurationRoute.builder()
                 .from("/")
-                .to(
+                .to(List.of(
                     "http://"
                         + getTigerProxyConfiguration().getDirectReverseProxy().getHostname()
                         + ":"
-                        + getTigerProxyConfiguration().getDirectReverseProxy().getPort())
+                        + getTigerProxyConfiguration().getDirectReverseProxy().getPort()))
                 .build());
   }
 
@@ -403,7 +396,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   }
 
   @Override
-  public List<TigerRoute> getRoutes() {
+  public List<TigerProxyRoute> getRoutes() {
     return tigerRouteMap.values().stream().toList();
   }
 
@@ -424,20 +417,32 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     getRbelLogger().getRbelModifier().deleteModification(modificationId);
   }
 
+  public TigerProxyRoute addRoute(final TigerConfigurationRoute tigerRoute) {
+    return addRoute(
+        TigerProxyRoute.builder()
+            .from(tigerRoute.getFrom())
+            .to(new TigerRouteSelector(tigerRoute.getTo(), getTigerProxyConfiguration().getForwardToProxy()).selectFirstReachableDestination())
+            .basicAuth(tigerRoute.getBasicAuth())
+            .hosts(tigerRoute.getHosts())
+            .criterions(tigerRoute.getCriterions())
+            .disableRbelLogging(tigerRoute.isDisableRbelLogging())
+            .build());
+  }
+
   @Override
-  public synchronized TigerRoute addRoute(final TigerRoute tigerRoute) {
+  public synchronized TigerProxyRoute addRoute(final TigerProxyRoute tigerRoute) {
     log.info("Adding route {} -> {}", tigerRoute.getFrom(), tigerRoute.getTo());
     final Expectation expectation = buildRouteAndReturnExpectation(tigerRoute);
     expectation.setTigerRoute(tigerRoute);
 
-    final TigerRoute createdTigerRoute = tigerRoute.withId(expectation.getId());
+    final TigerProxyRoute createdTigerRoute = tigerRoute.withId(expectation.getId());
     tigerRouteMap.put(expectation.getId(), createdTigerRoute);
 
     log.debug("Created route from {} to {}", tigerRoute.getFrom(), tigerRoute.getTo());
     return createdTigerRoute;
   }
 
-  private Expectation buildRouteAndReturnExpectation(final TigerRoute tigerRoute) {
+  private Expectation buildRouteAndReturnExpectation(final TigerProxyRoute tigerRoute) {
     if (UriUtil.hasScheme(tigerRoute.getFrom())) {
       return buildForwardProxyRoute(tigerRoute);
     } else {
@@ -445,7 +450,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     }
   }
 
-  private Expectation buildReverseProxyRoute(final TigerRoute tigerRoute) {
+  private Expectation buildReverseProxyRoute(final TigerProxyRoute tigerRoute) {
     final Expectation expectation =
         when(
                 request().setPath(tigerRoute.getFrom() + ".*").setForwardProxyRequest(false),
@@ -457,8 +462,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     return expectation;
   }
 
-  private Expectation buildForwardProxyRoute(final TigerRoute tigerRoute) {
-    final URL url = buildUrlSafe(tigerRoute);
+  private Expectation buildForwardProxyRoute(final TigerProxyRoute tigerRoute) {
+    final URL url = tigerRoute.retrieveFromUrl();
     final Expectation expectation =
         when(
                 request()
@@ -514,7 +519,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
       return;
     }
     mockServer.removeExpectation(routeId);
-    final TigerRoute route = tigerRouteMap.remove(routeId);
+    final TigerProxyRoute route = tigerRouteMap.remove(routeId);
 
     log.info(
         "Deleted route {} (id {}). Current # expectations {}",

@@ -23,7 +23,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.fail;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRouteDto;
 import java.util.List;
@@ -52,7 +52,7 @@ class TigerProxyRoutingTest {
         .forEach(tigerRoute -> tigerProxy.removeRoute(tigerRoute.getId()));
 
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from("http://myserv.er")
             .to("http://localhost:" + runtimeInfo.getHttpPort())
             .build());

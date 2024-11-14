@@ -22,9 +22,11 @@ import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.PkiType;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
+import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.env.TigerEnvUpdateSender;
@@ -53,7 +55,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
   private final String hostname;
   private final String serverId;
   private final List<String> environmentProperties = new ArrayList<>();
-  private final List<TigerRoute> serverRoutes = new ArrayList<>();
+  private final List<TigerProxyRoute> serverRoutes = new ArrayList<>();
   private final TigerTestEnvMgr tigerTestEnvMgr;
   private final List<TigerUpdateListener> listeners = new ArrayList<>();
   private final List<TigerServerLogListener> logListeners = new ArrayList<>();
@@ -158,7 +160,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
                         .map(
                             proxy ->
                                 proxy.addRoute(
-                                    TigerRoute.builder()
+                                    TigerConfigurationRoute.builder()
                                         .from(routeParts[0])
                                         .to(routeParts[1])
                                         .build()));
@@ -338,7 +340,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
 
   public void addServerToLocalProxyRouteMap(URL url) {
     addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from(TigerTestEnvMgr.HTTP + getHostname())
             .to(extractBaseUrl(url))
             .build());
@@ -356,7 +358,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     }
   }
 
-  void addRoute(TigerRoute newRoute) {
+    void addRoute(TigerConfigurationRoute newRoute) {
     getTigerTestEnvMgr()
         .getLocalTigerProxyOptional()
         .ifPresent(proxy -> serverRoutes.add(proxy.addRoute(newRoute)));
@@ -368,7 +370,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
         .ifPresent(
             proxy -> {
               log.info("Removing routes for {}...", getServerId());
-              serverRoutes.stream().map(TigerRoute::getId).forEach(proxy::removeRoute);
+              serverRoutes.stream().map(TigerProxyRoute::getId).forEach(proxy::removeRoute);
             });
   }
 

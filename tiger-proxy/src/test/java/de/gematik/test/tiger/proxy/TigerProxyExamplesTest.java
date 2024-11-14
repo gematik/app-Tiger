@@ -24,7 +24,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -169,7 +169,7 @@ class TigerProxyExamplesTest {
                 TigerProxyConfiguration.builder()
                     .proxyRoutes(
                         List.of(
-                            TigerRoute.builder()
+                            TigerConfigurationRoute.builder()
                                 .from("http://norealserver")
                                 .to("http://localhost:" + runtimeInfo.getHttpPort())
                                 .build()))
@@ -198,7 +198,7 @@ class TigerProxyExamplesTest {
                 TigerProxyConfiguration.builder()
                     .proxyRoutes(
                         List.of(
-                            TigerRoute.builder()
+                            TigerConfigurationRoute.builder()
                                 .from("http://norealserver")
                                 .to("http://localhost:" + runtimeInfo.getHttpPort())
                                 .build()))
@@ -221,7 +221,7 @@ class TigerProxyExamplesTest {
             TigerProxyConfiguration.builder()
                 .proxyRoutes(
                     List.of(
-                        TigerRoute.builder()
+                        TigerConfigurationRoute.builder()
                             .from("/")
                             .to("http://localhost:" + runtimeInfo.getHttpPort())
                             .build()))
@@ -242,7 +242,7 @@ class TigerProxyExamplesTest {
             TigerProxyConfiguration.builder()
                 .proxyRoutes(
                     List.of(
-                        TigerRoute.builder()
+                        TigerConfigurationRoute.builder()
                             .from("/wuff")
                             .to("http://localhost:" + runtimeInfo.getHttpPort())
                             .build()))
@@ -263,7 +263,7 @@ class TigerProxyExamplesTest {
                 TigerProxyConfiguration.builder()
                     .proxyRoutes(
                         List.of(
-                            TigerRoute.builder()
+                            TigerConfigurationRoute.builder()
                                 .from("/")
                                 .to("http://localhost:" + runtimeInfo.getHttpPort())
                                 .build()))
@@ -286,7 +286,7 @@ class TigerProxyExamplesTest {
                 TigerProxyConfiguration.builder()
                     .proxyRoutes(
                         List.of(
-                            TigerRoute.builder()
+                            TigerConfigurationRoute.builder()
                                 .from("https://blub")
                                 .to("http://localhost:" + runtimeInfo.getHttpPort())
                                 .build()))
@@ -312,7 +312,7 @@ class TigerProxyExamplesTest {
                 TigerProxyConfiguration.builder()
                     .proxyRoutes(
                         List.of(
-                            TigerRoute.builder()
+                            TigerConfigurationRoute.builder()
                                 .from("https://blub")
                                 .to("http://localhost:" + runtimeInfo.getHttpPort())
                                 .build()))
@@ -361,7 +361,7 @@ class TigerProxyExamplesTest {
                 TigerProxyConfiguration.builder()
                     .proxyRoutes(
                         List.of(
-                            TigerRoute.builder()
+                            TigerConfigurationRoute.builder()
                                 .from("http://blub")
                                 .to("http://localhost:" + runtimeInfo.getHttpPort())
                                 .build()))
@@ -398,7 +398,7 @@ class TigerProxyExamplesTest {
                 TigerProxyConfiguration.builder()
                     .proxyRoutes(
                         List.of(
-                            TigerRoute.builder()
+                            TigerConfigurationRoute.builder()
                                 .from("https://blub")
                                 .to("http://localhost:" + runtimeInfo.getHttpPort())
                                 .build()))

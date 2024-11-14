@@ -22,7 +22,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.github.tomakehurst.wiremock.client.MappingBuilder;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
@@ -31,7 +30,7 @@ import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import de.gematik.rbellogger.data.facet.RbelParsingNotCompleteFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import java.io.IOException;
@@ -53,7 +52,6 @@ import kong.unirest.Config;
 import kong.unirest.UnirestInstance;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
@@ -180,21 +178,21 @@ public abstract class AbstractTigerProxyTest {
     configuration
         .getProxyRoutes()
         .add(
-            TigerRoute.builder()
+            TigerConfigurationRoute.builder()
                 .from("https://backend")
                 .to("http://localhost:" + fakeBackendServerPort)
                 .build());
     configuration
         .getProxyRoutes()
         .add(
-            TigerRoute.builder()
+            TigerConfigurationRoute.builder()
                 .from("http://backend")
                 .to("http://localhost:" + fakeBackendServerPort)
                 .build());
     configuration
         .getProxyRoutes()
         .add(
-            TigerRoute.builder().from("/").to("http://localhost:" + fakeBackendServerPort).build());
+            TigerConfigurationRoute.builder().from("/").to("http://localhost:" + fakeBackendServerPort).build());
 
     spawnTigerProxyWith(configuration);
   }

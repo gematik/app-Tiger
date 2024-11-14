@@ -52,12 +52,12 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
       String routeFromProtocol, String routeToProtocol, String requestProtocol) {
     spawnTigerProxyWith(new TigerProxyConfiguration());
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from(routeFromProtocol + "://backend/combotest")
             .to(routeToProtocol + "://localhost:" + tigerProxy.getProxyPort() + "/foobar")
             .build());
     tigerProxy.addRoute(
-        TigerRoute.builder().from("/").to("http://localhost:" + fakeBackendServerPort).build());
+        TigerConfigurationRoute.builder().from("/").to("http://localhost:" + fakeBackendServerPort).build());
 
     assertThat(proxyRest.get(requestProtocol + "://backend/combotest").asString().getStatus())
         .isEqualTo(666);
@@ -79,7 +79,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
       String fromPath, String requestPath, String actualPath, int expectedReturnCode) {
     spawnTigerProxyWith(new TigerProxyConfiguration());
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from("http://backend")
             .to("http://localhost:" + fakeBackendServerPort + fromPath)
             .build());
@@ -105,7 +105,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
       String fromPath, String requestPath, String actualPath, int expectedReturnCode) {
     spawnTigerProxyWith(new TigerProxyConfiguration());
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from("/")
             .to("http://localhost:" + fakeBackendServerPort + fromPath)
             .build());
@@ -161,12 +161,12 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
       String fromPath, String toPath, String requestPath, String shouldBecomePath) {
     spawnTigerProxyWith(new TigerProxyConfiguration());
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from(fromPath)
             .to("http://localhost:" + tigerProxy.getProxyPort() + toPath)
             .build());
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from(shouldBecomePath)
             .to("http://localhost:" + fakeBackendServerPort + "/foobar")
             .build());
@@ -193,12 +193,12 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
       String fromPath, String toPath, String requestPath, String shouldBecomePath) {
     spawnTigerProxyWith(new TigerProxyConfiguration());
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from("http://backend" + fromPath)
             .to("http://localhost:" + tigerProxy.getProxyPort() + toPath)
             .build());
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from(shouldBecomePath)
             .to("http://localhost:" + fakeBackendServerPort + "/foobar")
             .build());
@@ -213,19 +213,19 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://backend/other")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build(),
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://backend/hallo")
                         .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar")
                         .build(),
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://backend")
                         .to("http://localhost:" + fakeBackendServerPort + "/foobar")
                         .build(),
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://backend/else")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -241,19 +241,19 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/other")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build(),
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/hallo")
                         .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar")
                         .build(),
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort + "/foobar")
                         .build(),
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/else")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -286,17 +286,17 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
             .activateForwardAllLogging(false)
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar")
                         .hosts(List.of(hostsRoute2.split("\\,")))
                         .build(),
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort + "/foobar")
                         .hosts(List.of(hostsRoute1.split("\\,")))
                         .build(),
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort + "/")
                         .build()))
@@ -316,11 +316,11 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort + "/foobar")
                         .build(),
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://ps")
                         .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar")
                         .build()))
