@@ -165,7 +165,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 3.4.4 - 2024-11-08</span>
+<span id="revdate">Version 3.4.5 - 2024-11-15</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -2745,7 +2745,26 @@ Meaning: If you have a mapping</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="criterions"><a class="anchor" href="#criterions"></a>4.3.4. criterions</h4>
+<h4 id="multiple-targets"><a class="anchor" href="#multiple-targets"></a>4.3.4. Multiple targets</h4>
+<div class="paragraph">
+<p>Sometimes you can only at runtime know which target to use. This can be achieved by using the <code>to</code>-property as a list of targets:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy:
+    proxyRoutes:
+      - from: /
+        to:
+          - http://orf.at/blub/
+          - http://ard.de/bla/</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When booting the tiger-proxy the proxy tries to reach the target host by sending a HEAD-request to the host (dropping the path). If the server sends a valid HTTP (or HTTPS) response, the target is considered reachable and the route is used. If no target can be reached an exception is thrown. The return code is ignored.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="criterions"><a class="anchor" href="#criterions"></a>4.3.5. criterions</h4>
 <div class="paragraph">
 <p>As an additional measure for a more fine-grained matching you can use criterions. These are JEXL-expressions which have to be fulfilled for the route to be used. This can be leveraged to make the routing decision dependent on the content of the message.</p>
 </div>
@@ -2764,7 +2783,7 @@ Meaning: If you have a mapping</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="disablerbellogging"><a class="anchor" href="#disablerbellogging"></a>4.3.5. disableRbelLogging</h4>
+<h4 id="disablerbellogging"><a class="anchor" href="#disablerbellogging"></a>4.3.6. disableRbelLogging</h4>
 <div class="paragraph">
 <p>You can deactivate the rbel-Logging on a per-Route basis.<br>
 Rbel is a versatile and powerful tool, but the analysis of individual messages consumes a lot of both CPU and memory.<br>
@@ -2772,7 +2791,7 @@ Deactivating it for routes in which it is not needed is therefore a good idea.</
 </div>
 </div>
 <div class="sect3">
-<h4 id="basicauth"><a class="anchor" href="#basicauth"></a>4.3.6. basicAuth</h4>
+<h4 id="basicauth"><a class="anchor" href="#basicauth"></a>4.3.7. basicAuth</h4>
 <div class="paragraph">
 <p>You can add optional basic-auth configuration which will be added to the forwarded message.<br>
 Theoretically this could also be done via modifications, but this a more convenient approach.</p>
@@ -2908,7 +2927,7 @@ To set a custom CA to be used for certificate generation simply specify it:</p>
 <h4 id="fixed-server-identity"><a class="anchor" href="#fixed-server-identity"></a>4.4.5. Fixed server identity</h4>
 <div class="paragraph">
 <p>The final, easiest and most unflexible way to solve TLS-issues is to simply give a fixed server-identity.<br>
-This identity will be used for all routes.</p>
+This identity will be used for all routes, but only if it matches the domain-name given by the client during the handshake. As a fallback (if the domain-name does not match) the dynamic server-identity will be used.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -8244,7 +8263,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-11-08 08:31:11 +0100
+Last updated 2024-11-15 15:11:15 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
