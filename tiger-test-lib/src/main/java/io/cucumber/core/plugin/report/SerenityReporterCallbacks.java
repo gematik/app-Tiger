@@ -586,6 +586,10 @@ public class SerenityReporterCallbacks {
       return;
     }
 
+    if (TestCaseDelegate.of(event.getTestCase()).isDryRun()) {
+      return;
+    }
+
     currentStepIndex = -1;
     String scenarioStatus = event.getResult().getStatus().toString();
 

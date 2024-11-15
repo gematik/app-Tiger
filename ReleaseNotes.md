@@ -30,6 +30,7 @@ The old configuration with a single target is still supported. In that case no h
 
 ## Bugfixes
 
+* KOB-7: Workflow UI: fixed that testcase discovery stops after first feature with matching tags
 * KOB-13: Workflow UI: fixed an issue where replaying a test would incorrectly shutdown the tiger suite.
 
 # Release 3.4.4
@@ -196,8 +197,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-  key = PLUGIN_PROPERTY_NAME,
-  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+    key = PLUGIN_PROPERTY_NAME,
+    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }
