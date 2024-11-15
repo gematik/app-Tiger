@@ -225,8 +225,11 @@ public class TigerGlue {
       await()
           .pollInterval(1, TimeUnit.SECONDS)
           .atMost(TigerDirector.getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
-          .until(() -> TigerDirector.getTigerTestEnvMgr().isUserAcknowledgedOnWorkflowUi());
-      TigerDirector.getTigerTestEnvMgr().resetConfirmationFromWorkflowUi();
+          .until(
+              () ->
+                  TigerDirector.getTigerTestEnvMgr()
+                      .getUserAcknowledgedOnWorkflowUi()
+                      .compareAndSet(true, false));
     } else {
       log.warn("Workflow UI is not active! Can't display message '{}'", bannerMessage);
     }

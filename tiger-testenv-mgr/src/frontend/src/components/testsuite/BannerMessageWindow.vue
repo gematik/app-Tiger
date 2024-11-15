@@ -15,14 +15,15 @@
   -->
 
 <template>
-  <div v-if="quitTestrunOngoing && !shutdownTestrunOngoing" id="workflow-messages"
+  <div v-if="quitTestrunOngoing" id="workflow-messages"
        class="alert banner-message fade show py-5 text-danger text-center fade show test-messages-quit" role="alert">
     <i class="btn-banner-close fa-solid fa-xmark" v-on:click="closeWindow"></i>
     <h4 class="pt-3 pb-0">
       <i class="fa-2xl fa-solid fa-power-off pe-3"></i>
-      Quit on user request!
+      {{ quitReason.message }}
     </h4>
-    <div>Please check console</div>
+    <div class="fs-5">Please check console</div>
+    <div class="fs-6" v-if="quitReason.details">{{ quitReason.details }}</div>
   </div>
   <div v-else id="workflow-messages"
        :class="`alert banner-message fade ${bannerMessage ? 'show' : ''}`" role="alert">
@@ -62,13 +63,15 @@ import BannerType from "@/types/BannerType";
 
 import {inject, onUpdated} from "vue";
 import {Emitter} from "mitt";
+import QuitReason from "@/types/QuitReason";
 
 const emitter: Emitter<any> = inject('emitter') as Emitter<any>;
+
 
 const props = defineProps<{
   bannerMessage: BannerMessage | boolean;
   quitTestrunOngoing: boolean;
-  shutdownTestrunOngoing: boolean;
+  quitReason: QuitReason;
 }>();
 
 function isOfType(bannerType: BannerType): boolean {
@@ -81,34 +84,23 @@ onUpdated(() => {
 });
 
 function closeWindow() {
-  document.getElementById('workflow-messages')!.classList.toggle('show');
-}
-
-function confirmShutdownPressed() {
-  emitter.emit('confirmShutdownPressed');
-
-  fetch(import.meta.env.BASE_URL + "status/confirmShutdown")
-  .then((response) => response.text())
-  .then(() => {
-    closeWindow();
-    alert("Backend of Workflow UI has been shut down!\nRbelLog details pane has no more filtering / search support!");
-  });
+  document.getElementById('workflow-messages')!.classList.remove('show');
 }
 
 function confirmContinue() {
   fetch(import.meta.env.BASE_URL + "status/continueExecution")
-  .then((response) => response.text())
-  .then(() => {
-    closeWindow();
-  });
+      .then((response) => response.text())
+      .then(() => {
+        closeWindow();
+      });
 }
 
 function confirmFail() {
   fetch(import.meta.env.BASE_URL + "status/failExecution")
-  .then((response) => response.text())
-  .then(() => {
-    // do nothing as the resume message will appear shortly after the click
-  });
+      .then((response) => response.text())
+      .then(() => {
+        // do nothing as the resume message will appear shortly after the click
+      });
 }
 </script>
 

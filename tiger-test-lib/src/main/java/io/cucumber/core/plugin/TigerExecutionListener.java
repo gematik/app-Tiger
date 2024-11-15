@@ -17,10 +17,15 @@
 
 package io.cucumber.core.plugin;
 
+import static io.cucumber.core.options.Constants.EXECUTION_DRY_RUN_PROPERTY_NAME;
+import static org.awaitility.Awaitility.await;
+
+import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +46,27 @@ public class TigerExecutionListener implements TestExecutionListener {
   @Override
   public void testPlanExecutionStarted(TestPlan testPlan) {
     ScenarioRunner.addScenarios(collectScenarios(testPlan));
+  }
+
+  @Override
+  public void testPlanExecutionFinished(TestPlan testPlan) {
+    TestExecutionListener.super.testPlanExecutionFinished(testPlan);
+    testPlan
+        .getConfigurationParameters()
+        .getBoolean(EXECUTION_DRY_RUN_PROPERTY_NAME)
+        .ifPresent(
+            dryRun -> {
+              if (dryRun) {
+                log.debug("Dry run detected. Will wait for tiger shutdown");
+                await()
+                    .logging(log::trace)
+                    .pollInterval(1, TimeUnit.SECONDS)
+                    .atMost(
+                        TigerDirector.getLibConfig().getPauseExecutionTimeoutSeconds(),
+                        TimeUnit.SECONDS)
+                    .until(() -> TigerDirector.getTigerTestEnvMgr().isShutDown());
+              }
+            });
   }
 
   @Override

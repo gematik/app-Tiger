@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.lib;
@@ -238,14 +239,14 @@ public class TigerDirector {
                 .atMost(getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
                 .until(
                     () ->
-                        tigerTestEnvMgr.isUserAcknowledgedOnWorkflowUi()
+                        tigerTestEnvMgr.getUserConfirmQuit().get()
                             || tigerTestEnvMgr.isShouldAbortTestExecution());
           } finally {
             tigerTestEnvMgr.shutDown();
           }
         }
       } else if (tigerTestEnvMgr != null) {
-        tigerTestEnvMgr.receivedConfirmationFromWorkflowUi(false);
+        tigerTestEnvMgr.receivedQuitConfirmationFromWorkflowUi();
         System.out.println("TGR Shutting down test env..."); // NOSONAR
         tigerTestEnvMgr.shutDown();
       }
@@ -311,6 +312,9 @@ public class TigerDirector {
 
     Map<String, Object> properties = TigerTestEnvMgr.getConfiguredLoggingLevels();
     properties.put("server.port", TESTENV_MGR_RESERVED_PORT.getValueOrDefault());
+    properties.put("spring.mustache.enabled", false); // TGR-875 avoid warning in console
+    properties.put("spring.mustache.check-template-location", false);
+
     envMgrApplicationContext =
         new SpringApplicationBuilder()
             .bannerMode(Mode.OFF)
@@ -497,8 +501,8 @@ public class TigerDirector {
       await()
           .pollInterval(1, TimeUnit.SECONDS)
           .atMost(getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
-          .until(() -> tigerTestEnvMgr.isUserAcknowledgedOnWorkflowUi());
-      tigerTestEnvMgr.resetConfirmationFromWorkflowUi();
+          .until(
+              () -> tigerTestEnvMgr.getUserAcknowledgedOnWorkflowUi().compareAndSet(true, false));
     } else {
       throw new TigerTestEnvException(
           "The step 'TGR pause test run execution with message \"{}\"' is not supported "
@@ -522,8 +526,8 @@ public class TigerDirector {
       await()
           .pollInterval(1, TimeUnit.SECONDS)
           .atMost(getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
-          .until(() -> tigerTestEnvMgr.isUserAcknowledgedOnWorkflowUi());
-      tigerTestEnvMgr.resetConfirmationFromWorkflowUi();
+          .until(
+              () -> tigerTestEnvMgr.getUserAcknowledgedOnWorkflowUi().compareAndSet(true, false));
       if (tigerTestEnvMgr.isUserPressedFailTestExecution()) {
         Fail.fail(errorMessage);
       }

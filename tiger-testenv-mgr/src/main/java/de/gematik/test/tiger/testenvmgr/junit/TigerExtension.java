@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.testenvmgr.junit;
@@ -138,6 +139,8 @@ public class TigerExtension
 
     Map<String, Object> properties = TigerTestEnvMgr.getConfiguredLoggingLevels();
     properties.put("server.port", TESTENV_MGR_RESERVED_PORT.getValue().orElse(0));
+    properties.put("spring.mustache.enabled", false); // TGR-875 avoid warning in console
+    properties.put("spring.mustache.check-template-location", false);
     log.info("Starting with port {}", properties.get("server.port"));
     envMgrApplicationContext =
         new SpringApplicationBuilder()

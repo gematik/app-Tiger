@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.testenvmgr.servers;
@@ -20,7 +21,7 @@ import static de.gematik.rbellogger.util.GlobalServerMap.addServerNameForPort;
 import static de.gematik.test.tiger.common.SocketHelper.findFreePort;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
@@ -30,9 +31,7 @@ import de.gematik.test.tiger.testenvmgr.config.tigerproxy_standalone.CfgStandalo
 import de.gematik.test.tiger.testenvmgr.env.TigerServerStatusUpdate;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.StringUtils;
@@ -99,7 +98,11 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
         .forEach(
             route -> {
               route.setFrom(getTigerTestEnvMgr().replaceSysPropsInString(route.getFrom()));
-              route.setTo(getTigerTestEnvMgr().replaceSysPropsInString(route.getTo()));
+              route.setTo(Optional.ofNullable(route.getTo())
+                  .stream()
+                  .flatMap(List::stream)
+                  .map(getTigerTestEnvMgr()::replaceSysPropsInString)
+                  .toList());
             });
 
     if (getTigerTestEnvMgr().isShuttingDown()) {
@@ -113,6 +116,9 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
 
     Map<String, Object> properties = TigerTestEnvMgr.getConfiguredLoggingLevels();
     properties.putAll(TigerSerializationUtil.toMap(standaloneCfg));
+    properties.put("spring.mustache.enabled", false); // TGR-875 avoid warning in console
+    properties.put("spring.mustache.check-template-location", false);
+
     log.info("Actually performing startup of tiger-proxy {}", getServerId());
     statusMessage(
         "Starting Tiger Proxy "
@@ -178,9 +184,9 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
                     new TigerTestEnvException(
                         "Proxied server '" + cfg.getProxiedServer() + "' not found in list!"));
 
-    TigerRoute tigerRoute = new TigerRoute();
+    TigerConfigurationRoute tigerRoute = new TigerConfigurationRoute();
     tigerRoute.setFrom("/");
-    tigerRoute.setTo(destUrl);
+    tigerRoute.setTo(Collections.singletonList(destUrl));
     cfg.getProxyRoutes().add(tigerRoute);
   }
 

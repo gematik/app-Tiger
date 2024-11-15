@@ -22,7 +22,7 @@ import static org.awaitility.Awaitility.await;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.zion.config.TigerMockResponse;
 import de.gematik.test.tiger.zion.config.TigerMockResponseDescription;
@@ -122,7 +122,7 @@ class TestZionServer {
                 .proxyPort(proxyPort)
                 .proxyRoutes(
                     List.of(
-                        TigerRoute.builder()
+                        TigerConfigurationRoute.builder()
                             .from("/")
                             .to("http://localhost:" + port + "/")
                             .build()))

@@ -16,10 +16,11 @@
 
 package de.gematik.test.tiger.mockserver.mock;
 
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationCallback;
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import de.gematik.test.tiger.mockserver.model.*;
+import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -46,7 +47,7 @@ import org.apache.http.client.utils.URIBuilder;
 public class Expectation extends ObjectWithJsonToString implements Comparable<Expectation> {
 
   @Setter private String id = UUID.randomUUID().toString();
-  @Setter private TigerRoute tigerRoute;
+  @Setter private TigerProxyRoute tigerRoute;
   private final int priority;
   private final HttpRequest requestPattern;
   @Setter private HttpAction httpAction;

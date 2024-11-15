@@ -26,25 +26,28 @@ import de.gematik.rbellogger.util.RbelMessagesSupplier;
 import de.gematik.test.tiger.TigerAgent;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.netty.MockServer;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
+import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactorySupplier;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
+import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxySslException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import de.gematik.test.tiger.proxy.handler.ForwardAllCallback;
 import de.gematik.test.tiger.proxy.handler.ForwardProxyCallback;
 import de.gematik.test.tiger.proxy.handler.ReverseProxyCallback;
-import de.gematik.test.tiger.proxy.tls.DynamicTigerKeyAndCertificateFactory;
-import de.gematik.test.tiger.proxy.tls.StaticTigerKeyAndCertificateFactory;
+import de.gematik.test.tiger.proxy.tls.CombinedKeyAndCertificateFactory;
+import de.gematik.test.tiger.proxy.tls.DynamicKeyAndCertificateFactory;
+import de.gematik.test.tiger.proxy.tls.StaticKeyAndCertificateFactory;
 import io.netty.handler.ssl.SslProvider;
 import jakarta.annotation.PreDestroy;
 import java.net.*;
@@ -68,10 +71,10 @@ import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, RbelMessagesSupplier {
 
   private static final String CA_CERT_ALIAS = "caCert";
-  private final List<DynamicTigerKeyAndCertificateFactory> tlsFactories = new ArrayList<>();
+  private final List<KeyAndCertificateFactory> tlsFactories = new ArrayList<>();
   private final List<Consumer<Throwable>> exceptionListeners = new ArrayList<>();
   @Getter private final MockServerToRbelConverter mockServerToRbelConverter;
-  private final Map<String, TigerRoute> tigerRouteMap = new HashMap<>();
+  private final Map<String, TigerProxyRoute> tigerRouteMap = new HashMap<>();
   private final List<TigerRemoteProxyClient> remoteProxyClients = new ArrayList<>();
 
   /**
@@ -139,14 +142,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
         });
   }
 
-  private static URL buildUrlSafe(TigerRoute tigerRoute) {
-    try {
-      return new URL(tigerRoute.getFrom());
-    } catch (MalformedURLException e) {
-      throw new TigerProxyStartupException("Error while building route", e);
-    }
-  }
-
   /**
    * Will restart the internal mockserver. This can be done to force a reload of the configured
    * TLS-identities. This will block until the mockserver is running again. Background connections
@@ -195,13 +190,15 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     mockServerConfiguration.enableTlsTermination(
         getTigerProxyConfiguration().isActivateTlsTermination());
 
-    final Optional<ProxyConfiguration> proxyConfiguration = ProxyConfigurationConverter.convertForwardProxyConfigurationToMockServerConfiguration(
-      getTigerProxyConfiguration());
+    final Optional<ProxyConfiguration> proxyConfiguration =
+        ProxyConfigurationConverter.convertForwardProxyConfigurationToMockServerConfiguration(
+            getTigerProxyConfiguration());
     outputForwardProxyConfigLogs(proxyConfiguration);
     proxyConfiguration.ifPresent(mockServerConfiguration::proxyConfiguration);
 
     if (getTigerProxyConfiguration().getDirectReverseProxy() == null) {
-      mockServer = new MockServer(mockServerConfiguration, getTigerProxyConfiguration().getPortAsArray());
+      mockServer =
+          new MockServer(mockServerConfiguration, getTigerProxyConfiguration().getPortAsArray());
     } else {
       mockServer = spawnDirectInverseTigerProxy(mockServerConfiguration);
     }
@@ -211,28 +208,26 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
 
   private void addRoutesToTigerProxy() {
     if (getTigerProxyConfiguration().getProxyRoutes() != null) {
-      for (final TigerRoute tigerRoute : getTigerProxyConfiguration().getProxyRoutes()) {
+      for (final TigerConfigurationRoute tigerRoute : getTigerProxyConfiguration().getProxyRoutes()) {
         addRoute(tigerRoute);
       }
     }
   }
 
-  private MockServer spawnDirectInverseTigerProxy(
-      MockServerConfiguration mockServerConfiguration) {
+  private MockServer spawnDirectInverseTigerProxy(MockServerConfiguration mockServerConfiguration) {
     mockServerConfiguration.binaryProxyListener(new BinaryExchangeHandler(this));
     if (mockServerConfiguration.proxyConfiguration() != null) {
       throw new TigerProxyStartupException(
           "DirectForwardProxy configured with additional forwardProxy: Not possible! (forwardProxy"
               + " is always HTTP!)");
     }
-    mockServerConfiguration.directForwarding(InetSocketAddress.createUnresolved(
-        getTigerProxyConfiguration().getDirectReverseProxy().getHostname(),
-        getTigerProxyConfiguration().getDirectReverseProxy().getPort()));
+    mockServerConfiguration.directForwarding(
+        InetSocketAddress.createUnresolved(
+            getTigerProxyConfiguration().getDirectReverseProxy().getHostname(),
+            getTigerProxyConfiguration().getDirectReverseProxy().getPort()));
 
     MockServer newMockServer =
-        new MockServer(
-            mockServerConfiguration,
-            getTigerProxyConfiguration().getPortAsArray());
+        new MockServer(mockServerConfiguration, getTigerProxyConfiguration().getPortAsArray());
     addReverseProxyRouteIfNotPresent();
 
     getRbelLogger()
@@ -249,13 +244,13 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     getTigerProxyConfiguration()
         .getProxyRoutes()
         .add(
-            TigerRoute.builder()
+            TigerConfigurationRoute.builder()
                 .from("/")
-                .to(
+                .to(List.of(
                     "http://"
                         + getTigerProxyConfiguration().getDirectReverseProxy().getHostname()
                         + ":"
-                        + getTigerProxyConfiguration().getDirectReverseProxy().getPort())
+                        + getTigerProxyConfiguration().getDirectReverseProxy().getPort()))
                 .build());
   }
 
@@ -300,31 +295,34 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     return (isServerInstance, mockServerConfiguration) -> {
       val tlsConfiguration = Optional.ofNullable(getTigerProxyConfiguration().getTls());
       if (isServerInstance) {
+        KeyAndCertificateFactory serverIdentityFactory =
+            new DynamicKeyAndCertificateFactory(
+                getTigerProxyConfiguration(),
+                determineServerRootCa()
+                    .orElseThrow(
+                        () ->
+                            new TigerProxyStartupException(
+                                "Unable to determine server root CA for TigerProxy TLS Server Identity")),
+                mockServerConfiguration);
         if (tlsConfiguration.map(TigerTlsConfiguration::getServerIdentity).isPresent()) {
-          return new StaticTigerKeyAndCertificateFactory(
-              tlsConfiguration.get().getServerIdentity());
+          serverIdentityFactory =
+              new CombinedKeyAndCertificateFactory(new StaticKeyAndCertificateFactory(
+                List.of(tlsConfiguration.get().getServerIdentity())), serverIdentityFactory);
         } else if (tlsConfiguration.map(TigerTlsConfiguration::getServerIdentities).isPresent()) {
-          return new StaticTigerKeyAndCertificateFactory(
-              tlsConfiguration.get().getServerIdentities().stream()
-                  .map(TigerPkiIdentity.class::cast)
-                  .toList());
-        } else {
-          final DynamicTigerKeyAndCertificateFactory dynamicTigerKeyAndCertificateFactory =
-              new DynamicTigerKeyAndCertificateFactory(
-                  getTigerProxyConfiguration(),
-                  determineServerRootCa()
-                      .orElseThrow(
-                          () -> new TigerProxyStartupException("Unrecoverable TLS startup state")),
-                  mockServerConfiguration);
-          this.tlsFactories.add(dynamicTigerKeyAndCertificateFactory);
-          return dynamicTigerKeyAndCertificateFactory;
+          serverIdentityFactory =
+            new CombinedKeyAndCertificateFactory(new StaticKeyAndCertificateFactory(
+                  tlsConfiguration.get().getServerIdentities().stream()
+                      .map(TigerPkiIdentity.class::cast)
+                      .toList()), serverIdentityFactory);
         }
+        this.tlsFactories.add(serverIdentityFactory);
+        return serverIdentityFactory;
       } else {
         if (tlsConfiguration.map(TigerTlsConfiguration::getForwardMutualTlsIdentity).isPresent()) {
-          return new StaticTigerKeyAndCertificateFactory(
-              tlsConfiguration.get().getForwardMutualTlsIdentity());
+          return new StaticKeyAndCertificateFactory(
+              Collections.singletonList(tlsConfiguration.get().getForwardMutualTlsIdentity()));
         } else {
-          return new DynamicTigerKeyAndCertificateFactory(
+          return new DynamicKeyAndCertificateFactory(
               getTigerProxyConfiguration(),
               new TigerPkiIdentity(
                   "CertificateAuthorityCertificate.pem;CertificateAuthorityPrivateKey.pem;PKCS1"),
@@ -398,7 +396,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   }
 
   @Override
-  public List<TigerRoute> getRoutes() {
+  public List<TigerProxyRoute> getRoutes() {
     return tigerRouteMap.values().stream().toList();
   }
 
@@ -419,20 +417,32 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     getRbelLogger().getRbelModifier().deleteModification(modificationId);
   }
 
+  public TigerProxyRoute addRoute(final TigerConfigurationRoute tigerRoute) {
+    return addRoute(
+        TigerProxyRoute.builder()
+            .from(tigerRoute.getFrom())
+            .to(new TigerRouteSelector(tigerRoute.getTo(), getTigerProxyConfiguration().getForwardToProxy()).selectFirstReachableDestination())
+            .basicAuth(tigerRoute.getBasicAuth())
+            .hosts(tigerRoute.getHosts())
+            .criterions(tigerRoute.getCriterions())
+            .disableRbelLogging(tigerRoute.isDisableRbelLogging())
+            .build());
+  }
+
   @Override
-  public synchronized TigerRoute addRoute(final TigerRoute tigerRoute) {
+  public synchronized TigerProxyRoute addRoute(final TigerProxyRoute tigerRoute) {
     log.info("Adding route {} -> {}", tigerRoute.getFrom(), tigerRoute.getTo());
     final Expectation expectation = buildRouteAndReturnExpectation(tigerRoute);
     expectation.setTigerRoute(tigerRoute);
 
-    final TigerRoute createdTigerRoute = tigerRoute.withId(expectation.getId());
+    final TigerProxyRoute createdTigerRoute = tigerRoute.withId(expectation.getId());
     tigerRouteMap.put(expectation.getId(), createdTigerRoute);
 
     log.debug("Created route from {} to {}", tigerRoute.getFrom(), tigerRoute.getTo());
     return createdTigerRoute;
   }
 
-  private Expectation buildRouteAndReturnExpectation(final TigerRoute tigerRoute) {
+  private Expectation buildRouteAndReturnExpectation(final TigerProxyRoute tigerRoute) {
     if (UriUtil.hasScheme(tigerRoute.getFrom())) {
       return buildForwardProxyRoute(tigerRoute);
     } else {
@@ -440,7 +450,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     }
   }
 
-  private Expectation buildReverseProxyRoute(final TigerRoute tigerRoute) {
+  private Expectation buildReverseProxyRoute(final TigerProxyRoute tigerRoute) {
     final Expectation expectation =
         when(
                 request().setPath(tigerRoute.getFrom() + ".*").setForwardProxyRequest(false),
@@ -452,8 +462,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     return expectation;
   }
 
-  private Expectation buildForwardProxyRoute(final TigerRoute tigerRoute) {
-    final URL url = buildUrlSafe(tigerRoute);
+  private Expectation buildForwardProxyRoute(final TigerProxyRoute tigerRoute) {
+    final URL url = tigerRoute.retrieveFromUrl();
     final Expectation expectation =
         when(
                 request()
@@ -496,8 +506,10 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     Objects.requireNonNull(getTigerProxyConfiguration().getTls())
         .setAlternativeNames(newAlternativeNames);
 
-    for (final DynamicTigerKeyAndCertificateFactory tlsFactory : tlsFactories) {
-      tlsFactory.addAlternativeName(host);
+    for (KeyAndCertificateFactory tlsFactory : tlsFactories) {
+      if (tlsFactory instanceof DynamicKeyAndCertificateFactory) {
+        ((DynamicKeyAndCertificateFactory) tlsFactory).addAlternativeName(host);
+      }
     }
   }
 
@@ -507,7 +519,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
       return;
     }
     mockServer.removeExpectation(routeId);
-    final TigerRoute route = tigerRouteMap.remove(routeId);
+    final TigerProxyRoute route = tigerRouteMap.remove(routeId);
 
     log.info(
         "Deleted route {} (id {}). Current # expectations {}",

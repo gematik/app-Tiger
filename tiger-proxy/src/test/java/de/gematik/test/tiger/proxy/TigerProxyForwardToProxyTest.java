@@ -133,7 +133,7 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
                 TigerTlsConfiguration.builder()
                     .masterSecretsFile("target/master-secrets.txt")
                     .build())
-            .proxyRoutes(List.of(TigerRoute.builder().from("https://maHost").to(toRoute).build()))
+            .proxyRoutes(List.of(TigerConfigurationRoute.builder().from("https://maHost").to(toRoute).build()))
             .forwardToProxy(forwardProxyInfo.get())
             .build());
 
@@ -175,7 +175,7 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
             .build();
     spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder().from("https://maHost").to(toRoute).build()))
+            .proxyRoutes(List.of(TigerConfigurationRoute.builder().from("https://maHost").to(toRoute).build()))
             .forwardToProxy(proxyInfo)
             .build());
 

@@ -24,21 +24,17 @@ import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.mockserver.model.HttpProtocol;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
+import de.gematik.test.tiger.util.NoProxyUtils;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.AttributeKey;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 
 /*
  * @author jamesdbloom
@@ -83,9 +79,7 @@ public class NettyHttpClient {
               + " not possible to send a request");
     }
 
-    if (isHostOnNoProxyHostList(requestInfo.getRemoteServerAddress())) {
-//      requestInfo.setAssureNoProxying(true);
-    } else {
+    if (shouldUseProxy(requestInfo.getRemoteServerAddress())) {
       modifyProxyInformation(requestInfo);
     }
 
@@ -260,21 +254,10 @@ public class NettyHttpClient {
     }
   }
 
-  private boolean isHostOnNoProxyHostList(InetSocketAddress remoteAddress) {
+  private boolean shouldUseProxy(InetSocketAddress remoteAddress) {
     if (remoteAddress == null || proxyConfiguration == null) {
       return true;
     }
-    return proxyConfiguration.getNoProxyHosts().stream()
-        .map(String::trim)
-        .map(
-            host -> {
-              try {
-                return InetAddress.getByName(host);
-              } catch (UnknownHostException e) {
-                return null;
-              }
-            })
-        .filter(Objects::nonNull)
-        .anyMatch(a -> remoteAddress.getHostName().equals(a.getHostName()));
+    return NoProxyUtils.shouldUseProxyForHost(remoteAddress.getAddress(), proxyConfiguration.getNoProxyHosts());
   }
 }

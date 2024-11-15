@@ -45,7 +45,7 @@ class TestTigerProxyConnections extends AbstractFastTigerProxyTest {
   @Test
   void testConnectionCount() {
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from("http://backend")
             .to("http://localhost:" + fakeBackendServerPort)
             .build());
@@ -70,7 +70,7 @@ class TestTigerProxyConnections extends AbstractFastTigerProxyTest {
   @Test
   void testConnectionCountWithTls() {
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from("http://backend")
             .to("http://localhost:" + fakeBackendServerPort)
             .build());

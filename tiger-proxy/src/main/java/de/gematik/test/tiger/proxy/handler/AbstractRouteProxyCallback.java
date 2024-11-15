@@ -16,8 +16,9 @@
 
 package de.gematik.test.tiger.proxy.handler;
 
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -36,7 +37,7 @@ public abstract class AbstractRouteProxyCallback extends AbstractTigerRouteCallb
   private final int port;
 
   @SneakyThrows({MalformedURLException.class, URISyntaxException.class})
-  AbstractRouteProxyCallback(TigerProxy tigerProxy, TigerRoute tigerRoute) {
+  AbstractRouteProxyCallback(TigerProxy tigerProxy, TigerProxyRoute tigerRoute) {
     super(tigerProxy, tigerRoute);
     if (tigerRoute.getTo().endsWith("/")) {
       targetUrl = new URL(tigerRoute.getTo().substring(0, tigerRoute.getTo().length() - 1));

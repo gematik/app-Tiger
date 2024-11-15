@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.testenvmgr;
@@ -32,10 +33,11 @@ import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
+import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
@@ -59,6 +61,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -96,7 +99,7 @@ public class TigerTestEnvMgr
 
   private final Configuration configuration;
   private final Map<String, Object> environmentVariables;
-  private final List<TigerRoute> routesList = new ArrayList<>();
+  private final List<TigerConfigurationRoute> routesList = new ArrayList<>();
   private final Map<String, AbstractTigerServer> servers = new HashMap<>();
 
   /**
@@ -120,7 +123,8 @@ public class TigerTestEnvMgr
   @Getter(AccessLevel.PRIVATE)
   private ServletWebServerApplicationContext localTigerProxyApplicationContext;
 
-  private boolean userAcknowledgedOnWorkflowUi = false;
+  private final AtomicBoolean userAcknowledgedOnWorkflowUi = new AtomicBoolean(false);
+  private final AtomicBoolean userConfirmQuit = new AtomicBoolean(false);
   private boolean shouldAbortTestExecution = false;
   @Getter private boolean userPressedFailTestExecution = false;
   private boolean isShuttingDown = false;
@@ -340,6 +344,8 @@ public class TigerTestEnvMgr
       LOCALPROXY_ADMIN_RESERVED_PORT.putValue(configuration.getTigerProxy().getAdminPort());
     }
     properties.putAll(getConfiguredLoggingLevels());
+    properties.put("spring.mustache.enabled", false); // TGR-875 avoid warning in console
+    properties.put("spring.mustache.check-template-location", false);
     log.info("Starting with port {}", properties.get(SERVER_PORT));
 
     localTigerProxyApplicationContext =
@@ -662,7 +668,7 @@ public class TigerTestEnvMgr
   }
 
   @SuppressWarnings("unused")
-  public List<TigerRoute> getRoutes() {
+  public List<TigerProxyRoute> getRoutes() {
     return servers.values().stream()
         .map(AbstractTigerServer::getServerRoutes)
         .flatMap(List::stream)
@@ -725,11 +731,12 @@ public class TigerTestEnvMgr
 
   public void receivedConfirmationFromWorkflowUi(boolean executionShouldFail) {
     userPressedFailTestExecution = executionShouldFail;
-    userAcknowledgedOnWorkflowUi = true;
+    userAcknowledgedOnWorkflowUi.set(true);
   }
 
-  public void resetConfirmationFromWorkflowUi() {
-    userAcknowledgedOnWorkflowUi = false;
+  public void receivedQuitConfirmationFromWorkflowUi() {
+    userPressedFailTestExecution = false;
+    userConfirmQuit.set(true);
   }
 
   @Override

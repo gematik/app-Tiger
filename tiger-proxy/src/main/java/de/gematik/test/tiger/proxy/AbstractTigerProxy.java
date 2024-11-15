@@ -27,10 +27,10 @@ import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.util.IRbelMessageListener;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import de.gematik.test.tiger.proxy.client.ProxyFileReadingFilter;
+import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import java.io.File;
 import java.io.IOException;
@@ -283,7 +283,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   public void clearAllRoutes() {
     getRoutes().stream()
         .filter(route -> !route.isInternalRoute())
-        .map(TigerRoute::getId)
+        .map(TigerProxyRoute::getId)
         .forEach(this::removeRoute);
   }
 

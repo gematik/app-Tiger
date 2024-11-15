@@ -23,10 +23,11 @@ import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.util.IRbelMessageListener;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.handler.BinaryChunksBuffer;
 import jakarta.websocket.ContainerProvider;
@@ -193,11 +194,11 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   }
 
   @Override
-  public TigerRoute addRoute(TigerRoute tigerRoute) {
+  public TigerProxyRoute addRoute(TigerProxyRoute tigerRoute) {
     return Unirest.put(remoteProxyUrl + "/route")
         .body(tigerRoute)
         .contentType(MediaType.APPLICATION_JSON_VALUE)
-        .asObject(TigerRoute.class)
+        .asObject(TigerProxyRoute.class)
         .ifFailure(
             response -> {
               throw new TigerRemoteProxyClientException(
@@ -232,9 +233,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   }
 
   @Override
-  public List<TigerRoute> getRoutes() {
+  public List<TigerProxyRoute> getRoutes() {
     return Unirest.get(remoteProxyUrl + "/route")
-        .asObject(new GenericType<List<TigerRoute>>() {})
+        .asObject(new GenericType<List<TigerProxyRoute>>() {})
         .ifFailure(
             response -> {
               throw new TigerRemoteProxyClientException(

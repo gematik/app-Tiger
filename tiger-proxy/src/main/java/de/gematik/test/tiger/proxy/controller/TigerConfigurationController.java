@@ -16,13 +16,15 @@
 
 package de.gematik.test.tiger.proxy.controller;
 
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.data.TigerRouteDto;
 import java.util.List;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -39,15 +41,15 @@ public class TigerConfigurationController {
   @PutMapping(value = "/route", consumes = MediaType.APPLICATION_JSON_VALUE)
   public TigerRouteDto addRoute(@RequestBody TigerRouteDto addRouteDto) {
     log.info("Adding route from '{}' to '{}'", addRouteDto.getFrom(), addRouteDto.getTo());
-    final TigerRoute tigerRoute =
+    val tigerRoute =
         tigerProxy.addRoute(
-            TigerRoute.builder().from(addRouteDto.getFrom()).to(addRouteDto.getTo()).build());
-    return TigerRouteDto.from(tigerRoute);
+            TigerProxyRoute.builder().from(addRouteDto.getFrom()).to(addRouteDto.getTo()).build());
+    return TigerRouteDto.create(tigerRoute);
   }
 
   @GetMapping(value = "/route", produces = MediaType.APPLICATION_JSON_VALUE)
   public List<TigerRouteDto> getRoutes() {
-    return tigerProxy.getRoutes().stream().map(TigerRouteDto::from).toList();
+    return tigerProxy.getRoutes().stream().map(TigerRouteDto::create).toList();
   }
 
   @DeleteMapping(value = "/route/{id}")

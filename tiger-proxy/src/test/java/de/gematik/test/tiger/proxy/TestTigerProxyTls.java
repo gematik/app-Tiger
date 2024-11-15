@@ -28,7 +28,7 @@ import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration.TigerProxyConfigurationBuilder;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
@@ -74,6 +74,7 @@ import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsClientProtocol;
+import org.bouncycastle.tls.TlsException;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.jetbrains.annotations.NotNull;
@@ -150,7 +151,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("https://authn.aktor.epa.telematik-test")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -204,7 +205,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
               TigerProxyConfiguration.builder()
                   .proxyRoutes(
                       List.of(
-                          TigerRoute.builder()
+                          TigerConfigurationRoute.builder()
                               .from("https://authn.aktor.epa.telematik-test")
                               .to("http://localhost:" + fakeBackendServerPort)
                               .build()))
@@ -293,7 +294,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                     .build())
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -318,7 +319,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                 .activateRbelParsingFor(List.of("X509"))
                 .proxyRoutes(
                     List.of(
-                        TigerRoute.builder()
+                        TigerConfigurationRoute.builder()
                             .from("/")
                             .to("http://localhost:" + fakeBackendServerPort)
                             .build()))
@@ -329,7 +330,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://backend")
                         .to("https://localhost:" + secondProxy.getProxyPort())
                         .build()))
@@ -351,7 +352,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
   @NotNull
   private static List<String> splitDn(String s1) {
-    return Stream.of(s1.split(",")).map(String::trim).collect(Collectors.toList());
+    return Stream.of(s1.split(",")).map(String::trim).toList();
   }
 
   @ParameterizedTest
@@ -450,12 +451,12 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             .tls(TigerTlsConfiguration.builder().serverIdentity(serverIdentity).build())
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         // aktor-gateway.gematik.de ist der DN des obigen zertifikats
                         .from("https://authn.aktor.epa.telematik-test")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build(),
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("https://falsche-url")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -475,7 +476,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                 .getStatus())
         .isEqualTo(666);
     assertThatThrownBy(() -> unirestInstance.get("https://falsche-url/foobar").asString())
-        .hasCauseInstanceOf(SSLPeerUnverifiedException.class);
+        .hasCauseInstanceOf(TlsException.class);
   }
 
   @SneakyThrows
@@ -542,7 +543,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://backend")
                         .to("https://localhost:" + serverPort)
                         .build()))
@@ -738,7 +739,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         proxyConfigurationBuilder
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -779,7 +780,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("https://blub")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -830,6 +831,9 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .tls(
                 TigerTlsConfiguration.builder()
+                    .serverRootCa(
+                        new TigerConfigurationPkiIdentity(
+                            "src/test/resources/selfSignedCa/rootCa.p12;00"))
                     .serverIdentities(
                         List.of(
                             new TigerConfigurationPkiIdentity("src/test/resources/rsa.p12;00"),
@@ -838,48 +842,51 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                     .build())
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort + "/foobar")
                         .hosts(List.of("kon-instanz2.titus.ti-dienste.de"))
                         .build(),
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/")
                         .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar")
                         .hosts(List.of("CGMAG-IM-FDSIM.ts-ttcn3.sig-test.telematik-test"))
+                        .build(),
+                    TigerConfigurationRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort + "/foobar")
+                        .hosts(List.of("some.other.server"))
                         .build()))
             .build());
-    final UnirestInstance kon2Unirest = Unirest.spawnInstance();
-    kon2Unirest
-        .config()
-        .sslContext(
-            buildSslContextTrustingOnly(
-                new TigerConfigurationPkiIdentity("src/test/resources/rsa.p12;00")));
-    kon2Unirest
-        .get("https://127.0.0.1:" + tigerProxy.getProxyPort() + "/")
-        .header("host", "kon-instanz2.titus.ti-dienste.de")
-        .asJson();
-    final UnirestInstance cmagUnirest = Unirest.spawnInstance();
-    cmagUnirest
-        .config()
-        .sslContext(
-            buildSslContextTrustingOnly(
-                new TigerConfigurationPkiIdentity(
-                    "src/test/resources/eccServerCertificate.p12;00")));
-    cmagUnirest
-        .get("https://127.0.0.1:" + tigerProxy.getProxyPort() + "/")
-        .header("host", "CGMAG-IM-FDSIM.ts-ttcn3.sig-test.telematik-test")
-        .asJson();
 
-    awaitMessagesInTiger(4);
+    executeRequestToPathWhileOnlyTrusting(
+        "kon-instanz2.titus.ti-dienste.de", "src/test/resources/rsa.p12;00");
+    executeRequestToPathWhileOnlyTrusting(
+        "CGMAG-IM-FDSIM.ts-ttcn3.sig-test.telematik-test",
+        "src/test/resources/eccServerCertificate.p12;00");
+    executeRequestToPathWhileOnlyTrusting(
+        "some.other.server",
+        "src/test/resources/selfSignedCa/rootCa.p12;00");
 
     assertThatThrownBy(
             () ->
-                kon2Unirest
-                    .get("https://127.0.0.1:" + tigerProxy.getProxyPort() + "/")
-                    .header("host", "CGMAG-IM-FDSIM.ts-ttcn3.sig-test.telematik-test")
-                    .asString())
+              executeRequestToPathWhileOnlyTrusting(
+                "CGMAG-IM-FDSIM.ts-ttcn3.sig-test.telematik-test", "src/test/resources/rsa.p12;00"))
         .isInstanceOf(UnirestException.class)
         .hasRootCauseInstanceOf(CertPathBuilderException.class);
+  }
+
+  private void executeRequestToPathWhileOnlyTrusting(
+      String host, String fileLoadingInformation) {
+    try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
+      unirestInstance
+          .config()
+          .sslContext(
+              buildSslContextTrustingOnly(new TigerConfigurationPkiIdentity(fileLoadingInformation)));
+      unirestInstance
+          .get("https://127.0.0.1:" + tigerProxy.getProxyPort() + "/")
+          .header("host", host)
+          .asJson();
+    }
   }
 }

@@ -16,9 +16,9 @@
 
 package de.gematik.test.tiger.proxy.handler;
 
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import java.net.URI;
 import java.net.URISyntaxException;
 import lombok.EqualsAndHashCode;
@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @EqualsAndHashCode(callSuper = true)
 public class ReverseProxyCallback extends AbstractRouteProxyCallback {
 
-  public ReverseProxyCallback(TigerProxy tigerProxy, TigerRoute route) {
+  public ReverseProxyCallback(TigerProxy tigerProxy, TigerProxyRoute route) {
     super(tigerProxy, route);
   }
 
