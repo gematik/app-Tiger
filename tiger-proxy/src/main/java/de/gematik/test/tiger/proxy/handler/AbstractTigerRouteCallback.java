@@ -23,12 +23,13 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.certificate.TlsFacet;
+import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyModificationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyParsingException;
 import java.security.cert.Certificate;
@@ -57,14 +58,14 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
 
   public static final String LOCATION_HEADER_KEY = "Location";
   private final TigerProxy tigerProxy;
-  private final TigerRoute tigerRoute;
+  private final TigerProxyRoute tigerRoute;
   private BundledServerNamesAdder bundledServerNamesAdder = new BundledServerNamesAdder();
 
   // Maps the Log-IDs to the (to be parsed) Rbel-messages
   private Map<String, CompletableFuture<RbelElement>> requestLogIdToParsingFuture =
       new ConcurrentHashMap<>();
 
-  protected AbstractTigerRouteCallback(TigerProxy tigerProxy, TigerRoute tigerRoute) {
+  protected AbstractTigerRouteCallback(TigerProxy tigerProxy, TigerProxyRoute tigerRoute) {
     this.tigerProxy = tigerProxy;
     this.tigerRoute = tigerRoute;
   }

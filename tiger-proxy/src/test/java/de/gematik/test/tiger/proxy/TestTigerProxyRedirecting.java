@@ -18,7 +18,7 @@ package de.gematik.test.tiger.proxy;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.util.stream.Stream;
 import kong.unirest.HttpResponse;
@@ -42,7 +42,7 @@ class TestTigerProxyRedirecting extends AbstractFastTigerProxyTest {
   void forwardProxyWithNestedPath_shouldRewriteLocationHeaderIfConfigured(
       String toPath, String requestPath, int statusCode) {
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from("http://foo.bar")
             .to("http://localhost:" + fakeBackendServerPort + toPath)
             .build());
@@ -56,7 +56,7 @@ class TestTigerProxyRedirecting extends AbstractFastTigerProxyTest {
   void reverseProxyWithNestedPath_shouldRewriteLocationHeaderIfConfigured(
       String toPath, String requestPath, int statusCode) {
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from("/")
             .to("http://localhost:" + fakeBackendServerPort + toPath)
             .build());
@@ -79,7 +79,7 @@ class TestTigerProxyRedirecting extends AbstractFastTigerProxyTest {
       unirestNoRedirects.config().followRedirects(false);
 
       tigerProxy.addRoute(
-          TigerRoute.builder()
+          TigerConfigurationRoute.builder()
               .from("/")
               .to("http://localhost:" + fakeBackendServerPort + "/redirect")
               .build());

@@ -1,10 +1,44 @@
 # Changelog Tiger Test platform
 
+# Release 3.4.5
+
+## Features
+
+* KOB-4: Support fallback static identities for TLS server. This means you can configure a one or many server
+  identities, and in case that the SNI during the TLS-handshake does match none of the given identities a matching,
+  dynamic certificate will be generated either from a given or a generic Root-CA.
+* TGR-1549: Configuration Editor has a refresh button now
+* TGR-1635: A route in a Tiger-Proxy can have multiple "to"-targets. On startup the Tiger-Proxy will choose the first
+  healthy target of the list. The configuration looks like this:
+
+```yaml
+tigerProxy:
+  proxyRoutes:
+    - from: /multiple/targets
+      to:
+        - http://example.com
+        - http://example2.com
+    - from: /only/one/target
+      to: http://example.com
+```
+
+The old configuration with a single target is still supported. In that case no health checks are performed.
+
+* TGR-1634: Workflow UI: when the backend shuts down, the frontend displays a message informing the user that the
+  backend is no longer active.
+* TGR-1636: TigerProxy IP from WorkflowUI is found dynamically
+
+## Bugfixes
+
+* KOB-7: Workflow UI: fixed that testcase discovery stops after first feature with matching tags
+* KOB-13: Workflow UI: fixed an issue where replaying a test would incorrectly shutdown the tiger suite.
+
 # Release 3.4.4
 
 ## Features
 
 * TGR-538: NoProxyHosts can now be configured for the forwardToProxy-configuration of a TigerProxy:
+
 ```yaml
 tigerProxy:
   forwardToProxy:
@@ -13,14 +47,21 @@ tigerProxy:
     noProxyHosts:
       - "localhost"
 ```
-In this example the TigerProxy will not use the forwardToProxy-configuration for requests to localhost (instead sending the messages directly).
+
+In this example the TigerProxy will not use the forwardToProxy-configuration for requests to localhost (instead sending
+the messages directly).
 
 ## Bugfixes
 
 * TGR-1616: ForwardToProxy now correctly works when tunneling HTTPS traffic through an HTTP-Proxy
-* TGR-1616: Reverse-Proxy-Routes now correctly delete the matching part from the path before forwarding the request. (`/foo/bar` which matches the route `/foo` will now be forwarded to `/bar` only)
-* KOB-8: The ordering of Proxy-Routes now also takes into consideration the amount of hosts in the route. This means that a route with more hosts is now preferred over a route with fewer hosts (since it is considered to be more specific).
-* TGR-1632: Fixed an issue which prevented Cucumber-error-messages to be thrown. (the `Failed to transform configuration parameter with key 'cucumber.snippet-type' and initial value 'UNDERSCORE'` message)
+* TGR-1616: Reverse-Proxy-Routes now correctly delete the matching part from the path before forwarding the request. (
+  `/foo/bar` which matches the route `/foo` will now be forwarded to `/bar` only)
+* TGR-1061: Behavior of different RbelElements in WebUi fixed
+* KOB-8: The ordering of Proxy-Routes now also takes into consideration the amount of hosts in the route. This means
+  that a route with more hosts is now preferred over a route with fewer hosts (since it is considered to be more
+  specific).
+* TGR-1632: Fixed an issue which prevented Cucumber-error-messages to be thrown. (the
+  `Failed to transform configuration parameter with key 'cucumber.snippet-type' and initial value 'UNDERSCORE'` message)
 
 # Release 3.4.3
 
@@ -156,8 +197,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-  key = PLUGIN_PROPERTY_NAME,
-  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+    key = PLUGIN_PROPERTY_NAME,
+    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

@@ -26,7 +26,7 @@ import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo.TigerFileSaveInfoBuilder;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import java.io.File;
@@ -195,7 +195,7 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://backend")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))

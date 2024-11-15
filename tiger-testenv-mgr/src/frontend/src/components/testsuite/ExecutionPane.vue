@@ -18,7 +18,8 @@
   <div class="tab-pane active execution-pane-tabs" id="execution_pane" role="tabpanel">
     <BannerMessageWindow :banner-message="bannerMessage"
                          :quitTestrunOngoing="quitTestrunOngoing"
-                         :shutdownTestrunOngoing="shutdownTestrunOngoing"></BannerMessageWindow>
+                         :quit-reason="quitReason"
+    ></BannerMessageWindow>
     <div class="w-100">
       <div class="mt-2 small text-muted text-end" id="test-execution-pane-date">Started: {{ started }}</div>
       <div id="execution_table" class="pt-1">
@@ -50,7 +51,8 @@
                   <div v-for="anzahl in getTableCountForScenarioOutlineKeysLength(scenario[1].exampleKeys)"
                        :key="anzahl"
                        class="d-inline-block">
-                    <table class="table table-sm table-data-variant" aria-label="Data used when executing this scenario">
+                    <table class="table table-sm table-data-variant"
+                           aria-label="Data used when executing this scenario">
                       <thead>
                       <tr>
                         <th v-for="(key, index) in getScenarioOutlineKeysParts(scenario[1].exampleKeys, anzahl)"
@@ -117,6 +119,7 @@ import {getTestResultIcon} from "@/types/testsuite/TestResult";
 import Ui from "@/types/ui/Ui";
 import LargePlayButton from "@/components/replay/LargePlayButton.vue";
 import MessageMetaDataDto from "@/types/rbel/MessageMetaDataDto";
+import QuitReason from "@/types/QuitReason";
 
 defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;
@@ -125,7 +128,7 @@ defineProps<{
   ui: Ui;
   started: Date;
   quitTestrunOngoing: boolean;
-  shutdownTestrunOngoing: boolean;
+  quitReason: QuitReason;
 }>();
 
 function findPair(currentMessage: MessageMetaDataDto, messages: MessageMetaDataDto[]) {

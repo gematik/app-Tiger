@@ -18,9 +18,10 @@ package de.gematik.test.tiger.proxy.handler;
 
 import static de.gematik.test.tiger.mockserver.model.Header.header;
 
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import java.net.URI;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ForwardProxyCallback extends AbstractRouteProxyCallback {
 
-  public ForwardProxyCallback(TigerProxy tigerProxy, TigerRoute tigerRoute) {
+  public ForwardProxyCallback(TigerProxy tigerProxy, TigerProxyRoute tigerRoute) {
     super(tigerProxy, tigerRoute);
     tigerProxy.addAlternativeName(getSourceUri().getHost());
   }

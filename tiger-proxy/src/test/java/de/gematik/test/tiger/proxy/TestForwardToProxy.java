@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import java.util.List;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
@@ -42,7 +42,7 @@ class TestForwardToProxy extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://hostWithoutProxying")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -70,7 +70,7 @@ class TestForwardToProxy extends AbstractTigerProxyTest {
                   TigerProxyConfiguration.builder()
                       .proxyRoutes(
                           List.of(
-                              TigerRoute.builder()
+                              TigerConfigurationRoute.builder()
                                   .from("http://hostWithoutProxying")
                                   .to("http://localhost:" + fakeBackendServerPort)
                                   .build()))

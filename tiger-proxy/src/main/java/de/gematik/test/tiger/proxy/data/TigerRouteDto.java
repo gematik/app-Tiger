@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.proxy.data;
 
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -33,7 +32,7 @@ public class TigerRouteDto {
   private String to;
   private boolean disableRbelLogging;
 
-  public static TigerRouteDto from(TigerRoute route) {
+  public static TigerRouteDto create(TigerProxyRoute route) {
     return TigerRouteDto.builder()
         .from(route.getFrom())
         .to(route.getTo())

@@ -33,7 +33,6 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
-import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -56,7 +55,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.IPAddress;
 
 @Slf4j
-public class DynamicTigerKeyAndCertificateFactory implements KeyAndCertificateFactory {
+public class DynamicKeyAndCertificateFactory implements KeyAndCertificateFactory {
 
   static {
     TigerSecurityProviderInitialiser.initialize();
@@ -71,8 +70,7 @@ public class DynamicTigerKeyAndCertificateFactory implements KeyAndCertificateFa
   private List<String> hostsCoveredByGeneratedIdentity = List.of();
   private final MockServerConfiguration mockServerConfiguration;
 
-  @Builder
-  public DynamicTigerKeyAndCertificateFactory(
+  public DynamicKeyAndCertificateFactory(
       TigerProxyConfiguration tigerProxyConfiguration,
       TigerPkiIdentity caIdentity,
       MockServerConfiguration mockServerConfiguration) {
@@ -87,12 +85,12 @@ public class DynamicTigerKeyAndCertificateFactory implements KeyAndCertificateFa
   }
 
   @Override
-  public TigerPkiIdentity buildAndSavePrivateKeyAndX509Certificate(String hostname) {
+  public Optional<TigerPkiIdentity> buildAndSavePrivateKeyAndX509Certificate(String hostname) {
     assureCurrentCertificateCoversAllNecessaryHosts();
     if (eeIdentity == null) {
       generateNewIdentity();
     }
-    return eeIdentity;
+    return Optional.ofNullable(eeIdentity);
   }
 
   private void generateNewIdentity() {

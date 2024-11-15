@@ -66,6 +66,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.http.MediaType;
+import org.springframework.test.util.TestSocketUtils;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
@@ -253,7 +254,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .rewriteHostHeader(true)
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://foo.bar")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -342,7 +343,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://foo.bar")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -375,7 +376,9 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   void routeLessTraffic_shouldLogInRbel() {
     spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerRoute.builder().from("http://foo").to("http://bar").build()))
+            .proxyRoutes(
+                List.of(
+                    TigerConfigurationRoute.builder().from("http://foo").to("http://bar").build()))
             .build());
 
     final HttpResponse<JsonNode> response =
@@ -449,7 +452,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("/notAServer")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -533,7 +536,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://backendWithBasicAuth")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .basicAuth(new TigerBasicAuthConfiguration("user", "password"))
@@ -552,7 +555,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://backend")
                         .to("http://notARealServer")
                         .build()))
@@ -575,7 +578,11 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
-                List.of(TigerRoute.builder().from("/").to("http://notARealServer").build()))
+                List.of(
+                    TigerConfigurationRoute.builder()
+                        .from("/")
+                        .to("http://notARealServer")
+                        .build()))
             .forwardToProxy(
                 ForwardProxyInfo.builder()
                     .port(forwardProxy.getPort())
@@ -600,7 +607,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://backend")
                         .to("http://localhost:" + fakeBackendServerPort + "/foobar")
                         .build()))
@@ -801,7 +808,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://server")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -1000,7 +1007,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
-                    TigerRoute.builder()
+                    TigerConfigurationRoute.builder()
                         .from("http://foo.bar")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
@@ -1065,5 +1072,25 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
     val request = Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/");
     assertThatThrownBy(request::asEmpty).hasRootCauseInstanceOf(NoHttpResponseException.class);
+  }
+
+  @SneakyThrows
+  @Test
+  void twoDestinationsOnlyOneReachable_shouldChooseCorrectOne() {
+    spawnTigerProxyWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerConfigurationRoute.builder()
+                        .from("/")
+                        .to(
+                            List.of(
+                                "http://localhost:" + TestSocketUtils.findAvailableTcpPort(),
+                                "http://localhost:" + fakeBackendServerPort))
+                        .build()))
+            .build());
+
+    val response = proxyRest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+    assertThat(response.getStatus()).isEqualTo(666);
   }
 }

@@ -21,37 +21,41 @@ import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import javax.security.auth.x500.X500Principal;
 import lombok.Builder;
+import org.apache.commons.lang3.StringUtils;
 
-public class StaticTigerKeyAndCertificateFactory implements KeyAndCertificateFactory {
+public class StaticKeyAndCertificateFactory implements KeyAndCertificateFactory {
 
   static {
     TigerSecurityProviderInitialiser.initialize();
   }
 
-  private final List<TigerPkiIdentity> availableIdentities;
+  private final List<TigerPkiIdentity> availableIdentities = new ArrayList<>();
 
   @Builder
-  public StaticTigerKeyAndCertificateFactory(TigerPkiIdentity eeIdentity) {
-    this.availableIdentities = List.of(eeIdentity);
-  }
-
-  public StaticTigerKeyAndCertificateFactory(List<TigerPkiIdentity> eeIdentities) {
-    this.availableIdentities = eeIdentities;
+  public StaticKeyAndCertificateFactory(
+    List<TigerPkiIdentity> availableIdentities) {
+    if (availableIdentities != null) {
+      this.availableIdentities.addAll(availableIdentities);
+    }
   }
 
   @Override
-  public TigerPkiIdentity buildAndSavePrivateKeyAndX509Certificate(String hostname) {
+  public Optional<TigerPkiIdentity> buildAndSavePrivateKeyAndX509Certificate(String hostname) {
     return availableIdentities.stream()
         .filter(id -> matchesHostname(id.getCertificate(), hostname))
-        .findAny()
-        .orElseGet(() -> availableIdentities.get(0));
+        .findAny();
   }
 
   private boolean matchesHostname(X509Certificate certificate, String hostname) {
     try {
+      if (StringUtils.isEmpty(hostname)) {
+        return true;
+      }
       if (subjectMatches(certificate.getSubjectX500Principal(), hostname)) {
         return true;
       }

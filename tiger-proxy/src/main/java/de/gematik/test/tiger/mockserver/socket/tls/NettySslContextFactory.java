@@ -81,7 +81,8 @@ public class NettySslContextFactory {
   private SslContext buildFreshClientSslContext(HttpProtocol protocol, String hostName) {
     try {
       val clientIdentity =
-          keyAndCertificateFactory.buildAndSavePrivateKeyAndX509Certificate(hostName);
+          keyAndCertificateFactory.buildAndSavePrivateKeyAndX509Certificate(hostName)
+            .orElseThrow(() -> new TigerProxySslException("Unable to find client identity for " + hostName));
       // create x509 and private key if none exist yet
       SslContextBuilder sslContextBuilder =
           SslContextBuilder.forClient()
@@ -121,7 +122,8 @@ public class NettySslContextFactory {
     log.info("Creating new server SSL context for {}", hostname);
     try {
       val serverIdentity =
-          keyAndCertificateFactory.buildAndSavePrivateKeyAndX509Certificate(hostname);
+          keyAndCertificateFactory.buildAndSavePrivateKeyAndX509Certificate(hostname)
+            .orElseThrow(() -> new TigerProxySslException("Unable to find server identity for " + hostname));
 
       log.atInfo()
           .addArgument(() -> serverIdentity.getCertificate().getSubjectX500Principal())

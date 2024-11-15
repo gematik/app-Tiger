@@ -549,11 +549,15 @@ public class TigerWebUiController implements ApplicationContextAware {
     }
     try {
       return JexlQueryResponseDto.builder()
-          .rbelTreeHtml(createRbelTreeForElement(targetElements.get(0), true))
+          .rbelTreeHtml(createRbelTreeForElement(targetElements.get(0), true, rbelPath))
           .elements(
               targetElements.stream()
                   .map(RbelElement::findNodePath)
-                  .map(key -> "$." + key)
+                  .map(
+                      key ->
+                          key.endsWith(".content") && !rbelPath.endsWith(".content")
+                              ? "$." + key.substring(0, key.length() - 8)
+                              : "$." + key)
                   .toList())
           .build();
     } catch (JexlException | TigerJexlException jexlException) {
@@ -578,10 +582,23 @@ public class TigerWebUiController implements ApplicationContextAware {
 
   private String createRbelTreeForElement(
       RbelElement targetElement, boolean addJexlResponseLinkCssClass) {
+    return createRbelTreeForElement(targetElement, addJexlResponseLinkCssClass, "");
+  }
+
+  private String createRbelTreeForElement(
+      RbelElement targetElement, boolean addJexlResponseLinkCssClass, String rbelPath) {
+
+    RbelElement rootElement =
+        targetElement
+            .getKey()
+            .filter(key -> key.endsWith("content") && !rbelPath.endsWith("content"))
+            .map(key -> targetElement.getParentNode())
+            .orElse(targetElement);
+
     return HtmlEscapers.htmlEscaper()
         .escape(
             RbelElementTreePrinter.builder()
-                .rootElement(targetElement)
+                .rootElement(rootElement)
                 .printFacets(false)
                 .build()
                 .execute())

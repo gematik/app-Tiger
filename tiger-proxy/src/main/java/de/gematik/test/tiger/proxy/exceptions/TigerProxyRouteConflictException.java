@@ -16,15 +16,15 @@
 
 package de.gematik.test.tiger.proxy.exceptions;
 
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import lombok.Getter;
 
 @Getter
 public class TigerProxyRouteConflictException extends TigerProxyConfigurationException {
 
-  private final TigerRoute existingRoute;
+  private final TigerConfigurationRoute existingRoute;
 
-  public TigerProxyRouteConflictException(TigerRoute existingRoute) {
+  public TigerProxyRouteConflictException(TigerConfigurationRoute existingRoute) {
     super("Could not add route. Competing route found: " + existingRoute);
 
     this.existingRoute = existingRoute;

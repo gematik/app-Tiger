@@ -115,6 +115,22 @@ tigerProxy:
 
 The entries are matched first as a total match, failing that as regular expressions. If you want to add ports you are free to do so: "myHost:80". This however will necessitate that the ports on all entries in this specific list are given (this does not apply to other routes).
 
+==== Multiple targets
+
+Sometimes you can only at runtime know which target to use. This can be achieved by using the `to`-property as a list of targets:
+
+[source,yaml]
+----
+tigerProxy:
+    proxyRoutes:
+      - from: /
+        to:
+          - http://orf.at/blub/
+          - http://ard.de/bla/
+----
+
+When booting the tiger-proxy the proxy tries to reach the target host by sending a HEAD-request to the host (dropping the path). If the server sends a valid HTTP (or HTTPS) response, the target is considered reachable and the route is used. If no target can be reached an exception is thrown. The return code is ignored.
+
 ==== criterions
 
 As an additional measure for a more fine-grained matching you can use criterions. These are JEXL-expressions which have to be fulfilled for the route to be used. This can be leveraged to make the routing decision dependent on the content of the message.
@@ -247,7 +263,7 @@ tigerProxy:
 ==== Fixed server identity
 
 The final, easiest and most unflexible way to solve TLS-issues is to simply give a fixed server-identity.
-This identity will be used for all routes.
+This identity will be used for all routes, but only if it matches the domain-name given by the client during the handshake. As a fallback (if the domain-name does not match) the dynamic server-identity will be used.
 
 [source,yaml]
 ----

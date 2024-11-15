@@ -33,11 +33,12 @@ import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
 import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
+import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.tracing.TracingPushService;
 import java.io.File;
 import java.io.IOException;
@@ -155,7 +156,7 @@ class TigerRemoteProxyClientTest {
     tigerProxy.clearAllRoutes();
     tigerProxy.clearAllMessages();
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from("http://myserv.er")
             .to("http://localhost:" + runtimeInfo.getHttpPort())
             .build());
@@ -239,7 +240,7 @@ class TigerRemoteProxyClientTest {
     final String routeId =
         tigerRemoteProxyClient
             .addRoute(
-                TigerRoute.builder()
+                TigerProxyRoute.builder()
                     .from("http://new.server")
                     .to("http://localhost:" + runtimeInfo.getHttpPort())
                     .build())
@@ -255,7 +256,7 @@ class TigerRemoteProxyClientTest {
 
   @Test
   void listRoutes(WireMockRuntimeInfo runtimeInfo) {
-    final List<TigerRoute> routes = tigerRemoteProxyClient.getRoutes();
+    final List<TigerProxyRoute> routes = tigerRemoteProxyClient.getRoutes();
 
     assertThat(routes)
         .extracting("from", "to", "disableRbelLogging")
@@ -266,7 +267,7 @@ class TigerRemoteProxyClientTest {
   @Test
   void reverseProxyRoute_checkRemoteTransmission(WireMockRuntimeInfo runtimeInfo) {
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from("/blub")
             .to("http://localhost:" + runtimeInfo.getHttpPort())
             .build());
@@ -293,7 +294,7 @@ class TigerRemoteProxyClientTest {
   @Test
   void reverseProxyRootRoute_checkRemoteTransmission(WireMockRuntimeInfo runtimeInfo) {
     tigerProxy.addRoute(
-        TigerRoute.builder().from("/").to("http://localhost:" + runtimeInfo.getHttpPort()).build());
+        TigerConfigurationRoute.builder().from("/").to("http://localhost:" + runtimeInfo.getHttpPort()).build());
 
     AtomicInteger listenerCallCounter = new AtomicInteger(0);
     tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());

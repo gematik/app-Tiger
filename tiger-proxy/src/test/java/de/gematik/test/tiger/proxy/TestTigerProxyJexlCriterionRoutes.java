@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -42,7 +42,7 @@ class TestTigerProxyJexlCriterionRoutes extends AbstractTigerProxyTest {
 
     spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration.builder().build());
 
-    final BiConsumer<TigerRoute, TigerRoute> testRoutesInOrder =
+    final BiConsumer<TigerConfigurationRoute, TigerConfigurationRoute> testRoutesInOrder =
         (route1, route2) -> {
           tigerProxy.clearAllRoutes();
           tigerProxy.addRoute(route1);
@@ -79,13 +79,13 @@ class TestTigerProxyJexlCriterionRoutes extends AbstractTigerProxyTest {
   void testRouteWithJexlCriterion() {
     spawnTigerProxyWith(new TigerProxyConfiguration());
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from("/foobar/")
             .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar/")
             .criterions(List.of("$.header.foo != 'bar'"))
             .build());
     tigerProxy.addRoute(
-        TigerRoute.builder()
+        TigerConfigurationRoute.builder()
             .from("/foobar/")
             .to("http://localhost:" + fakeBackendServerPort + "/foobar/")
             .criterions(List.of("$.header.foo == 'bar'"))
@@ -106,7 +106,7 @@ class TestTigerProxyJexlCriterionRoutes extends AbstractTigerProxyTest {
         .isEqualTo(666);
   }
 
-  private TigerRoute route(String from, String to) {
-    return TigerRoute.builder().from(from).to(to).build();
+  private TigerConfigurationRoute route(String from, String to) {
+    return TigerConfigurationRoute.builder().from(from).to(to).build();
   }
 }
