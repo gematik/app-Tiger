@@ -2,6 +2,12 @@
 
 # Release 3.4.5
 
+## Bugfixes
+
+* KOB-6: Fixed an issue where https-destinations could not be used as one of multiple "to"-targets.
+
+# Release 3.4.5
+
 ## Features
 
 * KOB-4: Support fallback static identities for TLS server. This means you can configure a one or many server

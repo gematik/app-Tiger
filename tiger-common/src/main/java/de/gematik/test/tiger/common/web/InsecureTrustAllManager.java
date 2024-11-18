@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.testenvmgr.util;
+package de.gematik.test.tiger.common.web;
 
+import de.gematik.test.tiger.common.exceptions.TigerPkiException;
+import java.net.Socket;
 import java.net.URLConnection;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.*;
 
-public class InsecureTrustAllManager implements X509TrustManager {
+public class InsecureTrustAllManager extends X509ExtendedTrustManager {
 
   private static final X509Certificate[] NO_ACCEPTED_ISSUERS = new X509Certificate[] {};
 
@@ -38,21 +37,44 @@ public class InsecureTrustAllManager implements X509TrustManager {
         httpsURLConnection.setSSLSocketFactory(context.getSocketFactory());
         httpsURLConnection.setHostnameVerifier((hostname, sslSession) -> true); // NOSONAR
       } catch (NoSuchAlgorithmException | KeyManagementException e) {
-        throw new TigerTestEnvException("Unable to establish relaxed SSL checks", e);
+        throw new TigerPkiException("Unable to establish relaxed SSL checks", e);
       }
     }
   }
 
   @Override
   public void checkClientTrusted(X509Certificate[] x509Certificates, String s) { // NOSONAR
+    // check nothing, because trust all
   }
 
   @Override
   public void checkServerTrusted(X509Certificate[] x509Certificates, String s) { // NOSONAR
+    // check nothing, because trust all
   }
 
   @Override
   public X509Certificate[] getAcceptedIssuers() {
     return NO_ACCEPTED_ISSUERS;
   }
+
+  @Override
+  public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket) { // NOSONAR
+    // check nothing, because trust all
+  }
+
+  @Override
+  public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket) { // NOSONAR
+    // check nothing, because trust all
+  }
+
+  @Override
+  public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine) { // NOSONAR
+    // check nothing, because trust all
+  }
+
+  @Override
+  public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine) { // NOSONAR
+    // check nothing, because trust all
+  }
+
 }

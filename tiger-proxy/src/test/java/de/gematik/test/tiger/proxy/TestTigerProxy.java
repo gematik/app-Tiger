@@ -1086,7 +1086,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                         .to(
                             List.of(
                                 "http://localhost:" + TestSocketUtils.findAvailableTcpPort(),
-                                "http://localhost:" + fakeBackendServerPort))
+                                "https://localhost:" + fakeBackendServerTlsPort))
                         .build()))
             .build());
 

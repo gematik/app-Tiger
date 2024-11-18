@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
+import de.gematik.test.tiger.common.web.InsecureTrustAllManager;
 import de.gematik.test.tiger.util.NoProxyUtils;
 import java.io.IOException;
 import java.net.*;
@@ -62,6 +63,7 @@ public class TigerRouteSelector {
       connection.setReadTimeout(5000);
       connection.setInstanceFollowRedirects(false);
       connection.setRequestMethod("HEAD");
+      InsecureTrustAllManager.allowAllSsl(connection);
       connection.connect();
       return true;
     } catch (IOException e) {
