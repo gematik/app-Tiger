@@ -47,6 +47,7 @@ class FindLastRequestTest {
     }
     tigerTestEnvMgr.shutDown();
     TigerDirector.testUninitialize();
+    TigerDirector.getLibConfig().getHttpClientConfig().setActivateRbelWriter(false);
   }
 
   /**
