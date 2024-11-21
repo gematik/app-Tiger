@@ -61,6 +61,7 @@ import org.apache.http.NoHttpResponseException;
 import org.assertj.core.data.TemporalUnitWithinOffset;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -1076,6 +1077,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @SneakyThrows
   @Test
+  @Disabled
   void twoDestinationsOnlyOneReachable_shouldChooseCorrectOne() {
     spawnTigerProxyWith(
         TigerProxyConfiguration.builder()

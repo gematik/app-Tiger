@@ -41,10 +41,20 @@ import io.cucumber.core.plugin.FeatureFileLoader;
 import io.cucumber.core.plugin.ScenarioContextDelegate;
 import io.cucumber.core.plugin.report.EvidenceReport.ReportContext;
 import io.cucumber.core.runner.TestCaseDelegate;
-import io.cucumber.messages.types.*;
+import io.cucumber.messages.types.Background;
+import io.cucumber.messages.types.DocString;
+import io.cucumber.messages.types.Examples;
+import io.cucumber.messages.types.Feature;
+import io.cucumber.messages.types.FeatureChild;
+import io.cucumber.messages.types.Location;
+import io.cucumber.messages.types.Scenario;
+import io.cucumber.messages.types.Step;
+import io.cucumber.messages.types.TableCell;
+import io.cucumber.messages.types.TableRow;
 import io.cucumber.plugin.event.Event;
 import io.cucumber.plugin.event.HookTestStep;
 import io.cucumber.plugin.event.PickleStepTestStep;
+import io.cucumber.plugin.event.TestCase;
 import io.cucumber.plugin.event.TestCaseFinished;
 import io.cucumber.plugin.event.TestCaseStarted;
 import io.cucumber.plugin.event.TestRunFinished;
@@ -69,7 +79,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -105,9 +114,6 @@ public class SerenityReporterCallbacks {
   private final EvidenceRenderer evidenceRenderer =
       new EvidenceRenderer(new HtmlEvidenceRenderer());
   FeatureFileLoader featureLoader = new FeatureFileLoader();
-  @Getter private int currentScenarioDataVariantIndex = -1;
-  private String currentScenarioID = "";
-  private int currentStepIndex = -1;
 
   /** number of passed scenarios / scenario data variants. */
   @Getter private int scPassed = 0;
@@ -201,35 +207,16 @@ public class SerenityReporterCallbacks {
 
     Optional<Feature> currentFeature = featureFrom(context.currentFeaturePath());
 
-    if (StringUtils.isEmpty(currentScenarioID)) {
-      currentScenarioID = context.getCurrentScenarioId();
-    }
-    if (context.getCurrentScenarioId() != null
-        && !context.getCurrentScenarioId().equals(currentScenarioID)) {
-      currentScenarioDataVariantIndex = -1;
-      currentScenarioID = context.getCurrentScenarioId();
-    }
-    // TGR
-    if (context.isAScenarioOutline()) {
-      currentScenarioDataVariantIndex =
-          extractScenarioDataVariantIndex(testCaseStartedEvent, context).orElse(-1);
-    } else {
-      currentScenarioDataVariantIndex = -1;
-      currentScenarioID = context.getCurrentScenarioId();
-    }
-    currentStepIndex = 0;
-
-    boolean isDryRun = TestCaseDelegate.of(testCaseStartedEvent.getTestCase()).isDryRun();
+    var testCase = testCaseStartedEvent.getTestCase();
+    boolean isDryRun = TestCaseDelegate.of(testCase).isDryRun();
     currentFeature.ifPresent(
-        feature -> informWorkflowUiAboutCurrentScenario(feature, context, isDryRun));
+        feature -> informWorkflowUiAboutCurrentScenario(feature, testCase, context, isDryRun));
     evidenceRecorder.reset();
     featureExecutionMonitor.startTestCase(testCaseStartedEvent);
   }
 
-  private Optional<Integer> extractScenarioDataVariantIndex(
-      TestCaseStarted event, ScenarioContextDelegate context) {
-    Location searchLocation =
-        new LocationConverter().convertLocation(event.getTestCase().getLocation());
+  public int extractScenarioDataVariantIndex(ScenarioContextDelegate context, TestCase testCase) {
+    Location searchLocation = new LocationConverter().convertLocation(testCase.getLocation());
     return Streams.mapWithIndex(
             context.currentScenarioOutline().getExamples().stream()
                 .map(Examples::getTableBody)
@@ -240,7 +227,8 @@ public class SerenityReporterCallbacks {
         .filter(Pair::getLeft)
         .map(Pair::getRight)
         .map(Math::toIntExact)
-        .findFirst();
+        .findFirst()
+        .orElse(-1);
   }
 
   private Optional<Feature> featureFrom(URI currentFeaturePath) {
@@ -261,28 +249,29 @@ public class SerenityReporterCallbacks {
   }
 
   private void informWorkflowUiAboutCurrentScenario(
-      Feature feature, ScenarioContextDelegate context, boolean isDryRun) {
+      Feature feature, TestCase testCase, ScenarioContextDelegate context, boolean isDryRun) {
     Scenario scenario = context.getCurrentScenarioDefinition();
+
+    int dataVariantIndex = extractScenarioDataVariantIndex(context, testCase);
 
     List<Step> steps = getStepsIncludingBackgroundFromFeatureForScenario(feature, scenario);
 
     log.info("Scenario location {}", scenario.getLocation());
-    Map<String, String> variantDataMap = getVariantDataMap(context);
-    log.debug(
-        "Current row for scenario variant {} {}", currentScenarioDataVariantIndex, variantDataMap);
+    Map<String, String> variantDataMap = getVariantDataMap(context, dataVariantIndex);
+    log.debug("Current row for scenario variant {} {}", dataVariantIndex, variantDataMap);
     String scenarioUniqueId =
         ScenarioRunner.findScenarioUniqueId(
                 scenario,
                 context.currentFeaturePath(),
                 context.isAScenarioOutline(),
-                currentScenarioDataVariantIndex)
+                dataVariantIndex)
             .toString();
     ScenarioUpdate scenarioUpdate =
         ScenarioUpdate.builder()
             .isDryRun(isDryRun)
             .description(replaceOutlineParameters(scenario.getName(), variantDataMap, false))
             .uniqueId(scenarioUniqueId)
-            .variantIndex(currentScenarioDataVariantIndex)
+            .variantIndex(dataVariantIndex)
             .exampleKeys(context.isAScenarioOutline() ? context.getTable().getHeaders() : null)
             .exampleList(variantDataMap)
             .steps(stepUpdates(steps, variantDataMap))
@@ -303,11 +292,51 @@ public class SerenityReporterCallbacks {
     return new LinkedHashMap<>(Map.of(key, value));
   }
 
-  private Map<String, String> getVariantDataMap(ScenarioContextDelegate context) {
-    return context.isAScenarioOutline()
-        ? context.getTable().row(currentScenarioDataVariantIndex).toStringMap().entrySet().stream()
-            .collect(Collectors.toMap(Entry::getKey, e -> tryResolvePlaceholders(e.getValue())))
-        : Map.of();
+  private Map<String, String> getVariantDataMap(
+      ScenarioContextDelegate context, int dataVariantIndex) {
+    if (context.isAScenarioOutline()) {
+      List<Examples> examples = context.currentScenarioOutline().getExamples();
+      var headers =
+          examples
+              .get(0)
+              .getTableHeader()
+              .map(SerenityReporterCallbacks::getCellValues)
+              .orElse(Collections.emptyList());
+      var values =
+          findExampleRow(dataVariantIndex, examples)
+              .map(SerenityReporterCallbacks::getCellValues)
+              .map(
+                  list ->
+                      list.stream().map(SerenityReporterCallbacks::tryResolvePlaceholders).toList())
+              .orElse(Collections.emptyList());
+      return createMap(headers, values);
+    } else {
+      return Map.of();
+    }
+  }
+
+  private static @NotNull List<String> getCellValues(TableRow row) {
+    return row.getCells().stream().map(TableCell::getValue).toList();
+  }
+
+  private static @NotNull <A, B> Map<A, B> createMap(List<A> keys, List<B> values) {
+    HashMap<A, B> map = new HashMap<>();
+    var it1 = keys.iterator();
+    var it2 = values.iterator();
+    while (it1.hasNext() && it2.hasNext()) {
+      map.put(it1.next(), it2.next());
+    }
+    return map;
+  }
+
+  private static @NotNull Optional<TableRow> findExampleRow(
+      int dataVariantIndex, List<Examples> examples) {
+    return Streams.mapWithIndex(
+            examples.stream().map(Examples::getTableBody).flatMap(List::stream),
+            Pair::of) // (tableRow, index)
+        .filter(pair -> pair.getRight() == dataVariantIndex)
+        .findFirst()
+        .map(Pair::getLeft);
   }
 
   private String replaceOutlineParameters(
@@ -424,7 +453,9 @@ public class SerenityReporterCallbacks {
       boolean isDryRun = TestCaseDelegate.of(event.getTestCase()).isDryRun();
       String statusName =
           isDryRun ? TestResult.TEST_DISCOVERED.name() : TestResult.EXECUTING.name();
-      informWorkflowUiAboutCurrentStep(pickleTestStep, statusName, context, isDryRun);
+      int dataVariantIndex = extractScenarioDataVariantIndex(context, event.getTestCase());
+      informWorkflowUiAboutCurrentStep(
+          pickleTestStep, statusName, context, isDryRun, dataVariantIndex);
     }
 
     if (context.getCurrentStep() != null) {
@@ -478,13 +509,14 @@ public class SerenityReporterCallbacks {
         boolean isDryRun = TestCaseDelegate.of(event.getTestCase()).isDryRun();
         String statusName =
             isDryRun ? TestResult.TEST_DISCOVERED.name() : event.getResult().getStatus().name();
-        informWorkflowUiAboutCurrentStep(event.getTestStep(), statusName, context, isDryRun);
+        int dataVariantIndex = extractScenarioDataVariantIndex(context, event.getTestCase());
+        informWorkflowUiAboutCurrentStep(
+            event.getTestStep(), statusName, context, isDryRun, dataVariantIndex);
 
         if (TigerDirector.isSerenityAvailable()) {
           addStepEvidence();
         }
       }
-      currentStepIndex++;
     }
   }
 
@@ -503,20 +535,29 @@ public class SerenityReporterCallbacks {
   }
 
   private void informWorkflowUiAboutCurrentStep(
-      TestStep event, String status, ScenarioContextDelegate context, boolean isDryRun) {
+      TestStep event,
+      String status,
+      ScenarioContextDelegate context,
+      boolean isDryRun,
+      int variantDataIndex) {
 
     Scenario scenario = context.getCurrentScenarioDefinition();
     PickleStepTestStep pickleTestStep = (PickleStepTestStep) event;
 
+    Optional<Feature> feature = featureFrom(context.currentFeaturePath());
+    var steps = getStepsIncludingBackgroundFromFeatureForScenario(feature.orElseThrow(), scenario);
+    var stepIndex = findStepIndex(pickleTestStep.getStep().getLocation(), steps);
+
     TigerStatusUpdate.TigerStatusUpdateBuilder builder = TigerStatusUpdate.builder();
 
-    String featureName =
-        featureFrom(context.currentFeaturePath()).map(Feature::getName).orElse("?");
+    String featureName = feature.map(Feature::getName).orElse("?");
     List<MessageMetaDataDto> stepMessagesMetaDataList =
-        new ArrayList<>(LocalProxyRbelMessageListener.getInstance().getStepRbelMessages())
-            .stream().map(MessageMetaDataDto::createFrom).toList();
+        new ArrayList<>(
+            LocalProxyRbelMessageListener.getInstance().getStepRbelMessages().stream()
+                .map(MessageMetaDataDto::createFrom)
+                .toList());
 
-    Map<String, String> variantDataMap = getVariantDataMap(context);
+    Map<String, String> variantDataMap = getVariantDataMap(context, variantDataIndex);
 
     if (!isDryRun) {
       addBannerMessageToUpdate(variantDataMap, pickleTestStep, builder);
@@ -527,7 +568,7 @@ public class SerenityReporterCallbacks {
                 scenario,
                 context.currentFeaturePath(),
                 context.isAScenarioOutline(),
-                currentScenarioDataVariantIndex)
+                variantDataIndex)
             .toString();
 
     Step currentStep = context.getCurrentStep();
@@ -536,7 +577,7 @@ public class SerenityReporterCallbacks {
             .description(getDescriptionWithReplacements(currentStep, variantDataMap))
             .tooltip(getStepToolTip(currentStep))
             .status(TestResult.valueOf(status))
-            .stepIndex(currentStepIndex)
+            .stepIndex(stepIndex)
             .rbelMetaData(stepMessagesMetaDataList)
             .build();
 
@@ -545,10 +586,10 @@ public class SerenityReporterCallbacks {
             .isDryRun(isDryRun)
             .description(replaceOutlineParameters(scenario.getName(), variantDataMap, false))
             .uniqueId(scenarioUniqueId)
-            .variantIndex(currentScenarioDataVariantIndex)
+            .variantIndex(variantDataIndex)
             .exampleKeys(context.isAScenarioOutline() ? context.getTable().getHeaders() : null)
             .exampleList(variantDataMap)
-            .steps(Map.of(String.valueOf(currentStepIndex), currentStepUpdate))
+            .steps(Map.of(String.valueOf(stepIndex), currentStepUpdate))
             .build();
 
     FeatureUpdate featureUpdate =
@@ -560,6 +601,16 @@ public class SerenityReporterCallbacks {
         .receiveTestEnvUpdate(
             builder.featureMap(convertToLinkedHashMap(featureName, featureUpdate)).build());
     LocalProxyRbelMessageListener.getInstance().getStepRbelMessages().clear();
+  }
+
+  private static int findStepIndex(io.cucumber.plugin.event.Location location, List<Step> steps) {
+    var loc = new LocationConverter().convertLocation(location);
+    return Streams.mapWithIndex(steps.stream().map(Step::getLocation), Pair::of)
+        .filter(pair -> pair.getLeft().equals(loc))
+        .findFirst()
+        .map(Pair::getRight)
+        .map(Math::toIntExact)
+        .orElse(-1);
   }
 
   private static String tryResolvePlaceholders(String input) {
@@ -590,7 +641,6 @@ public class SerenityReporterCallbacks {
       return;
     }
 
-    currentStepIndex = -1;
     String scenarioStatus = event.getResult().getStatus().toString();
 
     // dump overall status for updates while test is still running
@@ -608,7 +658,10 @@ public class SerenityReporterCallbacks {
         scFailed > 0 ? scFailed + " failed or error" : "");
 
     if (TigerDirector.getLibConfig().createRbelHtmlReports) {
-      createRbelLogReport(event.getTestCase().getName(), event.getTestCase().getUri());
+      int dataVariantIndex = extractScenarioDataVariantIndex(context, event.getTestCase());
+
+      createRbelLogReport(
+          event.getTestCase().getName(), event.getTestCase().getUri(), dataVariantIndex);
     }
 
     createEvidenceFile(event, context);
@@ -621,7 +674,9 @@ public class SerenityReporterCallbacks {
     final EvidenceReport evidenceReport = getEvidenceReport(testCaseFinishedEvent, scenarioContext);
 
     if (evidenceReport.getSteps().stream().anyMatch(step -> !step.getEvidenceEntries().isEmpty())) {
-      Path reportFile = createEvidenceReportFile(scenarioContext, evidenceReport);
+      int dataVariantIndex =
+          extractScenarioDataVariantIndex(scenarioContext, testCaseFinishedEvent.getTestCase());
+      Path reportFile = createEvidenceReportFile(scenarioContext, evidenceReport, dataVariantIndex);
 
       if (TigerDirector.isSerenityAvailable()) {
         (Serenity.recordReportData().asEvidence().withTitle("Evidence Report"))
@@ -633,15 +688,15 @@ public class SerenityReporterCallbacks {
 
   @NotNull
   private Path createEvidenceReportFile(
-      ScenarioContextDelegate scenarioContext, EvidenceReport evidenceReport) throws IOException {
+      ScenarioContextDelegate scenarioContext, EvidenceReport evidenceReport, int variantDataIndex)
+      throws IOException {
     var renderedReport = evidenceRenderer.render(evidenceReport);
 
     final Path parentDir = getEvidenceDir();
 
     return Files.writeString(
         parentDir.resolve(
-            getFileNameFor(
-                "evidence", scenarioContext.getScenarioName(), currentScenarioDataVariantIndex)),
+            getFileNameFor("evidence", scenarioContext.getScenarioName(), variantDataIndex)),
         renderedReport,
         StandardOpenOption.CREATE,
         StandardOpenOption.WRITE,
@@ -655,25 +710,23 @@ public class SerenityReporterCallbacks {
             scenarioContext.getScenarioName(), testCaseFinishedEvent.getTestCase().getUri()));
   }
 
-  private void createRbelLogReport(String scenarioName, URI scenarioUri) {
+  private void createRbelLogReport(String scenarioName, URI scenarioUri, int variantDataIndex) {
     try {
       // make sure target/rbellogs folder exists
       final File folder = Paths.get(TARGET_DIR, "rbellogs").toFile();
       if (!folder.exists() && !folder.mkdirs()) {
         throw new TigerOsException("Unable to create folder '" + folder.getAbsolutePath() + "'");
       }
-      var rbelRenderer = getRbelHtmlRenderer(scenarioName, scenarioUri);
+      var rbelRenderer = getRbelHtmlRenderer(scenarioName, scenarioUri, variantDataIndex);
 
       String html =
           rbelRenderer.doRender(LocalProxyRbelMessageListener.getInstance().getMessages());
 
-      String name = getFileNameFor("rbel", scenarioName, currentScenarioDataVariantIndex);
+      String name = getFileNameFor("rbel", scenarioName, variantDataIndex);
       final File logFile = Paths.get(TARGET_DIR, "rbellogs", name).toFile();
       FileUtils.writeStringToFile(logFile, html, StandardCharsets.UTF_8);
       if (TigerDirector.isSerenityAvailable()) {
-        (Serenity.recordReportData()
-                .asEvidence()
-                .withTitle("RBellog " + (currentScenarioDataVariantIndex + 1)))
+        (Serenity.recordReportData().asEvidence().withTitle("RBellog " + (variantDataIndex + 1)))
             .downloadable()
             .fromFile(logFile.toPath());
       }
@@ -686,15 +739,16 @@ public class SerenityReporterCallbacks {
   }
 
   @NotNull
-  private RbelHtmlRenderer getRbelHtmlRenderer(String scenarioName, URI scenarioUri) {
+  private RbelHtmlRenderer getRbelHtmlRenderer(
+      String scenarioName, URI scenarioUri, int dataVariantIndex) {
     var rbelRenderer = new RbelHtmlRenderer();
     rbelRenderer.setTitle(scenarioName);
     rbelRenderer.setSubTitle(
         "<p>"
-            + (currentScenarioDataVariantIndex != -1
+            + (dataVariantIndex != -1
                 ? "<button class=\"js-modal-trigger\""
                     + " data-bs-target=\"modal-data-variant\">Variant "
-                    + (currentScenarioDataVariantIndex + 1)
+                    + (dataVariantIndex + 1)
                     + "</button>"
                 : "")
             + "</p><p><i>"

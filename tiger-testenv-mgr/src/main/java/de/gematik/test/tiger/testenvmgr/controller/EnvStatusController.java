@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.testenvmgr.controller;
 
+import de.gematik.test.tiger.proxy.data.MessageMetaDataDto;
 import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
@@ -23,6 +24,7 @@ import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
 import de.gematik.test.tiger.testenvmgr.data.TigerServerStatusDto;
 import de.gematik.test.tiger.testenvmgr.env.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -79,17 +81,17 @@ public class EnvStatusController implements TigerUpdateListener {
 
   private void receiveTestSuiteUpdate(Map<String, FeatureUpdate> update) {
     update.forEach(
-        (key, value) -> {
+        (featureKey, featureUpdate) -> {
           try {
-            if (tigerEnvStatus.getFeatureMap().containsKey(key)) {
-              FeatureUpdate feature = tigerEnvStatus.getFeatureMap().get(key);
-              if (value.getStatus() != TestResult.UNUSED) {
-                feature.setStatus(value.getStatus());
+            if (tigerEnvStatus.getFeatureMap().containsKey(featureKey)) {
+              FeatureUpdate feature = tigerEnvStatus.getFeatureMap().get(featureKey);
+              if (featureUpdate.getStatus() != TestResult.UNUSED) {
+                feature.setStatus(featureUpdate.getStatus());
               }
-              feature.setDescription(value.getDescription());
-              fillInScenarioData(value, feature);
+              feature.setDescription(featureUpdate.getDescription());
+              fillInScenarioData(featureUpdate, feature);
             } else {
-              tigerEnvStatus.getFeatureMap().put(key, value);
+              tigerEnvStatus.getFeatureMap().put(featureKey, featureUpdate);
             }
           } catch (Exception e) {
             log.error("Unable to parse update", e);
@@ -97,51 +99,67 @@ public class EnvStatusController implements TigerUpdateListener {
         });
   }
 
-  private static void fillInScenarioData(FeatureUpdate value, FeatureUpdate feature) {
-    value
+  private static void fillInScenarioData(FeatureUpdate featureUpdate, FeatureUpdate feature) {
+    featureUpdate
         .getScenarios()
         .forEach(
-            (skey, svalue) -> {
-              if (feature.getScenarios().containsKey(skey)) {
-                ScenarioUpdate scenario = feature.getScenarios().get(skey);
-                if (svalue.getStatus() != TestResult.UNUSED) {
-                  scenario.setStatus(svalue.getStatus());
+            (scenarioKey, scenarioUpdate) -> {
+              if (feature.getScenarios().containsKey(scenarioKey)) {
+                ScenarioUpdate scenario = feature.getScenarios().get(scenarioKey);
+                if (scenarioUpdate.getStatus() != TestResult.UNUSED) {
+                  scenario.setStatus(scenarioUpdate.getStatus());
                 }
-                scenario.setDescription(svalue.getDescription());
-                scenario.setExampleKeys(svalue.getExampleKeys());
-                scenario.setExampleList(svalue.getExampleList());
-                scenario.setVariantIndex(svalue.getVariantIndex());
-                scenario.setDryRun(svalue.isDryRun());
-                fillInStepData(svalue, scenario);
+                scenario.setDescription(scenarioUpdate.getDescription());
+                scenario.setExampleKeys(scenarioUpdate.getExampleKeys());
+                scenario.setExampleList(scenarioUpdate.getExampleList());
+                scenario.setVariantIndex(scenarioUpdate.getVariantIndex());
+                scenario.setDryRun(scenarioUpdate.isDryRun());
+                fillInStepData(scenarioUpdate, scenario);
               } else {
-                feature.getScenarios().put(skey, svalue);
+                feature.getScenarios().put(scenarioKey, scenarioUpdate);
               }
             });
   }
 
-  private static void fillInStepData(ScenarioUpdate svalue, ScenarioUpdate scenario) {
-    svalue
+  private static void fillInStepData(ScenarioUpdate scenarioUpdate, ScenarioUpdate scenario) {
+    scenarioUpdate
         .getSteps()
         .forEach(
-            (stkey, stvalue) -> {
-              if (scenario.getSteps().containsKey(stkey)) {
-                StepUpdate step = scenario.getSteps().get(stkey);
-                if (stvalue.getStatus() != TestResult.UNUSED) {
-                  step.setStatus(stvalue.getStatus());
-                }
-                step.setDescription(stvalue.getDescription());
-                step.setTooltip(stvalue.getTooltip());
-                step.setStepIndex(stvalue.getStepIndex());
-                if (stvalue.getRbelMetaData() != null) {
-                  if (step.getRbelMetaData() == null) {
-                    step.setRbelMetaData(new ArrayList<>());
-                  }
-                  step.getRbelMetaData().addAll(stvalue.getRbelMetaData());
-                }
+            (stepKey, stepUpdate) -> {
+              if (scenario.getSteps().containsKey(stepKey)) {
+                StepUpdate step = scenario.getSteps().get(stepKey);
+                fillInStatus(scenario, step, stepUpdate);
+                step.setDescription(stepUpdate.getDescription());
+                step.setTooltip(stepUpdate.getTooltip());
+                step.setStepIndex(stepUpdate.getStepIndex());
+                fillInMetaData(step, stepUpdate);
               } else {
-                scenario.getSteps().put(stkey, stvalue);
+                scenario.getSteps().put(stepKey, stepUpdate);
               }
             });
+  }
+
+  private static void fillInMetaData(StepUpdate step, StepUpdate stepUpdate) {
+    List<MessageMetaDataDto> newMetaData = stepUpdate.getRbelMetaData();
+    if (newMetaData != null) {
+      if (step.getRbelMetaData() == null) {
+        step.setRbelMetaData(new ArrayList<>());
+      }
+      step.getRbelMetaData().addAll(newMetaData);
+    }
+  }
+
+  private static void fillInStatus(
+      ScenarioUpdate scenario, StepUpdate step, StepUpdate stepUpdate) {
+    TestResult newStatus = stepUpdate.getStatus();
+    if (newStatus != TestResult.UNUSED) {
+      step.setStatus(newStatus);
+      if (newStatus != null
+          && (scenario.getStatus() == null
+              || scenario.getStatus().ordinal() > newStatus.ordinal())) {
+        scenario.setStatus(newStatus);
+      }
+    }
   }
 
   private synchronized void receiveServerStatusUpdate(
