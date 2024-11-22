@@ -32,8 +32,8 @@ import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
@@ -155,6 +155,11 @@ public class TigerTestEnvMgr
         .entrySet()
         .stream()
         .collect(Collectors.toMap(entry -> "logging.level." + entry.getKey(), Entry::getValue));
+  }
+
+  public static Map<String, String> getTigerLibConfiguration() {
+    return TigerGlobalConfiguration.readMapWithCaseSensitiveKeys(TIGER, "lib").entrySet().stream()
+        .collect(Collectors.toMap(entry -> "tiger.lib." + entry.getKey(), Entry::getValue));
   }
 
   @SuppressWarnings("unused")

@@ -22,24 +22,31 @@ import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.r
 import com.google.common.collect.Streams;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.testenvmgr.api.model.TestExecutionRequestDto;
+import de.gematik.test.tiger.testenvmgr.util.ScenarioCollector;
 import io.cucumber.messages.types.Examples;
 import io.cucumber.messages.types.Location;
 import io.cucumber.messages.types.Scenario;
 import io.cucumber.messages.types.TableRow;
 import java.net.URI;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.platform.engine.DiscoverySelector;
 import org.junit.platform.engine.TestSource;
+import org.junit.platform.engine.TestTag;
 import org.junit.platform.engine.UniqueId;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.engine.discovery.UniqueIdSelector;
@@ -49,36 +56,59 @@ import org.junit.platform.engine.support.descriptor.FileSource;
 import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.TestIdentifier;
+import org.junit.platform.launcher.TestPlan;
 import org.junit.platform.launcher.core.LauncherFactory;
+import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import org.springframework.stereotype.Component;
 
 @Component
 @Slf4j
 public class ScenarioRunner {
 
-  private static final Set<TestIdentifier> scenarios = new HashSet<>();
+  private static final LinkedHashSet<TestIdentifier> scenarios =
+      new LinkedHashSet<>(); // NOSONAR - important to keep order
+
+  // Must be single threaded because we do not want to have multiple tests runs at the same time.
+  // Since the Launcher.execute() runs synchronously, we have the guarantee that the runner waits
+  // for the test to finish.
   private static final ExecutorService scenarioExecutionService =
       Executors.newSingleThreadExecutor();
 
+  private final Map<UUID, TestExecutionStatus> testExecutionResults = new ConcurrentHashMap<>();
+
   public static void addScenarios(Collection<TestIdentifier> newScenarios) {
-    var onlyCucumberEngineScenarios =
-        newScenarios.stream()
-            .filter(
-                t ->
-                    t.getUniqueIdObject().getSegments().stream()
-                        .anyMatch(
-                            s -> s.getType().equals("engine") && s.getValue().equals("cucumber")))
-            .toList();
-    scenarios.addAll(onlyCucumberEngineScenarios);
+    scenarios.addAll(newScenarios);
   }
 
-  @SneakyThrows
-  public void runTest(ScenarioIdentifier scenarioIdentifier) {
-    runTest(
-        findScenarioByUniqueId(scenarioIdentifier)
-            .orElseThrow(
-                () ->
-                    new NoSuchElementException("did not find a scenario matching the given id.")));
+  public static void addScenarios(TestPlan testPlan) {
+    addScenarios(ScenarioCollector.collectScenarios(testPlan));
+  }
+
+  public TestExecutionStatus enqueueExecutionSelectedTests(
+      TestExecutionRequestDto testExecutionRequest) {
+
+    var sources = testExecutionRequest.getSourceFiles();
+    var tags = testExecutionRequest.getTags();
+    var uniqueIds = testExecutionRequest.getTestUniqueIds();
+
+    // if one of the sourceFiles / tags / uniqueIds lists is empty, their filter is not used. That
+    // means all scenarios are selected for the next filter round.
+    List<UniqueIdSelector> selectors =
+        scenarios.stream()
+            .filter(testIdentifier -> sources.isEmpty() || anyFileMatches(sources, testIdentifier))
+            .filter(testIdentifier -> tags.isEmpty() || anyTagMatches(tags, testIdentifier))
+            .filter(
+                testIdentifier ->
+                    uniqueIds.isEmpty() || anyUniqueIdMatches(uniqueIds, testIdentifier))
+            .map(t -> DiscoverySelectors.selectUniqueId(t.getUniqueId()))
+            .toList();
+    return runTests(selectors);
+  }
+
+  public TestExecutionStatus enqueueExecutionAllTests() {
+    List<UniqueIdSelector> selectors =
+        scenarios.stream().map(t -> DiscoverySelectors.selectUniqueId(t.getUniqueId())).toList();
+    return runTests(selectors);
   }
 
   public static void clearScenarios() {
@@ -115,21 +145,28 @@ public class ScenarioRunner {
         .findAny();
   }
 
-  protected void runTest(TestIdentifier testIdentifier) {
-    UniqueIdSelector selector =
-        DiscoverySelectors.selectUniqueId(testIdentifier.getUniqueIdObject());
+  public TestExecutionStatus runTest(ScenarioIdentifier scenarioIdentifier) {
+    UniqueIdSelector selector = DiscoverySelectors.selectUniqueId(scenarioIdentifier.uniqueId());
+    return runTests(List.of(selector));
+  }
+
+  protected TestExecutionStatus runTests(List<? extends DiscoverySelector> selectors) {
     var initialConfiguration =
         TigerGlobalConfiguration.readMap(
             TigerConfigurationKeys.CUCUMBER_ENGINE_RUNTIME_CONFIGURATION.downsampleKey());
     initialConfiguration.put(EXECUTION_DRY_RUN_PROPERTY_NAME, "false");
-    LauncherDiscoveryRequest rerunRequest =
-        request().selectors(selector).configurationParameters(initialConfiguration).build();
+    val uuidForThisRun = UUID.randomUUID();
+    LauncherDiscoveryRequest runRequest =
+        request().selectors(selectors).configurationParameters(initialConfiguration).build();
 
-    scenarioExecutionService.execute(
-        () -> {
-          Launcher launcher = LauncherFactory.create();
-          launcher.execute(rerunRequest);
-        });
+    Launcher launcher = LauncherFactory.create();
+    TestPlan testPlan = launcher.discover(runRequest);
+
+    val summaryListener = new TigerSummaryListener(testPlan);
+    val testExecutionStatus = new TestExecutionStatus(uuidForThisRun, testPlan, summaryListener);
+    testExecutionResults.put(uuidForThisRun, testExecutionStatus);
+    scenarioExecutionService.execute(() -> launcher.execute(testPlan, summaryListener));
+    return testExecutionStatus;
   }
 
   public static UniqueId findScenarioUniqueId(
@@ -154,6 +191,39 @@ public class ScenarioRunner {
         .getUniqueIdObject();
   }
 
+  private boolean sameFile(TestIdentifier test, String filePath) {
+    return test.getSource()
+        .map(
+            source -> {
+              if (source instanceof FileSource fileSource) {
+                return fileSource.getUri().normalize().toString().equals(filePath);
+              } else if (source instanceof ClasspathResourceSource classpathResourceSource) {
+                return ("classpath:" + classpathResourceSource.getClasspathResourceName())
+                    .equals(filePath);
+              } else {
+                return false;
+              }
+            })
+        .orElse(false);
+  }
+
+  private boolean anyFileMatches(List<String> files, TestIdentifier test) {
+    return files.stream().anyMatch(f -> sameFile(test, f));
+  }
+
+  private boolean anyTagMatches(List<String> tags, TestIdentifier test) {
+    return tags.stream()
+        .anyMatch(t -> test.getTags().stream().map(TestTag::getName).toList().contains(t));
+  }
+
+  private boolean anyUniqueIdMatches(List<String> uniqueIds, TestIdentifier test) {
+    return uniqueIds.stream().anyMatch(u -> test.getUniqueId().equals(u));
+  }
+
+  public Optional<TestExecutionStatus> getTestResults(UUID testRunId) {
+    return Optional.ofNullable(testExecutionResults.get(testRunId));
+  }
+
   public record ScenarioIdentifier(String uniqueId) {}
 
   public record ScenarioLocation(URI featurePath, Location testVariantLocation) {
@@ -161,6 +231,21 @@ public class ScenarioRunner {
       return FilePosition.from(
           testVariantLocation.getLine().intValue(),
           testVariantLocation.getColumn().orElseThrow().intValue());
+    }
+  }
+
+  public static Set<TestIdentifier> getScenarios() {
+    return Collections.unmodifiableSet(scenarios);
+  }
+
+  public record TestExecutionStatus(
+      UUID testRunId, TestPlan testPlan, TigerSummaryListener testSummaryListener) {
+    public TestExecutionSummary getSummary() {
+      return testSummaryListener.getSummary();
+    }
+
+    public List<TigerSummaryListener.TestResultWithId> getIndividualTestResults() {
+      return testSummaryListener.getIndividualTestResults();
     }
   }
 }

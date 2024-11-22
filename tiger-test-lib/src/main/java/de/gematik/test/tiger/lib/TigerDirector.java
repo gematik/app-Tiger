@@ -314,6 +314,7 @@ public class TigerDirector {
     properties.put("server.port", TESTENV_MGR_RESERVED_PORT.getValueOrDefault());
     properties.put("spring.mustache.enabled", false); // TGR-875 avoid warning in console
     properties.put("spring.mustache.check-template-location", false);
+    properties.putAll(TigerTestEnvMgr.getTigerLibConfiguration());
 
     envMgrApplicationContext =
         new SpringApplicationBuilder()

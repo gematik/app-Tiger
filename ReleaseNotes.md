@@ -1,6 +1,11 @@
 # Changelog Tiger Test platform
 
-# Release 3.4.5
+# Release 3.4.6
+
+## Features
+
+* TGR-1464: Rest API: Tiger has now an API which allows the starting of specific tests and the retrievel of the test
+  results via REST.
 
 ## Bugfixes
 

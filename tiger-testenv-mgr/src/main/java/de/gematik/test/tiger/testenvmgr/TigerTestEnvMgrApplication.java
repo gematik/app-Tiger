@@ -37,6 +37,7 @@ public class TigerTestEnvMgrApplication implements ServletContextListener {
     Map<String, Object> properties = TigerTestEnvMgr.getConfiguredLoggingLevels();
     properties.put("spring.mustache.enabled", false); // TGR-875 avoid warning in console
     properties.put("spring.mustache.check-template-location", false);
+    properties.putAll(TigerTestEnvMgr.getTigerLibConfiguration());
     new SpringApplicationBuilder()
         .bannerMode(Mode.OFF)
         .properties(properties)

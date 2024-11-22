@@ -1,0 +1,307 @@
+openapi: 3.1.0
+info:
+  title: Tiger Management API
+  description: API for managing the tiger test environment. You can start tests and retrieve the test results.
+  contact:
+    name: gematik
+    email: software-development@gematik.de
+    url: https://github.com/gematik/app-Tiger/
+  license:
+    name: Apache License 2.0
+    url: https://github.com/gematik/app-Tiger/blob/master/LICENSE
+  version: 1.0.0
+tags:
+  - name: tests
+    description: start tests and retrieve test results
+servers:
+  - url: http://localhost:{port}
+    description: Local server
+    variables:
+      port:
+        default: '8080'
+paths:
+  /tests:
+    get:
+      tags:
+        - tests
+      summary: get list of available tests
+      description: gets the list of available tests that were discovered by the JUnit Platform.
+      operationId: getAvailableTests
+      responses:
+        '200':
+          description: List of available tests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TestDescription'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        default:
+          $ref: '#/components/responses/DefaultResponse'
+  /tests/runs:
+    post:
+      tags:
+        - tests
+      summary: request the execution of a selection of tests
+      description: >
+        sends a request for the execution of a selection of tests. The tests to be executed are specified with a TestExecutionRequest which includes uniqueIds, tags and file paths. 
+        The execution request is queued for execution and will be executed as soon as any previously running tests finish. The response includes the id of the test run and the url where to find the results of the execution.
+      operationId: postExecutionRequest
+      requestBody:
+        description: test execution request
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestExecutionRequest'
+        required: true
+      responses:
+        '202':
+          description: Request was received and test run is started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestExecutionInformation'
+          links:
+            GetTestResultsByTestRunId:
+              operationId: getTestResults
+              parameters:
+                testRunId: '$response.body#/testRunId'
+              description: >
+                The `testRunId` value returned in the response can be used as
+                the `testRunId` parameter in `GET /tests/runs/{testRunId}`.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        default:
+          $ref: '#/components/responses/DefaultResponse'
+  /tests/runs/all:
+    post:
+      tags:
+        - tests
+      summary: request execution of all tests
+      description: sends a request for the execution of all tests.
+        The execution request is queued for execution and will be executed as soon as any previously running tests finish. The response includes the id of the test run and the url where to find the results of the execution.
+      operationId: postExecutionRequestAllTests
+      responses:
+        '202':
+          description: Request was received and test run is started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestExecutionInformation'
+          links:
+            GetTestResultsByTestRunId:
+              operationId: getTestResults
+              parameters:
+                testRunId: '$response.body#/testRunId'
+              description: >
+                The `testRunId` value returned in the response can be used as
+                the `testRunId` parameter in `GET /tests/runs/{testRunId}`.
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        default:
+          $ref: '#/components/responses/DefaultResponse'
+  /tests/runs/{testRunId}:
+    get:
+      tags:
+        - tests
+      summary: get the results of a test run
+      description: >
+        gets the results of a test run. This includes a global test result and 
+        the results for each test case. In case of failing tests, the failure message is also included.
+      operationId: getTestResults
+      parameters:
+        - in: path
+          name: testRunId
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: testRunId for which to get the test results
+      responses:
+        '200':
+          description: the test results for the given testRunId
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestExecutionResult'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        default:
+          $ref: '#/components/responses/DefaultResponse'
+components:
+  responses:
+    DefaultResponse:
+      description: 'The default error response'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            errorCode: '418'
+            errorMessage: 'Example default message'
+    NotFound:
+      description: 'The specified resource was not found'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            errorCode: '404'
+            errorMessage: 'The specified resource was not found'
+    InternalServerError:
+      description: 'Something went wrong server internally'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            errorCode: '500'
+            errorMessage: 'Something went wrong internally'
+    BadRequest:
+      description: 'Bad Request'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            errorCode: '400'
+            errorMessage: 'Bad Request'
+
+  schemas:
+    ExecutionResult:
+      description: the result of an executed test
+      type: object
+      properties:
+        result:
+          type: string
+          enum:
+            - PENDING
+            - RUNNING
+            - SUCCESSFUL
+            - ABORTED
+            - FAILED
+        failureMessage:
+          type: string
+          examples:
+            - Assertion Error - expected X but was Y
+      required:
+        - result
+    TestDescription:
+      description: The description of a test case
+      type: object
+      properties:
+        uniqueId:
+          type: string
+          description: unique identifier of the tests which is generated by the test platform.
+          examples:
+            - '[engine:cucumber]/[feature:file%3A%2FC%3A%2Frepos%2Ftiger%2Ftiger-test-lib%2Fsrc%2Ftest%2Fresources%2Ffeatures%2Ftiger-test-lib%2FtestCustomFailMessage.feature]/[scenario:3]'
+        sourceFile:
+          type: string
+          description: source file from where the test was discovered
+          examples:
+            - 'C:\repos\tiger\tiger-test-lib\src\test\resources\features\tiger-test-lib\testCustomFailMessage.feature'
+            - 'classpath:features/tiger-test-lib/testCustomFailMessage.feature'
+        displayName:
+          type: string
+          description: display name of the test
+          examples:
+            - Test custom fail message
+        tags:
+          type: array
+          description: tags associated with the test as specified in the feature file
+          items:
+            type: string
+          examples:
+            - [ 'smoke', 'regression' ]
+          uniqueItems: true
+    TestExecutionRequest:
+      description: >
+        Request the execution of a subset of tests. Multiple specifications will be combined with AND.
+        If one of the tags, sourceFiles, or testUniqueIds is an empty list, it will not be considered in the selection of tests.
+        If all are empty, all tests are selected.
+      type: object
+      properties:
+        tags:
+          type: array
+          items:
+            type: string
+          examples:
+            - [ 'smoke', 'regression' ]
+        sourceFiles:
+          type: array
+          items:
+            type: string
+          examples:
+            - [ 'C:\repos\tiger\tiger-test-lib\src\test\resources\features\tiger-test-lib\testCustomFailMessage.feature','classpath:features/tiger-test-lib/testCustomFailMessage.feature' ]
+        testUniqueIds:
+          description: the unique ids generated by the test platform. See the endpoint `GET /tests` for the available tests.
+          type: array
+          items:
+            type: string
+            examples:
+              - '[engine:cucumber]/[feature:file%3A%2FC%3A%2Frepos%2Ftiger%2Ftiger-test-lib%2Fsrc%2Ftest%2Fresources%2Ffeatures%2Ftiger-test-lib%2FtestCustomFailMessage.feature]/[scenario:3]'
+    TestExecutionInformation:
+      description: information of which tests were started and where to find the results of the test run
+      type: object
+      properties:
+        testRunId:
+          type: string
+          format: uuid
+        resultUrl:
+          type: string
+          format: uri
+        testsToExecute:
+          type: array
+          items:
+            $ref: '#/components/schemas/TestDescription'
+
+    TestExecutionResult:
+      description: the result of the executed tests
+      type: object
+      properties:
+        testRunStarted:
+          type: string
+          format: date-time
+        testRunFinished:
+          type: string
+          format: date-time
+        result:
+          $ref: '#/components/schemas/ExecutionResult'
+        tests:
+          type: array
+          items:
+            type: object
+            properties:
+              test:
+                $ref: '#/components/schemas/TestDescription'
+              result:
+                $ref: '#/components/schemas/ExecutionResult'
+    Error:
+      description: 'Default error object with information about the occurred error'
+      type: object
+      properties:
+        errorCode:
+          description: 'A code identifying this error'
+          type: string
+        errorMessage:
+          description: 'A readable message describing the error'
+          type: string
+      required:
+        - errorCode
+        - errorMessage

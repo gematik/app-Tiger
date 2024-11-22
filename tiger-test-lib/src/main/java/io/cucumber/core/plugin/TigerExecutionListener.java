@@ -22,11 +22,8 @@ import static org.awaitility.Awaitility.await;
 
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.platform.launcher.TestExecutionListener;
@@ -45,7 +42,7 @@ public class TigerExecutionListener implements TestExecutionListener {
 
   @Override
   public void testPlanExecutionStarted(TestPlan testPlan) {
-    ScenarioRunner.addScenarios(collectScenarios(testPlan));
+    ScenarioRunner.addScenarios(testPlan);
   }
 
   @Override
@@ -74,26 +71,5 @@ public class TigerExecutionListener implements TestExecutionListener {
     if (testIdentifier.isTest()) {
       ScenarioRunner.addScenarios(List.of(testIdentifier));
     }
-  }
-
-  public Set<TestIdentifier> collectScenarios(TestPlan testPlan) {
-    var roots = testPlan.getRoots();
-
-    return roots.stream()
-        .map(r -> collectScenarios(testPlan, r))
-        .flatMap(Set::stream)
-        .collect(Collectors.toSet());
-  }
-
-  public Set<TestIdentifier> collectScenarios(TestPlan testplan, TestIdentifier root) {
-    var result = new HashSet<TestIdentifier>();
-    for (TestIdentifier child : testplan.getChildren(root.getUniqueIdObject())) {
-      if (child.isContainer()) {
-        result.addAll(collectScenarios(testplan, child));
-      } else {
-        result.add(child);
-      }
-    }
-    return result;
   }
 }

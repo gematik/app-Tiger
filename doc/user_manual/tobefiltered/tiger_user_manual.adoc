@@ -71,6 +71,26 @@ include::tigerExtensions.adoc[]
 
 <<<
 
+## Rest API
+
+The tiger test environment provides a Rest API which allows the automation of the execution of tests and retrieval of the corresponding test results.
+
+The Rest API is active by default.
+You can disable it by setting the following configuration entry in the tiger.yaml
+
+[source,yaml]
+----
+lib:
+    enableTestManagementRestApi: false # set to false to disable the Rest API. default is true
+----
+
+The following section provides an overview of the available endpoints and their functionality.
+Additionally, the OpenApi specification yaml can be found in the https://github.com/gematik/app-Tiger/blob/master/tiger-testenv-mgr/src/main/resources/tiger-management-api.yaml[tiger repository].
+
+include::rest_api/index.adoc[leveloffset=+2,lines=2..-1]
+
+<<<
+
 == Links to test relevant topics
 
 * 3-Amigos
