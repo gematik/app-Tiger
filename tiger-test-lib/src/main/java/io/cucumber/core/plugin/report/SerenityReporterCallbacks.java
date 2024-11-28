@@ -261,10 +261,7 @@ public class SerenityReporterCallbacks {
     log.debug("Current row for scenario variant {} {}", dataVariantIndex, variantDataMap);
     String scenarioUniqueId =
         ScenarioRunner.findScenarioUniqueId(
-                scenario,
-                context.currentFeaturePath(),
-                context.isAScenarioOutline(),
-                dataVariantIndex)
+                context.currentFeaturePath(), convertLocation(testCase.getLocation()))
             .toString();
     ScenarioUpdate scenarioUpdate =
         ScenarioUpdate.builder()
@@ -331,12 +328,11 @@ public class SerenityReporterCallbacks {
 
   private static @NotNull Optional<TableRow> findExampleRow(
       int dataVariantIndex, List<Examples> examples) {
-    return Streams.mapWithIndex(
-            examples.stream().map(Examples::getTableBody).flatMap(List::stream),
-            Pair::of) // (tableRow, index)
-        .filter(pair -> pair.getRight() == dataVariantIndex)
-        .findFirst()
-        .map(Pair::getLeft);
+    return examples.stream()
+        .map(Examples::getTableBody)
+        .flatMap(List::stream)
+        .skip(dataVariantIndex)
+        .findFirst();
   }
 
   private String replaceOutlineParameters(
@@ -448,20 +444,25 @@ public class SerenityReporterCallbacks {
     shouldWaitIfInPauseMode();
     shouldAbortTestExecution();
 
-    if (!(event.getTestStep() instanceof HookTestStep)
-        && event.getTestStep() instanceof PickleStepTestStep pickleTestStep) {
-      boolean isDryRun = TestCaseDelegate.of(event.getTestCase()).isDryRun();
-      String statusName =
-          isDryRun ? TestResult.TEST_DISCOVERED.name() : TestResult.EXECUTING.name();
-      int dataVariantIndex = extractScenarioDataVariantIndex(context, event.getTestCase());
-      informWorkflowUiAboutCurrentStep(
-          pickleTestStep, statusName, context, isDryRun, dataVariantIndex);
+    TestStep testStep = event.getTestStep();
+    if (!(testStep instanceof HookTestStep) && testStep instanceof PickleStepTestStep) {
+      var result = TestResult.EXECUTING.name();
+      var testCase = event.getTestCase();
+      updateStepInformation(context, testCase, testStep, result);
     }
 
     if (context.getCurrentStep() != null) {
       evidenceRecorder.openStepContext(
           new ReportStepConfiguration(getStepDescription(context.getCurrentStep(), true, false)));
     }
+  }
+
+  private void updateStepInformation(
+      ScenarioContextDelegate context, TestCase testCase, TestStep testStep, String result) {
+    var dryRun = TestCaseDelegate.of(testCase).isDryRun();
+    var status = dryRun ? TestResult.TEST_DISCOVERED.name() : result;
+    int dataVariantIndex = extractScenarioDataVariantIndex(context, testCase);
+    informWorkflowUiAboutCurrentStep(context, testCase, testStep, status, dryRun, dataVariantIndex);
   }
 
   private void addBannerMessageToUpdate(
@@ -499,19 +500,17 @@ public class SerenityReporterCallbacks {
   public void handleTestStepFinished(TestStepFinished event, ScenarioContextDelegate context) {
     if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) return;
 
-    if (!(event.getTestStep() instanceof HookTestStep)) {
+    TestStep testStep = event.getTestStep();
+    if (!(testStep instanceof HookTestStep)) {
       if (TigerDirector.getLibConfig().isAddCurlCommandsForRaCallsToReport()
           && TigerDirector.isSerenityAvailable()
           && TigerDirector.getCurlLoggingFilter() != null) {
         TigerDirector.getCurlLoggingFilter().printToReport();
       }
       if (context.getCurrentStep() != null) {
-        boolean isDryRun = TestCaseDelegate.of(event.getTestCase()).isDryRun();
-        String statusName =
-            isDryRun ? TestResult.TEST_DISCOVERED.name() : event.getResult().getStatus().name();
-        int dataVariantIndex = extractScenarioDataVariantIndex(context, event.getTestCase());
-        informWorkflowUiAboutCurrentStep(
-            event.getTestStep(), statusName, context, isDryRun, dataVariantIndex);
+        var result = event.getResult().getStatus().name();
+        var testCase = event.getTestCase();
+        updateStepInformation(context, testCase, testStep, result);
 
         if (TigerDirector.isSerenityAvailable()) {
           addStepEvidence();
@@ -535,14 +534,15 @@ public class SerenityReporterCallbacks {
   }
 
   private void informWorkflowUiAboutCurrentStep(
-      TestStep event,
-      String status,
       ScenarioContextDelegate context,
+      TestCase testCase,
+      TestStep testStep,
+      String status,
       boolean isDryRun,
       int variantDataIndex) {
 
     Scenario scenario = context.getCurrentScenarioDefinition();
-    PickleStepTestStep pickleTestStep = (PickleStepTestStep) event;
+    PickleStepTestStep pickleTestStep = (PickleStepTestStep) testStep;
 
     Optional<Feature> feature = featureFrom(context.currentFeaturePath());
     var steps = getStepsIncludingBackgroundFromFeatureForScenario(feature.orElseThrow(), scenario);
@@ -565,10 +565,7 @@ public class SerenityReporterCallbacks {
 
     String scenarioUniqueId =
         ScenarioRunner.findScenarioUniqueId(
-                scenario,
-                context.currentFeaturePath(),
-                context.isAScenarioOutline(),
-                variantDataIndex)
+                context.currentFeaturePath(), convertLocation(testCase.getLocation()))
             .toString();
 
     Step currentStep = context.getCurrentStep();
@@ -604,13 +601,17 @@ public class SerenityReporterCallbacks {
   }
 
   private static int findStepIndex(io.cucumber.plugin.event.Location location, List<Step> steps) {
-    var loc = new LocationConverter().convertLocation(location);
+    var loc = convertLocation(location);
     return Streams.mapWithIndex(steps.stream().map(Step::getLocation), Pair::of)
         .filter(pair -> pair.getLeft().equals(loc))
         .findFirst()
         .map(Pair::getRight)
         .map(Math::toIntExact)
         .orElse(-1);
+  }
+
+  private static Location convertLocation(io.cucumber.plugin.event.Location location) {
+    return new LocationConverter().convertLocation(location);
   }
 
   private static String tryResolvePlaceholders(String input) {

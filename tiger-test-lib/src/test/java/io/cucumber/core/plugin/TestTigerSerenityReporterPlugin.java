@@ -30,6 +30,7 @@ import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioUpdate;
 import de.gematik.test.tiger.testenvmgr.env.TestResult;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import io.cucumber.core.plugin.report.LocationConverter;
 import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
 import io.cucumber.plugin.event.Argument;
 import io.cucumber.plugin.event.Location;
@@ -139,10 +140,7 @@ public class TestTigerSerenityReporterPlugin {
     assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
     Map<String, ScenarioUpdate> scenarios = status.getFeatureMap().get(featureName).getScenarios();
     assertThat(scenarios).hasSize(1);
-    String scenarioId =
-        ScenarioRunner.findScenarioUniqueId(
-                listener.getContext().currentScenarioDefinition, featureUri, false, -1)
-            .toString();
+    String scenarioId = findScenarioId(startedEvent.getTestCase());
     assertThat(scenarios.get(scenarioId).getDescription()).isEqualTo(scenarioName);
   }
 
@@ -176,10 +174,7 @@ public class TestTigerSerenityReporterPlugin {
     assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
     Map<String, ScenarioUpdate> scenarios = status.getFeatureMap().get(featureName).getScenarios();
     assertThat(scenarios).hasSize(1);
-    var scenario1Id =
-        ScenarioRunner.findScenarioUniqueId(
-                listener.getContext().currentScenarioDefinition, featureUri, true, 0)
-            .toString();
+    var scenario1Id = findScenarioId(startedEvent.getTestCase());
     var scenario1 = scenarios.get(scenario1Id);
     assertThat(scenario1.getDescription()).isEqualTo(scenarioOutlineName);
     assertThat(scenario1.getVariantIndex()).isZero();
@@ -201,10 +196,7 @@ public class TestTigerSerenityReporterPlugin {
     status = envStatusController.getStatus();
     scenarios = status.getFeatureMap().get(featureName).getScenarios();
     assertThat(scenarios).hasSize(2);
-    var scenario2Id =
-        ScenarioRunner.findScenarioUniqueId(
-                listener.getContext().currentScenarioDefinition, featureUri, true, 1)
-            .toString();
+    var scenario2Id = findScenarioId(startedEvent.getTestCase());
     var scenario2 = scenarios.get(scenario2Id);
 
     assertThat(scenario1.getDescription()).isEqualTo(scenarioOutlineName);
@@ -254,10 +246,7 @@ public class TestTigerSerenityReporterPlugin {
 
     TigerEnvStatusDto status = envStatusController.getStatus();
     assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
-    String scenarioUniqueId =
-        ScenarioRunner.findScenarioUniqueId(
-                listener.getContext().currentScenarioOutline(), featureUri, false, -1)
-            .toString();
+    String scenarioUniqueId = findScenarioId(testCase);
     ScenarioUpdate scenario =
         status.getFeatureMap().get(featureName).getScenarios().get(scenarioUniqueId);
     // steps 0 and 1 are background steps
@@ -323,10 +312,7 @@ public class TestTigerSerenityReporterPlugin {
     TigerEnvStatusDto status = envStatusController.getStatus();
     assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
 
-    String scenarioUniqueId =
-        ScenarioRunner.findScenarioUniqueId(
-                listener.getContext().currentScenarioOutline(), featureUri, false, -1)
-            .toString();
+    String scenarioUniqueId = findScenarioId(testCase);
     ScenarioUpdate scenario =
         status.getFeatureMap().get(featureName).getScenarios().get(scenarioUniqueId);
 
@@ -334,6 +320,12 @@ public class TestTigerSerenityReporterPlugin {
 
     assertThat(listener.getReporterCallbacks().getScFailed()).isEqualTo(1);
     assertThat(listener.getReporterCallbacks().getScPassed()).isZero();
+  }
+
+  private String findScenarioId(TestCase testCase) {
+    return ScenarioRunner.findScenarioUniqueId(
+            featureUri, new LocationConverter().convertLocation(testCase.getLocation()))
+        .toString();
   }
 
   @Data
@@ -426,7 +418,7 @@ public class TestTigerSerenityReporterPlugin {
 
     @Override
     public Location getLocation() {
-      return new Location(60, 13);
+      return new Location(60, 3);
     }
 
     @Override

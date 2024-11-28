@@ -19,22 +19,18 @@ package de.gematik.test.tiger.testenvmgr.env;
 import static io.cucumber.core.options.Constants.EXECUTION_DRY_RUN_PROPERTY_NAME;
 import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.request;
 
-import com.google.common.collect.Streams;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.api.model.TestExecutionRequestDto;
 import de.gematik.test.tiger.testenvmgr.util.ScenarioCollector;
-import io.cucumber.messages.types.Examples;
 import io.cucumber.messages.types.Location;
-import io.cucumber.messages.types.Scenario;
-import io.cucumber.messages.types.TableRow;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -43,7 +39,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.platform.engine.DiscoverySelector;
 import org.junit.platform.engine.TestSource;
 import org.junit.platform.engine.TestTag;
@@ -115,34 +110,8 @@ public class ScenarioRunner {
     scenarios.clear();
   }
 
-  private static boolean doesLocationMatch(
-      TestIdentifier testIdentifier, ScenarioLocation scenarioLocation) {
-    TestSource testSource = testIdentifier.getSource().orElseThrow();
-    if (testSource instanceof FileSource fileSource) {
-      return areUrisSameFile(fileSource.getUri(), scenarioLocation.featurePath())
-          && fileSource.getPosition().orElseThrow().equals(scenarioLocation.filePosition());
-    } else if (testSource instanceof ClasspathResourceSource classpathSource) {
-      return ("classpath:" + classpathSource.getClasspathResourceName())
-              .equals(scenarioLocation.featurePath().toString())
-          && classpathSource.getPosition().orElseThrow().equals(scenarioLocation.filePosition());
-    } else {
-      return false;
-    }
-  }
-
   private static boolean areUrisSameFile(URI uri1, URI uri2) {
-    return uri1.normalize().equals(uri2.normalize());
-  }
-
-  public static Optional<TestIdentifier> findScenarioByLocation(ScenarioLocation scenarioLocation) {
-    return scenarios.stream().filter(s -> doesLocationMatch(s, scenarioLocation)).findAny();
-  }
-
-  public static Optional<TestIdentifier> findScenarioByUniqueId(
-      ScenarioIdentifier scenarioIdentifier) {
-    return scenarios.stream()
-        .filter(s -> Objects.equals(scenarioIdentifier.uniqueId(), s.getUniqueId()))
-        .findAny();
+    return uri1.normalize().getPath().equals(uri2.normalize().getPath());
   }
 
   public TestExecutionStatus runTest(ScenarioIdentifier scenarioIdentifier) {
@@ -169,25 +138,13 @@ public class ScenarioRunner {
     return testExecutionStatus;
   }
 
-  public static UniqueId findScenarioUniqueId(
-      Scenario scenario, URI featurePath, boolean isOutline, int scenarioDataVariantIndex) {
-    ScenarioRunner.ScenarioLocation scenarioLocation;
-    if (isOutline) {
-      var exampleLocation =
-          Streams.mapWithIndex(
-                  scenario.getExamples().stream().map(Examples::getTableBody).flatMap(List::stream),
-                  Pair::of) // (tableRow, index)
-              .filter(pair -> pair.getRight() == scenarioDataVariantIndex)
-              .map(Pair::getLeft)
-              .map(TableRow::getLocation)
-              .findFirst()
-              .orElseThrow();
-      scenarioLocation = new ScenarioRunner.ScenarioLocation(featurePath, exampleLocation);
-    } else {
-      scenarioLocation = new ScenarioRunner.ScenarioLocation(featurePath, scenario.getLocation());
-    }
-    return ScenarioRunner.findScenarioByLocation(scenarioLocation)
-        .orElseThrow()
+  public static UniqueId findScenarioUniqueId(URI featurePath, Location location) {
+    ScenarioLocation scenarioLocation = new ScenarioLocation(featurePath, location);
+    return scenarios.stream()
+        .filter(scenarioLocation::matches)
+        .findAny()
+        .orElseThrow(
+            () -> new NoSuchElementException("No scenario found matching " + scenarioLocation))
         .getUniqueIdObject();
   }
 
@@ -230,7 +187,40 @@ public class ScenarioRunner {
     public FilePosition filePosition() {
       return FilePosition.from(
           testVariantLocation.getLine().intValue(),
-          testVariantLocation.getColumn().orElseThrow().intValue());
+          testVariantLocation
+              .getColumn()
+              .orElseThrow(() -> new RuntimeException("No column available for " + this))
+              .intValue());
+    }
+
+    public boolean matches(TestIdentifier testIdentifier) {
+      TestSource testSource =
+          testIdentifier
+              .getSource()
+              .orElseThrow(
+                  () ->
+                      new IllegalArgumentException(
+                          "No Test source available for " + testIdentifier));
+      if (testSource instanceof FileSource fileSource) {
+        return areUrisSameFile(fileSource.getUri(), featurePath())
+            && fileSource
+                .getPosition()
+                .orElseThrow(
+                    () -> new IllegalArgumentException("No position available for " + fileSource))
+                .equals(filePosition());
+      } else if (testSource instanceof ClasspathResourceSource classpathSource) {
+        return ("classpath:" + classpathSource.getClasspathResourceName())
+                .equals(featurePath().toString())
+            && classpathSource
+                .getPosition()
+                .orElseThrow(
+                    () ->
+                        new IllegalArgumentException(
+                            "No position available for " + classpathSource))
+                .equals(filePosition());
+      } else {
+        return false;
+      }
     }
   }
 
