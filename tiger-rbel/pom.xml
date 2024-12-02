@@ -141,7 +141,12 @@
             <artifactId>apache-mime4j-dom</artifactId>
             <version>0.8.11</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.unboundid</groupId>
+            <artifactId>unboundid-ldapsdk</artifactId>
+            <version>7.0.1</version>
+        </dependency>
+        
         <dependency>
             <groupId>eu.europa.ec.joinup.sd-dss</groupId>
             <artifactId>dss-pades</artifactId>
