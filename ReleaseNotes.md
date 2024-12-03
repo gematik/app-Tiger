@@ -12,6 +12,8 @@
 ## Bugfixes
 
 * KOB-6: Fixed an issue where https-destinations could not be used as one of multiple "to"-targets.
+* TGR-1643: Treat testcases that have not been run (in case that lib.runTestsOnStart is false)
+  as SKIPPED/IGNORED instead of PASSED in Serenity test report.
 
 # Release 3.4.5
 

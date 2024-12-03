@@ -82,14 +82,30 @@ public class TigerSerenityReporterPlugin extends SerenityReporter {
   @Override
   protected void handleTestStepFinished(TestStepFinished event) {
     FailMessageOverrider.overrideFailureMessage(event);
+    if (TestCaseDelegate.of(event.getTestCase()).isDryRun()) {
+      event =
+          new TestStepFinished(
+              event.getInstant(),
+              event.getTestCase(),
+              event.getTestStep(),
+              new Result(
+                  Status.SKIPPED, event.getResult().getDuration(), event.getResult().getError()));
+    }
     reporterCallbacks.handleTestStepFinished(event, getScenarioContextDelegate());
     super.handleTestStepFinished(event);
   }
 
   @Override
   protected void handleTestCaseFinished(TestCaseFinished event) {
+    if (TestCaseDelegate.of(event.getTestCase()).isDryRun()) {
+      event =
+          new TestCaseFinished(
+              event.getInstant(),
+              event.getTestCase(),
+              new Result(
+                  Status.SKIPPED, event.getResult().getDuration(), event.getResult().getError()));
+    }
     reporterCallbacks.handleTestCaseFinished(event, getScenarioContextDelegate());
-
     super.handleTestCaseFinished(event);
   }
 
