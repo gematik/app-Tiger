@@ -6,7 +6,8 @@
 
 * TGR-1464: Rest API: Tiger has now an API which allows the starting of specific tests and the retrievel of the test
   results via REST.
-* TGR-1660: Change notification for jenkins release 
+* TGR-1548: TigerSerenityReporterPlugin is now based on the class SerenityReporterParallel
+* TGR-1660: Change notification for jenkins release
 * TGR-1618: RbelParser: Added support for LDAP messages.
 
 ## Bugfixes

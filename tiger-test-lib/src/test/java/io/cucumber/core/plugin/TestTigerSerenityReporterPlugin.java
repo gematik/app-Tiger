@@ -80,7 +80,7 @@ public class TestTigerSerenityReporterPlugin {
   private final String scenarioOutlineId = "6223db6e-708e-4c3f-ab11-1373b7e94ad7";
   private final String scenarioOutlineName = "Auth - Fehlende Parameter alle anderen";
   private final String featureFilePath =
-      "src/test/resources/testdata/parser/bdd/authentication.feature";
+      "src/test/resources/testdata/parser/bdd/features/authentication.feature";
   private final URI featureUri = new File(featureFilePath).toURI();
 
   @BeforeAll
@@ -120,28 +120,27 @@ public class TestTigerSerenityReporterPlugin {
             Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
     listener.handleTestSourceRead(event);
 
-    assertThat(listener.getContext().currentFeaturePath()).isNull();
-
     TestcaseAdapter testCase = new TestcaseAdapter();
     TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(), testCase);
 
     listener.handleTestCaseStarted(startedEvent);
-    assertThat(listener.getContext().currentFeaturePath()).isEqualTo(featureUri);
 
-    assertThat(listener.getContext().currentScenarioDefinition.getName()).isEqualTo(scenarioName);
+    String scenarioId = listener.getReporterCallbacks().scenarioIdFrom(testCase);
+    assertThat(listener.getContext(featureUri).getCurrentScenarioDefinition(scenarioId).getName())
+        .isEqualTo(scenarioName);
     assertThat(
             listener
                 .getReporterCallbacks()
                 .extractScenarioDataVariantIndex(
-                    new ScenarioContextDelegate(listener.getContext()), testCase))
+                    listener.getScenarioContextDelegate(featureUri), testCase))
         .isEqualTo(-1);
 
     TigerEnvStatusDto status = envStatusController.getStatus();
     assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
     Map<String, ScenarioUpdate> scenarios = status.getFeatureMap().get(featureName).getScenarios();
     assertThat(scenarios).hasSize(1);
-    String scenarioId = findScenarioId(startedEvent.getTestCase());
-    assertThat(scenarios.get(scenarioId).getDescription()).isEqualTo(scenarioName);
+    String scenarioUniqueId = findScenarioUniqueId(startedEvent.getTestCase());
+    assertThat(scenarios.get(scenarioUniqueId).getDescription()).isEqualTo(scenarioName);
   }
 
   @Test
@@ -150,14 +149,13 @@ public class TestTigerSerenityReporterPlugin {
         new TestSourceRead(
             Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
     listener.handleTestSourceRead(event);
-    assertThat(listener.getContext().currentFeaturePath()).isNull();
 
     TestCaseStarted startedEvent =
         new TestCaseStarted(Instant.now(), new ScenarioOutlineTestCaseAdapter());
     listener.handleTestCaseStarted(startedEvent);
-    assertThat(listener.getContext().currentFeaturePath()).isEqualTo(featureUri);
 
-    assertThat(listener.getContext().getTable().getHeaders())
+    String scenarioId = listener.getReporterCallbacks().scenarioIdFrom(startedEvent.getTestCase());
+    assertThat(listener.getContext(featureUri).getTable(scenarioId).getHeaders())
         .contains(
             "http_code",
             "err_id",
@@ -174,15 +172,15 @@ public class TestTigerSerenityReporterPlugin {
     assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
     Map<String, ScenarioUpdate> scenarios = status.getFeatureMap().get(featureName).getScenarios();
     assertThat(scenarios).hasSize(1);
-    var scenario1Id = findScenarioId(startedEvent.getTestCase());
-    var scenario1 = scenarios.get(scenario1Id);
+    var scenario1UniqueId = findScenarioUniqueId(startedEvent.getTestCase());
+    var scenario1 = scenarios.get(scenario1UniqueId);
     assertThat(scenario1.getDescription()).isEqualTo(scenarioOutlineName);
     assertThat(scenario1.getVariantIndex()).isZero();
 
     ScenarioOutlineTestCaseAdapter testCase =
         (ScenarioOutlineTestCaseAdapter) startedEvent.getTestCase();
 
-    ScenarioContextDelegate context = new ScenarioContextDelegate(listener.getContext());
+    ScenarioContextDelegate context = listener.getScenarioContextDelegate(featureUri);
     SerenityReporterCallbacks reporterCallbacks = listener.getReporterCallbacks();
 
     assertThat(reporterCallbacks.extractScenarioDataVariantIndex(context, testCase)).isZero();
@@ -196,8 +194,8 @@ public class TestTigerSerenityReporterPlugin {
     status = envStatusController.getStatus();
     scenarios = status.getFeatureMap().get(featureName).getScenarios();
     assertThat(scenarios).hasSize(2);
-    var scenario2Id = findScenarioId(startedEvent.getTestCase());
-    var scenario2 = scenarios.get(scenario2Id);
+    var scenario2UniqueId = findScenarioUniqueId(startedEvent.getTestCase());
+    var scenario2 = scenarios.get(scenario2UniqueId);
 
     assertThat(scenario1.getDescription()).isEqualTo(scenarioOutlineName);
     assertThat(scenario1.getVariantIndex()).isZero();
@@ -225,7 +223,8 @@ public class TestTigerSerenityReporterPlugin {
 
     TestStepStarted stepStartedEvent1 = new TestStepStarted(Instant.now(), testCase, testStep1);
     listener.handleTestStepStarted(stepStartedEvent1);
-    assertThat(listener.getContext().getCurrentStep().getLocation().getLine()).isEqualTo(71);
+    assertThat(listener.getContext(featureUri).getCurrentStep(testCase).getLocation().getLine())
+        .isEqualTo(71);
     listener.handleTestStepFinished(
         new TestStepFinished(
             Instant.now(),
@@ -235,7 +234,8 @@ public class TestTigerSerenityReporterPlugin {
 
     TestStepStarted stepStartedEvent2 = new TestStepStarted(Instant.now(), testCase, testStep2);
     listener.handleTestStepStarted(stepStartedEvent2);
-    assertThat(listener.getContext().getCurrentStep().getLocation().getLine()).isEqualTo(73);
+    assertThat(listener.getContext(featureUri).getCurrentStep(testCase).getLocation().getLine())
+        .isEqualTo(73);
     listener.handleTestStepFinished(
         new TestStepFinished(
             Instant.now(),
@@ -246,7 +246,7 @@ public class TestTigerSerenityReporterPlugin {
 
     TigerEnvStatusDto status = envStatusController.getStatus();
     assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
-    String scenarioUniqueId = findScenarioId(testCase);
+    String scenarioUniqueId = findScenarioUniqueId(testCase);
     ScenarioUpdate scenario =
         status.getFeatureMap().get(featureName).getScenarios().get(scenarioUniqueId);
     // steps 0 and 1 are background steps
@@ -312,7 +312,7 @@ public class TestTigerSerenityReporterPlugin {
     TigerEnvStatusDto status = envStatusController.getStatus();
     assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
 
-    String scenarioUniqueId = findScenarioId(testCase);
+    String scenarioUniqueId = findScenarioUniqueId(testCase);
     ScenarioUpdate scenario =
         status.getFeatureMap().get(featureName).getScenarios().get(scenarioUniqueId);
 
@@ -322,7 +322,7 @@ public class TestTigerSerenityReporterPlugin {
     assertThat(listener.getReporterCallbacks().getScPassed()).isZero();
   }
 
-  private String findScenarioId(TestCase testCase) {
+  private String findScenarioUniqueId(TestCase testCase) {
     return ScenarioRunner.findScenarioUniqueId(
             featureUri, new LocationConverter().convertLocation(testCase.getLocation()))
         .toString();
@@ -438,7 +438,7 @@ public class TestTigerSerenityReporterPlugin {
 
     @Override
     public List<String> getTags() {
-      return null;
+      return List.of();
     }
 
     @Override

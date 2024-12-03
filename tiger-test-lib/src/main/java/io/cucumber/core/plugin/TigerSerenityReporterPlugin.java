@@ -16,29 +16,28 @@
 
 package io.cucumber.core.plugin;
 
-
 import de.gematik.test.tiger.exceptions.FailMessageOverrider;
 import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
 import io.cucumber.core.runner.TestCaseDelegate;
 import io.cucumber.plugin.event.*;
+import java.net.URI;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /** will be replacing teh TigerCucumberListener once Serenity PR is released */
 @Slf4j
-public class TigerSerenityReporterPlugin extends SerenityReporter {
+public class TigerSerenityReporterPlugin extends SerenityReporterParallel {
 
-  @Getter private SerenityReporterCallbacks reporterCallbacks = new SerenityReporterCallbacks();
-
-  private final AtomicBoolean isDryRun = new AtomicBoolean(false);
+  @Getter
+  private final SerenityReporterCallbacks reporterCallbacks = new SerenityReporterCallbacks();
 
   public TigerSerenityReporterPlugin() {
     super();
   }
 
-  public ScenarioContextDelegate getScenarioContextDelegate() {
-    return new ScenarioContextDelegate(getContext());
+  public ScenarioContextDelegate getScenarioContextDelegate(URI featureURI) {
+    return new ScenarioContextDelegate(featureURI, getContext(featureURI));
   }
 
   @Override
@@ -55,7 +54,7 @@ public class TigerSerenityReporterPlugin extends SerenityReporter {
 
   @Override
   protected void handleTestRunStarted(TestRunStarted event) {
-    reporterCallbacks.handleTestRunStarted(event, getScenarioContextDelegate());
+    reporterCallbacks.handleTestRunStarted(event, null);
     super.handleTestRunStarted(event);
   }
 
@@ -68,15 +67,16 @@ public class TigerSerenityReporterPlugin extends SerenityReporter {
 
   @Override
   protected void handleTestCaseStarted(TestCaseStarted event) {
-    isDryRun.set(TestCaseDelegate.of(event.getTestCase()).isDryRun());
     super.handleTestCaseStarted(event);
-    reporterCallbacks.handleTestCaseStarted(event, getScenarioContextDelegate());
+    reporterCallbacks.handleTestCaseStarted(
+        event, getScenarioContextDelegate(event.getTestCase().getUri()));
   }
 
   @Override
   protected void handleTestStepStarted(TestStepStarted event) {
     super.handleTestStepStarted(event);
-    reporterCallbacks.handleTestStepStarted(event, getScenarioContextDelegate());
+    reporterCallbacks.handleTestStepStarted(
+        event, getScenarioContextDelegate(event.getTestCase().getUri()));
   }
 
   @Override
@@ -91,7 +91,8 @@ public class TigerSerenityReporterPlugin extends SerenityReporter {
               new Result(
                   Status.SKIPPED, event.getResult().getDuration(), event.getResult().getError()));
     }
-    reporterCallbacks.handleTestStepFinished(event, getScenarioContextDelegate());
+    reporterCallbacks.handleTestStepFinished(
+        event, getScenarioContextDelegate(event.getTestCase().getUri()));
     super.handleTestStepFinished(event);
   }
 
@@ -105,13 +106,14 @@ public class TigerSerenityReporterPlugin extends SerenityReporter {
               new Result(
                   Status.SKIPPED, event.getResult().getDuration(), event.getResult().getError()));
     }
-    reporterCallbacks.handleTestCaseFinished(event, getScenarioContextDelegate());
+    reporterCallbacks.handleTestCaseFinished(
+        event, getScenarioContextDelegate(event.getTestCase().getUri()));
     super.handleTestCaseFinished(event);
   }
 
   @Override
   protected void handleTestRunFinished(TestRunFinished event) {
-    reporterCallbacks.handleTestRunFinished(event, getScenarioContextDelegate());
+    reporterCallbacks.handleTestRunFinished(event, null);
     super.handleTestRunFinished(event);
   }
 
