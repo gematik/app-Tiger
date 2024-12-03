@@ -78,6 +78,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 @Slf4j
@@ -333,8 +334,7 @@ public class TigerTestEnvMgr
       proxyConfig.setProxyRoutes(List.of());
     }
 
-    Map<String, Object> properties =
-        new HashMap<>(TigerSerializationUtil.toMap(proxyConfig, "tigerProxy"));
+    Map<String, Object> properties = new HashMap<>();
     if (configuration.getTigerProxy().getAdminPort() == 0) {
       int port =
           LOCALPROXY_ADMIN_RESERVED_PORT
@@ -360,6 +360,12 @@ public class TigerTestEnvMgr
                 .sources(TigerProxyApplication.class)
                 .web(WebApplicationType.SERVLET)
                 .registerShutdownHook(false)
+                .initializers(
+                    ac -> ((GenericApplicationContext)ac).registerBean(
+                        "proxyConfig",
+                        TigerProxyConfiguration.class,
+                        () -> proxyConfig,
+                        bd -> bd.setPrimary(true)))
                 .properties(properties)
                 .run();
 

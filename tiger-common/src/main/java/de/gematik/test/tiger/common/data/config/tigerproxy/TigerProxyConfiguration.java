@@ -34,7 +34,7 @@ import lombok.NoArgsConstructor;
 @JsonInclude(Include.NON_NULL)
 public class TigerProxyConfiguration {
 
-  private List<TigerConfigurationRoute> proxyRoutes;
+  @Builder.Default private List<TigerConfigurationRoute> proxyRoutes = new ArrayList<>();
   private ForwardProxyInfo forwardToProxy;
   private DirectReverseProxyInfo directReverseProxy;
   @Builder.Default private String proxyLogLevel = "WARN";

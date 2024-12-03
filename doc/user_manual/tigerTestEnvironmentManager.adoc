@@ -289,9 +289,21 @@ Each part can be one of:
 * password
 * store-type (accepted are P12, PKCS12, JKS, BKS, PKCS1 and PKCS8)
 
+If you want, you can also describe the components in a map:
+
+[source,yaml]
+----
+tls.forwardMutualTlsIdentity:
+  filename: myIdentity.p12
+  password: "changeit"
+  storeType: P12
+----
+
+In this case both the storeType and the password are not mandatory and would be guessed (the store-type via the file extension and the password via a default-list).
+
 ===== PKI identity passwords
 
-Tiger will attempt to decrypt a given P12 file with a list of common passwords.
+Tiger will attempt to decrypt a given P12 file with a list of common passwords, among these are:
 
 ----
 "00", "123456", "gematik", "changeit"

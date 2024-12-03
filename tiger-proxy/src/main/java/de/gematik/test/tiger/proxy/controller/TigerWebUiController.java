@@ -27,14 +27,14 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.rbellogger.util.RbelJexlExecutor;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
 import de.gematik.test.tiger.proxy.data.*;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyWebUiException;
-import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
+import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -102,7 +102,7 @@ public class TigerWebUiController implements ApplicationContextAware {
   private TigerProxy tigerProxy;
   private final RbelHtmlRenderer renderer;
 
-  private final ApplicationConfiguration applicationConfiguration;
+  private final TigerProxyConfiguration proxyConfiguration;
   private ApplicationContext applicationContext;
 
   public final SimpMessagingTemplate template;
@@ -135,7 +135,7 @@ public class TigerWebUiController implements ApplicationContextAware {
       @RequestParam(name = "pageSize", required = false) final Optional<Integer> pageSize,
       HttpServletResponse response) {
     int actualPageSize =
-        pageSize.orElse(getApplicationConfiguration().getMaximumTrafficDownloadPageSize());
+        pageSize.orElse(getProxyConfiguration().getMaximumTrafficDownloadPageSize());
     final List<RbelElement> filteredMessages =
         loadMessagesMatchingFilter(lastMsgUuid, filterCriterion);
     final int returnedMessages = Math.min(filteredMessages.size(), actualPageSize);
@@ -172,7 +172,7 @@ public class TigerWebUiController implements ApplicationContextAware {
 
   @GetMapping(value = "", produces = MediaType.TEXT_HTML_VALUE)
   public String getUI(@RequestParam(name = "embedded", defaultValue = "false") boolean embedded) {
-    String html = renderer.getEmptyPage(applicationConfiguration.isLocalResources());
+    String html = renderer.getEmptyPage(proxyConfiguration.isLocalResources());
     // hide sidebar
     String targetDiv;
     if (embedded) {

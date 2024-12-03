@@ -23,7 +23,7 @@ import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.r
 import static org.mockito.Mockito.mock;
 
 import de.gematik.test.tiger.lib.TigerDirector;
-import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
+import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;

@@ -17,7 +17,7 @@
 package de.gematik.test.tiger.testenvmgr.controller;
 
 import de.gematik.test.tiger.proxy.data.MessageMetaDataDto;
-import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
+import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;

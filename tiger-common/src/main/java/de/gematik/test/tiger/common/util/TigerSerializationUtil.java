@@ -68,11 +68,6 @@ public class TigerSerializationUtil {
     }
   }
 
-  public static String toYaml(Object value) {
-    Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
-    return yaml.dump(value);
-  }
-
   public static Map<String, String> toMap(Object value, String... baseKeys) {
     return recursiveMapDumping(new JSONObject(toJson(value)), new TigerConfigurationKey(baseKeys))
         .entrySet()

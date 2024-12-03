@@ -19,7 +19,7 @@ package de.gematik.test.tiger.testenvmgr;
 
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
+import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import jakarta.servlet.ServletContextListener;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;

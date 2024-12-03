@@ -10,6 +10,18 @@
 * TGR-1660: Change notification for jenkins release
 * TGR-1618: RbelParser: Added support for LDAP messages.
 
+## Features
+
+* TGR-1442: PKI-Identites can now also be provided via a map, specifying the individual options:
+
+```yaml
+tls.forwardMutualTlsIdentity:
+  filename: myIdentity.p12
+  password: "changeit"
+  storeType: P12
+```
+* TGR-1442: PKI-Identities can now also be provided without any password, even in the yaml. The default guessing mechanism will be used, which can be extended via `lib.additionalKeyStorePasswords`.
+
 ## Bugfixes
 
 * KOB-6: Fixed an issue where https-destinations could not be used as one of multiple "to"-targets.

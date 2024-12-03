@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.spring_utils;
+package de.gematik.test.tiger.server;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
