@@ -16,7 +16,8 @@
 
 @Library('gematik-jenkins-shared-library') _
 
-def TEAMS_URL = 'https://gematikde.webhook.office.com/webhookb2/9c4c4366-476c-465d-8188-940f661574c3@30092c62-4dbf-43bf-a33f-10d21b5b660a/JenkinsCI/f7fb184ffab6425cae8e254ea3818449/0151c74f-c7f1-4fe1-834a-6aa680ab023f'
+def CHANNEL_ID = "19:5e4a353b87974bfca7ac6ac55ad7358b@thread.tacv2"
+def GROUP_ID = "9c4c4366-476c-465d-8188-940f661574c3"
 
 pipeline {
     options {
@@ -46,7 +47,6 @@ pipeline {
     stages {
         stage('Initialise') {
             steps {
-                setProperties([notifyTeams(TEAMS_URL)])
                 useJdk('OPENJDK17')
             }
         }
@@ -128,7 +128,7 @@ pipeline {
             sendEMailNotification(getTigerEMailList())
         }
         success {
-            sendTeamsNotification(TEAMS_URL)
+            teamsSendNotificationToChannel(CHANNEL_ID, GROUP_ID)
         }
     }
 }
