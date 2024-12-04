@@ -30,16 +30,13 @@ import org.apache.maven.plugin.logging.Log;
 @Data
 public class GenerateDriverProperties {
 
-  public static final String DEFAULT_TAGS = "not @Ignore";
-
   private final List<String> glues;
   private final String driverClassName;
   private final Path templateFile;
   private final String driverPackage;
   private Path outputFolder;
   private String featuresRootFolder;
-  private final String cucumberFilterTags =
-      System.getProperty("cucumber.filter.tags", DEFAULT_TAGS);
+  private final String cucumberFilterTags = System.getProperty("cucumber.filter.tags");
 
   public void log(Log log) {
     log.info("Using features root folder: " + featuresRootFolder);
@@ -58,7 +55,8 @@ public class GenerateDriverProperties {
   }
 
   private String gluesAsCommaseparatedList(final List<String> glues) {
-    return Stream.concat(Stream.of("de.gematik.test.tiger.glue"), glues.stream())
+    Stream<String> gluesStream = glues == null ? Stream.empty() : glues.stream();
+    return Stream.concat(Stream.of("de.gematik.test.tiger.glue"), gluesStream)
         .distinct()
         .collect(Collectors.joining(", "));
   }

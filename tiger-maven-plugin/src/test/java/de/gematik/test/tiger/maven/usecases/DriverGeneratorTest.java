@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.maven.usecases;
 
 import static java.util.Collections.emptyList;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -37,6 +38,7 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import uk.org.webcompere.systemstubs.SystemStubs;
 
 @Slf4j
 class DriverGeneratorTest {
@@ -52,9 +54,8 @@ class DriverGeneratorTest {
       generateDriverForFiles_DriverFileShouldBeGeneratedWithAllConfiguratedAndNecessaryGluesAndFeatureFiles(
           @TempDir final Path outputFolder, @TempDir final Path templateFolder) {
     // Preparation
-    final var customTemplatePath = templateFolder.resolve("customDriverTemplate.jtmpl");
-    Files.copy(getClass().getResourceAsStream("customDriverTemplate.jtmpl"), customTemplatePath);
-    Files.delete(outputFolder); // Simulate not existing output dir
+    Path customTemplatePath =
+        prepareTempFolders(outputFolder, templateFolder, "customDriverTemplate.jtmpl");
     var props =
         GenerateDriverProperties.builder()
             .glues(List.of("pck.of.glue1", "glue2.pck"))
@@ -80,6 +81,7 @@ class DriverGeneratorTest {
                                 counter: 1
                                 gluesCsv: de.gematik.test.tiger.glue,pck.of.glue1,glue2.pck
                                 classname: Mops001IT
+                                tagsAnnotation:
                                 """),
                 getNormalizedJavaFrom(
                     outputFolder.resolve(
@@ -97,6 +99,14 @@ class DriverGeneratorTest {
                 getNormalizedJavaFrom(
                     outputFolder.resolve(
                         Paths.get("fancy", "pck", "of", "driver", "Mops002IT.java")))));
+  }
+
+  @SneakyThrows
+  private Path prepareTempFolders(Path outputFolder, Path templateFolder, String templateName) {
+    final var customTemplatePath = templateFolder.resolve(templateName);
+    Files.copy(getClass().getResourceAsStream(templateName), customTemplatePath);
+    Files.delete(outputFolder); // Simulate not existing output dir
+    return customTemplatePath;
   }
 
   @Test
@@ -140,6 +150,116 @@ class DriverGeneratorTest {
                             }
                             """),
         getNormalizedJavaFrom(outputFolder.resolve(Paths.get("Mops001IT.java"))));
+  }
+
+  @Test
+  void tagsAnnotation_shouldStayEmptyIfUndefined(
+      @TempDir final Path outputFolder, @TempDir final Path templateFolder) throws Exception {
+    SystemStubs.restoreSystemProperties(
+        () -> {
+          System.clearProperty("cucumber.filter.tags"); // just in case some other test change it
+          Path customTemplatePath =
+              prepareTempFolders(
+                  outputFolder, templateFolder, "customTemplateWithTagsAnnotation.jtmpl");
+          var props =
+              GenerateDriverProperties.builder()
+                  .outputFolder(outputFolder)
+                  .driverClassName("Mops${ctr}IT")
+                  .templateFile(customTemplatePath)
+                  .build();
+
+          final var underTest = new DriverGenerator(props, logger);
+
+          underTest.generateDriverForFeatureFiles(List.of("featureFile.feature"));
+
+          assertEquals(
+              getNormalizedJavaFrom(""),
+              getNormalizedJavaFrom(outputFolder.resolve(Paths.get("Mops001IT.java"))));
+        });
+  }
+
+  @Test
+  void tagsAnnotation_shouldContainFullAnnotationWhenTagsDefined(
+      @TempDir final Path outputFolder, @TempDir final Path templateFolder) throws Exception {
+    SystemStubs.restoreSystemProperties(
+        () -> {
+          System.setProperty("cucumber.filter.tags", "@MyCustomUnitTestTag");
+          Path customTemplatePath =
+              prepareTempFolders(
+                  outputFolder, templateFolder, "customTemplateWithTagsAnnotation.jtmpl");
+          var props =
+              GenerateDriverProperties.builder()
+                  .outputFolder(outputFolder)
+                  .driverClassName("Mops${ctr}IT")
+                  .templateFile(customTemplatePath)
+                  .build();
+
+          final var underTest = new DriverGenerator(props, logger);
+
+          underTest.generateDriverForFeatureFiles(List.of("featureFile.feature"));
+
+          assertEquals(
+              getNormalizedJavaFrom(
+                  """
+@ConfigurationParameter(key = Constants.FILTER_TAGS_PROPERTY_NAME, value = "@MyCustomUnitTestTag")
+"""),
+              getNormalizedJavaFrom(outputFolder.resolve(Paths.get("Mops001IT.java"))));
+        });
+  }
+
+  @Test
+  void tags_shouldContainDefinedTags(
+      @TempDir final Path outputFolder, @TempDir final Path templateFolder) throws Exception {
+    SystemStubs.restoreSystemProperties(
+        () -> {
+          System.setProperty("cucumber.filter.tags", "@MyCustomUnitTestTag");
+          Path customTemplatePath =
+              prepareTempFolders(outputFolder, templateFolder, "customTemplateWithTags.jtmpl");
+          var props =
+              GenerateDriverProperties.builder()
+                  .outputFolder(outputFolder)
+                  .driverClassName("Mops${ctr}IT")
+                  .templateFile(customTemplatePath)
+                  .build();
+
+          final var underTest = new DriverGenerator(props, logger);
+
+          underTest.generateDriverForFeatureFiles(List.of("featureFile.feature"));
+
+          assertEquals(
+              getNormalizedJavaFrom(
+                  """
+            @MyCustomUnitTestTag
+            """),
+              getNormalizedJavaFrom(outputFolder.resolve(Paths.get("Mops001IT.java"))));
+        });
+  }
+
+  @Test
+  void tags_shouldThrowExceptionWhenNoTagsDefined(
+      @TempDir final Path outputFolder, @TempDir final Path templateFolder) throws Exception {
+    SystemStubs.restoreSystemProperties(
+        () -> {
+          System.clearProperty("cucumber.filter.tags"); // just in case some other test change it
+          Path customTemplatePath =
+              prepareTempFolders(outputFolder, templateFolder, "customTemplateWithTags.jtmpl");
+          var props =
+              GenerateDriverProperties.builder()
+                  .outputFolder(outputFolder)
+                  .driverClassName("Mops${ctr}IT")
+                  .templateFile(customTemplatePath)
+                  .build();
+
+          final var underTest = new DriverGenerator(props, logger);
+
+          var listOfFeatures = List.of("featureFile.feature");
+
+          assertThatThrownBy(() -> underTest.generateDriverForFeatureFiles(listOfFeatures))
+              .isInstanceOf(IllegalArgumentException.class)
+              .hasMessage(
+                  "Template contains ${tags} placeholders but no replacement was found for it. "
+                      + "Consider using the placeholder ${tagsAnnotation} which allows for an empty tags configuration.");
+        });
   }
 
   @NotNull

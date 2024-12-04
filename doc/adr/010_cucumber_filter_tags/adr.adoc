@@ -1,0 +1,73 @@
+== ADR 010: Cucumber filter tags
+
+== Context
+
+The DriverGenerator class adds the tag "not @Ignore" to the generated driver class if the system property "cucumber.filter.tags" is not defined.
+
+The driver generation is done by the tiger-maven-plugin and happens in the "generate-test-sources" lifecycle phase.
+
+In the IDP project, the tests are executed with the `maven-failsafe-plugin` and the system property "cucumber.filter.tags" is defined via the plugin.
+
+We observe that the tags are not applied to the test run, because when the driver gets generated, the system property is not yet set.
+When the tests are executed, the system property does not override the annotation set in the tag.
+
+The current workaround used in the IDP project is to set the cucumber property explicitly in the maven command, e.g.: `mvn clean verify -Dcucumber.filter.tags="@Approval and not @OpenBug"` . In this case the "cucumber.filter.tags" property overrides the annotation at runtime.
+
+According to the documentation, Cucumber follows the following order of importance for the set properties (see https://cucumber.io/docs/cucumber/api/?lang=java#list-configuration-options ):
+
+1. System properties, environment variables, and the cucumber.properties file
+2. Annotations
+3. CLI arguments
+
+A property set in the CLI arguments, will override all previous sources.
+A option set in the annotation will override properties set in the system properties.
+
+*Options*:
+
+[start=1]
+. Set the "not @Ignore" in the junit-platform.properties file.
+These are read by the junit launcher and passed to the cucumber engine.
+Setting the default over this file, allows customer projects to override it either via the CLI (-Dcucumber.filter.tags) or over the failsafe plugin configuration.
+E.g.:
+
+[source,xml]
+----
+<configuration>
+    <systemPropertyVariables>
+        <!--suppress UnresolvedMavenProperty -->
+        <cucumber.filter.tags>@MyTag</cucumber.filter.tags>
+    </systemPropertyVariables>
+</configuration>
+----
+
+However, if we include a `junit-platform.properties` file in our artefact, then customer projects will have problems if they have their own `junit-platform.properties` file.
+The documentation of the junit-platform says only one file shall exist in the class path.
+If multiple files are found, then "the first" one is taken.
+It is not clear to me which one is "the first" one.
+
+[start=2]
+. At the test discovery stage ( see LauncherDiscoveryListener ) check if the property `cucumber.filter.tags` is defined in any source.
+If not, then set it as a system property to the default "not @Ignore".
+Otherwise, do nothing.
+Cucumber will then respect the property set by the user and follow the order of precedence.
+- this requires manipulating the configuration properties of the runner at runtime.
+- user can override default by setting a different value at any level (system property, cucumber.properties file, annotation, CLI argument).
+. Do not set a default value for the tag in the driver class and DO NOT set any default value at runtime.
+- breaks current behavior by not setting the default "not @Ignore".
+. Do nothing.
+The user has to set the tag explicitly in the maven command.
+- easy for us, but will make users unhappy.
+
+== Decision
+
+Option 1 although simple, can conflict with existing junit-platform.properties files in the classpath of the customer project.
+Option 3 breaks current behaviour.
+Option 4 makes users unhappy.
+
+Option 2 keeps the expected behaviours and allows users to override the default value.
+
+== Consequences
+
+We change the system property at runtime only when there is no default set.
+This is done at the test discovery stage.
+If tests are repeated (replay/play) the system property stays at this initial value.

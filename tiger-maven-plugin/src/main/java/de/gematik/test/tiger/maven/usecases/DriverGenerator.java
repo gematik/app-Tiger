@@ -34,6 +34,9 @@ public class DriverGenerator {
 
   public static final String COUNTER_REPLACEMENT_TOKEN = "${ctr}";
 
+  private static final String TAGS_ANNOTATION =
+      "@ConfigurationParameter(key = Constants.FILTER_TAGS_PROPERTY_NAME, value = \"${tags}\")";
+  public static final String TAGS_PLACEHOLDER = "${tags}";
   private final GenerateDriverProperties props;
 
   private final Log log;
@@ -78,13 +81,45 @@ public class DriverGenerator {
         StringUtils.isBlank(props.getDriverPackage())
             ? ""
             : "package " + props.getDriverPackage() + ";\n";
-    return getTemplate()
-        .replace(COUNTER_REPLACEMENT_TOKEN, String.valueOf(ctr))
-        .replace("${package}", packageLine)
-        .replace("${driverClassName}", currentDriverClassName)
-        .replace("${feature}", featurePath.replace("\\", "/"))
-        .replace("${gluesCsv}", props.getGluesCsv())
-        .replace("${tags}", props.getCucumberFilterTags());
+
+    var templateWithReplacements =
+        getTemplate()
+            .replace(COUNTER_REPLACEMENT_TOKEN, String.valueOf(ctr))
+            .replace("${package}", packageLine)
+            .replace("${driverClassName}", currentDriverClassName)
+            .replace("${feature}", featurePath.replace("\\", "/"))
+            .replace("${gluesCsv}", props.getGluesCsv());
+
+    return replaceTagAnnotationAndTags(templateWithReplacements);
+  }
+
+  private String replaceTagAnnotationAndTags(String template) {
+    String tagsAnnotationReplacement;
+    var cucumberFilterTags = props.getCucumberFilterTags();
+
+    if (cucumberFilterTags != null) {
+      // replace the default tags in our TAGS_ANNOTATION
+      tagsAnnotationReplacement = TAGS_ANNOTATION.replace(TAGS_PLACEHOLDER, cucumberFilterTags);
+      // Replace any custom ${tags} that are in a custom template
+      template = template.replace(TAGS_PLACEHOLDER, cucumberFilterTags);
+    } else {
+      tagsAnnotationReplacement = "";
+    }
+
+    var templateWithReplacement = template.replace("${tagsAnnotation}", tagsAnnotationReplacement);
+
+    // If any ${tags} are left in the template, throw an exception
+    assertTemplateNoUndefinedTags(templateWithReplacement);
+
+    return templateWithReplacement;
+  }
+
+  private void assertTemplateNoUndefinedTags(String templateWithReplacements) {
+    if (templateWithReplacements.contains(TAGS_PLACEHOLDER)) {
+      throw new IllegalArgumentException(
+          "Template contains ${tags} placeholders but no replacement was found for it. "
+              + "Consider using the placeholder ${tagsAnnotation} which allows for an empty tags configuration.");
+    }
   }
 
   private String writeToDriverSourceFile(
@@ -106,7 +141,7 @@ public class DriverGenerator {
       try (final InputStream is = getClass().getResourceAsStream(driverTemplateResource)) {
         if (is == null) {
           throw new FileNotFoundException(
-              "Unable to find template file resource '/driverClassTemplate.jtmpl' in jar!");
+              "Unable to find template file resource '/driver5ClassTemplate.jtmpl' in jar!");
         }
         log.debug("Using template file from jar ressource");
         return IOUtils.toString(is, StandardCharsets.UTF_8);
