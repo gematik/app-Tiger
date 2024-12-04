@@ -74,6 +74,9 @@ serverKey_xxx:
   # OPTIONAL duration in seconds to wait for a successful start-up of the server node
   # Default value is 20
   startupTimeoutSec: int
+  # OPTIONAL duration in milliseconds to wait between polls for the server node to start up
+  # Default value is the property "tiger.internal.externalServer.startupPollIntervalMs" which defaults to 1000
+  startupPollIntervalMs: int
   # MANDATORY type specific property in that for some types it's a list,
   # for some others it's a single URL
   source:

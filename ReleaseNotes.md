@@ -6,7 +6,9 @@
 
 * TGR-1464: Rest API: Tiger has now an API which allows the starting of specific tests and the retrievel of the test
   results via REST.
-* TGR-1548: TigerSerenityReporterPlugin is now based on the class SerenityReporterParallel
+* TIMTS-658: default poll interval for waiting for external servers to be healthy is increased to 1000 ms and can be
+  be configured via configuration key `tiger.internal.externalServer.startupPollIntervalMs` or per server via the server
+  property `startupPollIntervalMs`
 * TGR-1660: Change notification for jenkins release
 * TGR-1618: RbelParser: Added support for LDAP messages.
 
@@ -20,7 +22,9 @@ tls.forwardMutualTlsIdentity:
   password: "changeit"
   storeType: P12
 ```
-* TGR-1442: PKI-Identities can now also be provided without any password, even in the yaml. The default guessing mechanism will be used, which can be extended via `lib.additionalKeyStorePasswords`.
+
+* TGR-1442: PKI-Identities can now also be provided without any password, even in the yaml. The default guessing
+  mechanism will be used, which can be extended via `lib.additionalKeyStorePasswords`.
 
 ## Bugfixes
 
