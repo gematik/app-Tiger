@@ -278,7 +278,9 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
         "myHost; myHost:80; myHost",
         "myHost; myHost:443; myHost:80",
         "anotherHost, myHost:80; myHost:443; myHost:80",
-        "myHost; myHost, anotherHost:80; myHost:80"
+        "myHost; myHost, anotherHost:80; myHost:80",
+        "myHost; anotherHost; mYHoST",
+        ".*.google.de; .*.google.at; www.gOOgLE.de"
       },
       delimiter = ';')
   void routingDecisionViaHostHeader(String hostsRoute1, String hostsRoute2, String hostHeader) {

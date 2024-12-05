@@ -79,6 +79,7 @@ tls.forwardMutualTlsIdentity:
 ## Bugfixes
 
 * KOB-6: Fixed an issue where https-destinations could not be used as one of multiple "to"-targets.
+* TGR-1670: TigerProxy: Correct host-header routing, which will now work case-insensitive
 * TGR-1643: Treat testcases that have not been run (in case that lib.runTestsOnStart is false)
   as SKIPPED/IGNORED instead of PASSED in Serenity test report.
 * TGR-1574: fixed an issue where defining the `cucumber.filter.tags` property via the failsafe configuration would not

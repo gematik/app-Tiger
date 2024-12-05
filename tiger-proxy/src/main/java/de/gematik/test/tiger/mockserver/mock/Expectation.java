@@ -123,8 +123,8 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
         hostRegexes.stream()
             .anyMatch(
                 hostMatchCriterion ->
-                    cleanedHostHeader.equals(hostMatchCriterion)
-                        || cleanedHostHeader.matches(hostMatchCriterion));
+                    cleanedHostHeader.equalsIgnoreCase(hostMatchCriterion)
+                        || cleanedHostHeader.toLowerCase().matches(hostMatchCriterion.toLowerCase()));
     if (!anyHostHeaderMatch) {
       log.atTrace()
           .addArgument(() -> cleanedHostHeader)

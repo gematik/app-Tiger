@@ -865,6 +865,9 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         "CGMAG-IM-FDSIM.ts-ttcn3.sig-test.telematik-test",
         "src/test/resources/eccServerCertificate.p12;00");
     executeRequestToPathWhileOnlyTrusting(
+        "cgmag-im-fdsim.ts-ttcn3.SIG-TEST.TELEMATIK-TEST",
+        "src/test/resources/eccServerCertificate.p12;00");
+    executeRequestToPathWhileOnlyTrusting(
         "some.other.server", "src/test/resources/selfSignedCa/rootCa.p12;00");
 
     assertThatThrownBy(
