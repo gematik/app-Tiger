@@ -75,14 +75,31 @@ include::tigerExtensions.adoc[]
 
 The tiger test environment provides a Rest API which allows the automation of the execution of tests and retrieval of the corresponding test results.
 
-The Rest API is active by default.
-You can disable it by setting the following configuration entry in the tiger.yaml
+The Rest API is disabled by default.
+You can enable it by setting the following configuration entry in the tiger.yaml
 
 [source,yaml]
 ----
 lib:
-    enableTestManagementRestApi: false # set to false to disable the Rest API. default is true
+    enableTestManagementRestApi: true # set to true to enable the Rest API. default is false
 ----
+
+To enable the Rest API it is required to have the `cucumber-junit-platform-engine` in the class path.
+
+E.g.:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.cucumber</groupId>
+    <artifactId>cucumber-junit-platform-engine</artifactId>
+    <version>7.19.0</version>
+    <scope>test</scope>
+</dependency>
+----
+
+This is transitively included if you are importing the `tiger-test-lib`.
+But it is not included if you just import the `tiger-testenv-mgr`.
 
 The following section provides an overview of the available endpoints and their functionality.
 Additionally, the OpenApi specification yaml can be found in the https://github.com/gematik/app-Tiger/blob/master/tiger-testenv-mgr/src/main/resources/tiger-management-api.yaml[tiger repository].

@@ -41,5 +41,5 @@ public class TigerLibConfig {
   @Builder.Default private boolean trafficVisualization = false;
   @Builder.Default public boolean clearEnvironmentStartupTraffic = true;
   @Builder.Default public boolean runTestsOnStart = true;
-  @Builder.Default public boolean enableTestManagementRestApi = true;
+  @Builder.Default public boolean enableTestManagementRestApi = false;
 }

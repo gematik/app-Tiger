@@ -24,7 +24,14 @@ If you do not use a custom template, no action is necessary.
 ## Features
 
 * TGR-1464: Rest API: Tiger has now an API which allows the starting of specific tests and the retrieval of the test
-  results via REST.
+  results via REST. The Rest Api is disabled by default. To enable it set the following configuration key in the
+  tiger.yaml:
+
+```yaml
+lib:
+  enableTestManagementRestApi: true 
+```
+
 * TIMTS-658: default poll interval for waiting for external servers to be healthy is increased to 1000 ms and can be
   be configured via configuration key `tiger.internal.externalServer.startupPollIntervalMs` or per server via the server
   property `startupPollIntervalMs`
@@ -250,8 +257,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+    key = PLUGIN_PROPERTY_NAME,
+    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

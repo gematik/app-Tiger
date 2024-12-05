@@ -46,7 +46,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
-@ConditionalOnProperty(name = "tiger.lib.enableTestManagementRestApi", matchIfMissing = true)
+@ConditionalOnProperty(name = "tiger.lib.enableTestManagementRestApi", havingValue = "true")
 public class TestsApiController implements TestsApi {
 
   private final TestDescriptionMapper testDescriptionMapper;
@@ -72,7 +72,10 @@ public class TestsApiController implements TestsApi {
       Class.forName(cucumberClassName);
     } catch (ClassNotFoundException e) {
       throw new IllegalStateException(
-          "Required class '" + cucumberClassName + "' is not present in the classpath.");
+          "Required class '"
+              + cucumberClassName
+              + "' is not present in the classpath. Make sure you have declared the dependency for 'cucumber-junit-platform-engine' "
+              + "or that it is included transitevely (e.g.: with tiger-test-lib)");
     }
   }
 

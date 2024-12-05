@@ -64,10 +64,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.context.TestPropertySource;
 
 @SpringBootTest(
     classes = TigerTestEnvMgrApplication.class,
     webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@TestPropertySource(properties = "tiger.lib.enableTestManagementRestApi=true")
 class TestsApiControllerTest {
   @LocalServerPort private int port;
   @Autowired private TestDescriptionMapper testDescriptionMapper;
