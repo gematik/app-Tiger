@@ -116,7 +116,9 @@ public abstract class RelayConnectHandler<T> extends SimpleChannelInboundHandler
                                           mockServerCtx.channel().pipeline();
 
                                       if (isSslEnabledDownstream(proxyClientCtx.channel())) {
-                                        log.info("Adding SSL Handler in RelayConnectHandler.channelRead");
+                                        log.info(
+                                            "Adding SSL Handler in"
+                                                + " RelayConnectHandler.channelRead");
                                         pipelineToMockServer.addLast(
                                             server
                                                 .getClientSslContextFactory()

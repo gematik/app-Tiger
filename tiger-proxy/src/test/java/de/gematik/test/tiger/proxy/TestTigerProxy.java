@@ -1092,7 +1092,8 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                         .build()))
             .build());
 
-    val response = proxyRest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+    val response =
+        proxyRest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
     assertThat(response.getStatus()).isEqualTo(666);
   }
 }

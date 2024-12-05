@@ -58,23 +58,26 @@ public class InsecureTrustAllManager extends X509ExtendedTrustManager {
   }
 
   @Override
-  public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket) { // NOSONAR
+  public void checkClientTrusted( // NOSONAR
+      X509Certificate[] chain, String authType, Socket socket) {
     // check nothing, because trust all
   }
 
   @Override
-  public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket) { // NOSONAR
+  public void checkServerTrusted( // NOSONAR
+      X509Certificate[] chain, String authType, Socket socket) {
     // check nothing, because trust all
   }
 
   @Override
-  public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine engine) { // NOSONAR
+  public void checkClientTrusted( // NOSONAR
+      X509Certificate[] chain, String authType, SSLEngine engine) {
     // check nothing, because trust all
   }
 
   @Override
-  public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine engine) { // NOSONAR
+  public void checkServerTrusted( // NOSONAR
+      X509Certificate[] chain, String authType, SSLEngine engine) {
     // check nothing, because trust all
   }
-
 }

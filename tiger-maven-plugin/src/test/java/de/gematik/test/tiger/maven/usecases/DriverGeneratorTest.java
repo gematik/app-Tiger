@@ -227,8 +227,7 @@ class DriverGeneratorTest {
           underTest.generateDriverForFeatureFiles(List.of("featureFile.feature"));
 
           assertEquals(
-              getNormalizedJavaFrom(
-                  """
+              getNormalizedJavaFrom("""
             @MyCustomUnitTestTag
             """),
               getNormalizedJavaFrom(outputFolder.resolve(Paths.get("Mops001IT.java"))));
@@ -257,8 +256,9 @@ class DriverGeneratorTest {
           assertThatThrownBy(() -> underTest.generateDriverForFeatureFiles(listOfFeatures))
               .isInstanceOf(IllegalArgumentException.class)
               .hasMessage(
-                  "Template contains ${tags} placeholders but no replacement was found for it. "
-                      + "Consider using the placeholder ${tagsAnnotation} which allows for an empty tags configuration.");
+                  "Template contains ${tags} placeholders but no replacement was found for it."
+                      + " Consider using the placeholder ${tagsAnnotation} which allows for an"
+                      + " empty tags configuration.");
         });
   }
 

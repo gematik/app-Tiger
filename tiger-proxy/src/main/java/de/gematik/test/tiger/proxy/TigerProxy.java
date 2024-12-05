@@ -25,8 +25,8 @@ import de.gematik.rbellogger.converter.HttpPairingInBinaryChannelConverter;
 import de.gematik.rbellogger.util.RbelMessagesSupplier;
 import de.gematik.test.tiger.TigerAgent;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
@@ -208,7 +208,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
 
   private void addRoutesToTigerProxy() {
     if (getTigerProxyConfiguration().getProxyRoutes() != null) {
-      for (final TigerConfigurationRoute tigerRoute : getTigerProxyConfiguration().getProxyRoutes()) {
+      for (final TigerConfigurationRoute tigerRoute :
+          getTigerProxyConfiguration().getProxyRoutes()) {
         addRoute(tigerRoute);
       }
     }
@@ -246,11 +247,12 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
         .add(
             TigerConfigurationRoute.builder()
                 .from("/")
-                .to(List.of(
-                    "http://"
-                        + getTigerProxyConfiguration().getDirectReverseProxy().getHostname()
-                        + ":"
-                        + getTigerProxyConfiguration().getDirectReverseProxy().getPort()))
+                .to(
+                    List.of(
+                        "http://"
+                            + getTigerProxyConfiguration().getDirectReverseProxy().getHostname()
+                            + ":"
+                            + getTigerProxyConfiguration().getDirectReverseProxy().getPort()))
                 .build());
   }
 
@@ -302,18 +304,23 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
                     .orElseThrow(
                         () ->
                             new TigerProxyStartupException(
-                                "Unable to determine server root CA for TigerProxy TLS Server Identity")),
+                                "Unable to determine server root CA for TigerProxy TLS Server"
+                                    + " Identity")),
                 mockServerConfiguration);
         if (tlsConfiguration.map(TigerTlsConfiguration::getServerIdentity).isPresent()) {
           serverIdentityFactory =
-              new CombinedKeyAndCertificateFactory(new StaticKeyAndCertificateFactory(
-                List.of(tlsConfiguration.get().getServerIdentity())), serverIdentityFactory);
+              new CombinedKeyAndCertificateFactory(
+                  new StaticKeyAndCertificateFactory(
+                      List.of(tlsConfiguration.get().getServerIdentity())),
+                  serverIdentityFactory);
         } else if (tlsConfiguration.map(TigerTlsConfiguration::getServerIdentities).isPresent()) {
           serverIdentityFactory =
-            new CombinedKeyAndCertificateFactory(new StaticKeyAndCertificateFactory(
-                  tlsConfiguration.get().getServerIdentities().stream()
-                      .map(TigerPkiIdentity.class::cast)
-                      .toList()), serverIdentityFactory);
+              new CombinedKeyAndCertificateFactory(
+                  new StaticKeyAndCertificateFactory(
+                      tlsConfiguration.get().getServerIdentities().stream()
+                          .map(TigerPkiIdentity.class::cast)
+                          .toList()),
+                  serverIdentityFactory);
         }
         this.tlsFactories.add(serverIdentityFactory);
         return serverIdentityFactory;
@@ -421,7 +428,10 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     return addRoute(
         TigerProxyRoute.builder()
             .from(tigerRoute.getFrom())
-            .to(new TigerRouteSelector(tigerRoute.getTo(), getTigerProxyConfiguration().getForwardToProxy()).selectFirstReachableDestination())
+            .to(
+                new TigerRouteSelector(
+                        tigerRoute.getTo(), getTigerProxyConfiguration().getForwardToProxy())
+                    .selectFirstReachableDestination())
             .basicAuth(tigerRoute.getBasicAuth())
             .hosts(tigerRoute.getHosts())
             .criterions(tigerRoute.getCriterions())

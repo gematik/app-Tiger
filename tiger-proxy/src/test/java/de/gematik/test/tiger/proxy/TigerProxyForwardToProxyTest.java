@@ -133,7 +133,9 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
                 TigerTlsConfiguration.builder()
                     .masterSecretsFile("target/master-secrets.txt")
                     .build())
-            .proxyRoutes(List.of(TigerConfigurationRoute.builder().from("https://maHost").to(toRoute).build()))
+            .proxyRoutes(
+                List.of(
+                    TigerConfigurationRoute.builder().from("https://maHost").to(toRoute).build()))
             .forwardToProxy(forwardProxyInfo.get())
             .build());
 
@@ -159,8 +161,9 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
   @ParameterizedTest
   @ValueSource(strings = {"http", "https"})
   void nonMatchingNoProxyHostInVariousSettings(String protocol) {
-    assertThatThrownBy(() -> executeNoProxyTestWithProtocolAndNoProxyHosts(protocol, List.of("somethingElse")))
-      .isNotNull();
+    assertThatThrownBy(
+            () -> executeNoProxyTestWithProtocolAndNoProxyHosts(protocol, List.of("somethingElse")))
+        .isNotNull();
   }
 
   void executeNoProxyTestWithProtocolAndNoProxyHosts(String protocol, List<String> noProxyHosts) {
@@ -175,7 +178,9 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
             .build();
     spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
-            .proxyRoutes(List.of(TigerConfigurationRoute.builder().from("https://maHost").to(toRoute).build()))
+            .proxyRoutes(
+                List.of(
+                    TigerConfigurationRoute.builder().from("https://maHost").to(toRoute).build()))
             .forwardToProxy(proxyInfo)
             .build());
 

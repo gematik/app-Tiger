@@ -37,8 +37,7 @@ public class StaticKeyAndCertificateFactory implements KeyAndCertificateFactory 
   private final List<TigerPkiIdentity> availableIdentities = new ArrayList<>();
 
   @Builder
-  public StaticKeyAndCertificateFactory(
-    List<TigerPkiIdentity> availableIdentities) {
+  public StaticKeyAndCertificateFactory(List<TigerPkiIdentity> availableIdentities) {
     if (availableIdentities != null) {
       this.availableIdentities.addAll(availableIdentities);
     }

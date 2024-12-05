@@ -18,7 +18,6 @@ package de.gematik.test.tiger.proxy.handler;
 
 import static de.gematik.test.tiger.mockserver.model.Header.header;
 
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
@@ -64,9 +63,9 @@ public class ForwardProxyCallback extends AbstractRouteProxyCallback {
   private String stripRoutePattern(String requestUri) {
     final URI routeFromUri = new URI(getTigerRoute().getFrom());
     log.atInfo()
-      .addArgument(requestUri)
-      .addArgument(routeFromUri::getPath)
-      .log("Stripping route pattern from request path: {} will delete {}");
+        .addArgument(requestUri)
+        .addArgument(routeFromUri::getPath)
+        .log("Stripping route pattern from request path: {} will delete {}");
     return requestUri.substring(routeFromUri.getPath().length());
   }
 

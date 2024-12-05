@@ -34,7 +34,6 @@ import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
@@ -361,11 +360,13 @@ public class TigerTestEnvMgr
                 .web(WebApplicationType.SERVLET)
                 .registerShutdownHook(false)
                 .initializers(
-                    ac -> ((GenericApplicationContext)ac).registerBean(
-                        "proxyConfig",
-                        TigerProxyConfiguration.class,
-                        () -> proxyConfig,
-                        bd -> bd.setPrimary(true)))
+                    ac ->
+                        ((GenericApplicationContext) ac)
+                            .registerBean(
+                                "proxyConfig",
+                                TigerProxyConfiguration.class,
+                                () -> proxyConfig,
+                                bd -> bd.setPrimary(true)))
                 .properties(properties)
                 .run();
 

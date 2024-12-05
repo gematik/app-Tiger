@@ -21,7 +21,6 @@ import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
 import io.cucumber.core.runner.TestCaseDelegate;
 import io.cucumber.plugin.event.*;
 import java.net.URI;
-import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 

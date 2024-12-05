@@ -16,10 +16,9 @@
 
 package io.cucumber.core.plugin;
 
+import java.net.URI;
 import lombok.Getter;
 import lombok.experimental.Delegate;
-
-import java.net.URI;
 
 public class ScenarioContextDelegate {
 

@@ -117,8 +117,9 @@ public class DriverGenerator {
   private void assertTemplateNoUndefinedTags(String templateWithReplacements) {
     if (templateWithReplacements.contains(TAGS_PLACEHOLDER)) {
       throw new IllegalArgumentException(
-          "Template contains ${tags} placeholders but no replacement was found for it. "
-              + "Consider using the placeholder ${tagsAnnotation} which allows for an empty tags configuration.");
+          "Template contains ${tags} placeholders but no replacement was found for it. Consider"
+              + " using the placeholder ${tagsAnnotation} which allows for an empty tags"
+              + " configuration.");
     }
   }
 

@@ -19,7 +19,6 @@ package de.gematik.test.tiger.common.pki;
 import static de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader.guessStoreType;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader.StoreType;
 import java.util.List;
 import lombok.AllArgsConstructor;

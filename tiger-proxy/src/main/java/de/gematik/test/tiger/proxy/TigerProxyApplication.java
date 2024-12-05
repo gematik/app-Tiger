@@ -83,7 +83,7 @@ public class TigerProxyApplication implements ServletContextListener {
   public RbelHtmlRenderer rbelHtmlRenderer() {
     var renderer = new RbelHtmlRenderer();
     renderer.setMaximumEntitySizeInBytes(
-      proxyConfiguration.getSkipDisplayWhenMessageLargerThanKb() * 1024);
+        proxyConfiguration.getSkipDisplayWhenMessageLargerThanKb() * 1024);
     return renderer;
   }
 }

@@ -26,9 +26,9 @@ import static uk.org.webcompere.systemstubs.SystemStubs.restoreSystemProperties;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.util.CryptoLoader;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration.TigerProxyConfigurationBuilder;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
@@ -865,24 +865,24 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         "CGMAG-IM-FDSIM.ts-ttcn3.sig-test.telematik-test",
         "src/test/resources/eccServerCertificate.p12;00");
     executeRequestToPathWhileOnlyTrusting(
-        "some.other.server",
-        "src/test/resources/selfSignedCa/rootCa.p12;00");
+        "some.other.server", "src/test/resources/selfSignedCa/rootCa.p12;00");
 
     assertThatThrownBy(
             () ->
-              executeRequestToPathWhileOnlyTrusting(
-                "CGMAG-IM-FDSIM.ts-ttcn3.sig-test.telematik-test", "src/test/resources/rsa.p12;00"))
+                executeRequestToPathWhileOnlyTrusting(
+                    "CGMAG-IM-FDSIM.ts-ttcn3.sig-test.telematik-test",
+                    "src/test/resources/rsa.p12;00"))
         .isInstanceOf(UnirestException.class)
         .hasRootCauseInstanceOf(CertPathBuilderException.class);
   }
 
-  private void executeRequestToPathWhileOnlyTrusting(
-      String host, String fileLoadingInformation) {
+  private void executeRequestToPathWhileOnlyTrusting(String host, String fileLoadingInformation) {
     try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
       unirestInstance
           .config()
           .sslContext(
-              buildSslContextTrustingOnly(new TigerConfigurationPkiIdentity(fileLoadingInformation)));
+              buildSslContextTrustingOnly(
+                  new TigerConfigurationPkiIdentity(fileLoadingInformation)));
       unirestInstance
           .get("https://127.0.0.1:" + tigerProxy.getProxyPort() + "/")
           .header("host", host)

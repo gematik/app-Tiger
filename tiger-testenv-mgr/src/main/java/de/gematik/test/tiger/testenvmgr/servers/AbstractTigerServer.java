@@ -25,7 +25,6 @@ import de.gematik.test.tiger.common.data.config.PkiType;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
-import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -358,7 +357,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     }
   }
 
-    void addRoute(TigerConfigurationRoute newRoute) {
+  void addRoute(TigerConfigurationRoute newRoute) {
     getTigerTestEnvMgr()
         .getLocalTigerProxyOptional()
         .ifPresent(proxy -> serverRoutes.add(proxy.addRoute(newRoute)));
