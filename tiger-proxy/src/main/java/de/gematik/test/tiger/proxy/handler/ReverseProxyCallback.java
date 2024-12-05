@@ -16,6 +16,8 @@
 
 package de.gematik.test.tiger.proxy.handler;
 
+import static de.gematik.test.tiger.mockserver.model.Header.header;
+
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
@@ -46,9 +48,11 @@ public class ReverseProxyCallback extends AbstractRouteProxyCallback {
     if (getTigerProxy().getTigerProxyConfiguration().isRewriteHostHeader()) {
       request.removeHeader("Host").withHeader("Host", getTargetUrl().getHost() + ":" + getPort());
     }
-    if (getTigerRoute().getBasicAuth() != null) {
-      request.withHeader(
-          "Authorization", getTigerRoute().getBasicAuth().toAuthorizationHeaderValue());
+    if (getTigerRoute().getAuthentication() != null) {
+      getTigerRoute()
+          .getAuthentication()
+          .toAuthorizationHeaderValue()
+          .ifPresent(auth -> request.replaceHeader(header("Authorization", auth)));
     }
 
     return request;

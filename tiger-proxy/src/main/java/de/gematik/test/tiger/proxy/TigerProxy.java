@@ -426,17 +426,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
 
   public TigerProxyRoute addRoute(final TigerConfigurationRoute tigerRoute) {
     return addRoute(
-        TigerProxyRoute.builder()
-            .from(tigerRoute.getFrom())
-            .to(
-                new TigerRouteSelector(
-                        tigerRoute.getTo(), getTigerProxyConfiguration().getForwardToProxy())
-                    .selectFirstReachableDestination())
-            .basicAuth(tigerRoute.getBasicAuth())
-            .hosts(tigerRoute.getHosts())
-            .criterions(tigerRoute.getCriterions())
-            .disableRbelLogging(tigerRoute.isDisableRbelLogging())
-            .build());
+        TigerProxyRoute.convertFromTigerConfigurationRoute(
+            tigerRoute, getTigerProxyConfiguration().getForwardToProxy()));
   }
 
   @Override

@@ -40,9 +40,11 @@ public class ForwardProxyCallback extends AbstractRouteProxyCallback {
   public HttpRequest handleRequest(HttpRequest req) {
     applyModifications(req);
     req.replaceHeader(header("Host", getTargetUrl().getHost() + ":" + getPort()));
-    if (getTigerRoute().getBasicAuth() != null) {
-      req.replaceHeader(
-          header("Authorization", getTigerRoute().getBasicAuth().toAuthorizationHeaderValue()));
+    if (getTigerRoute().getAuthentication() != null) {
+      getTigerRoute()
+          .getAuthentication()
+          .toAuthorizationHeaderValue()
+          .ifPresent(auth -> req.replaceHeader(header("Authorization", auth)));
     }
     String getTargetUrl = getTargetUrl().getPath();
     if (getTargetUrl.endsWith("/")) {

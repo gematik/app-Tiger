@@ -38,18 +38,18 @@ public class RbelModifier {
     this.rbelKeyManager = rbelKeyManager;
     this.rbelConverter = rbelConverter;
     this.elementWriterList =
-        new ArrayList<>(
-            List.of(
-                new RbelHttpHeaderWriter(),
-                new RbelHttpResponseWriter(),
-                new RbelJsonWriter(),
-                new RbelUriWriter(),
-                new RbelUriParameterWriter(),
-                new RbelJwtWriter(this.rbelKeyManager),
-                new RbelJwtSignatureWriter(),
-                new RbelJweWriter(this.rbelKeyManager),
-                new RbelVauErpWriter(),
-                new RbelVauEpaWriter()));
+      new ArrayList<>(
+        List.of(
+          new RbelHttpHeaderWriter(),
+          new RbelHttpMessageWriter(),
+          new RbelJsonWriter(),
+          new RbelUriWriter(),
+          new RbelUriParameterWriter(),
+          new RbelJwtWriter(this.rbelKeyManager),
+          new RbelJwtSignatureWriter(),
+          new RbelJweWriter(this.rbelKeyManager),
+          new RbelVauErpWriter(),
+          new RbelVauEpaWriter()));
   }
 
   public RbelElement applyModifications(final RbelElement message) {
@@ -57,7 +57,7 @@ public class RbelModifier {
     for (RbelModificationDescription modification : modificationsMap.values()) {
       if (shouldBeApplied(modification, message)) {
         final Optional<RbelElement> targetOptional =
-            modifiedMessage.findElement(modification.getTargetElement());
+          modifiedMessage.findElement(modification.getTargetElement());
         if (targetOptional.isEmpty()) {
           continue;
         }
@@ -73,7 +73,7 @@ public class RbelModifier {
 
   private void deleteOutdatedModifications() {
     for (Iterator<RbelModificationDescription> ks = modificationsMap.values().iterator();
-        ks.hasNext(); ) {
+      ks.hasNext(); ) {
       RbelModificationDescription next = ks.next();
       if (next.getDeleteAfterNExecutions() != null && next.getDeleteAfterNExecutions() <= 0) {
         ks.remove();
@@ -99,7 +99,7 @@ public class RbelModifier {
   }
 
   private byte[] applyModification(
-      RbelModificationDescription modification, RbelElement targetElement) {
+    RbelModificationDescription modification, RbelElement targetElement) {
     RbelElement oldTargetElement = targetElement.getParentNode();
     RbelElement oldTargetModifiedChild = targetElement;
     byte[] newContent = applyRegexAndReturnNewContent(targetElement, modification);
@@ -113,12 +113,12 @@ public class RbelModifier {
       }
       if (found.isEmpty()) {
         throw new RbelModificationException(
-            "Could not rewrite element with facets "
-                + oldTargetElement.getFacets().stream()
-                    .map(Object::getClass)
-                    .map(Class::getSimpleName)
-                    .toList()
-                + "!");
+          "Could not rewrite element with facets "
+          + oldTargetElement.getFacets().stream()
+            .map(Object::getClass)
+            .map(Class::getSimpleName)
+            .toList()
+          + "!");
       }
       newContent = found.get();
       oldTargetModifiedChild = oldTargetElement;
@@ -128,7 +128,7 @@ public class RbelModifier {
   }
 
   private byte[] applyRegexAndReturnNewContent(
-      RbelElement targetElement, RbelModificationDescription modification) {
+    RbelElement targetElement, RbelModificationDescription modification) {
     if (StringUtils.isEmpty(modification.getRegexFilter())) {
       if (modification.getReplaceWith() == null) {
         return "".getBytes(targetElement.getElementCharset());
@@ -136,9 +136,9 @@ public class RbelModifier {
       return modification.getReplaceWith().getBytes(targetElement.getElementCharset());
     } else {
       return targetElement
-          .getRawStringContent()
-          .replaceAll(modification.getRegexFilter(), modification.getReplaceWith())
-          .getBytes(targetElement.getElementCharset());
+        .getRawStringContent()
+        .replaceAll(modification.getRegexFilter(), modification.getReplaceWith())
+        .getBytes(targetElement.getElementCharset());
     }
   }
 

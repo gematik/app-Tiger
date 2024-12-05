@@ -27,7 +27,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.ArrayUtils;
 
-public class RbelHttpResponseWriter implements RbelElementWriter {
+public class RbelHttpMessageWriter implements RbelElementWriter {
 
   @Override
   public boolean canWrite(RbelElement oldTargetElement) {

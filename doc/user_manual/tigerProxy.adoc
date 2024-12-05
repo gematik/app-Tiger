@@ -153,21 +153,26 @@ You can deactivate the rbel-Logging on a per-Route basis.
 Rbel is a versatile and powerful tool, but the analysis of individual messages consumes a lot of both CPU and memory.
 Deactivating it for routes in which it is not needed is therefore a good idea.
 
-==== basicAuth
+==== Authentication
 
-You can add optional basic-auth configuration which will be added to the forwarded message.
-Theoretically this could also be done via modifications, but this a more convenient approach.
+You can add optional authentication configuration which will be added to the forwarded message. Here either Basic access authentication or Bearer Token can be used:
 
 [source,yaml]
 ----
 tigerProxy:
     proxyRoutes:
-      - from: http://my.domain/deep/
+      - from: http://my.domain/basicAuth/
         to: http://orf.at/blub/
-        basicAuth:
+        authentication:
           username: "test1"
           password: "pwd2"
+      - from: http://my.domain/bearerToken/
+        to: http://orf.at/blub/
+        authentication:
+          bearerToken: "blubblab"
 ----
+
+Please note that the phrase "Bearer " will be added automatically. Please do not add it yourself!
 
 === TLS, keys, certificates a quick tour on proxies
 

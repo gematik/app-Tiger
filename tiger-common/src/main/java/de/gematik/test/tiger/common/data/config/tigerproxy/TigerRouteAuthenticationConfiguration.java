@@ -19,23 +19,29 @@ package de.gematik.test.tiger.common.data.config.tigerproxy;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import java.util.Optional;
+import lombok.*;
+import org.apache.commons.lang3.StringUtils;
 
 @RequiredArgsConstructor
 @Builder(toBuilder = true)
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Data
-public class TigerBasicAuthConfiguration implements Serializable {
+public class TigerRouteAuthenticationConfiguration implements Serializable {
 
   private String username;
   private String password;
+  private String bearerToken;
 
-  public String toAuthorizationHeaderValue() {
-    return "Basic "
-        + Base64.getEncoder()
-            .encodeToString((username + ":" + password).getBytes(StandardCharsets.US_ASCII));
+  public Optional<String> toAuthorizationHeaderValue() {
+    if (StringUtils.isNotEmpty(bearerToken)) {
+      return Optional.of("Bearer " + bearerToken);
+    } else if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) {
+      return Optional.of("Basic "
+                         + Base64.getEncoder()
+                           .encodeToString((username + ":" + password).getBytes(StandardCharsets.US_ASCII)));
+    } else {
+      return Optional.empty();
+    }
   }
 }

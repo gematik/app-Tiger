@@ -533,18 +533,22 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                     .withBasicAuth("user", "password")
                     .willReturn(aResponse().withStatus(777).withBody("{\"foo\":\"bar\"}"))));
 
-    spawnTigerProxyWithDefaultRoutesAndWith(
+    spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
                     TigerConfigurationRoute.builder()
                         .from("http://backendWithBasicAuth")
                         .to("http://localhost:" + fakeBackendServerPort)
-                        .basicAuth(new TigerBasicAuthConfiguration("user", "password"))
+                        .authentication(
+                            TigerRouteAuthenticationConfiguration.builder()
+                                .username("user")
+                                .password("password")
+                                .build())
                         .build()))
             .build());
 
-    assertThatThrownBy(() -> proxyRest.get("/authenticatedPath").asJson())
+    assertThatThrownBy(() -> proxyRest.get("http://backend/authenticatedPath").asJson())
         .isInstanceOf(UnirestException.class);
     assertThat(proxyRest.get("http://backendWithBasicAuth/authenticatedPath").asJson().getStatus())
         .isEqualTo(777);

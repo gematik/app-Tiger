@@ -4,6 +4,17 @@
 
 ## Breaking Changes
 
+* TGR-1655: To add Basic Authentication to a TigerRoute you now have to use the following configuration:
+
+```yaml
+tigerProxy:
+  routes:
+    - from: /myRoute
+      to: http://example.com
+      authentication:
+        username: itsame
+        password: superSecret
+```
 * Tiger Maven Plugin: If you are using a custom driver template which includes the palceholder `${tags}`, you should
   change the full annotation to `${tagsAnnotation}`.
   E.g.:
@@ -37,8 +48,21 @@ lib:
   property `startupPollIntervalMs`
 * TGR-1660: Change notification for jenkins release
 * TGR-1618: RbelParser: Added support for LDAP messages.
+* TGR-1655: TigerRoutes can now not only add a Basic-Authentication but also a Bearer-Token:
 
-## Features
+```yaml
+tigerProxy:
+  routes:
+    - from: /myRoute
+      to: http://example.com
+      authentication:
+        bearerToken: blubblab
+    - from: /myRoute
+      to: http://example.com
+      authentication:
+        username: itsame
+        password: superSecret
+```
 
 * TGR-1442: PKI-Identites can now also be provided via a map, specifying the individual options:
 
@@ -257,8 +281,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-    key = PLUGIN_PROPERTY_NAME,
-    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+  key = PLUGIN_PROPERTY_NAME,
+  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }
