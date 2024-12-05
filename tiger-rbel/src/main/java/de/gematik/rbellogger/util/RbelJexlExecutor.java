@@ -139,11 +139,7 @@ public class RbelJexlExecutor {
                     : potentialPath));
     if (pathResults.isEmpty()
         || pathResults.stream().anyMatch(s -> !CharMatcher.ascii().matchesAllOf(s))) {
-      if (mapContext.shouldIgnoreEmptyRbelPaths()) {
-        pathResults.add(null);
-      } else {
-        pathResults.add(null);
-      }
+      pathResults.add(null);
     }
     for (String pathResult : pathResults) {
       final String id =

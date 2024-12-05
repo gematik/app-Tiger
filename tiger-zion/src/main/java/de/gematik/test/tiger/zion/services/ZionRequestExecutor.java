@@ -137,10 +137,7 @@ public class ZionRequestExecutor {
             response.getNestedResponses().keySet());
       }
       final TigerJexlContext localResponseContext =
-          context
-              .withCurrentElement(requestRbelMessage)
-              .withRootElement(requestRbelMessage)
-              .withShouldIgnoreEmptyRbelPaths(true);
+          context.withCurrentElement(requestRbelMessage).withRootElement(requestRbelMessage);
       final Optional<Pair<TigerMockResponse, TigerJexlContext>> responseCandidate =
           findMatchingResponse(response, requestRbelMessage, localResponseContext);
       // responseCandidate is not necessarily equal to response: nestedResponses!
