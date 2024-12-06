@@ -15,6 +15,7 @@ tigerProxy:
         username: itsame
         password: superSecret
 ```
+
 * Tiger Maven Plugin: If you are using a custom driver template which includes the palceholder `${tags}`, you should
   change the full annotation to `${tagsAnnotation}`.
   E.g.:
@@ -78,6 +79,8 @@ tls.forwardMutualTlsIdentity:
 
 ## Bugfixes
 
+* TGR-978: User Manual: Fixed the overlap of text from the table of contents when viewing the html manual on a small
+  width screen.
 * KOB-6: Fixed an issue where https-destinations could not be used as one of multiple "to"-targets.
 * TGR-1670: TigerProxy: Correct host-header routing, which will now work case-insensitive
 * TGR-1643: Treat testcases that have not been run (in case that lib.runTestsOnStart is false)
@@ -282,8 +285,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-  key = PLUGIN_PROPERTY_NAME,
-  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+        key = PLUGIN_PROPERTY_NAME,
+        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }
