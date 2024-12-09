@@ -34,6 +34,7 @@ import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -52,6 +53,11 @@ class TestEnvManagerConfigurationCheck {
 
   @BeforeEach
   public void resetConfig() {
+    TigerGlobalConfiguration.reset();
+  }
+
+  @AfterEach
+  public void cleanUp() {
     TigerGlobalConfiguration.reset();
   }
 
