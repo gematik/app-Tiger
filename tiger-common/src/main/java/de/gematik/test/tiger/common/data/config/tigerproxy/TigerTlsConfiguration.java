@@ -32,6 +32,7 @@ public class TigerTlsConfiguration {
   private TigerConfigurationPkiIdentity serverRootCa;
   private TigerConfigurationPkiIdentity forwardMutualTlsIdentity;
   private TigerConfigurationPkiIdentity serverIdentity;
+  private boolean allowGenericFallbackIdentity = false;
   private List<TigerConfigurationPkiIdentity> serverIdentities;
   @Builder.Default private String domainName = "localhost";
   @Builder.Default private List<String> alternativeNames = List.of("127.0.0.1", "localhost");

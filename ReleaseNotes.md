@@ -65,6 +65,7 @@ tigerProxy:
         password: superSecret
 ```
 
+* TGR-1645: Tiger-Proxy: You can now choose if the generic fallback identity should be used. This can be toggled via `tigerProxy.tls.allowGenericFallbackIdentity`. The default is `false`, meaning that the generic fallback identity is only used when no other means is configured (serverIdentities, serverIdentity, serverRootCa).
 * TGR-1442: PKI-Identites can now also be provided via a map, specifying the individual options:
 
 ```yaml

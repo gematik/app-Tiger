@@ -29,9 +29,15 @@ public class CombinedKeyAndCertificateFactory implements KeyAndCertificateFactor
   private final KeyAndCertificateFactory fallback;
 
   @Override
-  public Optional<TigerPkiIdentity> buildAndSavePrivateKeyAndX509Certificate(String hostname) {
+  public Optional<TigerPkiIdentity> findExactIdentityForHostname(String hostname) {
     return supplier
-        .buildAndSavePrivateKeyAndX509Certificate(hostname)
-        .or(() -> fallback.buildAndSavePrivateKeyAndX509Certificate(hostname));
+        .findExactIdentityForHostname(hostname)
+        .or(() -> fallback.findExactIdentityForHostname(hostname));
+  }
+
+  @Override
+  public TigerPkiIdentity resolveIdentityForHostname(String hostname) {
+    return findExactIdentityForHostname(hostname)
+        .orElseGet(() -> fallback.resolveIdentityForHostname(hostname));
   }
 }

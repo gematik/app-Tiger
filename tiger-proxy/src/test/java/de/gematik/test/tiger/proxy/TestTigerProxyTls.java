@@ -74,7 +74,6 @@ import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsClientProtocol;
-import org.bouncycastle.tls.TlsException;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.jetbrains.annotations.NotNull;
@@ -475,28 +474,12 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                 .asString()
                 .getStatus())
         .isEqualTo(666);
+
     assertThatThrownBy(() -> unirestInstance.get("https://falsche-url/foobar").asString())
-        .hasCauseInstanceOf(TlsException.class);
-  }
-
-  @SneakyThrows
-  private SSLContext buildSslContextTrustingOnly(TigerPkiIdentity serverIdentity) {
-    KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-    ks.load(null);
-    ks.setCertificateEntry("caCert", serverIdentity.getCertificate());
-    int chainCertCtr = 0;
-    for (X509Certificate chainCert : serverIdentity.getCertificateChain()) {
-      ks.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);
-    }
-    TrustManagerFactory tmf =
-        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-
-    tmf.init(ks);
-
-    SSLContext sslContext = SSLContext.getInstance("TLS");
-    sslContext.init(null, tmf.getTrustManagers(), null);
-
-    return sslContext;
+        .hasCauseInstanceOf(SSLPeerUnverifiedException.class)
+        .hasMessageContaining(
+            "Certificate for <falsche-url> doesn't match any of the subject alternative names:"
+                + " [authn.aktor.epa.telematik-test]");
   }
 
   @ParameterizedTest
@@ -839,6 +822,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                             new TigerConfigurationPkiIdentity("src/test/resources/rsa.p12;00"),
                             new TigerConfigurationPkiIdentity(
                                 "src/test/resources/eccServerCertificate.p12;00")))
+                    .allowGenericFallbackIdentity(true)
                     .build())
             .proxyRoutes(
                 List.of(
@@ -879,10 +863,50 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         .hasRootCauseInstanceOf(CertPathBuilderException.class);
   }
 
+  @SneakyThrows
+  @Test
+  void onlyOneServerIdentityWithMismatchedFqdn_shouldStillBeUsedIfConfigured()
+      throws UnirestException {
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder()
+            .tls(
+                TigerTlsConfiguration.builder()
+                    .serverIdentity(
+                        new TigerConfigurationPkiIdentity(
+                            "src/test/resources/rsaStoreWithChain.jks;gematik"))
+                    .build())
+            .build());
+
+    executeRequestToPathWhileOnlyTrusting(
+      "www.schmoobar.com", "src/test/resources/rsaStoreWithChain.jks;gematik");
+  }
+
+  @SneakyThrows
+  @Test
+  void onlyOneServerIdentityButDynamicFallback_fallbackShouldBeUsed()
+      throws UnirestException {
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder()
+            .tls(
+                TigerTlsConfiguration.builder()
+                    .serverIdentity(
+                        new TigerConfigurationPkiIdentity(
+                            "src/test/resources/rsaStoreWithChain.jks;gematik"))
+                  .serverRootCa(
+                    new TigerConfigurationPkiIdentity(
+                      "src/test/resources/selfSignedCa/rootCa.p12;00"))
+                    .build())
+            .build());
+
+    executeRequestToPathWhileOnlyTrusting(
+      "www.schmoobar.com", "src/test/resources/selfSignedCa/rootCa.p12;00");
+  }
+
   private void executeRequestToPathWhileOnlyTrusting(String host, String fileLoadingInformation) {
     try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
       unirestInstance
           .config()
+          .hostnameVerifier((hostname, session) -> true)
           .sslContext(
               buildSslContextTrustingOnly(
                   new TigerConfigurationPkiIdentity(fileLoadingInformation)));
@@ -891,5 +915,25 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
           .header("host", host)
           .asJson();
     }
+  }
+
+  @SneakyThrows
+  private SSLContext buildSslContextTrustingOnly(TigerPkiIdentity serverIdentity) {
+    KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+    ks.load(null);
+    ks.setCertificateEntry("caCert", serverIdentity.getCertificate());
+    int chainCertCtr = 0;
+    for (X509Certificate chainCert : serverIdentity.getCertificateChain()) {
+      ks.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);
+    }
+    TrustManagerFactory tmf =
+      TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+
+    tmf.init(ks);
+
+    SSLContext sslContext = SSLContext.getInstance("TLS");
+    sslContext.init(null, tmf.getTrustManagers(), null);
+
+    return sslContext;
   }
 }

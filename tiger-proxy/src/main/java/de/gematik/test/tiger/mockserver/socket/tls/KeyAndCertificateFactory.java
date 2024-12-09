@@ -24,5 +24,7 @@ import java.util.Optional;
  */
 public interface KeyAndCertificateFactory {
 
-  Optional<TigerPkiIdentity> buildAndSavePrivateKeyAndX509Certificate(String hostname);
+  Optional<TigerPkiIdentity> findExactIdentityForHostname(String hostname);
+
+  TigerPkiIdentity resolveIdentityForHostname(String hostname);
 }
