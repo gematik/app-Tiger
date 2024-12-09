@@ -37,9 +37,9 @@ public class TigerRouteSelector {
     if (routeDestinations.size() == 1) {
       return routeDestinations.get(0);
     }
-    return routeDestinations.stream()
+    return routeDestinations.parallelStream()
         .filter(this::isReachable)
-        .findFirst()
+        .findAny()
         .orElseThrow(
             () ->
                 new IllegalStateException(

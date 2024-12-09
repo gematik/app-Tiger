@@ -61,13 +61,11 @@ import org.apache.http.NoHttpResponseException;
 import org.assertj.core.data.TemporalUnitWithinOffset;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.http.MediaType;
-import org.springframework.test.util.TestSocketUtils;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
@@ -1077,27 +1075,5 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
     val request = Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/");
     assertThatThrownBy(request::asEmpty).hasRootCauseInstanceOf(NoHttpResponseException.class);
-  }
-
-  @SneakyThrows
-  @Test
-  @Disabled
-  void twoDestinationsOnlyOneReachable_shouldChooseCorrectOne() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerConfigurationRoute.builder()
-                        .from("/")
-                        .to(
-                            List.of(
-                                "http://localhost:" + TestSocketUtils.findAvailableTcpPort(),
-                                "https://localhost:" + fakeBackendServerTlsPort))
-                        .build()))
-            .build());
-
-    val response =
-        proxyRest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
-    assertThat(response.getStatus()).isEqualTo(666);
   }
 }

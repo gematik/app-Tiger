@@ -48,6 +48,7 @@ lib:
   be configured via configuration key `tiger.internal.externalServer.startupPollIntervalMs` or per server via the server
   property `startupPollIntervalMs`
 * TGR-1660: Change notification for jenkins release
+* KOB-35: TigerProxy now will query listed "to"-targets in parallel. The first healthy target will be used for routing.
 * TGR-1618: RbelParser: Added support for LDAP messages.
 * TGR-1655: TigerRoutes can now not only add a Basic-Authentication but also a Bearer-Token:
 
