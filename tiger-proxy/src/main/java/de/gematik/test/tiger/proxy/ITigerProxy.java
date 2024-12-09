@@ -18,7 +18,6 @@ package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.util.IRbelMessageListener;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import java.security.Key;
 import java.util.List;

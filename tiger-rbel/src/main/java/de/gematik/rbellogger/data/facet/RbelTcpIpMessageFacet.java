@@ -23,7 +23,6 @@ import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelMessageRenderer;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -66,25 +65,26 @@ public class RbelTcpIpMessageFacet implements RbelFacet {
         .getFacet(TracingMessagePairFacet.class)
         .map(TracingMessagePairFacet::getRequest)
         .or(
-            () -> context
-                .messagesStreamLatestFirst()
-                .dropWhile(e -> e != response)
-                .filter(e -> e != response)
-                .filter(e -> e.hasFacet(requestFacetClass))
-                .filter(e -> !e.hasFacet(TracingMessagePairFacet.class))
-                .filter(request -> haveOppositeTcpIpEndpoints(request, response))
-                .filter(
-                    request -> {
-                      var pair =
-                          TracingMessagePairFacet.builder()
-                              .request(request)
-                              .response(response)
-                              .build();
-                      response.addFacet(pair);
-                      request.addFacet(pair);
-                      return true;
-                    })
-                .findFirst());
+            () ->
+                context
+                    .messagesStreamLatestFirst()
+                    .dropWhile(e -> e != response)
+                    .filter(e -> e != response)
+                    .filter(e -> e.hasFacet(requestFacetClass))
+                    .filter(e -> !e.hasFacet(TracingMessagePairFacet.class))
+                    .filter(request -> haveOppositeTcpIpEndpoints(request, response))
+                    .filter(
+                        request -> {
+                          var pair =
+                              TracingMessagePairFacet.builder()
+                                  .request(request)
+                                  .response(response)
+                                  .build();
+                          response.addFacet(pair);
+                          request.addFacet(pair);
+                          return true;
+                        })
+                    .findFirst());
   }
 
   private static boolean haveOppositeTcpIpEndpoints(

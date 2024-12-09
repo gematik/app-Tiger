@@ -18,7 +18,10 @@ package de.gematik.test.tiger.proxy.data;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerBasicAuthConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerRouteAuthenticationConfiguration;
+import de.gematik.test.tiger.proxy.TigerRouteSelector;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import java.io.Serializable;
 import java.net.MalformedURLException;
@@ -39,9 +42,23 @@ public class TigerProxyRoute implements Serializable {
   private String to;
   @Builder.Default private boolean internalRoute = false;
   private boolean disableRbelLogging;
-  private TigerBasicAuthConfiguration basicAuth;
+  private TigerRouteAuthenticationConfiguration authentication;
   private List<String> criterions;
   @Builder.Default private List<String> hosts = new ArrayList<>();
+
+  public static TigerProxyRoute convertFromTigerConfigurationRoute(
+      TigerConfigurationRoute tigerRoute, ForwardProxyInfo forwardProxyInfo) {
+    return TigerProxyRoute.builder()
+        .from(tigerRoute.getFrom())
+        .to(
+            new TigerRouteSelector(tigerRoute.getTo(), forwardProxyInfo)
+                .selectFirstReachableDestination())
+        .authentication(tigerRoute.getAuthentication())
+        .hosts(tigerRoute.getHosts())
+        .criterions(tigerRoute.getCriterions())
+        .disableRbelLogging(tigerRoute.isDisableRbelLogging())
+        .build();
+  }
 
   public String createShortDescription() {
     final StringBuilder resultBuilder = new StringBuilder();

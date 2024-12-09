@@ -23,7 +23,6 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import de.gematik.test.tiger.mockserver.model.*;
@@ -499,7 +498,8 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
 
   @Override
   public Action handleException(Throwable exception, HttpRequest request) {
-    log.info("Exception during handling of request {}", request.printLogLineDescription(), exception);
+    log.info(
+        "Exception during handling of request {}", request.printLogLineDescription(), exception);
     final RbelElement errorResponse =
         tigerProxy
             .getMockServerToRbelConverter()

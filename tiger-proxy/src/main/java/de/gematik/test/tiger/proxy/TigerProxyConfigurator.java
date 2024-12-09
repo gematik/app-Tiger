@@ -17,7 +17,6 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.tracing.TracingPushService;
@@ -71,7 +70,7 @@ public class TigerProxyConfigurator
     }
     log.info("Adding route for 'http://tiger.proxy'...");
     tigerProxy.addRoute(
-      TigerProxyRoute.builder()
+        TigerProxyRoute.builder()
             .from("http://tiger.proxy")
             // you might be tempted to look for "server.port", but don't:
             // when it is zero (random free port) then it stays zero

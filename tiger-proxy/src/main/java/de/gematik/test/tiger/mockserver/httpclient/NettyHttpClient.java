@@ -258,6 +258,7 @@ public class NettyHttpClient {
     if (remoteAddress == null || proxyConfiguration == null) {
       return true;
     }
-    return NoProxyUtils.shouldUseProxyForHost(remoteAddress.getAddress(), proxyConfiguration.getNoProxyHosts());
+    return NoProxyUtils.shouldUseProxyForHost(
+        remoteAddress.getAddress(), proxyConfiguration.getNoProxyHosts());
   }
 }

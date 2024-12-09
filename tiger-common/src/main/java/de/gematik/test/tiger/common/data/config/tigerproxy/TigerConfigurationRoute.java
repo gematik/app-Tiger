@@ -19,7 +19,6 @@ package de.gematik.test.tiger.common.data.config.tigerproxy;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.*;
@@ -32,11 +31,13 @@ import lombok.*;
 public class TigerConfigurationRoute {
 
   private String from;
+
   @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
   @Singular("to")
   private List<String> to = new ArrayList<>();
+
   private boolean disableRbelLogging;
-  private TigerBasicAuthConfiguration basicAuth;
+  private TigerRouteAuthenticationConfiguration authentication;
   private List<String> criterions;
   @Builder.Default private List<String> hosts = new ArrayList<>();
 }

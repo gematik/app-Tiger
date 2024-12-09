@@ -23,10 +23,16 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader.TigerPkiIdentityLoaderException;
 import java.io.File;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import lombok.Data;
+import lombok.val;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class TigerPkiIdentityLoaderTest {
 
@@ -36,19 +42,21 @@ class TigerPkiIdentityLoaderTest {
   }
 
   @ParameterizedTest
-  @CsvSource(
-      textBlock =
-          """
-            src/test/resources/egk_aut_keystore.jks;gematik,    gematik;src/test/resources/egk_aut_keystore.jks,     src/test/resources/egk_aut_keystore.jks;jks
-            src\\test\\resources\\egk_aut_keystore.jks;gematik, gematik;src\\test\\resources\\egk_aut_keystore.jks,  src\\test\\resources\\egk_aut_keystore.jks;jks
-            """)
-  void loadJks(String pathKey, String keyPath, String pathStoreType) {
-    assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(pathKey)).isNotNull();
-    assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(keyPath)).isNotNull();
+  @ValueSource(
+      strings = {
+        "src/test/resources/egk_aut_keystore.jks;gematik",
+        "src\\test\\resources\\egk_aut_keystore.jks;gematik",
+        "gematik;src/test/resources/egk_aut_keystore.jks",
+        "gematik;src\\test\\resources\\egk_aut_keystore.jks"
+      })
+  void loadJksWithDifferentPaths(String path) {
+    assertThat(TigerPkiIdentityLoader.loadRbelPkiIdentity(path)).isNotNull();
+  }
+
+  @Test
+  void testExceptionIsThrownWithoutProperFilename() {
     assertThatThrownBy(() -> TigerPkiIdentityLoader.loadRbelPkiIdentity("foo;bar;jks"))
         .hasMessageContaining("file");
-    assertThatThrownBy(() -> TigerPkiIdentityLoader.loadRbelPkiIdentity(pathStoreType))
-        .hasMessageContaining("password");
   }
 
   @ParameterizedTest
@@ -174,5 +182,83 @@ class TigerPkiIdentityLoaderTest {
     assertThatThrownBy(() -> TigerPkiIdentityLoader.loadRbelPkiIdentity(incorrectPath))
         .isInstanceOf(TigerPkiIdentityLoaderException.class)
         .hasMessage("Unable to determine store-type for input '%s'!".formatted(incorrectPath));
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        """
+        myKey:
+          filename: src/test/resources/egk_aut_keystore.jks
+          password: gematik
+        """,
+        """
+        replace.with: src/test/resources/egk_aut_keystore.jks
+        somePw: gematik
+        myKey:
+          filename: ${base.replace.with}
+          password: ${base.somePw}
+        """,
+        """
+        myKey:
+          filename: "src/test/resources/someP12File.bin"
+          storeType: p12
+        """,
+        """
+        myKey:
+          filename: "src/test/resources/pwWithSemicolon.p12"
+          password: "Semi;colon"
+        """,
+        """
+        myKey: src/test/resources/egk_aut_keystore.jks
+        """
+      })
+  void initializeWithDetailDescriptionOrWithout(String yamlFragment) {
+    TigerGlobalConfiguration.initialize();
+    TigerGlobalConfiguration.readFromYaml(yamlFragment, "base");
+    final Optional<NestedKeyClass> blub =
+        TigerGlobalConfiguration.instantiateConfigurationBean(NestedKeyClass.class, "base");
+    assertThat(blub).get().extracting("myKey").extracting("certificate").isNotNull();
+    assertThat(blub).get().extracting("myKey").extracting("privateKey").isNotNull();
+  }
+
+  @Test
+  void readCompactForm_compactFormShouldBeUsedForDeserialization() {
+    TigerGlobalConfiguration.initialize();
+    TigerGlobalConfiguration.readFromYaml("myKey: src/test/resources/egk_aut_keystore.jks;gematik");
+    val key =
+        TigerGlobalConfiguration.instantiateConfigurationBean(
+                TigerConfigurationPkiIdentity.class, "myKey")
+            .get();
+    TigerGlobalConfiguration.putValue("another.key", key);
+    final Map<String, String> map = TigerGlobalConfiguration.readMap("another");
+    assertThat(map)
+        .containsExactly(Pair.of("key", "src/test/resources/egk_aut_keystore.jks;gematik;JKS"));
+  }
+
+  @Test
+  void readObjectForm_objectFormShouldBeUsedForDeserialization() {
+    TigerGlobalConfiguration.initialize();
+    TigerGlobalConfiguration.readFromYaml(
+        """
+        myKey:
+          filename: src/test/resources/egk_aut_keystore.jks
+          password: gematik
+        """);
+    val key =
+        TigerGlobalConfiguration.instantiateConfigurationBean(
+                TigerConfigurationPkiIdentity.class, "myKey")
+            .get();
+    TigerGlobalConfiguration.putValue("another.key", key);
+    final Map<String, String> map = TigerGlobalConfiguration.readMap("another");
+    assertThat(map)
+        .containsExactly(
+            Pair.of("key.filenames.0", "src/test/resources/egk_aut_keystore.jks"),
+            Pair.of("key.password", "gematik"));
+  }
+
+  @Data
+  public static class NestedKeyClass {
+    private final TigerConfigurationPkiIdentity myKey;
   }
 }

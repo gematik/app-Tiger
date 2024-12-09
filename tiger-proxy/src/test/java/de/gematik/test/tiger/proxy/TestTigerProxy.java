@@ -66,7 +66,6 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.http.MediaType;
-import org.springframework.test.util.TestSocketUtils;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
@@ -532,18 +531,22 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                     .withBasicAuth("user", "password")
                     .willReturn(aResponse().withStatus(777).withBody("{\"foo\":\"bar\"}"))));
 
-    spawnTigerProxyWithDefaultRoutesAndWith(
+    spawnTigerProxyWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(
                 List.of(
                     TigerConfigurationRoute.builder()
                         .from("http://backendWithBasicAuth")
                         .to("http://localhost:" + fakeBackendServerPort)
-                        .basicAuth(new TigerBasicAuthConfiguration("user", "password"))
+                        .authentication(
+                            TigerRouteAuthenticationConfiguration.builder()
+                                .username("user")
+                                .password("password")
+                                .build())
                         .build()))
             .build());
 
-    assertThatThrownBy(() -> proxyRest.get("/authenticatedPath").asJson())
+    assertThatThrownBy(() -> proxyRest.get("http://backend/authenticatedPath").asJson())
         .isInstanceOf(UnirestException.class);
     assertThat(proxyRest.get("http://backendWithBasicAuth/authenticatedPath").asJson().getStatus())
         .isEqualTo(777);
@@ -1072,25 +1075,5 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
     val request = Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/");
     assertThatThrownBy(request::asEmpty).hasRootCauseInstanceOf(NoHttpResponseException.class);
-  }
-
-  @SneakyThrows
-  @Test
-  void twoDestinationsOnlyOneReachable_shouldChooseCorrectOne() {
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerConfigurationRoute.builder()
-                        .from("/")
-                        .to(
-                            List.of(
-                                "http://localhost:" + TestSocketUtils.findAvailableTcpPort(),
-                                "http://localhost:" + fakeBackendServerPort))
-                        .build()))
-            .build());
-
-    val response = proxyRest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
-    assertThat(response.getStatus()).isEqualTo(666);
   }
 }

@@ -31,6 +31,7 @@ public class CfgTemplate {
   private List<String> source = new ArrayList<>();
   private String version;
   private Integer startupTimeoutSec;
+  private Integer startupPollIntervalMs;
   private boolean active = true;
   private String healthcheckUrl;
   private Integer healthcheckReturnCode;

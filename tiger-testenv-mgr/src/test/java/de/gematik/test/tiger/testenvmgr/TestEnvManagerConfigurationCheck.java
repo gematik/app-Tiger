@@ -20,16 +20,21 @@ import static org.assertj.core.api.Assertions.*;
 
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
+import de.gematik.test.tiger.common.pki.TigerPkiIdentityInformation;
+import de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader.StoreType;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import java.util.List;
 import java.util.Map;
 import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
@@ -48,6 +53,11 @@ class TestEnvManagerConfigurationCheck {
 
   @BeforeEach
   public void resetConfig() {
+    TigerGlobalConfiguration.reset();
+  }
+
+  @AfterEach
+  public void cleanUp() {
     TigerGlobalConfiguration.reset();
   }
 
@@ -236,14 +246,22 @@ additionalYamls:
         "tim.keystore.pw = gematik"
       })
   void testProxyEnvironmentVariables(TigerTestEnvMgr envMgr) {
-    assertThat(
-            envMgr
-                .getLocalTigerProxyOrFail()
-                .getTigerProxyConfiguration()
-                .getTls()
-                .getForwardMutualTlsIdentity()
-                .getFileLoadingInformation())
-        .isEqualTo("src\\test\\resources\\egk_aut_keystore.jks;gematik;00");
+    final TigerConfigurationPkiIdentity forwardMutualTlsIdentity =
+        envMgr
+            .getLocalTigerProxyOrFail()
+            .getTigerProxyConfiguration()
+            .getTls()
+            .getForwardMutualTlsIdentity();
+    assertThat(forwardMutualTlsIdentity)
+        .isNotNull()
+        .extracting(TigerConfigurationPkiIdentity::getFileLoadingInformation)
+        .isEqualTo(
+            TigerPkiIdentityInformation.builder()
+                .filenames(List.of("src\\test\\resources\\egk_aut_keystore.jks"))
+                .password("gematik")
+                .storeType(StoreType.JKS)
+                .useCompactFormat(true)
+                .build());
   }
 
   // -----------------------------------------------------------------------------------------------------------------

@@ -67,9 +67,7 @@ public abstract class AbstractTestTigerTestEnvMgr {
   @BeforeEach
   public void resetConfiguration(WireMockRuntimeInfo runtimeInfo) {
     TigerGlobalConfiguration.reset();
-    runtimeInfo
-        .getWireMock()
-        .register(get("/download").willReturn(ok().withBody(winstoneBytes)));
+    runtimeInfo.getWireMock().register(get("/download").willReturn(ok().withBody(winstoneBytes)));
   }
 
   // -----------------------------------------------------------------------------------------------------------------

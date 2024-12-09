@@ -1,0 +1,45 @@
+@startuml
+
+!include plantuml.style
+
+title Tiger validation process
+
+start
+
+:Clone Tiger testsuite from github;
+
+fork
+#palegreen:Start Tiger validation suite manually via maven;
+
+#palegreen:The validation test suite is started\n\
+        and waiting for the first request.;
+
+:Perform your manual test activities, \n\
+guided by Tiger Notifications on screen;
+
+fork again
+
+:Integrate your CI/CT with Tiger REST API;
+
+:Start your automated tests;
+
+#palegreen:Tiger validation suite is started via REST API\n\
+and waiting for first request;
+
+:Perform test activities vi CI/CT Pipeline;
+
+end fork
+
+#palegreen:The validation test suite checks that all requests and responses,\n\
+matching the specified work flow have been received in order\n\
+and do match all criteria.;
+
+#palegreen:Create a local test report as ZIP archive;
+
+:Upload the ZIP archive to the TITUS platform;
+
+:The next step in the certification process can be performed;
+
+end
+
+@enduml

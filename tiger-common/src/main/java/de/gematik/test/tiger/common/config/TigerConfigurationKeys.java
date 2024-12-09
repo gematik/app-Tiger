@@ -40,6 +40,10 @@ public class TigerConfigurationKeys {
   public static final TigerTypedConfigurationKey<Integer> EXTERNAL_SERVER_CONNECTION_TIMEOUT =
       new TigerTypedConfigurationKey<>(
           "tiger.internal.externalServer.connectionTimeout", Integer.class, 1000);
+  public static final TigerTypedConfigurationKey<Integer>
+      EXTERNAL_SERVER_STARTUP_POLL_INTERVAL_IN_MS =
+          new TigerTypedConfigurationKey<>(
+              "tiger.internal.externalServer.startupPollIntervalMs", Integer.class, 1000);
   public static final TigerTypedConfigurationKey<Boolean> TRAFFIC_VISUALIZATION_ACTIVE =
       new TigerTypedConfigurationKey<>("tiger.lib.trafficVisualization", Boolean.class, false);
 

@@ -30,7 +30,6 @@ import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.codec.http2.HttpConversionUtil;
-import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 
 /*
@@ -71,8 +70,7 @@ public class MockServerHttpRequestToFullHttpRequest {
   }
 
   @SuppressWarnings("HttpUrlsUsage")
-  public String getURI(
-      HttpRequest httpRequest, ProxyConfiguration proxyConfiguration) {
+  public String getURI(HttpRequest httpRequest, ProxyConfiguration proxyConfiguration) {
     String uri = "";
     if (httpRequest.getPath() != null) {
       if (httpRequest.getQueryStringParameters() != null

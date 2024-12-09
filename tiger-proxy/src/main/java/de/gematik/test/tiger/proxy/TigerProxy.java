@@ -18,15 +18,12 @@ package de.gematik.test.tiger.proxy;
 
 import static de.gematik.test.tiger.mockserver.ExpectationBuilder.when;
 import static de.gematik.test.tiger.mockserver.model.HttpRequest.request;
-import static de.gematik.test.tiger.proxy.tls.OcspUtils.buildOcspResponse;
-import static de.gematik.test.tiger.proxy.tls.TlsCertificateGenerator.generateNewCaCertificate;
 
 import de.gematik.rbellogger.converter.HttpPairingInBinaryChannelConverter;
 import de.gematik.rbellogger.util.RbelMessagesSupplier;
-import de.gematik.test.tiger.TigerAgent;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
@@ -34,21 +31,17 @@ import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.netty.MockServer;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
-import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactorySupplier;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
-import de.gematik.test.tiger.proxy.exceptions.TigerProxySslException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import de.gematik.test.tiger.proxy.handler.ForwardAllCallback;
 import de.gematik.test.tiger.proxy.handler.ForwardProxyCallback;
 import de.gematik.test.tiger.proxy.handler.ReverseProxyCallback;
-import de.gematik.test.tiger.proxy.tls.CombinedKeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.tls.DynamicKeyAndCertificateFactory;
-import de.gematik.test.tiger.proxy.tls.StaticKeyAndCertificateFactory;
-import io.netty.handler.ssl.SslProvider;
+import de.gematik.test.tiger.proxy.tls.MockServerTlsConfigurator;
 import jakarta.annotation.PreDestroy;
 import java.net.*;
 import java.security.*;
@@ -86,7 +79,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   @Getter private final UUID healthEndpointRequestUuid = UUID.randomUUID();
 
   private MockServer mockServer;
-  private TigerPkiIdentity generatedRootCa;
+  private TigerPkiIdentity serverRootCa;
 
   public TigerProxy(final TigerProxyConfiguration configuration) {
     super(configuration);
@@ -103,43 +96,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
         getRbelLogger().getRbelModifier().addModification(modification);
       }
     }
-  }
-
-  private static void customizeServerBuilderCustomizer(
-      MockServerConfiguration mockServerConfiguration, TigerTlsConfiguration tlsConfiguration) {
-    mockServerConfiguration.sslServerContextBuilderCustomizer(
-        builder -> {
-          if (tlsConfiguration.getServerSslSuites() != null) {
-            builder.ciphers(tlsConfiguration.getServerSslSuites());
-          }
-          if (tlsConfiguration.getServerTlsProtocols() != null) {
-            builder.protocols(tlsConfiguration.getServerTlsProtocols());
-          }
-          if (tlsConfiguration.getOcspSignerIdentity() != null) {
-            builder.enableOcsp(true);
-            mockServerConfiguration.ocspResponseSupplier(
-                certificate ->
-                    buildOcspResponse(certificate, tlsConfiguration.getOcspSignerIdentity()));
-            builder.sslProvider(SslProvider.OPENSSL);
-          } else {
-            builder.sslProvider(SslProvider.JDK);
-            builder.sslContextProvider(new BouncyCastleJsseProvider());
-          }
-
-          return builder;
-        });
-  }
-
-  private static void customizeClientBuilderCustomizer(
-      MockServerConfiguration mockServerConfiguration, TigerTlsConfiguration tlsConfiguration) {
-    mockServerConfiguration.sslClientContextBuilderCustomizer(
-        builder -> {
-          if (tlsConfiguration.getClientSslSuites() != null) {
-            builder.ciphers(tlsConfiguration.getClientSslSuites());
-          }
-          builder.sslProvider(SslProvider.JDK);
-          return builder;
-        });
   }
 
   /**
@@ -184,9 +140,16 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   private void createNewMockServer() {
     MockServerConfiguration mockServerConfiguration = MockServerConfiguration.configuration();
     mockServerConfiguration.mockServerName(getName().orElse("MockServer"));
-    mockServerConfiguration.customKeyAndCertificateFactorySupplier(buildKeyAndCertificateFactory());
 
-    customizeSslIfApplicable(mockServerConfiguration);
+    final MockServerTlsConfigurator tlsConfigurator =
+        MockServerTlsConfigurator.builder()
+            .tigerProxyConfiguration(getTigerProxyConfiguration())
+            .mockServerConfiguration(mockServerConfiguration)
+            .tigerProxyName(getName())
+            .build();
+    tlsConfigurator.execute();
+    serverRootCa = tlsConfigurator.getServerRootCa();
+
     mockServerConfiguration.enableTlsTermination(
         getTigerProxyConfiguration().isActivateTlsTermination());
 
@@ -208,7 +171,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
 
   private void addRoutesToTigerProxy() {
     if (getTigerProxyConfiguration().getProxyRoutes() != null) {
-      for (final TigerConfigurationRoute tigerRoute : getTigerProxyConfiguration().getProxyRoutes()) {
+      for (final TigerConfigurationRoute tigerRoute :
+          getTigerProxyConfiguration().getProxyRoutes()) {
         addRoute(tigerRoute);
       }
     }
@@ -246,101 +210,13 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
         .add(
             TigerConfigurationRoute.builder()
                 .from("/")
-                .to(List.of(
-                    "http://"
-                        + getTigerProxyConfiguration().getDirectReverseProxy().getHostname()
-                        + ":"
-                        + getTigerProxyConfiguration().getDirectReverseProxy().getPort()))
+                .to(
+                    List.of(
+                        "http://"
+                            + getTigerProxyConfiguration().getDirectReverseProxy().getHostname()
+                            + ":"
+                            + getTigerProxyConfiguration().getDirectReverseProxy().getPort()))
                 .build());
-  }
-
-  private void customizeSslIfApplicable(MockServerConfiguration mockServerConfiguration) {
-    final TigerTlsConfiguration tlsConfiguration = getTigerProxyConfiguration().getTls();
-
-    customizeServerBuilderCustomizer(mockServerConfiguration, tlsConfiguration);
-
-    customizeClientBuilderCustomizer(mockServerConfiguration, tlsConfiguration);
-
-    customizeClientBuilderFunction(mockServerConfiguration, tlsConfiguration);
-
-    if (getTigerProxyConfiguration().getTls() != null
-        && getTigerProxyConfiguration().getTls().getMasterSecretsFile() != null) {
-      TigerAgent.addListener(
-          new TigerProxyMasterSecretListener(
-              getTigerProxyConfiguration().getTls().getMasterSecretsFile()));
-    }
-  }
-
-  private void customizeClientBuilderFunction(
-      MockServerConfiguration mockServerConfiguration, TigerTlsConfiguration tlsConfiguration) {
-    if (tlsConfiguration.getClientSupportedGroups() != null
-        && !tlsConfiguration.getClientSupportedGroups().isEmpty()) {
-      mockServerConfiguration.clientSslContextBuilderFunction(
-          sslContextBuilder -> {
-            try {
-              System.setProperty(
-                  "jdk.tls.namedGroups",
-                  String.join(",", tlsConfiguration.getClientSupportedGroups()));
-              sslContextBuilder.sslProvider(SslProvider.JDK);
-              return sslContextBuilder.build();
-            } catch (SSLException e) {
-              throw new TigerProxySslException(
-                  "Error while building SSL context in Tiger-Proxy " + getName().orElse(""), e);
-            }
-          });
-    }
-  }
-
-  private KeyAndCertificateFactorySupplier buildKeyAndCertificateFactory() {
-    return (isServerInstance, mockServerConfiguration) -> {
-      val tlsConfiguration = Optional.ofNullable(getTigerProxyConfiguration().getTls());
-      if (isServerInstance) {
-        KeyAndCertificateFactory serverIdentityFactory =
-            new DynamicKeyAndCertificateFactory(
-                getTigerProxyConfiguration(),
-                determineServerRootCa()
-                    .orElseThrow(
-                        () ->
-                            new TigerProxyStartupException(
-                                "Unable to determine server root CA for TigerProxy TLS Server Identity")),
-                mockServerConfiguration);
-        if (tlsConfiguration.map(TigerTlsConfiguration::getServerIdentity).isPresent()) {
-          serverIdentityFactory =
-              new CombinedKeyAndCertificateFactory(new StaticKeyAndCertificateFactory(
-                List.of(tlsConfiguration.get().getServerIdentity())), serverIdentityFactory);
-        } else if (tlsConfiguration.map(TigerTlsConfiguration::getServerIdentities).isPresent()) {
-          serverIdentityFactory =
-            new CombinedKeyAndCertificateFactory(new StaticKeyAndCertificateFactory(
-                  tlsConfiguration.get().getServerIdentities().stream()
-                      .map(TigerPkiIdentity.class::cast)
-                      .toList()), serverIdentityFactory);
-        }
-        this.tlsFactories.add(serverIdentityFactory);
-        return serverIdentityFactory;
-      } else {
-        if (tlsConfiguration.map(TigerTlsConfiguration::getForwardMutualTlsIdentity).isPresent()) {
-          return new StaticKeyAndCertificateFactory(
-              Collections.singletonList(tlsConfiguration.get().getForwardMutualTlsIdentity()));
-        } else {
-          return new DynamicKeyAndCertificateFactory(
-              getTigerProxyConfiguration(),
-              new TigerPkiIdentity(
-                  "CertificateAuthorityCertificate.pem;CertificateAuthorityPrivateKey.pem;PKCS1"),
-              mockServerConfiguration);
-        }
-      }
-    };
-  }
-
-  private Optional<TigerPkiIdentity> determineServerRootCa() {
-    if (getTigerProxyConfiguration().getTls().getServerRootCa() != null) {
-      return Optional.of(getTigerProxyConfiguration().getTls().getServerRootCa());
-    } else {
-      if (generatedRootCa == null) {
-        generatedRootCa = generateNewCaCertificate();
-      }
-      return Optional.of(generatedRootCa);
-    }
   }
 
   public void subscribeToTrafficEndpoints() {
@@ -419,14 +295,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
 
   public TigerProxyRoute addRoute(final TigerConfigurationRoute tigerRoute) {
     return addRoute(
-        TigerProxyRoute.builder()
-            .from(tigerRoute.getFrom())
-            .to(new TigerRouteSelector(tigerRoute.getTo(), getTigerProxyConfiguration().getForwardToProxy()).selectFirstReachableDestination())
-            .basicAuth(tigerRoute.getBasicAuth())
-            .hosts(tigerRoute.getHosts())
-            .criterions(tigerRoute.getCriterions())
-            .disableRbelLogging(tigerRoute.isDisableRbelLogging())
-            .build());
+        TigerProxyRoute.convertFromTigerConfigurationRoute(
+            tigerRoute, getTigerProxyConfiguration().getForwardToProxy()));
   }
 
   @Override
@@ -507,8 +377,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
         .setAlternativeNames(newAlternativeNames);
 
     for (KeyAndCertificateFactory tlsFactory : tlsFactories) {
-      if (tlsFactory instanceof DynamicKeyAndCertificateFactory) {
-        ((DynamicKeyAndCertificateFactory) tlsFactory).addAlternativeName(host);
+      if (tlsFactory instanceof DynamicKeyAndCertificateFactory dynamicKeyAndCertificateFactory) {
+        dynamicKeyAndCertificateFactory.addAlternativeName(host);
       }
     }
   }
@@ -593,12 +463,13 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     try {
       final KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
       ks.load(null);
-      storeCertificate(ks, determineServerRootCa().get(), 99);
+      val certCounter = new AtomicInteger(0);
+      storeCertificate(ks, serverRootCa, certCounter.getAndIncrement());
       val tlsConfiguration = Optional.ofNullable(getTigerProxyConfiguration().getTls());
       if (tlsConfiguration.map(TigerTlsConfiguration::getServerIdentity).isPresent()) {
-        storeCertificate(ks, tlsConfiguration.get().getServerIdentity(), 0);
+        storeCertificate(
+            ks, tlsConfiguration.get().getServerIdentity(), certCounter.getAndIncrement());
       } else if (tlsConfiguration.map(TigerTlsConfiguration::getServerIdentities).isPresent()) {
-        val certCounter = new AtomicInteger(0);
         tlsConfiguration.map(TigerTlsConfiguration::getServerIdentities).stream()
             .flatMap(Collection::stream)
             .forEach(id -> storeCertificate(ks, id, certCounter.getAndIncrement()));

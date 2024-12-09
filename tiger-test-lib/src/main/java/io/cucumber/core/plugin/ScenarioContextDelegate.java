@@ -16,13 +16,18 @@
 
 package io.cucumber.core.plugin;
 
+import java.net.URI;
+import lombok.Getter;
 import lombok.experimental.Delegate;
 
 public class ScenarioContextDelegate {
 
-  public ScenarioContextDelegate(ScenarioContext context) {
+  @Getter private final URI featureURI;
+
+  public ScenarioContextDelegate(URI featureURI, ScenarioContextParallel context) {
+    this.featureURI = featureURI;
     this.context = context;
   }
 
-  @Delegate private final ScenarioContext context;
+  @Delegate private final ScenarioContextParallel context;
 }

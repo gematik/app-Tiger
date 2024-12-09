@@ -128,7 +128,7 @@ class TigerSerenityReportMojoTest {
   @SneakyThrows
   private void prepareReportDir() {
     final var repoRessourceDir =
-        Paths.get(getClass().getResource("/serenetyReports/fresh").toURI());
+        Paths.get(getClass().getResource("/serenityReports/fresh").toURI());
     FileUtils.copyDirectory(repoRessourceDir.toFile(), reportDir.toFile());
   }
 }

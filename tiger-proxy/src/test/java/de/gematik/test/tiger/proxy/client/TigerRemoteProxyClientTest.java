@@ -32,8 +32,8 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
@@ -294,7 +294,10 @@ class TigerRemoteProxyClientTest {
   @Test
   void reverseProxyRootRoute_checkRemoteTransmission(WireMockRuntimeInfo runtimeInfo) {
     tigerProxy.addRoute(
-        TigerConfigurationRoute.builder().from("/").to("http://localhost:" + runtimeInfo.getHttpPort()).build());
+        TigerConfigurationRoute.builder()
+            .from("/")
+            .to("http://localhost:" + runtimeInfo.getHttpPort())
+            .build());
 
     AtomicInteger listenerCallCounter = new AtomicInteger(0);
     tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());

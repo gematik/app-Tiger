@@ -18,6 +18,7 @@ package de.gematik.test.tiger.common.config;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.Data;
@@ -137,11 +138,11 @@ public class TigerConfigurationKey extends ArrayList<TigerConfigurationKeyString
     addAll(splitKeys(key));
   }
 
-  public TigerConfigurationKey getParentNodeOrIdentity() {
+  public Optional<TigerConfigurationKey> getParentNode() {
     if (size() > 1) {
-      return new TigerConfigurationKey(subList(0, size() - 1));
+      return Optional.of(new TigerConfigurationKey(subList(0, size() - 1)));
     } else {
-      return this;
+      return Optional.empty();
     }
   }
 }

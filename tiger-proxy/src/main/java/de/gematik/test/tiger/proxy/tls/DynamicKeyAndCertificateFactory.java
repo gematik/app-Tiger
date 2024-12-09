@@ -33,6 +33,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -71,9 +72,9 @@ public class DynamicKeyAndCertificateFactory implements KeyAndCertificateFactory
   private final MockServerConfiguration mockServerConfiguration;
 
   public DynamicKeyAndCertificateFactory(
-      TigerProxyConfiguration tigerProxyConfiguration,
-      TigerPkiIdentity caIdentity,
-      MockServerConfiguration mockServerConfiguration) {
+      @NonNull TigerProxyConfiguration tigerProxyConfiguration,
+      @NonNull TigerPkiIdentity caIdentity,
+      @NonNull MockServerConfiguration mockServerConfiguration) {
     this.caIdentity = caIdentity;
     this.eeIdentity = null;
     this.serverName = tigerProxyConfiguration.getTls().getDomainName();
@@ -85,15 +86,21 @@ public class DynamicKeyAndCertificateFactory implements KeyAndCertificateFactory
   }
 
   @Override
-  public Optional<TigerPkiIdentity> buildAndSavePrivateKeyAndX509Certificate(String hostname) {
-    assureCurrentCertificateCoversAllNecessaryHosts();
-    if (eeIdentity == null) {
-      generateNewIdentity();
-    }
-    return Optional.ofNullable(eeIdentity);
+  public Optional<TigerPkiIdentity> findExactIdentityForHostname(String hostname) {
+    return Optional.of(resolveIdentityForHostname(hostname));
   }
 
-  private void generateNewIdentity() {
+  @Override
+  public TigerPkiIdentity resolveIdentityForHostname(String hostname) {
+    assureCurrentCertificateCoversAllNecessaryHosts();
+    if (eeIdentity == null) {
+      return generateNewIdentity();
+    } else {
+      return eeIdentity;
+    }
+  }
+
+  private TigerPkiIdentity generateNewIdentity() {
     try {
       KeyPair keyPair = this.generateRsaKeyPair(2048);
       X509Certificate x509Certificate =
@@ -103,6 +110,7 @@ public class DynamicKeyAndCertificateFactory implements KeyAndCertificateFactory
               this.caIdentity.getPrivateKey());
 
       eeIdentity = new TigerPkiIdentity(x509Certificate, keyPair.getPrivate());
+      return eeIdentity;
     } catch (RuntimeException
         | GeneralSecurityException
         | IOException

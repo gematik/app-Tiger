@@ -23,21 +23,22 @@ import java.util.Objects;
 
 public class NoProxyUtils {
 
-  public static boolean shouldUseProxyForHost(InetAddress remoteAddress, List<String> noProxyHosts) {
+  public static boolean shouldUseProxyForHost(
+      InetAddress remoteAddress, List<String> noProxyHosts) {
     if (noProxyHosts == null) {
       return true;
     }
     return noProxyHosts.stream()
-      .map(String::trim)
-      .map(
-        host -> {
-          try {
-            return InetAddress.getByName(host);
-          } catch (UnknownHostException e) {
-            return null;
-          }
-        })
-      .filter(Objects::nonNull)
-      .noneMatch(a -> remoteAddress.getHostName().equals(a.getHostName()));
+        .map(String::trim)
+        .map(
+            host -> {
+              try {
+                return InetAddress.getByName(host);
+              } catch (UnknownHostException e) {
+                return null;
+              }
+            })
+        .filter(Objects::nonNull)
+        .noneMatch(a -> remoteAddress.getHostName().equals(a.getHostName()));
   }
 }

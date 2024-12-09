@@ -17,37 +17,39 @@
 package de.gematik.test.tiger.common.pki;
 
 import static de.gematik.test.tiger.common.config.TigerConfigurationLoader.TIGER_CONFIGURATION_ATTRIBUTE_KEY;
+import static de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader.parseInformationString;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.node.TextNode;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity.TigerPkiIdentityDeserializer;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity.TigerPkiIdentitySerializer;
+import de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader.StoreType;
 import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.val;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-@NoArgsConstructor
-@JsonIgnoreProperties(value = {"certificate", "privateKey", "keyId", "certificateChain"})
 @JsonDeserialize(using = TigerPkiIdentityDeserializer.class)
 @JsonSerialize(using = TigerPkiIdentitySerializer.class)
 public class TigerConfigurationPkiIdentity extends TigerPkiIdentity {
-  private String fileLoadingInformation;
+  private TigerPkiIdentityInformation fileLoadingInformation;
 
-  public TigerConfigurationPkiIdentity(String fileLoadingInformation) {
+  public TigerConfigurationPkiIdentity(String informationString) {
+    super(informationString);
+    this.fileLoadingInformation = parseInformationString(informationString);
+  }
+
+  public TigerConfigurationPkiIdentity(TigerPkiIdentityInformation fileLoadingInformation) {
     super(fileLoadingInformation);
     this.fileLoadingInformation = fileLoadingInformation;
   }
@@ -56,18 +58,52 @@ public class TigerConfigurationPkiIdentity extends TigerPkiIdentity {
       extends JsonDeserializer<TigerConfigurationPkiIdentity> {
 
     @Override
-    public TigerConfigurationPkiIdentity deserialize(JsonParser p, DeserializationContext ctxt) {
+    public TigerConfigurationPkiIdentity deserialize(
+        JsonParser jsonParser, DeserializationContext ctxt) {
       try {
-        final String value = ((TextNode) p.readValueAsTree()).asText();
-        final String substitutedValue =
-            TokenSubstituteHelper.substitute(
-                value,
-                (TigerConfigurationLoader) ctxt.getAttribute(TIGER_CONFIGURATION_ATTRIBUTE_KEY));
-        return new TigerConfigurationPkiIdentity(substitutedValue);
+        JsonNode node = jsonParser.getCodec().readTree(jsonParser);
+
+        if (node.isTextual()) {
+          final String substitutedValue = replacePlaceholders(ctxt, node.asText());
+          return new TigerConfigurationPkiIdentity(substitutedValue);
+        }
+
+        if (node.isObject()) {
+          val pkiLoadingInformation = new TigerPkiIdentityInformation();
+          pkiLoadingInformation.setFilenames(
+              List.of(
+                  findField(node, "filename", ctxt)
+                      .or(() -> findField(node, "fileName", ctxt))
+                      .orElseThrow(
+                          () ->
+                              new TigerConfigurationException(
+                                  "Missing filename in TigerConfigurationPkiIdentity"))));
+          findField(node, "password", ctxt).ifPresent(pkiLoadingInformation::setPassword);
+          findField(node, "storeType", ctxt)
+              .or(() -> findField(node, "storetype", ctxt))
+              .flatMap(StoreType::findStoreTypeForString)
+              .ifPresent(pkiLoadingInformation::setStoreType);
+          return new TigerConfigurationPkiIdentity(pkiLoadingInformation);
+        }
+
+        throw new IOException("Unsupported YAML structure for TigerConfigurationPkiIdentity");
       } catch (IOException e) {
         throw new TigerConfigurationException(
             "Error while deserializing from JSON: " + e.getMessage(), e);
       }
+    }
+
+    private static Optional<String> findField(
+        JsonNode node, String fieldname, DeserializationContext ctxt) {
+      if (node.hasNonNull(fieldname) && node.get(fieldname).isTextual()) {
+        return Optional.of(replacePlaceholders(ctxt, node.get(fieldname).asText()));
+      }
+      return Optional.empty();
+    }
+
+    private static String replacePlaceholders(DeserializationContext ctxt, String text) {
+      return TokenSubstituteHelper.substitute(
+          text, (TigerConfigurationLoader) ctxt.getAttribute(TIGER_CONFIGURATION_ATTRIBUTE_KEY));
     }
   }
 
@@ -78,7 +114,14 @@ public class TigerConfigurationPkiIdentity extends TigerPkiIdentity {
     public void serialize(
         TigerConfigurationPkiIdentity value, JsonGenerator gen, SerializerProvider serializers)
         throws IOException {
-      gen.writeString(value.getFileLoadingInformation());
+      if (value.getFileLoadingInformation() != null
+          && value.getFileLoadingInformation().isUseCompactFormat()) {
+        gen.writeString(value.getFileLoadingInformation().generateCompactFormat());
+        return;
+      }
+      serializers
+          .findValueSerializer(TigerPkiIdentityInformation.class)
+          .serialize(value.getFileLoadingInformation(), gen, serializers);
     }
   }
 }

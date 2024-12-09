@@ -19,7 +19,7 @@ package de.gematik.test.tiger.testenvmgr;
 
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
+import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import jakarta.servlet.ServletContextListener;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +37,7 @@ public class TigerTestEnvMgrApplication implements ServletContextListener {
     Map<String, Object> properties = TigerTestEnvMgr.getConfiguredLoggingLevels();
     properties.put("spring.mustache.enabled", false); // TGR-875 avoid warning in console
     properties.put("spring.mustache.check-template-location", false);
+    properties.putAll(TigerTestEnvMgr.getTigerLibConfiguration());
     new SpringApplicationBuilder()
         .bannerMode(Mode.OFF)
         .properties(properties)

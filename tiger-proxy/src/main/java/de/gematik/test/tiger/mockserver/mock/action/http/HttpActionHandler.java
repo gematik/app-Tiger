@@ -33,14 +33,12 @@ import de.gematik.test.tiger.mockserver.mock.HttpAction;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
-import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.scheduler.Scheduler;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.EventLoopGroup;
 import io.netty.util.AttributeKey;
 import java.net.InetSocketAddress;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
@@ -74,9 +72,7 @@ public class HttpActionHandler {
     this.configuration = configuration;
     this.httpStateHandler = httpStateHandler;
     this.scheduler = httpStateHandler.getScheduler();
-    this.httpClient =
-        new NettyHttpClient(
-            configuration, eventLoopGroup, nettySslContextFactory);
+    this.httpClient = new NettyHttpClient(configuration, eventLoopGroup, nettySslContextFactory);
   }
 
   public void processAction(

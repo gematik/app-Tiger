@@ -16,8 +16,6 @@
 
 package de.gematik.test.tiger.common.pki;
 
-import static de.gematik.test.tiger.common.pki.TigerPkiIdentityLoader.StoreType.PKCS12;
-
 import de.gematik.rbellogger.util.CryptoLoader;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
@@ -29,24 +27,49 @@ import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+@Slf4j
 public class TigerPkiIdentityLoader {
 
   private static final String CLASSPATH_PREFIX = "classpath:";
   private static final List<String> DEFAULT_KEYSTORE_PASSWORDS =
-      List.of("00", "123456", "gematik", "changeit");
+      List.of(
+          // common passwords used in keystore-files
+          "00",
+          "123456",
+          "gematik",
+          "changeit",
+          // some additional common passwords
+          "12345678",
+          "1234567890",
+          "password",
+          "qwerty",
+          "123456789",
+          "12345",
+          "abcdef",
+          "111111",
+          "1234567",
+          "password1",
+          "letmein",
+          "admin",
+          "welcome",
+          "iloveyou",
+          "sunshine",
+          "abc123",
+          "trustno1",
+          "123123",
+          "monkey",
+          "dragon");
 
   static {
     TigerSecurityProviderInitialiser.initialize();
@@ -64,11 +87,7 @@ public class TigerPkiIdentityLoader {
    * @return pki identity object as used within the Tiger platform
    */
   public static TigerPkiIdentity loadRbelPkiIdentity(String information) {
-    return loadRbelPkiIdentity(Optional.empty(), information);
-  }
-
-  public static TigerPkiIdentity loadRbelPkiIdentity(File file, String information) {
-    return loadRbelPkiIdentity(Optional.of(file), information);
+    return guessStringPartsAndTryToLoadIdentity(information);
   }
 
   @SneakyThrows
@@ -76,10 +95,17 @@ public class TigerPkiIdentityLoader {
     Pair<String, byte[]> keystore =
         Pair.of(file.getAbsolutePath(), FileUtils.readFileToByteArray(file));
     final List<String> keystorePasswords = getAllKeystorePasswords();
+    final List<String> filenameList = List.of(keystore.getLeft());
+    final StoreType storeType = guessStoreType(filenameList).orElseThrow();
 
     for (String password : keystorePasswords) {
       try {
-        return loadKeystoreFrom(keystore, password, PKCS12.name());
+        return loadKeystoreFrom(
+            TigerPkiIdentityInformation.builder()
+                .filenames(filenameList)
+                .storeType(storeType)
+                .password(password)
+                .build());
       } catch (TigerPkiIdentityLoaderException e) {
         // continue
       }
@@ -98,40 +124,30 @@ public class TigerPkiIdentityLoader {
     return keystorePasswords;
   }
 
-  private static TigerPkiIdentity loadRbelPkiIdentity(
-      Optional<File> fileOptional, String information) {
+  private static TigerPkiIdentity guessStringPartsAndTryToLoadIdentity(String information) {
+    final var identityInformation = parseInformationString(information);
+    return loadIdentity(identityInformation);
+  }
+
+  public static TigerPkiIdentityInformation parseInformationString(String information) {
+    val identityInformation = new TigerPkiIdentityInformation();
+    identityInformation.setUseCompactFormat(true);
     final List<String> informationSplits =
-        Stream.concat(
-                Stream.of(fileOptional)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .map(File::getAbsolutePath),
-                Stream.of(information.split(";")))
-            .map(String::trim)
-            .toList();
-    final StoreType storeType =
+        Stream.of(information.split(";")).map(String::trim).toList();
+
+    // Store type
+    identityInformation.setStoreType(
         extractStoreType(informationSplits)
             .or(() -> guessStoreType(informationSplits))
             .orElseThrow(
                 () ->
                     new TigerPkiIdentityLoaderException(
-                        "Unable to determine store-type for input '" + information + "'!"));
-    List<Pair<String, byte[]>> fileNamesAndContent =
-        fileOptional
-            .map(
-                f -> {
-                  try {
-                    return List.of(Pair.of(f.getAbsolutePath(), FileUtils.readFileToByteArray(f)));
-                  } catch (IOException e) {
-                    throw new IllegalArgumentException(
-                        "Error while reading from file '" + f.getAbsolutePath() + "'!", e);
-                  }
-                })
-            .orElseGet(() -> extractFileNames(informationSplits));
-    List<String> fileNames = fileNamesAndContent.stream().map(Pair::getLeft).toList();
+                        "Unable to determine store-type for input '" + information + "'!")));
+    List<Pair<String, byte[]>> fileNamesAndContent = extractFileNames(informationSplits);
+    identityInformation.setFilenames(fileNamesAndContent.stream().map(Pair::getLeft).toList());
 
     if (fileNamesAndContent.isEmpty()
-        || (!storeType.isKeystore() && fileNamesAndContent.size() < 2)) {
+        || (!identityInformation.getStoreType().isKeystore() && fileNamesAndContent.size() < 2)) {
       throw new IllegalArgumentException(
           "Could not find file information in parameters "
               + "(maybe the files could not be found?)! ("
@@ -139,39 +155,62 @@ public class TigerPkiIdentityLoader {
               + ")");
     }
 
-    if (storeType.isKeystore()) {
-      return loadKeystoreFrom(
-          fileNamesAndContent.get(0),
-          guessPasswordField(informationSplits, fileNames, storeType),
-          storeType.name());
+    if (identityInformation.getStoreType().isKeystore()) {
+      identityInformation.setPassword(
+          guessPasswordField(
+                  informationSplits,
+                  identityInformation.getFilenames(),
+                  identityInformation.getStoreType())
+              .orElse(null));
+    }
+    return identityInformation;
+  }
+
+  public static TigerPkiIdentity loadIdentity(TigerPkiIdentityInformation identityInformation) {
+    if (identityInformation.getOrGuessStoreType().isKeystore()) {
+      if (identityInformation.getPassword() != null) {
+        return loadKeystoreFrom(identityInformation);
+      } else {
+        return getAllKeystorePasswords().stream()
+            .map(
+                password -> {
+                  try {
+                    return loadKeystoreFrom(
+                        identityInformation.toBuilder().password(password).build());
+                  } catch (Exception e) {
+                    return null;
+                  }
+                })
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new TigerPkiIdentityLoaderException(
+                        "No valid password found and could not be guessed for source '"
+                            + identityInformation.getFilenames().get(0)
+                            + "'"));
+      }
     } else {
-      final TigerPkiIdentity rbelPkiIdentity = loadCertKeyPair(storeType, fileNamesAndContent);
-      final TigerPkiIdentity tigerPkiIdentity = new TigerPkiIdentity();
-      tigerPkiIdentity.setCertificate(rbelPkiIdentity.getCertificate());
-      tigerPkiIdentity.setPrivateKey(rbelPkiIdentity.getPrivateKey());
-      tigerPkiIdentity.setKeyId(rbelPkiIdentity.getKeyId());
-      return tigerPkiIdentity;
+      return loadCertKeyPair(identityInformation);
     }
   }
 
-  private static String guessPasswordField(
+  private static Optional<String> guessPasswordField(
       List<String> informationSplits, List<String> fileNames, StoreType storeType) {
     return informationSplits.stream()
         .filter(part -> !fileNames.contains(part))
-        .filter(part -> !storeType.name().equalsIgnoreCase(part))
-        .findAny()
-        .orElseThrow(
-            () ->
-                new TigerPkiIdentityLoaderException(
-                    "Unable to guess password from parts " + informationSplits));
+        .filter(
+            part ->
+                !storeType.name().equalsIgnoreCase(part)
+                    && storeType.getNames().stream().noneMatch(s -> s.equalsIgnoreCase(part)))
+        .findAny();
   }
 
-  private static TigerPkiIdentity loadCertKeyPair(
-      StoreType storeType, List<Pair<String, byte[]>> fileNamesAndContent) {
-    final byte[] data0 = fileNamesAndContent.get(0).getRight();
-    final byte[] data1 = fileNamesAndContent.get(1).getRight();
+  private static TigerPkiIdentity loadCertKeyPair(TigerPkiIdentityInformation identityInformation) {
+    final byte[] data0 = forceReadDataFromLocation(identityInformation.getFilenames().get(0));
+    final byte[] data1 = forceReadDataFromLocation(identityInformation.getFilenames().get(1));
 
-    if (storeType == StoreType.PKCS1) {
+    if (identityInformation.getStoreType() == StoreType.PKCS1) {
       try {
         return CryptoLoader.getIdentityFromPemAndPkcs1(data0, data1);
       } catch (Exception e) {
@@ -188,7 +227,7 @@ public class TigerPkiIdentityLoader {
 
   private static List<Pair<String, byte[]>> extractFileNames(List<String> informationSplits) {
     return informationSplits.stream()
-        .map(part -> Pair.of(part, loadFileOrResourceData(part)))
+        .map(part -> Pair.of(part, readDataFromLocation(part)))
         .filter(pair -> pair.getValue().isPresent())
         .map(pair -> Pair.of(pair.getLeft(), pair.getRight().get()))
         .toList();
@@ -202,7 +241,7 @@ public class TigerPkiIdentityLoader {
         .findAny();
   }
 
-  private static Optional<StoreType> guessStoreType(List<String> informationSplits) {
+  public static Optional<StoreType> guessStoreType(List<String> informationSplits) {
     return informationSplits.stream()
         .flatMap(part -> Stream.of(part.split("\\.")))
         .map(StoreType::findStoreTypeForString)
@@ -212,16 +251,25 @@ public class TigerPkiIdentityLoader {
   }
 
   private static TigerPkiIdentity loadKeystoreFrom(
-      Pair<String, byte[]> keyStore, String password, String keystoreType) {
+      TigerPkiIdentityInformation identityInformation) {
+    val sourceUri = identityInformation.getFilenames().get(0);
+    val keystoreInputStream =
+        readDataFromLocation(sourceUri)
+            .map(ByteArrayInputStream::new)
+            .orElseThrow(
+                () ->
+                    new TigerPkiIdentityLoaderException(
+                        "Unable to load keystore from '" + sourceUri + "'!"));
     try {
-      KeyStore ks = KeyStore.getInstance(keystoreType);
-      ks.load(new ByteArrayInputStream(keyStore.getRight()), password.toCharArray());
+      KeyStore ks = KeyStore.getInstance(identityInformation.getOrGuessStoreType().name());
+      ks.load(keystoreInputStream, identityInformation.getPassword().toCharArray());
       TigerPkiIdentity result = new TigerPkiIdentity();
       for (Iterator<String> it = ks.aliases().asIterator(); it.hasNext(); ) {
         String alias = it.next();
         if (ks.isKeyEntry(alias)) {
           result.setCertificate((X509Certificate) ks.getCertificate(alias));
-          result.setPrivateKey((PrivateKey) ks.getKey(alias, password.toCharArray()));
+          result.setPrivateKey(
+              (PrivateKey) ks.getKey(alias, identityInformation.getPassword().toCharArray()));
           final Certificate[] certificateChain = ks.getCertificateChain(alias);
           for (int i = 1; i < certificateChain.length; i++) {
             result.addCertificateToCertificateChain((X509Certificate) certificateChain[i]);
@@ -232,19 +280,30 @@ public class TigerPkiIdentityLoader {
       }
       if (result.getPrivateKey() == null) {
         throw new TigerPkiIdentityLoaderException(
-            "Error while loading keystore from '"
-                + keyStore.getLeft()
-                + "': No matching entry found!");
+            "Error while loading keystore from '" + sourceUri + "': No matching entry found!");
       } else {
         return result;
       }
     } catch (Exception e) {
       throw new TigerPkiIdentityLoaderException(
-          "Error while loading keystore from '" + keyStore.getLeft() + "'", e);
+          "Error while loading keystore from '"
+              + sourceUri
+              + "' with password '"
+              + identityInformation.getPassword()
+              + "'",
+          e);
     }
   }
 
-  private static Optional<byte[]> loadFileOrResourceData(final String entityLocation) {
+  private static byte[] forceReadDataFromLocation(String entityLocation) {
+    return readDataFromLocation(entityLocation)
+        .orElseThrow(
+            () ->
+                new TigerPkiIdentityLoaderException(
+                    "Unable to load data from location '" + entityLocation + "'!"));
+  }
+
+  private static Optional<byte[]> readDataFromLocation(String entityLocation) {
     if (StringUtils.isEmpty(entityLocation)) {
       throw new IllegalArgumentException(
           "Trying to load data from empty location! (value is '" + entityLocation + "')");

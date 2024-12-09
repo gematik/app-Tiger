@@ -19,6 +19,7 @@ package io.cucumber.core.plugin;
 
 import static io.cucumber.core.options.Constants.EXECUTION_DRY_RUN_PROPERTY_NAME;
 import static io.cucumber.core.options.Constants.FEATURES_PROPERTY_NAME;
+import static io.cucumber.core.options.Constants.FILTER_TAGS_PROPERTY_NAME;
 
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
@@ -43,6 +44,13 @@ public class TigerLauncherDiscoveryListener implements LauncherDiscoveryListener
     TigerGlobalConfiguration.initialize();
     backupInitialConfigParameters(request.getConfigurationParameters());
     forceDryRun();
+    setDefaultFilterTags(request.getConfigurationParameters());
+  }
+
+  private void setDefaultFilterTags(ConfigurationParameters configurationParameters) {
+    if (configurationParameters.get(FILTER_TAGS_PROPERTY_NAME).isEmpty()) {
+      System.setProperty(FILTER_TAGS_PROPERTY_NAME, "not @Ignore");
+    }
   }
 
   private void backupInitialConfigParameters(ConfigurationParameters configurationParameters) {

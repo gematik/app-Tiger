@@ -29,8 +29,8 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import de.gematik.rbellogger.data.facet.RbelParsingNotCompleteFacet;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import java.io.IOException;
@@ -74,7 +74,10 @@ public abstract class AbstractTigerProxyTest {
   public void setupBackendServer(WireMockRuntimeInfo runtimeInfo) {
     fakeBackendServerPort = runtimeInfo.getHttpPort();
     fakeBackendServerTlsPort = runtimeInfo.getHttpsPort();
-    log.info("Fake backend server started on ports {} (http) and {} (https)", fakeBackendServerPort, fakeBackendServerTlsPort);
+    log.info(
+        "Fake backend server started on ports {} (http) and {} (https)",
+        fakeBackendServerPort,
+        fakeBackendServerTlsPort);
     runtimeInfo
         .getWireMock()
         .register(
@@ -138,10 +141,7 @@ public abstract class AbstractTigerProxyTest {
         .getWireMock()
         .register(
             get("/ok")
-                .willReturn(
-                    status(200)
-                        .withStatusMessage("")
-                        .withBody("{'request':'body'}")));
+                .willReturn(status(200).withStatusMessage("").withBody("{'request':'body'}")));
 
     runtimeInfo
         .getWireMock()
@@ -192,7 +192,10 @@ public abstract class AbstractTigerProxyTest {
     configuration
         .getProxyRoutes()
         .add(
-            TigerConfigurationRoute.builder().from("/").to("http://localhost:" + fakeBackendServerPort).build());
+            TigerConfigurationRoute.builder()
+                .from("/")
+                .to("http://localhost:" + fakeBackendServerPort)
+                .build());
 
     spawnTigerProxyWith(configuration);
   }
@@ -218,10 +221,10 @@ public abstract class AbstractTigerProxyTest {
                 .automaticRetries(false));
 
     log.info(
-      "WIRESHARK filter | | (http or tls) && (tcp.port in { {} {} {} })",
-      tigerProxy.getProxyPort(),
-      fakeBackendServerTlsPort,
-      fakeBackendServerPort);
+        "WIRESHARK filter | | (http or tls) && (tcp.port in { {} {} {} })",
+        tigerProxy.getProxyPort(),
+        fakeBackendServerTlsPort,
+        fakeBackendServerPort);
   }
 
   public void awaitMessagesInTiger(int numberOfMessagesExpected) {
