@@ -131,7 +131,6 @@ public class TigerJexlExecutor {
   }
 
   private boolean matchesAsJexlExpressionInternal(String jexlExpression, TigerJexlContext context) {
-    context.shouldIgnoreEmptyRbelPaths();
     final boolean result =
         createNewExecutor().evaluateJexlExpressionInternal(jexlExpression, context).stream()
             .filter(Boolean.class::isInstance)

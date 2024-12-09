@@ -1,0 +1,46 @@
+@startuml
+title Run test and check result
+
+== Post test run request ==
+Client -> TestsApiController: POST /tests/runs
+activate TestsApiController
+TestsApiController -> ScenarioRunner: requestExecution
+activate ScenarioRunner
+ScenarioRunner -> ScenarioRunner: generateUid
+ScenarioRunner -> junit.Launcher: discover tests
+junit.Launcher -> ScenarioRunner: TestPlan
+ScenarioRunner -> ScenarioRunner: add TestPlan to ResultsMap
+ScenarioRunner -> junit.Launcher: execute test plan
+ScenarioRunner -> TestsApiController
+deactivate ScenarioRunner
+TestsApiController -> Client: 202 Accepted - body with uuid
+deactivate TestsApiController
+junit.Launcher ->> ScenarioRunner: testPlanExecutionStarted
+ScenarioRunner -> ScenarioRunner: update status in ResultsMap
+
+== Get test run result - not yet finished ==
+Client -> TestsApiController: GET /tests/runs/{testRunId}
+activate TestsApiController
+TestsApiController -> ScenarioRunner: getTestResults
+activate ScenarioRunner
+ScenarioRunner -> TestsApiController
+deactivate ScenarioRunner
+TestsApiController -> Client: 200 OK - status running
+deactivate TestsApiController
+junit.Launcher ->> ScenarioRunner: testPlanExecutionFinished
+ScenarioRunner -> ScenarioRunner: update status in ResultsMap
+
+== Get test run result - finished ==
+Client -> TestsApiController: GET /tests/runs/{testRunId}
+activate TestsApiController
+TestsApiController -> ScenarioRunner: getTestResults
+activate ScenarioRunner
+ScenarioRunner -> TestsApiController
+deactivate ScenarioRunner
+TestsApiController -> Client: 200 OK - status finished
+deactivate TestsApiController
+
+
+
+
+@enduml

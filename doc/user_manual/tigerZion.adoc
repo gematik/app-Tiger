@@ -8,6 +8,17 @@ It can return JSON, XML, JWT, JWE and many more, nest these formats into each ot
 The underlying templating language supports loops and conditions.
 It can be used both as a standalone server or as a server directly inside of tiger.
 
+In order to use zion, make sure that you add the tiger-zion dependency in the most recent version.
+
+[source,xml]
+----
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-zion</artifactId>
+            <version>${tiger.version}</version>
+        </dependency>
+----
+
 === Simple canned response
 
 To start lets write a server that has one endpoint: Return a simple JSON.

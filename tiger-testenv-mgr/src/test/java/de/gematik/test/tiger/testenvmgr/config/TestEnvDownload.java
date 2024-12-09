@@ -59,14 +59,11 @@ class TestEnvDownload {
     } else {
       FileUtils.forceMkdir(DOWNLOAD_FOLDER_PATH.toFile());
     }
-    runtimeInfo
-        .getWireMock()
-        .register(get("/download").willReturn(ok().withBody(winstoneBytes)));
+    runtimeInfo.getWireMock().register(get("/download").willReturn(ok().withBody(winstoneBytes)));
     runtimeInfo
         .getWireMock()
         .register(
-                get("/tiger/download")
-                    .willReturn(ok().withBody(tigerProxyBytes).withFixedDelay(2000)));
+            get("/tiger/download").willReturn(ok().withBody(tigerProxyBytes).withFixedDelay(2000)));
   }
 
   @BeforeAll
@@ -137,8 +134,8 @@ class TestEnvDownload {
     runtimeInfo
         .getWireMock()
         .register(
-                get("/failDownload")
-                    .willReturn(ok().withBody("not a jar".getBytes(StandardCharsets.UTF_8))));
+            get("/failDownload")
+                .willReturn(ok().withBody("not a jar".getBytes(StandardCharsets.UTF_8))));
 
     loadConfigurationWithJarsLoadedFromUrls(
         "http://localhost:" + runtimeInfo.getHttpPort() + "/failDownload");

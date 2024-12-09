@@ -32,9 +32,8 @@ import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
-import de.gematik.test.tiger.common.util.TigerSerializationUtil;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
@@ -78,6 +77,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 @Slf4j
@@ -155,6 +155,11 @@ public class TigerTestEnvMgr
         .entrySet()
         .stream()
         .collect(Collectors.toMap(entry -> "logging.level." + entry.getKey(), Entry::getValue));
+  }
+
+  public static Map<String, String> getTigerLibConfiguration() {
+    return TigerGlobalConfiguration.readMapWithCaseSensitiveKeys(TIGER, "lib").entrySet().stream()
+        .collect(Collectors.toMap(entry -> "tiger.lib." + entry.getKey(), Entry::getValue));
   }
 
   @SuppressWarnings("unused")
@@ -328,8 +333,7 @@ public class TigerTestEnvMgr
       proxyConfig.setProxyRoutes(List.of());
     }
 
-    Map<String, Object> properties =
-        new HashMap<>(TigerSerializationUtil.toMap(proxyConfig, "tigerProxy"));
+    Map<String, Object> properties = new HashMap<>();
     if (configuration.getTigerProxy().getAdminPort() == 0) {
       int port =
           LOCALPROXY_ADMIN_RESERVED_PORT
@@ -355,6 +359,14 @@ public class TigerTestEnvMgr
                 .sources(TigerProxyApplication.class)
                 .web(WebApplicationType.SERVLET)
                 .registerShutdownHook(false)
+                .initializers(
+                    ac ->
+                        ((GenericApplicationContext) ac)
+                            .registerBean(
+                                "proxyConfig",
+                                TigerProxyConfiguration.class,
+                                () -> proxyConfig,
+                                bd -> bd.setPrimary(true)))
                 .properties(properties)
                 .run();
 

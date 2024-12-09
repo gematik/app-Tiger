@@ -20,8 +20,8 @@ package de.gematik.test.tiger.testenvmgr.servers;
 import static de.gematik.rbellogger.util.GlobalServerMap.addServerNameForPort;
 import static de.gematik.test.tiger.common.SocketHelper.findFreePort;
 
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
@@ -98,11 +98,11 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
         .forEach(
             route -> {
               route.setFrom(getTigerTestEnvMgr().replaceSysPropsInString(route.getFrom()));
-              route.setTo(Optional.ofNullable(route.getTo())
-                  .stream()
-                  .flatMap(List::stream)
-                  .map(getTigerTestEnvMgr()::replaceSysPropsInString)
-                  .toList());
+              route.setTo(
+                  Optional.ofNullable(route.getTo()).stream()
+                      .flatMap(List::stream)
+                      .map(getTigerTestEnvMgr()::replaceSysPropsInString)
+                      .toList());
             });
 
     if (getTigerTestEnvMgr().isShuttingDown()) {

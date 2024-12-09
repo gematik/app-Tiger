@@ -29,7 +29,6 @@ import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
-import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import de.gematik.test.tiger.mockserver.netty.proxy.connect.HttpConnectHandler;
 import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
 import io.netty.channel.ChannelHandler;
@@ -37,10 +36,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.AttributeKey;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.text.StringEscapeUtils;
 
 /*
  * @author jamesdbloom

@@ -57,7 +57,10 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
             .to(routeToProtocol + "://localhost:" + tigerProxy.getProxyPort() + "/foobar")
             .build());
     tigerProxy.addRoute(
-        TigerConfigurationRoute.builder().from("/").to("http://localhost:" + fakeBackendServerPort).build());
+        TigerConfigurationRoute.builder()
+            .from("/")
+            .to("http://localhost:" + fakeBackendServerPort)
+            .build());
 
     assertThat(proxyRest.get(requestProtocol + "://backend/combotest").asString().getStatus())
         .isEqualTo(666);
@@ -152,7 +155,6 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
       value = {
         "/foo, /, /foo/bar, /bar",
         "/foo/bar, /, /foo/bar/schmah, /schmah",
-
         "/foo, /holla, /foo/bar, /holla/bar",
         "/foo/bar, /holla, /foo/bar/schmah, /holla/schmah"
       },
@@ -184,7 +186,6 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
       value = {
         "/foo, /, /foo/bar, /bar",
         "/foo/bar, /, /foo/bar/schmah, /schmah",
-
         "/foo, /holla, /foo/bar, /holla/bar",
         "/foo/bar, /holla, /foo/bar/schmah, /holla/schmah"
       },
@@ -277,7 +278,9 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
         "myHost; myHost:80; myHost",
         "myHost; myHost:443; myHost:80",
         "anotherHost, myHost:80; myHost:443; myHost:80",
-        "myHost; myHost, anotherHost:80; myHost:80"
+        "myHost; myHost, anotherHost:80; myHost:80",
+        "myHost; anotherHost; mYHoST",
+        ".*.google.de; .*.google.at; www.gOOgLE.de"
       },
       delimiter = ';')
   void routingDecisionViaHostHeader(String hostsRoute1, String hostsRoute2, String hostHeader) {

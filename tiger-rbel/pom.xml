@@ -22,7 +22,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.4.5</version>
+        <version>3.4.6</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -141,7 +141,12 @@
             <artifactId>apache-mime4j-dom</artifactId>
             <version>0.8.11</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.unboundid</groupId>
+            <artifactId>unboundid-ldapsdk</artifactId>
+            <version>7.0.1</version>
+        </dependency>
+        
         <dependency>
             <groupId>eu.europa.ec.joinup.sd-dss</groupId>
             <artifactId>dss-pades</artifactId>

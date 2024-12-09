@@ -60,13 +60,14 @@ public class ProxyConfigurationConverter {
     if (StringUtils.equals(forwardProxyInfo.getHostname(), "$SYSTEM")) {
       return convertSystemProxyConfig(forwardProxyInfo);
     } else {
-      final ProxyConfiguration result = proxyConfiguration(
-        Optional.ofNullable(forwardProxyInfo.getType())
-          .map(ProxyConfigurationConverter::toMockServerType)
-          .orElse(HTTP),
-        forwardProxyInfo.getHostname() + ":" + forwardProxyInfo.calculateProxyPort(),
-        forwardProxyInfo.getUsername(),
-        forwardProxyInfo.getPassword());
+      final ProxyConfiguration result =
+          proxyConfiguration(
+              Optional.ofNullable(forwardProxyInfo.getType())
+                  .map(ProxyConfigurationConverter::toMockServerType)
+                  .orElse(HTTP),
+              forwardProxyInfo.getHostname() + ":" + forwardProxyInfo.calculateProxyPort(),
+              forwardProxyInfo.getUsername(),
+              forwardProxyInfo.getPassword());
       if (forwardProxyInfo.getNoProxyHosts() != null) {
         result.getNoProxyHosts().addAll(forwardProxyInfo.getNoProxyHosts());
       }
@@ -139,19 +140,19 @@ public class ProxyConfigurationConverter {
 
     if (proxyUsernamePassword == null) {
       return Optional.of(proxyConfiguration(proxyType, proxyAsUri.getHost() + ":" + proxyPort))
-        .map(ProxyConfigurationConverter::addNoProxyHostsFromEnv);
+          .map(ProxyConfigurationConverter::addNoProxyHostsFromEnv);
     } else if (!proxyUsernamePassword.contains(":")) {
       throw new TigerProxyToForwardProxyException(
           "Could not convert proxy configuration: either username or password are not present in"
               + " the env variable");
     } else {
       return Optional.of(
-          proxyConfiguration(
-              proxyType,
-              proxyAsUri.getHost() + ":" + proxyPort,
-              proxyUsernamePassword.split(":")[0],
-              proxyUsernamePassword.split(":")[1]))
-        .map(ProxyConfigurationConverter::addNoProxyHostsFromEnv);
+              proxyConfiguration(
+                  proxyType,
+                  proxyAsUri.getHost() + ":" + proxyPort,
+                  proxyUsernamePassword.split(":")[0],
+                  proxyUsernamePassword.split(":")[1]))
+          .map(ProxyConfigurationConverter::addNoProxyHostsFromEnv);
     }
   }
 

@@ -23,8 +23,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import de.gematik.test.tiger.proxy.configuration.ApplicationConfiguration;
-import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import jakarta.servlet.ServletContextListener;
 import java.io.IOException;
 import lombok.Getter;
@@ -41,7 +41,7 @@ import org.springframework.context.annotation.Bean;
 @Slf4j
 public class TigerProxyApplication implements ServletContextListener {
 
-  @Getter private final ApplicationConfiguration applicationConfiguration;
+  @Getter private final TigerProxyConfiguration proxyConfiguration;
 
   public static void main(String[] args) { // NOSONAR
     // Necessary hack to avoid mockserver activating java.util.logging - which would not work in
@@ -83,7 +83,7 @@ public class TigerProxyApplication implements ServletContextListener {
   public RbelHtmlRenderer rbelHtmlRenderer() {
     var renderer = new RbelHtmlRenderer();
     renderer.setMaximumEntitySizeInBytes(
-        applicationConfiguration.getSkipDisplayWhenMessageLargerThanKb() * 1024);
+        proxyConfiguration.getSkipDisplayWhenMessageLargerThanKb() * 1024);
     return renderer;
   }
 }

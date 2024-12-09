@@ -33,8 +33,6 @@ import io.cucumber.core.options.CommandlineOptionsParser;
 import io.cucumber.core.options.RuntimeOptions;
 import io.cucumber.core.plugin.Options;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,15 +64,8 @@ public class TigerCucumberRunner {
   public static void main(String[] args) {
     log.info("Starting TigerCucumberRunner.main()...");
 
-    ArrayList<String> argvList = new ArrayList<>(Arrays.asList(args));
-    int index = argvList.indexOf("--tags");
-    if (index <= 0) {
-      argvList.add("--tags");
-      argvList.add("not @Ignore");
-    }
-    String[] arr = argvList.toArray(new String[0]);
     RuntimeOptions cmdLineOptions =
-        (new CommandlineOptionsParser(System.out)).parse(arr).build(); // NOSONAR
+        (new CommandlineOptionsParser(System.out)).parse(args).build(); // NOSONAR
 
     Map<String, String> configurationParameters =
         convertToConfigurationParametersMap(cmdLineOptions);

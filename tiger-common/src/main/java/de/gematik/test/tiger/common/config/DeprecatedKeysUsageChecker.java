@@ -94,6 +94,16 @@ public final class DeprecatedKeysUsageChecker {
               .compareKey("tiger.additionalYamls")
               .deprecatedKey("additionalYamls")
               .newKey(TigerGlobalConfiguration.ADDITIONAL_CONFIGURATION_FILES)
+              .build(),
+          DeprecatedKeyDescriptor.builder()
+              .compareKey("tiger.servers.*.tigerproxyconfiguration.proxyRoutes.*.basicAuth")
+              .deprecatedKey("basicAuth")
+              .newKey("authentication")
+              .build(),
+          DeprecatedKeyDescriptor.builder()
+              .compareKey("tiger.tigerproxy.proxyRoutes.*.basicAuth")
+              .deprecatedKey("basicAuth")
+              .newKey("authentication")
               .build());
 
   private DeprecatedKeysUsageChecker() {}

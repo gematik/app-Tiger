@@ -23,7 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
+import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.env.*;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
@@ -100,7 +100,10 @@ class EnvStatusControllerTest {
     ScenarioUpdate firstScenarioUpdate =
         ScenarioUpdate.builder()
             .description("scenario")
-            .steps(convertToLinkedHashMap("0", StepUpdate.builder().description("step0").build()))
+            .steps(
+                convertToLinkedHashMap(
+                    "0",
+                    StepUpdate.builder().description("step0").status(TestResult.PASSED).build()))
             .build();
     FeatureUpdate firstFeatureUpdate =
         FeatureUpdate.builder()
@@ -136,7 +139,7 @@ class EnvStatusControllerTest {
                         .status(TestResult.PASSED)
                         .build(),
                     "1",
-                    StepUpdate.builder().description("step1").build()))
+                    StepUpdate.builder().description("step1").status(TestResult.FAILED).build()))
             .build();
     FeatureUpdate nextFeatureUpdate =
         FeatureUpdate.builder()
@@ -152,12 +155,14 @@ class EnvStatusControllerTest {
     assertThat(feature.getDescription()).isEqualTo("feature");
     ScenarioUpdate scenario = feature.getScenarios().get("scenario");
     assertThat(scenario.getDescription()).isEqualTo("scenario");
+    assertThat(scenario.getStatus()).isEqualTo(TestResult.FAILED);
     StepUpdate step0 = scenario.getSteps().get("0");
     assertThat(step0.getDescription()).isEqualTo("step00");
     assertThat(step0.getStatus()).isEqualTo(TestResult.PASSED);
     assertThat(step0.getTooltip()).isEqualTo("tooltip");
     StepUpdate step1 = scenario.getSteps().get("1");
     assertThat(step1.getDescription()).isEqualTo("step1");
+    assertThat(step1.getStatus()).isEqualTo(TestResult.FAILED);
     assertThat(step1.getTooltip()).isNull();
   }
 

@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.mockserver.netty.unification;
 
-import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.*;
 import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.INCOMING_CHANNEL;
 import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.OUTGOING_CHANNEL;
@@ -352,13 +351,7 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
     } else if (sslHandshakeException(throwable)) {
       if (throwable.getMessage().contains("certificate_unknown")) {
         log.warn(
-            "TLS handshake failure:"
-                + NEW_LINE
-                + NEW_LINE
-                + " Client does not trust MockServer Certificate Authority for:{}See"
-                + " http://mock-server.com/mock_server/HTTPS_TLS.html to enable the"
-                + " client to trust MocksServer Certificate Authority."
-                + NEW_LINE,
+            "TLS handshake failure: Client does not trust the presented certificate for '{}'!",
             ctx.channel());
       } else if (!throwable.getMessage().contains("close_notify during handshake")) {
         log.error(

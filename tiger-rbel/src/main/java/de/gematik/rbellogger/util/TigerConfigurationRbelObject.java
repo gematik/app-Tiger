@@ -51,8 +51,10 @@ class TigerConfigurationRbelObject extends RbelPathAble {
 
   @Override
   public TigerConfigurationRbelObject getParentNode() {
-    return new TigerConfigurationRbelObject(
-        configuration, new TigerConfigurationKey(key).getParentNodeOrIdentity());
+    return new TigerConfigurationKey(key)
+        .getParentNode()
+        .map(newKey -> new TigerConfigurationRbelObject(configuration, newKey))
+        .orElse(null);
   }
 
   @Override

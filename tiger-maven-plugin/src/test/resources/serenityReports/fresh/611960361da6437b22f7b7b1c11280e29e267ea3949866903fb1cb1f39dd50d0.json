@@ -1,0 +1,78 @@
+{
+  "name": "Simple first test",
+  "id": "test-tiger-bdd;simple-first-test",
+  "testSteps": [
+    {
+      "number": 1,
+      "description": "Given TGR show red banner \"Starting Demo...\"",
+      "duration": 32,
+      "startTime": "2022-03-21T15:59:26.389045300+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0
+    },
+    {
+      "number": 2,
+      "description": "When User requests the startpage",
+      "duration": 383,
+      "startTime": "2022-03-21T15:59:26.426011900+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0
+    },
+    {
+      "number": 3,
+      "description": "Then TGR find request to path \"/\"",
+      "duration": 1036,
+      "startTime": "2022-03-21T15:59:26.817536300+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0
+    },
+    {
+      "number": 4,
+      "description": "Then TGR current response with attribute \"$.body.html.head.link.href\" matches \"jetty-dir.css\"",
+      "duration": 19,
+      "startTime": "2022-03-21T15:59:27.855790600+01:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "reportData": [
+        {
+          "title": "RBellog 0",
+          "path": "downloadable\\downloadable-94552a4b-ca3e-49f6-80e1-4a68947c354e-Simple_first_test.html",
+          "isEvidence": true,
+          "id": "report-data-bdefb805-aa6b-4073-8b38-561d90d42259"
+        }
+      ],
+      "precondition": false,
+      "level": 0
+    }
+  ],
+  "userStory": {
+    "id": "test-tiger-bdd",
+    "storyName": "Test Tiger BDD",
+    "displayName": "Test Tiger BDD",
+    "path": "smoketest.feature",
+    "type": "feature"
+  },
+  "featureTag": {
+    "name": "Test Tiger BDD",
+    "type": "feature",
+    "displayName": "Test Tiger BDD"
+  },
+  "title": "Simple first test",
+  "description": "",
+  "tags": [
+    {
+      "name": "Test Tiger BDD",
+      "type": "feature",
+      "displayName": "Test Tiger BDD"
+    }
+  ],
+  "startTime": "2022-03-21T15:59:13.963504800+01:00[Europe/Berlin]",
+  "duration": 13994,
+  "projectKey": "",
+  "isManualTestingUpToDate": false,
+  "manual": false,
+  "testSource": "Cucumber",
+  "result": "SUCCESS"
+}

@@ -22,7 +22,6 @@ import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
 import java.util.List;
-import java.util.Map;
 
 /*
  * @author jamesdbloom

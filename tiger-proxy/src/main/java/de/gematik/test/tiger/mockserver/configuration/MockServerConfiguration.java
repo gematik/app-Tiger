@@ -16,16 +16,13 @@
 
 package de.gematik.test.tiger.mockserver.configuration;
 
-import de.gematik.test.tiger.common.data.config.tigerproxy.ForwardProxyInfo;
 import de.gematik.test.tiger.mockserver.model.BinaryProxyListener;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
-import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactorySupplier;
+import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
@@ -78,7 +75,8 @@ public class MockServerConfiguration {
   // TLS
   private boolean rebuildServerTlsContext = false;
   private String tlsProtocols = "TLSv1,TLSv1.1,TLSv1.2";
-  private KeyAndCertificateFactorySupplier customKeyAndCertificateFactorySupplier = null;
+  private KeyAndCertificateFactory serverKeyAndCertificateFactory = null;
+  private KeyAndCertificateFactory clientKeyAndCertificateFactory = null;
   private Function<SslContextBuilder, SslContext> clientSslContextBuilderFunction = null;
   private Consumer<NettySslContextFactory> nettySslContextFactoryCustomizer = factory -> {};
   private UnaryOperator<SslContextBuilder> sslServerContextBuilderCustomizer =

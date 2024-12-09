@@ -201,16 +201,16 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
       return true;
     }
     return proxyConfiguration.getNoProxyHosts().stream()
-      .map(String::trim)
-      .map(
-        host -> {
-          try {
-            return InetAddress.getByName(host);
-          } catch (UnknownHostException e) {
-            return null;
-          }
-        })
-      .filter(Objects::nonNull)
-      .noneMatch(a -> remoteAddress.getHostName().equals(a.getHostName()));
+        .map(String::trim)
+        .map(
+            host -> {
+              try {
+                return InetAddress.getByName(host);
+              } catch (UnknownHostException e) {
+                return null;
+              }
+            })
+        .filter(Objects::nonNull)
+        .noneMatch(a -> remoteAddress.getHostName().equals(a.getHostName()));
   }
 }

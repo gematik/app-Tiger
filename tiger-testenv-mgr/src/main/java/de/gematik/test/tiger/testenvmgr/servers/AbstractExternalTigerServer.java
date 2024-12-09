@@ -17,18 +17,20 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.EXTERNAL_SERVER_CONNECTION_TIMEOUT;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.EXTERNAL_SERVER_STARTUP_POLL_INTERVAL_IN_MS;
 import static org.awaitility.Awaitility.await;
 
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
+import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.web.InsecureTrustAllManager;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.configuration.ProxyConfigurationConverter;
 import de.gematik.test.tiger.proxy.handler.TigerExceptionUtils;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
-import de.gematik.test.tiger.testenvmgr.util.InsecureTrustAllManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.IOException;
@@ -97,6 +99,11 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
   protected void waitForServiceToBeUpForHalfOfTheConnectionTimeout(boolean quiet) {
     final long timeOutInMs =
         getStartupTimeoutSec().orElse(DEFAULT_STARTUP_TIMEOUT_IN_SECONDS) * 1000L / 2;
+    final int pollIntervalMs =
+        Optional.ofNullable(getConfiguration())
+            .map(CfgTemplate::getStartupPollIntervalMs)
+            .orElseGet(EXTERNAL_SERVER_STARTUP_POLL_INTERVAL_IN_MS::getValueOrDefault);
+
     if (isHealthCheckNone()) {
       waitForConfiguredTimeAndSetRunning(timeOutInMs);
     } else {
@@ -107,9 +114,11 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
             getServerId());
       }
       try {
+        long maxTimeOutMs = Math.max(timeOutInMs, 1000);
+        long pollInterval = Math.min(pollIntervalMs, maxTimeOutMs - 1); // cap at maxTimeOut
         await()
-            .atMost(Math.max(timeOutInMs, 1000), TimeUnit.MILLISECONDS)
-            .pollInterval(200, TimeUnit.MILLISECONDS)
+            .atMost(maxTimeOutMs, TimeUnit.MILLISECONDS)
+            .pollInterval(pollInterval, TimeUnit.MILLISECONDS)
             .until(
                 () ->
                     updateStatus(quiet) != TigerServerStatus.STARTING

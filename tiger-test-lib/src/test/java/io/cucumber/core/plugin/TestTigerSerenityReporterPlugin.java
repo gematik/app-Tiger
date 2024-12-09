@@ -23,12 +23,15 @@ import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.r
 import static org.mockito.Mockito.mock;
 
 import de.gematik.test.tiger.lib.TigerDirector;
-import de.gematik.test.tiger.spring_utils.TigerBuildPropertiesService;
+import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioUpdate;
+import de.gematik.test.tiger.testenvmgr.env.TestResult;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import io.cucumber.core.plugin.report.LocationConverter;
+import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
 import io.cucumber.plugin.event.Argument;
 import io.cucumber.plugin.event.Location;
 import io.cucumber.plugin.event.PickleStepTestStep;
@@ -53,6 +56,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -75,7 +80,7 @@ public class TestTigerSerenityReporterPlugin {
   private final String scenarioOutlineId = "6223db6e-708e-4c3f-ab11-1373b7e94ad7";
   private final String scenarioOutlineName = "Auth - Fehlende Parameter alle anderen";
   private final String featureFilePath =
-      "src/test/resources/testdata/parser/bdd/authentication.feature";
+      "src/test/resources/testdata/parser/bdd/features/authentication.feature";
   private final URI featureUri = new File(featureFilePath).toURI();
 
   @BeforeAll
@@ -115,25 +120,27 @@ public class TestTigerSerenityReporterPlugin {
             Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
     listener.handleTestSourceRead(event);
 
-    assertThat(listener.getContext().currentFeaturePath()).isNull();
-
-    TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(), new TestcaseAdapter());
+    TestcaseAdapter testCase = new TestcaseAdapter();
+    TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(), testCase);
 
     listener.handleTestCaseStarted(startedEvent);
-    assertThat(listener.getContext().currentFeaturePath()).isEqualTo(featureUri);
 
-    assertThat(listener.getContext().currentScenarioDefinition.getName()).isEqualTo(scenarioName);
-    assertThat(listener.getReporterCallbacks().getCurrentScenarioDataVariantIndex()).isEqualTo(-1);
+    String scenarioId = listener.getReporterCallbacks().scenarioIdFrom(testCase);
+    assertThat(listener.getContext(featureUri).getCurrentScenarioDefinition(scenarioId).getName())
+        .isEqualTo(scenarioName);
+    assertThat(
+            listener
+                .getReporterCallbacks()
+                .extractScenarioDataVariantIndex(
+                    listener.getScenarioContextDelegate(featureUri), testCase))
+        .isEqualTo(-1);
 
     TigerEnvStatusDto status = envStatusController.getStatus();
     assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
     Map<String, ScenarioUpdate> scenarios = status.getFeatureMap().get(featureName).getScenarios();
     assertThat(scenarios).hasSize(1);
-    String scenarioId =
-        ScenarioRunner.findScenarioUniqueId(
-                listener.getContext().currentScenarioDefinition, featureUri, false, -1)
-            .toString();
-    assertThat(scenarios.get(scenarioId).getDescription()).isEqualTo(scenarioName);
+    String scenarioUniqueId = findScenarioUniqueId(startedEvent.getTestCase());
+    assertThat(scenarios.get(scenarioUniqueId).getDescription()).isEqualTo(scenarioName);
   }
 
   @Test
@@ -142,14 +149,13 @@ public class TestTigerSerenityReporterPlugin {
         new TestSourceRead(
             Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
     listener.handleTestSourceRead(event);
-    assertThat(listener.getContext().currentFeaturePath()).isNull();
 
     TestCaseStarted startedEvent =
         new TestCaseStarted(Instant.now(), new ScenarioOutlineTestCaseAdapter());
     listener.handleTestCaseStarted(startedEvent);
-    assertThat(listener.getContext().currentFeaturePath()).isEqualTo(featureUri);
 
-    assertThat(listener.getContext().getTable().getHeaders())
+    String scenarioId = listener.getReporterCallbacks().scenarioIdFrom(startedEvent.getTestCase());
+    assertThat(listener.getContext(featureUri).getTable(scenarioId).getHeaders())
         .contains(
             "http_code",
             "err_id",
@@ -166,27 +172,30 @@ public class TestTigerSerenityReporterPlugin {
     assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
     Map<String, ScenarioUpdate> scenarios = status.getFeatureMap().get(featureName).getScenarios();
     assertThat(scenarios).hasSize(1);
-    var scenario1Id =
-        ScenarioRunner.findScenarioUniqueId(
-                listener.getContext().currentScenarioDefinition, featureUri, true, 0)
-            .toString();
-    var scenario1 = scenarios.get(scenario1Id);
+    var scenario1UniqueId = findScenarioUniqueId(startedEvent.getTestCase());
+    var scenario1 = scenarios.get(scenario1UniqueId);
     assertThat(scenario1.getDescription()).isEqualTo(scenarioOutlineName);
     assertThat(scenario1.getVariantIndex()).isZero();
 
-    // moving to next variant
-    ((ScenarioOutlineTestCaseAdapter) startedEvent.getTestCase()).incrementLocationLine();
+    ScenarioOutlineTestCaseAdapter testCase =
+        (ScenarioOutlineTestCaseAdapter) startedEvent.getTestCase();
 
+    ScenarioContextDelegate context = listener.getScenarioContextDelegate(featureUri);
+    SerenityReporterCallbacks reporterCallbacks = listener.getReporterCallbacks();
+
+    assertThat(reporterCallbacks.extractScenarioDataVariantIndex(context, testCase)).isZero();
+
+    // moving to next variant
+    testCase.incrementLocationLine();
     listener.handleTestCaseStarted(startedEvent);
-    assertThat(listener.getReporterCallbacks().getCurrentScenarioDataVariantIndex()).isEqualTo(1);
+
+    assertThat(reporterCallbacks.extractScenarioDataVariantIndex(context, testCase)).isEqualTo(1);
+
     status = envStatusController.getStatus();
     scenarios = status.getFeatureMap().get(featureName).getScenarios();
     assertThat(scenarios).hasSize(2);
-    var scenario2Id =
-        ScenarioRunner.findScenarioUniqueId(
-                listener.getContext().currentScenarioDefinition, featureUri, true, 1)
-            .toString();
-    var scenario2 = scenarios.get(scenario2Id);
+    var scenario2UniqueId = findScenarioUniqueId(startedEvent.getTestCase());
+    var scenario2 = scenarios.get(scenario2UniqueId);
 
     assertThat(scenario1.getDescription()).isEqualTo(scenarioOutlineName);
     assertThat(scenario1.getVariantIndex()).isZero();
@@ -194,51 +203,57 @@ public class TestTigerSerenityReporterPlugin {
     assertThat(scenario2.getVariantIndex()).isEqualTo(1);
   }
 
-  /* TODO in order to get this working with the tighter integration with serenity test run event management
-  we would need to get the test step adapter contain more meaningful info. So the test parts that rely on test steps are commented out
-  */
   @Test
   void testStepsHandling() throws IOException {
     TestSourceRead event =
         new TestSourceRead(
             Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
     listener.handleTestSourceRead(event);
-    TestCase testCase = new TestcaseAdapter();
+    TestStep testStep1 = new TestStepAdapter(71, 5);
+    TestStep testStep2 = new TestStepAdapter(73, 5);
+    TestCase testCase =
+        new TestcaseAdapter() {
+          @Override
+          public List<TestStep> getTestSteps() {
+            return List.of(testStep1, testStep2);
+          }
+        };
     TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(), testCase);
     listener.handleTestCaseStarted(startedEvent);
 
-    TestStepStarted stepStartedEvent =
-        new TestStepStarted(Instant.now(), testCase, new TestStepAdapter());
-    listener.handleTestStepStarted(stepStartedEvent);
-    // TODO assertThat(listener.getContext().getCurrentStep().getLocation().getLine()).isEqualTo(1);
+    TestStepStarted stepStartedEvent1 = new TestStepStarted(Instant.now(), testCase, testStep1);
+    listener.handleTestStepStarted(stepStartedEvent1);
+    assertThat(listener.getContext(featureUri).getCurrentStep(testCase).getLocation().getLine())
+        .isEqualTo(71);
     listener.handleTestStepFinished(
         new TestStepFinished(
             Instant.now(),
             testCase,
-            new TestStepAdapter(),
+            testStep1,
             new Result(Status.PASSED, Duration.ofMillis(500), null)));
 
-    listener.handleTestStepStarted(stepStartedEvent);
-    // TODO assertThat(listener.getContext().getCurrentStep().getLocation().getLine()).isEqualTo(1);
+    TestStepStarted stepStartedEvent2 = new TestStepStarted(Instant.now(), testCase, testStep2);
+    listener.handleTestStepStarted(stepStartedEvent2);
+    assertThat(listener.getContext(featureUri).getCurrentStep(testCase).getLocation().getLine())
+        .isEqualTo(73);
     listener.handleTestStepFinished(
         new TestStepFinished(
             Instant.now(),
             testCase,
-            new TestStepAdapter(),
+            testStep2,
             new Result(
                 Status.FAILED, Duration.ofMillis(500), new TigerTestEnvException("Test Tiger A"))));
 
     TigerEnvStatusDto status = envStatusController.getStatus();
     assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
+    String scenarioUniqueId = findScenarioUniqueId(testCase);
     ScenarioUpdate scenario =
-        status
-            .getFeatureMap()
-            .get(featureName)
-            .getScenarios()
-            .get(listener.getContext().currentScenarioDefinition.getId());
-    // TODO assertThat(scenario.getSteps().get("0").getStatus()).isEqualTo(TestResult.PASSED);
-    // TODO assertThat(scenario.getSteps().get("1").getStatus()).isEqualTo(TestResult.FAILED);
-
+        status.getFeatureMap().get(featureName).getScenarios().get(scenarioUniqueId);
+    // steps 0 and 1 are background steps
+    assertThat(scenario.getSteps().get("0").getStatus()).isEqualTo(TestResult.PENDING);
+    assertThat(scenario.getSteps().get("1").getStatus()).isEqualTo(TestResult.PENDING);
+    assertThat(scenario.getSteps().get("2").getStatus()).isEqualTo(TestResult.PASSED);
+    assertThat(scenario.getSteps().get("3").getStatus()).isEqualTo(TestResult.FAILED);
   }
 
   @Test
@@ -248,18 +263,24 @@ public class TestTigerSerenityReporterPlugin {
         new TestSourceRead(
             Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
     listener.handleTestSourceRead(event);
-    TestCase testCase = new TestcaseAdapter();
+    TestStep testStep = new TestStepAdapter(71, 5);
+    TestCase testCase =
+        new TestcaseAdapter() {
+          @Override
+          public List<TestStep> getTestSteps() {
+            return List.of(testStep);
+          }
+        };
     TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(), testCase);
     listener.handleTestCaseStarted(startedEvent);
 
-    TestStepStarted stepStartedEvent =
-        new TestStepStarted(Instant.now(), testCase, new TestStepAdapter());
+    TestStepStarted stepStartedEvent = new TestStepStarted(Instant.now(), testCase, testStep);
     listener.handleTestStepStarted(stepStartedEvent);
     listener.handleTestStepFinished(
         new TestStepFinished(
             Instant.now(),
             testCase,
-            new TestStepAdapter(),
+            testStep,
             new Result(
                 Status.FAILED,
                 Duration.ofMillis(500),
@@ -290,20 +311,28 @@ public class TestTigerSerenityReporterPlugin {
 
     TigerEnvStatusDto status = envStatusController.getStatus();
     assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
+
+    String scenarioUniqueId = findScenarioUniqueId(testCase);
     ScenarioUpdate scenario =
-        status
-            .getFeatureMap()
-            .get(featureName)
-            .getScenarios()
-            .get(listener.getContext().currentScenarioDefinition.getId());
-    // TODO as the scenario status is dervided from all step status, doesnt work, see above
-    //  assertThat(scenario.getStatus()).isEqualTo(TestResult.FAILED);
+        status.getFeatureMap().get(featureName).getScenarios().get(scenarioUniqueId);
+
+    assertThat(scenario.getStatus()).isEqualTo(TestResult.FAILED);
 
     assertThat(listener.getReporterCallbacks().getScFailed()).isEqualTo(1);
     assertThat(listener.getReporterCallbacks().getScPassed()).isZero();
   }
 
+  private String findScenarioUniqueId(TestCase testCase) {
+    return ScenarioRunner.findScenarioUniqueId(
+            featureUri, new LocationConverter().convertLocation(testCase.getLocation()))
+        .toString();
+  }
+
+  @Data
+  @AllArgsConstructor
   private static class TestStepAdapter implements PickleStepTestStep {
+    private int line;
+    private int column;
 
     private final UUID stepUuid = UUID.randomUUID();
 
@@ -342,12 +371,12 @@ public class TestTigerSerenityReporterPlugin {
 
         @Override
         public int getLine() {
-          return 43;
+          return line;
         }
 
         @Override
         public Location getLocation() {
-          return new Location(43, 3);
+          return new Location(line, column);
         }
       };
     }
@@ -364,7 +393,7 @@ public class TestTigerSerenityReporterPlugin {
 
     @Override
     public int getStepLine() {
-      return 26;
+      return line;
     }
 
     @Override
@@ -389,7 +418,7 @@ public class TestTigerSerenityReporterPlugin {
 
     @Override
     public Location getLocation() {
-      return new Location(60, 13);
+      return new Location(60, 3);
     }
 
     @Override
@@ -409,12 +438,12 @@ public class TestTigerSerenityReporterPlugin {
 
     @Override
     public List<String> getTags() {
-      return null;
+      return List.of();
     }
 
     @Override
     public List<TestStep> getTestSteps() {
-      return null;
+      return List.of(new TestStepAdapter(71, 5));
     }
 
     @Override

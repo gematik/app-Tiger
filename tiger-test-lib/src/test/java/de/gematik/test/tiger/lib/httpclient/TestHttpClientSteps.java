@@ -99,6 +99,7 @@ public class TestHttpClientSteps {
     System.clearProperty("tiger.testenv.cfgfile");
     TigerGlobalConfiguration.reset();
     TigerHttpClient.reset();
+    TigerDirector.getLibConfig().getHttpClientConfig().setActivateRbelWriter(false);
   }
 
   @Test

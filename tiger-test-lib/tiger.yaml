@@ -32,6 +32,7 @@ lib:
   activateWorkflowUi: false
   trafficVisualization: true
   runTestsOnStart: true
+  enableTestManagementRestApi: true
 
 additionalConfigurationFiles:
   - filename: src/test/resources/testdata/specialEnvironment.yaml
