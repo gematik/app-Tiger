@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.playwright.workflowui;
@@ -28,11 +29,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.Date;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -235,8 +239,28 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
   }
 
   void openSidebar() {
-    if (page.locator(".test-sidebar-collapsed").isVisible()) {
+    int ctr = 0;
+    while (ctr < 3 && page.locator(".test-sidebar-collapsed").isVisible()) {
       page.querySelector("#test-tiger-logo").click();
+      try {
+        await()
+            .atMost(Duration.ofSeconds(5L))
+            .until(page.locator("#test-sidebar-feature")::isVisible);
+      } catch (ConditionTimeoutException cte) {
+        try {
+          Files.createDirectories(Path.of("./target/playwright-artifacts"));
+          screenshot(
+              page,
+              "./target/playwright-artifacts/OpenSideBarFailed"
+                  + ctr
+                  + "-"
+                  + UUID.randomUUID()
+                  + ".png");
+        } catch (IOException e) {
+          log.error("Unable to save screenshot while failing to open sidebar", e);
+        }
+        ctr++;
+      }
     }
     assertThat(page.locator(".test-sidebar-open")).isVisible();
   }

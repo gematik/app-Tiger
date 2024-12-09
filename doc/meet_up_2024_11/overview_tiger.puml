@@ -1,0 +1,27 @@
+@startuml
+@startmindmap
+
+
+
++ Wie der Tiger erwachsen wurde
+
+++ Ausgangspunkt - 1 min
++++ Probleme
++++ Lösungsansatz
+++ Reise - 1 min
++++ IDP
++++ BDD / shift left
++++ Interne Projekte
+-- Was ist der Tiger - 6 min
+--- Protokoll agnostische Validierung
+--- Zero Line
+--- Workflow UI / Serenity reporting
+--- Testenvironment manager / IaaS
+---- external instances
+---- jars
+---- docker
+---- helmchart
+
+
+@endmindmap
+@enduml
