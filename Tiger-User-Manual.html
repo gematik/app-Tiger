@@ -55,31 +55,58 @@ h1 {
     text-align: center;
 }
 
-#header {
-    padding: 20rem 0;
-    background-position: top;
-    background-repeat: no-repeat;
-    background-image: url("media/title_white.plain.svg");
-    height: 80rem;
+@media (min-width: 768px) {
+    #header {
+        padding: 20rem 0;
+        background-position: top;
+        background-repeat: no-repeat;
+        background-image: url("media/title_white.plain.svg");
+        height: 80rem;
+    }
+
+    #toc {
+        border: 0;
+    }
+
+    /* TODO Anne to be kept locally */
+    #header h1 {
+        background-image: url("media/tiger-mono-picto-plain.svg");
+        background-size: 150px;
+        background-repeat: no-repeat;
+        background-position: 120px bottom;
+        padding-left: 10rem;
+        line-height: 350%;
+        font-size: 327%;
+    }
+
+    #header .details {
+        text-align: center;
+        display: block;
+        padding-left: 120px;
+        border: 0;
+        margin-top: -40px;
+    }
 }
 
-/* TODO Anne to be kept locally */
-#header h1 {
-    background-image: url("media/tiger-mono-picto-plain.svg");
-    background-size: 150px;
-    background-repeat: no-repeat;
-    background-position: 120px bottom;
-    padding-left: 10rem;
-    line-height: 350%;
-    font-size: 327%;
-}
+/** Small screens
+Without the big background image and the tiger logo above the title*/
+@media (max-width: 768px) {
+    #header h1 {
+        background-image: url("media/tiger-mono-picto-plain.svg");
+        background-position: center top;
+        background-repeat: no-repeat;
+        background-size: 75px;
+        padding-left: 0;
+        padding-top: 75px; /* Adjust padding to ensure the image appears above the title */
+        line-height: normal;
+        font-size: 200%; /* Adjust font size for smaller screens */
+    }
 
-#header .details {
-    text-align: center;
-    display: block;
-    padding-left: 120px;
-    border: 0;
-    margin-top: -40px;
+    #header .details {
+        text-align: center;
+        display: block;
+        border: 0;
+    }
 }
 
 /* end of to be kept locally */
@@ -150,7 +177,7 @@ video {
 
 @media all and (max-width: 600px) {
     table {
-        width: 55vw;
+        width: 55vw !important;
         font-size: 3vw;
     }
 }
@@ -165,7 +192,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 3.4.5 - 2024-11-15</span>
+<span id="revdate">Version 3.4.6 - 2024-12-09</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -266,16 +293,23 @@ video {
 <li><a href="#tiger-robot-extension">9.6. Tiger Robot Extension</a></li>
 </ul>
 </li>
-<li><a href="#links-to-test-relevant-topics">10. Links to test relevant topics</a></li>
-<li><a href="#frequently-asked-questions">11. Frequently asked questions</a>
+<li><a href="#rest-api">10. Rest API</a>
+<ul class="sectlevel3">
+<li><a href="#introduction-2">10.1. Introduction</a></li>
+<li><a href="#endpoints">10.2. Endpoints</a></li>
+<li><a href="#models">10.3. Models</a></li>
+</ul>
+</li>
+<li><a href="#links-to-test-relevant-topics">11. Links to test relevant topics</a></li>
+<li><a href="#frequently-asked-questions">12. Frequently asked questions</a>
 <ul class="sectlevel2">
-<li><a href="#maven">11.1. Maven</a></li>
-<li><a href="#extensions">11.2. Extensions</a></li>
-<li><a href="#workflow-ui">11.3. Workflow UI</a></li>
-<li><a href="#other-topics">11.4. Other topics</a></li>
-<li><a href="#extensions-2">11.5. Extensions</a></li>
-<li><a href="#workflow-ui-2">11.6. Workflow UI</a></li>
-<li><a href="#other-topics-2">11.7. Other topics</a></li>
+<li><a href="#maven">12.1. Maven</a></li>
+<li><a href="#extensions">12.2. Extensions</a></li>
+<li><a href="#workflow-ui">12.3. Workflow UI</a></li>
+<li><a href="#other-topics">12.4. Other topics</a></li>
+<li><a href="#extensions-2">12.5. Extensions</a></li>
+<li><a href="#workflow-ui-2">12.6. Workflow UI</a></li>
+<li><a href="#other-topics-2">12.7. Other topics</a></li>
 </ul>
 </li>
 </ul>
@@ -1418,6 +1452,9 @@ If unsure take a <a href="https://dev.to/techworld_with_nana/yaml-tutorial-for-b
   # OPTIONAL duration in seconds to wait for a successful start-up of the server node
   # Default value is 20
   startupTimeoutSec: int
+  # OPTIONAL duration in milliseconds to wait between polls for the server node to start up
+  # Default value is the property "tiger.internal.externalServer.startupPollIntervalMs" which defaults to 1000
+  startupPollIntervalMs: int
   # MANDATORY type specific property in that for some types it's a list,
   # for some others it's a single URL
   source:
@@ -1682,10 +1719,24 @@ Invalid pathname strings will also produce an exception.</p>
 </li>
 </ul>
 </div>
+<div class="paragraph">
+<p>If you want, you can also describe the components in a map:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tls.forwardMutualTlsIdentity:
+  filename: myIdentity.p12
+  password: "changeit"
+  storeType: P12</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>In this case both the storeType and the password are not mandatory and would be guessed (the store-type via the file extension and the password via a default-list).</p>
+</div>
 <div class="sect4">
 <h5 id="pki-identity-passwords"><a class="anchor" href="#pki-identity-passwords"></a>PKI identity passwords</h5>
 <div class="paragraph">
-<p>Tiger will attempt to decrypt a given P12 file with a list of common passwords.</p>
+<p>Tiger will attempt to decrypt a given P12 file with a list of common passwords, among these are:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2791,21 +2842,27 @@ Deactivating it for routes in which it is not needed is therefore a good idea.</
 </div>
 </div>
 <div class="sect3">
-<h4 id="basicauth"><a class="anchor" href="#basicauth"></a>4.3.7. basicAuth</h4>
+<h4 id="authentication"><a class="anchor" href="#authentication"></a>4.3.7. Authentication</h4>
 <div class="paragraph">
-<p>You can add optional basic-auth configuration which will be added to the forwarded message.<br>
-Theoretically this could also be done via modifications, but this a more convenient approach.</p>
+<p>You can add optional authentication configuration which will be added to the forwarded message. Here either Basic access authentication or Bearer Token can be used:</p>
 </div>
 <div class="listingblock">
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy:
     proxyRoutes:
-      - from: http://my.domain/deep/
+      - from: http://my.domain/basicAuth/
         to: http://orf.at/blub/
-        basicAuth:
+        authentication:
           username: "test1"
-          password: "pwd2"</code></pre>
+          password: "pwd2"
+      - from: http://my.domain/bearerToken/
+        to: http://orf.at/blub/
+        authentication:
+          bearerToken: "blubblab"</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>Please note that the phrase "Bearer " will be added automatically. Please do not add it yourself!</p>
 </div>
 </div>
 </div>
@@ -2935,6 +2992,20 @@ This identity will be used for all routes, but only if it matches the domain-nam
     tls:
       serverIdentity: "certificateAndKeyAndChain.p12;Password"</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>If you want to use the fixed-server identity only for requests to matching hosts and you have NOT supplied a <code>serverRootCa</code>, you can use the <code>allowGenericFallbackIdentity</code>-property:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy:
+    tls:
+      serverIdentity: "certificateForFoobar.p12;Password"
+      allowGenericFallbackIdentity: true</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If <code>certificateForFoobar.p12</code> contains a certificate for the FQDN <code>foobar.com</code>, then a request to <code>foobar.com</code> will use this certificate. If the request is to <code>barfoo.com</code> the generic server-identity will be used. If you have supplied a <code>serverRootCa</code> this CA will always be used for any request for which an exact match is not found.</p>
 </div>
 </div>
 <div class="sect3">
@@ -7131,6 +7202,18 @@ It can return JSON, XML, JWT, JWE and many more, nest these formats into each ot
 The underlying templating language supports loops and conditions.<br>
 It can be used both as a standalone server or as a server directly inside of tiger.</p>
 </div>
+<div class="paragraph">
+<p>In order to use zion, make sure that you add the tiger-zion dependency in the most recent version.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">        &lt;dependency&gt;
+            &lt;groupId&gt;de.gematik.test&lt;/groupId&gt;
+            &lt;artifactId&gt;tiger-zion&lt;/artifactId&gt;
+            &lt;version&gt;${tiger.version}&lt;/version&gt;
+        &lt;/dependency&gt;</code></pre>
+</div>
+</div>
 <div class="sect2">
 <h3 id="simple-canned-response"><a class="anchor" href="#simple-canned-response"></a>8.1. Simple canned response</h3>
 <div class="paragraph">
@@ -7822,7 +7905,791 @@ This is an internal gematik extension and can be found on GitLab <a href="https:
 </div>
 </div>
 <div class="sect1">
-<h2 id="links-to-test-relevant-topics"><a class="anchor" href="#links-to-test-relevant-topics"></a>10. Links to test relevant topics</h2>
+<h2 id="rest-api"><a class="anchor" href="#rest-api"></a>10. Rest API</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The tiger test environment provides a Rest API which allows the automation of the execution of tests and retrieval of the corresponding test results.</p>
+</div>
+<div class="paragraph">
+<p>The Rest API is disabled by default.<br>
+You can enable it by setting the following configuration entry in the tiger.yaml</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">lib:
+    enableTestManagementRestApi: true # set to true to enable the Rest API. default is false</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To enable the Rest API it is required to have the <code>cucumber-junit-platform-engine</code> in the class path.</p>
+</div>
+<div class="paragraph">
+<p>E.g.:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;dependency&gt;
+    &lt;groupId&gt;io.cucumber&lt;/groupId&gt;
+    &lt;artifactId&gt;cucumber-junit-platform-engine&lt;/artifactId&gt;
+    &lt;version&gt;7.19.0&lt;/version&gt;
+    &lt;scope&gt;test&lt;/scope&gt;
+&lt;/dependency&gt;</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This is transitively included if you are importing the <code>tiger-test-lib</code>.<br>
+But it is not included if you just import the <code>tiger-testenv-mgr</code>.</p>
+</div>
+<div class="paragraph">
+<p>The following section provides an overview of the available endpoints and their functionality.<br>
+Additionally, the OpenApi specification yaml can be found in the <a href="https://github.com/gematik/app-Tiger/blob/master/tiger-testenv-mgr/src/main/resources/tiger-management-api.yaml">tiger repository</a>.</p>
+</div>
+<div class="sect3">
+<h4 id="introduction-2"><a class="anchor" href="#introduction-2"></a>10.1. Introduction</h4>
+<div class="paragraph">
+<p>API for managing the tiger test environment. You can start tests and retrieve the test results.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="endpoints"><a class="anchor" href="#endpoints"></a>10.2. Endpoints</h4>
+<div class="sect4 Tests">
+<h5 id="tests"><a class="anchor" href="#tests"></a>Tests</h5>
+<div class="sect5 getAvailableTests">
+<h6 id="getavailabletests"><a class="anchor" href="#getavailabletests"></a>getAvailableTests</h6>
+<div class="paragraph">
+<p><code>GET /tests</code></p>
+</div>
+<div class="paragraph">
+<p>get list of available tests</p>
+</div>
+<div class="sect6">
+<h7 id="description"><a class="anchor" href="#description"></a>Description</h7>
+<div class="paragraph">
+<p>gets the list of available tests that were discovered by the JUnit Platform.</p>
+</div>
+</div>
+<div class="sect6">
+<h7 id="parameters"><a class="anchor" href="#parameters"></a>Parameters</h7>
+
+</div>
+<div class="sect6">
+<h7 id="return-type"><a class="anchor" href="#return-type"></a>Return Type</h7>
+<div class="paragraph">
+<p>array[<a href="#TestDescription"><em>TestDescription</em></a>]</p>
+</div>
+</div>
+<div class="sect6">
+<h7 id="content-type"><a class="anchor" href="#content-type"></a>Content Type</h7>
+<div class="ulist">
+<ul>
+<li>
+<p>application/json</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect6">
+<h7 id="responses"><a class="anchor" href="#responses"></a>Responses</h7>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 1. HTTP Response Codes</caption>
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 50%;">
+<col style="width: 16.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Code</th>
+<th class="tableblock halign-left valign-top">Message</th>
+<th class="tableblock halign-left valign-top">Datatype</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">200</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List of available tests</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List[<a href="#TestDescription"><em>TestDescription</em></a>]</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">400</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bad Request</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Error"><em>Error</em></a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">500</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Something went wrong server internally</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Error"><em>Error</em></a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The default error response</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Error"><em>Error</em></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect5 getTestResults">
+<h6 id="gettestresults"><a class="anchor" href="#gettestresults"></a>getTestResults</h6>
+<div class="paragraph">
+<p><code>GET /tests/runs/{testRunId}</code></p>
+</div>
+<div class="paragraph">
+<p>get the results of a test run</p>
+</div>
+<div class="sect6">
+<h7 id="description-2"><a class="anchor" href="#description-2"></a>Description</h7>
+<div class="paragraph">
+<p>gets the results of a test run. This includes a global test result and  the results for each test case. In case of failing tests, the failure message is also included.</p>
+</div>
+</div>
+<div class="sect6">
+<h7 id="parameters-2"><a class="anchor" href="#parameters-2"></a>Parameters</h7>
+<div class="sect7">
+<h8 id="path-parameters"><a class="anchor" href="#path-parameters"></a>Path Parameters</h8>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 37.5%;">
+<col style="width: 12.5%;">
+<col style="width: 12.5%;">
+<col style="width: 12.5%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Name</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Required</th>
+<th class="tableblock halign-left valign-top">Default</th>
+<th class="tableblock halign-left valign-top">Pattern</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">testRunId</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">testRunId for which to get the test results</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">X</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">null</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect6">
+<h7 id="return-type-2"><a class="anchor" href="#return-type-2"></a>Return Type</h7>
+<div class="paragraph">
+<p><a href="#TestExecutionResult"><em>TestExecutionResult</em></a></p>
+</div>
+</div>
+<div class="sect6">
+<h7 id="content-type-2"><a class="anchor" href="#content-type-2"></a>Content Type</h7>
+<div class="ulist">
+<ul>
+<li>
+<p>application/json</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect6">
+<h7 id="responses-2"><a class="anchor" href="#responses-2"></a>Responses</h7>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 2. HTTP Response Codes</caption>
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 50%;">
+<col style="width: 16.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Code</th>
+<th class="tableblock halign-left valign-top">Message</th>
+<th class="tableblock halign-left valign-top">Datatype</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">200</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the test results for the given testRunId</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#TestExecutionResult"><em>TestExecutionResult</em></a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">404</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The specified resource was not found</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Error"><em>Error</em></a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">400</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bad Request</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Error"><em>Error</em></a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">500</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Something went wrong server internally</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Error"><em>Error</em></a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The default error response</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Error"><em>Error</em></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect5 postExecutionRequest">
+<h6 id="postexecutionrequest"><a class="anchor" href="#postexecutionrequest"></a>postExecutionRequest</h6>
+<div class="paragraph">
+<p><code>POST /tests/runs</code></p>
+</div>
+<div class="paragraph">
+<p>request the execution of a selection of tests</p>
+</div>
+<div class="sect6">
+<h7 id="description-3"><a class="anchor" href="#description-3"></a>Description</h7>
+<div class="paragraph">
+<p>sends a request for the execution of a selection of tests. The tests to be executed are specified with a TestExecutionRequest which includes uniqueIds, tags and file paths.  The execution request is queued for execution and will be executed as soon as any previously running tests finish. The response includes the id of the test run and the url where to find the results of the execution.</p>
+</div>
+</div>
+<div class="sect6">
+<h7 id="parameters-3"><a class="anchor" href="#parameters-3"></a>Parameters</h7>
+<div class="sect7">
+<h8 id="body-parameter"><a class="anchor" href="#body-parameter"></a>Body Parameter</h8>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 25%;">
+<col style="width: 37.5%;">
+<col style="width: 12.5%;">
+<col style="width: 12.5%;">
+<col style="width: 12.5%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Name</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Required</th>
+<th class="tableblock halign-left valign-top">Default</th>
+<th class="tableblock halign-left valign-top">Pattern</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">TestExecutionRequest</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">test execution request <a href="#TestExecutionRequest"><em>TestExecutionRequest</em></a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">X</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect6">
+<h7 id="return-type-3"><a class="anchor" href="#return-type-3"></a>Return Type</h7>
+<div class="paragraph">
+<p><a href="#TestExecutionInformation"><em>TestExecutionInformation</em></a></p>
+</div>
+</div>
+<div class="sect6">
+<h7 id="content-type-3"><a class="anchor" href="#content-type-3"></a>Content Type</h7>
+<div class="ulist">
+<ul>
+<li>
+<p>application/json</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect6">
+<h7 id="responses-3"><a class="anchor" href="#responses-3"></a>Responses</h7>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 3. HTTP Response Codes</caption>
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 50%;">
+<col style="width: 16.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Code</th>
+<th class="tableblock halign-left valign-top">Message</th>
+<th class="tableblock halign-left valign-top">Datatype</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">202</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Request was received and test run is started</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#TestExecutionInformation"><em>TestExecutionInformation</em></a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">404</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The specified resource was not found</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Error"><em>Error</em></a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">400</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bad Request</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Error"><em>Error</em></a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">500</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Something went wrong server internally</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Error"><em>Error</em></a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The default error response</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Error"><em>Error</em></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="sect5 postExecutionRequestAllTests">
+<h6 id="postexecutionrequestalltests"><a class="anchor" href="#postexecutionrequestalltests"></a>postExecutionRequestAllTests</h6>
+<div class="paragraph">
+<p><code>POST /tests/runs/all</code></p>
+</div>
+<div class="paragraph">
+<p>request execution of all tests</p>
+</div>
+<div class="sect6">
+<h7 id="description-4"><a class="anchor" href="#description-4"></a>Description</h7>
+<div class="paragraph">
+<p>sends a request for the execution of all tests. The execution request is queued for execution and will be executed as soon as any previously running tests finish. The response includes the id of the test run and the url where to find the results of the execution.</p>
+</div>
+</div>
+<div class="sect6">
+<h7 id="parameters-4"><a class="anchor" href="#parameters-4"></a>Parameters</h7>
+
+</div>
+<div class="sect6">
+<h7 id="return-type-4"><a class="anchor" href="#return-type-4"></a>Return Type</h7>
+<div class="paragraph">
+<p><a href="#TestExecutionInformation"><em>TestExecutionInformation</em></a></p>
+</div>
+</div>
+<div class="sect6">
+<h7 id="content-type-4"><a class="anchor" href="#content-type-4"></a>Content Type</h7>
+<div class="ulist">
+<ul>
+<li>
+<p>application/json</p>
+</li>
+</ul>
+</div>
+</div>
+<div class="sect6">
+<h7 id="responses-4"><a class="anchor" href="#responses-4"></a>Responses</h7>
+<table class="tableblock frame-all grid-all stretch">
+<caption class="title">Table 4. HTTP Response Codes</caption>
+<colgroup>
+<col style="width: 33.3333%;">
+<col style="width: 50%;">
+<col style="width: 16.6667%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Code</th>
+<th class="tableblock halign-left valign-top">Message</th>
+<th class="tableblock halign-left valign-top">Datatype</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">202</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Request was received and test run is started</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#TestExecutionInformation"><em>TestExecutionInformation</em></a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">404</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The specified resource was not found</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Error"><em>Error</em></a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">400</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Bad Request</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Error"><em>Error</em></a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">500</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Something went wrong server internally</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Error"><em>Error</em></a></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">0</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">The default error response</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#Error"><em>Error</em></a></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="models"><a class="anchor" href="#models"></a>10.3. Models</h4>
+<div class="sect4">
+<h5 id="Error"><a class="anchor" href="#Error"></a><em>Error</em></h5>
+<div class="paragraph">
+<p>Default error object with information about the occurred error</p>
+</div>
+<table class="tableblock frame-all grid-all stretch fields-Error">
+<colgroup>
+<col style="width: 18.1818%;">
+<col style="width: 9.0909%;">
+<col style="width: 9.0909%;">
+<col style="width: 18.1818%;">
+<col style="width: 36.3636%;">
+<col style="width: 9.091%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field Name</th>
+<th class="tableblock halign-left valign-top">Required</th>
+<th class="tableblock halign-left valign-top">Nullable</th>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">errorCode</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">X</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">String</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A code identifying this error</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">errorMessage</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">X</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">String</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A readable message describing the error</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="ExecutionResult"><a class="anchor" href="#ExecutionResult"></a><em>ExecutionResult</em></h5>
+<div class="paragraph">
+<p>the result of an executed test</p>
+</div>
+<table class="tableblock frame-all grid-all stretch fields-ExecutionResult">
+<colgroup>
+<col style="width: 18.1818%;">
+<col style="width: 9.0909%;">
+<col style="width: 9.0909%;">
+<col style="width: 18.1818%;">
+<col style="width: 36.3636%;">
+<col style="width: 9.091%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field Name</th>
+<th class="tableblock halign-left valign-top">Required</th>
+<th class="tableblock halign-left valign-top">Nullable</th>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">result</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">X</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#String">[String]</a></p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><em>Enum:</em> PENDING, RUNNING, SUCCESSFUL, ABORTED, FAILED,</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">failureMessage</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">String</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="TestDescription"><a class="anchor" href="#TestDescription"></a><em>TestDescription</em></h5>
+<div class="paragraph">
+<p>The description of a test case</p>
+</div>
+<table class="tableblock frame-all grid-all stretch fields-TestDescription">
+<colgroup>
+<col style="width: 18.1818%;">
+<col style="width: 9.0909%;">
+<col style="width: 9.0909%;">
+<col style="width: 18.1818%;">
+<col style="width: 36.3636%;">
+<col style="width: 9.091%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field Name</th>
+<th class="tableblock halign-left valign-top">Required</th>
+<th class="tableblock halign-left valign-top">Nullable</th>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">uniqueId</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">String</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">unique identifier of the tests which is generated by the test platform.</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">sourceFile</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">String</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">source file from where the test was discovered</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">displayName</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">String</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">display name of the test</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">tags</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Set   of <a href="#string">[string]</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">tags associated with the test as specified in the feature file</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="TestExecutionInformation"><a class="anchor" href="#TestExecutionInformation"></a><em>TestExecutionInformation</em></h5>
+<div class="paragraph">
+<p>information of which tests were started and where to find the results of the test run</p>
+</div>
+<table class="tableblock frame-all grid-all stretch fields-TestExecutionInformation">
+<colgroup>
+<col style="width: 18.1818%;">
+<col style="width: 9.0909%;">
+<col style="width: 9.0909%;">
+<col style="width: 18.1818%;">
+<col style="width: 36.3636%;">
+<col style="width: 9.091%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field Name</th>
+<th class="tableblock halign-left valign-top">Required</th>
+<th class="tableblock halign-left valign-top">Nullable</th>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">testRunId</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">UUID</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">uuid</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">resultUrl</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">URI</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">uri</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">testsToExecute</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List   of <a href="#TestDescription"><em>TestDescription</em></a></p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="TestExecutionRequest"><a class="anchor" href="#TestExecutionRequest"></a><em>TestExecutionRequest</em></h5>
+<div class="paragraph">
+<p>Request the execution of a subset of tests. Multiple specifications will be combined with AND. If one of the tags, sourceFiles, or testUniqueIds is an empty list, it will not be considered in the selection of tests. If all are empty, all tests are selected.</p>
+</div>
+<table class="tableblock frame-all grid-all stretch fields-TestExecutionRequest">
+<colgroup>
+<col style="width: 18.1818%;">
+<col style="width: 9.0909%;">
+<col style="width: 9.0909%;">
+<col style="width: 18.1818%;">
+<col style="width: 36.3636%;">
+<col style="width: 9.091%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field Name</th>
+<th class="tableblock halign-left valign-top">Required</th>
+<th class="tableblock halign-left valign-top">Nullable</th>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">tags</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List   of <a href="#string">[string]</a></p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">sourceFiles</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List   of <a href="#string">[string]</a></p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">testUniqueIds</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List   of <a href="#string">[string]</a></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">the unique ids generated by the test platform. See the endpoint &#x60;GET /tests&#x60; for the available tests.</p></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="TestExecutionResult"><a class="anchor" href="#TestExecutionResult"></a><em>TestExecutionResult</em></h5>
+<div class="paragraph">
+<p>the result of the executed tests</p>
+</div>
+<table class="tableblock frame-all grid-all stretch fields-TestExecutionResult">
+<colgroup>
+<col style="width: 18.1818%;">
+<col style="width: 9.0909%;">
+<col style="width: 9.0909%;">
+<col style="width: 18.1818%;">
+<col style="width: 36.3636%;">
+<col style="width: 9.091%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field Name</th>
+<th class="tableblock halign-left valign-top">Required</th>
+<th class="tableblock halign-left valign-top">Nullable</th>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">testRunStarted</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Date</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">date-time</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">testRunFinished</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Date</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">date-time</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">result</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#ExecutionResult"><em>ExecutionResult</em></a></p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">tests</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">List   of <a href="#TestExecutionResult_tests_inner">[TestExecutionResult_tests_inner]</a></p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect4">
+<h5 id="TestExecutionResultTestsInner"><a class="anchor" href="#TestExecutionResultTestsInner"></a><em>TestExecutionResultTestsInner</em></h5>
+<table class="tableblock frame-all grid-all stretch fields-TestExecutionResultTestsInner">
+<colgroup>
+<col style="width: 18.1818%;">
+<col style="width: 9.0909%;">
+<col style="width: 9.0909%;">
+<col style="width: 18.1818%;">
+<col style="width: 36.3636%;">
+<col style="width: 9.091%;">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Field Name</th>
+<th class="tableblock halign-left valign-top">Required</th>
+<th class="tableblock halign-left valign-top">Nullable</th>
+<th class="tableblock halign-left valign-top">Type</th>
+<th class="tableblock halign-left valign-top">Description</th>
+<th class="tableblock halign-left valign-top">Format</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">test</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#TestDescription"><em>TestDescription</em></a></p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">result</p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><a href="#ExecutionResult"><em>ExecutionResult</em></a></p></td>
+<td class="tableblock halign-left valign-top"></td>
+<td class="tableblock halign-left valign-top"></td>
+</tr>
+</tbody>
+</table>
+<div style="page-break-after: always;"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="links-to-test-relevant-topics"><a class="anchor" href="#links-to-test-relevant-topics"></a>11. Links to test relevant topics</h2>
 <div class="sectionbody">
 <div class="ulist">
 <ul>
@@ -7902,18 +8769,18 @@ This is an internal gematik extension and can be found on GitLab <a href="https:
 </div>
 </div>
 <div class="sect1">
-<h2 id="frequently-asked-questions"><a class="anchor" href="#frequently-asked-questions"></a>11. Frequently asked questions</h2>
+<h2 id="frequently-asked-questions"><a class="anchor" href="#frequently-asked-questions"></a>12. Frequently asked questions</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="maven"><a class="anchor" href="#maven"></a>11.1. Maven</h3>
+<h3 id="maven"><a class="anchor" href="#maven"></a>12.1. Maven</h3>
 <div class="sect3">
-<h4 id="fm01-which-serenity-are-we-currently-using"><a class="anchor" href="#fm01-which-serenity-are-we-currently-using"></a>11.1.1. FM01 Which Serenity are we currently using?</h4>
+<h4 id="fm01-which-serenity-are-we-currently-using"><a class="anchor" href="#fm01-which-serenity-are-we-currently-using"></a>12.1.1. FM01 Which Serenity are we currently using?</h4>
 <div class="paragraph">
 <p>You can find the Serenity compatible with each Tiger version in the [ReleaseNotes](ReleaseNotes.md)</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm02-when-using-maven-no-tests-are-executed"><a class="anchor" href="#fm02-when-using-maven-no-tests-are-executed"></a>11.1.2. FM02 When using maven, no tests are executed.</h4>
+<h4 id="fm02-when-using-maven-no-tests-are-executed"><a class="anchor" href="#fm02-when-using-maven-no-tests-are-executed"></a>12.1.2. FM02 When using maven, no tests are executed.</h4>
 <div class="paragraph">
 <p>Please first make sure that either the surefire or failsafe plugin is enabled and shown as running in the console. If you use Junit4 test annotations, you have to make sure that the junit vintage engine from the Junit5 library is included in the dependencies.</p>
 </div>
@@ -7928,7 +8795,7 @@ This is an internal gematik extension and can be found on GitLab <a href="https:
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm03-when-running-tests-in-tiger-the-test-run-aborts-with-a-java-lang-nosuchmethoderror"><a class="anchor" href="#fm03-when-running-tests-in-tiger-the-test-run-aborts-with-a-java-lang-nosuchmethoderror"></a>11.1.3. FM03 When running tests in Tiger, the test run aborts with a java.lang.NoSuchMethodError.</h4>
+<h4 id="fm03-when-running-tests-in-tiger-the-test-run-aborts-with-a-java-lang-nosuchmethoderror"><a class="anchor" href="#fm03-when-running-tests-in-tiger-the-test-run-aborts-with-a-java-lang-nosuchmethoderror"></a>12.1.3. FM03 When running tests in Tiger, the test run aborts with a java.lang.NoSuchMethodError.</h4>
 <div class="paragraph">
 <p>More specifically, the error is as follows:</p>
 </div>
@@ -7950,23 +8817,23 @@ This is an internal gematik extension and can be found on GitLab <a href="https:
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm04-i-dont-see-any-log-output-there-are-only-warnings-about-outdated-versions-at-the-beginning"><a class="anchor" href="#fm04-i-dont-see-any-log-output-there-are-only-warnings-about-outdated-versions-at-the-beginning"></a>11.1.4. FM04 I don&#8217;t see any log output, there are only warnings about outdated versions at the beginning</h4>
+<h4 id="fm04-i-dont-see-any-log-output-there-are-only-warnings-about-outdated-versions-at-the-beginning"><a class="anchor" href="#fm04-i-dont-see-any-log-output-there-are-only-warnings-about-outdated-versions-at-the-beginning"></a>12.1.4. FM04 I don&#8217;t see any log output, there are only warnings about outdated versions at the beginning</h4>
 <div class="paragraph">
 <p>Apparently you included SLF4J V2 dependencies.<br>
 We currently use the logback classic 1.2.x branch, which is delivered in the most recent SpringBoot version. This is not compatible to SLF4J 2.x.x.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm05-there-are-selenium-version-conflicts-when-i-want-to-run-my-project-with-springboot-and-tiger-with-selenium"><a class="anchor" href="#fm05-there-are-selenium-version-conflicts-when-i-want-to-run-my-project-with-springboot-and-tiger-with-selenium"></a>11.1.5. FM05 There are selenium version conflicts when I want to run my project with SpringBoot and tiger with selenium</h4>
+<h4 id="fm05-there-are-selenium-version-conflicts-when-i-want-to-run-my-project-with-springboot-and-tiger-with-selenium"><a class="anchor" href="#fm05-there-are-selenium-version-conflicts-when-i-want-to-run-my-project-with-springboot-and-tiger-with-selenium"></a>12.1.5. FM05 There are selenium version conflicts when I want to run my project with SpringBoot and tiger with selenium</h4>
 <div class="paragraph">
 <p>SpringBoot deploys an outdated selenium version. To solve the conflicts, please use the versions stated in the release notes via dependency managent in the maven pom.xml.</p>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="extensions"><a class="anchor" href="#extensions"></a>11.2. Extensions</h3>
+<h3 id="extensions"><a class="anchor" href="#extensions"></a>12.2. Extensions</h3>
 <div class="sect3">
-<h4 id="fe01-when-i-start-a-docker-image-in-tiger-yaml-the-testenvironmentmanagers-startup-fails"><a class="anchor" href="#fe01-when-i-start-a-docker-image-in-tiger-yaml-the-testenvironmentmanagers-startup-fails"></a>11.2.1. FE01 When I start a docker image in tiger.yaml, the TestenvironmentManager&#8217;s startup fails</h4>
+<h4 id="fe01-when-i-start-a-docker-image-in-tiger-yaml-the-testenvironmentmanagers-startup-fails"><a class="anchor" href="#fe01-when-i-start-a-docker-image-in-tiger-yaml-the-testenvironmentmanagers-startup-fails"></a>12.2.1. FE01 When I start a docker image in tiger.yaml, the TestenvironmentManager&#8217;s startup fails</h4>
 <div class="paragraph">
 <p>Please make sure that you added the tiger-cloud-extension dependency in the most recent version.</p>
 </div>
@@ -7981,7 +8848,7 @@ We currently use the logback classic 1.2.x branch, which is delivered in the mos
 </div>
 </div>
 <div class="sect3">
-<h4 id="fe02-when-using-the-tiger-cloud-extensions-healthcheck-at-docker-servertypes-in-gematik-sw-factory-fails"><a class="anchor" href="#fe02-when-using-the-tiger-cloud-extensions-healthcheck-at-docker-servertypes-in-gematik-sw-factory-fails"></a>11.2.2. FE02 When using the tiger-cloud-extensions, healthcheck at docker servertypes in Gematik SW factory fails</h4>
+<h4 id="fe02-when-using-the-tiger-cloud-extensions-healthcheck-at-docker-servertypes-in-gematik-sw-factory-fails"><a class="anchor" href="#fe02-when-using-the-tiger-cloud-extensions-healthcheck-at-docker-servertypes-in-gematik-sw-factory-fails"></a>12.2.2. FE02 When using the tiger-cloud-extensions, healthcheck at docker servertypes in Gematik SW factory fails</h4>
 <div class="paragraph">
 <p>Tiger expects that Docker Daemon starts the container locally.<br>
 However, if this is not the case, you may use the environment variable TIGER_DOCKER_HOST to share on which server instance the container is started and the HealthcheckURL is adjusted accordingly. For purposes of the Gematik SW-factory, the following code snippet is recommended for the pipeline script:</p>
@@ -8001,9 +8868,9 @@ However, if this is not the case, you may use the environment variable TIGER_DOC
 </div>
 </div>
 <div class="sect2">
-<h3 id="workflow-ui"><a class="anchor" href="#workflow-ui"></a>11.3. Workflow UI</h3>
+<h3 id="workflow-ui"><a class="anchor" href="#workflow-ui"></a>12.3. Workflow UI</h3>
 <div class="sect3">
-<h4 id="fw01-in-the-workflow-ui-scenarios-are-listed-twice-and-are-refreshed-the-same-time-as-if-they-ran-parallely"><a class="anchor" href="#fw01-in-the-workflow-ui-scenarios-are-listed-twice-and-are-refreshed-the-same-time-as-if-they-ran-parallely"></a>11.3.1. FW01 In the workflow UI scenarios are listed twice and are refreshed the same time (as if they ran parallely)</h4>
+<h4 id="fw01-in-the-workflow-ui-scenarios-are-listed-twice-and-are-refreshed-the-same-time-as-if-they-ran-parallely"><a class="anchor" href="#fw01-in-the-workflow-ui-scenarios-are-listed-twice-and-are-refreshed-the-same-time-as-if-they-ran-parallely"></a>12.3.1. FW01 In the workflow UI scenarios are listed twice and are refreshed the same time (as if they ran parallely)</h4>
 <div class="paragraph">
 <p>Usually, this only happens when the test suite is started in intellij and TigerCucumberListener is delivered as a plugin in TigerCucumberListener.<br>
 This is no longer necessary since v1.3 because the listener is added automatically. Due to this manual adjustment, two listeners are running that communicate the scenarios twice to the workflow UI.<br>
@@ -8011,16 +8878,16 @@ If this happens in a mvn call, please check the tiger-maven-plugin configuration
 </div>
 </div>
 <div class="sect3">
-<h4 id="fw02-after-having-pressed-shutdown-in-the-workflow-ui-i-cannot-see-messages-in-rbellog-details-pane-anymore"><a class="anchor" href="#fw02-after-having-pressed-shutdown-in-the-workflow-ui-i-cannot-see-messages-in-rbellog-details-pane-anymore"></a>11.3.2. FW02 After having pressed shutdown in the workflow UI, I cannot see messages in RbelLog Details Pane anymore</h4>
+<h4 id="fw02-after-having-pressed-shutdown-in-the-workflow-ui-i-cannot-see-messages-in-rbellog-details-pane-anymore"><a class="anchor" href="#fw02-after-having-pressed-shutdown-in-the-workflow-ui-i-cannot-see-messages-in-rbellog-details-pane-anymore"></a>12.3.2. FW02 After having pressed shutdown in the workflow UI, I cannot see messages in RbelLog Details Pane anymore</h4>
 <div class="paragraph">
 <p>By stopping the test runs, the workflow UI backend is terminated as well. You may recognize this by the light-red color of the side bar. However, navigating in the RbelLog Details Pane requires a running backend. In addition, RbelPath- and JEXL inspect dialogues are not working.</p>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="other-topics"><a class="anchor" href="#other-topics"></a>11.4. Other topics</h3>
+<h3 id="other-topics"><a class="anchor" href="#other-topics"></a>12.4. Other topics</h3>
 <div class="sect3">
-<h4 id="fo01-how-can-i-change-the-logging-levels-of-loggers-used-by-tiger"><a class="anchor" href="#fo01-how-can-i-change-the-logging-levels-of-loggers-used-by-tiger"></a>11.4.1. FO01 How can I change the logging levels of loggers used by Tiger</h4>
+<h4 id="fo01-how-can-i-change-the-logging-levels-of-loggers-used-by-tiger"><a class="anchor" href="#fo01-how-can-i-change-the-logging-levels-of-loggers-used-by-tiger"></a>12.4.1. FO01 How can I change the logging levels of loggers used by Tiger</h4>
 <div class="paragraph">
 <p>Inside the tiger.yaml file, you can add a section logging.level: and add a list of packages / classes and the desired logging level.</p>
 </div>
@@ -8036,7 +8903,7 @@ If this happens in a mvn call, please check the tiger-maven-plugin configuration
 </div>
 </div>
 <div class="sect3">
-<h4 id="fo02-docker-container-creation-fails"><a class="anchor" href="#fo02-docker-container-creation-fails"></a>11.4.2. FO02 Docker container creation fails</h4>
+<h4 id="fo02-docker-container-creation-fails"><a class="anchor" href="#fo02-docker-container-creation-fails"></a>12.4.2. FO02 Docker container creation fails</h4>
 <div class="paragraph">
 <p>Use the command below to remove all unused containers. Or look for containers starting with "tiger", stop and remove them.</p>
 </div>
@@ -8058,7 +8925,7 @@ If this happens in a mvn call, please check the tiger-maven-plugin configuration
 </div>
 </div>
 <div class="sect3">
-<h4 id="fo03-adding-alternative-names-programatically-throws-sslexception"><a class="anchor" href="#fo03-adding-alternative-names-programatically-throws-sslexception"></a>11.4.3. FO03 Adding alternative names programatically throws SSLException</h4>
+<h4 id="fo03-adding-alternative-names-programatically-throws-sslexception"><a class="anchor" href="#fo03-adding-alternative-names-programatically-throws-sslexception"></a>12.4.3. FO03 Adding alternative names programatically throws SSLException</h4>
 <div class="paragraph">
 <p>When using directly the method <code>de.gematik.test.tiger.proxy.TigerProxy.addAlternativeName()</code> to add multiple alternative names to the TLS certificate of the tiger proxy the following exception may come up:</p>
 </div>
@@ -8083,13 +8950,13 @@ proxy.restartMockserver();</code></pre>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm01-what-serenity-do-we-use-currently"><a class="anchor" href="#fm01-what-serenity-do-we-use-currently"></a>11.4.4. FM01 What serenity do we use currently?</h4>
+<h4 id="fm01-what-serenity-do-we-use-currently"><a class="anchor" href="#fm01-what-serenity-do-we-use-currently"></a>12.4.4. FM01 What serenity do we use currently?</h4>
 <div class="paragraph">
 <p>Das zu jeder Tiger Version kompatible Serenity findet ihr in den [ReleaseNotes](ReleaseNotes.md)</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm02-bei-der-nutzung-von-maven-werden-keine-tests-ausgeführt"><a class="anchor" href="#fm02-bei-der-nutzung-von-maven-werden-keine-tests-ausgeführt"></a>11.4.5. FM02 Bei der Nutzung von maven werden keine Tests ausgeführt</h4>
+<h4 id="fm02-bei-der-nutzung-von-maven-werden-keine-tests-ausgeführt"><a class="anchor" href="#fm02-bei-der-nutzung-von-maven-werden-keine-tests-ausgeführt"></a>12.4.5. FM02 Bei der Nutzung von maven werden keine Tests ausgeführt</h4>
 <div class="paragraph">
 <p>Bitte stell zuerst sicher, dass entweder das surefire oder das failsafe plugin aktiviert ist und auch in der Konsole als ausgeführt angezeigt wird. Solltest Du Junit4 Test Annotationen verwenden so musst Du noch sicherstellen, dass die junit vintage engine aus der Junit5 Library in den dependencies mit angeführt ist.</p>
 </div>
@@ -8104,7 +8971,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm03-beim-ausführen-von-tests-im-tiger-bricht-der-testlauf-mit-einem-java-lang-nosuchmethoderror-ab"><a class="anchor" href="#fm03-beim-ausführen-von-tests-im-tiger-bricht-der-testlauf-mit-einem-java-lang-nosuchmethoderror-ab"></a>11.4.6. FM03 Beim Ausführen von Tests im Tiger bricht der Testlauf mit einem java.lang.NoSuchMethodError ab</h4>
+<h4 id="fm03-beim-ausführen-von-tests-im-tiger-bricht-der-testlauf-mit-einem-java-lang-nosuchmethoderror-ab"><a class="anchor" href="#fm03-beim-ausführen-von-tests-im-tiger-bricht-der-testlauf-mit-einem-java-lang-nosuchmethoderror-ab"></a>12.4.6. FM03 Beim Ausführen von Tests im Tiger bricht der Testlauf mit einem java.lang.NoSuchMethodError ab</h4>
 <div class="paragraph">
 <p>Genauer geht es um folgenden Fehler:</p>
 </div>
@@ -8126,23 +8993,23 @@ proxy.restartMockserver();</code></pre>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm04-ich-sehe-keine-log-ausgabe-lediglich-am-anfang-stehen-warnungen-über-veraltete-versionen"><a class="anchor" href="#fm04-ich-sehe-keine-log-ausgabe-lediglich-am-anfang-stehen-warnungen-über-veraltete-versionen"></a>11.4.7. FM04 Ich sehe keine Log-Ausgabe, lediglich am Anfang stehen Warnungen über veraltete Versionen</h4>
+<h4 id="fm04-ich-sehe-keine-log-ausgabe-lediglich-am-anfang-stehen-warnungen-über-veraltete-versionen"><a class="anchor" href="#fm04-ich-sehe-keine-log-ausgabe-lediglich-am-anfang-stehen-warnungen-über-veraltete-versionen"></a>12.4.7. FM04 Ich sehe keine Log-Ausgabe, lediglich am Anfang stehen Warnungen über veraltete Versionen</h4>
 <div class="paragraph">
 <p>Du hast anscheinend Dependencies zu SLF4J V2 eingebunden.<br>
 Wir verwenden derzeit den logback classic 1.2.x branch, da dieser in der von uns verwendeten Spring Boot Version mitgeliefert wird. Dieses ist NICHT kompatibel zu SLF4J 2.x.x!</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fm05-wenn-ich-in-meinem-projekt-spring-boot-und-tiger-mit-selenium-nutzen-will-gibt-es-versionskonflikte-bei-selenium"><a class="anchor" href="#fm05-wenn-ich-in-meinem-projekt-spring-boot-und-tiger-mit-selenium-nutzen-will-gibt-es-versionskonflikte-bei-selenium"></a>11.4.8. FM05 Wenn ich in meinem Projekt Spring Boot und Tiger mit Selenium nutzen will, gibt es Versionskonflikte bei Selenium</h4>
+<h4 id="fm05-wenn-ich-in-meinem-projekt-spring-boot-und-tiger-mit-selenium-nutzen-will-gibt-es-versionskonflikte-bei-selenium"><a class="anchor" href="#fm05-wenn-ich-in-meinem-projekt-spring-boot-und-tiger-mit-selenium-nutzen-will-gibt-es-versionskonflikte-bei-selenium"></a>12.4.8. FM05 Wenn ich in meinem Projekt Spring Boot und Tiger mit Selenium nutzen will, gibt es Versionskonflikte bei Selenium</h4>
 <div class="paragraph">
 <p>Spring Boot liefert eine veraltete Version von Selenium aus. Um die Konflikte zu lösen, bitte die in den ReleaseNotes angeführten Versionen über DependencyManagement im maven pom.xml lösen.</p>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="extensions-2"><a class="anchor" href="#extensions-2"></a>11.5. Extensions</h3>
+<h3 id="extensions-2"><a class="anchor" href="#extensions-2"></a>12.5. Extensions</h3>
 <div class="sect3">
-<h4 id="fe01-wenn-ich-in-der-tiger-yaml-ein-docker-image-starten-will-so-schlägt-der-startup-des-testenvironmentmanagers-fehl"><a class="anchor" href="#fe01-wenn-ich-in-der-tiger-yaml-ein-docker-image-starten-will-so-schlägt-der-startup-des-testenvironmentmanagers-fehl"></a>11.5.1. FE01 Wenn ich in der tiger.yaml ein Docker image starten will, so schlägt der Startup des TestenvironmentManagers fehl.</h4>
+<h4 id="fe01-wenn-ich-in-der-tiger-yaml-ein-docker-image-starten-will-so-schlägt-der-startup-des-testenvironmentmanagers-fehl"><a class="anchor" href="#fe01-wenn-ich-in-der-tiger-yaml-ein-docker-image-starten-will-so-schlägt-der-startup-des-testenvironmentmanagers-fehl"></a>12.5.1. FE01 Wenn ich in der tiger.yaml ein Docker image starten will, so schlägt der Startup des TestenvironmentManagers fehl.</h4>
 <div class="paragraph">
 <p>Stelle sicher, dass du die tiger-cloud-extension in der aktuellsten Version als dependency hinzugefügt hast.</p>
 </div>
@@ -8157,7 +9024,7 @@ Wir verwenden derzeit den logback classic 1.2.x branch, da dieser in der von uns
 </div>
 </div>
 <div class="sect3">
-<h4 id="fe02-wenn-ich-die-tiger-cloud-extensions-nutze-schlägt-der-healthcheck-bei-docker-servertypen-in-der-gematik-sw-factory-fehl"><a class="anchor" href="#fe02-wenn-ich-die-tiger-cloud-extensions-nutze-schlägt-der-healthcheck-bei-docker-servertypen-in-der-gematik-sw-factory-fehl"></a>11.5.2. FE02 Wenn ich die tiger-cloud-extensions nutze, schlägt der Healthcheck bei docker Servertypen in der Gematik SW Factory fehl</h4>
+<h4 id="fe02-wenn-ich-die-tiger-cloud-extensions-nutze-schlägt-der-healthcheck-bei-docker-servertypen-in-der-gematik-sw-factory-fehl"><a class="anchor" href="#fe02-wenn-ich-die-tiger-cloud-extensions-nutze-schlägt-der-healthcheck-bei-docker-servertypen-in-der-gematik-sw-factory-fehl"></a>12.5.2. FE02 Wenn ich die tiger-cloud-extensions nutze, schlägt der Healthcheck bei docker Servertypen in der Gematik SW Factory fehl</h4>
 <div class="paragraph">
 <p>Normalerweise geht Tiger davon aus, dass der Docker Daemon die Container am lokalen Rechner startet.<br>
 Sollte dies nicht so sein, so kann man Tiger mit der Umgebungsvariable TIGER_DOCKER_HOST mitteilen, auf welchem Rechner die Container gestartet werden und die HealthcheckURL wird dementsprechend angepasst. Für die Gematik SW-Factory empfiehlt sich folgendes Code Snippet für das Pipeline-Skript:</p>
@@ -8177,25 +9044,25 @@ Sollte dies nicht so sein, so kann man Tiger mit der Umgebungsvariable TIGER_DOC
 </div>
 </div>
 <div class="sect2">
-<h3 id="workflow-ui-2"><a class="anchor" href="#workflow-ui-2"></a>11.6. Workflow UI</h3>
+<h3 id="workflow-ui-2"><a class="anchor" href="#workflow-ui-2"></a>12.6. Workflow UI</h3>
 <div class="sect3">
-<h4 id="fw01-in-der-workflow-ui-sind-die-szenarios-doppelt-aufgeführt-und-werden-auch-zeitgleich-aktualisiert-es-scheint-als-ob-sie-parallel-ablaufen"><a class="anchor" href="#fw01-in-der-workflow-ui-sind-die-szenarios-doppelt-aufgeführt-und-werden-auch-zeitgleich-aktualisiert-es-scheint-als-ob-sie-parallel-ablaufen"></a>11.6.1. FW01 In der Workflow UI sind die Szenarios doppelt aufgeführt und werden auch zeitgleich aktualisiert (es scheint, als ob sie parallel ablaufen)</h4>
+<h4 id="fw01-in-der-workflow-ui-sind-die-szenarios-doppelt-aufgeführt-und-werden-auch-zeitgleich-aktualisiert-es-scheint-als-ob-sie-parallel-ablaufen"><a class="anchor" href="#fw01-in-der-workflow-ui-sind-die-szenarios-doppelt-aufgeführt-und-werden-auch-zeitgleich-aktualisiert-es-scheint-als-ob-sie-parallel-ablaufen"></a>12.6.1. FW01 In der Workflow UI sind die Szenarios doppelt aufgeführt und werden auch zeitgleich aktualisiert (es scheint, als ob sie parallel ablaufen)</h4>
 <div class="paragraph">
 <p>Passiert eigentlich nur, wenn die Testsuite aus Intellij gestartet wurde und in der RuntimeConfiguration der TigerCucumberListener als plugin mitgegeben wird. Dies ist seit v1.3 nicht mehr notwendig, weil der Listener automatisch hinzugefügt wird. Durch den manuellen Eintrag laufen also dann zwei Listener, welche die Szenarien dann auch doppelt an die Workflow UI kommunizieren &#8230;&#8203;<br>
 Sollte dieser Effekt auch bei einem mvn call auftreten, dann bitte die Konfiguration des tiger-maven-plugins überprüfen, bzw. die generierten Treiberklassen bezüglich zusätzlicher Plugins in den CucumberOptions checken.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="fw02-nachdem-ich-auf-shutdown-in-der-workflow-ui-gedrückt-habe-kann-ich-die-nachrichten-in-der-rbellog-details-pane-nicht-mehr-ansehen"><a class="anchor" href="#fw02-nachdem-ich-auf-shutdown-in-der-workflow-ui-gedrückt-habe-kann-ich-die-nachrichten-in-der-rbellog-details-pane-nicht-mehr-ansehen"></a>11.6.2. FW02 Nachdem ich auf Shutdown in der Workflow UI gedrückt habe, kann ich die Nachrichten in der RbelLog Details Pane nicht mehr ansehen</h4>
+<h4 id="fw02-nachdem-ich-auf-shutdown-in-der-workflow-ui-gedrückt-habe-kann-ich-die-nachrichten-in-der-rbellog-details-pane-nicht-mehr-ansehen"><a class="anchor" href="#fw02-nachdem-ich-auf-shutdown-in-der-workflow-ui-gedrückt-habe-kann-ich-die-nachrichten-in-der-rbellog-details-pane-nicht-mehr-ansehen"></a>12.6.2. FW02 Nachdem ich auf Shutdown in der Workflow UI gedrückt habe, kann ich die Nachrichten in der RbelLog Details Pane nicht mehr ansehen</h4>
 <div class="paragraph">
 <p>Durch das Beenden des Testlaufs ist das Backend der Workflow UI auch beendet worden. Dies kannst Du auch daran erkennen, dass die linke Seitenleiste nun blass rot eingefärbt ist. Das Navigieren in der RbelLog Details Pane benötigt aber das Backend und klappt daher zum jetzigen Zeitpunkt nicht mehr. Auch die RbelPath- und JEXL Inspect Dialoge sind nicht mehr funktional.</p>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="other-topics-2"><a class="anchor" href="#other-topics-2"></a>11.7. Other topics</h3>
+<h3 id="other-topics-2"><a class="anchor" href="#other-topics-2"></a>12.7. Other topics</h3>
 <div class="sect3">
-<h4 id="fo01-how-can-i-change-the-logging-levels-of-loggers-used-by-tiger-2"><a class="anchor" href="#fo01-how-can-i-change-the-logging-levels-of-loggers-used-by-tiger-2"></a>11.7.1. FO01 How can I change the logging levels of loggers used by Tiger</h4>
+<h4 id="fo01-how-can-i-change-the-logging-levels-of-loggers-used-by-tiger-2"><a class="anchor" href="#fo01-how-can-i-change-the-logging-levels-of-loggers-used-by-tiger-2"></a>12.7.1. FO01 How can I change the logging levels of loggers used by Tiger</h4>
 <div class="paragraph">
 <p>Inside the tiger.yaml file you can add a section logging.level: and add a list of packages / classes and the desired logging level.</p>
 </div>
@@ -8211,7 +9078,7 @@ Sollte dieser Effekt auch bei einem mvn call auftreten, dann bitte die Konfigura
 </div>
 </div>
 <div class="sect3">
-<h4 id="fo02-docker-container-creation-fails-2"><a class="anchor" href="#fo02-docker-container-creation-fails-2"></a>11.7.2. FO02 Docker container creation fails</h4>
+<h4 id="fo02-docker-container-creation-fails-2"><a class="anchor" href="#fo02-docker-container-creation-fails-2"></a>12.7.2. FO02 Docker container creation fails</h4>
 <div class="paragraph">
 <p>Use the command below to remove all unused containers. Or look for containers starting with "tiger", stop and remove them.</p>
 </div>
@@ -8233,7 +9100,7 @@ Sollte dieser Effekt auch bei einem mvn call auftreten, dann bitte die Konfigura
 </div>
 </div>
 <div class="sect3">
-<h4 id="fo03-adding-alternative-names-programatically-throws-sslexception-2"><a class="anchor" href="#fo03-adding-alternative-names-programatically-throws-sslexception-2"></a>11.7.3. FO03 Adding alternative names programatically throws SSLException</h4>
+<h4 id="fo03-adding-alternative-names-programatically-throws-sslexception-2"><a class="anchor" href="#fo03-adding-alternative-names-programatically-throws-sslexception-2"></a>12.7.3. FO03 Adding alternative names programatically throws SSLException</h4>
 <div class="paragraph">
 <p>When using directly the method <code>de.gematik.test.tiger.proxy.TigerProxy.addAlternativeName()</code> to add multiple alternative names to the TLS certificate of the tiger proxy the following exception may come up:</p>
 </div>
@@ -8263,7 +9130,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-11-15 15:11:15 +0100
+Last updated 2024-12-09 11:54:15 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
