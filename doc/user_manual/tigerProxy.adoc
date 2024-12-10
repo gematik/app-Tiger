@@ -757,13 +757,14 @@ tigerProxy:
     directReverseProxy:
         hostname: 127.0.0.1
         port: 3858
+        ignoreConnectionErrors: false
 ----
 
 This will directly forward any request to the given host.
 This is a form of reverseProxy, only also applicable for non-http-traffic.
 HTTP traffic will still be forwarded through use of a global reverse proxy.
 Other traffic will be directly forwarded, rerouted directly on the TCP layer.
-Messages transmitted can still be parsed via RBel.
+Messages transmitted can still be parsed via RBel. If the optional flag `ignoreConnectionErrors` is true, no connection errors will be logged, the default is false.
 
 ==== activateTrafficLogging
 
