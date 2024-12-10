@@ -37,6 +37,7 @@ import de.gematik.test.tiger.mockserver.netty.proxy.BinaryHandler;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import de.gematik.test.tiger.mockserver.socket.tls.SniHandler;
 import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
+import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
@@ -117,7 +118,14 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
               incomingChannel.attr(OUTGOING_CHANNEL).set(future.channel());
               future.channel().attr(INCOMING_CHANNEL).set(incomingChannel);
               if (!future.isSuccess()) {
-                log.error("Failed to connect to {}", remoteAddress, future.cause());
+                if (configuration.binaryProxyListener() != null
+                    && !(((BinaryExchangeHandler) configuration.binaryProxyListener())
+                        .getTigerProxy()
+                        .getTigerProxyConfiguration()
+                        .getDirectReverseProxy()
+                        .isIgnoreConnectionErrors())) {
+                  log.error("Failed to connect to {}", remoteAddress, future.cause());
+                }
               }
             });
   }

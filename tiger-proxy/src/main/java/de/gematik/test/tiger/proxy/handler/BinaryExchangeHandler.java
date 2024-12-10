@@ -17,19 +17,16 @@
 package de.gematik.test.tiger.proxy.handler;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelBinaryFacet;
-import de.gematik.rbellogger.data.facet.RbelFacet;
-import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
-import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
-import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
+import de.gematik.rbellogger.data.facet.*;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.mockserver.model.BinaryProxyListener;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -104,11 +101,16 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
                       })
                   .exceptionally(
                       t -> {
-                        if (isConnectionResetException(t)) {
-                          log.trace("Connection reset:", t);
-                        } else {
-                          log.warn("Exception during Direct-Proxy handling:", t);
-                          propagateExceptionMessageSafe(t);
+                        if (!getTigerProxy()
+                            .getTigerProxyConfiguration()
+                            .getDirectReverseProxy()
+                            .isIgnoreConnectionErrors()) {
+                          if (isConnectionResetException(t)) {
+                            log.trace("Connection reset:", t);
+                          } else {
+                            log.warn("Exception during Direct-Proxy handling:", t);
+                            propagateExceptionMessageSafe(t);
+                          }
                         }
                         return null;
                       }));

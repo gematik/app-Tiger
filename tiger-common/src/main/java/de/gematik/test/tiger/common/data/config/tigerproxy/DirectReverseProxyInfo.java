@@ -29,4 +29,5 @@ public class DirectReverseProxyInfo {
 
   private String hostname;
   private Integer port;
+  private boolean ignoreConnectionErrors = false;
 }
