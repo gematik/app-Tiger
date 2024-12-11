@@ -44,31 +44,58 @@ h1 {
     text-align: center;
 }
 
-#header {
-    padding: 20rem 0;
-    background-position: top;
-    background-repeat: no-repeat;
-    background-image: url("media/title_white.plain.svg");
-    height: 80rem;
+@media (min-width: 768px) {
+    #header {
+        padding: 20rem 0;
+        background-position: top;
+        background-repeat: no-repeat;
+        background-image: url("media/title_white.plain.svg");
+        height: 80rem;
+    }
+
+    #toc {
+        border: 0;
+    }
+
+    /* TODO Anne to be kept locally */
+    #header h1 {
+        background-image: url("media/tiger-mono-picto-plain.svg");
+        background-size: 150px;
+        background-repeat: no-repeat;
+        background-position: 120px bottom;
+        padding-left: 10rem;
+        line-height: 350%;
+        font-size: 327%;
+    }
+
+    #header .details {
+        text-align: center;
+        display: block;
+        padding-left: 120px;
+        border: 0;
+        margin-top: -40px;
+    }
 }
 
-/* TODO Anne to be kept locally */
-#header h1 {
-    background-image: url("media/tiger-mono-picto-plain.svg");
-    background-size: 150px;
-    background-repeat: no-repeat;
-    background-position: 120px bottom;
-    padding-left: 10rem;
-    line-height: 350%;
-    font-size: 327%;
-}
+/** Small screens
+Without the big background image and the tiger logo above the title*/
+@media (max-width: 768px) {
+    #header h1 {
+        background-image: url("media/tiger-mono-picto-plain.svg");
+        background-position: center top;
+        background-repeat: no-repeat;
+        background-size: 75px;
+        padding-left: 0;
+        padding-top: 75px; /* Adjust padding to ensure the image appears above the title */
+        line-height: normal;
+        font-size: 200%; /* Adjust font size for smaller screens */
+    }
 
-#header .details {
-    text-align: center;
-    display: block;
-    padding-left: 120px;
-    border: 0;
-    margin-top: -40px;
+    #header .details {
+        text-align: center;
+        display: block;
+        border: 0;
+    }
 }
 
 /* end of to be kept locally */
@@ -139,7 +166,7 @@ video {
 
 @media all and (max-width: 600px) {
     table {
-        width: 55vw;
+        width: 55vw !important;
         font-size: 3vw;
     }
 }

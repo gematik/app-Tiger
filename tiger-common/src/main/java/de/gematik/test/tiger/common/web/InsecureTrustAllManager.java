@@ -32,14 +32,19 @@ public class InsecureTrustAllManager extends X509ExtendedTrustManager {
   public static void allowAllSsl(URLConnection urlConnection) {
     if (urlConnection instanceof HttpsURLConnection httpsURLConnection) {
       try {
-        SSLContext context = SSLContext.getInstance("TLS");
-        context.init(null, new TrustManager[] {new InsecureTrustAllManager()}, new SecureRandom());
+        final SSLContext context = buildContext();
         httpsURLConnection.setSSLSocketFactory(context.getSocketFactory());
         httpsURLConnection.setHostnameVerifier((hostname, sslSession) -> true); // NOSONAR
       } catch (NoSuchAlgorithmException | KeyManagementException e) {
         throw new TigerPkiException("Unable to establish relaxed SSL checks", e);
       }
     }
+  }
+
+  public static SSLContext buildContext() throws NoSuchAlgorithmException, KeyManagementException {
+    SSLContext context = SSLContext.getInstance("TLS");
+    context.init(null, new TrustManager[] {new InsecureTrustAllManager()}, new SecureRandom());
+    return context;
   }
 
   @Override

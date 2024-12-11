@@ -1,0 +1,60 @@
+@startuml
+
+!include plantuml.style
+
+hide stereotype
+
+
+' left to right direction
+
+' component TigerServer  <<NextRelease>>
+
+component tsys <<Other>> [
+     Testsysteme
+
+     ---
+
+     RU/TU service instances
+     Docker containers
+     Helm charts
+     Simulators
+]
+
+
+rectangle Tiger as tiger {
+component TigerTestEnvMgr as tem <<Tiger>>
+component TigerProxy as tp <<Tiger>>
+
+
+'suites
+' interface "Steps" as isteps
+' interface "Helpers" as ihelpers
+' interface "Reuse" as ireuse
+' tem
+' interface ITestEnvironment as item
+' tp
+' interface "Local Http traffic" as ihttp <<HTTP>>
+' interface "ProxyConfiguration" as ipconf
+' ts
+' interface "IRBelMessaging" as irbel
+
+component "Current Testsuite" as tdir <<Current>>
+
+
+
+}
+
+
+tdir --> tp <<HTTP>> : traffic of\ntest run
+
+tp -up-> tdir : return\ntraffic data
+
+tp -left-> tsys <<HTTP>> : routed test traffic
+
+tem --> tp : configure\nroutes and PKI
+
+tdir -left-> tem : build me\na test env
+
+tem -left-> tsys
+
+@enduml

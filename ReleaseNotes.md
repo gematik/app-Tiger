@@ -15,6 +15,7 @@ tigerProxy:
         username: itsame
         password: superSecret
 ```
+
 * Tiger Maven Plugin: If you are using a custom driver template which includes the palceholder `${tags}`, you should
   change the full annotation to `${tagsAnnotation}`.
   E.g.:
@@ -47,6 +48,7 @@ lib:
   be configured via configuration key `tiger.internal.externalServer.startupPollIntervalMs` or per server via the server
   property `startupPollIntervalMs`
 * TGR-1660: Change notification for jenkins release
+* KOB-35: TigerProxy now will query listed "to"-targets in parallel. The first healthy target will be used for routing.
 * TGR-1618: RbelParser: Added support for LDAP messages.
 * TGR-1655: TigerRoutes can now not only add a Basic-Authentication but also a Bearer-Token:
 
@@ -64,6 +66,7 @@ tigerProxy:
         password: superSecret
 ```
 
+* TGR-1645: Tiger-Proxy: You can now choose if the generic fallback identity should be used. This can be toggled via `tigerProxy.tls.allowGenericFallbackIdentity`. The default is `false`, meaning that the generic fallback identity is only used when no other means is configured (serverIdentities, serverIdentity, serverRootCa).
 * TGR-1442: PKI-Identites can now also be provided via a map, specifying the individual options:
 
 ```yaml
@@ -78,6 +81,8 @@ tls.forwardMutualTlsIdentity:
 
 ## Bugfixes
 
+* TGR-978: User Manual: Fixed the overlap of text from the table of contents when viewing the html manual on a small
+  width screen.
 * KOB-6: Fixed an issue where https-destinations could not be used as one of multiple "to"-targets.
 * TGR-1670: TigerProxy: Correct host-header routing, which will now work case-insensitive
 * TGR-1643: Treat testcases that have not been run (in case that lib.runTestsOnStart is false)
@@ -282,8 +287,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-  key = PLUGIN_PROPERTY_NAME,
-  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+        key = PLUGIN_PROPERTY_NAME,
+        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

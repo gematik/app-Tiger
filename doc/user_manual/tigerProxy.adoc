@@ -277,6 +277,18 @@ tigerProxy:
       serverIdentity: "certificateAndKeyAndChain.p12;Password"
 ----
 
+If you want to use the fixed-server identity only for requests to matching hosts and you have NOT supplied a `serverRootCa`, you can use the `allowGenericFallbackIdentity`-property:
+
+[source,yaml]
+----
+tigerProxy:
+    tls:
+      serverIdentity: "certificateForFoobar.p12;Password"
+      allowGenericFallbackIdentity: true
+----
+
+If `certificateForFoobar.p12` contains a certificate for the FQDN `foobar.com`, then a request to `foobar.com` will use this certificate. If the request is to `barfoo.com` the generic server-identity will be used. If you have supplied a `serverRootCa` this CA will always be used for any request for which an exact match is not found.
+
 ==== Multiple server identities
 
 Sometimes you might want to use different server-identities for different hosts that are proxied. This can be achieved by using the `serverIdentities`-property. Simply list the properties, the proxy will automatically try to choose the correct one.

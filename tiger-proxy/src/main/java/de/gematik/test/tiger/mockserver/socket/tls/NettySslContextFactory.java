@@ -53,12 +53,17 @@ public class NettySslContextFactory {
   }
 
   public KeyAndCertificateFactory createKeyAndCertificateFactory() {
-    if (configuration.customKeyAndCertificateFactorySupplier() == null) {
-      throw new TigerProxySslException("No KeyAndCertificateFactorySupplier supplied!");
+    if (forServer) {
+      if (configuration.serverKeyAndCertificateFactory() == null) {
+        throw new TigerProxySslException("No serverKeyAndCertificateFactory found!");
+      }
+      return configuration.serverKeyAndCertificateFactory();
+    } else {
+      if (configuration.clientKeyAndCertificateFactory() == null) {
+        throw new TigerProxySslException("No clientKeyAndCertificateFactory found!");
+      }
+      return configuration.clientKeyAndCertificateFactory();
     }
-    return configuration
-        .customKeyAndCertificateFactorySupplier()
-        .buildKeyAndCertificateFactory(forServer, configuration);
   }
 
   public synchronized SslContext createClientSslContext(Optional<HttpProtocol> protocol) {
@@ -81,12 +86,7 @@ public class NettySslContextFactory {
 
   private SslContext buildFreshClientSslContext(HttpProtocol protocol, String hostName) {
     try {
-      val clientIdentity =
-          keyAndCertificateFactory
-              .buildAndSavePrivateKeyAndX509Certificate(hostName)
-              .orElseThrow(
-                  () ->
-                      new TigerProxySslException("Unable to find client identity for " + hostName));
+      val clientIdentity = keyAndCertificateFactory.resolveIdentityForHostname(hostName);
       // create x509 and private key if none exist yet
       SslContextBuilder sslContextBuilder =
           SslContextBuilder.forClient()
@@ -125,12 +125,7 @@ public class NettySslContextFactory {
     }
     log.info("Creating new server SSL context for {}", hostname);
     try {
-      val serverIdentity =
-          keyAndCertificateFactory
-              .buildAndSavePrivateKeyAndX509Certificate(hostname)
-              .orElseThrow(
-                  () ->
-                      new TigerProxySslException("Unable to find server identity for " + hostname));
+      val serverIdentity = keyAndCertificateFactory.resolveIdentityForHostname(hostname);
 
       log.atInfo()
           .addArgument(() -> serverIdentity.getCertificate().getSubjectX500Principal())

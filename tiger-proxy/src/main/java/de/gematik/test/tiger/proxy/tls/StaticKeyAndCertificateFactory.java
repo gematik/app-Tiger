@@ -19,6 +19,7 @@ package de.gematik.test.tiger.proxy.tls;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxySslException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 import javax.security.auth.x500.X500Principal;
 import lombok.Builder;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 public class StaticKeyAndCertificateFactory implements KeyAndCertificateFactory {
@@ -38,16 +40,23 @@ public class StaticKeyAndCertificateFactory implements KeyAndCertificateFactory 
 
   @Builder
   public StaticKeyAndCertificateFactory(List<TigerPkiIdentity> availableIdentities) {
-    if (availableIdentities != null) {
-      this.availableIdentities.addAll(availableIdentities);
+    if (CollectionUtils.isEmpty(availableIdentities)) {
+      throw new TigerProxySslException(
+          "No available identities provided in StaticKeyAndCertificateFactory");
     }
+    this.availableIdentities.addAll(availableIdentities);
   }
 
   @Override
-  public Optional<TigerPkiIdentity> buildAndSavePrivateKeyAndX509Certificate(String hostname) {
+  public Optional<TigerPkiIdentity> findExactIdentityForHostname(String hostname) {
     return availableIdentities.stream()
         .filter(id -> matchesHostname(id.getCertificate(), hostname))
         .findAny();
+  }
+
+  @Override
+  public TigerPkiIdentity resolveIdentityForHostname(String hostname) {
+    return findExactIdentityForHostname(hostname).orElseGet(() -> availableIdentities.get(0));
   }
 
   private boolean matchesHostname(X509Certificate certificate, String hostname) {
@@ -60,7 +69,6 @@ public class StaticKeyAndCertificateFactory implements KeyAndCertificateFactory 
       }
       var alternativeNames = certificate.getSubjectAlternativeNames();
       return alternativeNames != null
-          && hostname != null
           && alternativeNames.stream().map(Object::toString).anyMatch(hostname::equalsIgnoreCase);
     } catch (CertificateParsingException e) {
       return false;
