@@ -117,14 +117,14 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
               incomingChannel.attr(OUTGOING_CHANNEL).set(future.channel());
               future.channel().attr(INCOMING_CHANNEL).set(incomingChannel);
               if (!future.isSuccess()) {
-                if (configuration.binaryProxyListener() != null
-                    && !(((BinaryExchangeHandler) configuration.binaryProxyListener())
-                        .getTigerProxy()
-                        .getTigerProxyConfiguration()
-                        .getDirectReverseProxy()
-                        .isIgnoreConnectionErrors())) {
-                  log.error("Failed to connect to {}", remoteAddress, future.cause());
-                }
+                Optional.ofNullable(configuration.binaryProxyListener())
+                        .filter(listener -> listener instanceof BinaryExchangeHandler)
+                        .map(listener -> (BinaryExchangeHandler) listener)
+                        .filter(handler -> !handler.getTigerProxy()
+                                .getTigerProxyConfiguration()
+                                .getDirectReverseProxy()
+                                .isIgnoreConnectionErrors())
+                        .ifPresent(handler -> log.error("Failed to connect to {}", remoteAddress, future.cause()));
               }
             });
   }

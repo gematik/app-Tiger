@@ -18,6 +18,7 @@ package de.gematik.test.tiger.proxy.handler;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
+import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.mockserver.model.BinaryProxyListener;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -101,10 +102,12 @@ public class BinaryExchangeHandler implements BinaryProxyListener {
                       })
                   .exceptionally(
                       t -> {
-                        if (!getTigerProxy()
-                            .getTigerProxyConfiguration()
-                            .getDirectReverseProxy()
-                            .isIgnoreConnectionErrors()) {
+                        DirectReverseProxyInfo reverseProxyInfo = Optional.ofNullable(getTigerProxy()
+                                        .getTigerProxyConfiguration()
+                                        .getDirectReverseProxy())
+                                .orElse(null);
+
+                        if (reverseProxyInfo == null || !reverseProxyInfo.isIgnoreConnectionErrors()) {
                           if (isConnectionResetException(t)) {
                             log.trace("Connection reset:", t);
                           } else {
