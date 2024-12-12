@@ -2,6 +2,14 @@
 
 # Release 3.4.6
 
+* Serenity BDD 4.2.3
+* Cucumber 7.19.0
+* RestAssured 5.5.0
+* Selenium 4.19.1
+* Appium 9.3.0
+* Spring Boot 3.3.4
+* Logback 1.5.8
+
 ## Breaking Changes
 
 * TGR-1655: To add Basic Authentication to a TigerRoute you now have to use the following configuration:
@@ -35,6 +43,7 @@ If you do not use a custom template, no action is necessary.
 
 ## Features
 
+* TGR-1673: updated `junit-jupiter` and `junit-platform-suite` dependencies to versions 5.11.0 and 1.11.0 respectively.
 * TGR-1464: Rest API: Tiger has now an API which allows the starting of specific tests and the retrieval of the test
   results via REST. The Rest Api is disabled by default. To enable it set the following configuration key in the
   tiger.yaml:
@@ -66,7 +75,9 @@ tigerProxy:
         password: superSecret
 ```
 
-* TGR-1645: Tiger-Proxy: You can now choose if the generic fallback identity should be used. This can be toggled via `tigerProxy.tls.allowGenericFallbackIdentity`. The default is `false`, meaning that the generic fallback identity is only used when no other means is configured (serverIdentities, serverIdentity, serverRootCa).
+* TGR-1645: Tiger-Proxy: You can now choose if the generic fallback identity should be used. This can be toggled via
+  `tigerProxy.tls.allowGenericFallbackIdentity`. The default is `false`, meaning that the generic fallback identity is
+  only used when no other means is configured (serverIdentities, serverIdentity, serverRootCa).
 * TGR-1442: PKI-Identites can now also be provided via a map, specifying the individual options:
 
 ```yaml

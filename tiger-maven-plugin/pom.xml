@@ -31,7 +31,7 @@
     <artifactId>tiger-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
     <description>
-        This plugin supports generating custom Junit4 driver classes for Serenity test runs.
+        This plugin supports generating custom Junit5 driver classes for Serenity test runs.
     </description>
 
     <properties>
