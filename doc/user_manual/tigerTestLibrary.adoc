@@ -173,7 +173,7 @@ include::./RbelBuilderGlueCodeCommentsOnly.adoc[]
 .Tiger Rbel Builder steps example
 [source,gherkin]
 --
-include::validation-example.feature[]
+include::rbelbuilder-example.feature[]
 --
 
 === Using the HTTP client steps
