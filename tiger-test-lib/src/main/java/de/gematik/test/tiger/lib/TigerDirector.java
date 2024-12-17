@@ -502,14 +502,18 @@ public class TigerDirector {
       await()
           .pollInterval(1, TimeUnit.SECONDS)
           .atMost(getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
-          .until(
-              () -> tigerTestEnvMgr.getUserAcknowledgedOnWorkflowUi().compareAndSet(true, false));
+          .until(TigerDirector::hasUserAcknowledgedDialog);
     } else {
       throw new TigerTestEnvException(
           "The step 'TGR pause test run execution with message \"{}\"' is not supported "
               + "outside the Workflow UI. Please check the manual for more information.",
           message);
     }
+  }
+
+  private static boolean hasUserAcknowledgedDialog() {
+    return tigerTestEnvMgr.isShuttingDown()
+        || tigerTestEnvMgr.getUserAcknowledgedOnWorkflowUi().compareAndSet(true, false);
   }
 
   public static void pauseExecution(String message) {
@@ -527,8 +531,7 @@ public class TigerDirector {
       await()
           .pollInterval(1, TimeUnit.SECONDS)
           .atMost(getLibConfig().getPauseExecutionTimeoutSeconds(), TimeUnit.SECONDS)
-          .until(
-              () -> tigerTestEnvMgr.getUserAcknowledgedOnWorkflowUi().compareAndSet(true, false));
+          .until(TigerDirector::hasUserAcknowledgedDialog);
       if (tigerTestEnvMgr.isUserPressedFailTestExecution()) {
         Fail.fail(errorMessage);
       }

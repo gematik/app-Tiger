@@ -24,7 +24,7 @@ tigerProxy:
         password: superSecret
 ```
 
-* Tiger Maven Plugin: If you are using a custom driver template which includes the palceholder `${tags}`, you should
+* Tiger Maven Plugin: If you are using a custom driver template which includes the placeholder `${tags}`, you should
   change the full annotation to `${tagsAnnotation}`.
   E.g.:
   If your custom template has:
@@ -55,7 +55,7 @@ lib:
 ```
 
 * TIMTS-658: default poll interval for waiting for external servers to be healthy is increased to 1000 ms and can be
-  be configured via configuration key `tiger.internal.externalServer.startupPollIntervalMs` or per server via the server
+  configured via configuration key `tiger.internal.externalServer.startupPollIntervalMs` or per server via the server
   property `startupPollIntervalMs`
 * TGR-1660: Change notification for jenkins release
 * KOB-35: TigerProxy now will query listed "to"-targets in parallel. The first healthy target will be used for routing.
@@ -93,6 +93,8 @@ tls.forwardMutualTlsIdentity:
 
 ## Bugfixes
 
+* TGR-1659: Workflow UI: fixed an issue where quiting the Workflow UI while a pause step was waiting, would not
+  correctly shut down the background process.
 * TGR-978: User Manual: Fixed the overlap of text from the table of contents when viewing the html manual on a small
   width screen.
 * KOB-6: Fixed an issue where https-destinations could not be used as one of multiple "to"-targets.
