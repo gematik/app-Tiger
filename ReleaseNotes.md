@@ -43,6 +43,7 @@ If you do not use a custom template, no action is necessary.
 
 ## Features
 
+* TGR-1651: DisplayName of Scenario Outlines in RestAPI has a more descriptive name
 * TGR-1673: updated `junit-jupiter` and `junit-platform-suite` dependencies to versions 5.11.0 and 1.11.0 respectively.
 * KOB-19: Workflow UI: make button to expand and minimize Tiger Proxy Log pane more visible.
 * TGR-1464: Rest API: Tiger has now an API which allows the starting of specific tests and the retrieval of the test

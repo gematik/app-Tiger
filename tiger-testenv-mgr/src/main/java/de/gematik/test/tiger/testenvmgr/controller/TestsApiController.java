@@ -82,9 +82,11 @@ public class TestsApiController implements TestsApi {
 
   @Override
   public ResponseEntity<List<TestDescriptionDto>> getAvailableTests() {
-    var scenarios = ScenarioRunner.getScenarios();
+    var scenarios = ScenarioRunner.getTigerScenarios();
     var testDescriptionDtos =
-        scenarios.stream().map(testDescriptionMapper::testIdentifierToTestDescription).toList();
+        scenarios.stream()
+            .map(testDescriptionMapper::tigerTestIdentifierToTestDescription)
+            .toList();
     return ResponseEntity.ok(testDescriptionDtos);
   }
 

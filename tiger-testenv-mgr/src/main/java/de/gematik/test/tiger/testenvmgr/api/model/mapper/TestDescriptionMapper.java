@@ -31,7 +31,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 
 /**
- * maps {@link TestIdentifier} into {@link
+ * maps {@link TigerTestIdentifier} into {@link
  * de.gematik.test.tiger.testenvmgr.api.model.TestDescriptionDto} *
  */
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
@@ -39,6 +39,12 @@ public interface TestDescriptionMapper {
 
   @Mapping(source = "source", target = "sourceFile")
   TestDescriptionDto testIdentifierToTestDescription(TestIdentifier testIdentifier);
+
+  @Mapping(source = "testIdentifier.uniqueId", target = "uniqueId")
+  @Mapping(source = "testIdentifier.source", target = "sourceFile")
+  @Mapping(source = "displayName", target = "displayName")
+  @Mapping(source = "testIdentifier.tags", target = "tags")
+  TestDescriptionDto tigerTestIdentifierToTestDescription(TigerTestIdentifier tigerTestIdentifier);
 
   default Set<String> testTagsToStrings(Set<TestTag> tags) {
     return tags.stream().map(TestTag::getName).collect(Collectors.toSet());

@@ -22,6 +22,7 @@ import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.r
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.api.model.TestExecutionRequestDto;
+import de.gematik.test.tiger.testenvmgr.api.model.mapper.TigerTestIdentifier;
 import de.gematik.test.tiger.testenvmgr.util.ScenarioCollector;
 import io.cucumber.messages.types.Location;
 import java.net.URI;
@@ -60,7 +61,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class ScenarioRunner {
 
-  private static final LinkedHashSet<TestIdentifier> scenarios =
+  private static final LinkedHashSet<TigerTestIdentifier> tigerScenarios =
       new LinkedHashSet<>(); // NOSONAR - important to keep order
 
   // Must be single threaded because we do not want to have multiple tests runs at the same time.
@@ -71,12 +72,12 @@ public class ScenarioRunner {
 
   private final Map<UUID, TestExecutionStatus> testExecutionResults = new ConcurrentHashMap<>();
 
-  public static void addScenarios(Collection<TestIdentifier> newScenarios) {
-    scenarios.addAll(newScenarios);
+  public static void addTigerScenarios(Collection<TigerTestIdentifier> newScenarios) {
+    tigerScenarios.addAll(newScenarios);
   }
 
-  public static void addScenarios(TestPlan testPlan) {
-    addScenarios(ScenarioCollector.collectScenarios(testPlan));
+  public static void addTigerScenarios(TestPlan testPlan) {
+    addTigerScenarios(ScenarioCollector.collectTigerScenarios(testPlan));
   }
 
   public TestExecutionStatus enqueueExecutionSelectedTests(
@@ -89,25 +90,33 @@ public class ScenarioRunner {
     // if one of the sourceFiles / tags / uniqueIds lists is empty, their filter is not used. That
     // means all scenarios are selected for the next filter round.
     List<UniqueIdSelector> selectors =
-        scenarios.stream()
-            .filter(testIdentifier -> sources.isEmpty() || anyFileMatches(sources, testIdentifier))
-            .filter(testIdentifier -> tags.isEmpty() || anyTagMatches(tags, testIdentifier))
+        tigerScenarios.stream()
             .filter(
                 testIdentifier ->
-                    uniqueIds.isEmpty() || anyUniqueIdMatches(uniqueIds, testIdentifier))
-            .map(t -> DiscoverySelectors.selectUniqueId(t.getUniqueId()))
+                    sources.isEmpty()
+                        || anyFileMatches(sources, testIdentifier.getTestIdentifier()))
+            .filter(
+                testIdentifier ->
+                    tags.isEmpty() || anyTagMatches(tags, testIdentifier.getTestIdentifier()))
+            .filter(
+                testIdentifier ->
+                    uniqueIds.isEmpty()
+                        || anyUniqueIdMatches(uniqueIds, testIdentifier.getTestIdentifier()))
+            .map(t -> DiscoverySelectors.selectUniqueId(t.getTestIdentifier().getUniqueId()))
             .toList();
     return runTests(selectors);
   }
 
   public TestExecutionStatus enqueueExecutionAllTests() {
     List<UniqueIdSelector> selectors =
-        scenarios.stream().map(t -> DiscoverySelectors.selectUniqueId(t.getUniqueId())).toList();
+        tigerScenarios.stream()
+            .map(t -> DiscoverySelectors.selectUniqueId(t.getTestIdentifier().getUniqueId()))
+            .toList();
     return runTests(selectors);
   }
 
   public static void clearScenarios() {
-    scenarios.clear();
+    tigerScenarios.clear();
   }
 
   private static boolean areUrisSameFile(URI uri1, URI uri2) {
@@ -140,11 +149,12 @@ public class ScenarioRunner {
 
   public static UniqueId findScenarioUniqueId(URI featurePath, Location location) {
     ScenarioLocation scenarioLocation = new ScenarioLocation(featurePath, location);
-    return scenarios.stream()
-        .filter(scenarioLocation::matches)
+    return tigerScenarios.stream()
+        .filter(t -> scenarioLocation.matches(t.getTestIdentifier()))
         .findAny()
         .orElseThrow(
             () -> new NoSuchElementException("No scenario found matching " + scenarioLocation))
+        .getTestIdentifier()
         .getUniqueIdObject();
   }
 
@@ -224,8 +234,8 @@ public class ScenarioRunner {
     }
   }
 
-  public static Set<TestIdentifier> getScenarios() {
-    return Collections.unmodifiableSet(scenarios);
+  public static Set<TigerTestIdentifier> getTigerScenarios() {
+    return Collections.unmodifiableSet(tigerScenarios);
   }
 
   public record TestExecutionStatus(
