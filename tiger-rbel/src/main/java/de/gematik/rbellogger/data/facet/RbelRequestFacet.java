@@ -16,20 +16,18 @@
 
 package de.gematik.rbellogger.data.facet;
 
-import lombok.Builder;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.SuperBuilder;
+import java.util.Objects;
+import lombok.*;
 
-/** Empty marker: The element is a request. */
-@Data
-@SuperBuilder
-@RequiredArgsConstructor
-public class RbelRequestFacet implements RbelFacet {
-
-  /** Short info string describing this request. Will primarily be displayed in the menu. */
-  private final String menuInfoString;
+@EqualsAndHashCode
+@Getter
+public class RbelRequestFacet extends RbelMessageInfoFacet {
 
   /** Mark this element for the message validation as requiring a matching response */
-  @Builder.Default private final boolean responseRequired = false; // NOSONAR
+  private boolean responseRequired;
+
+  public RbelRequestFacet(String menuInfoString, Boolean responseRequired) {
+    super("fa-share", "has-text-link", menuInfoString, "REQ", "Request");
+    this.responseRequired = Objects.requireNonNullElse(responseRequired, false);
+  }
 }

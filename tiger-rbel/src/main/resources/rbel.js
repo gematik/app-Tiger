@@ -14,39 +14,24 @@
  * limitations under the License.
  */
 
-const menuHtmlTemplateRequest =
-    "<div class=\"ms-1 is-size-7\">\n"
+const menuHtmlMessage =
+    "<div class=\"ms-1 is-size-7\">"
     + "  <a onclick=\"scrollToMessage('${uuid}',${sequenceNumber})\" class=\"mt-3 is-block\">\n"
-    + "    <div class=\"has-text-link d-flex align-items-center\">\n"
-    + "      <span class=\"tag is-info is-light me-1\">${sequence}</span>\n"
-    + "      <i class=\"fas fa-share\"></i>\n"
-    + "      <span class=\"mx-1\">REQ</span>\n"
+    + "    <div class=\"${color} d-flex align-items-center\">\n"
+    + "      <span class=\"tag ${color} is-light me-1\">${sequence}</span>\n"
+    + "      <i class=\"fas ${symbol}\"></i>\n"
+    + "      <span class=\"ms-1\">${abbrev}</span>\n"
     + "      <span class=\"has-text-dark text-ellipsis ms-auto\">${timestamp}</span>\n"
     + "    </div>\n"
-    + "    <div class=\"ms-4 has-text-link d-flex align-items-center\">\n"
+    + "    <div class=\"ms-4 ${color} d-flex align-items-center\">\n"
     + "      <span class=\"ms-1 has-text-weight-bold text-ellipsis\""
     + "        title=\"${menuInfoString}\">${menuInfoString}"
     + "      </span>\n"
     + "    </div>\n"
-    + "    <div class=\"ms-4 has-text-link d-flex align-items-center\">\n"
+    + "    <div class=\"ms-4 ${color} d-flex align-items-center\">\n"
     + "      <span class=\"ms-3 text-ellipsis\""
     + "        title=\"${additionalInformation}\">${additionalInformation}"
     + "      </span>\n"
-    + "    </div>\n"
-    + "  </a></div>";
-const menuHtmlTemplateResponse =
-    "<div class=\"ms-1 mb-4 is-size-7\">"
-    + "  <a onclick=\"scrollToMessage('${uuid}',${sequenceNumber})\" class=\"mt-3 is-block\">\n"
-    + "    <div class=\"mb-1 text-success d-flex align-items-center\">\n"
-    + "      <span class=\"tag is-info is-light me-1\">${sequence}</span>\n"
-    + "      <i class=\"fas fa-reply\"></i>\n"
-    + "      <span class=\"ms-1\">RES</span>\n"
-    + "      <span class=\"mx-1 has-text-weight-bold\"\n"
-    + "         title=\"${menuInfoString}\">${menuInfoString}"
-    + "      </span>\n"
-    + "      <span class=\"has-text-dark text-ellipsis ms-auto\">${timestamp}</span>\n"
-    + "    </div>\n"
-    + "    <div class=\"ms-5 mb-4 text-success d-flex align-items-center\">${additionalInformation}\n"
     + "    </div>\n"
     + "  </a></div>";
 
@@ -64,16 +49,14 @@ let msgIndex = 1;
 function createMenuEntry(msgMetaData) {
     let isRequest = msgMetaData.request;
 
-    let menuItem;
-    if (isRequest) {
-        menuItem = menuHtmlTemplateRequest;
-    } else {
-        menuItem = menuHtmlTemplateResponse;
-    }
+    let menuItem = menuHtmlMessage;
     menuItem = menuItem
-        .replace("${uuid}", msgMetaData.uuid)
-        .replace("${sequence}", msgMetaData.sequenceNumber + 1)
-        .replace("${sequenceNumber}", msgMetaData.sequenceNumber);
+        .replaceAll("${uuid}", msgMetaData.uuid)
+        .replaceAll("${color}", msgMetaData.color)
+        .replaceAll("${symbol}", msgMetaData.symbol)
+        .replaceAll("${abbrev}", msgMetaData.abbrev)
+        .replaceAll("${sequence}", msgMetaData.sequenceNumber + 1)
+        .replaceAll("${sequenceNumber}", msgMetaData.sequenceNumber);
     if (msgMetaData.menuInfoString != null) {
         menuItem = menuItem
             .replaceAll("${menuInfoString}", msgMetaData.menuInfoString);

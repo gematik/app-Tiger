@@ -29,15 +29,18 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import de.gematik.rbellogger.data.facet.RbelParsingNotCompleteFacet;
+import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -314,5 +317,10 @@ public abstract class AbstractTigerProxyTest {
     sslContext.init(kmf.getKeyManagers(), new X509TrustManager[] {x509TrustManager}, null);
 
     return sslContext;
+  }
+
+  public void renderTrafficTo(String filename) throws IOException {
+    final String html = RbelHtmlRenderer.render(tigerProxy.getRbelMessagesList());
+    Files.write(new File("target/" + filename).toPath(), html.getBytes());
   }
 }

@@ -25,6 +25,7 @@ import de.gematik.rbellogger.data.facet.RbelJweFacet;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.util.JsonUtils;
+import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -85,9 +86,9 @@ public class RbelJweWriter implements RbelElementWriter {
         .flatMap(RbelKey::getMatchingPublicKey)
         .orElseThrow(
             () ->
-                new InvalidEncryptionInfo(
-                    "Could not find matching public key to \n"
-                        + rbelJweFacet.getEncryptionInfo().printTreeStructure()));
+              new InvalidEncryptionInfo(
+                "Could not find matching public key to \n"
+                + rbelJweFacet.getEncryptionInfo().printTreeStructure()));
   }
 
   private void writeHeaderInJwe(
@@ -117,14 +118,14 @@ public class RbelJweWriter implements RbelElementWriter {
     }
   }
 
-  public class JweUpdateException extends RuntimeException {
+  public static class JweUpdateException extends GenericTigerException {
 
     public JweUpdateException(String s, JoseException e) {
       super(s, e);
     }
   }
 
-  public class InvalidEncryptionInfo extends RuntimeException {
+  public static class InvalidEncryptionInfo extends GenericTigerException {
 
     public InvalidEncryptionInfo(String s) {
       super(s);

@@ -16,13 +16,11 @@
 
 package de.gematik.rbellogger.exceptions;
 
-public class RbelJexlException extends RuntimeException {
+import de.gematik.test.tiger.exceptions.GenericTigerException;
+
+public class RbelJexlException extends GenericTigerException {
 
   public RbelJexlException(String s) {
     super(s);
-  }
-
-  public RbelJexlException(String s, Exception e) {
-    super(s, e);
   }
 }

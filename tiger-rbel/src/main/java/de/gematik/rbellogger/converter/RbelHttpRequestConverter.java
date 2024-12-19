@@ -82,10 +82,7 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
             .build();
     targetElement.addFacet(httpRequest);
     targetElement.addFacet(
-        RbelRequestFacet.builder()
-            .responseRequired(true)
-            .menuInfoString(method + " " + path)
-            .build());
+        new RbelRequestFacet(method + " " + path, true));
     targetElement.addFacet(
         RbelHttpMessageFacet.builder()
             .header(headerElement)

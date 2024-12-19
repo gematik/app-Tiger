@@ -17,6 +17,7 @@
 package de.gematik.rbellogger.data;
 
 import de.gematik.rbellogger.exceptions.RbelHostnameFormatException;
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.URI;
@@ -32,7 +33,7 @@ import org.apache.commons.lang3.StringUtils;
 @Builder
 @RequiredArgsConstructor(access = AccessLevel.PUBLIC)
 @Slf4j
-public class RbelHostname {
+public class RbelHostname implements Serializable {
 
   private final String hostname;
   private final int port;
@@ -54,6 +55,14 @@ public class RbelHostname {
       }
     } else {
       return Optional.ofNullable(RbelHostname.builder().hostname(value).build());
+    }
+  }
+
+  public static RbelHostname create(SocketAddress clientAddress) {
+    if (clientAddress instanceof InetSocketAddress inetSocketAddress) {
+      return new RbelHostname(inetSocketAddress.getHostName(), inetSocketAddress.getPort());
+    } else {
+      return new RbelHostname(clientAddress.toString(), 0);
     }
   }
 

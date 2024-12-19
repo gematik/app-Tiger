@@ -58,6 +58,7 @@ lib:
 * TIMTS-658: default poll interval for waiting for external servers to be healthy is increased to 1000 ms and can be
   configured via configuration key `tiger.internal.externalServer.startupPollIntervalMs` or per server via the server
   property `startupPollIntervalMs`
+* TGR-1517: Improved display of connection errors in the Tiger-Proxy traffic log
 * TGR-1660: Change notification for jenkins release
 * KOB-35: TigerProxy now will query listed "to"-targets in parallel. The first healthy target will be used for routing.
 * TGR-1618: RbelParser: Added support for LDAP messages.

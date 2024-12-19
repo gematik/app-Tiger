@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2024 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,21 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package de.gematik.test.tiger.proxy.exceptions;
 
-package de.gematik.test.tiger.mockserver.model;
+import de.gematik.test.tiger.exceptions.GenericTigerException;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
-import java.net.SocketAddress;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+@Getter
+@Setter
+@EqualsAndHashCode(callSuper = true)
+public class TigerProxyException extends GenericTigerException {
 
-/*
- * @author jamesdbloom
- */
-public interface BinaryProxyListener {
+  public TigerProxyException(String message) {
+    super(message);
+  }
 
-  void onProxy(
-      BinaryMessage binaryRequest,
-      Optional<CompletableFuture<BinaryMessage>> binaryResponse,
-      SocketAddress serverAddress,
-      SocketAddress clientAddress);
+  public TigerProxyException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public TigerProxyException(Throwable cause) {
+    super(cause);
+  }
 }

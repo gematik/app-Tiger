@@ -47,9 +47,7 @@ public class RbelSicctEnvelopeConverter implements RbelConverterPlugin {
                   element
                       .findMessage()
                       .addFacet(
-                          RbelRequestFacet.builder()
-                              .menuInfoString(requestInfoString(envelopeFacet))
-                              .build());
+                          new RbelRequestFacet(requestInfoString(envelopeFacet), false));
                 } else {
                   element
                       .findMessage()

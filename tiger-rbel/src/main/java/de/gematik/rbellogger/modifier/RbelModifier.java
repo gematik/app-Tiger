@@ -21,6 +21,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.util.*;
 import java.util.Map.Entry;
 import lombok.Builder;
@@ -164,7 +165,7 @@ public class RbelModifier {
     modificationsMap.remove(modificationsId);
   }
 
-  public static class RbelModificationException extends RuntimeException {
+  public static class RbelModificationException extends GenericTigerException {
 
     public RbelModificationException(String s) {
       super(s);

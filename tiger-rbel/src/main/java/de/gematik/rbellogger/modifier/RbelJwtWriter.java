@@ -25,6 +25,7 @@ import de.gematik.rbellogger.data.facet.RbelJwtFacet;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.util.JsonUtils;
+import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.util.List;
@@ -80,7 +81,7 @@ public class RbelJwtWriter implements RbelElementWriter {
 
     if (!jwtFacet.getSignature().getFacetOrFail(RbelJwtSignature.class).isValid()) {
       throw new InvalidJwtSignatureException(
-          "The signature is invalid\n" + jwtFacet.getSignature().printTreeStructure());
+        "The signature is invalid\n" + jwtFacet.getSignature().printTreeStructure());
     }
 
     try {
@@ -113,17 +114,17 @@ public class RbelJwtWriter implements RbelElementWriter {
                     .findCorrespondingPrivateKey(newSignatureKeyName)
                     .orElseThrow(
                         () ->
-                            new RbelJwtSignatureModificationException(
-                                "Could not find private key matching '"
-                                    + newSignatureKeyName
-                                    + "'"));
+                          new RbelJwtSignatureModificationException(
+                            "Could not find private key matching '"
+                            + newSignatureKeyName
+                            + "'"));
               }
             })
         .map(RbelKey::getKey)
         .orElseThrow(
             () ->
-                new RbelJwtSignatureModificationException(
-                    "Could not find key '" + newSignatureKeyName + "'"));
+              new RbelJwtSignatureModificationException(
+                "Could not find key '" + newSignatureKeyName + "'"));
   }
 
   private Key extractJwsKey(RbelJwtFacet jwtFacet) {
@@ -137,12 +138,12 @@ public class RbelJwtWriter implements RbelElementWriter {
         .flatMap(this::getKeyBasedOnEncryptionType)
         .orElseThrow(
             () ->
-                new InvalidJwtSignatureException(
-                    "Could not find the key matching signature \n"
-                        + jwtFacet.getSignature().printTreeStructureWithoutColors()
-                        + "\n"
-                        + "(If the private key is unknown then a new signature can not be"
-                        + " written)"));
+              new InvalidJwtSignatureException(
+                "Could not find the key matching signature \n"
+                + jwtFacet.getSignature().printTreeStructureWithoutColors()
+                + "\n"
+                + "(If the private key is unknown then a new signature can not be"
+                + " written)"));
   }
 
   private void writeHeaderInJws(
@@ -182,21 +183,21 @@ public class RbelJwtWriter implements RbelElementWriter {
     }
   }
 
-  public class JwtUpdateException extends RuntimeException {
+  public static class JwtUpdateException extends GenericTigerException {
 
     public JwtUpdateException(String s, JoseException e) {
       super(s, e);
     }
   }
 
-  public class InvalidJwtSignatureException extends RuntimeException {
+  public static class InvalidJwtSignatureException extends GenericTigerException {
 
     public InvalidJwtSignatureException(String s) {
       super(s);
     }
   }
 
-  private class RbelJwtSignatureModificationException extends RuntimeException {
+  private static class RbelJwtSignatureModificationException extends GenericTigerException {
     public RbelJwtSignatureModificationException(String s) {
       super(s);
     }

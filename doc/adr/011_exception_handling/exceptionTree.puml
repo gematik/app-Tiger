@@ -1,0 +1,12 @@
+@startmindmap
+skinparam defaultFontName "Arial"
+
+* GenericTigerException
+** RbelException
+*** RbelParsingException (something went wrong while parsing a particular message)
+*** RbelSerializationException (something went wrong while WRITING a particular message)
+** TigerServerException (error from within a particular tiger server)
+** TigerProxyException (error from within a particular proxy)
+*** TigerProxyRoutingException (error while routing a message)
+
+@endmindmap

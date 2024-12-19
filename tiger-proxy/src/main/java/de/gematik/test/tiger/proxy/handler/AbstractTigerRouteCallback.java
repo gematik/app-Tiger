@@ -20,6 +20,7 @@ import static de.gematik.test.tiger.mockserver.model.Header.header;
 import static de.gematik.test.tiger.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
@@ -31,6 +32,7 @@ import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyModificationException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyParsingException;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.time.ZonedDateTime;
@@ -261,7 +263,12 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
             .convertRequest(
                 mockServerRequest,
                 extractProtocolAndHostForRequest(mockServerRequest),
-                Optional.of(ZonedDateTime.now()));
+                Optional.of(ZonedDateTime.now()))
+            .thenApply(
+                parsedMessage -> {
+                  return parsedMessage;
+                });
+    mockServerRequest.setParsedMessageFuture(toBeConvertedRequest);
 
     requestLogIdToParsingFuture.put(mockServerRequest.getLogCorrelationId(), toBeConvertedRequest);
     log.trace("Added request to pairingMap with id {}", mockServerRequest.getLogCorrelationId());
@@ -294,7 +301,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
         .convertResponse(
             resp,
             extractProtocolAndHostForRequest(req),
-            req.getRemoteAddress(),
+            req.getSenderAddress(),
             futureParsedRequest,
             Optional.of(ZonedDateTime.now()))
         .thenCombine(
@@ -498,14 +505,21 @@ public abstract class AbstractTigerRouteCallback implements ExpectationForwardAn
 
   @Override
   public Action handleException(Throwable exception, HttpRequest request) {
-    log.info(
-        "Exception during handling of request {}", request.printLogLineDescription(), exception);
-    final RbelElement errorResponse =
-        tigerProxy
-            .getMockServerToRbelConverter()
-            .convertErrorResponse(request, extractProtocolAndHostForRequest(request));
-    errorResponse.addFacet(
-        RbelNoteFacet.builder().style(NoteStyling.ERROR).value(exception.getMessage()).build());
+    final TigerProxyRoutingException routingException =
+        new TigerProxyRoutingException(
+            "Exception during handling of HTTP request: " + exception.getMessage(),
+            // sender and receiver are switched here, because the exception acts as a response
+            Optional.ofNullable(request.getReceiverAddress())
+                .map(SocketAddress::toRbelHostname)
+                .orElse(null),
+            RbelHostname.fromString(request.getSenderAddress()).orElse(null),
+            exception);
+    routingException.setRoutedMessage(request.getParsedMessageFuture());
+    log.info(routingException.getMessage(), routingException);
+
+    tigerProxy
+        .getMockServerToRbelConverter()
+        .convertErrorResponse(request, extractProtocolAndHostForRequest(request), routingException);
     return new CloseChannel();
   }
 }

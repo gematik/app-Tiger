@@ -24,6 +24,7 @@ import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
+import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.util.Set;
 
 /** Validates a given json string against a given json schema */
@@ -62,7 +63,7 @@ public class JsonSchemaChecker {
     }
   }
 
-  public static class JsonSchemaProcessingError extends RuntimeException {
+  public static class JsonSchemaProcessingError extends GenericTigerException {
 
     public JsonSchemaProcessingError(String message, Throwable cause) {
       super(message, cause);

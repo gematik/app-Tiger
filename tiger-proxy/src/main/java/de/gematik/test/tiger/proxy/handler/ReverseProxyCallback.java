@@ -40,7 +40,7 @@ public class ReverseProxyCallback extends AbstractRouteProxyCallback {
     applyModifications(httpRequest);
     final HttpRequest request =
         cloneRequest(httpRequest)
-            .setSocketAddress(
+            .setReceiverAddress(
                 getTargetUrl().getProtocol().equals("https"), getTargetUrl().getHost(), getPort())
             .setSecure(getTigerRoute().getTo().startsWith("https"))
             .setPath(patchPath(httpRequest.getPath()));

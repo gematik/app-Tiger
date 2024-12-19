@@ -41,7 +41,7 @@ public class ForwardAllCallback extends AbstractTigerRouteCallback {
   @Override
   protected HttpRequest handleRequest(HttpRequest req) {
     return forwardOverriddenRequest(
-            req.setSocketAddress(
+            req.setReceiverAddress(
                 req.isSecure(),
                 req.socketAddressFromHostHeader().getHostName(),
                 req.socketAddressFromHostHeader().getPort()))
@@ -50,14 +50,14 @@ public class ForwardAllCallback extends AbstractTigerRouteCallback {
 
   @Override
   protected String extractProtocolAndHostForRequest(HttpRequest request) {
-    if (request.getSocketAddress() == null) {
+    if (request.getReceiverAddress() == null) {
       return null;
     } else {
-      return request.getSocketAddress().getScheme()
+      return request.getReceiverAddress().getScheme()
           + "://"
-          + request.getSocketAddress().getHost()
+          + request.getReceiverAddress().getHost()
           + ":"
-          + request.getSocketAddress().getPort();
+          + request.getReceiverAddress().getPort();
     }
   }
 

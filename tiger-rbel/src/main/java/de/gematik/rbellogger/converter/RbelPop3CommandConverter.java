@@ -37,10 +37,7 @@ public class RbelPop3CommandConverter implements RbelConverterPlugin {
             facet -> {
               element.addFacet(facet);
               element.addFacet(
-                  RbelRequestFacet.builder()
-                      .responseRequired(true)
-                      .menuInfoString(facet.getCommand().getRawStringContent())
-                      .build());
+                  new RbelRequestFacet(facet.getCommand().getRawStringContent(), true));
             });
   }
 

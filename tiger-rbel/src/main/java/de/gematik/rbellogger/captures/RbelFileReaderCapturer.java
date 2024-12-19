@@ -18,6 +18,7 @@ package de.gematik.rbellogger.captures;
 
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.file.RbelFileWriter;
+import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -52,7 +53,7 @@ public class RbelFileReaderCapturer extends RbelCapturer {
     // no open handles
   }
 
-  private static class RbelFileIoException extends RuntimeException {
+  private static class RbelFileIoException extends GenericTigerException {
     public RbelFileIoException(String s, Exception e) {
       super(s, e);
     }

@@ -21,6 +21,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelElementConvertionPair;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.util.RbelMessagePostProcessor;
+import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -153,7 +154,7 @@ public class RbelFileWriter {
     return Optional.of(ZonedDateTime.parse(time));
   }
 
-  private static class RbelFileReadingException extends RuntimeException {
+  private static class RbelFileReadingException extends GenericTigerException {
 
     public RbelFileReadingException(String s, Exception e) {
       super(s, e);

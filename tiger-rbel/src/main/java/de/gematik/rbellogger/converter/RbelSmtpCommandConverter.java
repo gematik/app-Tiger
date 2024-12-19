@@ -54,10 +54,7 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
                   .ifPresent(context::convertElement);
               element.addFacet(new RbelRootFacet<>(facet));
               element.addFacet(
-                  RbelRequestFacet.builder()
-                      .responseRequired(true)
-                      .menuInfoString(facet.getCommand().getRawStringContent())
-                      .build());
+                  new RbelRequestFacet(facet.getCommand().getRawStringContent(), true));
             });
   }
 
