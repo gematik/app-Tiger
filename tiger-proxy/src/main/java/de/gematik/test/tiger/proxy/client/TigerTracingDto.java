@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.facet.ProxyTransmissionHistory;
 import java.time.ZonedDateTime;
 import java.util.Map;
 import lombok.Builder;
@@ -36,5 +37,7 @@ public class TigerTracingDto {
   private final Map<String, String> additionalInformationResponse;
   private final Long sequenceNumberRequest;
   private final Long sequenceNumberResponse;
+  private final ProxyTransmissionHistory proxyTransmissionHistoryRequest;
+  private final ProxyTransmissionHistory proxyTransmissionHistoryResponse;
   @Builder.Default private final boolean unparsedChunk = false;
 }

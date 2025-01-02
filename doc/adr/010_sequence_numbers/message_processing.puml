@@ -1,0 +1,18 @@
+@startuml
+title Message-Processing
+
+MessageSource -> Converter: parseAsync()/convert()
+note right of Converter: Gives message new Seq-Nr,\nannotates message with previous message
+Converter -> TracingPushService: propagate()
+TracingPushService -> PreviousMessage: waitUntilProcessed()
+note right of PreviousMessage: waits until markAsProcessed was called
+PreviousMessage -> TracingPushService
+note left of TracingPushService: annotates message with history
+TracingPushService -> DownstreamProxy: sendDownstream()
+DownstreamProxy -> TracingPushService
+TracingPushService -> Message: markAsProcessed()
+Message -> TracingPushService
+TracingPushService -> Converter
+Converter -> MessageSource
+
+@enduml

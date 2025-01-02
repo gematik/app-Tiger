@@ -1,0 +1,53 @@
+= ADR 010: Sequence Numbers
+
+== Kontext
+
+Nachrichten können unterschiedlich lange parsiert werden, bevor sie an einen downstream Proxys weitergeleitet werden.
+
+Nachrichten sollten in ihrer Empfangsreihenfolge weitergeleitet werden, um die Reihenfolge der Nachrichten zu erhalten.
+Eine Nachricht, die früher ankommt, sollte auch früher weitergeleitet werden, egal, ob sie später fertig parsiert ist als eine später angekommene Nachricht.
+
+Nachrichten können in mehreren Paketen ankommen, die in der richtigen Reihenfolge zusammengefügt werden müssen.
+Der Zeitpunkt des Ankommens des letzten Paketes ist entscheidend für die Reihenfolge der Nachrichten.
+
+Pakete verschiedener Nachrichten können sich überschneiden.
+
+Es ist dementsprechend schwierig, Nachrichten aufsteigend lückenlose Sequenz-Nummern zuzuweisen.
+
+Wenn Nachrichten von verschiedenen Proxies ankommen, können diese die gleiche Sequenz-Nummer haben.
+
+== Status
+
+Jeder Proxy vergibt seine eigenen Sequenz-Nummern, diese werden an den downstream Proxy weitergeleitet und von diesem beibehalten.
+
+Das führt zu doppelten und nicht streng aufsteigenden Sequenz-Nummern.
+
+== Entscheidungen
+
+Jeder Proxy vergibt eine Sequenz-Nummer pro ankommendem Paket und eine vollständige Nachricht erhält die Sequenz-Nummer seines letzten Pakets.
+Zusätzlich wird die Liste der Sequenz-Nummern der enthaltenen Pakete mit weitergeleitet.
+
+Jede Nachricht hat eine Proxy-History, welche eine Liste aus Paaren von Proxy-Id und von diesem Proxy an diese Nachricht vergebenen Sequenz-Nummern ist.
+
+Damit kann für jede Nachricht nachvollzogen werden, welches ihre Sequenz-Nummer bei jedem Proxy war.
+
+Nachrichten von parallelen Proxies können sich bei Weiterleitung überholen, was dazu führen kann, daß eine früher angekommene Nachricht von Proxy 1 beim downstream Proxy später ankommt als eine später angekommene Nachricht von Proxy 2.
+
+D.h. die Sequenz-Nummern sind bei jedem Proxy streng aufsteigend, aber die abgespeicherten Empfangszeiten nur innerhalb der Nachrichten jedes Original-Proxys.
+Dementsprechend sind die Empfangszeiten beim downstream Proxy nicht zwingend streng aufsteigend.
+
+Durch die Proxy-History können Nachrichten im Log anhand ihres Original-Proxys verschieden dargestellt werden und eine Verbindung zu der gleichen Nachricht im Log des anderen Proxys hergestellt werden.
+
+== Implementierung
+
+Um weiterhin paralleles Parsieren von Nachrichten zu ermöglichen, wird beim Start des Parsierens jeder Nachricht eine neue Sequenz-Nummer vergeben und eine Referenz auf die Vorgänger-Nachricht.
+
+Wenn eine Nachricht fertig konvertiert wurde und propagiert werden soll, wird dort zuerst gewartet, bis die Vorgänger-Nachricht propagiert worden ist.
+
+Nach der Propagierung wird die Nachricht als fertig markiert, so daß die darauf folgende Nachricht propagiert werden kann.
+
+Somit wird sichergestellt, daß die Nachrichten in der richtigen Reihenfolge propagiert werden.
+
+Wenn eine Nachricht noch nicht vollständig ist oder aus anderen Gründen nicht erfolgreich parsiert werden kann, wird sie nach dem nicht erfolgreichen Parsieren ebenfalls als fertig markiert.
+
+Damit wird sichergestellt, daß keine Nachrichten verloren gehen oder stecken bleiben.

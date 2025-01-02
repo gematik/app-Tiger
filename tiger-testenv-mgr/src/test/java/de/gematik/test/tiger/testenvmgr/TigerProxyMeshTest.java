@@ -20,19 +20,25 @@ import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.ProxyTransmissionHistory;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.data.facet.RbelJsonFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import kong.unirest.HttpResponse;
@@ -336,6 +342,141 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
+            tigerProxy:
+              skipTrafficEndpointsSubscription: true
+              adminPort: ${free.port.31}
+              dependsOn: reverseProxy1, reverseProxy2
+              trafficEndpoints:
+                - http://localhost:${free.port.32}
+                - http://localhost:${free.port.35}
+            servers:
+              reverseProxy1:
+                type: tigerProxy
+                tigerProxyConfiguration:
+                  adminPort: ${free.port.32}
+                  proxyPort: ${free.port.33}
+                  activateRbelParsing: false
+                  directReverseProxy:
+                    hostname: localhost
+                    port: ${free.port.31}
+              reverseProxy2:
+                type: tigerProxy
+                tigerProxyConfiguration:
+                  adminPort: ${free.port.35}
+                  proxyPort: ${free.port.36}
+                  activateRbelParsing: false
+                  directReverseProxy:
+                    hostname: localhost
+                    port: ${free.port.31}
+            """)
+  void testDirectReverseProxyMeshSetup_parallelUpstreamProxies(TigerTestEnvMgr envMgr) {
+    waitShortTime();
+
+    // wait for message of reverse proxy 2 to be processed before end
+    // of conversion of reverse proxy 1
+    CompletableFuture<Boolean> reverseProxy2FinishedProcessing = new CompletableFuture<>();
+    ((TigerProxyServer) envMgr.getServers().get("reverseProxy1"))
+        .getTigerProxy()
+        .getRbelLogger()
+        .getRbelConverter()
+        .addConverter(
+            (e, c) -> {
+              reverseProxy2FinishedProcessing.join();
+            });
+    ((TigerProxyServer) envMgr.getServers().get("reverseProxy2"))
+        .getTigerProxy()
+        .addRbelMessageListener(
+            (m) -> {
+              if (!m.getContent().startsWith("HTTP/1.1".getBytes())
+                  && m.getContent().endsWith("]}".getBytes())) {
+                await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
+                reverseProxy2FinishedProcessing.complete(true);
+              }
+            });
+    for (String portNr : List.of("33", "36")) {
+      CompletableFuture.runAsync(
+          () -> {
+            try (Socket clientSocket =
+                new Socket(
+                    "127.0.0.1",
+                    Integer.parseInt(
+                        TigerGlobalConfiguration.resolvePlaceholders(
+                            "${free.port." + portNr + "}")))) {
+              clientSocket.setSoTimeout(1);
+              OutputStream outputStream = clientSocket.getOutputStream();
+              outputStream.write("{\"foo\":[0".getBytes());
+              for (int i = 1; i < 1000; i++) {
+                outputStream.write(("," + i).getBytes());
+                outputStream.flush();
+              }
+              outputStream.write("]}".getBytes());
+              outputStream.close();
+            } catch (Exception e) {
+              log.error("Error while sending message", e);
+            }
+          });
+    }
+
+    RbelLogger rbelLogger = envMgr.getLocalTigerProxyOrFail().getRbelLogger();
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .until(
+            () ->
+                rbelLogger.getMessageHistory().stream()
+                        .filter(m -> m.hasFacet(RbelJsonFacet.class))
+                        .toList()
+                        .size()
+                    == 2);
+
+    rbelLogger.getRbelConverter().waitForAllCurrentMessagesToBeParsed();
+
+    var jsonMessages =
+        rbelLogger.getMessageHistory().stream()
+            .filter(m -> m.hasFacet(RbelJsonFacet.class))
+            .toList();
+
+    RbelElement msg0 = jsonMessages.get(0);
+    RbelElement msg1 = jsonMessages.get(1);
+
+    assertThat(msg0)
+        .extractFacet(ProxyTransmissionHistory.class)
+        .matches(
+            proxyTransmissionHistory ->
+                proxyTransmissionHistory.getTransmissionHops().size() == 1
+                    && proxyTransmissionHistory
+                        .getTransmissionHops()
+                        .get(0)
+                        .getProxyName()
+                        .equals("reverseProxy2"));
+    assertThat(msg1)
+        .extractFacet(ProxyTransmissionHistory.class)
+        .matches(
+            proxyTransmissionHistory ->
+                proxyTransmissionHistory.getTransmissionHops().size() == 1
+                    && proxyTransmissionHistory
+                        .getTransmissionHops()
+                        .get(0)
+                        .getProxyName()
+                        .equals("reverseProxy1"));
+
+    var messages = rbelLogger.getMessageHistory().stream().toList();
+    for (int i = 0; i < messages.size() - 1; i++) {
+      Long sequenceNumber0 =
+          messages.get(i).getFacetOrFail(RbelTcpIpMessageFacet.class).getSequenceNumber();
+      Long sequenceNumber1 =
+          messages.get(i + 1).getFacetOrFail(RbelTcpIpMessageFacet.class).getSequenceNumber();
+
+      assertThat(sequenceNumber0).isLessThan(sequenceNumber1);
+    }
+
+    waitShortTime();
+  }
+
+  @SneakyThrows
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
          lib:
              trafficVisualization: true
          tigerProxy:
@@ -481,11 +622,25 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
 
     for (int i = 0; i < numberOfMessages; i++) {
       log.info("Processing message {}", i);
-      var req = messages.get(i * 2);
-      var resp = messages.get(i * 2 + 1);
+      int reqIndex = i * 2;
+      int respIndex = reqIndex + 1;
+      var req = messages.get(reqIndex);
+      var resp = messages.get(respIndex);
 
       assertThat(req).extractChildWithPath("$.path").asString().contains(i + "");
       assertThat(resp).extractChildWithPath("$.body.url").asString().contains(i + "");
+
+      assertThat(req.getFacetOrFail(RbelTcpIpMessageFacet.class).getSequenceNumber())
+          .isEqualTo(reqIndex);
+      assertThat(resp.getFacetOrFail(RbelTcpIpMessageFacet.class).getSequenceNumber())
+          .isEqualTo(respIndex);
+
+      assertThat(req)
+          .extractFacet(ProxyTransmissionHistory.class)
+          .isEqualTo(new ProxyTransmissionHistory("reverseProxy", List.of((long) reqIndex), null));
+      assertThat(resp)
+          .extractFacet(ProxyTransmissionHistory.class)
+          .isEqualTo(new ProxyTransmissionHistory("reverseProxy", List.of((long) respIndex), null));
     }
 
     waitShortTime();
@@ -523,7 +678,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
             (e, c) -> {
               if (e.hasFacet(RbelHttpRequestFacet.class)) {
                 try {
-                  final int millis = random.nextInt(0, 50);
+                  final int millis = random.nextInt(0, 30);
                   log.info("Delaying for {} ms", millis);
                   Thread.sleep(millis);
                 } catch (InterruptedException ex) {
@@ -540,7 +695,8 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                 .getTigerProxy()
                 .getConfiguredTigerProxySslContext());
 
-    IntStream.range(0, 200)
+    int cycles = 200;
+    IntStream.range(0, cycles)
         .parallel()
         .forEach(
             i ->
@@ -556,11 +712,11 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
                     .run());
 
     await()
-        .atMost(30, TimeUnit.SECONDS)
+        .atMost(cycles * 250, TimeUnit.MILLISECONDS)
         .until(
             () ->
                 envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size()
-                    == 400);
+                    == 2 * cycles);
 
     envMgr.getLocalTigerProxyOrFail().waitForAllCurrentMessagesToBeParsed();
 

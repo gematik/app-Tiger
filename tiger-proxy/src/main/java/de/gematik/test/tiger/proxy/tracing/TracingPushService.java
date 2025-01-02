@@ -16,10 +16,17 @@
 
 package de.gematik.test.tiger.proxy.tracing;
 
+import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.facet.MessageProcessingStateFacet;
+import de.gematik.rbellogger.data.facet.PreviousMessageFacet;
+import de.gematik.rbellogger.data.facet.ProxyTransmissionHistory;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
+import de.gematik.rbellogger.data.facet.RbelRequestFacet;
+import de.gematik.rbellogger.data.facet.RbelResponseFacet;
+import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
 import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
@@ -27,11 +34,12 @@ import de.gematik.rbellogger.data.facet.UnparsedChunkFacet;
 import de.gematik.rbellogger.file.MessageTimeWriter;
 import de.gematik.rbellogger.file.RbelFileWriter;
 import de.gematik.rbellogger.file.TcpIpMessageFacetWriter;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.*;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -46,18 +54,30 @@ public class TracingPushService {
   public static final int MAX_MESSAGE_SIZE = 512 * 1024;
   private final SimpMessagingTemplate template;
   private final TigerProxy tigerProxy;
-  private final ConcurrentHashMap<String, Long> nextSequenceNumberToBePushed =
-      new ConcurrentHashMap<>();
-  private final Map<String, Map<Long, Runnable>> pendingMessagesPerUrl = new ConcurrentHashMap<>();
   private Logger log = LoggerFactory.getLogger(TracingPushService.class);
 
   public void addWebSocketListener() {
     tigerProxy.addRbelMessageListener(this::propagateRbelMessageSafe);
     tigerProxy.addNewExceptionConsumer(this::propagateExceptionSafe);
+    tigerProxy
+        .getRbelLogger()
+        .getRbelConverter()
+        .addLastPostConversionListener(this::markUnsuccessfulMessageAsProcessed);
 
     log =
         LoggerFactory.getLogger(
             TracingPushService.class.getName() + "(" + tigerProxy.proxyName() + ")");
+  }
+
+  private void markUnsuccessfulMessageAsProcessed(RbelElement result, RbelConverter rbelConverter) {
+    if (result.getFacets().stream()
+        .noneMatch(
+            f ->
+                f instanceof RbelRootFacet
+                    || f instanceof RbelResponseFacet
+                    || f instanceof RbelRequestFacet)) {
+      RbelConverter.setMessageFullyProcessed(result);
+    }
   }
 
   private void propagateExceptionSafe(Throwable exc) {
@@ -69,92 +89,26 @@ public class TracingPushService {
     }
   }
 
-  private synchronized void propagateRbelMessageSafe(RbelElement msg) {
+  private void propagateRbelMessageSafe(RbelElement msg) {
     try {
       if (!msg.hasFacet(RbelTcpIpMessageFacet.class)) {
+        log.info("Skipping propagation, not a TCP/IP message {}", msg.getUuid());
         return;
       }
 
-      final long sequenceNumber =
-          msg.getFacetOrFail(RbelTcpIpMessageFacet.class).getSequenceNumber();
-      if (log.isTraceEnabled()) {
-        log.trace("Transmitting message #{}: {}", sequenceNumber, msg.printHttpDescription());
-      }
-      if (sequenceNumber < nextSequenceNumberFor(msg)) {
-        throw new IllegalStateException(
-            "Received message with sequence number lower than expected! (We are at "
-                + nextSequenceNumberFor(msg)
-                + ", received "
-                + sequenceNumber
-                + ")");
-      }
-      if (sequenceNumber == nextSequenceNumberFor(msg)) {
-        propagateMessageAndUpdateSequenceCounter(msg, sequenceNumber);
-      } else {
-        if (log.isTraceEnabled()) {
-          log.trace(
-              "Received message with sequence number {}. Waiting... (we are at {})",
-              sequenceNumber,
-              nextSequenceNumberFor(msg));
-        }
-        addNewPendingMessage(msg, sequenceNumber);
-      }
+      waitForPreviousMessageFullyProcessed(msg);
+      propagateRbelMessage(msg);
     } catch (RuntimeException e) {
       log.error("Error while propagating new Rbel-Message", e);
       throw e;
     }
   }
 
-  private void addNewPendingMessage(RbelElement msg, long sequenceNumber) {
-    final String remoteUrl = extractRemoteUrl(msg);
-    pendingMessagesPerUrl.computeIfAbsent(remoteUrl, k -> new ConcurrentHashMap<>());
-
-    pendingMessagesPerUrl
-        .get(remoteUrl)
-        .put(sequenceNumber, () -> propagateMessageAndUpdateSequenceCounter(msg, sequenceNumber));
-  }
-
-  private Long nextSequenceNumberFor(RbelElement msg) {
-    return this.nextSequenceNumberToBePushed.getOrDefault(extractRemoteUrl(msg), 0L);
-  }
-
-  private void propagateMessageAndUpdateSequenceCounter(RbelElement msg, long sequenceNumber) {
-    log.trace("Received message with sequence number {}. Pushing...", sequenceNumber);
-    propagateRbelMessage(msg);
-    this.nextSequenceNumberToBePushed.put(extractRemoteUrl(msg), sequenceNumber + 1);
-    log.trace(
-        "Pushed message with sequence number {}. Now treating waiting messages (sequence numbers"
-            + " are {})",
-        sequenceNumber,
-        nextSequenceNumberToBePushed);
-    queryAndRemovePendingMessageFuture(msg, sequenceNumber)
-        .ifPresent(
-            future -> {
-              log.info("Completing future for sequence number {}", sequenceNumber);
-              future.run();
-            });
-  }
-
-  private static String extractRemoteUrl(RbelElement msg) {
-    return msg.getFacet(RbelTcpIpMessageFacet.class)
-        .map(RbelTcpIpMessageFacet::getReceivedFromRemoteWithUrl)
-        .orElse("local");
-  }
-
-  /** Retrieves a potentially pending future for a message following the given message. */
-  private Optional<Runnable> queryAndRemovePendingMessageFuture(
-      RbelElement msg, long sequenceNumber) {
-    final String remoteUrl = extractRemoteUrl(msg);
-
-    return Optional.ofNullable(pendingMessagesPerUrl.get(remoteUrl))
-        .map(map -> map.remove(sequenceNumber + 1));
-  }
-
-  private void propagateRbelMessage(RbelElement msg) {
-    if (!msg.hasFacet(RbelTcpIpMessageFacet.class)) {
-      log.trace("Skipping propagation, not a TCP/IP message {}", msg.getUuid());
-      return;
-    }
+  private synchronized void propagateRbelMessage(RbelElement msg) {
+    log.atTrace()
+        .addArgument(() -> getSequenceNumber(msg))
+        .addArgument(msg::printHttpDescription)
+        .log("Transmitting message #{}: {}");
     if (msg.hasFacet(TigerNonPairedMessageFacet.class)) {
       sendNonPairedMessage(msg);
     } else if (msg.hasFacet(RbelHttpResponseFacet.class)
@@ -173,6 +127,7 @@ public class TracingPushService {
             msg.getUuid());
       }
     }
+    RbelConverter.setMessageFullyProcessed(msg);
   }
 
   private void sendNonPairedMessage(RbelElement msg) {
@@ -200,6 +155,11 @@ public class TracingPushService {
               .additionalInformationRequest(gatherAdditionalInformation(msg))
               .unparsedChunk(msg.hasFacet(UnparsedChunkFacet.class))
               .sequenceNumberRequest(rbelTcpIpMessageFacet.getSequenceNumber())
+              .proxyTransmissionHistoryRequest(
+                  new ProxyTransmissionHistory(
+                      tigerProxy.getTigerProxyConfiguration().getName(),
+                      List.of(rbelTcpIpMessageFacet.getSequenceNumber()),
+                      msg.getFacet(ProxyTransmissionHistory.class).orElse(null)))
               .build());
 
       mapRbelMessageAndSent(msg);
@@ -257,6 +217,16 @@ public class TracingPushService {
             .additionalInformationResponse(gatherAdditionalInformation(response))
             .sequenceNumberRequest(requestTcpIpFacet.getSequenceNumber())
             .sequenceNumberResponse(responseTcpIpFacet.getSequenceNumber())
+            .proxyTransmissionHistoryRequest(
+                new ProxyTransmissionHistory(
+                    tigerProxy.getTigerProxyConfiguration().getName(),
+                    List.of(requestTcpIpFacet.getSequenceNumber()),
+                    request.getFacet(ProxyTransmissionHistory.class).orElse(null)))
+            .proxyTransmissionHistoryResponse(
+                new ProxyTransmissionHistory(
+                    tigerProxy.getTigerProxyConfiguration().getName(),
+                    List.of(responseTcpIpFacet.getSequenceNumber()),
+                    response.getFacet(ProxyTransmissionHistory.class).orElse(null)))
             .build());
 
     mapRbelMessageAndSent(request);
@@ -291,12 +261,19 @@ public class TracingPushService {
       return;
     }
 
-    var content = rbelMessage.getContent();
-    final int numberOfParts = content.size() / MAX_MESSAGE_SIZE + 1;
-    for (int i = 0; i < numberOfParts; i++) {
+    RbelContent content = rbelMessage.getContent();
+    if (content.isNull()) {
+      return;
+    }
+
+    final int size = content.getSize();
+    final int chunkSize = content.getChunkSize();
+    final int numberOfParts = (size + chunkSize - 1) / chunkSize;
+    int i = 0;
+    int nextPartIndex = 0;
+    while (nextPartIndex < size) {
       byte[] partContent =
-          content.subArray(
-              i * MAX_MESSAGE_SIZE, Math.min((i + 1) * MAX_MESSAGE_SIZE, content.size()));
+          content.subArray(nextPartIndex, Math.min(nextPartIndex + chunkSize, size));
 
       log.trace(
           "sending part {} of {} for UUID {}...", i + 1, numberOfParts, rbelMessage.getUuid());
@@ -308,6 +285,31 @@ public class TracingPushService {
               .uuid(rbelMessage.getUuid())
               .numberOfMessages(numberOfParts)
               .build());
+      nextPartIndex += partContent.length;
+      i++;
     }
+  }
+
+  private static Long getSequenceNumber(RbelElement msg) {
+    return msg.getFacet(RbelTcpIpMessageFacet.class)
+        .map(RbelTcpIpMessageFacet::getSequenceNumber)
+        .orElse(-1L);
+  }
+
+  private void waitForMessageFullyProcessed(RbelElement msg) {
+    log.atTrace().addArgument(() -> getSequenceNumber(msg)).log("Waiting for message #{}");
+    msg.getFacet(MessageProcessingStateFacet.class)
+        .map(MessageProcessingStateFacet::getProcessed)
+        .ifPresent(CompletableFuture::join);
+  }
+
+  private void waitForPreviousMessageFullyProcessed(RbelElement msg) {
+    log.atTrace()
+        .addArgument(() -> getSequenceNumber(msg))
+        .log("Waiting for previous message of #{}");
+    msg.getFacet(PreviousMessageFacet.class)
+        .map(PreviousMessageFacet::getMessage)
+        .ifPresent(this::waitForMessageFullyProcessed);
+    msg.removeFacetsOfType(PreviousMessageFacet.class);
   }
 }

@@ -1,5 +1,11 @@
 # Changelog Tiger Test platform
 
+# Release 3.4.7
+
+* TGR-1447, TGR-1656: Sequence-Numbers are assigned per tiger proxy, assuring monotonous increase.
+  A history of sequence numbers per proxy is transmitted to the downstream proxy. This shall allow
+  differentiation for messages originating from different proxies.
+
 # Release 3.4.6
 
 * Serenity BDD 4.2.3
@@ -303,8 +309,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+    key = PLUGIN_PROPERTY_NAME,
+    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

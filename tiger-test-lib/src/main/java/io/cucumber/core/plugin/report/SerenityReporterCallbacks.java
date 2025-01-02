@@ -80,6 +80,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
@@ -561,11 +562,12 @@ public class SerenityReporterCallbacks {
 
     String featureName = feature.map(Feature::getName).orElse("?");
     List<MessageMetaDataDto> stepMessagesMetaDataList =
-        new ArrayList<>(
-            LocalProxyRbelMessageListener.getInstance().getStepRbelMessages().stream()
-                .map(MessageMetaDataDto::createFrom)
-                .toList());
-
+        List.copyOf( // to avoid concurrent modification during iteration
+                LocalProxyRbelMessageListener.getInstance().getStepRbelMessages())
+            .stream()
+            .map(MessageMetaDataDto::createFrom)
+            // to allow later modification in model when step is actually performed
+            .collect(Collectors.toCollection(ArrayList::new));
     Map<String, String> variantDataMap = getVariantDataMap(context, scenarioId, variantDataIndex);
 
     if (!isDryRun) {

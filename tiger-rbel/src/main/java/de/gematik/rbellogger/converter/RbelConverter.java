@@ -34,6 +34,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import lombok.*;
@@ -65,6 +66,9 @@ public class RbelConverter {
   @Builder.Default private List<String> activateRbelParsingFor = List.of();
 
   @Builder.Default private volatile boolean shallInitializeConverters = true;
+
+  private final AtomicReference<PreviousMessageFacet> lastConvertedMessage =
+      new AtomicReference<>();
 
   public static final TigerTypedConfigurationKey<Integer> RAW_STRING_MAX_TRACE_LENGTH =
       new TigerTypedConfigurationKey<>(
@@ -100,6 +104,7 @@ public class RbelConverter {
 
   public RbelElement convertElement(final RbelElement convertedInput) {
     initializeConverters();
+    log.trace("Converting {}...", convertedInput);
     boolean elementIsOversized =
         skipParsingWhenMessageLargerThanKb > -1
             && (convertedInput.getSize() > skipParsingWhenMessageLargerThanKb * 1024L);
@@ -110,7 +115,8 @@ public class RbelConverter {
       try {
         plugin.consumeElement(convertedInput, this);
       } catch (RuntimeException e) {
-        val conversionException = RbelConversionException.wrapIfNotAConversionException(e, plugin, convertedInput);
+        val conversionException =
+            RbelConversionException.wrapIfNotAConversionException(e, plugin, convertedInput);
         conversionException.printDetailsToLog(log);
         conversionException.addErrorNoteFacetToElement();
       }
@@ -134,6 +140,11 @@ public class RbelConverter {
     }
   }
 
+  public enum FinishProcessing {
+    YES,
+    NO
+  }
+
   public RbelElement parseMessage(
       byte[] content,
       RbelHostname sender,
@@ -141,7 +152,11 @@ public class RbelConverter {
       Optional<ZonedDateTime> transmissionTime) {
     final RbelElement messageElement = RbelElement.builder().rawContent(content).build();
     return parseMessage(
-        new RbelElementConvertionPair(messageElement), sender, receiver, transmissionTime);
+        new RbelElementConvertionPair(messageElement),
+        sender,
+        receiver,
+        transmissionTime,
+        FinishProcessing.YES);
   }
 
   public RbelElement parseMessage(
@@ -149,24 +164,26 @@ public class RbelConverter {
       final RbelHostname sender,
       final RbelHostname receiver,
       final Optional<ZonedDateTime> transmissionTime) {
-    return parseMessage(messagePair, sender, receiver, transmissionTime, Optional.empty());
+    return parseMessage(messagePair, sender, receiver, transmissionTime, FinishProcessing.YES);
   }
 
-  // TODO Remove sequenceNumber parameter after TGR-1447 is solved
   public RbelElement parseMessage(
       @NonNull final RbelElementConvertionPair messagePair,
       final RbelHostname sender,
       final RbelHostname receiver,
       final Optional<ZonedDateTime> transmissionTime,
-      final Optional<Long> sequenceNumber) {
+      FinishProcessing finishProcessing) {
     try {
-      return parseMessageAsync(messagePair, sender, receiver, transmissionTime, sequenceNumber)
-          .get();
+      return parseMessageAsync(messagePair, sender, receiver, transmissionTime).get();
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new RbelConversionException(e);
     } catch (ExecutionException e) {
       throw new RbelConversionException(e);
+    } finally {
+      if (finishProcessing == FinishProcessing.YES) {
+        setMessageFullyProcessed(messagePair.getMessage());
+      }
     }
   }
 
@@ -175,27 +192,17 @@ public class RbelConverter {
       final RbelHostname sender,
       final RbelHostname receiver,
       final Optional<ZonedDateTime> transmissionTime) {
-    return parseMessageAsync(messagePair, sender, receiver, transmissionTime, Optional.empty());
-  }
-
-  // TODO Remove sequenceNumber parameter after TGR-1447 is solved
-  public CompletableFuture<RbelElement> parseMessageAsync(
-      @NonNull final RbelElementConvertionPair messagePair,
-      final RbelHostname sender,
-      final RbelHostname receiver,
-      final Optional<ZonedDateTime> transmissionTime,
-      final Optional<Long> sequenceNumber) {
     final var messageElement = messagePair.getMessage();
     if (messageElement.getContent().isNull()) {
       throw new RbelConversionException("content is empty");
     }
-    addMessageToHistory(messageElement);
+    long seqNumber = addMessageToHistoryWithNextSequenceNumber(messageElement);
 
     messageElement.addFacet(
         RbelTcpIpMessageFacet.builder()
             .receiver(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, receiver))
             .sender(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, sender))
-            .sequenceNumber(sequenceNumber.orElseGet(() -> messageSequenceNumber++))
+            .sequenceNumber(seqNumber)
             .build());
 
     messageElement.addFacet(new RbelParsingNotCompleteFacet(this));
@@ -220,6 +227,9 @@ public class RbelConverter {
             convertElement(messageElement);
             doMessagePostConversion(messagePair, transmissionTime);
             return messageElement;
+          } catch (Exception e) {
+            setMessageFullyProcessed(messageElement);
+            throw e;
           } finally {
             messageElement.removeFacetsOfType(RbelParsingNotCompleteFacet.class);
           }
@@ -246,13 +256,18 @@ public class RbelConverter {
     return message;
   }
 
-  private void addMessageToHistory(RbelElement rbelElement) {
+  private long addMessageToHistoryWithNextSequenceNumber(RbelElement rbelElement) {
+    long seqNumber;
     synchronized (messageHistory) {
+      Optional.ofNullable(lastConvertedMessage.getAndSet(new PreviousMessageFacet(rbelElement)))
+          .ifPresent(rbelElement::addFacet);
       currentBufferSize += rbelElement.getSize();
       knownMessageUuids.add(rbelElement.getUuid());
       messageHistory.add(rbelElement);
+      seqNumber = messageSequenceNumber++;
     }
     manageRbelBufferSize();
+    return seqNumber;
   }
 
   public RbelConverter addLastPostConversionListener(RbelConverterPlugin postConversionListener) {
@@ -418,5 +433,13 @@ public class RbelConverter {
       completableFutures = messagesWaitingForCompletion.removeAll(element.getUuid());
     }
     completableFutures.forEach(future -> future.complete(element));
+  }
+
+  public static void setMessageFullyProcessed(RbelElement element) {
+    element
+        .getFacet(MessageProcessingStateFacet.class)
+        .map(MessageProcessingStateFacet::getProcessed)
+        .ifPresent(future -> future.complete(true));
+    element.removeFacetsOfType(MessageProcessingStateFacet.class);
   }
 }

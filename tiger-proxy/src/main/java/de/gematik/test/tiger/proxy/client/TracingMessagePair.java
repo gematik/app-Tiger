@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.proxy.client;
 
+import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
@@ -88,6 +89,9 @@ public class TracingMessagePair implements TracingMessageFrame {
                     request.getTracingDto().getResponseUuid(),
                     e);
                 throw e;
+              } finally {
+                RbelConverter.setMessageFullyProcessed(req);
+                RbelConverter.setMessageFullyProcessed(res);
               }
             })
         .exceptionally(
@@ -108,14 +112,14 @@ public class TracingMessagePair implements TracingMessageFrame {
         && response.getTracingDto().getSequenceNumberResponse() != null) {
       req.addOrReplaceFacet(
           req.getFacetOrFail(RbelTcpIpMessageFacet.class).toBuilder()
-              .sequenceNumber(request.getTracingDto().getSequenceNumberRequest())
               .receivedFromRemoteWithUrl(remoteProxyClient.getRemoteProxyUrl())
               .build());
+      req.addFacet(request.getTracingDto().getProxyTransmissionHistoryRequest());
       res.addOrReplaceFacet(
           res.getFacetOrFail(RbelTcpIpMessageFacet.class).toBuilder()
-              .sequenceNumber(response.getTracingDto().getSequenceNumberResponse())
               .receivedFromRemoteWithUrl(remoteProxyClient.getRemoteProxyUrl())
               .build());
+      res.addFacet(response.getTracingDto().getProxyTransmissionHistoryResponse());
     }
     tigerPostConversionListener(req, res);
     val pairFacet = TracingMessagePairFacet.builder().response(res).request(req).build();

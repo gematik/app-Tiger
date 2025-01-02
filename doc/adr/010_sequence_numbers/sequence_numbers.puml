@@ -1,0 +1,39 @@
+@startuml
+title Sequenz-Nummern
+
+participant "Sender 1" as A1
+participant "Sender 2" as A2
+participant "Proxy 1" as P1
+participant "Proxy 2" as P2
+participant "Proxy 3" as P3
+
+A1 -> P1: Chunk 1.1
+note right of P1: Seq-Nr #1
+A1 -> P1: Chunk 2.1
+note right of P1: Seq-Nr #2
+A1 -> P1: Chunk 1.2
+note right of P1: Seq-Nr #3
+P1 -> P3: Nachricht (1.1, 1.2)
+note right of P3: Seq-Nr #1 Historie (P1, (#1, #3))
+A1 -> P1: Chunk 2.2
+note right of P1: Seq-Nr #4
+
+A2 -> P2: Chunk 1.1
+note right of P2: Seq-Nr #1
+A2 -> P2: Chunk 2.1
+note right of P2: Seq-Nr #2
+A2 -> P2: Chunk 1.2
+note right of P2: Seq-Nr #3
+P2 -> P3: Nachricht (1.1, 1.2)
+note right of P3: Seq-Nr #2 Historie (P2, (#1, #3))
+
+
+P1 -> P3: Nachricht (2.1, 2.2)
+note right of P3: Seq-Nr #3 Historie (P1, (#2, #4))
+
+A2 -> P2: Chunk 2.2
+note right of P2: Seq-Nr #4
+P2 -> P3: Nachricht (2.1, 2.2)
+note right of P3: Seq-Nr #4 Historie (P2, (#2, #4))
+
+@enduml
