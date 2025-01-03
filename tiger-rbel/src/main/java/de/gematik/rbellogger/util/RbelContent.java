@@ -485,4 +485,8 @@ public class RbelContent {
     }
     return foundCount; // fewer than max allowed found
   }
+
+  public boolean contains(byte[] searchContent) {
+    return indexOf(searchContent) >= 0;
+  }
 }

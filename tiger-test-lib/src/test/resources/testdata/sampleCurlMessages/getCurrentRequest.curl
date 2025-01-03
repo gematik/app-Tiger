@@ -3,5 +3,6 @@ Cache-Control: no-store
 Pragma: no-cache
 Version: 0.1-SNAPSHOT
 Content-Type: application/json
+Content-Length: 13
 
 {"foo":"bar"}

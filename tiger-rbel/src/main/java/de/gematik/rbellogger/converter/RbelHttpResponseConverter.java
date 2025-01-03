@@ -16,13 +16,16 @@
 
 package de.gematik.rbellogger.converter;
 
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LENIENT_HTTP_PARSING;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.net.MediaType;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.http.RbelHttpCodingConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.util.RbelArrayUtils;
 import de.gematik.rbellogger.util.RbelContent;
@@ -36,16 +39,20 @@ import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.InflaterInputStream;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.bouncycastle.util.encoders.Hex;
 
 @Slf4j
 public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
-  private static final String CRLF = "\r\n";
+  static final String CRLF = "\r\n";
   private static final byte[] CRLF_BYTES = CRLF.getBytes(UTF_8);
-  private static final String HTTP_PREFIX = "HTTP";
+  private static final String HTTP_PREFIX = "HTTP/";
   private static final byte[] HTTP_PREFIX_BYTES = HTTP_PREFIX.getBytes(UTF_8);
+  @Getter
+  private final boolean lenientParsingMode;
 
   public static final Map<String, RbelHttpCodingConverter> HTTP_CODINGS_MAP =
       Map.of(
@@ -88,6 +95,11 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
     }
   }
 
+  public RbelHttpResponseConverter(RbelConfiguration configuration) {
+    this.lenientParsingMode = Optional.ofNullable(configuration.getLenientHttpParsing())
+      .orElseGet(LENIENT_HTTP_PARSING::getValueOrDefault);
+  }
+
   @Override
   public boolean ignoreOversize() {
     return true;
@@ -115,9 +127,19 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
         return;
       }
       var eol = eolOpt.get();
+      checkEolValue(eol, targetElement);
       var endOfHeaderIndexOpt = findEndOfHeaderIndex(eol);
       if (endOfHeaderIndexOpt.isEmpty()) {
-        return;
+        if (lenientParsingMode || !isTcpMessage(targetElement)) {
+          endOfHeaderIndexOpt = Optional.of(content.size());
+        } else {
+          targetElement.addFacet(
+            RbelNoteFacet.builder()
+              .style(NoteStyling.WARN)
+              .value("Unable to determine end of HTTP header. Does the header end with double CRLF?")
+              .build());
+          return;
+        }
       }
       var endOfHeaderIndex = endOfHeaderIndexOpt.get();
       var stringContent = targetElement.getRawStringContent();
@@ -307,11 +329,12 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
 
   public byte[] extractBodyData(
       RbelElement targetElement,
-      final int offset,
+      int bodyDataStartOffset,
       final RbelHttpHeaderFacet headerMap,
       final String eol) {
+    bodyDataStartOffset = checkContentLength(targetElement, bodyDataStartOffset, headerMap);
     var content = targetElement.getContent();
-    byte[] inputData = content.subArray(offset, content.size());
+    byte[] inputData = content.subArray(bodyDataStartOffset, content.size());
 
     Charset elementCharset = targetElement.getElementCharset();
     return applyCodings(
@@ -322,6 +345,52 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
         "Transfer-Encoding");
   }
 
+  private int checkContentLength(final RbelElement targetElement, final int bodyDataStartOffset, final RbelHttpHeaderFacet headerMap) {
+    val messageBodyIsPresent = bodyDataStartOffset < targetElement.getContent().size();
+
+    if (messageBodyIsPresent) {
+      if (headerMap.getCaseInsensitiveMatches("Content-Length").findAny().isEmpty()
+          && headerMap.getCaseInsensitiveMatches("Transfer-Encoding").findAny().isEmpty()) {
+        targetElement.addFacet(
+          RbelNoteFacet.builder()
+            .style(styleParsingError(targetElement))
+            .value(
+              "Did not find content-length or transfer-encoding header. One of them is required.")
+            .build());
+        if (!lenientParsingMode && isTcpMessage(targetElement)) {
+          throw new RbelConversionException("No content-length or transfer-encoding header found");
+        }
+      }
+
+      return bodyDataStartOffset;
+    }
+
+    if (bodyDataStartOffset == targetElement.getContent().size()) {
+      return bodyDataStartOffset;
+    }
+
+    if (!lenientParsingMode) {
+      targetElement.addFacet(
+          RbelNoteFacet.builder()
+              .style(styleParsingError(targetElement))
+              .value(
+                  "No body found in HTTP message (Does the message contain correct line breaks?)")
+              .build());
+      if (isTcpMessage(targetElement)) {
+        throw new RbelConversionException("No body found in HTTP message");
+      }
+    }
+    return targetElement.getContent().size();
+  }
+
+  NoteStyling styleParsingError(RbelElement targetElement) {
+    return isTcpMessage(targetElement) ? NoteStyling.WARN : NoteStyling.INFO;
+  }
+
+  boolean isTcpMessage(RbelElement targetElement) {
+    return targetElement.hasFacet(RbelTcpIpMessageFacet.class);
+  }
+
   public Optional<String> findEolInHttpMessage(RbelContent content) {
     if (content.indexOf(CRLF_BYTES) >= 0) {
       return Optional.of(CRLF);
@@ -329,6 +398,17 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
       return Optional.of("\n");
     } else {
       return Optional.empty();
+    }
+  }
+
+  void checkEolValue(String eol, RbelElement targetElement) {
+    if (!eol.equals(CRLF)) {
+      targetElement.addFacet(
+        RbelNoteFacet.builder()
+          .style(NoteStyling.INFO)
+          .value(
+            "Non-standard line endings detected. Expected CRLF, but found: " + Hex.toHexString(eol.getBytes()))
+          .build());
     }
   }
 }

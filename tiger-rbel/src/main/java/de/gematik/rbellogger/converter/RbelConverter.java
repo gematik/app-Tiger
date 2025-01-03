@@ -17,6 +17,7 @@
 package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.RbelConverterInitializer;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelElementConvertionPair;
 import de.gematik.rbellogger.data.RbelHostname;
@@ -74,12 +75,12 @@ public class RbelConverter {
       new TigerTypedConfigurationKey<>(
           "tiger.rbel.rawstring.max.trace.length", Integer.class, 1000);
 
-  public void initializeConverters() {
+  public void initializeConverters(RbelConfiguration rbelConfiguration) {
     if (shallInitializeConverters) {
       // the outside check is done to avoid the synchronized overhead for most calls
       synchronized (converterPlugins) {
         if (shallInitializeConverters) {
-          new RbelConverterInitializer(this, activateRbelParsingFor).addConverters();
+          new RbelConverterInitializer(this, rbelConfiguration, activateRbelParsingFor).addConverters();
           shallInitializeConverters = false;
         }
       }
@@ -103,8 +104,7 @@ public class RbelConverter {
   }
 
   public RbelElement convertElement(final RbelElement convertedInput) {
-    initializeConverters();
-    log.trace("Converting {}...", convertedInput);
+    initializeConverters(new RbelConfiguration());
     boolean elementIsOversized =
         skipParsingWhenMessageLargerThanKb > -1
             && (convertedInput.getSize() > skipParsingWhenMessageLargerThanKb * 1024L);

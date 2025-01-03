@@ -2,6 +2,16 @@
 
 # Release 3.4.7
 
+## Breaking Changes 
+
+* TGR-1686: Stricter HTTP-Parsing added. This means messages without valid headers will not be parsed. Error messages will be added. To disable this feature set the following configuration key in the tiger.yaml:
+
+```yaml
+rbel.lenientHttpParsing: true
+```
+
+## Features
+
 * TGR-1447, TGR-1656: Sequence-Numbers are assigned per tiger proxy, assuring monotonous increase.
   A history of sequence numbers per proxy is transmitted to the downstream proxy. This shall allow
   differentiation for messages originating from different proxies.

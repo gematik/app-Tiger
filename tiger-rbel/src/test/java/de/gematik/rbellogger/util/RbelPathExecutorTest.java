@@ -16,6 +16,7 @@
 
 package de.gematik.rbellogger.util;
 
+import static de.gematik.rbellogger.TestUtils.readAndConvertCurlMessage;
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,6 +35,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import lombok.SneakyThrows;
+import lombok.val;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -44,7 +46,10 @@ class RbelPathExecutorTest {
 
   private static final RbelConverter RBEL_CONVERTER =
       RbelLogger.build(
-              new RbelConfiguration().activateConversionFor("X509").activateConversionFor("asn1"))
+              new RbelConfiguration()
+                .activateConversionFor("X509")
+                .activateConversionFor("asn1")
+                .setLenientHttpParsing(true))
           .getRbelConverter();
   private static RbelElement jwtMessage;
   private static RbelElement xmlMessage;
@@ -168,15 +173,8 @@ class RbelPathExecutorTest {
 
   @Test
   void eliminateContentInRbelPathResult() throws IOException {
-    final String challengeMessage =
-        readCurlFromFileWithCorrectedLineBreaks(
-            "src/test/resources/sampleMessages/getChallenge.curl");
-
-    final RbelElement convertedMessage =
-        RbelLogger.build()
-            .getRbelConverter()
-            .parseMessage(
-                challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+    val convertedMessage =
+      readAndConvertCurlMessage("src/test/resources/sampleMessages/getChallenge.curl");
 
     Assertions.assertThat(convertedMessage.findElement("$.body.challenge.signature"))
         .containsSame(convertedMessage.findElement("$.body.challenge.content.signature").get());

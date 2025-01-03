@@ -49,23 +49,19 @@ class RbelJexlExecutorTest {
     request =
         rbelLogger
             .getRbelConverter()
-            .parseMessage(
+            .convertElement(
                 readCurlFromFileWithCorrectedLineBreaks(
                         "src/test/resources/sampleMessages/getRequest.curl")
                     .getBytes(),
-                null,
-                null,
-                Optional.of(ZonedDateTime.now()));
+                null);
     response =
         rbelLogger
             .getRbelConverter()
-            .parseMessage(
+            .convertElement(
                 readCurlFromFileWithCorrectedLineBreaks(
                         "src/test/resources/sampleMessages/rbelPath.curl")
                     .getBytes(),
-                null,
-                null,
-                Optional.of(ZonedDateTime.now()));
+                null);
     RbelHttpResponseFacet.updateRequestOfResponseFacet(response, request);
     RbelHttpRequestFacet.updateResponseOfRequestFacet(request, response);
   }
