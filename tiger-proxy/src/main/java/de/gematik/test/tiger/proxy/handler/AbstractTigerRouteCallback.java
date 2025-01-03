@@ -25,7 +25,7 @@ import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
 import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
-import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndResponseCallback;
+import de.gematik.test.tiger.mockserver.mock.action.ExpectationCallback;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.certificate.TlsFacet;
@@ -55,7 +55,7 @@ import org.apache.commons.lang3.StringUtils;
  */
 @Data
 @Slf4j
-public abstract class AbstractTigerRouteCallback implements ExpectationForwardAndResponseCallback {
+public abstract class AbstractTigerRouteCallback implements ExpectationCallback {
 
   public static final String LOCATION_HEADER_KEY = "Location";
   private final TigerProxy tigerProxy;

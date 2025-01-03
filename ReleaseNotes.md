@@ -12,9 +12,11 @@ rbel.lenientHttpParsing: true
 
 ## Features
 
-* TGR-1447, TGR-1656: Sequence-Numbers are assigned per tiger proxy, assuring monotonous increase.
-  A history of sequence numbers per proxy is transmitted to the downstream proxy. This shall allow
+* TGR-1447, TGR-1656: Tiger-Proxy: Sequence-Numbers are assigned per tiger proxy, assuring monotonous increase. A history of sequence numbers per proxy is transmitted to the downstream proxy. This shall allow
   differentiation for messages originating from different proxies.
+
+## Bugfixes
+* TGR-783: Tiger-Proxy: Refined the handling of trailing slashes in proxy-routes. This eliminates certain unwanted edge-cases. (route /foo and request /foobar will no longer match)
 
 # Release 3.4.6
 

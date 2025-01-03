@@ -113,15 +113,14 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
 
     val noProxyInstance = Unirest.spawnInstance();
     noProxyInstance.config().automaticRetries(false);
+    noProxyInstance.config().socketTimeout(1000);
+    noProxyInstance.config().connectTimeout(1000);
     assertThatThrownBy(
             () ->
                 noProxyInstance
                     .get("http://localhost:" + tigerProxy.getProxyPort() + "/error")
                     .asString())
         .isInstanceOf(UnirestException.class);
-
-    Thread.sleep(1000);
-    renderTrafficTo("direct.html");
 
     awaitMessagesInTiger(2);
 

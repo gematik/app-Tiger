@@ -18,7 +18,7 @@ package de.gematik.test.tiger.mockserver.mock;
 
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
 
-import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndResponseCallback;
+import de.gematik.test.tiger.mockserver.mock.action.ExpectationCallback;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpForwardActionResult;
 import de.gematik.test.tiger.mockserver.model.*;
@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 public class HttpAction {
 
   private final Action action;
-  private ExpectationForwardAndResponseCallback expectationForwardAndResponseCallback;
+  private ExpectationCallback expectationForwardAndResponseCallback;
 
   public static HttpAction of(Action actionToTake) {
     return new HttpAction(actionToTake);

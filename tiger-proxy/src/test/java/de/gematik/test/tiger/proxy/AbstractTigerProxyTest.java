@@ -151,6 +151,17 @@ public abstract class AbstractTigerProxyTest {
         .register(
             get("/error")
                 .willReturn(responseDefinition().withFault(Fault.CONNECTION_RESET_BY_PEER)));
+
+    runtimeInfo
+      .getWireMock()
+      .register(
+        get("/api")
+          .willReturn(status(200).withStatusMessage("").withBody("{'request':'body'}")));
+    runtimeInfo
+      .getWireMock()
+      .register(
+        get("/apifoo")
+          .willReturn(status(200).withStatusMessage("").withBody("{'request':'body'}")));
   }
 
   @BeforeEach
