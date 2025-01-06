@@ -26,7 +26,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 import lombok.Setter;
-import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.TestPlan;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
@@ -46,10 +45,11 @@ public abstract class TestExecutionInformationMapper {
       ScenarioRunner.TestExecutionStatus testExecutionStatus, @Context String basePath);
 
   public List<TestDescriptionDto> testPlanToTestDescriptionDtos(TestPlan testPlan) {
-    LinkedHashSet<TestIdentifier> testIdentifiers = ScenarioCollector.collectScenarios(testPlan);
+    LinkedHashSet<TigerTestIdentifier> tigerTestIdentifiers =
+        ScenarioCollector.collectTigerScenarios(testPlan);
 
-    return testIdentifiers.stream()
-        .map(testDescriptionMapper::testIdentifierToTestDescription)
+    return tigerTestIdentifiers.stream()
+        .map(testDescriptionMapper::tigerTestIdentifierToTestDescription)
         .toList();
   }
 

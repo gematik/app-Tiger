@@ -19,6 +19,7 @@ package de.gematik.rbellogger.data.facet;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMultiMap;
+import de.gematik.rbellogger.util.RbelException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -91,7 +92,7 @@ public class RbelHostnameFacet implements RbelFacet {
         .build();
   }
 
-  private static class RbelHostnameStructureException extends RuntimeException {
+  private static class RbelHostnameStructureException extends RbelException { // NOSONAR
     public RbelHostnameStructureException(String s) {
       super(s);
     }

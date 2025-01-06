@@ -57,9 +57,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MockServer extends LifeCycle {
 
-  private InetSocketAddress remoteSocket;
+  private final InetSocketAddress remoteSocket;
   private HttpActionHandler actionHandler;
-  private Map<SocketAddress, TigerConnectionStatus> connectionStatusMap = new ConcurrentHashMap<>();
+  private final Map<SocketAddress, TigerConnectionStatus> connectionStatusMap = new ConcurrentHashMap<>();
   private NettySslContextFactory serverSslContextFactory;
   private NettySslContextFactory clientSslContextFactory;
 
@@ -147,8 +147,9 @@ public class MockServer extends LifeCycle {
     connectionStatusMap.remove(socketAddress);
   }
 
-  public void addRoute(Expectation expectation) {
+  public Expectation addRoute(Expectation expectation) {
     getHttpState().add(expectation);
+    return expectation;
   }
 
   @RequiredArgsConstructor

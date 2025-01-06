@@ -19,11 +19,13 @@ package de.gematik.rbellogger;
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
+import java.util.List;
+import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.BeforeAll;
@@ -31,7 +33,7 @@ import org.junit.jupiter.api.Test;
 
 class RbelOversizeMessageFilterTest {
 
-  private static RbelLogger rbelLogger;
+  private static RbelElement msg;
 
   @BeforeAll
   static void initializeRbelLogger() throws IOException {
@@ -40,20 +42,20 @@ class RbelOversizeMessageFilterTest {
             + "{\"foo\":\""
             + RandomStringUtils.insecure().nextAlphabetic(50_000_000)
             + "\"}\r\n";
-    rbelLogger = RbelLogger.build();
-    rbelLogger
+    val rbelLogger = RbelLogger.build();
+    msg = rbelLogger
         .getRbelConverter()
-        .parseMessage(oversizedRequest.getBytes(), null, null, Optional.empty());
+        .convertElement(oversizedRequest.getBytes(), null);
   }
 
   @Test
   void oversizedMessageShouldNotBeParsed() {
-    assertThat(rbelLogger.getMessageList().get(0).getFirst("body").get().getFacets()).isEmpty();
+    assertThat(msg.getFirst("body").get().getFacets()).isEmpty();
   }
 
   @Test
   void oversizedMessageShouldNotBeRendered() throws Exception {
-    final String html = RbelHtmlRenderer.render(rbelLogger.getMessageList());
+    final String html = RbelHtmlRenderer.render(List.of(msg));
 
     FileUtils.writeStringToFile(new File("target/large.html"), html, StandardCharsets.UTF_8);
 

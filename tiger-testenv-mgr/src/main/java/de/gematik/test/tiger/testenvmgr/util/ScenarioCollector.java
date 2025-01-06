@@ -17,7 +17,12 @@
 
 package de.gematik.test.tiger.testenvmgr.util;
 
+import static java.lang.String.join;
+
+import de.gematik.test.tiger.testenvmgr.api.model.mapper.TigerTestIdentifier;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -31,15 +36,15 @@ public class ScenarioCollector {
   @SuppressWarnings(
       "java:S1319") // i want a SequencedSet (java >= 21) and LinkedHashSet is the next
   // best thing
-  public static LinkedHashSet<TestIdentifier> collectScenarios(TestPlan testPlan) {
+  public static LinkedHashSet<TigerTestIdentifier> collectTigerScenarios(TestPlan testPlan) {
     var roots = testPlan.getRoots();
 
     return roots.stream()
-        .map(r -> collectScenarios(testPlan, r))
+        .map(r -> collectTigerScenarios(testPlan, r))
         .flatMap(Set::stream)
         .filter(
             t ->
-                t.getUniqueIdObject().getSegments().stream()
+                t.getTestIdentifier().getUniqueIdObject().getSegments().stream()
                     .anyMatch(s -> s.getType().equals("engine") && s.getValue().equals("cucumber")))
         .collect(Collectors.toCollection(LinkedHashSet::new));
   }
@@ -47,20 +52,49 @@ public class ScenarioCollector {
   @SuppressWarnings(
       "java:S1319") // i want a SequencedSet (java >= 21) and LinkedHashSet is the next
   // best thing
-  private static LinkedHashSet<TestIdentifier> collectScenarios(
+  private static LinkedHashSet<TigerTestIdentifier> collectTigerScenarios(
       TestPlan testplan, TestIdentifier root) {
-    var result = new LinkedHashSet<TestIdentifier>();
+    var result = new LinkedHashSet<TigerTestIdentifier>();
     if (root.isTest()) {
-      result.add(root);
+
+      result.add(
+          TigerTestIdentifier.builder()
+              .testIdentifier(root)
+              .displayName(root.getDisplayName())
+              .build());
       return result;
     }
-    for (TestIdentifier child : testplan.getChildren(root.getUniqueIdObject())) {
-      if (child.isContainer()) {
-        result.addAll(collectScenarios(testplan, child));
-      } else {
-        result.add(child);
-      }
-    }
+    testplan
+        .getChildren(root.getUniqueIdObject())
+        .forEach(
+            child -> {
+              if (child.isContainer()) {
+                result.addAll(collectTigerScenarios(testplan, child));
+              } else {
+                String displayName = describeTest(testplan, child);
+                result.add(
+                    TigerTestIdentifier.builder()
+                        .testIdentifier(child)
+                        .displayName(displayName)
+                        .build());
+              }
+            });
     return result;
+  }
+
+  // method copied from
+  // org.junit.platform.launcher.listeners.MutableTestExecutionSummary.describeTest
+  private static String describeTest(TestPlan testPlan, TestIdentifier testIdentifier) {
+    List<String> descriptionParts = new ArrayList<>();
+    collectTestDescription(testPlan, testIdentifier, descriptionParts);
+    return join(":", descriptionParts);
+  }
+
+  private static void collectTestDescription(
+      TestPlan testPlan, TestIdentifier identifier, List<String> descriptionParts) {
+    descriptionParts.add(0, identifier.getDisplayName());
+    testPlan
+        .getParent(identifier)
+        .ifPresent(parent -> collectTestDescription(testPlan, parent, descriptionParts));
   }
 }

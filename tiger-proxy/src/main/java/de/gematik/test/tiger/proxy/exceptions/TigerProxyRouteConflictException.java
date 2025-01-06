@@ -20,7 +20,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRou
 import lombok.Getter;
 
 @Getter
-public class TigerProxyRouteConflictException extends TigerProxyConfigurationException {
+public class TigerProxyRouteConflictException extends TigerProxyConfigurationException { // NOSONAR
 
   private final TigerConfigurationRoute existingRoute;
 

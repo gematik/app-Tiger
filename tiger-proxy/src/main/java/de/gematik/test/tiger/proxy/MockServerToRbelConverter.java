@@ -25,7 +25,10 @@ import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.mockserver.model.Header;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
+import de.gematik.test.tiger.mockserver.model.SocketAddress;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyParsingException;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
+import de.gematik.test.tiger.proxy.exceptions.TigerRoutingErrorFacet;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -37,6 +40,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.Arrays;
 
@@ -92,18 +96,23 @@ public class MockServerToRbelConverter {
     return rbelConverter
         .parseMessageAsync(
             new RbelElementConvertionPair(requestToRbelMessage(request)),
-            RbelHostname.fromString(request.getRemoteAddress()).orElse(null),
+            RbelHostname.fromString(request.getSenderAddress()).orElse(null),
             convertUri(protocolAndHost),
             timestamp)
         .thenApply(e -> addHttpRequestFacetIfNotPresent(request, e));
   }
 
-  public RbelElement convertErrorResponse(HttpRequest request, String protocolAndHost) {
+  public RbelElement convertErrorResponse(
+      HttpRequest request, String protocolAndHost, TigerProxyRoutingException routingException) {
+    val message = new RbelElement(new byte[] {}, null);
+    message.addFacet(new TigerRoutingErrorFacet(routingException));
     return rbelConverter.parseMessage(
-        new byte[0],
+        new RbelElementConvertionPair(message),
         convertUri(protocolAndHost),
-        RbelHostname.fromString(request.getRemoteAddress()).orElse(null),
-        Optional.of(ZonedDateTime.now()));
+        Optional.ofNullable(request.getReceiverAddress())
+            .map(SocketAddress::toRbelHostname)
+            .orElse(null),
+        Optional.of(routingException.getTimestamp()));
   }
 
   private RbelElement addHttpRequestFacetIfNotPresent(HttpRequest request, RbelElement element) {

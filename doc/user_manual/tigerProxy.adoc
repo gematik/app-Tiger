@@ -100,6 +100,31 @@ tigerProxy:
 
 and you execute GET http://my.domain/deep/deeper, you will get the result of GET http://orf.at/blub/deeper (the /deep in between has been eliminated along with my.domain).
 
+==== Trailing Slashes
+
+Trailing slashes in routes may be significant for the server. Thus, the handling in the tiger-proxy is important. To achieve a consistent behavior while maintaining ease of use, the following rules apply:
+
+* If the request is longer then the from-path of the route (eg. if the "from" is "/foo" and the request is "/foo/bar", then "/bar" is the deep-path), the trailing slash behavior from the request is taken. This only is the case for more path-fragments (/foo/bar), and not simply a longer string (/foobar), as this would not be matched to the route.
+* If the to-URL has a trailing slash, the request is forwarded with a trailing slash.
+* Finally, if the request ends with a slash and the from-URL does NOT end with one, a trailing slash is added. (The logic being the slash in the from-URL expresses an anticipated slash. Thus, a slash being present in the request is simply "expected".)
+
+This leads to the following examples:
+
+[%autowidth]
+|===
+|from | to | request | forwarded to
+
+|"/webapp/" | "/api/" | "/webapp" | "/api/"
+|"/webapp/" | "/api" | "/webapp" | "/api"
+|"/webapp/" | "/api/" | "/webapp/" | "/api/"
+|"/webapp/" | "/api" | "/webapp/" | "/api"
+|"/webapp" | "/api/" | "/webapp" | "/api/"
+|"/webapp" | "/api" | "/webapp" | "/api"
+|"/webapp" | "/api/" | "/webapp/" | "/api/"
+|"/webapp" | "/api" | "/webapp/" | "/api/"
+|"/webapp<irrelevant>" | "/api<irrelevant>" | "/webapp/foo" | "/api/foo"
+|===
+
 ==== hosts
 
 In some instances you might be pressed to "hosts" multiple servers on one tiger-proxy. This can happen when you can influence DNS-Resolvement, but neither the path nor the port used. In this case you can use the hosts-property to define which hosts should be routed to which target.
@@ -769,13 +794,14 @@ tigerProxy:
     directReverseProxy:
         hostname: 127.0.0.1
         port: 3858
+        ignoreConnectionErrors: false
 ----
 
 This will directly forward any request to the given host.
 This is a form of reverseProxy, only also applicable for non-http-traffic.
 HTTP traffic will still be forwarded through use of a global reverse proxy.
 Other traffic will be directly forwarded, rerouted directly on the TCP layer.
-Messages transmitted can still be parsed via RBel.
+Messages transmitted can still be parsed via RBel. If the optional flag `ignoreConnectionErrors` is true, no connection errors will be logged, the default is false.
 
 ==== activateTrafficLogging
 

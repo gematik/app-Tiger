@@ -26,13 +26,11 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
 import java.util.Optional;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.SuperBuilder;
+import lombok.*;
 
 @EqualsAndHashCode(callSuper = true)
-@Data
-@SuperBuilder
+@Getter
+@Setter
 public class RbelCetpFacet extends RbelRequestFacet {
 
   static {
@@ -85,6 +83,17 @@ public class RbelCetpFacet extends RbelRequestFacet {
 
   private final RbelElement messageLength;
   private final RbelElement body;
+
+  @Builder
+  public RbelCetpFacet(
+      String menuInfoString,
+      Boolean responseRequired,
+      RbelElement messageLength,
+      RbelElement body) {
+    super(menuInfoString, responseRequired);
+    this.messageLength = messageLength;
+    this.body = body;
+  }
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {

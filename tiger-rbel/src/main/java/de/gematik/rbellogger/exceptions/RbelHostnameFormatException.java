@@ -16,13 +16,11 @@
 
 package de.gematik.rbellogger.exceptions;
 
-public class RbelHostnameFormatException extends RuntimeException {
+import de.gematik.test.tiger.exceptions.GenericTigerException;
+
+public class RbelHostnameFormatException extends GenericTigerException {
 
   public RbelHostnameFormatException(String message, Exception exception) {
     super(message, exception);
-  }
-
-  public RbelHostnameFormatException(String message) {
-    super(message);
   }
 }

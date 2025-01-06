@@ -25,12 +25,12 @@ import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.data.facet.RbelSmtpCommandFacet;
 import de.gematik.rbellogger.data.facet.RbelSmtpResponseFacet;
 import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
-import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.util.EmailConversionUtils;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @ConverterInfo(onlyActivateFor = "smtp")
@@ -103,7 +103,10 @@ public class RbelSmtpResponseConverter implements RbelConverterPlugin {
         status = singleResponse.group("status");
         body = Optional.ofNullable(singleResponse.group("body"));
       } else {
-        throw new RbelConversionException("unknown response syntax");
+        log.atDebug()
+            .addArgument(() -> StringUtils.abbreviate(response, 300))
+            .log("unknown SMTP response syntax: {}");
+        return Optional.empty();
       }
     }
 

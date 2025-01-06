@@ -49,6 +49,7 @@ import lombok.Builder;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -399,10 +400,12 @@ public class ZionRequestExecutor {
                   .flatMap(entry -> entry.getValue().stream().map(v -> entry.getKey() + ": " + v))
                   .collect(Collectors.joining("\r\n"));
     }
-    header += "\r\n\r\n";
-    if (response.hasBody()) {
-      return ArrayUtils.addAll(header.getBytes(), response.getBody());
+    val body = response.getBody();
+    if (body != null) {
+      header += "\r\nContent-Length: " + body.length + "\r\n\r\n";
+      return ArrayUtils.addAll(header.getBytes(), body);
     } else {
+      header += "\r\n\r\n";
       return header.getBytes();
     }
   }

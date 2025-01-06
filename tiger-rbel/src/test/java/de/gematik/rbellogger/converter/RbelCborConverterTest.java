@@ -33,7 +33,6 @@ import java.io.File;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.Optional;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -160,14 +159,12 @@ public class RbelCborConverterTest {
     final RbelElement convertMessage =
         rbelLogger
             .getRbelConverter()
-            .parseMessage(
+            .convertElement(
                 ArrayUtils.addAll(
                     ("HTTP/1.1 200\r\nConnection: keep-alive\r\n\r\n").getBytes(),
                     Hex.decode(
                         "D90100D81C86D81C86656669727374645365616E646C61737465486F6164656A6F636375706174696F6E66777269746572D81D01D81D01D81C86D81900D81901D8190266436F6E6E6572D819046A70726F6772616D6D6572D81D02D81D02")),
-                null,
-                null,
-                Optional.empty());
+                null);
 
     assertThatNoException()
         .isThrownBy(() -> RbelHtmlRenderer.render(rbelLogger.getMessageHistory()));

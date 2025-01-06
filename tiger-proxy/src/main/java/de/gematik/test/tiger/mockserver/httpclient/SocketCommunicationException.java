@@ -16,10 +16,6 @@
 
 package de.gematik.test.tiger.mockserver.httpclient;
 
-/*
- * @author jamesdbloom
- */
-
 /**
  * This exception indicates there was an error while trying to communicate over a socket
  *

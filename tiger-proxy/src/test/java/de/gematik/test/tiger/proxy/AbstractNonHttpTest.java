@@ -28,13 +28,13 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInf
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
+import de.gematik.test.tiger.mockserver.model.BinaryMessage;
+import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
+import java.net.*;
 import java.security.KeyStore;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -51,6 +51,7 @@ import lombok.Data;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -132,24 +133,29 @@ public abstract class AbstractNonHttpTest {
           (MockServerConfiguration)
               ReflectionTestUtils.getField(
                   ReflectionTestUtils.getField(tigerProxy, "mockServer"), "configuration");
-      final de.gematik.test.tiger.mockserver.model.BinaryProxyListener oldListener =
-          configuration.binaryProxyListener();
+      val oldListener = configuration.binaryProxyListener();
       configuration.binaryProxyListener(
-          (binaryMessage, completableFuture, socketAddress, socketAddress1) -> {
-            log.info(
-                "ports are {} and {}",
-                ((InetSocketAddress) socketAddress).getPort(),
-                ((InetSocketAddress) socketAddress1).getPort());
-            // with new direct connection to remote server, there is no longer
-            // pairing of request/response, so we identify it based on the direction the message
-            // is
-            // going
-            if (((InetSocketAddress) socketAddress).getPort() == listenerServer.getLocalPort()) {
-              handlerCalledRequest.incrementAndGet();
-            } else {
-              handlerCalledResponse.incrementAndGet();
+          new BinaryExchangeHandler(tigerProxy) {
+            @Override
+            public void onProxy(
+                BinaryMessage binaryMessage,
+                Optional<CompletableFuture<BinaryMessage>> completableFuture,
+                SocketAddress serverAddress,
+                SocketAddress clientAddress) {
+              log.info(
+                  "ports are {} and {}",
+                  ((InetSocketAddress) serverAddress).getPort(),
+                  ((InetSocketAddress) clientAddress).getPort());
+              // with new direct connection to remote server, there is no longer
+              // pairing of request/response, so we identify it based on the direction the message
+              // is going
+              if (((InetSocketAddress) serverAddress).getPort() == listenerServer.getLocalPort()) {
+                handlerCalledRequest.incrementAndGet();
+              } else {
+                handlerCalledResponse.incrementAndGet();
+              }
+              oldListener.onProxy(binaryMessage, completableFuture, serverAddress, clientAddress);
             }
-            oldListener.onProxy(binaryMessage, completableFuture, socketAddress, socketAddress1);
           });
 
       CompletableFuture<Void> executionResult =

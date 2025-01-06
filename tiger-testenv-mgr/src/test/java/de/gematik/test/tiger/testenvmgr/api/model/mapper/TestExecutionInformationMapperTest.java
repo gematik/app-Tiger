@@ -55,7 +55,7 @@ class TestExecutionInformationMapperTest {
         .containsExactly(
             "dummyTest1: dummy display name",
             "dummyTest2: dummy display name",
-            "dummyTest3: dummy display name",
-            "dummyTest4: dummy display name");
+            "dummyContainerDescriptor: dummy display name:dummyTest3: dummy display name",
+            "dummyContainerDescriptor: dummy display name:dummyTest4: dummy display name");
   }
 }

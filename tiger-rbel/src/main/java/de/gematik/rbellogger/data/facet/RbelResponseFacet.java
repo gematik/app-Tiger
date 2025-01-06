@@ -16,12 +16,13 @@
 
 package de.gematik.rbellogger.data.facet;
 
-import lombok.Data;
 
-/** Empty marker: The element is a response. */
-@Data
-public class RbelResponseFacet implements RbelFacet {
+import lombok.Builder;
 
-  /** Short info string describing this request. Will primarily be displayed in the menu. */
-  private final String menuInfoString;
+public class RbelResponseFacet extends RbelMessageInfoFacet {
+
+  @Builder
+  public RbelResponseFacet(String menuInfoString) {
+    super("fa-reply", "text-success", menuInfoString, "RES", "Response");
+  }
 }

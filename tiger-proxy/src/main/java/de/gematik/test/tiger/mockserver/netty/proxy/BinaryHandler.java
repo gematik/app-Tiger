@@ -17,16 +17,16 @@
 package de.gematik.test.tiger.mockserver.netty.proxy;
 
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.closeOnFlush;
-import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.connectionClosedException;
 import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.getRemoteAddress;
 import static de.gematik.test.tiger.mockserver.model.BinaryMessage.bytes;
 import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.isSslEnabledUpstream;
 
+import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.httpclient.BinaryRequestInfo;
 import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
-import de.gematik.test.tiger.mockserver.model.BinaryProxyListener;
+import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
@@ -47,7 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
   private final NettyHttpClient httpClient;
-  private final BinaryProxyListener binaryExchangeCallback;
+  private final BinaryExchangeHandler binaryExchangeCallback;
 
   public BinaryHandler(
       final MockServerConfiguration configuration, final NettyHttpClient httpClient) {
@@ -107,13 +107,8 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-    if (connectionClosedException(cause)) {
-      log.error(
-          "exception caught by {} handler -> closing pipeline {}",
-          this.getClass(),
-          ctx.channel(),
-          cause);
-    }
+    binaryExchangeCallback.propagateExceptionMessageSafe(
+        cause, RbelHostname.create(ctx.channel().remoteAddress()), null);
     closeOnFlush(ctx.channel());
   }
 }

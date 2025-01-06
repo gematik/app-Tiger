@@ -563,15 +563,16 @@ class RbelMessageValidatorTest extends AbstractRbelMessageValidatorTest {
     glue.currentRequestBodyMatches("!{rbel:currentRequestAsString('$.body')}");
     glue.currentRequestMessageAttributeMatches("$.body.foo", "bar");
     glue.currentRequestMessageContainsNode("$.body.foo");
-    glue.currentRequestMessageAtMatchesDocString("$.body", "{\"foo\":\"bar\"}\r\n");
+    glue.currentRequestMessageAtMatchesDocString("$.body", "{\"foo\":\"bar\"}");
     glue.currentRequestAtMatchesAsJsonOrXml("$.body", ModeType.JSON, oracleStr);
     glue.currentRequestMessageAttributeDoesNotMatch("$.body.foo", "foo");
   }
 
-  @Test
+    @Test
   void testCurrentRequestMatchesJsonSchemaWithPlaceholdersReplacement() {
     val responseToCheck = """
       HTTP/1.1 200 OK
+      Content-Length: 18
 
       ["hello", "world"]
       """;

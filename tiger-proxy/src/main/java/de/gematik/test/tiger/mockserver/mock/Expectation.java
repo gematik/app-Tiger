@@ -16,17 +16,21 @@
 
 package de.gematik.test.tiger.mockserver.mock;
 
+import static de.gematik.test.tiger.mockserver.model.HttpRequest.request;
+
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationCallback;
-import de.gematik.test.tiger.mockserver.mock.action.ExpectationForwardAndResponseCallback;
 import de.gematik.test.tiger.mockserver.model.*;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
+import de.gematik.test.tiger.proxy.handler.ForwardProxyCallback;
+import de.gematik.test.tiger.proxy.handler.ReverseProxyCallback;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.regex.PatternSyntaxException;
 import lombok.*;
 import lombok.experimental.Accessors;
 import lombok.extern.slf4j.Slf4j;
@@ -41,22 +45,27 @@ import org.apache.http.client.utils.URIBuilder;
 @Accessors(chain = true)
 @Getter
 @Slf4j
-@Builder(toBuilder = true)
-@AllArgsConstructor
 public class Expectation extends ObjectWithJsonToString implements Comparable<Expectation> {
 
-  @Setter private String id = UUID.randomUUID().toString();
+  private static final int BASE_PRIORITY_FORWARD_ROUTE = 1_000_000;
+  private final String id;
   @Setter private TigerProxyRoute tigerRoute;
   private final int priority;
   private final HttpRequest requestPattern;
-  @Setter private HttpAction httpAction;
+  private final HttpAction httpAction;
   private final List<String> hostRegexes;
   private final boolean ignorePortsInHostHeader;
-  private ExpectationCallback expectationCallback;
+  private final ExpectationCallback expectationCallback;
 
-  public Expectation(HttpRequest requestDefinition, int priority, List<String> hostRegexes) {
-    this.requestPattern = requestDefinition;
+  @Builder(toBuilder = true)
+  public Expectation(HttpRequest requestPattern, String id, int priority, List<String> hostRegexes, ExpectationCallback expectationCallback) {
+    this.requestPattern = requestPattern;
     this.priority = priority;
+    if (id == null) {
+      this.id = UUID.randomUUID().toString();
+    } else {
+    this.id = id;
+    }
     if (hostRegexes == null) {
       this.hostRegexes = List.of();
       this.ignorePortsInHostHeader = true;
@@ -64,21 +73,54 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
       this.hostRegexes = hostRegexes.stream().map(String::trim).toList();
       this.ignorePortsInHostHeader = hostRegexes.stream().noneMatch(h -> h.contains(":"));
     }
-  }
-
-  public Expectation thenForward(ExpectationForwardAndResponseCallback callback) {
+    this.expectationCallback = expectationCallback;
     this.httpAction =
         HttpAction.of(new HttpOverrideForwardedRequest())
-            .setExpectationForwardAndResponseCallback(callback);
-    this.expectationCallback = callback;
-    return this;
+          .setExpectationForwardAndResponseCallback(expectationCallback);
+  }
+
+  public static Expectation buildReverseProxyRoute(
+      final TigerProxyRoute tigerRoute, final TigerProxy tigerProxy) {
+    return Expectation.builder()
+        .requestPattern(
+            request()
+                .setPath(addTrailingSlashIfMissing(tigerRoute.getFrom()))
+                .setForwardProxyRequest(false))
+        .priority(0)
+        .hostRegexes(tigerRoute.getHosts())
+        .id(tigerRoute.getId())
+        .expectationCallback(new ReverseProxyCallback(tigerProxy, tigerRoute))
+        .build();
+  }
+
+  public static Expectation buildForwardProxyRoute(
+      final TigerProxyRoute tigerRoute, final TigerProxy tigerProxy) {
+    final URL url = tigerRoute.retrieveFromUrl();
+    return Expectation.builder()
+        .requestPattern(
+            request()
+                .withHeader("Host", url.getAuthority())
+                .setForwardProxyRequest(true)
+                .setSecure(url.getProtocol().equals("https"))
+                .setPath(addTrailingSlashIfMissing(extractPath(tigerRoute.getFrom()))))
+        .priority(BASE_PRIORITY_FORWARD_ROUTE)
+        .hostRegexes(tigerRoute.getHosts())
+        .id(tigerRoute.getId())
+        .expectationCallback(new ForwardProxyCallback(tigerProxy, tigerRoute))
+        .build();
+  }
+
+  @SneakyThrows
+  private static String extractPath(String url) {
+    return new URI(url).getPath();
   }
 
   public boolean matches(HttpRequest request) {
     return protocolMatches(this.requestPattern.getProtocol(), request.getProtocol())
         && secureMatches(request)
         && hostMatches(request)
-        && pathMatches(this.requestPattern.getPath(), request.getPath())
+        && pathMatches(
+            this.requestPattern.getPath(), addTrailingSlashIfMissing(request.getPath()))
         && (expectationCallback == null || expectationCallback.matches(request));
   }
 
@@ -124,7 +166,9 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
             .anyMatch(
                 hostMatchCriterion ->
                     cleanedHostHeader.equalsIgnoreCase(hostMatchCriterion)
-                        || cleanedHostHeader.toLowerCase().matches(hostMatchCriterion.toLowerCase()));
+                        || cleanedHostHeader
+                            .toLowerCase()
+                            .matches(hostMatchCriterion.toLowerCase()));
     if (!anyHostHeaderMatch) {
       log.atTrace()
           .addArgument(() -> cleanedHostHeader)
@@ -159,33 +203,19 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
     if (StringUtils.isBlank(blueprint)) {
       return true;
     } else {
-      if (actualValue != null) {
-        // match as exact string
-        if (actualValue.equalsIgnoreCase(blueprint)) {
-          return true;
-        }
-
-        // match as regex - matcher -> matched (data plane or control plane)
-        try {
-          if (actualValue.matches(blueprint)) {
-            return true;
-          }
-        } catch (PatternSyntaxException pse) {
-          log.debug("error while matching regex [{}] for string [{}]", blueprint, actualValue, pse);
-        }
-        // match as regex - matched -> matcher (control plane only)
-        try {
-          if (blueprint.matches(actualValue)) {
-            return true;
-          }
-        } catch (PatternSyntaxException pse) {
-          log.debug("error while matching regex [{}] for string [{}]", actualValue, blueprint, pse);
-        }
+      if (actualValue.startsWith(blueprint)) {
+        return true;
       }
     }
     log.atTrace()
         .addArgument(actualValue)
-        .addArgument(tigerRoute::createShortDescription)
+        .addArgument(
+            () -> {
+              if (tigerRoute == null) {
+                return "<null>";
+              }
+              return tigerRoute.createShortDescription();
+            })
         .log("path [{}] is not matching for route {}");
     return false;
   }
@@ -217,7 +247,7 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
     }
   }
 
-  private static boolean uriTwoIsBelowUriOne(final String uri1, final String uri2) {
+  public static boolean uriTwoIsBelowUriOne(final String uri1, final String uri2) {
     try {
       URIBuilder base = new URIBuilder(uri2);
       URIBuilder sub = new URIBuilder(uri1);
@@ -228,6 +258,14 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
       return subUri.getPath().startsWith(baseUri.getPath()) && !baseUri.equals(subUri);
     } catch (URISyntaxException e) {
       return false;
+    }
+  }
+
+  private static String addTrailingSlashIfMissing(String from) {
+    if (from.endsWith("/")) {
+      return from;
+    } else {
+      return from + "/";
     }
   }
 

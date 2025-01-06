@@ -67,4 +67,43 @@ public abstract class AbstractRouteProxyCallback extends AbstractTigerRouteCallb
       return originalLocation;
     }
   }
+
+  public String patchPath(String requestPath) {
+    String unmatchedRequestPath = requestPath.replaceFirst(getTargetUrl().toString(), "");
+    if (!sourceUri.getPath().equals("/")) {
+      unmatchedRequestPath =
+        unmatchedRequestPath.substring(
+          Math.min(unmatchedRequestPath.length(), sourceUri.getPath().length()));
+    }
+    final String actualUrl =
+      concatenateUrlFragments(getTargetUrl().getPath(), unmatchedRequestPath);
+    if (unmatchedRequestPath.isBlank() && shouldAddTrailingSlash(requestPath)) {
+      return concatenateUrlFragments(actualUrl, "/");
+    } else {
+      return actualUrl;
+    }
+  }
+
+  private boolean shouldAddTrailingSlash(String requestPath) {
+    if (isAddTrailingSlash()) {
+      return true;
+    }
+    return requestPath.endsWith("/") && (!getTigerRoute().getFrom().endsWith("/"));
+  }
+
+  private String concatenateUrlFragments(String path, String unmatchedRequestPath) {
+    if (path.endsWith("/") && unmatchedRequestPath.startsWith("/")) {
+      return path + unmatchedRequestPath.substring(1);
+    } else if (!path.endsWith("/") && !unmatchedRequestPath.startsWith("/")) {
+      if (unmatchedRequestPath.isBlank()) {
+        return path;
+      }
+      if (path.isBlank()) {
+        return unmatchedRequestPath;
+      }
+      return path + "/" + unmatchedRequestPath;
+    } else {
+      return path + unmatchedRequestPath;
+    }
+  }
 }

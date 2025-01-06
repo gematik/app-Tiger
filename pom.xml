@@ -24,7 +24,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger</artifactId>
-    <version>3.4.6</version>
+    <version>3.4.7</version>
 
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
@@ -48,7 +48,6 @@
         <version.commons-collections>3.2.2</version.commons-collections>
         <version.commons-collections4>4.4</version.commons-collections4>
         <version.cucumber>7.19.0</version.cucumber>
-        <version.datatable>7.19.0</version.datatable>
         <version.groovy>4.0.23</version.groovy>
         <version.gson>2.11.0</version.gson>
         <version.hamcrest>2.2</version.hamcrest>
@@ -61,8 +60,10 @@
         <version.json>20230618</version.json>
         <!-- 20240303 -->
         <version.json-unit>3.4.1</version.json-unit>
-        <version.junit5>5.10.3</version.junit5>
-        <version.junit-platform>1.10.3</version.junit-platform>
+        <!-- junit 5 and junit-platform should be in sync -->
+        <version.junit-minor-version>11.0</version.junit-minor-version>
+        <version.junit5>5.${version.junit-minor-version}</version.junit5>
+        <version.junit-platform>1.${version.junit-minor-version}</version.junit-platform>
         <version.logback>1.5.8</version.logback>
         <version.lombok>1.18.34</version.lombok>
         <version.maven>3.9.9</version.maven>
@@ -321,17 +322,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>io.cucumber</groupId>
-                <artifactId>datatable</artifactId>
-                <version>${version.datatable}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.cucumber</groupId>
-                <artifactId>datatable-matchers</artifactId>
-                <version>${version.datatable}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
                 <version>${version.assertj}</version>
@@ -382,18 +372,8 @@
                 <version>${version.junit5}</version>
             </dependency>
             <dependency>
-                <groupId>org.junit.jupiter</groupId>
-                <artifactId>junit-jupiter-params</artifactId>
-                <version>${version.junit5}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-suite</artifactId>
-                <version>${version.junit-platform}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.junit.platform</groupId>
-                <artifactId>junit-platform-suite-api</artifactId>
                 <version>${version.junit-platform}</version>
             </dependency>
             <dependency>

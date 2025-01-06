@@ -76,8 +76,8 @@ public abstract class TestExecutionResultMapper {
     return new TestExecutionResultTestsInnerDto()
         .result(testResultWithId.getTestExecutionResult().orElse(null))
         .test(
-            testDescriptionMapper.testIdentifierToTestDescription(
-                testResultWithId.getTestIdentifier()));
+            testDescriptionMapper.tigerTestIdentifierToTestDescription(
+                testResultWithId.getTigerTestIdentifier()));
   }
 
   public ExecutionResultDto testExecutionStatusToExecutionResultDto(

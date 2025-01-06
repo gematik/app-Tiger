@@ -16,7 +16,9 @@
 
 package de.gematik.rbellogger.exceptions;
 
-public class RbelPkiException extends RuntimeException {
+import de.gematik.test.tiger.exceptions.GenericTigerException;
+
+public class RbelPkiException extends GenericTigerException {
   public RbelPkiException(String msg) {
     super(msg);
   }

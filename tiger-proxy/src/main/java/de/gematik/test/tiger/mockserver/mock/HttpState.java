@@ -41,9 +41,9 @@ public class HttpState {
   private final List<Expectation> expectations = new ArrayList<>();
 
   public static void setPort(final HttpRequest request) {
-    if (request != null && request.getSocketAddress() != null) {
-      setPort(request.getSocketAddress().getPort());
-      request.setSocketAddress(null);
+    if (request != null && request.getReceiverAddress() != null) {
+      setPort(request.getReceiverAddress().getPort());
+      request.setReceiverAddress(null);
     }
   }
 

@@ -20,6 +20,7 @@ import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.util.*;
+import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -446,7 +447,7 @@ public class RbelElement extends RbelPathAble {
     return result;
   }
 
-  private static class RbelPathNotUniqueException extends RuntimeException {
+  private static class RbelPathNotUniqueException extends GenericTigerException {
 
     public RbelPathNotUniqueException(String s) {
       super(s);

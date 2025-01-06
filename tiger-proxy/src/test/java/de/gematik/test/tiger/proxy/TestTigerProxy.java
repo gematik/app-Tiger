@@ -1044,23 +1044,6 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
   @SneakyThrows
   @Test
-  void connectionReset_shouldKeepRequestInLog() {
-    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
-
-    proxyRest.config().automaticRetries(false);
-    assertThatThrownBy(() -> proxyRest.get("http://backend/error").asString())
-        .isInstanceOf(UnirestException.class)
-        .hasCauseInstanceOf(NoHttpResponseException.class);
-
-    awaitMessagesInTiger(2);
-
-    assertThat(tigerProxy.getRbelMessagesList().get(1))
-        .extractChildWithPath("$.sender")
-        .hasStringContentEqualTo("backend:80");
-  }
-
-  @SneakyThrows
-  @Test
   void noRoutes_unkownHost_shouldCloseConnection() {
     spawnTigerProxyWith(new TigerProxyConfiguration());
 

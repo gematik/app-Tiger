@@ -78,6 +78,7 @@ class CetpConverterTest {
         .isEqualTo(286);
   }
 
+  @SneakyThrows
   @Test
   @SuppressWarnings("java:S2699")
   void checkRendering() {

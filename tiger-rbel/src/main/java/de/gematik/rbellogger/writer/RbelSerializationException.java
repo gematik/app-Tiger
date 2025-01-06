@@ -16,7 +16,9 @@
 
 package de.gematik.rbellogger.writer;
 
-public class RbelSerializationException extends RuntimeException {
+import de.gematik.test.tiger.exceptions.GenericTigerException;
+
+public class RbelSerializationException extends GenericTigerException {
 
   public RbelSerializationException(String s) {
     super(s);

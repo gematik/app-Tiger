@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.proxy.client;
 
+import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
@@ -74,6 +75,8 @@ public class TracingMessageIsolani implements TracingMessageFrame {
                     message.getTracingDto().getRequestUuid(),
                     e);
                 throw e;
+              } finally {
+                RbelConverter.setMessageFullyProcessed(msg);
               }
             })
         .exceptionally(
@@ -91,9 +94,10 @@ public class TracingMessageIsolani implements TracingMessageFrame {
   private void doPostConversion(RbelElement msg) {
     msg.addOrReplaceFacet(
         msg.getFacetOrFail(RbelTcpIpMessageFacet.class).toBuilder()
-            .sequenceNumber(message.getTracingDto().getSequenceNumberRequest())
             .receivedFromRemoteWithUrl(remoteProxyClient.getRemoteProxyUrl())
             .build());
+
+    msg.addFacet(message.getTracingDto().getProxyTransmissionHistoryRequest());
 
     triggerPostConversionListener(msg);
 

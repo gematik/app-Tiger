@@ -70,6 +70,7 @@ class TigerWebUiControllerTest {
     fakeBackendServerPort = runtimeInfo.getHttpPort();
     log.info("Started Backend-Server on port {}", fakeBackendServerPort);
 
+    runtimeInfo.getWireMock().resetMappings();
     runtimeInfo
         .getWireMock()
         .register(
@@ -81,18 +82,20 @@ class TigerWebUiControllerTest {
 
     tigerProxy.clearAllMessages();
 
-    val proxyRest = Unirest.spawnInstance();
-    proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());
-    System.out.println(
-        proxyRest
-            .get("http://localhost:" + fakeBackendServerPort + "/foobar")
-            .asString()
-            .getStatus());
-    System.out.println(
-        proxyRest
-            .post("http://localhost:" + fakeBackendServerPort + "/foobar")
-            .asString()
-            .getBody());
+    try (val proxyRest = Unirest.spawnInstance()) {
+      proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());
+
+      System.out.println(
+          proxyRest
+              .get("http://localhost:" + fakeBackendServerPort + "/foobar")
+              .asString()
+              .getStatus());
+      System.out.println(
+          proxyRest
+              .post("http://localhost:" + fakeBackendServerPort + "/foobar")
+              .asString()
+              .getBody());
+    }
 
     TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
         tigerProxy, 4, 10);

@@ -29,15 +29,18 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import de.gematik.rbellogger.data.facet.RbelParsingNotCompleteFacet;
+import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -49,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.*;
 import kong.unirest.Config;
+import kong.unirest.Unirest;
 import kong.unirest.UnirestInstance;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +67,17 @@ import org.junit.jupiter.api.TestInfo;
 @Slf4j
 @WireMockTest(httpsEnabled = true)
 public abstract class AbstractTigerProxyTest {
+
+  public static boolean unirestInitialized = false;
+  static {
+    synchronized (AbstractTigerProxyTest.class) {
+      if (!unirestInitialized && !Unirest.isRunning()) {
+        Unirest.config().reset();
+        Unirest.config().connectTimeout(1000).socketTimeout(1000);
+        unirestInitialized = true;
+      }
+    }
+  }
 
   public static int fakeBackendServerPort = 0;
   public static int fakeBackendServerTlsPort = 0;
@@ -148,6 +163,17 @@ public abstract class AbstractTigerProxyTest {
         .register(
             get("/error")
                 .willReturn(responseDefinition().withFault(Fault.CONNECTION_RESET_BY_PEER)));
+
+    runtimeInfo
+      .getWireMock()
+      .register(
+        get("/api")
+          .willReturn(status(200).withStatusMessage("").withBody("{'request':'body'}")));
+    runtimeInfo
+      .getWireMock()
+      .register(
+        get("/apifoo")
+          .willReturn(status(200).withStatusMessage("").withBody("{'request':'body'}")));
   }
 
   @BeforeEach
@@ -216,8 +242,8 @@ public abstract class AbstractTigerProxyTest {
             new Config()
                 .proxy("localhost", tigerProxy.getProxyPort())
                 .sslContext(tigerProxy.buildSslContext())
-                .connectTimeout(1000 * 1000)
-                .socketTimeout(1000 * 1000)
+                .connectTimeout(5 * 1000)
+                .socketTimeout(5 * 1000)
                 .automaticRetries(false));
 
     log.info(
@@ -314,5 +340,10 @@ public abstract class AbstractTigerProxyTest {
     sslContext.init(kmf.getKeyManagers(), new X509TrustManager[] {x509TrustManager}, null);
 
     return sslContext;
+  }
+
+  public void renderTrafficTo(String filename) throws IOException {
+    final String html = RbelHtmlRenderer.render(tigerProxy.getRbelMessagesList());
+    Files.write(new File("target/" + filename).toPath(), html.getBytes());
   }
 }

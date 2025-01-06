@@ -40,6 +40,7 @@ import j2html.tags.EmptyTag;
 import j2html.tags.Tag;
 import j2html.tags.UnescapedText;
 import j2html.tags.specialized.DivTag;
+import j2html.tags.specialized.PTag;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -57,6 +58,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
@@ -190,7 +192,14 @@ public class RbelHtmlRenderingToolkit {
       return span();
     }
     return span(getElementSequenceNumber(message))
-        .withClass("msg-sequence tag is-info is-light me-3 " + isSize(4) + " test-message-number");
+        .withClass(
+            "msg-sequence tag is-info is-light me-3 "
+                + isSize(4)
+                + " test-message-number "
+                + message
+                    .getFacet(RbelMessageInfoFacet.class)
+                    .map(RbelMessageInfoFacet::getColor)
+                    .orElse(""));
   }
 
   @SuppressWarnings({"rawtypes", "java:S3740"})
@@ -315,17 +324,30 @@ public class RbelHtmlRenderingToolkit {
     JSONObject metaData = new JSONObject();
     metaData.put("uuid", uuid);
     metaData.put("sequenceNumber", Integer.parseInt(getElementSequenceNumber(rbelElement)) - 1);
-    if (rbelElement.hasFacet(RbelRequestFacet.class)) {
-      metaData.put(
-          "menuInfoString", rbelElement.getFacetOrFail(RbelRequestFacet.class).getMenuInfoString());
-    } else {
-      metaData.put(
-          "menuInfoString",
-          rbelElement
-              .getFacet(RbelResponseFacet.class)
-              .map(RbelResponseFacet::getMenuInfoString)
-              .orElse(""));
-    }
+    metaData.put(
+        "menuInfoString",
+        rbelElement
+            .getFacet(RbelMessageInfoFacet.class)
+            .map(RbelMessageInfoFacet::getMenuInfoString)
+            .orElse(""));
+    metaData.put(
+        "symbol",
+        rbelElement
+            .getFacet(RbelMessageInfoFacet.class)
+            .map(RbelMessageInfoFacet::getSymbol)
+            .orElse(null));
+    metaData.put(
+        "abbrev",
+        rbelElement
+            .getFacet(RbelMessageInfoFacet.class)
+            .map(RbelMessageInfoFacet::getAbbrev)
+            .orElse("fdsafdsfas"));
+    metaData.put(
+        "color",
+        rbelElement
+            .getFacet(RbelMessageInfoFacet.class)
+            .map(RbelMessageInfoFacet::getColor)
+            .orElse(""));
     metaData.put(
         "timestamp",
         rbelElement
@@ -463,9 +485,6 @@ public class RbelHtmlRenderingToolkit {
                                             .withClass("rbel-main-content")
                                             .with(
                                                 elements.stream()
-                                                    //
-                                                    // .filter(el ->
-                                                    // el.hasFacet(RbelTcpIpMessageFacet.class))
                                                     .map(this::convertMessage)
                                                     .toList()),
                                         div("Created "
@@ -683,6 +702,26 @@ public class RbelHtmlRenderingToolkit {
 
   public boolean shouldRenderEntitiesWithSize(int length) {
     return rbelHtmlRenderer.getMaximumEntitySizeInBytes() > length;
+  }
+
+  public static PTag buildScrollableTextbox(String text) {
+    return p(new UnescapedText(
+            text.replace("\t", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;").replace("\n", "</br>")))
+        .withStyle("white-space: nowrap; overflow-x: auto; overflow-y: hidden;");
+  }
+
+  public static Iterable<DomContent> collapsibleBox(String title, DomContent content) {
+    String id = "collapse" + RandomStringUtils.insecure().nextAlphabetic(20); // NOSONAR
+    return List.of(
+        p(
+            button(title)
+                .withClass("btn btn-secondary")
+                .attr("data-bs-target", "#" + id)
+                .attr("data-bs-toggle", "collapse")
+                .attr("role", "button")
+                .attr("aria-expanded", "false")
+                .attr("aria-controls", id)),
+        div(div(content).withClass("card card-body")).withClass("collapse").withId(id));
   }
 
   @Builder

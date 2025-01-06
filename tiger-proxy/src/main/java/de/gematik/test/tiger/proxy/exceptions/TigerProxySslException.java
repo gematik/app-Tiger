@@ -16,7 +16,8 @@
 
 package de.gematik.test.tiger.proxy.exceptions;
 
-public class TigerProxySslException extends RuntimeException {
+public class TigerProxySslException extends TigerProxyException { // NOSONAR
+
   public TigerProxySslException(String s, Exception e) {
     super(s, e);
   }

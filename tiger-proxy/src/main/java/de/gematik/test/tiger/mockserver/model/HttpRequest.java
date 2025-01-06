@@ -54,9 +54,8 @@ public class HttpRequest extends HttpMessage<HttpRequest> {
   private List<MockserverX509CertificateWrapper> clientCertificateChain;
   private String tlsVersion = null;
   private String cipherSuite = null;
-  private SocketAddress socketAddress;
-  private String localAddress;
-  private String remoteAddress;
+  private SocketAddress receiverAddress;
+  private String senderAddress;
   private Boolean forwardProxyRequest = false;
   private RbelElement parsedRbelMessage = null;
   private String logCorrelationId;
@@ -73,17 +72,17 @@ public class HttpRequest extends HttpMessage<HttpRequest> {
     if (secure == null) {
       if (tlsVersion != null || cipherSuite != null) {
         setSecure(true);
-      } else if (socketAddress != null && socketAddress.getScheme() != null) {
-        setSecure(socketAddress.getScheme() == SocketAddress.Scheme.HTTPS);
+      } else if (receiverAddress != null && receiverAddress.getScheme() != null) {
+        setSecure(receiverAddress.getScheme() == SocketAddress.Scheme.HTTPS);
       }
     }
     return secure;
   }
 
-  public HttpRequest setSocketAddress(SocketAddress socketAddress) {
-    this.socketAddress = socketAddress;
-    if (socketAddress != null && socketAddress.getScheme() != null) {
-      secure = socketAddress.getScheme() == SocketAddress.Scheme.HTTPS;
+  public HttpRequest setReceiverAddress(SocketAddress receiverAddress) {
+    this.receiverAddress = receiverAddress;
+    if (receiverAddress != null && receiverAddress.getScheme() != null) {
+      secure = receiverAddress.getScheme() == SocketAddress.Scheme.HTTPS;
     }
     return this;
   }
@@ -96,24 +95,24 @@ public class HttpRequest extends HttpMessage<HttpRequest> {
    * @param port the remote port to send request to
    * @param scheme the scheme to use for remote socket
    */
-  public HttpRequest setSocketAddress(String host, Integer port, SocketAddress.Scheme scheme) {
-    setSocketAddress(new SocketAddress().withHost(host).withPort(port).withScheme(scheme));
+  public HttpRequest setReceiverAddress(String host, Integer port, SocketAddress.Scheme scheme) {
+    setReceiverAddress(new SocketAddress().withHost(host).withPort(port).withScheme(scheme));
     return this;
   }
 
-  public HttpRequest setSocketAddress(Boolean isSecure, String host, Integer port) {
+  public HttpRequest setReceiverAddress(Boolean isSecure, String host, Integer port) {
     if (isNotBlank(host)) {
       String[] hostParts = host.split(":");
       boolean secure = Boolean.TRUE.equals(isSecure);
       if (hostParts.length > 1) {
-        setSocketAddress(
+        setReceiverAddress(
             hostParts[0],
             port != null ? port : Integer.parseInt(hostParts[1]),
             secure ? HTTPS : HTTP);
       } else if (secure) {
-        setSocketAddress(host, port != null ? port : 443, HTTPS);
+        setReceiverAddress(host, port != null ? port : 443, HTTPS);
       } else {
-        setSocketAddress(host, port != null ? port : 80, HTTP);
+        setReceiverAddress(host, port != null ? port : 80, HTTP);
       }
     }
     return this;
@@ -234,13 +233,13 @@ public class HttpRequest extends HttpMessage<HttpRequest> {
   }
 
   public InetSocketAddress socketAddressFromHostHeader() {
-    if (socketAddress != null && socketAddress.getHost() != null) {
+    if (receiverAddress != null && receiverAddress.getHost() != null) {
       boolean isSsl =
-          socketAddress.getScheme() != null
-              && socketAddress.getScheme().equals(SocketAddress.Scheme.HTTPS);
+        receiverAddress.getScheme() != null
+              && receiverAddress.getScheme().equals(SocketAddress.Scheme.HTTPS);
       return new InetSocketAddress(
-          socketAddress.getHost(),
-          socketAddress.getPort() != null ? socketAddress.getPort() : isSsl ? 443 : 80);
+        receiverAddress.getHost(),
+        receiverAddress.getPort() != null ? receiverAddress.getPort() : isSsl ? 443 : 80);
     } else if (isNotBlank(getFirstHeader(HOST.toString()))) {
       boolean isSsl = Optional.ofNullable(isSecure()).orElse(false);
       String[] hostHeaderParts = getFirstHeader(HOST.toString()).split(":");

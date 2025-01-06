@@ -17,11 +17,11 @@
 package de.gematik.test.tiger.mockserver.httpclient;
 
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.closeOnFlush;
-import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.connectionClosedException;
 
+import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
-import de.gematik.test.tiger.mockserver.model.BinaryProxyListener;
+import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -40,7 +40,7 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
       AttributeKey.valueOf("OUTGOING_CHANNEL");
   public static final AttributeKey<Channel> INCOMING_CHANNEL =
       AttributeKey.valueOf("INCOMING_CHANNEL");
-  private final BinaryProxyListener binaryProxyListener;
+  private final BinaryExchangeHandler binaryProxyListener;
 
   public BinaryBridgeHandler(MockServerConfiguration configuration) {
     this.binaryProxyListener = configuration.binaryProxyListener();
@@ -65,13 +65,10 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-    if (connectionClosedException(cause)) {
-      log.error(
-          "exception caught by {} handler -> closing pipeline {}",
-          this.getClass(),
-          ctx.channel(),
-          cause);
-    }
+    binaryProxyListener.propagateExceptionMessageSafe(
+        cause,
+        RbelHostname.create(ctx.channel().remoteAddress()),
+        RbelHostname.create(ctx.channel().attr(INCOMING_CHANNEL).get().remoteAddress()));
     closeOnFlush(ctx.channel());
   }
 }

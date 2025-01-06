@@ -22,7 +22,7 @@ import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.data.facet.RbelVauErpFacet;
-import de.gematik.rbellogger.exceptions.RbelPkiException;
+import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.util.CryptoUtils;
 import de.gematik.rbellogger.util.RbelContent;
@@ -139,7 +139,7 @@ public class RbelErpVauDecrpytionConverter implements RbelConverterPlugin {
     } else if (key instanceof SecretKey) {
       return CryptoUtils.decrypt(content, key, 96 / 8, 128 / 8);
     } else {
-      throw new RbelPkiException(
+      throw new RbelConversionException(
           "Unexpected key-type encountered '" + key.getClass().getSimpleName() + "'");
     }
   }
@@ -190,7 +190,8 @@ public class RbelErpVauDecrpytionConverter implements RbelConverterPlugin {
     try {
       return new SecretKeySpec(Hex.decode(hexEncodedKey), "AES");
     } catch (DecoderException e) {
-      throw new RbelPkiException("Error during Key decoding from '" + hexEncodedKey + "'", e);
+      throw new RbelConversionException(
+          "Error during key decoding from '" + hexEncodedKey + "'", e);
     }
   }
 }

@@ -16,14 +16,11 @@
 
 package de.gematik.rbellogger.converter;
 
+import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.google.common.io.Files;
 import de.gematik.rbellogger.RbelLogger;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.time.ZonedDateTime;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class RbelX5cKeyReaderTest {
@@ -33,12 +30,10 @@ class RbelX5cKeyReaderTest {
     RbelLogger logger = RbelLogger.build();
     logger
         .getRbelConverter()
-        .parseMessage(
-            Files.toByteArray(
-                Path.of("src/test/resources/sampleMessages/multipleKeyIds.curl").toFile()),
-            null,
-            null,
-            Optional.of(ZonedDateTime.now()));
+        .convertElement(
+            readCurlFromFileWithCorrectedLineBreaks(
+                "src/test/resources/sampleMessages/multipleKeyIds.curl"),
+            null);
 
     assertThat(logger.getRbelKeyManager().findKeyByName("puk_idp_sig")).isPresent();
   }

@@ -16,10 +16,11 @@
 
 package de.gematik.test.tiger.proxy;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LENIENT_HTTP_PARSING;
 import static org.awaitility.Awaitility.await;
 
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
+import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
@@ -36,6 +37,7 @@ class IdpDecryptionTest {
 
   @Test
   void shouldAddRecordIdFacetToAllHandshakeMessages() throws Exception {
+    LENIENT_HTTP_PARSING.putValue(true);
     try (var tigerProxy =
         new TigerProxy(
             TigerProxyConfiguration.builder()
@@ -64,15 +66,14 @@ class IdpDecryptionTest {
       FileUtils.writeStringToFile(
           new File("target/idpFlow.html"), htmlData, StandardCharsets.UTF_8);
 
-      assertThat(
-              tigerProxy
-                  .getRbelMessagesList()
-                  .get(21)
-                  .findElement("$.body.access_token.content.encryptionInfo.decryptedUsingKeyWithId")
-                  .get()
-                  .seekValue(String.class))
+      RbelElementAssertion.assertThat(tigerProxy.getRbelMessagesList().get(21))
+          .extractChildWithPath(
+              "$.body.access_token.content.encryptionInfo.decryptedUsingKeyWithId")
+          .valueAsString()
           .get()
           .isEqualTo("token_key");
+    } finally {
+      LENIENT_HTTP_PARSING.clearValue();
     }
   }
 }

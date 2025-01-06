@@ -79,7 +79,7 @@ public class RbelLdapConverter implements RbelConverterPlugin {
   private void handleRequestResponse(RbelElement rbelElement, LDAPMessage ldapMessage) {
     val protocolOp = ldapMessage.getProtocolOp().getClass().getSimpleName();
     if (protocolOp.contains("Request")) {
-      rbelElement.addFacet(RbelRequestFacet.builder().menuInfoString(protocolOp).build());
+      rbelElement.addFacet(new RbelRequestFacet(protocolOp, false));
     } else {
       rbelElement.addFacet(new RbelResponseFacet(protocolOp));
     }

@@ -27,7 +27,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.4.6</version>
+        <version>3.4.7</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -129,11 +129,6 @@
             <version>${version.cucumber}</version>
         </dependency>
         <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-core</artifactId>
-            <version>${version.cucumber}</version>
-        </dependency>
-        <dependency>
             <groupId>net.serenity-bdd</groupId>
             <artifactId>serenity-model</artifactId>
             <version>${version.serenity.core}</version>
@@ -172,16 +167,11 @@
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>${version.junit5}</version>
+            <artifactId>junit-jupiter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-suite</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-suite-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
@@ -241,15 +231,6 @@
             <artifactId>freemarker</artifactId>
             <version>2.3.33</version>
         </dependency>
-        <!-- test -->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!-- TestNG driver is currently not supported with Serenity -->
-        <!-- Junit 5 driver is currently not supported with Tiger -->
-
         <dependency>
             <groupId>uk.org.webcompere</groupId>
             <artifactId>system-stubs-core</artifactId>
