@@ -134,13 +134,19 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
 
   public static Stream<Arguments> nestedAndShallowPathTestCases() {
     return Stream.of(
+      /*
+       * The cases 5, 7 & 13, 15 SHOULD result in an actual path without terminating slash.
+       * However, if no deep path is set the actual HTTP request will be a "GET /", regardless
+       * of the actual base path.
+       */
+
         // toPath, requestPath, actualPath, expectedReturnCode
         Arguments.of("/deep", "/foobar", "/deep/foobar", 777),
         Arguments.of("/deep", "/foobar/", "/deep/foobar/", 777),
         Arguments.of("/deep/", "/foobar", "/deep/foobar", 777),
         Arguments.of("/deep/", "/foobar/", "/deep/foobar/", 777),
-        Arguments.of("/foobar", "", "/foobar", 666), // 5
-        Arguments.of("/foobar", "/", "/foobar", 666),
+        Arguments.of("/foobar", "", "/foobar/", 666), // 5
+        Arguments.of("/foobar", "/", "/foobar/", 666),
         Arguments.of("/foobar/", "", "/foobar/", 666),
         Arguments.of("/foobar/", "/", "/foobar/", 666),
         Arguments.of("", "/foobar", "/foobar", 666), // 9
@@ -159,7 +165,22 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
         Arguments.of("/webapp/", "/api/", "/webapp/foo?bar=baz", "/api/foo?bar=baz"),
         Arguments.of("/webapp/", "/api", "/webapp/foo?bar=baz", "/api/foo?bar=baz"),
         Arguments.of("/webapp", "/api/", "/webapp/foo?bar=baz", "/api/foo?bar=baz"),
-        Arguments.of("/webapp", "/api", "/webapp/foo?bar=baz", "/api/foo?bar=baz"));
+        Arguments.of("/webapp", "/api", "/webapp/foo?bar=baz", "/api/foo?bar=baz"),
+        // 5
+        Arguments.of("/webapp/", "/api/", "/webapp/foo/?bar=baz", "/api/foo/?bar=baz"),
+        Arguments.of("/webapp/", "/api", "/webapp/foo/?bar=baz", "/api/foo/?bar=baz"),
+        Arguments.of("/webapp", "/api/", "/webapp/foo/?bar=baz", "/api/foo/?bar=baz"),
+        Arguments.of("/webapp", "/api", "/webapp/foo/?bar=baz", "/api/foo/?bar=baz"),
+        // 9
+        Arguments.of("/webapp/", "/api/", "/webapp", "/api/"),
+        Arguments.of("/webapp/", "/api", "/webapp", "/api"),
+        Arguments.of("/webapp", "/api/", "/webapp", "/api/"),
+        Arguments.of("/webapp", "/api", "/webapp", "/api"),
+        // 13
+        Arguments.of("/webapp/", "/api/", "/webapp/", "/api/"),
+        Arguments.of("/webapp/", "/api", "/webapp/", "/api"),
+        Arguments.of("/webapp", "/api/", "/webapp/", "/api/"),
+        Arguments.of("/webapp", "/api", "/webapp/", "/api/"));
   }
 
   public static Stream<Arguments> failingTrailingSlashTestCases() {
@@ -197,6 +218,35 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
     assertThat(request)
         .extractChildWithPath("$.header.[?(key=~'host|Host')]")
         .hasStringContentEqualTo("localhost:" + tigerProxy.getProxyPort());
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .extractChildWithPath("$.path")
+        .hasStringContentEqualTo(actualPath);
+    assertThat(backendServer.getWireMock().getServeEvents().get(0).getRequest().getAbsoluteUrl())
+        .endsWith(actualPath);
+  }
+
+  @ParameterizedTest
+  @MethodSource("trailingSlashTestCases")
+  void forwardProxyTrailingSlashTestCases(
+      String fromPath,
+      String toPath,
+      String requestPath,
+      String actualPath,
+      WireMockRuntimeInfo backendServer) {
+    spawnTigerProxyWith(new TigerProxyConfiguration());
+    tigerProxy.addRoute(
+        TigerConfigurationRoute.builder()
+            .from("http://mydomain" + fromPath)
+            .to("http://localhost:" + fakeBackendServerPort + toPath)
+            .build());
+
+    backendServer.getWireMock().getServeEvents().clear();
+
+    proxyRest.get("http://mydomain" + requestPath)
+        .asString()
+        .getStatus();
+    awaitMessagesInTiger(2);
+
     assertThat(tigerProxy.getRbelMessagesList().get(0))
         .extractChildWithPath("$.path")
         .hasStringContentEqualTo(actualPath);

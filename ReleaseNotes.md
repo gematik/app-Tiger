@@ -16,7 +16,7 @@ rbel.lenientHttpParsing: true
   differentiation for messages originating from different proxies.
 
 ## Bugfixes
-* TGR-783: Tiger-Proxy: Refined the handling of trailing slashes in proxy-routes. This eliminates certain unwanted edge-cases. (route /foo and request /foobar will no longer match)
+* TGR-783, TGR-1327: Tiger-Proxy: Refined the handling of trailing slashes in proxy-routes. This eliminates certain unwanted edge-cases. (route /foo and request /foobar will no longer match)
 
 # Release 3.4.6
 

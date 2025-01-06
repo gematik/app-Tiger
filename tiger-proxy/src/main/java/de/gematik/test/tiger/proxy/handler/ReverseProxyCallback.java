@@ -58,27 +58,6 @@ public class ReverseProxyCallback extends AbstractRouteProxyCallback {
     return request;
   }
 
-  private String patchPath(String requestPath) {
-    String patchedUrl = requestPath.replaceFirst(getTargetUrl().toString(), "");
-    if (patchedUrl.equals("/")) {
-      patchedUrl = "";
-    }
-    if (!getTigerRoute().getFrom().equals("/")) {
-      patchedUrl = patchedUrl.substring(getTigerRoute().getFrom().length());
-    }
-    if (patchedUrl.startsWith("/") || patchedUrl.isEmpty()) {
-      if (isAddTrailingSlash()
-          && !patchedUrl.endsWith("/")
-          && (requestPath.equals("/") || requestPath.isEmpty())) {
-        return getTargetUrl().getPath() + patchedUrl + "/";
-      } else {
-        return getTargetUrl().getPath() + patchedUrl;
-      }
-    } else {
-      return getTargetUrl().getPath() + "/" + patchedUrl;
-    }
-  }
-
   @Override
   protected String rewriteConcreteLocation(String originalLocation) {
     try {
