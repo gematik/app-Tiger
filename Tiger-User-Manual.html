@@ -192,7 +192,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 3.4.6 - 2024-12-09</span>
+<span id="revdate">Version 3.4.7 - 2025-01-06</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -2778,7 +2778,101 @@ Meaning: If you have a mapping</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="hosts"><a class="anchor" href="#hosts"></a>4.3.3. hosts</h4>
+<h4 id="trailing-slashes"><a class="anchor" href="#trailing-slashes"></a>4.3.3. Trailing Slashes</h4>
+<div class="paragraph">
+<p>Trailing slashes in routes may be significant for the server. Thus, the handling in the tiger-proxy is important. To achieve a consistent behavior while maintaining ease of use, the following rules apply:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>If the request is longer then the from-path of the route (eg. if the "from" is "/foo" and the request is "/foo/bar", then "/bar" is the deep-path), the trailing slash behavior from the request is taken. This only is the case for more path-fragments (/foo/bar), and not simply a longer string (/foobar), as this would not be matched to the route.</p>
+</li>
+<li>
+<p>If the to-URL has a trailing slash, the request is forwarded with a trailing slash.</p>
+</li>
+<li>
+<p>Finally, if the request ends with a slash and the from-URL does NOT end with one, a trailing slash is added. (The logic being the slash in the from-URL expresses an anticipated slash. Thus, a slash being present in the request is simply "expected".)</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>This leads to the following examples:</p>
+</div>
+<table class="tableblock frame-all grid-all fit-content">
+<colgroup>
+<col>
+<col>
+<col>
+<col>
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">from</th>
+<th class="tableblock halign-left valign-top">to</th>
+<th class="tableblock halign-left valign-top">request</th>
+<th class="tableblock halign-left valign-top">forwarded to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp/"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api/"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api/"</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp/"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api"</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp/"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api/"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp/"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api/"</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp/"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp/"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api"</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api/"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api/"</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api"</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api/"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp/"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api/"</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp/"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api/"</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp&lt;irrelevant&gt;"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api&lt;irrelevant&gt;"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/webapp/foo"</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">"/api/foo"</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sect3">
+<h4 id="hosts"><a class="anchor" href="#hosts"></a>4.3.4. hosts</h4>
 <div class="paragraph">
 <p>In some instances you might be pressed to "hosts" multiple servers on one tiger-proxy. This can happen when you can influence DNS-Resolvement, but neither the path nor the port used. In this case you can use the hosts-property to define which hosts should be routed to which target.</p>
 </div>
@@ -2796,7 +2890,7 @@ Meaning: If you have a mapping</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="multiple-targets"><a class="anchor" href="#multiple-targets"></a>4.3.4. Multiple targets</h4>
+<h4 id="multiple-targets"><a class="anchor" href="#multiple-targets"></a>4.3.5. Multiple targets</h4>
 <div class="paragraph">
 <p>Sometimes you can only at runtime know which target to use. This can be achieved by using the <code>to</code>-property as a list of targets:</p>
 </div>
@@ -2815,7 +2909,7 @@ Meaning: If you have a mapping</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="criterions"><a class="anchor" href="#criterions"></a>4.3.5. criterions</h4>
+<h4 id="criterions"><a class="anchor" href="#criterions"></a>4.3.6. criterions</h4>
 <div class="paragraph">
 <p>As an additional measure for a more fine-grained matching you can use criterions. These are JEXL-expressions which have to be fulfilled for the route to be used. This can be leveraged to make the routing decision dependent on the content of the message.</p>
 </div>
@@ -2834,7 +2928,7 @@ Meaning: If you have a mapping</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="disablerbellogging"><a class="anchor" href="#disablerbellogging"></a>4.3.6. disableRbelLogging</h4>
+<h4 id="disablerbellogging"><a class="anchor" href="#disablerbellogging"></a>4.3.7. disableRbelLogging</h4>
 <div class="paragraph">
 <p>You can deactivate the rbel-Logging on a per-Route basis.<br>
 Rbel is a versatile and powerful tool, but the analysis of individual messages consumes a lot of both CPU and memory.<br>
@@ -2842,7 +2936,7 @@ Deactivating it for routes in which it is not needed is therefore a good idea.</
 </div>
 </div>
 <div class="sect3">
-<h4 id="authentication"><a class="anchor" href="#authentication"></a>4.3.7. Authentication</h4>
+<h4 id="authentication"><a class="anchor" href="#authentication"></a>4.3.8. Authentication</h4>
 <div class="paragraph">
 <p>You can add optional authentication configuration which will be added to the forwarded message. Here either Basic access authentication or Bearer Token can be used:</p>
 </div>
@@ -3694,7 +3788,8 @@ For all Tiger Proxies this default behavior can be changed.</p>
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy:
     directReverseProxy:
         hostname: 127.0.0.1
-        port: 3858</code></pre>
+        port: 3858
+        ignoreConnectionErrors: false</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -3702,7 +3797,7 @@ For all Tiger Proxies this default behavior can be changed.</p>
 This is a form of reverseProxy, only also applicable for non-http-traffic.<br>
 HTTP traffic will still be forwarded through use of a global reverse proxy.<br>
 Other traffic will be directly forwarded, rerouted directly on the TCP layer.<br>
-Messages transmitted can still be parsed via RBel.</p>
+Messages transmitted can still be parsed via RBel. If the optional flag <code>ignoreConnectionErrors</code> is true, no connection errors will be logged, the default is false.</p>
 </div>
 </div>
 </div>
@@ -4875,41 +4970,22 @@ certain value</p>
 <div class="listingblock">
 <div class="title">Listing 18. Tiger Rbel Builder steps example</div>
 <div class="content">
-<pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature Tiger validation steps
+<pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature: Tiger - RbelBuilder
 
-  Scenario: Example steps
+  Scenario: Replace/change certain values/nodes in a rbel object
+    # changing primitive value
+    Given TGR creates a new Rbel object 'someObjName' with content '{"address": {"street": "Friedrichstr 136","city": "Berlin","postalCode": "10115"}}'
+    Then TGR sets Rbel object 'someObjName' at '$address.street' to new value 'Hauptstrasse'
+    Then TGR asserts '!{rbelObject:serialize("someObjName")}' equals '{"address": {"street": "Hauptstrasse","city": "Berlin","postalCode": "10115"}}' of type JSON
 
-    Given TGR clear recorded messages
-    And TGR filter requests based on host "testnode.example.org"
-    And TGR filter requests based on method "POST"
-    And TGR set request wait timeout to 20 seconds
-    When TGR find request to path "/path/path/blabla" with "$..tag.value.text" matching "abc.*"
-    And TGR find request to path "/path/path/blabla" containing node "$..tag"
-    Then TGR current response with attribute "$..answer.result.text" matches "OK.*"
-    But TGR current response with attribute "$..answer.reason.text" does not match "REQUEST.*"
-    And TGR current response body matches:
-    """
-         body content
-        """
-    And TGR current response at "$..tag" matches as JSON:
-    """
-          {
-            "arr1": [
-              "asso", "bsso"
-            ]
-          }
-        """
-    And TGR current response at "$..tag" matches as XML:
-    """
-          &lt;arr1&gt;
-            &lt;entry index="1"&gt;asso&lt;/entry&gt;
-            &lt;entry index="2"&gt;bsso&lt;/entry&gt;
-          &lt;/arr1&gt;
-        """
+    # replacing object nodes
+    Given TGR creates a new Rbel object 'phoneNumbers' with content '{"phoneNumbers": [{"type": "home",  "number": "030-1234567"},{  "type": "mobile", "number": "0176-123456788"  }]}'
+    When TGR sets Rbel object 'phoneNumbers' at '$phoneNumbers.1' to new value '{"type" : "work", "number" : "0176-199999"}'
+    Then TGR asserts '!{rbelObject:serialize("phoneNumbers")}' equals '{"phoneNumbers": [{"type": "home",  "number": "030-1234567"},{  "type": "work", "number": "0176-199999"}]}' of type JSON
 
-    Given TGR find message with "$.pop3Body.mimeHeader.subject" matching ".*test.*"
-    Given TGR find next message with "$.pop3Status" matching "-ERR"
-    Given TGR find last message with "$.pop3Command" matching "RETR"</code></pre>
+    # adding new nodes to an array
+    When TGR extends Rbel object 'phoneNumbers' at path '$phoneNumbers' by a new entry '{"type" : "home", "number" : "0176-12345566778"}'
+    Then TGR asserts '!{rbelObject:serialize("phoneNumbers")}' equals '{"phoneNumbers": [{"type": "home",  "number": "030-1234567"},{"type": "work", "number": "0176-199999"},{"type" : "home", "number" : "0176-12345566778"}]}' of type JSON</code></pre>
 </div>
 </div>
 </div>
@@ -9130,7 +9206,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2024-12-09 11:54:15 +0100
+Last updated 2025-01-06 13:35:16 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
