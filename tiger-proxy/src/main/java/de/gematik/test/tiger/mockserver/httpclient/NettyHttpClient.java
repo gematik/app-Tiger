@@ -175,7 +175,7 @@ public class NettyHttpClient {
               + ":"
               + requestInfo.getRemoteServerAddress().getPort();
 
-      requestInfo.getDataToSend().setRemoteAddress(remoteAddress);
+      requestInfo.getDataToSend().setSenderAddress(remoteAddress);
 
       proxyConfiguration.addProxyAuthenticationHeader(requestInfo.getDataToSend());
     } else if (requestInfo.getRemoteServerAddress() == null) {

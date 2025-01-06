@@ -24,14 +24,14 @@
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
         <relativePath>../pom.xml</relativePath>
-        <version>3.4.6</version>
+        <version>3.4.7</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>tiger-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
     <description>
-        This plugin supports generating custom Junit4 driver classes for Serenity test runs.
+        This plugin supports generating custom Junit5 driver classes for Serenity test runs.
     </description>
 
     <properties>
@@ -235,7 +235,7 @@
                     <plugin>
                         <groupId>de.gematik.test</groupId>
                         <artifactId>tiger-maven-plugin</artifactId>
-                        <version>3.4.6</version>
+                        <version>3.4.7</version>
                         <executions>
                             <execution>
                                 <configuration>

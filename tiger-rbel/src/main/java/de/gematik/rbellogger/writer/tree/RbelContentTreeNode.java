@@ -23,6 +23,7 @@ import de.gematik.rbellogger.util.RbelPathAble;
 import de.gematik.rbellogger.util.RbelPathExecutor;
 import de.gematik.rbellogger.writer.*;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
+import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -324,7 +325,7 @@ public class RbelContentTreeNode extends RbelPathAble {
     return attributeMap.containsKey(RbelJsonElementToNodeConverter.JSON_ARRAY);
   }
 
-  private static class RbelPathNotUniqueException extends RuntimeException {
+  private static class RbelPathNotUniqueException extends GenericTigerException {
 
     public RbelPathNotUniqueException(String s) {
       super(s);

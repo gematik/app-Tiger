@@ -1,6 +1,32 @@
 # Changelog Tiger Test platform
 
+# Release 3.4.7
+
+## Breaking Changes 
+
+* TGR-1686: Stricter HTTP-Parsing added. This means messages without valid headers will not be parsed. Error messages will be added. To disable this feature set the following configuration key in the tiger.yaml:
+
+```yaml
+rbel.lenientHttpParsing: true
+```
+
+## Features
+
+* TGR-1447, TGR-1656: Tiger-Proxy: Sequence-Numbers are assigned per tiger proxy, assuring monotonous increase. A history of sequence numbers per proxy is transmitted to the downstream proxy. This shall allow
+  differentiation for messages originating from different proxies.
+
+## Bugfixes
+* TGR-783, TGR-1327: Tiger-Proxy: Refined the handling of trailing slashes in proxy-routes. This eliminates certain unwanted edge-cases. (route /foo and request /foobar will no longer match)
+
 # Release 3.4.6
+
+* Serenity BDD 4.2.3
+* Cucumber 7.19.0
+* RestAssured 5.5.0
+* Selenium 4.19.1
+* Appium 9.3.0
+* Spring Boot 3.3.4
+* Logback 1.5.8
 
 ## Breaking Changes
 
@@ -16,7 +42,7 @@ tigerProxy:
         password: superSecret
 ```
 
-* Tiger Maven Plugin: If you are using a custom driver template which includes the palceholder `${tags}`, you should
+* Tiger Maven Plugin: If you are using a custom driver template which includes the placeholder `${tags}`, you should
   change the full annotation to `${tagsAnnotation}`.
   E.g.:
   If your custom template has:
@@ -35,6 +61,9 @@ If you do not use a custom template, no action is necessary.
 
 ## Features
 
+* TGR-1651: DisplayName of Scenario Outlines in RestAPI has a more descriptive name
+* TGR-1673: updated `junit-jupiter` and `junit-platform-suite` dependencies to versions 5.11.0 and 1.11.0 respectively.
+* KOB-19: Workflow UI: make button to expand and minimize Tiger Proxy Log pane more visible.
 * TGR-1464: Rest API: Tiger has now an API which allows the starting of specific tests and the retrieval of the test
   results via REST. The Rest Api is disabled by default. To enable it set the following configuration key in the
   tiger.yaml:
@@ -45,8 +74,9 @@ lib:
 ```
 
 * TIMTS-658: default poll interval for waiting for external servers to be healthy is increased to 1000 ms and can be
-  be configured via configuration key `tiger.internal.externalServer.startupPollIntervalMs` or per server via the server
+  configured via configuration key `tiger.internal.externalServer.startupPollIntervalMs` or per server via the server
   property `startupPollIntervalMs`
+* TGR-1517: Improved display of connection errors in the Tiger-Proxy traffic log
 * TGR-1660: Change notification for jenkins release
 * KOB-35: TigerProxy now will query listed "to"-targets in parallel. The first healthy target will be used for routing.
 * TGR-1618: RbelParser: Added support for LDAP messages.
@@ -66,7 +96,9 @@ tigerProxy:
         password: superSecret
 ```
 
-* TGR-1645: Tiger-Proxy: You can now choose if the generic fallback identity should be used. This can be toggled via `tigerProxy.tls.allowGenericFallbackIdentity`. The default is `false`, meaning that the generic fallback identity is only used when no other means is configured (serverIdentities, serverIdentity, serverRootCa).
+* TGR-1645: Tiger-Proxy: You can now choose if the generic fallback identity should be used. This can be toggled via
+  `tigerProxy.tls.allowGenericFallbackIdentity`. The default is `false`, meaning that the generic fallback identity is
+  only used when no other means is configured (serverIdentities, serverIdentity, serverRootCa).
 * TGR-1442: PKI-Identites can now also be provided via a map, specifying the individual options:
 
 ```yaml
@@ -81,6 +113,8 @@ tls.forwardMutualTlsIdentity:
 
 ## Bugfixes
 
+* TGR-1659: Workflow UI: fixed an issue where quiting the Workflow UI while a pause step was waiting, would not
+  correctly shut down the background process.
 * TGR-978: User Manual: Fixed the overlap of text from the table of contents when viewing the html manual on a small
   width screen.
 * KOB-6: Fixed an issue where https-destinations could not be used as one of multiple "to"-targets.
@@ -287,8 +321,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+    key = PLUGIN_PROPERTY_NAME,
+    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

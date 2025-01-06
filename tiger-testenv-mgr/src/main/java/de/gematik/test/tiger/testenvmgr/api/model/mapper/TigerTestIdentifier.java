@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2024 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,21 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package de.gematik.test.tiger.testenvmgr.api.model.mapper;
 
-package de.gematik.test.tiger.mockserver.model;
+import lombok.Builder;
+import lombok.Data;
+import org.junit.platform.launcher.TestIdentifier;
 
-import java.net.SocketAddress;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
+@Data
+@Builder
+public class TigerTestIdentifier {
 
-/*
- * @author jamesdbloom
- */
-public interface BinaryProxyListener {
-
-  void onProxy(
-      BinaryMessage binaryRequest,
-      Optional<CompletableFuture<BinaryMessage>> binaryResponse,
-      SocketAddress serverAddress,
-      SocketAddress clientAddress);
+  private final TestIdentifier testIdentifier;
+  private final String displayName;
 }

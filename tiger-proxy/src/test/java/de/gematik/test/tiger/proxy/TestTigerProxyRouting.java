@@ -18,7 +18,9 @@ package de.gematik.test.tiger.proxy;
 
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import kong.unirest.*;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -105,12 +108,12 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
   @ParameterizedTest
   @MethodSource("nestedAndShallowPathTestCases")
   void reverseProxyToNestedTarget_ShouldAddressCorrectly(
-      String fromPath, String requestPath, String actualPath, int expectedReturnCode) {
+      String toPath, String requestPath, String actualPath, int expectedReturnCode) {
     spawnTigerProxyWith(new TigerProxyConfiguration());
     tigerProxy.addRoute(
         TigerConfigurationRoute.builder()
             .from("/")
-            .to("http://localhost:" + fakeBackendServerPort + fromPath)
+            .to("http://localhost:" + fakeBackendServerPort + toPath)
             .build());
 
     assertThat(
@@ -131,13 +134,19 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
 
   public static Stream<Arguments> nestedAndShallowPathTestCases() {
     return Stream.of(
-        // fromPath, requestPath, actualPath, expectedReturnCode
+      /*
+       * The cases 5, 7 & 13, 15 SHOULD result in an actual path without terminating slash.
+       * However, if no deep path is set the actual HTTP request will be a "GET /", regardless
+       * of the actual base path.
+       */
+
+        // toPath, requestPath, actualPath, expectedReturnCode
         Arguments.of("/deep", "/foobar", "/deep/foobar", 777),
         Arguments.of("/deep", "/foobar/", "/deep/foobar/", 777),
         Arguments.of("/deep/", "/foobar", "/deep/foobar", 777),
         Arguments.of("/deep/", "/foobar/", "/deep/foobar/", 777),
-        Arguments.of("/foobar", "", "/foobar", 666), // 5
-        Arguments.of("/foobar", "/", "/foobar", 666),
+        Arguments.of("/foobar", "", "/foobar/", 666), // 5
+        Arguments.of("/foobar", "/", "/foobar/", 666),
         Arguments.of("/foobar/", "", "/foobar/", 666),
         Arguments.of("/foobar/", "/", "/foobar/", 666),
         Arguments.of("", "/foobar", "/foobar", 666), // 9
@@ -148,6 +157,116 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
         Arguments.of("", "/", "/", 888),
         Arguments.of("/", "", "/", 888),
         Arguments.of("/", "/", "/", 888));
+  }
+
+  public static Stream<Arguments> trailingSlashTestCases() {
+    return Stream.of(
+        // fromPath, toPath, requestPath, actualPath
+        Arguments.of("/webapp/", "/api/", "/webapp/foo?bar=baz", "/api/foo?bar=baz"),
+        Arguments.of("/webapp/", "/api", "/webapp/foo?bar=baz", "/api/foo?bar=baz"),
+        Arguments.of("/webapp", "/api/", "/webapp/foo?bar=baz", "/api/foo?bar=baz"),
+        Arguments.of("/webapp", "/api", "/webapp/foo?bar=baz", "/api/foo?bar=baz"),
+        // 5
+        Arguments.of("/webapp/", "/api/", "/webapp/foo/?bar=baz", "/api/foo/?bar=baz"),
+        Arguments.of("/webapp/", "/api", "/webapp/foo/?bar=baz", "/api/foo/?bar=baz"),
+        Arguments.of("/webapp", "/api/", "/webapp/foo/?bar=baz", "/api/foo/?bar=baz"),
+        Arguments.of("/webapp", "/api", "/webapp/foo/?bar=baz", "/api/foo/?bar=baz"),
+        // 9
+        Arguments.of("/webapp/", "/api/", "/webapp", "/api/"),
+        Arguments.of("/webapp/", "/api", "/webapp", "/api"),
+        Arguments.of("/webapp", "/api/", "/webapp", "/api/"),
+        Arguments.of("/webapp", "/api", "/webapp", "/api"),
+        // 13
+        Arguments.of("/webapp/", "/api/", "/webapp/", "/api/"),
+        Arguments.of("/webapp/", "/api", "/webapp/", "/api"),
+        Arguments.of("/webapp", "/api/", "/webapp/", "/api/"),
+        Arguments.of("/webapp", "/api", "/webapp/", "/api/"));
+  }
+
+  public static Stream<Arguments> failingTrailingSlashTestCases() {
+    return Stream.of(
+        // fromPath, toPath, requestPath
+        Arguments.of("/webapp/", "/api/", "/webappfoo?bar=baz"),
+        Arguments.of("/webapp/", "/api", "/webappfoo?bar=baz"),
+        Arguments.of("/webapp", "/api/", "/webappfoo?bar=baz"),
+        Arguments.of("/webapp", "/api", "/webappfoo?bar=baz"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("trailingSlashTestCases")
+  void reverseProxyTrailingSlashTestCases(
+      String fromPath,
+      String toPath,
+      String requestPath,
+      String actualPath,
+      WireMockRuntimeInfo backendServer) {
+    spawnTigerProxyWith(new TigerProxyConfiguration());
+    tigerProxy.addRoute(
+        TigerConfigurationRoute.builder()
+            .from(fromPath)
+            .to("http://localhost:" + fakeBackendServerPort + toPath)
+            .build());
+
+    backendServer.getWireMock().getServeEvents().clear();
+
+    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + requestPath)
+        .asString()
+        .getStatus();
+    awaitMessagesInTiger(2);
+    final RbelElement request = tigerProxy.getRbelMessagesList().get(0);
+
+    assertThat(request)
+        .extractChildWithPath("$.header.[?(key=~'host|Host')]")
+        .hasStringContentEqualTo("localhost:" + tigerProxy.getProxyPort());
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .extractChildWithPath("$.path")
+        .hasStringContentEqualTo(actualPath);
+    assertThat(backendServer.getWireMock().getServeEvents().get(0).getRequest().getAbsoluteUrl())
+        .endsWith(actualPath);
+  }
+
+  @ParameterizedTest
+  @MethodSource("trailingSlashTestCases")
+  void forwardProxyTrailingSlashTestCases(
+      String fromPath,
+      String toPath,
+      String requestPath,
+      String actualPath,
+      WireMockRuntimeInfo backendServer) {
+    spawnTigerProxyWith(new TigerProxyConfiguration());
+    tigerProxy.addRoute(
+        TigerConfigurationRoute.builder()
+            .from("http://mydomain" + fromPath)
+            .to("http://localhost:" + fakeBackendServerPort + toPath)
+            .build());
+
+    backendServer.getWireMock().getServeEvents().clear();
+
+    proxyRest.get("http://mydomain" + requestPath)
+        .asString()
+        .getStatus();
+    awaitMessagesInTiger(2);
+
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .extractChildWithPath("$.path")
+        .hasStringContentEqualTo(actualPath);
+    assertThat(backendServer.getWireMock().getServeEvents().get(0).getRequest().getAbsoluteUrl())
+        .endsWith(actualPath);
+  }
+
+  @ParameterizedTest
+  @MethodSource("failingTrailingSlashTestCases")
+  void reverseProxyFailingTrailingSlashTestCases(
+      String fromPath, String toPath, String requestPath) {
+    spawnTigerProxyWith(new TigerProxyConfiguration());
+    tigerProxy.addRoute(
+        TigerConfigurationRoute.builder()
+            .from(fromPath)
+            .to("http://localhost:" + fakeBackendServerPort + toPath)
+            .build());
+
+    val request = Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + requestPath);
+    assertThatThrownBy(request::asString).isInstanceOf(UnirestException.class);
   }
 
   @ParameterizedTest

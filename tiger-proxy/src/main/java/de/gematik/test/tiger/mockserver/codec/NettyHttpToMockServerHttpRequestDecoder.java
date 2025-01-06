@@ -52,21 +52,19 @@ public class NettyHttpToMockServerHttpRequestDecoder
   protected void decode(
       ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest, List<Object> out) {
     List<Header> preservedHeaders = null;
-    SocketAddress localAddress = null;
+    SocketAddress senderAddress = null;
     SocketAddress remoteAddress = null;
     SSLSession sslSession = null;
     if (ctx != null && ctx.channel() != null) {
       preservedHeaders = PreserveHeadersNettyRemoves.preservedHeaders(ctx.channel());
-      localAddress = ctx.channel().localAddress();
-      remoteAddress = ctx.channel().remoteAddress();
+      senderAddress = ctx.channel().remoteAddress();
       sslSession = ctx.channel().attr(SniHandler.SSL_SESSION).get();
     }
     out.add(
         fullHttpRequestToMockServerRequest.mapFullHttpRequestToMockServerRequest(
             fullHttpRequest,
             preservedHeaders,
-            localAddress,
-            remoteAddress,
+            senderAddress,
             getAlpnProtocol(ctx),
             sslSession));
   }

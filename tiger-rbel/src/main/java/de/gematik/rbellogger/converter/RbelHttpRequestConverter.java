@@ -16,6 +16,7 @@
 
 package de.gematik.rbellogger.converter;
 
+import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
@@ -26,6 +27,7 @@ import java.util.Set;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
@@ -33,6 +35,11 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
 
   private static final Set<String> HTTP_METHODS =
       Set.of("GET", "POST", "PUT", "HEAD", "OPTIONS", "PATCH", "DELETE", "TRACE", "CONNECT");
+  private static final byte[] HTTP_11_BYTES = "HTTP/1.1".getBytes();
+
+  public RbelHttpRequestConverter(RbelConfiguration configuration) {
+    super(configuration);
+  }
 
   @Override
   public void consumeElement(final RbelElement targetElement, final RbelConverter converter) {
@@ -49,6 +56,7 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
     if (firstLineOpt.isEmpty()) {
       return;
     }
+    checkEolValue(eol, targetElement);
     int endOfHeadIndex = findEndOfHeadIndex(content, eol);
 
     var firstLineParts = firstLineOpt.get();
@@ -69,6 +77,7 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
     final RbelElement headerElement =
         extractHeaderFromMessage(targetElement, converter, eol, stringContent);
     RbelHttpHeaderFacet httpHeader = headerElement.getFacetOrFail(RbelHttpHeaderFacet.class);
+    verifyHeader(httpHeader, httpVersion, targetElement);
 
     final byte[] bodyData =
         extractBodyData(targetElement, endOfHeadIndex + 2 * eol.length(), httpHeader, eol);
@@ -81,11 +90,7 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
             .path(pathElement)
             .build();
     targetElement.addFacet(httpRequest);
-    targetElement.addFacet(
-        RbelRequestFacet.builder()
-            .responseRequired(true)
-            .menuInfoString(method + " " + path)
-            .build());
+    targetElement.addFacet(new RbelRequestFacet(method + " " + path, true));
     targetElement.addFacet(
         RbelHttpMessageFacet.builder()
             .header(headerElement)
@@ -93,6 +98,22 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
             .httpVersion(httpVersion)
             .build());
     converter.convertElement(bodyElement);
+  }
+
+  private void verifyHeader(
+      RbelHttpHeaderFacet httpHeader, RbelElement httpVersion, RbelElement targetElement) {
+    if (httpVersion.getContent().startsWith(HTTP_11_BYTES)) {
+      if (httpHeader.getCaseInsensitiveMatches("host").findAny().isEmpty()) {
+        targetElement.addFacet(
+            RbelNoteFacet.builder()
+                .value("HTTP/1.1 request does not contain Host header")
+                .style(styleParsingError(targetElement))
+                .build());
+        if (!isLenientParsingMode() && isTcpMessage(targetElement)) {
+          throw new RbelConversionException("HTTP/1.1 request does not contain Host header");
+        }
+      }
+    }
   }
 
   @Data
@@ -120,9 +141,9 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
       return Optional.empty();
     }
 
-    final String method = firstLineParts[0];
-    final String path = firstLineParts[1];
-    final var httpVersion = new RbelElement(firstLineParts[2].getBytes(), targetElement);
+    val method = firstLineParts[0];
+    val path = firstLineParts[1];
+    val httpVersion = new RbelElement(firstLineParts[2].getBytes(), targetElement);
     return Optional.of(
         RequestFirstLineParts.builder().method(method).path(path).version(httpVersion).build());
   }

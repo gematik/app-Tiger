@@ -27,9 +27,8 @@ import de.gematik.rbellogger.data.facet.RbelJwtFacet;
 import de.gematik.rbellogger.key.RbelKey;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.time.ZonedDateTime;
-import java.util.Optional;
 import javax.crypto.spec.SecretKeySpec;
+import lombok.val;
 import org.jose4j.jws.AlgorithmIdentifiers;
 import org.junit.jupiter.api.Test;
 
@@ -87,7 +86,7 @@ class JwtConverterTest {
 
   @Test
   void keyMessageAndJwtReply_shouldValidateSignature() throws IOException {
-    final String keyMessage =
+    val keyMessage =
         readCurlFromFileWithCorrectedLineBreaks(
             "src/test/resources/sampleMessages/idpSigMessage.curl");
     final String challengeMessage =
@@ -95,10 +94,10 @@ class JwtConverterTest {
             "src/test/resources/sampleMessages/getChallenge.curl");
     final RbelConverter rbelConverter = RbelLogger.build().getRbelConverter();
 
-    rbelConverter.parseMessage(keyMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+    rbelConverter.convertElement(keyMessage.getBytes(), null);
     final RbelElement convertedMessage =
-        rbelConverter.parseMessage(
-            challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+        rbelConverter.convertElement(
+            challengeMessage.getBytes(), null);
     final RbelJwtSignature signature =
         convertedMessage
             .findElement("$.body.challenge.signature")

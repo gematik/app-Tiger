@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2024 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,16 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package de.gematik.test.tiger.exceptions;
 
-package de.gematik.rbellogger.exceptions;
+import java.time.ZonedDateTime;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
-public class RbelAsn1Exception extends RuntimeException {
+@Getter
+@EqualsAndHashCode(callSuper = true)
+@Slf4j
+public abstract class GenericTigerException extends RuntimeException {
 
-  public RbelAsn1Exception(String message) {
+  private final ZonedDateTime timestamp = ZonedDateTime.now();
+
+  protected GenericTigerException(String message) {
     super(message);
   }
 
-  public RbelAsn1Exception(String message, Throwable e) {
-    super(message, e);
+  protected GenericTigerException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  protected GenericTigerException(Throwable cause) {
+    super(cause);
   }
 }

@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.proxy.client;
 
+import static com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder.responseDefinition;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,6 +26,7 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.assertj.core.api.AssertionsForClassTypes.fail;
 import static org.awaitility.Awaitility.await;
 
+import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.converter.RbelConverter;
@@ -147,6 +149,11 @@ class TigerRemoteProxyClientTest {
     runtimeInfo.getWireMock().register(get("/foo").willReturn(ok().withBody("bar")));
     runtimeInfo.getWireMock().register(post("/foo").willReturn(ok().withBody("bar")));
     runtimeInfo.getWireMock().register(get("/").willReturn(badRequest().withBody("emptyPath!!!")));
+    runtimeInfo
+        .getWireMock()
+        .register(
+            get("/error")
+                .willReturn(responseDefinition().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
     log.info("Configuring routes...");
     new ArrayList<>(tigerRemoteProxyClient.getRbelMessageListeners())
@@ -629,6 +636,22 @@ class TigerRemoteProxyClientTest {
   private void addRequestResponsePair(RbelConverter rbelConverter) {
     rbelConverter.parseMessage(request, null, null, Optional.empty());
     rbelConverter.parseMessage(response, null, null, Optional.empty());
+  }
+
+  @Disabled("waiting on TGR-1684")
+  @Test
+  void exceptionDuringRequest_shouldShowUpInLog() {
+    AtomicInteger listenerCallCounter = new AtomicInteger(0);
+    tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
+
+    unirestInstance.config().automaticRetries(false);
+    assertThatThrownBy(() -> unirestInstance.get("http://myserv.er/error").asString())
+      .isNotNull();
+
+    await().atMost(8, TimeUnit.SECONDS).until(() -> listenerCallCounter.get() > 0);
+
+    // wir erwarten zwei Nachrichten im tigerRemoteProxyClient
+    // wir erwarten eine propagierte Exception im tigerRemoteProxyClient
   }
 
   private void addMessagePart(String responseUuid, int index, int numberOfMessages) {

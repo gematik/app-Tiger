@@ -26,9 +26,7 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.data.RbelElement;
 import java.io.IOException;
-import java.time.ZonedDateTime;
 import java.util.Comparator;
-import java.util.Optional;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,7 +55,7 @@ class RbelPathExecutorLoggingTest {
 
     return RbelLogger.build()
         .getRbelConverter()
-        .parseMessage(curlMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+        .convertElement(curlMessage.getBytes(), null);
   }
 
   @Test

@@ -16,7 +16,9 @@
 
 package de.gematik.rbellogger.exceptions;
 
-public class RbelContentTreeConversionException extends RuntimeException {
+import de.gematik.test.tiger.exceptions.GenericTigerException;
+
+public class RbelContentTreeConversionException extends GenericTigerException {
   public RbelContentTreeConversionException(String s) {
     super(s);
   }

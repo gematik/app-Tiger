@@ -21,11 +21,11 @@ import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelElementConvertionPair;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.facet.RbelNoteFacet;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.facet.RbelRequestFacet;
+import de.gematik.rbellogger.data.facet.RbelResponseFacet;
+import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.data.facet.UnparsedChunkFacet;
 import de.gematik.rbellogger.util.RbelContent;
-import de.gematik.rbellogger.util.RbelException;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.proxy.data.SenderReceiverPair;
 import java.net.InetSocketAddress;
@@ -40,7 +40,6 @@ import lombok.extern.slf4j.Slf4j;
 public class BinaryChunksBuffer {
   private final BundledServerNamesAdder bundledServerNamesAdder = new BundledServerNamesAdder();
   private final Map<SenderReceiverPair, RbelContent> bufferedParts = new ConcurrentHashMap<>();
-  private final Map<SenderReceiverPair, Long> currentSequenceNumber = new ConcurrentHashMap<>();
   private final RbelConverter rbelConverter;
   private final TigerProxyConfiguration proxyConfiguration;
 
@@ -55,25 +54,20 @@ public class BinaryChunksBuffer {
   }
 
   /** returns the complete message for this key with the given part appended to it */
-  private RbelContent addToBuffer(SenderReceiverPair key, byte[] part) {
-    RbelContent bufferedBytes = bufferedParts.get(key);
-    if (bufferedBytes != null) {
-      bufferedBytes.append(part);
-    } else {
-      bufferedBytes = RbelContent.of(part);
-      bufferedParts.put(key, bufferedBytes);
-    }
-    return bufferedBytes;
+  private RbelContent addToBuffer(SenderReceiverPair key, RbelContent part) {
+    RbelContent bufferedContent =
+        bufferedParts.computeIfAbsent(key, k -> RbelContent.builder().build());
+    bufferedContent.append(part);
+    return bufferedContent;
   }
 
   public Optional<RbelElement> tryToConvertMessageAndBufferUnusedBytes(
-      byte[] message, SocketAddress senderAddress, SocketAddress receiverAddress) {
+      RbelContent message, SocketAddress senderAddress, SocketAddress receiverAddress) {
     var key = new SenderReceiverPair(senderAddress, receiverAddress);
     final Optional<RbelElement> requestOptional =
         tryToConvertMessage(addToBuffer(key, message), key);
     if (requestOptional.isPresent()) {
       removePart(key);
-      currentSequenceNumber.remove(key);
     }
     return requestOptional;
   }
@@ -87,17 +81,15 @@ public class BinaryChunksBuffer {
             toRbelHostname(connectionKey.sender()),
             toRbelHostname(connectionKey.receiver()),
             Optional.empty(),
-            Optional.ofNullable(currentSequenceNumber.get(connectionKey)));
+            RbelConverter.FinishProcessing.NO);
     if (proxyConfiguration.isActivateRbelParsing()
-        && result.getFacets().stream().filter(f -> !(f instanceof RbelNoteFacet)).count() <= 1) {
-      var sequenceNumber =
-          result
-              .getFacet(RbelTcpIpMessageFacet.class)
-              .orElseThrow(() -> new RbelException("cannot retrieve sequence number"))
-              .getSequenceNumber();
-      currentSequenceNumber.put(connectionKey, sequenceNumber);
+        && result.getFacets().stream()
+            .noneMatch(
+                f ->
+                    f instanceof RbelRootFacet
+                        || f instanceof RbelResponseFacet
+                        || f instanceof RbelRequestFacet)) {
       rbelConverter.removeMessage(result);
-
       return Optional.empty();
     }
 

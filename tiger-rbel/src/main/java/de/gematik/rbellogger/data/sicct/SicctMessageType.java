@@ -16,6 +16,7 @@
 
 package de.gematik.rbellogger.data.sicct;
 
+import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 
@@ -36,7 +37,7 @@ public enum SicctMessageType {
         .orElseThrow(() -> new UnknownSicctMessageTypeException(input));
   }
 
-  private static class UnknownSicctMessageTypeException extends RuntimeException {
+  private static class UnknownSicctMessageTypeException extends GenericTigerException {
     public UnknownSicctMessageTypeException(byte input) {
       super("Could not determine message type for " + input + "!");
     }

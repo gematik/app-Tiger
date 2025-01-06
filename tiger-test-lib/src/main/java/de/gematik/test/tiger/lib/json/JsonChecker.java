@@ -19,6 +19,7 @@ package de.gematik.test.tiger.lib.json;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.test.tiger.exceptions.GenericTigerException;
 import groovy.util.logging.Slf4j;
 import java.util.Iterator;
 import java.util.Optional;
@@ -322,14 +323,14 @@ public class JsonChecker {
     return String.format(pattern, expected, received);
   }
 
-  static class JsonCheckerConversionException extends RuntimeException {
+  static class JsonCheckerConversionException extends GenericTigerException {
 
     public JsonCheckerConversionException(String failingJsonString, Exception e) {
       super("Exception while trying to convert '" + failingJsonString + "' to JSON-Object", e);
     }
   }
 
-  public static class JsonCheckerMismatchException extends RuntimeException {
+  public static class JsonCheckerMismatchException extends GenericTigerException {
 
     public JsonCheckerMismatchException(String s) {
       super(s);

@@ -24,9 +24,7 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.IOException;
-import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Optional;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,13 +39,11 @@ class RbelX509ConverterTest {
         RbelLogger.build(
                 RbelConfiguration.builder().activateRbelParsingFor(List.of("X509")).build())
             .getRbelConverter()
-            .parseMessage(
+            .convertElement(
                 readCurlFromFileWithCorrectedLineBreaks(
                         "src/test/resources/sampleMessages/xmlMessage.curl")
                     .getBytes(),
-                null,
-                null,
-                Optional.of(ZonedDateTime.now()));
+                null);
   }
 
   @SneakyThrows

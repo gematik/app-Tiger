@@ -121,10 +121,8 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         element.getFacet(RbelHttpMessageFacet.class);
     final Optional<RbelHttpRequestFacet> httpRequestFacet =
         element.getFacet(RbelHttpRequestFacet.class);
-    final Optional<RbelHttpResponseFacet> httpResponseFacet =
-        element.getFacet(RbelHttpResponseFacet.class);
-    final Optional<RbelCetpFacet> cetpFacet = element.getFacet(RbelCetpFacet.class);
-    final Optional<Boolean> isRequest = determineIsRequest(element);
+    final Optional<RbelMessageInfoFacet> messageInfoFacet =
+        element.getFacet(RbelMessageInfoFacet.class);
     final Optional<RbelElement> partnerMessage = findHttpPartner(element);
     ///////////////////// TITLE (+path, response-code...) //////////////////////////
     List<DomContent> messageTitleElements = new ArrayList<>();
@@ -132,7 +130,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
     messageTitleElements.add(
         i().withClasses(
                 "fa-solid fa-toggle-on toggle-icon float-end me-3 is-size-3 msg-toggle",
-                httpRequestFacet.map(f -> "has-text-link").orElse("has-text-success")));
+                messageInfoFacet.map(RbelMessageInfoFacet::getColor).orElse("")));
     messageTitleElements.add(showContentButtonAndDialog(element, renderingToolkit));
     partnerMessage.ifPresent(
         msg ->
@@ -159,45 +157,20 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
     messageTitleElements.add(
         h1(
                 renderingToolkit.constructMessageId(element),
-                getRequestOrReplySymbol(isRequest),
-                httpRequestFacet
+                constructMessageSymbol(element),
+                messageInfoFacet
                     .map(
-                        f ->
-                            span()
-                                .with(
-                                    span(" "
-                                            + f.getMethod().getRawStringContent()
-                                            + " "
-                                            + f.getPathAsString())
-                                        .withClass("font-monospace title is-size-6")
-                                        .withTitle(f.getPathAsString())
-                                        .with(addNotes(f.getPath())))
-                                .withClass("has-text-link text-ellipsis"))
-                    .orElse(span()),
-                httpResponseFacet
-                    .map(
-                        response ->
-                            span(response.getResponseCode().getRawStringContent())
-                                .withClass("font-monospace title ms-3"))
-                    .orElse(span("")),
-                cetpFacet
-                    .map(facet -> span("CETP").withClass("font-monospace title ms-3"))
+                        facet ->
+                            span(facet.getMenuInfoString()).withClass("font-monospace title ms-3 "))
                     .orElse(span("")),
                 span()
                     .with(buildTimingInfo(element), buildAddressInfo(element))
-                    .withStyle(
-                        isRequest
-                            .map(
-                                r ->
-                                    (Boolean.TRUE.equals(isRequest.get()) ? "display: block;" : ""))
-                            .orElse("")))
+                    .withStyle("display: block;"))
             .withClasses(
                 "title",
                 "ms-3",
                 "text-ellipsis",
-                isRequest
-                    .map(req -> Boolean.TRUE.equals(req) ? "has-text-link" : "has-text-success")
-                    .orElse(""))
+                messageInfoFacet.map(RbelMessageInfoFacet::getColor).orElse(""))
             .withStyle("overflow: hidden;"));
     messageTitleElements.addAll(addNotes(element));
     //////////////////////////////// HEADER & BODY //////////////////////////////////////
@@ -213,7 +186,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         div().with(messageTitleElements).withClass("full-width"),
         ancestorTitle().with(messageBodyElements),
         "msg-card",
-        "mx-3 " + isRequest.map(r -> Boolean.TRUE.equals(r) ? "mt-5" : "mt-2").orElse("mt-3"),
+        "mx-3 mt-3",
         "msg-content");
   }
 
@@ -307,17 +280,14 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
     return messageBodyElements;
   }
 
-  private DomContent getRequestOrReplySymbol(Optional<Boolean> isRequestOptional) {
-    return isRequestOptional
+  private DomContent constructMessageSymbol(RbelElement message) {
+    return message
+        .getFacet(RbelMessageInfoFacet.class)
         .map(
-            isRequest -> {
-              if (Boolean.TRUE.equals(isRequest)) {
-                return i().withClass("fas fa-share me-1").withTitle("Request");
-              } else {
-                return i().withClass("fas fa-reply me-1").withTitle("Response");
-              }
-            })
-        .map(DomContent.class::cast)
+            f ->
+                (ContainerTag)
+                    i().withClass("fas me-1 " + f.getSymbol() + " " + f.getColor())
+                        .withTitle(f.getTitle()))
         .orElse(span());
   }
 }

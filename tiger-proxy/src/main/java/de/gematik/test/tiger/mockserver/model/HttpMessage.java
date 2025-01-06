@@ -16,7 +16,9 @@
 
 package de.gematik.test.tiger.mockserver.model;
 
+import de.gematik.rbellogger.data.RbelElement;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import lombok.Data;
 
 /*
@@ -27,6 +29,8 @@ import lombok.Data;
 public abstract class HttpMessage<T extends HttpMessage> extends ObjectWithJsonToString
     implements Message {
   private byte[] body = null;
+
+  private CompletableFuture<RbelElement> parsedMessageFuture;
 
   public abstract T withBody(byte[] body);
 

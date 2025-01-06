@@ -59,7 +59,7 @@ public class RbelLogger {
             .activateRbelParsingFor(configuration.getActivateRbelParsingFor())
             .build();
 
-    rbelConverter.initializeConverters();
+    rbelConverter.initializeConverters(configuration);
 
     rbelConverter.registerListener(new RbelX5cKeyReader());
     rbelConverter.registerListener(new RbelJwkReader());

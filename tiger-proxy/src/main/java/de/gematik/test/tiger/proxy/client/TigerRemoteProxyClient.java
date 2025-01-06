@@ -21,6 +21,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelElementConvertionPair;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.util.IRbelMessageListener;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
@@ -293,11 +294,11 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   Optional<CompletableFuture<RbelElement>> buildNewRbelMessage(
       RbelHostname sender,
       RbelHostname receiver,
-      byte[] messageBytes,
+      RbelContent messageContent,
       Optional<ZonedDateTime> transmissionTime,
       String uuid) {
     return buildNewMessage(
-        sender, receiver, messageBytes, Optional.empty(), transmissionTime, uuid);
+        sender, receiver, messageContent, Optional.empty(), transmissionTime, uuid);
   }
 
   Optional<CompletableFuture<RbelElement>> tryParseMessage(PartialTracingMessage message) {
@@ -322,21 +323,21 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   Optional<CompletableFuture<RbelElement>> buildNewRbelResponse(
       RbelHostname sender,
       RbelHostname receiver,
-      byte[] messageBytes,
+      RbelContent messageContent,
       Optional<CompletableFuture<RbelElement>> parsedRequest,
       Optional<ZonedDateTime> transmissionTime,
       String uuid) {
-    return buildNewMessage(sender, receiver, messageBytes, parsedRequest, transmissionTime, uuid);
+    return buildNewMessage(sender, receiver, messageContent, parsedRequest, transmissionTime, uuid);
   }
 
   private Optional<CompletableFuture<RbelElement>> buildNewMessage(
       RbelHostname sender,
       RbelHostname receiver,
-      byte[] messageBytes,
+      RbelContent messageContent,
       Optional<CompletableFuture<RbelElement>> parsedRequest,
       Optional<ZonedDateTime> transmissionTime,
       String uuid) {
-    if (messageBytes != null) {
+    if (!messageContent.isNull()) {
       if (log.isTraceEnabled()) {
         log.trace("Received new message with ID '{}'", uuid);
       }
@@ -346,7 +347,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
               .getRbelConverter()
               .parseMessageAsync(
                   new RbelElementConvertionPair(
-                      RbelElement.builder().uuid(uuid).rawContent(messageBytes).build(),
+                      RbelElement.builder().uuid(uuid).content(messageContent).build(),
                       parsedRequest.orElse(null)),
                   sender,
                   receiver,

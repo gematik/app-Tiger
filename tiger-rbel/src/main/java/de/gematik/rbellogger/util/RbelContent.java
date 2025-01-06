@@ -64,10 +64,17 @@ public class RbelContent {
   }
 
   @Builder
-  private RbelContent(int chunkSize, @Nullable Collection<byte[]> content) {
-    this.chunkSize = chunkSize == 0 ? DEFAULT_CHUNK_SIZE : chunkSize;
+  private RbelContent(@Nullable Integer chunkSize, @Nullable Collection<byte[]> content) {
+    this.chunkSize = chunkSize == null ? DEFAULT_CHUNK_SIZE : chunkSize;
+    if (this.chunkSize <= 0) {
+      throw new IllegalArgumentException("chunkSize must be positive");
+    }
     if (content != null) {
-      appendAll(content);
+      int length = 0;
+      for (byte[] chunk : content) {
+        length += chunk.length;
+      }
+      appendContent(content, length);
     }
   }
 
@@ -154,9 +161,24 @@ public class RbelContent {
     deleteWeakReferences();
   }
 
-  public void appendAll(Collection<byte[]> arrays) {
-    if (arrays != null) {
-      arrays.forEach(this::append);
+  public void append(RbelContent content) {
+    appendContent(content.getChunks(), content.size);
+  }
+
+  private void appendContent(Collection<byte[]> arrays, int bytesToAppend) {
+    if (arrays != null && bytesToAppend >= 0) {
+      int copied = 0;
+      for (byte[] array : arrays) {
+        byte[] appended;
+        if (copied + array.length <= bytesToAppend) {
+          appended = array;
+        } else {
+          appended = new byte[bytesToAppend - copied];
+          System.arraycopy(array, 0, appended, 0, appended.length);
+        }
+        append(appended);
+        copied += appended.length;
+      }
     }
   }
 
@@ -462,5 +484,9 @@ public class RbelContent {
       }
     }
     return foundCount; // fewer than max allowed found
+  }
+
+  public boolean contains(byte[] searchContent) {
+    return indexOf(searchContent) >= 0;
   }
 }

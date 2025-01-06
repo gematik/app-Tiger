@@ -18,6 +18,7 @@
 package de.gematik.test.tiger.testenvmgr.env;
 
 import de.gematik.test.tiger.testenvmgr.api.model.ExecutionResultDto;
+import de.gematik.test.tiger.testenvmgr.api.model.mapper.TigerTestIdentifier;
 import de.gematik.test.tiger.testenvmgr.util.ScenarioCollector;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,11 +41,11 @@ public class TigerSummaryListener extends SummaryGeneratingListener {
   }
 
   private void preFillIndividualTestResults(TestPlan testPlan) {
-    ScenarioCollector.collectScenarios(testPlan)
+    ScenarioCollector.collectTigerScenarios(testPlan)
         .forEach(
             s ->
                 individualTestResults.put(
-                    s.getUniqueIdObject(),
+                    s.getTestIdentifier().getUniqueIdObject(),
                     new TestResultWithId(
                         s,
                         new ExecutionResultDto().result(ExecutionResultDto.ResultEnum.PENDING))));
@@ -92,11 +93,11 @@ public class TigerSummaryListener extends SummaryGeneratingListener {
   @AllArgsConstructor
   @Getter
   public class TestResultWithId {
-    private final TestIdentifier testIdentifier;
+    private final TigerTestIdentifier tigerTestIdentifier;
     @Setter private ExecutionResultDto testExecutionResult;
 
     public UniqueId getUniqueId() {
-      return testIdentifier.getUniqueIdObject();
+      return tigerTestIdentifier.getTestIdentifier().getUniqueIdObject();
     }
 
     public Optional<ExecutionResultDto> getTestExecutionResult() {

@@ -16,6 +16,7 @@
 
 package de.gematik.rbellogger;
 
+import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.*;
 import de.gematik.rbellogger.exceptions.RbelInitializationException;
 import java.lang.reflect.Modifier;
@@ -30,6 +31,7 @@ import org.reflections.Reflections;
 public class RbelConverterInitializer {
 
   private final RbelConverter rbelConverter;
+  private final RbelConfiguration rbelConfiguration;
   private final List<String> activateRbelParsingFor;
   private final Set<Class<? extends RbelConverterPlugin>> leftovers = new HashSet<>();
   private final List<Class<? extends RbelConverterPlugin>> converters = new ArrayList<>();
@@ -82,7 +84,17 @@ public class RbelConverterInitializer {
   private RbelConverterPlugin buildConverterInstance(
       Class<? extends RbelConverterPlugin> converterClass) {
     try {
-      return converterClass.getDeclaredConstructor().newInstance();
+      return converterClass
+          .getDeclaredConstructor(RbelConfiguration.class)
+          .newInstance(rbelConfiguration);
+    } catch (NoSuchMethodException e) {
+      try {
+        return converterClass.getDeclaredConstructor().newInstance();
+      } catch (Exception innerException) {
+        throw new RbelInitializationException(
+            "Could not initialize the converters. Error for '" + converterClass.getName() + "'",
+            innerException);
+      }
     } catch (Exception e) {
       throw new RbelInitializationException(
           "Could not initialize the converters. Error for '" + converterClass.getName() + "'", e);

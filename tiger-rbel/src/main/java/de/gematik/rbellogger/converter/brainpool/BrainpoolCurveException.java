@@ -16,7 +16,9 @@
 
 package de.gematik.rbellogger.converter.brainpool;
 
-public class BrainpoolCurveException extends RuntimeException {
+import de.gematik.test.tiger.exceptions.GenericTigerException;
+
+public class BrainpoolCurveException extends GenericTigerException {
   public BrainpoolCurveException(String msg, Exception e) {
     super(msg, e);
   }

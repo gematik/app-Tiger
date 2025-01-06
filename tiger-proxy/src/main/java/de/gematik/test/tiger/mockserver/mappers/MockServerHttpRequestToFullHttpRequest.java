@@ -94,8 +94,8 @@ public class MockServerHttpRequestToFullHttpRequest {
         && !Boolean.TRUE.equals(httpRequest.isSecure())) {
       if (isNotBlank(httpRequest.getFirstHeader(HOST.toString()))) {
         uri = "http://" + httpRequest.getFirstHeader(HOST.toString()) + uri;
-      } else if (httpRequest.getRemoteAddress() != null) {
-        uri = "http://" + httpRequest.getRemoteAddress() + uri;
+      } else if (httpRequest.getReceiverAddress() != null) {
+        uri = "http://" + httpRequest.getReceiverAddress() + uri;
       }
     }
     return uri;

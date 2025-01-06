@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.lib.serenityrest;
 
+import de.gematik.test.tiger.exceptions.GenericTigerException;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import io.restassured.RestAssured;
 import lombok.AccessLevel;
@@ -55,7 +56,7 @@ public class SerenityRestUtils {
         });
   }
 
-  private static class TigerSerenityRestException extends RuntimeException {
+  private static class TigerSerenityRestException extends GenericTigerException {
 
     public TigerSerenityRestException(String s, Exception e) {
       super(s, e);

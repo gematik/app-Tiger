@@ -27,7 +27,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.4.6</version>
+        <version>3.4.7</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -124,12 +124,6 @@
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-test-utils</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.cucumber</groupId>
-            <artifactId>cucumber-junit-platform-engine</artifactId>
-            <version>${version.cucumber}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

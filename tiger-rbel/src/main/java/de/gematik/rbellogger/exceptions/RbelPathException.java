@@ -16,7 +16,9 @@
 
 package de.gematik.rbellogger.exceptions;
 
-public class RbelPathException extends RuntimeException {
+import de.gematik.test.tiger.exceptions.GenericTigerException;
+
+public class RbelPathException extends GenericTigerException {
 
   public RbelPathException(String s) {
     super(s);

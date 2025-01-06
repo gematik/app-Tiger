@@ -16,6 +16,7 @@
 
 package de.gematik.rbellogger.util;
 
+import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -124,7 +125,7 @@ public enum RbelAnsiColors {
     return otherNames.contains(query.toLowerCase());
   }
 
-  private static class RbelUnknownAnsiColorException extends RuntimeException {
+  private static class RbelUnknownAnsiColorException extends GenericTigerException {
     public RbelUnknownAnsiColorException(String s) {
       super(s);
     }

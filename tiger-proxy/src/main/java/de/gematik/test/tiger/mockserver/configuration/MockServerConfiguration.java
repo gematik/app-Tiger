@@ -16,10 +16,10 @@
 
 package de.gematik.test.tiger.mockserver.configuration;
 
-import de.gematik.test.tiger.mockserver.model.BinaryProxyListener;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
+import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import java.net.InetSocketAddress;
@@ -65,7 +65,7 @@ public class MockServerConfiguration {
   private Integer maxChunkSize = Integer.MAX_VALUE;
 
   // non http proxying
-  private BinaryProxyListener binaryProxyListener = null;
+  private BinaryExchangeHandler binaryProxyListener = null;
   private boolean enableTlsTermination = true;
 
   // proxy

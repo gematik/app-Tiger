@@ -19,9 +19,10 @@
        v-on:mouseenter="ui.mouseEnterHandler"
        v-on:mousedown="ui.mouseDownHandler"
        v-on:mouseleave="ui.mouseLeaveHandler">
-    <i v-on:click="ui.toggleRightSideBar" class="fa-solid fa-angles-left resizer-right" id="test-webui-slider"></i>
+    <i v-on:click="clickedToggleIcon" :title="tooltipExpandMinimize"
+       class="fs-1 fa-solid fa-angles-left resizer-right" id="test-webui-slider"></i>
   </div>
-  <div class="d-none position-fixed pl-3 pt-3" id="rbellog_details_pane">
+  <div ref="detailsPane" class="d-none position-fixed pl-3 pt-3" id="rbellog_details_pane">
     <h2>
       <img alt="RBel logo" src="/img/rbellog.png" class="rbel-logo" id="test-rbel-logo">
       Tiger Proxy Log
@@ -40,11 +41,30 @@
 </template>
 <script setup lang="ts">
 import Ui from "@/types/ui/Ui";
+import {ref} from "vue";
 
-defineProps<{
+const props = defineProps<{
   localProxyWebUiUrl: string;
   ui: Ui
 }>()
+
+const detailsPane = ref<HTMLElement | null>(null);
+const tooltipExpandMinimize = ref<string>("Expand Tiger Proxy Log");
+
+
+function isMinimized(): boolean {
+  return detailsPane.value == undefined || detailsPane.value.classList.contains("d-none");
+}
+
+const clickedToggleIcon = (ev: MouseEvent) => {
+  props.ui.toggleRightSideBar(ev)
+  tooltipExpandMinimize.value = createTooltip();
+}
+const createTooltip = () => {
+  return (isMinimized() ? 'Expand' : 'Minimize') + ' Tiger Proxy Log';
+};
+
+
 </script>
 <style scoped>
 
@@ -59,7 +79,8 @@ defineProps<{
 }
 
 #rbellog_resize i.resizer-right {
-  left: -19px;
+  top: 1px;
+  left: -50px;
   right: 5px;
   color: var(--gem-primary-400);
   border: 1px solid var(--gem-primary-400);

@@ -28,9 +28,7 @@ import de.gematik.rbellogger.data.facet.RbelJwtFacet;
 import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.IOException;
-import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class JsonConverterTest {
@@ -88,7 +86,7 @@ class JsonConverterTest {
     final RbelElement convertedMessage =
         RbelLogger.build()
             .getRbelConverter()
-            .parseMessage(curlMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+            .convertElement(curlMessage.getBytes(), null);
 
     assertThat(RbelHtmlRenderer.render(List.of(convertedMessage))).isNotBlank();
 

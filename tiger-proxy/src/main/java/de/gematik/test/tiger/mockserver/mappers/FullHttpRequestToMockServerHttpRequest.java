@@ -68,8 +68,7 @@ public class FullHttpRequestToMockServerHttpRequest {
   public HttpRequest mapFullHttpRequestToMockServerRequest(
       FullHttpRequest fullHttpRequest,
       List<Header> preservedHeaders,
-      SocketAddress localAddress,
-      SocketAddress remoteAddress,
+      SocketAddress senderAddress,
       Optional<HttpProtocol> protocol,
       SSLSession sslSession) {
     HttpRequest httpRequest = new HttpRequest();
@@ -90,7 +89,7 @@ public class FullHttpRequestToMockServerHttpRequest {
         setQueryString(httpRequest, fullHttpRequest);
         setHeaders(httpRequest, fullHttpRequest, preservedHeaders);
         setBody(httpRequest, fullHttpRequest);
-        setSocketAddress(httpRequest, fullHttpRequest, isSecure, port, localAddress, remoteAddress);
+        setSocketAddress(httpRequest, fullHttpRequest, isSecure, port, senderAddress);
         setForwardProxyRequest(httpRequest, fullHttpRequest);
 
         jdkCertificateToMockServerX509Certificate.setClientCertificates(
@@ -127,14 +126,10 @@ public class FullHttpRequestToMockServerHttpRequest {
       FullHttpRequest fullHttpRequest,
       boolean isSecure,
       Integer port,
-      SocketAddress localAddress,
-      SocketAddress remoteAddress) {
-    httpRequest.setSocketAddress(isSecure, fullHttpRequest.headers().get("host"), port);
-    if (remoteAddress instanceof InetSocketAddress) {
-      httpRequest.setRemoteAddress(StringUtils.removeStart(remoteAddress.toString(), "/"));
-    }
-    if (localAddress instanceof InetSocketAddress) {
-      httpRequest.setLocalAddress(StringUtils.removeStart(localAddress.toString(), "/"));
+      SocketAddress senderAddress) {
+    httpRequest.setReceiverAddress(isSecure, fullHttpRequest.headers().get("host"), port);
+    if (senderAddress instanceof InetSocketAddress) {
+      httpRequest.setSenderAddress(StringUtils.removeStart(senderAddress.toString(), "/"));
     }
   }
 

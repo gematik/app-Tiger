@@ -16,9 +16,9 @@
 
 package de.gematik.rbellogger.util;
 
-public class RbelException extends RuntimeException {
+import de.gematik.test.tiger.exceptions.GenericTigerException;
 
-  private static final long serialVersionUID = -2312909087086432824L;
+public class RbelException extends GenericTigerException {
 
   public RbelException(final String s) {
     super(s);
@@ -26,9 +26,5 @@ public class RbelException extends RuntimeException {
 
   public RbelException(final String s, Throwable e) {
     super(s, e);
-  }
-
-  public RbelException(Exception e) {
-    super(e);
   }
 }

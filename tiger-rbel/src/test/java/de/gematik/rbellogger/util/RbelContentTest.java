@@ -42,7 +42,11 @@ class RbelContentTest {
     byte[] thirdChunk = Arrays.copyOfRange(input, 6, 11);
     byte[] fourthChunk = Arrays.copyOfRange(input, 11, 12);
 
-    bytes.appendAll(List.of(firstChunk, secondChunk, thirdChunk));
+    bytes.append(
+        RbelContent.builder()
+            .chunkSize(10)
+            .content(List.of(firstChunk, secondChunk, thirdChunk))
+            .build());
 
     assertEquals(11, bytes.size());
     assertNotNull(bytes.getChunks());
@@ -67,7 +71,8 @@ class RbelContentTest {
     byte[] firstChunk = Arrays.copyOfRange(input, 0, 3);
     byte[] secondChunk = Arrays.copyOfRange(input, 3, 6);
 
-    bytes.appendAll(List.of(firstChunk, secondChunk));
+    bytes.append(firstChunk);
+    bytes.append(secondChunk);
 
     assertEquals(6, bytes.size());
     assertNotNull(bytes.getChunks());

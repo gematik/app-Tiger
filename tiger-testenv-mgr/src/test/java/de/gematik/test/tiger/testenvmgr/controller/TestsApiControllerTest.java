@@ -32,6 +32,7 @@ import de.gematik.test.tiger.testenvmgr.api.model.TestExecutionRequestDto;
 import de.gematik.test.tiger.testenvmgr.api.model.TestExecutionResultDto;
 import de.gematik.test.tiger.testenvmgr.api.model.mapper.TestDescriptionMapper;
 import de.gematik.test.tiger.testenvmgr.api.model.mapper.TestExecutionStatusFactory;
+import de.gematik.test.tiger.testenvmgr.api.model.mapper.TigerTestIdentifier;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
 import java.io.File;
 import java.net.URI;
@@ -99,7 +100,16 @@ class TestsApiControllerTest {
   void testGetDiscoveredTest_containsDiscoveredTests() {
     val testDescriptors = TestExecutionStatusFactory.createTestDescriptorsFlat();
     val testIdentifiers = testDescriptors.stream().map(TestIdentifier::from).toList();
-    ScenarioRunner.addScenarios(testIdentifiers);
+    val tigerTestIdentifier =
+        testIdentifiers.stream()
+            .map(
+                testIdentifier ->
+                    TigerTestIdentifier.builder()
+                        .testIdentifier(testIdentifier)
+                        .displayName(testIdentifier.getDisplayName())
+                        .build())
+            .collect(Collectors.toList());
+    ScenarioRunner.addTigerScenarios(tigerTestIdentifier);
     List<TestDescriptionDto> responseBody =
         unirestInstance
             .get(BASE_URL + port + "/tests")
@@ -157,7 +167,7 @@ class TestsApiControllerTest {
   void testPostExecutionAllTests() {
 
     TestPlan testPlan = loadRealTestDescriptors("unitTest_A.feature");
-    ScenarioRunner.addScenarios(testPlan);
+    ScenarioRunner.addTigerScenarios(testPlan);
 
     assertThat(testPlan.containsTests()).isTrue();
 
@@ -169,7 +179,7 @@ class TestsApiControllerTest {
     assertThat(response.getStatus()).isEqualTo(HttpStatus.ACCEPTED.value());
 
     UUID uuid = response.getBody().getTestRunId();
-    TestIdentifier testIdentifier = ScenarioRunner.getScenarios().iterator().next();
+    TigerTestIdentifier testIdentifier = ScenarioRunner.getTigerScenarios().iterator().next();
 
     assertThat(response.getBody())
         .isEqualTo(
@@ -178,13 +188,14 @@ class TestsApiControllerTest {
                 .resultUrl(URI.create("http://localhost:" + port + "/tests/runs/" + uuid))
                 .testsToExecute(
                     List.of(
-                        testDescriptionMapper.testIdentifierToTestDescription(testIdentifier))));
+                        testDescriptionMapper.tigerTestIdentifierToTestDescription(
+                            testIdentifier))));
   }
 
   @Test
   void testPostExecutionEmptySelectors_selectsAll() {
     TestPlan testPlan = loadTestDescriptorsAllFeatures();
-    ScenarioRunner.addScenarios(testPlan);
+    ScenarioRunner.addTigerScenarios(testPlan);
 
     assertThat(testPlan.containsTests()).isTrue();
 
@@ -204,7 +215,7 @@ class TestsApiControllerTest {
   void testGetTestResults() {
 
     TestPlan testPlan = loadRealTestDescriptors("unitTest_A.feature");
-    ScenarioRunner.addScenarios(testPlan);
+    ScenarioRunner.addTigerScenarios(testPlan);
 
     assertThat(testPlan.containsTests()).isTrue();
 
@@ -241,7 +252,7 @@ class TestsApiControllerTest {
   @Test
   void testPostExecutionByTag() {
     TestPlan testPlan = loadTestDescriptorsAllFeatures();
-    ScenarioRunner.addScenarios(testPlan);
+    ScenarioRunner.addTigerScenarios(testPlan);
 
     assertThat(testPlan.containsTests()).isTrue();
 
@@ -269,7 +280,7 @@ class TestsApiControllerTest {
   @Test
   void testPostExecutionByFile() {
     TestPlan testPlan = loadTestDescriptorsAllFeatures();
-    ScenarioRunner.addScenarios(testPlan);
+    ScenarioRunner.addTigerScenarios(testPlan);
 
     assertThat(testPlan.containsTests()).isTrue();
 
@@ -297,7 +308,7 @@ class TestsApiControllerTest {
   @Test
   void testPostExecutionByUniqueID() {
     TestPlan testPlan = loadTestDescriptorsAllFeatures();
-    ScenarioRunner.addScenarios(testPlan);
+    ScenarioRunner.addTigerScenarios(testPlan);
 
     var uniqueIdToExecute =
         "[engine:cucumber]/[feature:classpath%3Afeatures%2FunitTest_B.feature]/[scenario:4]";
@@ -322,7 +333,7 @@ class TestsApiControllerTest {
   @Test
   void testPostExecutionFileAndTag() {
     TestPlan testPlan = loadTestDescriptorsAllFeatures();
-    ScenarioRunner.addScenarios(testPlan);
+    ScenarioRunner.addTigerScenarios(testPlan);
 
     assertThat(testPlan.containsTests()).isTrue();
 
