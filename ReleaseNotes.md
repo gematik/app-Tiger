@@ -2,21 +2,27 @@
 
 # Release 3.4.7
 
-## Breaking Changes 
+## Breaking Changes
 
-* TGR-1686: Stricter HTTP-Parsing added. This means messages without valid headers will not be parsed. Error messages will be added. To disable this feature set the following configuration key in the tiger.yaml:
+* TGR-1686: Stricter HTTP-Parsing added. This means messages without valid headers will not be parsed. Error messages
+  will be added. To disable this feature set the following configuration key in the tiger.yaml:
 
 ```yaml
 rbel.lenientHttpParsing: true
 ```
 
+* TGR-1685: added glue step to support storing nodes of requests into Tiger Global Configuration properties.
+
 ## Features
 
-* TGR-1447, TGR-1656: Tiger-Proxy: Sequence-Numbers are assigned per tiger proxy, assuring monotonous increase. A history of sequence numbers per proxy is transmitted to the downstream proxy. This shall allow
+* TGR-1447, TGR-1656: Tiger-Proxy: Sequence-Numbers are assigned per tiger proxy, assuring monotonous increase. A
+  history of sequence numbers per proxy is transmitted to the downstream proxy. This shall allow
   differentiation for messages originating from different proxies.
 
 ## Bugfixes
-* TGR-783, TGR-1327: Tiger-Proxy: Refined the handling of trailing slashes in proxy-routes. This eliminates certain unwanted edge-cases. (route /foo and request /foobar will no longer match)
+
+* TGR-783, TGR-1327: Tiger-Proxy: Refined the handling of trailing slashes in proxy-routes. This eliminates certain
+  unwanted edge-cases. (route /foo and request /foobar will no longer match)
 
 # Release 3.4.6
 
@@ -321,8 +327,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-    key = PLUGIN_PROPERTY_NAME,
-    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+        key = PLUGIN_PROPERTY_NAME,
+        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

@@ -558,9 +558,33 @@ public class RBelValidatorGlue {
 
   // =================================================================================================================
   //
-  //    S T O R E   R E S P O N S E   N O D E   I N   C O N T E X T
+  //    S T O R E   R E S P O N S E  / R E Q U E S T   N O D E   I N   C O N T E X T
   //
   // =================================================================================================================
+
+  /**
+   * store given rbel path node/attribute text value of current request.
+   *
+   * @param rbelPath path to node/attribute
+   * @param varName name of variable to store the node text value in
+   */
+  @Dann(
+      "TGR speichere Wert des Knotens {tigerResolvedString} der aktuellen Anfrage in der Variable"
+          + " {tigerResolvedString}")
+  @Then(
+      "TGR store current request node text value at {tigerResolvedString} in variable"
+          + " {tigerResolvedString}")
+  public void storeCurrentRequestNodeTextValueInVariable(
+      final String rbelPath, final String varName) {
+    final String text =
+        rbelValidator.findElementsInCurrentRequest(rbelPath).stream()
+            .map(RbelElement::getRawStringContent)
+            .filter(Objects::nonNull)
+            .map(String::trim)
+            .collect(Collectors.joining());
+    TigerGlobalConfiguration.putValue(varName, text, ConfigurationValuePrecedence.TEST_CONTEXT);
+    log.info(String.format("Storing '%s' in variable '%s'", text, varName));
+  }
 
   /**
    * store given rbel path node/attribute text value of current response.
