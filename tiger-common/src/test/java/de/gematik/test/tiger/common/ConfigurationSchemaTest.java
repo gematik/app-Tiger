@@ -10,6 +10,7 @@ import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
@@ -23,12 +24,19 @@ public class ConfigurationSchemaTest {
   private static final ObjectMapper objectMapper = new ObjectMapper();
 
   @Test
-  void testConfigurationSchema() throws Exception {
+  void testValidConfigurations() throws Exception {
     final JsonSchema jsonSchema = loadSchema();
-    final JsonNode example = loadExample("src/test/resources/schema/exampleConfiguration.yml");
+    final List<String> exampleConfigurations =
+        List.of(
+            "src/test/resources/schema/exampleConfiguration1.yml",
+            "src/test/resources/schema/exampleConfiguration2.yml",
+            "src/test/resources/schema/exampleConfiguration3.yml");
+    for (final String exampleConfiguration : exampleConfigurations) {
+      final JsonNode example = loadExample(exampleConfiguration);
 
-    final Set<ValidationMessage> validationMessages = jsonSchema.validate(example);
-    assertThat(validationMessages).isEmpty();
+      final Set<ValidationMessage> validationMessages = jsonSchema.validate(example);
+      assertThat(validationMessages).isEmpty();
+    }
   }
 
   private JsonSchema loadSchema() throws Exception {

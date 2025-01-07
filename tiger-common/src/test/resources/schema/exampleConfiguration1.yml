@@ -19,8 +19,8 @@ servers:
   remoteTigerProxy:
     type: tigerProxy
     tigerProxyConfiguration:
-      adminPort: ${free.port.2}
-      proxyPort: ${free.port.1}
+      adminPort: 9002
+      proxyPort: 9003
       proxyRoutes:
         - from: http://httpbin
           to: http://localhost:${free.port.4}
