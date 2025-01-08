@@ -11,13 +11,13 @@
 rbel.lenientHttpParsing: true
 ```
 
-* TGR-1685: added glue step to support storing nodes of requests into Tiger Global Configuration properties.
-
 ## Features
 
 * TGR-1447, TGR-1656: Tiger-Proxy: Sequence-Numbers are assigned per tiger proxy, assuring monotonous increase. A
   history of sequence numbers per proxy is transmitted to the downstream proxy. This shall allow
   differentiation for messages originating from different proxies.
+* TGR-1685: added glue step to support storing nodes of requests into Tiger Global Configuration properties.
+* TGR-1672: improved display of tiger user manual on small screens (tables)
 
 ## Bugfixes
 

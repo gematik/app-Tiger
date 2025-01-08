@@ -261,6 +261,7 @@ Each entry has to provide a unique id, type and pem property.
       pem: "ISUADOGBESBXEZOBXWEDHBXOU..."
 ----
 
+[#_configuring_pki_identities_in_tiger_proxys_tls_section]
 ==== Configuring PKI identities in Tiger Proxy's tls section
 
 PKI identities can be supplied in a number of ways (JKS, BKS, PKCS1, PKCS8).
