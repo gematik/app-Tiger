@@ -1,15 +1,16 @@
 == Tiger Proxy
 
+[#_excurse_what_are_proxies_reverse_forward]
 === Excurse: What are proxies, reverse, forward
 
-There are a lot of different kind of proxies.
+There are a lot of different types of proxies.
 Here we talk only about HTTP and HTTPS proxies!
 
 ==== Forward proxies
 
 Forward proxies work like a switch-station: You send a packet to your destination, via proxy.
 The proxy receives the packet, sees the address and can send that packet to wherever he sees fit.
-To use a forward proxy the sender has to be aware of it and send the packet accordingly.
+To use a forward proxy, the sender has to be aware of it and send the packet accordingly.
 
 This allows the creation of virtual domains, something we use extensively in tiger.
 
@@ -33,6 +34,7 @@ This also enables path-rewriting (for example the GET http://reverse.proxy.de/my
 A reverse proxy also terminates https, always.
 This is less of a problem with a reverse proxy since it is technically not a man-in-the-middle attack, due to the traffic being addressed to the reverse proxy.
 
+[#_tiger_proxy_basics]
 === Tiger Proxy basics
 
 The Tiger Proxy is a proxy-server.
@@ -56,7 +58,9 @@ From where should the traffic be collected?
 This can either be an absolute URL (e.g. http://foobar), which defines a forward-proxy route, or relative (e.g. /blub), defining a reverse-proxy-route.
 Please note: You can freely add parts (e.g. http://foobar/extra/part) to further specify the mapping.
 
-You can add multiple routes that match the same URL. If multiple matches are found the most specific route is select. For example if you have two routes `/` and `/foo` then for a request to `/foo/bar` the route `/foo` will be selected.
+You can add multiple routes that match the same URL.
+If multiple matches are found the most specific route is select.
+For example if you have two routes `/` and `/foo` then for a request to `/foo/bar` the route `/foo` will be selected.
 
 ==== to
 
@@ -102,11 +106,16 @@ and you execute GET http://my.domain/deep/deeper, you will get the result of GET
 
 ==== Trailing Slashes
 
-Trailing slashes in routes may be significant for the server. Thus, the handling in the tiger-proxy is important. To achieve a consistent behavior while maintaining ease of use, the following rules apply:
+Trailing slashes in routes may be significant for the server.
+Thus, the handling in the tiger-proxy is important.
+To achieve a consistent behavior while maintaining ease of use, the following rules apply:
 
-* If the request is longer then the from-path of the route (eg. if the "from" is "/foo" and the request is "/foo/bar", then "/bar" is the deep-path), the trailing slash behavior from the request is taken. This only is the case for more path-fragments (/foo/bar), and not simply a longer string (/foobar), as this would not be matched to the route.
+* If the request is longer then the from-path of the route (eg. if the "from" is "/foo" and the request is "/foo/bar", then "/bar" is the deep-path), the trailing slash behavior from the request is taken.
+This only is the case for more path-fragments (/foo/bar), and not simply a longer string (/foobar), as this would not be matched to the route.
 * If the to-URL has a trailing slash, the request is forwarded with a trailing slash.
-* Finally, if the request ends with a slash and the from-URL does NOT end with one, a trailing slash is added. (The logic being the slash in the from-URL expresses an anticipated slash. Thus, a slash being present in the request is simply "expected".)
+* Finally, if the request ends with a slash and the from-URL does NOT end with one, a trailing slash is added.
+(The logic being the slash in the from-URL expresses an anticipated slash.
+Thus, a slash being present in the request is simply "expected".)
 
 This leads to the following examples:
 
@@ -127,7 +136,9 @@ This leads to the following examples:
 
 ==== hosts
 
-In some instances you might be pressed to "hosts" multiple servers on one tiger-proxy. This can happen when you can influence DNS-Resolvement, but neither the path nor the port used. In this case you can use the hosts-property to define which hosts should be routed to which target.
+In some instances you might be pressed to "hosts" multiple servers on one tiger-proxy.
+This can happen when you can influence DNS-Resolvement, but neither the path nor the port used.
+In this case you can use the hosts-property to define which hosts should be routed to which target.
 
 [source,yaml]
 ----
@@ -138,11 +149,14 @@ tigerProxy:
         - ".*.bing.com"
 ----
 
-The entries are matched first as a total match, failing that as regular expressions. If you want to add ports you are free to do so: "myHost:80". This however will necessitate that the ports on all entries in this specific list are given (this does not apply to other routes).
+The entries are matched first as a total match, failing that as regular expressions.
+If you want to add ports you are free to do so: "myHost:80".
+This however will necessitate that the ports on all entries in this specific list are given (this does not apply to other routes).
 
 ==== Multiple targets
 
-Sometimes you can only at runtime know which target to use. This can be achieved by using the `to`-property as a list of targets:
+Sometimes you can only at runtime know which target to use.
+This can be achieved by using the `to`-property as a list of targets:
 
 [source,yaml]
 ----
@@ -154,11 +168,16 @@ tigerProxy:
           - http://ard.de/bla/
 ----
 
-When booting the tiger-proxy the proxy tries to reach the target host by sending a HEAD-request to the host (dropping the path). If the server sends a valid HTTP (or HTTPS) response, the target is considered reachable and the route is used. If no target can be reached an exception is thrown. The return code is ignored.
+When booting the tiger-proxy the proxy tries to reach the target host by sending a HEAD-request to the host (dropping the path).
+If the server sends a valid HTTP (or HTTPS) response, the target is considered reachable and the route is used.
+If no target can be reached an exception is thrown.
+The return code is ignored.
 
 ==== criterions
 
-As an additional measure for a more fine-grained matching you can use criterions. These are JEXL-expressions which have to be fulfilled for the route to be used. This can be leveraged to make the routing decision dependent on the content of the message.
+As an additional measure for a more fine-grained matching you can use criterions.
+These are JEXL-expressions which have to be fulfilled for the route to be used.
+This can be leveraged to make the routing decision dependent on the content of the message.
 
 [source,yaml]
 ----
@@ -180,7 +199,8 @@ Deactivating it for routes in which it is not needed is therefore a good idea.
 
 ==== Authentication
 
-You can add optional authentication configuration which will be added to the forwarded message. Here either Basic access authentication or Bearer Token can be used:
+You can add optional authentication configuration which will be added to the forwarded message.
+Here either Basic access authentication or Bearer Token can be used:
 
 [source,yaml]
 ----
@@ -197,7 +217,8 @@ tigerProxy:
           bearerToken: "blubblab"
 ----
 
-Please note that the phrase "Bearer " will be added automatically. Please do not add it yourself!
+Please note that the phrase "Bearer " will be added automatically.
+Please do not add it yourself!
 
 === TLS, keys, certificates a quick tour on proxies
 
@@ -293,7 +314,8 @@ tigerProxy:
 ==== Fixed server identity
 
 The final, easiest and most unflexible way to solve TLS-issues is to simply give a fixed server-identity.
-This identity will be used for all routes, but only if it matches the domain-name given by the client during the handshake. As a fallback (if the domain-name does not match) the dynamic server-identity will be used.
+This identity will be used for all routes, but only if it matches the domain-name given by the client during the handshake.
+As a fallback (if the domain-name does not match) the dynamic server-identity will be used.
 
 [source,yaml]
 ----
@@ -312,11 +334,15 @@ tigerProxy:
       allowGenericFallbackIdentity: true
 ----
 
-If `certificateForFoobar.p12` contains a certificate for the FQDN `foobar.com`, then a request to `foobar.com` will use this certificate. If the request is to `barfoo.com` the generic server-identity will be used. If you have supplied a `serverRootCa` this CA will always be used for any request for which an exact match is not found.
+If `certificateForFoobar.p12` contains a certificate for the FQDN `foobar.com`, then a request to `foobar.com` will use this certificate.
+If the request is to `barfoo.com` the generic server-identity will be used.
+If you have supplied a `serverRootCa` this CA will always be used for any request for which an exact match is not found.
 
 ==== Multiple server identities
 
-Sometimes you might want to use different server-identities for different hosts that are proxied. This can be achieved by using the `serverIdentities`-property. Simply list the properties, the proxy will automatically try to choose the correct one.
+Sometimes you might want to use different server-identities for different hosts that are proxied.
+This can be achieved by using the `serverIdentities`-property.
+Simply list the properties, the proxy will automatically try to choose the correct one.
 
 [source,yaml]
 ----
@@ -342,7 +368,9 @@ The server will then use this OCSP-Signer to create a fake OCSP-Response during 
 
 ==== TLS Decryption in wireshark
 
-Sometimes you might want to look at decrypted TLS-traffic in wireshark. To achieve this we need to extract the masterSecrets of every connection from the Tiger Proxy and provide them to wireshark. This is actually pretty straight forward, with one big caveat: It is very insecure to access the masterSecrets of a TLS-connection, so we need to attach a Java-Agent to the VM.
+Sometimes you might want to look at decrypted TLS-traffic in wireshark.
+To achieve this we need to extract the masterSecrets of every connection from the Tiger Proxy and provide them to wireshark.
+This is actually pretty straight forward, with one big caveat: It is very insecure to access the masterSecrets of a TLS-connection, so we need to attach a Java-Agent to the VM.
 
 When you are using the Tiger Proxy in a normal tiger-testsuite you can simply add the                             `<goal>attach-tiger-agent</goal>` goal to the tiger-maven-plugin:
 
@@ -364,7 +392,8 @@ When you are using the Tiger Proxy in a normal tiger-testsuite you can simply ad
             </plugin>
 ----
 
-This will modify the `argLine` property used by failsafe to start the testsuite and attach the TigerAgent to the VM. Next we need to set the filename where to write the masterSecrets to:
+This will modify the `argLine` property used by failsafe to start the testsuite and attach the TigerAgent to the VM.
+Next we need to set the filename where to write the masterSecrets to:
 
 [source,yaml]
 ----
@@ -377,7 +406,11 @@ The Tiger Proxy will write the secrets to the given file.
 
 The final step is to import the masterSecrets into wireshark:
 
-Go to Edit -> Preferences. Open the Protocols tree and select TLS. Alternatively, select a TLS packet in the packet list, right-click on the TLS layer in the packet details view and open the Protocol preferences menu. Set the `(Pre)-Master-Secret log filename` to the file containing the master secrets. Now wireshark should decrypt TLS traffic routed through the Tiger Proxy on-the-fly.
+Go to Edit -> Preferences.
+Open the Protocols tree and select TLS.
+Alternatively, select a TLS packet in the packet list, right-click on the TLS layer in the packet details view and open the Protocol preferences menu.
+Set the `(Pre)-Master-Secret log filename` to the file containing the master secrets.
+Now wireshark should decrypt TLS traffic routed through the Tiger Proxy on-the-fly.
 
 === Modifications
 
@@ -502,6 +535,7 @@ This JSON encoded message consists of:
 RBeL-Path is a XPath or JSON-Path inspired expression-language enabling the quick traversal of captured RBeL-Traffic (navigation of the RbelElement-tree).
 
 A simple example:
+
 [source,java]
 ----
 assertThat(convertedMessage.findRbelPathMembers("$.header"))
@@ -509,6 +543,7 @@ assertThat(convertedMessage.findRbelPathMembers("$.header"))
 ----
 
 or
+
 [source,java]
 ----
 assertThat(convertedMessage.findElement("$.header"))
@@ -571,13 +606,15 @@ So to use special characters please URL encode them (Space is a special case sin
 
 ==== Arrays
 
-To make things easy and consistent, the entries of an array are simply stored as a map with the index as key. So the following expression will return the first element of the array:
+To make things easy and consistent, the entries of an array are simply stored as a map with the index as key.
+So the following expression will return the first element of the array:
 
 `$.body.array.0`
 
 ==== Differentiating between multiple elements
 
-When a key is present multiple times, all elements are returned. To differentiate between them, you can use the index:
+When a key is present multiple times, all elements are returned.
+To differentiate between them, you can use the index:
 
 `$.body.entry[0]`
 
@@ -603,14 +640,15 @@ So if only always one of the two elements is present, only a single element will
 
 ==== Case-insensitive matching
 
-Sometimes it can be helpful to match keys in a case-insensitive manner. To achieve this you can use the `~`-operator:
+Sometimes it can be helpful to match keys in a case-insensitive manner.
+To achieve this you can use the `~`-operator:
 `$.body.[~'fOO'].key`
 
 This will match `$.body.foo.key` and `$.body.FOO.key` (and any other case-insensitive match).
 
 To find multiple case-insensitive matches, concatenate them using the pipe symbols, like so:
-`$.body.[~'fOO'|~'bAR'].key`. With this expression, the following nodes will be found: `$.body.foo.key`, `$.body.FOO.key`, `$.body.bar.key` and `$.body.BAR.key` (and any other potential matches).
-
+`$.body.[~'fOO'|~'bAR'].key`.
+With this expression, the following nodes will be found: `$.body.foo.key`, `$.body.FOO.key`, `$.body.bar.key` and `$.body.BAR.key` (and any other potential matches).
 
 [#_jexl_expressions]
 ==== JEXL expressions
@@ -746,8 +784,8 @@ There are some additional configuration-flags in the Tiger Proxy:
 ==== Performance
 
 Below some properties along with their respective default values:
-[source,yaml]
 
+[source,yaml]
 ----
 tigerProxy:
     activateRbelParsing: true
@@ -764,7 +802,8 @@ This is a huge deal in terms of memory- and CPU-consumption, but you will lose a
 
 ===== activateRbelParsingFor
 
-This option can activate various optional Rbel-Converters. Currently supported are:
+This option can activate various optional Rbel-Converters.
+Currently supported are:
 
 * `pop3` for RbelPop3CommandConverter and RbelPop3ResponseConverter
 * `smtp` for RbelSmtpCommandConverter and RbelSmtpResponseConverter
@@ -801,19 +840,28 @@ This will directly forward any request to the given host.
 This is a form of reverseProxy, only also applicable for non-http-traffic.
 HTTP traffic will still be forwarded through use of a global reverse proxy.
 Other traffic will be directly forwarded, rerouted directly on the TCP layer.
-Messages transmitted can still be parsed via RBel. If the optional flag `ignoreConnectionErrors` is true, no connection errors will be logged, the default is false.
+Messages transmitted can still be parsed via RBel.
+If the optional flag `ignoreConnectionErrors` is true, no connection errors will be logged, the default is false.
 
 ==== activateTrafficLogging
 
-This flag controls whether the Tiger Proxy will log all traffic. If activated every request and response is noted in the log. This can lead to a verbose and bloated log. If you are not interested in the traffic log, but only in the Rbel-Analysis, you can deactivate this flag. Default is true.
+This flag controls whether the Tiger Proxy will log all traffic.
+If activated every request and response is noted in the log.
+This can lead to a verbose and bloated log.
+If you are not interested in the traffic log, but only in the Rbel-Analysis, you can deactivate this flag.
+Default is true.
 
 ==== rewriteHostHeader
 
-This flag activates the rewriting of the host-header. If activated the host-header will be rewritten to the target host (only applicable for reverse proxy routes). Default is false.
+This flag activates the rewriting of the host-header.
+If activated the host-header will be rewritten to the target host (only applicable for reverse proxy routes).
+Default is false.
 
 ==== rewriteLocationHeader
 
-This flag activates the rewriting of the location-header for 3xx responses. If activated the location-header will be modified so the client will still use the proxy to reach the new location. Default is true.
+This flag activates the rewriting of the location-header for 3xx responses.
+If activated the location-header will be modified so the client will still use the proxy to reach the new location.
+Default is true.
 
 === Understanding filtering
 

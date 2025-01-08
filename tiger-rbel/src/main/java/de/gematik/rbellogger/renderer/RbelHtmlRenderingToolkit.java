@@ -320,41 +320,10 @@ public class RbelHtmlRenderingToolkit {
   }
 
   public String menuTab(final RbelElement rbelElement) {
-    final String uuid = rbelElement.getUuid();
-    JSONObject metaData = new JSONObject();
-    metaData.put("uuid", uuid);
-    metaData.put("sequenceNumber", Integer.parseInt(getElementSequenceNumber(rbelElement)) - 1);
-    metaData.put(
-        "menuInfoString",
-        rbelElement
-            .getFacet(RbelMessageInfoFacet.class)
-            .map(RbelMessageInfoFacet::getMenuInfoString)
-            .orElse(""));
-    metaData.put(
-        "symbol",
-        rbelElement
-            .getFacet(RbelMessageInfoFacet.class)
-            .map(RbelMessageInfoFacet::getSymbol)
-            .orElse(null));
-    metaData.put(
-        "abbrev",
-        rbelElement
-            .getFacet(RbelMessageInfoFacet.class)
-            .map(RbelMessageInfoFacet::getAbbrev)
-            .orElse("fdsafdsfas"));
-    metaData.put(
-        "color",
-        rbelElement
-            .getFacet(RbelMessageInfoFacet.class)
-            .map(RbelMessageInfoFacet::getColor)
-            .orElse(""));
-    metaData.put(
-        "timestamp",
-        rbelElement
-            .getFacet(RbelMessageTimingFacet.class)
-            .map(RbelMessageTimingFacet::getTransmissionTime)
-            .orElse(null));
-    metaData.put("request", rbelElement.hasFacet(RbelRequestFacet.class));
+    final String metaData =
+        new JSONObject(
+                MessageMetaDataDto.createFrom(rbelElement))
+            .toString();
     return "createMenuEntry(" + metaData + ")";
   }
 

@@ -28,6 +28,7 @@ import java.io.File;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import lombok.SneakyThrows;
+import lombok.val;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +41,6 @@ public class VauEpa3ConverterTest {
     rbelLogger =
         RbelLogger.build(
             new RbelConfiguration()
-                .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
                 .activateConversionFor("epa3-vau")
                 .addCapturer(
                     RbelFileReaderCapturer.builder()
@@ -54,9 +54,25 @@ public class VauEpa3ConverterTest {
   @SneakyThrows
   @Test
   void shouldRenderCleanHtml() {
+    val rbelLogger =
+      RbelLogger.build(
+        new RbelConfiguration()
+          .activateConversionFor("epa3-vau")
+          .addCapturer(
+            RbelFileReaderCapturer.builder()
+              .rbelFile("src/test/resources/vau3WithInnerGzip.tgr")
+              .build()));
+    try (final var capturer = rbelLogger.getRbelCapturer()) {
+      capturer.initialize();
+    }
+
     final String html = RbelHtmlRenderer.render(rbelLogger.getMessageHistory());
     Files.write(new File("target/vau3.html").toPath(), html.getBytes());
-    assertThat(html).isNotBlank();
+    assertThat(html)
+        .isNotBlank()
+        .contains(
+            "additionalInformation\":[\"GET /epa/medication/api/v1/fhir/Medication/Medication")
+        .contains(">GET /epa/medication/api/v1/fhir/Medication/Medication");
   }
 
   @SneakyThrows
@@ -123,4 +139,6 @@ public class VauEpa3ConverterTest {
         .extractChildWithPath("$.body.decrypted.body.resourceType")
         .hasStringContentEqualTo("Bundle");
   }
+
+
 }

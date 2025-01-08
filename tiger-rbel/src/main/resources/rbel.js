@@ -15,25 +15,20 @@
  */
 
 const menuHtmlMessage =
-    "<div class=\"ms-1 is-size-7\">"
-    + "  <a onclick=\"scrollToMessage('${uuid}',${sequenceNumber})\" class=\"mt-3 is-block\">\n"
-    + "    <div class=\"${color} d-flex align-items-center\">\n"
-    + "      <span class=\"tag ${color} is-light me-1\">${sequence}</span>\n"
-    + "      <i class=\"fas ${symbol}\"></i>\n"
-    + "      <span class=\"ms-1\">${abbrev}</span>\n"
-    + "      <span class=\"has-text-dark text-ellipsis ms-auto\">${timestamp}</span>\n"
-    + "    </div>\n"
-    + "    <div class=\"ms-4 ${color} d-flex align-items-center\">\n"
-    + "      <span class=\"ms-1 has-text-weight-bold text-ellipsis\""
-    + "        title=\"${menuInfoString}\">${menuInfoString}"
-    + "      </span>\n"
-    + "    </div>\n"
-    + "    <div class=\"ms-4 ${color} d-flex align-items-center\">\n"
-    + "      <span class=\"ms-3 text-ellipsis\""
-    + "        title=\"${additionalInformation}\">${additionalInformation}"
-    + "      </span>\n"
-    + "    </div>\n"
-    + "  </a></div>";
+    `<div class="ms-1 is-size-7">  <a onclick="scrollToMessage('$\{uuid}',$\{sequenceNumber})" class="mt-3 is-block">
+    <div class="$\{color} d-flex align-items-center">
+      <span class="tag $\{color} is-light me-1">$\{sequence}</span>
+      <i class="fas $\{symbol}"></i>
+      <span class="ms-1">$\{abbrev}</span>
+      <span class="has-text-dark text-ellipsis ms-auto">$\{timestamp}</span>
+    </div>
+    <div class="ms-4 $\{color} d-flex align-items-center">
+      <span class="ms-1 has-text-weight-bold text-ellipsis"        title="$\{menuInfoString}">$\{menuInfoString}      </span>
+    </div>
+    <div class="ms-4 $\{color} d-flex align-items-center">
+      <span class="ms-3 text-ellipsis"        title="$\{additionalInformation}">$\{additionalInformation}      </span>
+    </div>
+  </a></div>`;
 
 const menuHtmlTemplateSubResponse =
     "      <i class=\"fas fa-reply\"></i>\n"
@@ -66,18 +61,9 @@ function createMenuEntry(msgMetaData) {
     }
     if (msgMetaData.additionalInformation != null &&
         msgMetaData.additionalInformation.length > 0) {
-        if (isRequest) {
-            menuItem = menuItem
-                .replaceAll("${additionalInformation}",
-                    msgMetaData.additionalInformation[0]);
-        } else {
-            let subMenu = menuHtmlTemplateSubResponse
-                .replaceAll("${additionalInformation}",
-                    msgMetaData.additionalInformation[0]);
-            menuItem = menuItem
-                .replaceAll("${additionalInformation}",
-                    subMenu);
-        }
+        menuItem = menuItem
+            .replaceAll("${additionalInformation}",
+                msgMetaData.additionalInformation[0]);
     } else {
         menuItem = menuItem
             .replaceAll("${additionalInformation}", " ");

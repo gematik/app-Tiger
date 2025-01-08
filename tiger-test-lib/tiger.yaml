@@ -10,6 +10,7 @@ tigerProxy:
     - .
   activateRbelParsingFor:
     - X509
+    - epa3-vau
 
 servers:
   httpbin:

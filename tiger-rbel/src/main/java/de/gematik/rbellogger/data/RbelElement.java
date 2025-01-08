@@ -454,13 +454,24 @@ public class RbelElement extends RbelPathAble {
     }
   }
 
-  public static List<RbelElement> findAllNestedElementsWithFacet(
-      RbelElement el, Class<? extends RbelFacet> rbelFacetClass) {
+  public <F extends RbelFacet> List<F> findAllNestedFacets(Class<F> rbelFacetClass) {
+    return getChildNodes().stream()
+        .map(child -> findAllNestedElementsWithFacet(child, rbelFacetClass))
+        .flatMap(List::stream)
+        .flatMap(RbelElement::getFacetStream)
+        .filter(rbelFacetClass::isInstance)
+        .map(rbelFacetClass::cast)
+        .toList();
+  }
+
+  private static List<RbelElement> findAllNestedElementsWithFacet(
+      RbelElement target, Class<? extends RbelFacet> rbelFacetClass) {
     List<RbelElement> result = new ArrayList<>();
-    if (el.hasFacet(rbelFacetClass)) {
-      result.add(el);
+    if (target.hasFacet(rbelFacetClass)) {
+      result.add(target);
     }
-    el.getChildNodes()
+    target
+        .getChildNodes()
         .forEach(child -> result.addAll(findAllNestedElementsWithFacet(child, rbelFacetClass)));
 
     return result;

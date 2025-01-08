@@ -16,44 +16,24 @@
 
 package de.gematik.test.tiger.proxy.data;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
-import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
+import de.gematik.rbellogger.renderer.MessageMetaDataDto;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.AbstractTigerProxyTest;
+import de.gematik.test.tiger.proxy.TigerProxy;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
 @Slf4j
 @TestInstance(Lifecycle.PER_CLASS)
 @ResetTigerConfiguration
-public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
-
-  @RegisterExtension
-  static WireMockExtension forwardProxy =
-      WireMockExtension.newInstance()
-          .options(wireMockConfig().dynamicPort())
-          .configureStaticDsl(true)
-          .build();
-
-  @BeforeAll
-  public static void setupForwardProxy(WireMockRuntimeInfo runtimeInfo) {
-    log.info("Started Forward-Proxy-Server on port {}", forwardProxy.getPort());
-
-    forwardProxy.stubFor(
-        get(urlMatching(".*"))
-            .willReturn(aResponse().proxiedFrom("http://localhost:" + runtimeInfo.getHttpPort())));
-  }
+class TestMessageMetaDataDto extends AbstractTigerProxyTest {
 
   @Test
   void checkMessageMetaDataDtoConversion() {
@@ -62,24 +42,59 @@ public class TestMessageMetaDataDto extends AbstractTigerProxyTest {
     proxyRest.get("http://backend/foobar").asJson();
     awaitMessagesInTiger(2);
 
-    MessageMetaDataDto message0 =
+    MessageMetaDataDto requestMetaData =
         MessageMetaDataDto.createFrom(tigerProxy.getRbelMessagesList().get(0));
-    assertThat(message0.getPath()).isEqualTo("/foobar");
-    assertThat(message0.getMethod()).isEqualTo("GET");
-    assertThat(message0.getResponseCode()).isNull();
-    assertThat(message0.getRecipient()).isEqualTo("backend:80");
-    // TODO TGR-651 wieder reaktivieren
-    // assertThat(message0.getSender()).matches("(view-|)localhost:\\d*");
-    assertThat(message0.getSequenceNumber()).isZero();
+    assertThat(requestMetaData)
+        .hasFieldOrPropertyWithValue("menuInfoString", "GET /foobar")
+        .hasFieldOrPropertyWithValue("recipient", "backend:80")
+        .hasFieldOrPropertyWithValue("symbol", "fa-share")
+        .hasFieldOrPropertyWithValue("color", "has-text-link")
+        .hasFieldOrPropertyWithValue("sequenceNumber", 0L);
+    assertThat(requestMetaData.getSender()).matches("127\\.0\\.0\\.1:\\d*");
 
-    MessageMetaDataDto message1 =
+    MessageMetaDataDto responseMetaData =
         MessageMetaDataDto.createFrom(tigerProxy.getRbelMessagesList().get(1));
-    assertThat(message1.getPath()).isNull();
-    assertThat(message1.getMethod()).isNull();
-    assertThat(message1.getResponseCode()).isEqualTo(666);
-    // TODO TGR-651 wieder reaktivieren
-    // assertThat(message1.getRecipient()).matches("(view-|)localhost:\\d*");
-    assertThat(message1.getSender()).isEqualTo("backend:80");
-    assertThat(message1.getSequenceNumber()).isEqualTo(1);
+    assertThat(responseMetaData)
+        .hasFieldOrPropertyWithValue("menuInfoString", "666")
+        .hasFieldOrPropertyWithValue("sender", "backend:80")
+        .hasFieldOrPropertyWithValue("symbol", "fa-reply")
+        .hasFieldOrPropertyWithValue("color", "text-success")
+        .hasFieldOrPropertyWithValue("sequenceNumber", 1L);
+    assertThat(responseMetaData.getRecipient()).matches("127\\.0\\.0\\.1:\\d*");
+  }
+
+  @Test
+  void checkVau3MetaDataDtoConversion() {
+    tigerProxy =
+        new TigerProxy(
+            TigerProxyConfiguration.builder()
+                .fileSaveInfo(
+                    TigerFileSaveInfo.builder()
+                        .sourceFile("../tiger-rbel/src/test/resources/vau3WithInnerGzip.tgr")
+                        .build())
+                .activateRbelParsingFor(List.of("epa3-vau"))
+                .build());
+
+    awaitMessagesInTiger(2);
+
+    MessageMetaDataDto requestMetaData =
+        MessageMetaDataDto.createFrom(tigerProxy.getRbelMessagesList().get(0));
+    assertThat(requestMetaData)
+        .hasFieldOrPropertyWithValue(
+            "menuInfoString", "POST /1718790513675?_count=10&_offset=0&_total=none&_format=json")
+        .hasFieldOrPropertyWithValue("recipient", "vau-proxy-server:8080")
+        .hasFieldOrPropertyWithValue("sender", "192.168.128.1:44882")
+        .hasFieldOrPropertyWithValue(
+            "additionalInformation",
+            List.of(
+                "GET /epa/medication/api/v1/fhir/Medication/Medication?_count=10&_offset=0&_total=none&_format=json"));
+
+    MessageMetaDataDto responseMetaData =
+        MessageMetaDataDto.createFrom(tigerProxy.getRbelMessagesList().get(1));
+    assertThat(responseMetaData)
+        .hasFieldOrPropertyWithValue("menuInfoString", "200")
+        .hasFieldOrPropertyWithValue("sender", "vau-proxy-server:8080")
+        .hasFieldOrPropertyWithValue("recipient", "192.168.128.1:44882")
+        .hasFieldOrPropertyWithValue("additionalInformation", List.of("200"));
   }
 }
