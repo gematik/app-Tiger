@@ -529,6 +529,23 @@ This JSON encoded message consists of:
 }
 ----
 
+=== Adding notes to messages
+
+To add notes to certain messages, you can add a list of criteria with messages
+that shall be added to any message in the rbel log matching the specific criterion.
+
+[source,yaml]
+----
+tigerProxy:
+    proxyId: meshProxy2
+    notes:
+        - message: "This is a note on the HTTP method"
+          jexlCriterion: "isRequest && path == '$.method'"
+        - message: "Hackers were here..."
+          jexlCriterion: "element.decryptedUsingKeyWithId == 'mySuperSecretKey'"
+----
+
+
 [#_rbel_path_details]
 === Understanding RBelPath
 

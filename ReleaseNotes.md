@@ -1,5 +1,11 @@
 # Changelog Tiger Test platform
 
+# Release 3.5.1
+
+## Features
+
+* TGR-1100: cleaned up Tiger Proxy configuration properties in fileSaveInfo
+
 # Release 3.5.0
 
 ## Bugfix
@@ -24,6 +30,7 @@ rbel.lenientHttpParsing: true
   differentiation for messages originating from different proxies.
 * TGR-1685: added glue step to support storing nodes of requests into Tiger Global Configuration properties.
 * TGR-1672: improved display of tiger user manual on small screens (tables)
+*
 
 ## Bugfixes
 

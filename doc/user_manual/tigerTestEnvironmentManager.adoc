@@ -778,28 +778,18 @@ tigerProxy:
   adminPort: 7777
   # logLevel of the proxy-server. DEBUG and TRACE will print traffic, so use with care!
   proxyLogLevel: TRACE
-  # section to configure whether and where the proxy should dump
-  # a traffic HTML report on shutdown
+  # section to configure whether and where the proxy should dump a tiger traffic file on shutdown
   fileSaveInfo:
-    # should the cleartext http-traffic be logged to a file?
+    # should the traffic be logged to a file?
     writeToFile: true
     # configure the file name
     filename: "foobar.tgr"
-    # default false
+    # default false, removes any potentially existing saved tgr traffic file on startup.
     clearFileOnBoot: true
     # read traffic from a file at startup
     sourceFile: "sourceFile.tgr"
     # filter messages read from file (JEXL expression)
     readFilter: "message.statusCode == '200'"
-    # List of notes that should be added to the traffic
-    notes:
-        # The message to be added as a note
-      - message: "This is a note on the HTTP method"
-        # Only add this note to elements that EXACTLY match the given JEXL expression.
-        # This will be checked for every message and every node in every message.
-        jexlCriterion: "isRequest && path == '$.method'"
-      - message: "Hackers were here..."
-        jexlCriterion: "element.decryptedUsingKeyWithId == 'mySuperSecretKey'"
 
   # a list of routing entries the proxy should apply to traffic
   proxyRoutes:
@@ -961,7 +951,7 @@ tigerProxy:
 
 === Standalone mode vs. implicit startup with test suite
 
-If your test environment is very "expensive" to start or if you are developing your test suite scenarios thus starting many test runs in short time, you might want to keep your test environment running and not shut it down after each run.
+If your test environment is very "expensive" to start or if you are developing your test suite scenarios thus starting many test runs in a short time, you might want to keep your test environment running and not shut it down after each run.
 To do so, you can simply use the tiger maven plugin to start your test environment in standalone mode.
 
 First prepare a standalone test environment configuration file (call it for example tiger-standalone.yaml) containing all the server nodes needed and with a deactivated the local Tiger Proxy section.
