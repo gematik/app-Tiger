@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.proxy.data;
 
+import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

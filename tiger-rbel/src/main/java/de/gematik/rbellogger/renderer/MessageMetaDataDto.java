@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.proxy.data;
+package de.gematik.rbellogger.renderer;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
@@ -36,20 +36,19 @@ import lombok.extern.slf4j.Slf4j;
 public class MessageMetaDataDto {
 
   private String uuid;
-  private String path;
+  private String menuInfoString;
   private List<String> additionalInformation = new ArrayList<>();
-  private Integer decryptedResponseCode;
-  private String method;
-  private Integer responseCode;
   private String recipient;
   private String sender;
   private String bundledServerNameSender;
   private String bundledServerNameReceiver;
   private long sequenceNumber;
-  private String menuInfoString;
   private ZonedDateTime timestamp;
   private boolean isRequest;
   private String pairedUuid;
+  private String color;
+  private String symbol;
+  private String abbrev;
 
   public static MessageMetaDataDto createFrom(RbelElement el) {
     MessageMetaDataDto.MessageMetaDataDtoBuilder builder = MessageMetaDataDto.builder();
@@ -87,69 +86,31 @@ public class MessageMetaDataDto {
                     .map(RbelElement::getUuid)
                     .orElse(null));
 
-    if (el.hasFacet(RbelHttpRequestFacet.class)) {
-      RbelHttpRequestFacet req = el.getFacetOrFail(RbelHttpRequestFacet.class);
-      builder
-          .path(req.getPath().getRawStringContent())
-          .method(req.getMethod().getRawStringContent())
-          .responseCode(null);
-
-      List<Optional<RbelRequestFacet>> requestFacets = new ArrayList<>();
-      el.getChildNodes()
-          .forEach(
-              child -> {
-                List<RbelElement> nestedElements =
-                    RbelElement.findAllNestedElementsWithFacet(child, RbelRequestFacet.class);
-                requestFacets.addAll(
-                    nestedElements.stream()
-                        .map(e -> e.getFacet(RbelRequestFacet.class))
-                        .filter(Optional::isPresent)
-                        .toList());
-              });
-      builder.additionalInformation(
-          requestFacets.stream()
-              .flatMap(Optional::stream)
-              .map(a -> a.getMenuInfoString())
-              .toList());
-
-    } else if (el.hasFacet(RbelHttpResponseFacet.class)) {
-      builder.responseCode(
-          Integer.parseInt(
-              el.getFacetOrFail(RbelHttpResponseFacet.class)
-                  .getResponseCode()
-                  .getRawStringContent()));
-
-      List<Optional<RbelResponseFacet>> responseFacets = new ArrayList<>();
-      el.getChildNodes()
-          .forEach(
-              child -> {
-                List<RbelElement> nestedElements =
-                    RbelElement.findAllNestedElementsWithFacet(child, RbelResponseFacet.class);
-                responseFacets.addAll(
-                    nestedElements.stream()
-                        .map(e -> e.getFacet(RbelResponseFacet.class))
-                        .filter(Optional::isPresent)
-                        .toList());
-              });
-
-      builder.additionalInformation(
-          responseFacets.stream()
-              .flatMap(Optional::stream)
-              .map(a -> a.getMenuInfoString())
-              .toList());
-    }
+    builder.additionalInformation(el.findAllNestedFacets(RbelMessageInfoFacet.class)
+      .stream()
+      .map(RbelMessageInfoFacet::getMenuInfoString)
+      .toList());
+    builder.menuInfoString(
+        el.getFacet(RbelMessageInfoFacet.class)
+            .map(RbelMessageInfoFacet::getMenuInfoString)
+            .orElse("<noMenuInfoString>"));
+    builder.symbol(
+        el.getFacet(RbelMessageInfoFacet.class)
+            .map(RbelMessageInfoFacet::getSymbol)
+            .orElse("<noSymbol>"));
+    builder.abbrev(
+        el.getFacet(RbelMessageInfoFacet.class)
+            .map(RbelMessageInfoFacet::getAbbrev)
+            .orElse("<noAbbrev>"));
+    builder.color(
+        el.getFacet(RbelMessageInfoFacet.class)
+            .map(RbelMessageInfoFacet::getColor)
+            .orElse("<noColor>"));
 
     builder.isRequest(el.hasFacet(RbelRequestFacet.class));
     builder.timestamp(
         el.getFacet(RbelMessageTimingFacet.class)
             .map(RbelMessageTimingFacet::getTransmissionTime)
-            .orElse(null));
-    builder.menuInfoString(
-        el.getFacet(RbelRequestFacet.class)
-            .map(RbelRequestFacet::getMenuInfoString)
-            .or(
-                () ->
-                    el.getFacet(RbelResponseFacet.class).map(RbelResponseFacet::getMenuInfoString))
             .orElse(null));
     return builder.build();
   }

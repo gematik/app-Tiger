@@ -17,10 +17,8 @@
 
 export default class MessageMetaDataDto {
   uuid: string = '';
-  path: string = '';
-  method: string = '';
   menuInfoString: string = '';
-  responseCode: number = -1;
+  symbol: string = '';
   recipient: string = '';
   sender: string = '';
   bundledServerNameSender: string = '';

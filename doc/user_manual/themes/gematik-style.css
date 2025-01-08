@@ -44,6 +44,17 @@ h1 {
     text-align: center;
 }
 
+table.stretch {
+    width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
+}
+
+table.stretch td, table.stretch th {
+    overflow-wrap: break-word;
+    max-width: 100%;
+}
+
 @media (min-width: 768px) {
     #header {
         padding: 20rem 0;
@@ -60,9 +71,9 @@ h1 {
     /* TODO Anne to be kept locally */
     #header h1 {
         background-image: url("media/tiger-mono-picto-plain.svg");
-        background-size: 150px;
+        background-size: 80px;
         background-repeat: no-repeat;
-        background-position: 120px bottom;
+        background-position: 80px;
         padding-left: 10rem;
         line-height: 350%;
         font-size: 327%;
@@ -165,9 +176,8 @@ video {
 }
 
 @media all and (max-width: 600px) {
-    table {
-        width: 55vw !important;
-        font-size: 3vw;
+    body {
+        font-size: 80%;
     }
 }
 
