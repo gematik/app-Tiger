@@ -1,5 +1,11 @@
 # Changelog Tiger Test platform
 
+# Release 3.5.0
+
+## Bugfix
+
+* TGR-1693: Tiger-Proxy: In the menu the correct information about a message is again being displayed.
+
 # Release 3.4.7
 
 ## Breaking Changes

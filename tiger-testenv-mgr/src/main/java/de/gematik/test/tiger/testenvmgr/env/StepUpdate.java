@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.testenvmgr.env;
 
-import de.gematik.test.tiger.proxy.data.MessageMetaDataDto;
+import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;

@@ -84,16 +84,14 @@
                     <div v-html="step[1].description"
                          :title="step[1].tooltip"/>
                     <div v-for="rbelmsg in step[1].rbelMetaData" :key="rbelmsg.uuid">
-                      <div v-if="rbelmsg.method" class="rbelmessage">
+
+                      <div v-if="rbelmsg.menuInfoString" class="rbelmessage">
                         <a v-on:click="ui.showRbelLogDetails(rbelmsg.uuid, '' + rbelmsg.sequenceNumber, $event)"
                            href="#" class="badge rbelDetailsBadge test-rbel-link">
                           {{ rbelmsg.sequenceNumber + 1 }}
                         </a>
-                        <b>{{ rbelmsg.method }} {{
-                            getPairResponseCode(rbelmsg, step[1].rbelMetaData)
-                          }}</b>
-                        <span>&nbsp;&nbsp;&nbsp;&rarr;&nbsp;&nbsp;&nbsp;
-                        {{ rbelmsg.recipient }}{{ rbelmsg.path }}</span>
+                        <span><i v-if="rbelmsg.symbol" class="fas" :class="rbelmsg.symbol"></i>&nbsp;&nbsp;&nbsp;
+                          {{ rbelmsg.recipient }}&nbsp;&nbsp;&nbsp;{{ rbelmsg.menuInfoString }}</span>
                       </div>
                     </div>
                   </td>

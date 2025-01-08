@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.testenvmgr.controller;
 
-import de.gematik.test.tiger.proxy.data.MessageMetaDataDto;
+import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
