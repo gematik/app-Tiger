@@ -55,6 +55,17 @@ h1 {
     text-align: center;
 }
 
+table.stretch {
+    width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
+}
+
+table.stretch td, table.stretch th {
+    overflow-wrap: break-word;
+    max-width: 100%;
+}
+
 @media (min-width: 768px) {
     #header {
         padding: 20rem 0;
@@ -71,9 +82,9 @@ h1 {
     /* TODO Anne to be kept locally */
     #header h1 {
         background-image: url("media/tiger-mono-picto-plain.svg");
-        background-size: 150px;
+        background-size: 80px;
         background-repeat: no-repeat;
-        background-position: 120px bottom;
+        background-position: 80px;
         padding-left: 10rem;
         line-height: 350%;
         font-size: 327%;
@@ -176,9 +187,8 @@ video {
 }
 
 @media all and (max-width: 600px) {
-    table {
-        width: 55vw !important;
-        font-size: 3vw;
+    body {
+        font-size: 80%;
     }
 }
 
@@ -192,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 3.4.7 - 2025-01-06</span>
+<span id="revdate">Version 3.5.0 - 2025-01-08</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -224,8 +234,8 @@ video {
 </li>
 <li><a href="#tiger-proxy-2">4. Tiger Proxy</a>
 <ul class="sectlevel2">
-<li><a href="#excurse-what-are-proxies-reverse-forward">4.1. Excurse: What are proxies, reverse, forward</a></li>
-<li><a href="#tiger-proxy-basics">4.2. Tiger Proxy basics</a></li>
+<li><a href="#_excurse_what_are_proxies_reverse_forward">4.1. Excurse: What are proxies, reverse, forward</a></li>
+<li><a href="#_tiger_proxy_basics">4.2. Tiger Proxy basics</a></li>
 <li><a href="#understanding-routes">4.3. Understanding routes</a></li>
 <li><a href="#tls-keys-certificates-a-quick-tour-on-proxies">4.4. TLS, keys, certificates a quick tour on proxies</a></li>
 <li><a href="#modifications">4.5. Modifications</a></li>
@@ -295,9 +305,8 @@ video {
 </li>
 <li><a href="#rest-api">10. Rest API</a>
 <ul class="sectlevel3">
-<li><a href="#introduction-2">10.1. Introduction</a></li>
-<li><a href="#endpoints">10.2. Endpoints</a></li>
-<li><a href="#models">10.3. Models</a></li>
+<li><a href="#tests">10.1. Tests</a></li>
+<li><a href="#models">10.2. Models</a></li>
 </ul>
 </li>
 <li><a href="#links-to-test-relevant-topics">11. Links to test relevant topics</a></li>
@@ -1648,7 +1657,7 @@ Each entry has to provide a unique id, type and pem property.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="configuring-pki-identities-in-tiger-proxys-tls-section"><a class="anchor" href="#configuring-pki-identities-in-tiger-proxys-tls-section"></a>3.1.4. Configuring PKI identities in Tiger Proxy&#8217;s tls section</h4>
+<h4 id="_configuring_pki_identities_in_tiger_proxys_tls_section"><a class="anchor" href="#_configuring_pki_identities_in_tiger_proxys_tls_section"></a>3.1.4. Configuring PKI identities in Tiger Proxy&#8217;s tls section</h4>
 <div class="paragraph">
 <p>PKI identities can be supplied in a number of ways (JKS, BKS, PKCS1, PKCS8).<br>
 In every place a string can be given.<br>
@@ -2645,9 +2654,9 @@ So you may skip the first and just use it with two different values being set.</
 <h2 id="tiger-proxy-2"><a class="anchor" href="#tiger-proxy-2"></a>4. Tiger Proxy</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="excurse-what-are-proxies-reverse-forward"><a class="anchor" href="#excurse-what-are-proxies-reverse-forward"></a>4.1. Excurse: What are proxies, reverse, forward</h3>
+<h3 id="_excurse_what_are_proxies_reverse_forward"><a class="anchor" href="#_excurse_what_are_proxies_reverse_forward"></a>4.1. Excurse: What are proxies, reverse, forward</h3>
 <div class="paragraph">
-<p>There are a lot of different kind of proxies.<br>
+<p>There are a lot of different types of proxies.<br>
 Here we talk only about HTTP and HTTPS proxies!</p>
 </div>
 <div class="sect3">
@@ -2655,7 +2664,7 @@ Here we talk only about HTTP and HTTPS proxies!</p>
 <div class="paragraph">
 <p>Forward proxies work like a switch-station: You send a packet to your destination, via proxy.<br>
 The proxy receives the packet, sees the address and can send that packet to wherever he sees fit.<br>
-To use a forward proxy the sender has to be aware of it and send the packet accordingly.</p>
+To use a forward proxy, the sender has to be aware of it and send the packet accordingly.</p>
 </div>
 <div class="paragraph">
 <p>This allows the creation of virtual domains, something we use extensively in tiger.</p>
@@ -2690,7 +2699,7 @@ This is less of a problem with a reverse proxy since it is technically not a man
 </div>
 </div>
 <div class="sect2">
-<h3 id="tiger-proxy-basics"><a class="anchor" href="#tiger-proxy-basics"></a>4.2. Tiger Proxy basics</h3>
+<h3 id="_tiger_proxy_basics"><a class="anchor" href="#_tiger_proxy_basics"></a>4.2. Tiger Proxy basics</h3>
 <div class="paragraph">
 <p>The Tiger Proxy is a proxy-server.<br>
 It comes in two flavours: Tiger Proxy and Tiger Standalone Proxy.<br>
@@ -2718,7 +2727,9 @@ This can either be an absolute URL (e.g. <a href="http://foobar" class="bare">ht
 Please note: You can freely add parts (e.g. <a href="http://foobar/extra/part" class="bare">http://foobar/extra/part</a>) to further specify the mapping.</p>
 </div>
 <div class="paragraph">
-<p>You can add multiple routes that match the same URL. If multiple matches are found the most specific route is select. For example if you have two routes <code>/</code> and <code>/foo</code> then for a request to <code>/foo/bar</code> the route <code>/foo</code> will be selected.</p>
+<p>You can add multiple routes that match the same URL.<br>
+If multiple matches are found the most specific route is select.<br>
+For example if you have two routes <code>/</code> and <code>/foo</code> then for a request to <code>/foo/bar</code> the route <code>/foo</code> will be selected.</p>
 </div>
 </div>
 <div class="sect3">
@@ -2780,18 +2791,23 @@ Meaning: If you have a mapping</p>
 <div class="sect3">
 <h4 id="trailing-slashes"><a class="anchor" href="#trailing-slashes"></a>4.3.3. Trailing Slashes</h4>
 <div class="paragraph">
-<p>Trailing slashes in routes may be significant for the server. Thus, the handling in the tiger-proxy is important. To achieve a consistent behavior while maintaining ease of use, the following rules apply:</p>
+<p>Trailing slashes in routes may be significant for the server.<br>
+Thus, the handling in the tiger-proxy is important.<br>
+To achieve a consistent behavior while maintaining ease of use, the following rules apply:</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>If the request is longer then the from-path of the route (eg. if the "from" is "/foo" and the request is "/foo/bar", then "/bar" is the deep-path), the trailing slash behavior from the request is taken. This only is the case for more path-fragments (/foo/bar), and not simply a longer string (/foobar), as this would not be matched to the route.</p>
+<p>If the request is longer then the from-path of the route (eg. if the "from" is "/foo" and the request is "/foo/bar", then "/bar" is the deep-path), the trailing slash behavior from the request is taken.<br>
+This only is the case for more path-fragments (/foo/bar), and not simply a longer string (/foobar), as this would not be matched to the route.</p>
 </li>
 <li>
 <p>If the to-URL has a trailing slash, the request is forwarded with a trailing slash.</p>
 </li>
 <li>
-<p>Finally, if the request ends with a slash and the from-URL does NOT end with one, a trailing slash is added. (The logic being the slash in the from-URL expresses an anticipated slash. Thus, a slash being present in the request is simply "expected".)</p>
+<p>Finally, if the request ends with a slash and the from-URL does NOT end with one, a trailing slash is added.<br>
+(The logic being the slash in the from-URL expresses an anticipated slash.<br>
+Thus, a slash being present in the request is simply "expected".)</p>
 </li>
 </ul>
 </div>
@@ -2874,7 +2890,9 @@ Meaning: If you have a mapping</p>
 <div class="sect3">
 <h4 id="hosts"><a class="anchor" href="#hosts"></a>4.3.4. hosts</h4>
 <div class="paragraph">
-<p>In some instances you might be pressed to "hosts" multiple servers on one tiger-proxy. This can happen when you can influence DNS-Resolvement, but neither the path nor the port used. In this case you can use the hosts-property to define which hosts should be routed to which target.</p>
+<p>In some instances you might be pressed to "hosts" multiple servers on one tiger-proxy.<br>
+This can happen when you can influence DNS-Resolvement, but neither the path nor the port used.<br>
+In this case you can use the hosts-property to define which hosts should be routed to which target.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2886,13 +2904,16 @@ Meaning: If you have a mapping</p>
 </div>
 </div>
 <div class="paragraph">
-<p>The entries are matched first as a total match, failing that as regular expressions. If you want to add ports you are free to do so: "myHost:80". This however will necessitate that the ports on all entries in this specific list are given (this does not apply to other routes).</p>
+<p>The entries are matched first as a total match, failing that as regular expressions.<br>
+If you want to add ports you are free to do so: "myHost:80".<br>
+This however will necessitate that the ports on all entries in this specific list are given (this does not apply to other routes).</p>
 </div>
 </div>
 <div class="sect3">
 <h4 id="multiple-targets"><a class="anchor" href="#multiple-targets"></a>4.3.5. Multiple targets</h4>
 <div class="paragraph">
-<p>Sometimes you can only at runtime know which target to use. This can be achieved by using the <code>to</code>-property as a list of targets:</p>
+<p>Sometimes you can only at runtime know which target to use.<br>
+This can be achieved by using the <code>to</code>-property as a list of targets:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2905,13 +2926,18 @@ Meaning: If you have a mapping</p>
 </div>
 </div>
 <div class="paragraph">
-<p>When booting the tiger-proxy the proxy tries to reach the target host by sending a HEAD-request to the host (dropping the path). If the server sends a valid HTTP (or HTTPS) response, the target is considered reachable and the route is used. If no target can be reached an exception is thrown. The return code is ignored.</p>
+<p>When booting the tiger-proxy the proxy tries to reach the target host by sending a HEAD-request to the host (dropping the path).<br>
+If the server sends a valid HTTP (or HTTPS) response, the target is considered reachable and the route is used.<br>
+If no target can be reached an exception is thrown.<br>
+The return code is ignored.</p>
 </div>
 </div>
 <div class="sect3">
 <h4 id="criterions"><a class="anchor" href="#criterions"></a>4.3.6. criterions</h4>
 <div class="paragraph">
-<p>As an additional measure for a more fine-grained matching you can use criterions. These are JEXL-expressions which have to be fulfilled for the route to be used. This can be leveraged to make the routing decision dependent on the content of the message.</p>
+<p>As an additional measure for a more fine-grained matching you can use criterions.<br>
+These are JEXL-expressions which have to be fulfilled for the route to be used.<br>
+This can be leveraged to make the routing decision dependent on the content of the message.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2938,7 +2964,8 @@ Deactivating it for routes in which it is not needed is therefore a good idea.</
 <div class="sect3">
 <h4 id="authentication"><a class="anchor" href="#authentication"></a>4.3.8. Authentication</h4>
 <div class="paragraph">
-<p>You can add optional authentication configuration which will be added to the forwarded message. Here either Basic access authentication or Bearer Token can be used:</p>
+<p>You can add optional authentication configuration which will be added to the forwarded message.<br>
+Here either Basic access authentication or Bearer Token can be used:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -2956,7 +2983,8 @@ Deactivating it for routes in which it is not needed is therefore a good idea.</
 </div>
 </div>
 <div class="paragraph">
-<p>Please note that the phrase "Bearer " will be added automatically. Please do not add it yourself!</p>
+<p>Please note that the phrase "Bearer " will be added automatically.<br>
+Please do not add it yourself!</p>
 </div>
 </div>
 </div>
@@ -3078,7 +3106,8 @@ To set a custom CA to be used for certificate generation simply specify it:</p>
 <h4 id="fixed-server-identity"><a class="anchor" href="#fixed-server-identity"></a>4.4.5. Fixed server identity</h4>
 <div class="paragraph">
 <p>The final, easiest and most unflexible way to solve TLS-issues is to simply give a fixed server-identity.<br>
-This identity will be used for all routes, but only if it matches the domain-name given by the client during the handshake. As a fallback (if the domain-name does not match) the dynamic server-identity will be used.</p>
+This identity will be used for all routes, but only if it matches the domain-name given by the client during the handshake.<br>
+As a fallback (if the domain-name does not match) the dynamic server-identity will be used.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -3099,13 +3128,17 @@ This identity will be used for all routes, but only if it matches the domain-nam
 </div>
 </div>
 <div class="paragraph">
-<p>If <code>certificateForFoobar.p12</code> contains a certificate for the FQDN <code>foobar.com</code>, then a request to <code>foobar.com</code> will use this certificate. If the request is to <code>barfoo.com</code> the generic server-identity will be used. If you have supplied a <code>serverRootCa</code> this CA will always be used for any request for which an exact match is not found.</p>
+<p>If <code>certificateForFoobar.p12</code> contains a certificate for the FQDN <code>foobar.com</code>, then a request to <code>foobar.com</code> will use this certificate.<br>
+If the request is to <code>barfoo.com</code> the generic server-identity will be used.<br>
+If you have supplied a <code>serverRootCa</code> this CA will always be used for any request for which an exact match is not found.</p>
 </div>
 </div>
 <div class="sect3">
 <h4 id="multiple-server-identities"><a class="anchor" href="#multiple-server-identities"></a>4.4.6. Multiple server identities</h4>
 <div class="paragraph">
-<p>Sometimes you might want to use different server-identities for different hosts that are proxied. This can be achieved by using the <code>serverIdentities</code>-property. Simply list the properties, the proxy will automatically try to choose the correct one.</p>
+<p>Sometimes you might want to use different server-identities for different hosts that are proxied.<br>
+This can be achieved by using the <code>serverIdentities</code>-property.<br>
+Simply list the properties, the proxy will automatically try to choose the correct one.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -3136,7 +3169,9 @@ This identity will be used for all routes, but only if it matches the domain-nam
 <div class="sect3">
 <h4 id="tls-decryption-in-wireshark"><a class="anchor" href="#tls-decryption-in-wireshark"></a>4.4.8. TLS Decryption in wireshark</h4>
 <div class="paragraph">
-<p>Sometimes you might want to look at decrypted TLS-traffic in wireshark. To achieve this we need to extract the masterSecrets of every connection from the Tiger Proxy and provide them to wireshark. This is actually pretty straight forward, with one big caveat: It is very insecure to access the masterSecrets of a TLS-connection, so we need to attach a Java-Agent to the VM.</p>
+<p>Sometimes you might want to look at decrypted TLS-traffic in wireshark.<br>
+To achieve this we need to extract the masterSecrets of every connection from the Tiger Proxy and provide them to wireshark.<br>
+This is actually pretty straight forward, with one big caveat: It is very insecure to access the masterSecrets of a TLS-connection, so we need to attach a Java-Agent to the VM.</p>
 </div>
 <div class="paragraph">
 <p>When you are using the Tiger Proxy in a normal tiger-testsuite you can simply add the                             <code>&lt;goal&gt;attach-tiger-agent&lt;/goal&gt;</code> goal to the tiger-maven-plugin:</p>
@@ -3160,7 +3195,8 @@ This identity will be used for all routes, but only if it matches the domain-nam
 </div>
 </div>
 <div class="paragraph">
-<p>This will modify the <code>argLine</code> property used by failsafe to start the testsuite and attach the TigerAgent to the VM. Next we need to set the filename where to write the masterSecrets to:</p>
+<p>This will modify the <code>argLine</code> property used by failsafe to start the testsuite and attach the TigerAgent to the VM.<br>
+Next we need to set the filename where to write the masterSecrets to:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -3176,7 +3212,11 @@ This identity will be used for all routes, but only if it matches the domain-nam
 <p>The final step is to import the masterSecrets into wireshark:</p>
 </div>
 <div class="paragraph">
-<p>Go to Edit &#8594; Preferences. Open the Protocols tree and select TLS. Alternatively, select a TLS packet in the packet list, right-click on the TLS layer in the packet details view and open the Protocol preferences menu. Set the <code>(Pre)-Master-Secret log filename</code> to the file containing the master secrets. Now wireshark should decrypt TLS traffic routed through the Tiger Proxy on-the-fly.</p>
+<p>Go to Edit &#8594; Preferences.<br>
+Open the Protocols tree and select TLS.<br>
+Alternatively, select a TLS packet in the packet list, right-click on the TLS layer in the packet details view and open the Protocol preferences menu.<br>
+Set the <code>(Pre)-Master-Secret log filename</code> to the file containing the master secrets.<br>
+Now wireshark should decrypt TLS traffic routed through the Tiger Proxy on-the-fly.</p>
 </div>
 </div>
 </div>
@@ -3436,7 +3476,8 @@ So to use special characters please URL encode them (Space is a special case sin
 <div class="sect3">
 <h4 id="arrays"><a class="anchor" href="#arrays"></a>4.7.1. Arrays</h4>
 <div class="paragraph">
-<p>To make things easy and consistent, the entries of an array are simply stored as a map with the index as key. So the following expression will return the first element of the array:</p>
+<p>To make things easy and consistent, the entries of an array are simply stored as a map with the index as key.<br>
+So the following expression will return the first element of the array:</p>
 </div>
 <div class="paragraph">
 <p><code>$.body.array.0</code></p>
@@ -3445,7 +3486,8 @@ So to use special characters please URL encode them (Space is a special case sin
 <div class="sect3">
 <h4 id="differentiating-between-multiple-elements"><a class="anchor" href="#differentiating-between-multiple-elements"></a>4.7.2. Differentiating between multiple elements</h4>
 <div class="paragraph">
-<p>When a key is present multiple times, all elements are returned. To differentiate between them, you can use the index:</p>
+<p>When a key is present multiple times, all elements are returned.<br>
+To differentiate between them, you can use the index:</p>
 </div>
 <div class="paragraph">
 <p><code>$.body.entry[0]</code></p>
@@ -3478,7 +3520,8 @@ So if only always one of the two elements is present, only a single element will
 <div class="sect3">
 <h4 id="case-insensitive-matching"><a class="anchor" href="#case-insensitive-matching"></a>4.7.4. Case-insensitive matching</h4>
 <div class="paragraph">
-<p>Sometimes it can be helpful to match keys in a case-insensitive manner. To achieve this you can use the <code>~</code>-operator:<br>
+<p>Sometimes it can be helpful to match keys in a case-insensitive manner.<br>
+To achieve this you can use the <code>~</code>-operator:<br>
 <code>$.body.[~'fOO'].key</code></p>
 </div>
 <div class="paragraph">
@@ -3486,7 +3529,8 @@ So if only always one of the two elements is present, only a single element will
 </div>
 <div class="paragraph">
 <p>To find multiple case-insensitive matches, concatenate them using the pipe symbols, like so:<br>
-<code>$.body.[<sub>'fOO'|</sub>'bAR'].key</code>. With this expression, the following nodes will be found: <code>$.body.foo.key</code>, <code>$.body.FOO.key</code>, <code>$.body.bar.key</code> and <code>$.body.BAR.key</code> (and any other potential matches).</p>
+<code>$.body.[<sub>'fOO'|</sub>'bAR'].key</code>.<br>
+With this expression, the following nodes will be found: <code>$.body.foo.key</code>, <code>$.body.FOO.key</code>, <code>$.body.bar.key</code> and <code>$.body.BAR.key</code> (and any other potential matches).</p>
 </div>
 </div>
 <div class="sect3">
@@ -3736,7 +3780,8 @@ This is a huge deal in terms of memory- and CPU-consumption, but you will lose a
 <div class="sect4">
 <h5 id="activaterbelparsingfor"><a class="anchor" href="#activaterbelparsingfor"></a>activateRbelParsingFor</h5>
 <div class="paragraph">
-<p>This option can activate various optional Rbel-Converters. Currently supported are:</p>
+<p>This option can activate various optional Rbel-Converters.<br>
+Currently supported are:</p>
 </div>
 <div class="ulist">
 <ul>
@@ -3797,26 +3842,35 @@ For all Tiger Proxies this default behavior can be changed.</p>
 This is a form of reverseProxy, only also applicable for non-http-traffic.<br>
 HTTP traffic will still be forwarded through use of a global reverse proxy.<br>
 Other traffic will be directly forwarded, rerouted directly on the TCP layer.<br>
-Messages transmitted can still be parsed via RBel. If the optional flag <code>ignoreConnectionErrors</code> is true, no connection errors will be logged, the default is false.</p>
+Messages transmitted can still be parsed via RBel.<br>
+If the optional flag <code>ignoreConnectionErrors</code> is true, no connection errors will be logged, the default is false.</p>
 </div>
 </div>
 </div>
 <div class="sect3">
 <h4 id="activatetrafficlogging"><a class="anchor" href="#activatetrafficlogging"></a>4.9.2. activateTrafficLogging</h4>
 <div class="paragraph">
-<p>This flag controls whether the Tiger Proxy will log all traffic. If activated every request and response is noted in the log. This can lead to a verbose and bloated log. If you are not interested in the traffic log, but only in the Rbel-Analysis, you can deactivate this flag. Default is true.</p>
+<p>This flag controls whether the Tiger Proxy will log all traffic.<br>
+If activated every request and response is noted in the log.<br>
+This can lead to a verbose and bloated log.<br>
+If you are not interested in the traffic log, but only in the Rbel-Analysis, you can deactivate this flag.<br>
+Default is true.</p>
 </div>
 </div>
 <div class="sect3">
 <h4 id="rewritehostheader"><a class="anchor" href="#rewritehostheader"></a>4.9.3. rewriteHostHeader</h4>
 <div class="paragraph">
-<p>This flag activates the rewriting of the host-header. If activated the host-header will be rewritten to the target host (only applicable for reverse proxy routes). Default is false.</p>
+<p>This flag activates the rewriting of the host-header.<br>
+If activated the host-header will be rewritten to the target host (only applicable for reverse proxy routes).<br>
+Default is false.</p>
 </div>
 </div>
 <div class="sect3">
 <h4 id="rewritelocationheader"><a class="anchor" href="#rewritelocationheader"></a>4.9.4. rewriteLocationHeader</h4>
 <div class="paragraph">
-<p>This flag activates the rewriting of the location-header for 3xx responses. If activated the location-header will be modified so the client will still use the proxy to reach the new location. Default is true.</p>
+<p>This flag activates the rewriting of the location-header for 3xx responses.<br>
+If activated the location-header will be modified so the client will still use the proxy to reach the new location.<br>
+Default is true.</p>
 </div>
 </div>
 </div>
@@ -4610,6 +4664,20 @@ found, each is tested, and if any matches, this step fails.</p>
 <p><strong>param</strong> rbelPath path to node/attribute<br>
 <strong>param</strong> value value / regex that should NOT BE equal or should NOT match as string content with<br>
     MultiLine and DotAll regex option</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="tgr-speichere-wert-des-knotens-tigerresolvedstring-der-aktuellen-anfrage-in-der-variable-tigerresolvedstring"><a class="anchor" href="#tgr-speichere-wert-des-knotens-tigerresolvedstring-der-aktuellen-anfrage-in-der-variable-tigerresolvedstring"></a>TGR speichere Wert des Knotens {tigerResolvedString} der aktuellen Anfrage in der Variable" + " {tigerResolvedString}</h5>
+
+</div>
+<div class="sect4">
+<h5 id="tgr-store-current-request-node-text-value-at-tigerresolvedstring-in-variable-tigerresolvedstring"><a class="anchor" href="#tgr-store-current-request-node-text-value-at-tigerresolvedstring-in-variable-tigerresolvedstring"></a>TGR store current request node text value at {tigerResolvedString} in variable" + " {tigerResolvedString}</h5>
+<div class="paragraph indent">
+<p>store given rbel path node/attribute text value of current request.</p>
+</div>
+<div class="paragraph indent">
+<p><strong>param</strong> rbelPath path to node/attribute<br>
+<strong>param</strong> varName name of variable to store the node text value in</p>
 </div>
 </div>
 <div class="sect4">
@@ -7984,7 +8052,7 @@ This is an internal gematik extension and can be found on GitLab <a href="https:
 <h2 id="rest-api"><a class="anchor" href="#rest-api"></a>10. Rest API</h2>
 <div class="sectionbody">
 <div class="paragraph">
-<p>The tiger test environment provides a Rest API which allows the automation of the execution of tests and retrieval of the corresponding test results.</p>
+<p>The tiger test environment provides a Rest API which allows the automation of test execution and retrieval of the corresponding test results.</p>
 </div>
 <div class="paragraph">
 <p>The Rest API is disabled by default.<br>
@@ -8020,42 +8088,34 @@ But it is not included if you just import the <code>tiger-testenv-mgr</code>.</p
 <p>The following section provides an overview of the available endpoints and their functionality.<br>
 Additionally, the OpenApi specification yaml can be found in the <a href="https://github.com/gematik/app-Tiger/blob/master/tiger-testenv-mgr/src/main/resources/tiger-management-api.yaml">tiger repository</a>.</p>
 </div>
-<div class="sect3">
-<h4 id="introduction-2"><a class="anchor" href="#introduction-2"></a>10.1. Introduction</h4>
-<div class="paragraph">
-<p>API for managing the tiger test environment. You can start tests and retrieve the test results.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="endpoints"><a class="anchor" href="#endpoints"></a>10.2. Endpoints</h4>
-<div class="sect4 Tests">
-<h5 id="tests"><a class="anchor" href="#tests"></a>Tests</h5>
-<div class="sect5 getAvailableTests">
-<h6 id="getavailabletests"><a class="anchor" href="#getavailabletests"></a>getAvailableTests</h6>
+<div class="sect3 Tests">
+<h4 id="tests"><a class="anchor" href="#tests"></a>10.1. Tests</h4>
+<div class="sect4 getAvailableTests">
+<h5 id="getavailabletests"><a class="anchor" href="#getavailabletests"></a>getAvailableTests</h5>
 <div class="paragraph">
 <p><code>GET /tests</code></p>
 </div>
 <div class="paragraph">
 <p>get list of available tests</p>
 </div>
-<div class="sect6">
-<h7 id="description"><a class="anchor" href="#description"></a>Description</h7>
+<div class="sect5">
+<h6 id="description"><a class="anchor" href="#description"></a>Description</h6>
 <div class="paragraph">
 <p>gets the list of available tests that were discovered by the JUnit Platform.</p>
 </div>
 </div>
-<div class="sect6">
-<h7 id="parameters"><a class="anchor" href="#parameters"></a>Parameters</h7>
+<div class="sect5">
+<h6 id="parameters"><a class="anchor" href="#parameters"></a>Parameters</h6>
 
 </div>
-<div class="sect6">
-<h7 id="return-type"><a class="anchor" href="#return-type"></a>Return Type</h7>
+<div class="sect5">
+<h6 id="return-type"><a class="anchor" href="#return-type"></a>Return Type</h6>
 <div class="paragraph">
 <p>array[<a href="#TestDescription"><em>TestDescription</em></a>]</p>
 </div>
 </div>
-<div class="sect6">
-<h7 id="content-type"><a class="anchor" href="#content-type"></a>Content Type</h7>
+<div class="sect5">
+<h6 id="content-type"><a class="anchor" href="#content-type"></a>Content Type</h6>
 <div class="ulist">
 <ul>
 <li>
@@ -8064,8 +8124,8 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </ul>
 </div>
 </div>
-<div class="sect6">
-<h7 id="responses"><a class="anchor" href="#responses"></a>Responses</h7>
+<div class="sect5">
+<h6 id="responses"><a class="anchor" href="#responses"></a>Responses</h6>
 <table class="tableblock frame-all grid-all stretch">
 <caption class="title">Table 1. HTTP Response Codes</caption>
 <colgroup>
@@ -8105,24 +8165,24 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </table>
 </div>
 </div>
-<div class="sect5 getTestResults">
-<h6 id="gettestresults"><a class="anchor" href="#gettestresults"></a>getTestResults</h6>
+<div class="sect4 getTestResults">
+<h5 id="gettestresults"><a class="anchor" href="#gettestresults"></a>getTestResults</h5>
 <div class="paragraph">
 <p><code>GET /tests/runs/{testRunId}</code></p>
 </div>
 <div class="paragraph">
 <p>get the results of a test run</p>
 </div>
-<div class="sect6">
-<h7 id="description-2"><a class="anchor" href="#description-2"></a>Description</h7>
+<div class="sect5">
+<h6 id="description-2"><a class="anchor" href="#description-2"></a>Description</h6>
 <div class="paragraph">
 <p>gets the results of a test run. This includes a global test result and  the results for each test case. In case of failing tests, the failure message is also included.</p>
 </div>
 </div>
+<div class="sect5">
+<h6 id="parameters-2"><a class="anchor" href="#parameters-2"></a>Parameters</h6>
 <div class="sect6">
-<h7 id="parameters-2"><a class="anchor" href="#parameters-2"></a>Parameters</h7>
-<div class="sect7">
-<h8 id="path-parameters"><a class="anchor" href="#path-parameters"></a>Path Parameters</h8>
+<h7 id="path-parameters"><a class="anchor" href="#path-parameters"></a>Path Parameters</h7>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -8152,14 +8212,14 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </table>
 </div>
 </div>
-<div class="sect6">
-<h7 id="return-type-2"><a class="anchor" href="#return-type-2"></a>Return Type</h7>
+<div class="sect5">
+<h6 id="return-type-2"><a class="anchor" href="#return-type-2"></a>Return Type</h6>
 <div class="paragraph">
 <p><a href="#TestExecutionResult"><em>TestExecutionResult</em></a></p>
 </div>
 </div>
-<div class="sect6">
-<h7 id="content-type-2"><a class="anchor" href="#content-type-2"></a>Content Type</h7>
+<div class="sect5">
+<h6 id="content-type-2"><a class="anchor" href="#content-type-2"></a>Content Type</h6>
 <div class="ulist">
 <ul>
 <li>
@@ -8168,8 +8228,8 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </ul>
 </div>
 </div>
-<div class="sect6">
-<h7 id="responses-2"><a class="anchor" href="#responses-2"></a>Responses</h7>
+<div class="sect5">
+<h6 id="responses-2"><a class="anchor" href="#responses-2"></a>Responses</h6>
 <table class="tableblock frame-all grid-all stretch">
 <caption class="title">Table 2. HTTP Response Codes</caption>
 <colgroup>
@@ -8214,24 +8274,24 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </table>
 </div>
 </div>
-<div class="sect5 postExecutionRequest">
-<h6 id="postexecutionrequest"><a class="anchor" href="#postexecutionrequest"></a>postExecutionRequest</h6>
+<div class="sect4 postExecutionRequest">
+<h5 id="postexecutionrequest"><a class="anchor" href="#postexecutionrequest"></a>postExecutionRequest</h5>
 <div class="paragraph">
 <p><code>POST /tests/runs</code></p>
 </div>
 <div class="paragraph">
 <p>request the execution of a selection of tests</p>
 </div>
-<div class="sect6">
-<h7 id="description-3"><a class="anchor" href="#description-3"></a>Description</h7>
+<div class="sect5">
+<h6 id="description-3"><a class="anchor" href="#description-3"></a>Description</h6>
 <div class="paragraph">
 <p>sends a request for the execution of a selection of tests. The tests to be executed are specified with a TestExecutionRequest which includes uniqueIds, tags and file paths.  The execution request is queued for execution and will be executed as soon as any previously running tests finish. The response includes the id of the test run and the url where to find the results of the execution.</p>
 </div>
 </div>
+<div class="sect5">
+<h6 id="parameters-3"><a class="anchor" href="#parameters-3"></a>Parameters</h6>
 <div class="sect6">
-<h7 id="parameters-3"><a class="anchor" href="#parameters-3"></a>Parameters</h7>
-<div class="sect7">
-<h8 id="body-parameter"><a class="anchor" href="#body-parameter"></a>Body Parameter</h8>
+<h7 id="body-parameter"><a class="anchor" href="#body-parameter"></a>Body Parameter</h7>
 <table class="tableblock frame-all grid-all stretch">
 <colgroup>
 <col style="width: 25%;">
@@ -8261,14 +8321,14 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </table>
 </div>
 </div>
-<div class="sect6">
-<h7 id="return-type-3"><a class="anchor" href="#return-type-3"></a>Return Type</h7>
+<div class="sect5">
+<h6 id="return-type-3"><a class="anchor" href="#return-type-3"></a>Return Type</h6>
 <div class="paragraph">
 <p><a href="#TestExecutionInformation"><em>TestExecutionInformation</em></a></p>
 </div>
 </div>
-<div class="sect6">
-<h7 id="content-type-3"><a class="anchor" href="#content-type-3"></a>Content Type</h7>
+<div class="sect5">
+<h6 id="content-type-3"><a class="anchor" href="#content-type-3"></a>Content Type</h6>
 <div class="ulist">
 <ul>
 <li>
@@ -8277,8 +8337,8 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </ul>
 </div>
 </div>
-<div class="sect6">
-<h7 id="responses-3"><a class="anchor" href="#responses-3"></a>Responses</h7>
+<div class="sect5">
+<h6 id="responses-3"><a class="anchor" href="#responses-3"></a>Responses</h6>
 <table class="tableblock frame-all grid-all stretch">
 <caption class="title">Table 3. HTTP Response Codes</caption>
 <colgroup>
@@ -8323,32 +8383,32 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </table>
 </div>
 </div>
-<div class="sect5 postExecutionRequestAllTests">
-<h6 id="postexecutionrequestalltests"><a class="anchor" href="#postexecutionrequestalltests"></a>postExecutionRequestAllTests</h6>
+<div class="sect4 postExecutionRequestAllTests">
+<h5 id="postexecutionrequestalltests"><a class="anchor" href="#postexecutionrequestalltests"></a>postExecutionRequestAllTests</h5>
 <div class="paragraph">
 <p><code>POST /tests/runs/all</code></p>
 </div>
 <div class="paragraph">
 <p>request execution of all tests</p>
 </div>
-<div class="sect6">
-<h7 id="description-4"><a class="anchor" href="#description-4"></a>Description</h7>
+<div class="sect5">
+<h6 id="description-4"><a class="anchor" href="#description-4"></a>Description</h6>
 <div class="paragraph">
 <p>sends a request for the execution of all tests. The execution request is queued for execution and will be executed as soon as any previously running tests finish. The response includes the id of the test run and the url where to find the results of the execution.</p>
 </div>
 </div>
-<div class="sect6">
-<h7 id="parameters-4"><a class="anchor" href="#parameters-4"></a>Parameters</h7>
+<div class="sect5">
+<h6 id="parameters-4"><a class="anchor" href="#parameters-4"></a>Parameters</h6>
 
 </div>
-<div class="sect6">
-<h7 id="return-type-4"><a class="anchor" href="#return-type-4"></a>Return Type</h7>
+<div class="sect5">
+<h6 id="return-type-4"><a class="anchor" href="#return-type-4"></a>Return Type</h6>
 <div class="paragraph">
 <p><a href="#TestExecutionInformation"><em>TestExecutionInformation</em></a></p>
 </div>
 </div>
-<div class="sect6">
-<h7 id="content-type-4"><a class="anchor" href="#content-type-4"></a>Content Type</h7>
+<div class="sect5">
+<h6 id="content-type-4"><a class="anchor" href="#content-type-4"></a>Content Type</h6>
 <div class="ulist">
 <ul>
 <li>
@@ -8357,8 +8417,8 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </ul>
 </div>
 </div>
-<div class="sect6">
-<h7 id="responses-4"><a class="anchor" href="#responses-4"></a>Responses</h7>
+<div class="sect5">
+<h6 id="responses-4"><a class="anchor" href="#responses-4"></a>Responses</h6>
 <table class="tableblock frame-all grid-all stretch">
 <caption class="title">Table 4. HTTP Response Codes</caption>
 <colgroup>
@@ -8404,11 +8464,10 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </div>
 </div>
 </div>
-</div>
+<div class="sect2">
+<h3 id="models"><a class="anchor" href="#models"></a>10.2. Models</h3>
 <div class="sect3">
-<h4 id="models"><a class="anchor" href="#models"></a>10.3. Models</h4>
-<div class="sect4">
-<h5 id="Error"><a class="anchor" href="#Error"></a><em>Error</em></h5>
+<h4 id="Error"><a class="anchor" href="#Error"></a>10.2.1. <em>Error</em></h4>
 <div class="paragraph">
 <p>Default error object with information about the occurred error</p>
 </div>
@@ -8451,8 +8510,8 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </tbody>
 </table>
 </div>
-<div class="sect4">
-<h5 id="ExecutionResult"><a class="anchor" href="#ExecutionResult"></a><em>ExecutionResult</em></h5>
+<div class="sect3">
+<h4 id="ExecutionResult"><a class="anchor" href="#ExecutionResult"></a>10.2.2. <em>ExecutionResult</em></h4>
 <div class="paragraph">
 <p>the result of an executed test</p>
 </div>
@@ -8495,8 +8554,8 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </tbody>
 </table>
 </div>
-<div class="sect4">
-<h5 id="TestDescription"><a class="anchor" href="#TestDescription"></a><em>TestDescription</em></h5>
+<div class="sect3">
+<h4 id="TestDescription"><a class="anchor" href="#TestDescription"></a>10.2.3. <em>TestDescription</em></h4>
 <div class="paragraph">
 <p>The description of a test case</p>
 </div>
@@ -8555,8 +8614,8 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </tbody>
 </table>
 </div>
-<div class="sect4">
-<h5 id="TestExecutionInformation"><a class="anchor" href="#TestExecutionInformation"></a><em>TestExecutionInformation</em></h5>
+<div class="sect3">
+<h4 id="TestExecutionInformation"><a class="anchor" href="#TestExecutionInformation"></a>10.2.4. <em>TestExecutionInformation</em></h4>
 <div class="paragraph">
 <p>information of which tests were started and where to find the results of the test run</p>
 </div>
@@ -8607,8 +8666,8 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </tbody>
 </table>
 </div>
-<div class="sect4">
-<h5 id="TestExecutionRequest"><a class="anchor" href="#TestExecutionRequest"></a><em>TestExecutionRequest</em></h5>
+<div class="sect3">
+<h4 id="TestExecutionRequest"><a class="anchor" href="#TestExecutionRequest"></a>10.2.5. <em>TestExecutionRequest</em></h4>
 <div class="paragraph">
 <p>Request the execution of a subset of tests. Multiple specifications will be combined with AND. If one of the tags, sourceFiles, or testUniqueIds is an empty list, it will not be considered in the selection of tests. If all are empty, all tests are selected.</p>
 </div>
@@ -8659,8 +8718,8 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </tbody>
 </table>
 </div>
-<div class="sect4">
-<h5 id="TestExecutionResult"><a class="anchor" href="#TestExecutionResult"></a><em>TestExecutionResult</em></h5>
+<div class="sect3">
+<h4 id="TestExecutionResult"><a class="anchor" href="#TestExecutionResult"></a>10.2.6. <em>TestExecutionResult</em></h4>
 <div class="paragraph">
 <p>the result of the executed tests</p>
 </div>
@@ -8719,8 +8778,8 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 </tbody>
 </table>
 </div>
-<div class="sect4">
-<h5 id="TestExecutionResultTestsInner"><a class="anchor" href="#TestExecutionResultTestsInner"></a><em>TestExecutionResultTestsInner</em></h5>
+<div class="sect3">
+<h4 id="TestExecutionResultTestsInner"><a class="anchor" href="#TestExecutionResultTestsInner"></a>10.2.7. <em>TestExecutionResultTestsInner</em></h4>
 <table class="tableblock frame-all grid-all stretch fields-TestExecutionResultTestsInner">
 <colgroup>
 <col style="width: 18.1818%;">
@@ -9206,7 +9265,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-01-06 13:35:16 +0100
+Last updated 2025-01-08 15:12:33 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
