@@ -26,6 +26,7 @@ import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /** Validates a given json string against a given json schema */
 public class JsonSchemaChecker {
@@ -49,7 +50,9 @@ public class JsonSchemaChecker {
       Set<ValidationMessage> errors = jsonSchema.validate(jsonNode);
 
       if (!errors.isEmpty()) {
-        throw new JsonSchemaAssertionError("Json does not conform to schema: " + errors);
+        var errorMessages =
+            errors.stream().map(ValidationMessage::toString).collect(Collectors.joining("\n  "));
+        throw new JsonSchemaAssertionError("JSON schema validation failed:\n  " + errorMessages);
       }
     } catch (JsonProcessingException e) {
       throw new JsonSchemaProcessingError("Failed to process input json and/or input schema", e);

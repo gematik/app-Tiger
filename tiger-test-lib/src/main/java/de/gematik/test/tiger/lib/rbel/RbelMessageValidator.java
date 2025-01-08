@@ -543,30 +543,34 @@ public class RbelMessageValidator {
 
   public void assertAttributeForMessagesMatchAs(
       ModeType mode, String oracle, List<RbelElement> elements, String diffOptionCSV) {
+    HashMap<String, Throwable> exceptions = new HashMap<>();
     for (RbelElement element : elements) {
       try {
         switch (mode) {
-          case JSON -> new JsonChecker()
-              .compareJsonStrings(getAsJsonString(element), oracle, false);
+          case JSON ->
+              new JsonChecker().compareJsonStrings(getAsJsonString(element), oracle, false);
           case XML -> compareXMLStructureOfRbelElement(element, oracle, diffOptionCSV);
-          case JSON_SCHEMA -> new JsonSchemaChecker()
-              .compareJsonToSchema(getAsJsonString(element), oracle);
+          case JSON_SCHEMA ->
+              new JsonSchemaChecker().compareJsonToSchema(getAsJsonString(element), oracle);
         }
         log.debug("Found matching element: \n{}", element.printTreeStructure());
         return;
-      } catch (JsonChecker.JsonCheckerMismatchException | AssertionError ignored) {
-        // try next
+      } catch (JsonChecker.JsonCheckerMismatchException | AssertionError e) {
+        exceptions.put(element.getUuid(), e);
       }
     }
     if (elements.size() == 1) {
+      RbelElement element = elements.get(0);
       throw new AssertionError(
           String.format(
               """
                       Element value:
                       %s
                       Expected:
+                      %s
+                      Validation message:
                       %s""",
-              elements.get(0).getRawStringContent(), oracle));
+              element.getRawStringContent(), oracle, exceptions.get(element.getUuid())));
     } else {
       throw new AssertionError(
           String.format(

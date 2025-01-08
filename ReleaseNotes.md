@@ -10,6 +10,10 @@
 * Spring Boot 3.4.1
 * Logback 1.5.15
 
+## Features
+
+* TGR-1696: When JSON Schema validation fails, the error message now contains the validation messages.
+
 # Release 3.4.7
 
 ## Breaking Changes
