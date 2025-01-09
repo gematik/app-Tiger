@@ -25,6 +25,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
+import de.gematik.test.tiger.mockserver.httpclient.ClientBootstrapFactory.ReusableChannelMap.ChannelId;
 import de.gematik.test.tiger.mockserver.model.Message;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -35,7 +36,9 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.WriteBufferWaterMark;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.util.AttributeKey;
 import java.net.InetSocketAddress;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.Nullable;
@@ -43,11 +46,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 @RequiredArgsConstructor
 @Slf4j
 public class ClientBootstrapFactory {
 
+  public static final AttributeKey<Integer> LOOP_COUNTER = AttributeKey.valueOf("loopCounter");
   private final MockServerConfiguration configuration;
   private final EventLoopGroup eventLoop;
   @Getter private final ReusableChannelMap channelMap = new ReusableChannelMap();
@@ -122,6 +127,7 @@ public class ClientBootstrapFactory {
               .attr(SECURE, isSecure)
               .attr(REMOTE_SOCKET, remoteAddress)
               .attr(ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE, errorIfChannelClosedWithoutResponse)
+              .attr(LOOP_COUNTER, incomingChannel.attr(LOOP_COUNTER).get() + 1)
               .handler(clientInitializer);
       if (responseFuture != null) {
         bootstrap.attr(RESPONSE_FUTURE, responseFuture);
@@ -141,8 +147,25 @@ public class ClientBootstrapFactory {
     }
   }
 
+  public int getLoopCounterForOpenConnectionFromPort(int port) {
+    return channelMap.channelMap.entries().stream()
+        .filter(e -> isLocalPortOfChannelEqualToIncomingPortInQuestion(port, e))
+        .mapToInt(
+            entry -> entry.getValue().getFutureOutgoingChannel().channel().attr(LOOP_COUNTER).get())
+        .max()
+        .orElse(0);
+  }
+
+  private boolean isLocalPortOfChannelEqualToIncomingPortInQuestion(int port, Entry<ChannelId, ReusableChannel> entry) {
+      val loc = entry.getValue().getFutureOutgoingChannel().channel().localAddress();
+      if (loc instanceof InetSocketAddress localAddress) {
+        return localAddress.getPort() == port;
+      }
+      return false;
+  }
+
   public static class ReusableChannelMap {
-    private final Multimap<ChannelId, ReusableChannel> channelMap =
+    public final Multimap<ChannelId, ReusableChannel> channelMap =
         Multimaps.synchronizedListMultimap(ArrayListMultimap.create());
 
     public synchronized ChannelFuture getChannelToReuse(RequestInfo<?> requestInfo) {

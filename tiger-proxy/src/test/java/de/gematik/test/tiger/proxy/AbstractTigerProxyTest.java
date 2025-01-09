@@ -73,7 +73,7 @@ public abstract class AbstractTigerProxyTest {
     synchronized (AbstractTigerProxyTest.class) {
       if (!unirestInitialized && !Unirest.isRunning()) {
         Unirest.config().reset();
-        Unirest.config().connectTimeout(1000).socketTimeout(1000);
+        Unirest.config().connectTimeout(1000).socketTimeout(1000).automaticRetries(false);
         unirestInitialized = true;
       }
     }

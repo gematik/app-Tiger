@@ -26,17 +26,20 @@ import static de.gematik.test.tiger.mockserver.netty.HttpRequestHandler.PROXYING
 import static de.gematik.test.tiger.mockserver.netty.proxy.relay.RelayConnectHandler.*;
 import static java.util.Collections.unmodifiableSet;
 
+import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.test.tiger.mockserver.codec.MockServerHttpServerCodec;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.netty.HttpRequestHandler;
 import de.gematik.test.tiger.mockserver.netty.MockServer;
+import de.gematik.test.tiger.mockserver.netty.MockServerInfiniteLoopChecker;
 import de.gematik.test.tiger.mockserver.netty.proxy.BinaryHandler;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import de.gematik.test.tiger.mockserver.socket.tls.SniHandler;
 import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
-import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
+import de.gematik.test.tiger.proxy.handler.TigerExceptionUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
@@ -53,6 +56,7 @@ import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
@@ -61,6 +65,7 @@ import org.apache.commons.lang3.StringUtils;
  * @author jamesdbloom
  */
 @Slf4j
+@AllArgsConstructor
 public class PortUnificationHandler extends ReplayingDecoder<Void> {
 
   public static final AttributeKey<Boolean> TLS_ENABLED_UPSTREAM =
@@ -74,17 +79,7 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   private final MockServer server;
   private final HttpState httpState;
   private final HttpActionHandler actionHandler;
-
-  public PortUnificationHandler(
-      MockServerConfiguration configuration,
-      MockServer server,
-      HttpState httpState,
-      HttpActionHandler actionHandler) {
-    this.configuration = configuration;
-    this.server = server;
-    this.httpState = httpState;
-    this.actionHandler = actionHandler;
-  }
+  private final MockServerInfiniteLoopChecker infiniteLoopChecker;
 
   private void performConnectionToRemote(ChannelHandlerContext ctx) {
     var incomingChannel = ctx.channel();
@@ -118,15 +113,30 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
               future.channel().attr(INCOMING_CHANNEL).set(incomingChannel);
               if (!future.isSuccess()) {
                 Optional.ofNullable(configuration.binaryProxyListener())
-                        .filter(listener -> listener instanceof BinaryExchangeHandler)
-                        .map(listener -> (BinaryExchangeHandler) listener)
-                        .filter(handler -> !handler.getTigerProxy()
+                    .filter(
+                        handler ->
+                            !handler
+                                .getTigerProxy()
                                 .getTigerProxyConfiguration()
                                 .getDirectReverseProxy()
                                 .isIgnoreConnectionErrors())
-                        .ifPresent(handler -> log.error("Failed to connect to {}", remoteAddress, future.cause()));
+                    .ifPresent(
+                        handler ->
+                            log.error("Failed to connect to {}", remoteAddress, future.cause()));
               }
             });
+  }
+
+  private void doInfiniteLoopCheck(ChannelHandlerContext ctx) {
+    val remoteAddress = ctx.pipeline().channel().remoteAddress();
+    if (infiniteLoopChecker.isInfiniteLoop(ctx.pipeline().channel())) {
+      log.error("Infinite loop detected for {}", remoteAddress);
+      throw new TigerProxyRoutingException(
+          "Infinite loop detected for " + remoteAddress,
+          RbelHostname.create(remoteAddress),
+          null,
+          null);
+    }
   }
 
   public NettySslContextFactory nettySslContextFactory(boolean forServer) {
@@ -169,6 +179,8 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   }
 
   private void decodeSafe(ChannelHandlerContext ctx, ByteBuf msg) {
+    doInfiniteLoopCheck(ctx);
+
     if (isTls(msg) && configuration.enableTlsTermination()) {
       logStage(ctx, "adding TLS decoders");
       enableTls(ctx, msg);
@@ -351,7 +363,18 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
 
   @Override
   public void exceptionCaught(ChannelHandlerContext ctx, Throwable throwable) {
-    if (connectionClosedException(throwable)) {
+    val tigerRoutingException = getTigerRoutingException(throwable);
+    if (tigerRoutingException.isPresent()) {
+      if (configuration.exceptionHandlingCallback() != null && ctx.channel().isOpen()) {
+        configuration.exceptionHandlingCallback().accept(tigerRoutingException.get(), ctx);
+      }
+      log.atTrace()
+          .addArgument(() -> tigerRoutingException.get().getMessage())
+          .addArgument(() -> ctx.channel().isActive())
+          .addArgument(() -> ctx.channel().isOpen())
+          .log(
+              "Routing error caught by port unification handler -> closing pipeline ({}) active {}, open {}");
+    } else if (connectionClosedException(throwable)) {
       log.error(
           "exception caught by port unification handler -> closing pipeline {}",
           ctx.channel(),
@@ -369,5 +392,9 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
       }
     }
     closeOnFlush(ctx.channel());
+  }
+
+  private Optional<TigerProxyRoutingException> getTigerRoutingException(Throwable throwable) {
+    return TigerExceptionUtils.getCauseWithType(throwable, TigerProxyRoutingException.class);
   }
 }

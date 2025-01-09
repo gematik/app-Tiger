@@ -109,7 +109,8 @@ public class MockServerToRbelConverter {
     return rbelConverter.parseMessage(
         new RbelElementConvertionPair(message),
         convertUri(protocolAndHost),
-        Optional.ofNullable(request.getReceiverAddress())
+        Optional.ofNullable(request)
+            .map(HttpRequest::getReceiverAddress)
             .map(SocketAddress::toRbelHostname)
             .orElse(null),
         Optional.of(routingException.getTimestamp()));

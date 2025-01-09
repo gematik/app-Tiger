@@ -19,16 +19,16 @@ package de.gematik.test.tiger.mockserver.configuration;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
 import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import java.net.InetSocketAddress;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
+import java.util.function.*;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -67,6 +67,10 @@ public class MockServerConfiguration {
   // non http proxying
   private BinaryExchangeHandler binaryProxyListener = null;
   private boolean enableTlsTermination = true;
+
+  // callbacks
+  private BiConsumer<TigerProxyRoutingException, ChannelHandlerContext> exceptionHandlingCallback =
+      (x, y) -> {};
 
   // proxy
   private ProxyConfiguration proxyConfiguration = null;

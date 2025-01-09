@@ -53,7 +53,6 @@ public class NettyHttpClient {
   private final EventLoopGroup eventLoopGroup;
   private final ProxyConfiguration proxyConfiguration;
   private final NettySslContextFactory nettySslContextFactory;
-  private final Set<Integer> clientPorts = Collections.synchronizedSet(new HashSet<>());
 
   @Getter private final ClientBootstrapFactory clientBootstrapFactory;
 
@@ -260,5 +259,9 @@ public class NettyHttpClient {
     }
     return NoProxyUtils.shouldUseProxyForHost(
         remoteAddress.getAddress(), proxyConfiguration.getNoProxyHosts());
+  }
+
+  public int queryClientPort(int port) {
+    return clientBootstrapFactory.getLoopCounterForOpenConnectionFromPort(port);
   }
 }

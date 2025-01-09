@@ -29,6 +29,8 @@ public class TigerConfigurationKeys {
       new TigerTypedConfigurationKey<>("tiger.tigerProxy.adminPort", Integer.class);
   public static final TigerTypedConfigurationKey<Integer> LOCAL_PROXY_PROXY_PORT =
       new TigerTypedConfigurationKey<>("tiger.tigerProxy.proxyPort", Integer.class);
+  public static final TigerTypedConfigurationKey<Integer> TIGER_PROXY_MAX_LOOP_COUNTER =
+    new TigerTypedConfigurationKey<>("tiger.tigerProxy.maxLoopCounter", Integer.class, 10);
   public static final TigerTypedConfigurationKey<Boolean> SKIP_ENVIRONMENT_SETUP =
       new TigerTypedConfigurationKey<>("tiger.skipEnvironmentSetup", Boolean.class, false);
   public static final TigerTypedConfigurationKey<Boolean> SHOW_TIGER_LOGO =
