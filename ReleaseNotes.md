@@ -2,15 +2,13 @@
 
 # Release 3.5.1
 
-## Features
-
-* TGR-1100: cleaned up Tiger Proxy configuration properties in fileSaveInfo
-
-# Release 3.5.0
-
-## Bugfix
-
-* TGR-1693: Tiger-Proxy: In the menu the correct information about a message is again being displayed.
+* Serenity BDD 4.2.11
+* Cucumber 7.20.1
+* RestAssured 5.5.0
+* Selenium 4.19.1
+* Appium 9.3.0
+* Spring Boot 3.4.1
+* Logback 1.5.15
 
 # Release 3.4.7
 
@@ -28,9 +26,6 @@ rbel.lenientHttpParsing: true
 * TGR-1447, TGR-1656: Tiger-Proxy: Sequence-Numbers are assigned per tiger proxy, assuring monotonous increase. A
   history of sequence numbers per proxy is transmitted to the downstream proxy. This shall allow
   differentiation for messages originating from different proxies.
-* TGR-1685: added glue step to support storing nodes of requests into Tiger Global Configuration properties.
-* TGR-1672: improved display of tiger user manual on small screens (tables)
-*
 
 ## Bugfixes
 
@@ -340,8 +335,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+    key = PLUGIN_PROPERTY_NAME,
+    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

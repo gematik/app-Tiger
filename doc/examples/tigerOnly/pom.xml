@@ -29,7 +29,6 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
 
-        <version.junit5>5.10.3</version.junit5>
         <version.maven.failsafe>3.3.1</version.maven.failsafe>
         <!-- please adapt Tiger version property to the most current one obtained from -->
         <!-- maven central:
@@ -37,7 +36,7 @@
           or from gematik internal Nexus
           https://nexus.prod.ccs.gematik.solutions/#browse/search=keyword%3Dtiger-test-lib
         -->
-        <version.tiger>3.1.1</version.tiger>
+        <version.tiger>3.5.0</version.tiger>
         <version.logback>1.5.7</version.logback>
     </properties>
 
