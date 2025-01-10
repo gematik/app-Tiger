@@ -1,0 +1,254 @@
+= ADR 011: Pagination for Messages
+
+== Context
+
+The current pagination uses forward pagination, starting from a selected message and loading the next page.
+This approach requires loading all messages sequentially from the start, leading to performance issues,
+difficulty handling large message volumes, and poor user experience when navigating or filtering messages.
+
+=== Requirements
+
+The pagination implementation must be flexible enough to:
+
+- Serve multiple consumers (frontends).
+- Filter messages.
+- Reset the message offset.
+- Import external messages.
+
+It should also provide a natural user experience by:
+
+- Maintaining scroll position.
+- Allowing continuous scrolling while new messages appear.
+
+=== Message Structure
+
+Each message is sequentially marked with a numerically ascending offset counter, contains an UUID
+and is of type request or response.
+
+== Decision
+
+=== Backend
+
+The backend employs a queue-like structure (`msg_queue`) to store messages and provides the API endpoint `/api/get_messages`:
+
+.JSON Request
+[source,js]
+----
+{
+  "fromOffset": 50,
+  "toOffsetExcluding": 150, <1>
+  "filter": {
+    "rbelPath": "...",
+    "requestFrom": "...",
+    "requestTo": "...",
+  } <2>
+}
+----
+<1> Specifies the desired end offset (excluding the given offset). This and `fromOffset` is the offset of the *filtered* `msg_queue`.
+<2> Optional filters. Must be implemented as an empty object if no filters are specified.
+
+The response applies the specified filter to `msg_queue` and returns a view of the filtered queue:
+`msg_queue[fromOffset:toOffsetExcluding]`.
+
+.JSON Response
+[source,js]
+----
+{
+  "fromOffset": 50,
+  "toOffsetExcluding": 120, <1>
+  "totalFiltered": 120, <2>
+  "total": 500, <3>
+  "filter": {
+    // ...
+  },
+  "hash": "cf83e135...7eefb8bd", <4>
+  "messages": [
+    { /* ... */ },
+    { /* ... */ },
+    // ...
+  ] <5>
+}
+----
+<1> May return fewer results than requested depending on applied filters and the size of `msg_queue`.
+<2> The total number of messages after applying the filter on `msg_queue`.
+<3> The total number of messages within `msg_queue`.
+<4> A hash reflecting the `msg_queue`. E.g. the first UUID of `messages`.
+<5> An array containing `toOffsetExcluding - fromOffset` messages.
+
+As a result, the backend is largely stateless (not storing frontend-related data) and highly decoupled.
+
+==== Overview of Messages
+
+Querying all messages is costly, so we use a condensed view via `/api/get_all_messages`:
+
+.JSON Request
+[source,js]
+----
+{
+  "filter": {
+    "rbelPath": "...",
+    "requestFrom": "...",
+    "requestTo": "...",
+  } <1>
+}
+----
+<1> All the same filters applied on the request to `/api/get_messages`.
+
+.JSON Response
+[source,js]
+----
+{
+  "totalFiltered": 120, <1>
+  "total": 500, <2>
+  "filter": {
+    // ...
+  },
+  "hash": "cf83e135...7eefb8bd", <3>
+  "messages": [
+    { "uuid": "...", "name": "...", /* ... */ },
+    // ...
+  ] <4>
+}
+----
+<1> The total number of messages after applying the filter on `msg_queue`.
+<2> The total number of messages within `msg_queue`.
+<3> A hash reflecting the `msg_queue`. E.g. the first UUID of `messages`.
+<4> An array of messages excluding individual payloads.
+
+The values for `hash`, `totalFiltered`, and `total` must match those returned by an identical `/api/get_messages` request.
+
+This call provides a quick summary of all messages, such as for display in a sidebar for easy navigation.
+
+=== Frontend
+
+Each frontend can visualize the message queue using two methods: paginated views or endless scrolling.
+
+==== Paginated with Page Buttons
+
+Each page contains a fixed number of messages. The total number of pages is calculated as:
+`(totalFiltered + msg_per_page - 1) / msg_per_page`. Navigation is achieved using next/prev buttons.
+For each page, `fromOffset` and `toOffsetExcluding` are adjusted accordingly.
+
+New messages are polled automatically at regular intervals (`N`).
+When new messages are detected, a visual indicator notifies the user.
+Clicking the indicator allows the user to jump directly to the last page (`toOffsetExcluding == totalFiltered`).
+
+==== Endless Scrolling
+
+Endless scrolling behaves like pagination but without visible page boundaries.
+Initially, the frontend loads as many messages as needed to fill the visible area (e.g., starting with 10 messages).
+
+A sliding window mechanism is then employed:
+----
++----------------------------------------+
+| N/? messages before the current view   |
++----------------------------------------+
+| N messages currently visible           |
++----------------------------------------+
+| N/? messages after the current view    |
++----------------------------------------+
+----
+
+This ensures smooth scrolling. Window parameters should be fine-tuned during development.
+Scrolling up or down dynamically loads more messages and discards unused ones.
+
+If the user is at the bottom of the message stream:
+
+1. New messages are automatically polled at regular intervals (`N`).
+2. When new messages are detected, the window scrolls automatically to the bottom.
+
+If the user is in the middle of the message stream:
+
+1. New messages are also polled at regular intervals (`N`).
+2. On detecting new messages, a visual indicator appears, prompting the user to view the updates.
+3. Clicking the indicator scrolls the window to the bottom, displaying the latest messages (`toOffsetExcluding == totalFiltered`).
+
+
+==== Polling for New Messages
+
+Polling for new messages can be achieved by sending a request to `/api/get_messages` with `fromOffset` set to `0` and
+`toOffsetExcluding` to `1`.
+
+.JSON Request
+[source,js]
+----
+{
+  "fromOffset": 0,
+  "toOffsetExcluding": 0,
+  "filter": { /* ... */ }
+}
+----
+
+.JSON Response
+[source,js]
+----
+{
+  "fromOffset": 0,
+  "toOffsetExcluding": 0,
+  "totalFiltered": 120,
+  "total": 500,
+  "hash": "cf83e135...7eefb8bd",
+  "filter": { /* ... */ },
+  "messages": []
+}
+----
+
+The response will include an empty messages array. However, the updated `totalFiltered` value may differ from the previous `totalFiltered` *or*
+the returned `hash` has changed, indicating the presence of new messages:
+
+`totalFiltered_new > 0 && hash_new != hash_old`::
+The underlying `msg_queue` was replaced. A full reload is necessary.
+
+`hash_new == hash_old && totalFiltered_new != totalFiltered_old`::
+More messages to load.
+
+[NOTE]
+====
+Polling the first message enables all consumers (frontends) to be able to detect xref:_import_messages[imports] and
+initiate proper refreshing of its already visualized data view.
+====
+
+==== Reset Messages
+
+Resetting messages deletes the `msg_queue` within the backend.
+
+==== Filter
+
+`rbelPath`::
+Optional string containing the Rbel-Path.
+
+`requestFrom`::
+Optional string containing the host from where the request is originating.
+
+`requestTo`::
+Optional string containing the host from where the request is going.
+
+[#_import_messages]
+==== Import Messages
+
+A Rbel message log can be imported via the UI. Once uploaded, it becomes part of the `msg_queue` on the backend.
+Consequently, requests to `/api/get_messages` function identically to live message logging.
+
+[IMPORTANT]
+====
+In the current backend implementation, this is a stateful operation initiated by the frontend. Consequently,
+frontends visualize data views; but show the same underlying data.
+====
+
+== Edge Cases
+
+Listening for new messages relies on comparing message UUIDs, which are typically unique.
+However, manually importing messages can disrupt this mechanism. Users might manually adjust logs while
+retaining the original message UUID, even if the log content has changed.
+
+== Conclusion
+
+The backend manages the technical aspects of pagination and filtering,enabling a flexible implementation in the frontend.
+
+While pagination with pages is straightforward, it does not address the inconvenience of separating
+request-response pairs across pages. Endless scrolling resolves this issue but requires additional development effort.
+
+Polling for new messages, while not the most elegant solution, requires minimal additional effort on both the backend
+and frontend, as it leverages the existing endpoint. In the future, this can be replaced with a more efficient streaming approach,
+such as WebSockets or a similar technology. As a result, this could introduce backend state handling, potentially
+exceeding the primary goal of visually displaying a streamed log.
