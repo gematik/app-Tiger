@@ -28,6 +28,10 @@
 
 * TGR-1696: When JSON Schema validation fails, the error message now contains the validation messages.
 
+## Bugfixes
+
+* TGR-1329: Tiger-Proxy: During a TLS-Handshake the Tiger-Proxy no longer signals HTTP/2-support in the ALPN
+
 # Release 3.4.7
 
 ## Breaking Changes
