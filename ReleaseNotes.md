@@ -16,6 +16,11 @@
 * Spring Boot 3.4.1
 * Logback 1.5.15
 
+## Bugfixes
+
+* TGR-1693: Tiger-Proxy: In the menu the correct information about a message is again being displayed.
+* TGR-1694: Fixed missing messages in UI traffic visualization when using proxy mesh setup.
+
 ## Features
 
 * TGR-1696: When JSON Schema validation fails, the error message now contains the validation messages.
@@ -36,6 +41,8 @@ rbel.lenientHttpParsing: true
 * TGR-1447, TGR-1656: Tiger-Proxy: Sequence-Numbers are assigned per tiger proxy, assuring monotonous increase. A
   history of sequence numbers per proxy is transmitted to the downstream proxy. This shall allow
   differentiation for messages originating from different proxies.
+* TGR-1685: added glue step to support storing nodes of requests into Tiger Global Configuration properties.
+* TGR-1672: improved display of tiger user manual on small screens (tables)
 
 ## Bugfixes
 
@@ -345,8 +352,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-    key = PLUGIN_PROPERTY_NAME,
-    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+        key = PLUGIN_PROPERTY_NAME,
+        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }
