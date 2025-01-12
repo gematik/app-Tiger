@@ -12,6 +12,7 @@
   - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   - See the License for the specific language governing permissions and
   - limitations under the License.
+  -
   -->
 
 <script setup lang="ts">
@@ -24,6 +25,7 @@ const props = defineProps<{
   diagramStepDescription: string[]
 }>()
 
+const headerElement = ref<SVGElement | null>(null);
 const mermaidElement = ref<SVGElement | null>(null);
 const stringToRender = computed(() => "sequenceDiagram\n" + props.diagramStepDescription.map(s => "    " + s).join("\n"));
 const emit = defineEmits(['clickOnMessageWithSequenceNumber'])
@@ -50,8 +52,14 @@ const renderDiagram = async () => {
   try {
     const {svg}: RenderResult = await mermaid.render("mermaidDiagram-" + Math.floor(Math.random() * 1000),
         stringToRender.value, mermaidElement.value || undefined)
-    if (mermaidElement.value) {
+    if (mermaidElement.value && headerElement.value) {
+      headerElement.value.innerHTML = svg;
+      headerElement.value?.querySelectorAll("line").forEach(e => e.remove())
+      headerElement.value?.querySelectorAll("text.messageText").forEach(e => e.remove())
+      headerElement.value?.querySelectorAll("rect.actor-bottom").forEach(e => e.parentElement?.remove())
       mermaidElement.value.innerHTML = svg;
+      mermaidElement.value?.querySelectorAll("rect.actor-top").forEach(e => e.parentElement?.remove())
+
       const messages = mermaidElement.value.querySelectorAll("text.messageText");
       messages.forEach(m => {
         m.classList.add("clickableMessageText")
@@ -75,7 +83,9 @@ watch(() => stringToRender.value, () => {
 
 
 <template>
-<pre ref="mermaidElement">
+<pre style="position:fixed;width:100%;" ref="headerElement">
+</pre>
+  <pre style="position:relative;z-index:1000;padding-top:60px;" ref="mermaidElement">
 </pre>
 </template>
 

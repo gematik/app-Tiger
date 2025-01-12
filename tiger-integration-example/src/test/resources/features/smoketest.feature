@@ -8,6 +8,17 @@ Feature: Test Tiger BDD
 #    And TGR zeige grünen Text "Der Testbericht wird unter target/site/serenity/index.html erstellt"
 
   Scenario: Test show HTML
+    And TGR send empty GET request to "https://www.google.com"
+    And TGR send empty GET request to "https://www.google.com"
+    And TGR send empty GET request to "https://www.google.com"
+    And TGR send empty GET request to "https://www.google.com"
+    And TGR send empty GET request to "https://www.google.com"
+    And TGR send empty GET request to "https://www.google.com"
+    And TGR send empty GET request to "https://www.google.com"
+    And TGR send empty GET request to "https://www.google.com"
+    And TGR send empty GET request to "https://www.google.com"
+    And TGR send empty GET request to "https://www.google.com"
+    And TGR send empty GET request to "https://www.google.com"
     Given TGR show HTML Notification:
     """
       <b>Fetter Text</b>
