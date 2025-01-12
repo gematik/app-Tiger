@@ -4,10 +4,13 @@
 
 ## Features
 
-* TGR-1100: cleaned up Tiger Proxy configuration properties in fileSaveInfo
-* TGR-1608: Tiger-Proxy: Infinite loop prevention for HTTP-Requests. After 10 loops the Proxy will simply close the connection, saving an error to the Tiger-Proxy log.
+* TGR-1100: cleaned up Tiger Proxy configuration properties documentation in fileSaveInfo
+* TGR-1608: Tiger-Proxy: Infinite loop prevention for HTTP-Requests. After 10 loops the Proxy will simply close the
+  connection, saving an error to the Tiger-Proxy log.
+* TGR-1563: headers in traffic visualization are now fixed on top and are always visible
 
 # Release 3.5.0
+
 * Serenity BDD 4.2.11
 * Cucumber 7.20.1
 * RestAssured 5.5.0
