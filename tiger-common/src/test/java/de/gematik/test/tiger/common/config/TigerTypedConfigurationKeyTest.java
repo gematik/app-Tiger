@@ -57,4 +57,19 @@ class TigerTypedConfigurationKeyTest {
     stringKey.putValue("myNewValue");
     assertThat(stringKey.getValue()).get().isEqualTo("myNewValue");
   }
+
+  @Test
+  void testReadArray() {
+    var stringKey = new TigerTypedConfigurationKey<>("key", String[].class);
+    assertThat(stringKey.getValue()).isEmpty();
+    TigerGlobalConfiguration.putValue("key", "foo, bar");
+    assertThat(stringKey.getValue()).get().isEqualTo(new String[] {"foo", "bar"});
+  }
+
+  @Test
+  void testReadEmptyArray() {
+    var stringKey = new TigerTypedConfigurationKey<>("key", String[].class);
+    TigerGlobalConfiguration.putValue("key", "foo, bar");
+    assertThat(stringKey.getValue()).get().isEqualTo(new String[] {"foo", "bar"});
+  }
 }

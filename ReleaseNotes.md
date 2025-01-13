@@ -9,6 +9,10 @@
   connection, saving an error to the Tiger-Proxy log.
 * TGR-1563: headers in traffic visualization are now fixed on top and are always visible
 
+## Bugfixes
+
+* TGR-1698: Tiger-Proxy: Default for namedGroups changed. This solves issues when connecting to a Tiger-Proxy with a client that uses a non-standard ECC-group. The new default can be overriden via `tiger.tigerProxy.defaultNamedGroups`.
+
 # Release 3.5.0
 
 * Serenity BDD 4.2.11

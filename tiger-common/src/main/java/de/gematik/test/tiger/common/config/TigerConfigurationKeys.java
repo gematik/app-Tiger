@@ -20,6 +20,41 @@ public class TigerConfigurationKeys {
 
   private TigerConfigurationKeys() {}
 
+  private static final String[] DEFAULT_NAMED_GROUPS_FALLBACK = {
+    "sect163k1",
+    "sect163r1",
+    "sect163r2",
+    "sect193r1",
+    "sect193r2",
+    "sect233k1",
+    "sect233r1",
+    "sect239k1",
+    "sect283k1",
+    "sect283r1",
+    "sect409k1",
+    "sect409r1",
+    "sect571k1",
+    "sect571r1",
+    "secp160k1",
+    "secp160r1",
+    "secp160r2",
+    "secp192k1",
+    "secp192r1",
+    "secp224k1",
+    "secp224r1",
+    "secp256k1",
+    "secp256r1",
+    "secp384r1",
+    "secp521r1",
+    "brainpoolP256r1",
+    "brainpoolP384r1",
+    "brainpoolP512r1",
+    "brainpoolP256r1",
+    "brainpoolP384r1",
+    "brainpoolP512r1"
+  };
+
+
   public static final TigerTypedConfigurationKey<Integer> TESTENV_MGR_RESERVED_PORT =
       new TigerTypedConfigurationKey<>("tiger.lib.workflowUiPort", Integer.class);
   public static final TigerTypedConfigurationKey<Integer> LOCALPROXY_ADMIN_RESERVED_PORT =
@@ -30,7 +65,12 @@ public class TigerConfigurationKeys {
   public static final TigerTypedConfigurationKey<Integer> LOCAL_PROXY_PROXY_PORT =
       new TigerTypedConfigurationKey<>("tiger.tigerProxy.proxyPort", Integer.class);
   public static final TigerTypedConfigurationKey<Integer> TIGER_PROXY_MAX_LOOP_COUNTER =
-    new TigerTypedConfigurationKey<>("tiger.tigerProxy.maxLoopCounter", Integer.class, 10);
+      new TigerTypedConfigurationKey<>("tiger.tigerProxy.maxLoopCounter", Integer.class, 10);
+  public static final TigerTypedConfigurationKey<String[]> TIGER_PROXY_DEFAULT_NAMED_GROUPS =
+      new TigerTypedConfigurationKey<>(
+          "tiger.tigerProxy.defaultNamedGroups",
+          String[].class,
+        DEFAULT_NAMED_GROUPS_FALLBACK);
   public static final TigerTypedConfigurationKey<Boolean> SKIP_ENVIRONMENT_SETUP =
       new TigerTypedConfigurationKey<>("tiger.skipEnvironmentSetup", Boolean.class, false);
   public static final TigerTypedConfigurationKey<Boolean> SHOW_TIGER_LOGO =
@@ -57,11 +97,12 @@ public class TigerConfigurationKeys {
   public static final TigerTypedConfigurationKey<String> CUSTOM_FAILURE_MESSAGE =
       new TigerTypedConfigurationKey<>("tiger.rbel.customFailureMessage", String.class, "");
   public static final TigerTypedConfigurationKey<Boolean> LENIENT_HTTP_PARSING =
-    new TigerTypedConfigurationKey<>("tiger.rbel.lenientHttpParsing", Boolean.class, false);
+      new TigerTypedConfigurationKey<>("tiger.rbel.lenientHttpParsing", Boolean.class, false);
 
   public static final TigerTypedConfigurationKey<Boolean> RUN_TESTS_ON_START =
       new TigerTypedConfigurationKey<>("tiger.lib.runTestsOnStart", Boolean.class, true);
 
   public static final TigerConfigurationKey CUCUMBER_ENGINE_RUNTIME_CONFIGURATION = // NOSONAR
       new TigerConfigurationKey("tiger.cucumber.runtime-configuration");
+
 }

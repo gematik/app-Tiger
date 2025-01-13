@@ -16,8 +16,10 @@
 
 package de.gematik.test.tiger.common.config;
 
-import java.lang.reflect.Constructor;
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;
+import java.util.function.Function;
 import lombok.Getter;
 import lombok.SneakyThrows;
 
@@ -32,7 +34,7 @@ public class TigerTypedConfigurationKey<T> {
 
   @Getter private final TigerConfigurationKey key;
   private final Optional<T> defaultValue;
-  private final Constructor<T> typeConstructor;
+  private final Function<String, T> typeConstructor;
 
   public TigerTypedConfigurationKey(String key, Class<T> type) {
     this(key, type, null);
@@ -49,7 +51,49 @@ public class TigerTypedConfigurationKey<T> {
   @SneakyThrows
   public TigerTypedConfigurationKey(TigerConfigurationKey key, Class<T> type, T defaultValue) {
     this.key = key;
-    this.typeConstructor = type.getConstructor(String.class);
+    if (type.isArray()) {
+      this.typeConstructor =
+          s -> {
+            String[] split = s.split(",");
+            T[] array = (T[]) Array.newInstance(type.getComponentType(), split.length);
+            for (int i = 0; i < split.length; i++) {
+              try {
+                Array.set(
+                    array,
+                    i,
+                    type.componentType().getConstructor(String.class).newInstance(split[i].trim()));
+              } catch (InstantiationException
+                  | IllegalAccessException
+                  | InvocationTargetException
+                  | NoSuchMethodException e) {
+                throw new TigerConfigurationException(
+                    "Exception while retrieving value for key "
+                        + key.downsampleKey()
+                        + " and type "
+                        + type,
+                    e);
+              }
+            }
+            return (T) array;
+          };
+    } else {
+      this.typeConstructor =
+          (s) -> {
+            try {
+              return type.getConstructor(String.class).newInstance(s);
+            } catch (InstantiationException
+                | IllegalAccessException
+                | InvocationTargetException
+                | NoSuchMethodException e) {
+              throw new TigerConfigurationException(
+                  "Exception while retrieving value for key "
+                      + key.downsampleKey()
+                      + " and type "
+                      + type,
+                  e);
+            }
+          };
+    }
     this.defaultValue = Optional.ofNullable(defaultValue);
   }
 
@@ -70,7 +114,7 @@ public class TigerTypedConfigurationKey<T> {
 
   @SneakyThrows
   private T getInstance(String s) {
-    return typeConstructor.newInstance(s);
+    return typeConstructor.apply(s);
   }
 
   public void putValue(T value) {

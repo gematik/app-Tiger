@@ -27,6 +27,11 @@ import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.TigerProxyMasterSecretListener;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxySslException;
+import io.netty.handler.ssl.ApplicationProtocolConfig;
+import io.netty.handler.ssl.ApplicationProtocolConfig.Protocol;
+import io.netty.handler.ssl.ApplicationProtocolConfig.SelectedListenerFailureBehavior;
+import io.netty.handler.ssl.ApplicationProtocolConfig.SelectorFailureBehavior;
+import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.SslProvider;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,12 +39,16 @@ import java.util.List;
 import java.util.Optional;
 import javax.net.ssl.SSLException;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
+@Slf4j
 public class MockServerTlsConfigurator {
+
+  private static final String NAMED_GROUPS = "jdk.tls.namedGroups";
   private final MockServerConfiguration mockServerConfiguration;
   private final TigerProxyConfiguration tigerProxyConfiguration;
   private Optional<TigerTlsConfiguration> tlsConfiguration;
@@ -75,9 +84,10 @@ public class MockServerTlsConfigurator {
         .isPresent()) {
       mockServerConfiguration.clientSslContextBuilderFunction(
           sslContextBuilder -> {
+            val previousGroups = System.getProperty(NAMED_GROUPS);
             try {
               System.setProperty(
-                  "jdk.tls.namedGroups",
+                  NAMED_GROUPS,
                   String.join(",", tlsConfiguration.get().getClientSupportedGroups()));
               sslContextBuilder.sslProvider(SslProvider.JDK);
               return sslContextBuilder.build();
@@ -85,6 +95,12 @@ public class MockServerTlsConfigurator {
               throw new TigerProxySslException(
                   "Error while building SSL context in Tiger-Proxy " + tigerProxyName.orElse(""),
                   e);
+            } finally {
+              if (previousGroups != null) {
+                System.setProperty(NAMED_GROUPS, previousGroups);
+              } else {
+                System.clearProperty(NAMED_GROUPS);
+              }
             }
           });
     }
@@ -165,11 +181,25 @@ public class MockServerTlsConfigurator {
                   },
                   () -> {
                     builder.sslProvider(SslProvider.JDK);
-                    builder.sslContextProvider(new BouncyCastleJsseProvider());
+                    final BouncyCastleJsseProvider sslContextProvider =
+                        new BouncyCastleJsseProvider();
+
+                    builder.sslContextProvider(sslContextProvider);
+                    builder.applicationProtocolConfig(
+                        new ApplicationProtocolConfig(
+                            Protocol.ALPN,
+                            SelectorFailureBehavior.NO_ADVERTISE,
+                            SelectedListenerFailureBehavior.ACCEPT,
+                            List.of("http/1.1")));
                   });
 
           return builder;
         });
+  }
+
+  @SneakyThrows
+  private static List<String> extractSelectedCipherSuites(SslContextBuilder builder) {
+    return builder.build().cipherSuites();
   }
 
   private void customizeClientBuilderCustomizer() {
