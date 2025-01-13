@@ -35,6 +35,7 @@
 
         <version.jfiglet>1.0.1</version.jfiglet>
         <version.snakeyaml>2.3</version.snakeyaml>
+        <version.jsonschema-generator>4.37.0</version.jsonschema-generator>
     </properties>
 
     <dependencies>
@@ -115,6 +116,13 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.github.victools</groupId>
+            <artifactId>jsonschema-generator</artifactId>
+            <version>${version.jsonschema-generator}</version>
+        </dependency>
+
         <!-- Test dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -189,6 +197,40 @@
             <plugin>
                 <artifactId>sonar-maven-plugin</artifactId>
                 <groupId>org.sonarsource.scanner.maven</groupId>
+            </plugin>
+            <plugin>
+                <groupId>com.github.victools</groupId>
+                <artifactId>jsonschema-maven-plugin</artifactId>
+                <version>4.31.1</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <classNames>
+                        <className>de.gematik.test.tiger.testenvmgr.config.Configuration</className>
+                    </classNames>
+                    <schemaVersion>DRAFT_2020_12</schemaVersion>
+                    <schemaFileName>{0}.json</schemaFileName>
+                    <schemaFilePath>target/schemas</schemaFilePath>
+                    <options>
+                        <enabled>
+                            <option>DEFINITIONS_FOR_ALL_OBJECTS</option>
+                            <option>NULLABLE_FIELDS_BY_DEFAULT</option>
+                        </enabled>
+                    </options>
+                    <modules>
+                        <module>
+                            <name>Jackson</name>
+                            <options>
+                                <option>FLATTENED_ENUMS_FROM_JSONVALUE</option>
+                            </options>
+                        </module>
+                    </modules>
+                </configuration>
             </plugin>
         </plugins>
     </build>
