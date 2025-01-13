@@ -33,7 +33,7 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
-public class ConfigurationSchemaTest {
+class ConfigurationSchemaTest {
 
   private static final String schemaFile = "target/schemas/Configuration.json";
 
