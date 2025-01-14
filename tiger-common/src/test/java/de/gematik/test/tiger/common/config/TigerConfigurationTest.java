@@ -27,14 +27,10 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.TextNode;
-import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyType;
 import de.gematik.test.tiger.zion.config.TigerSkipEvaluation;
-import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +38,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -345,148 +340,6 @@ public class TigerConfigurationTest { // NOSONAR
             });
   }
 
-  @SneakyThrows
-  @Test
-  void yamlWithTemplates_shouldLoad() {
-    TigerGlobalConfiguration.reset();
-    TigerGlobalConfiguration.readFromYaml(
-        """
-                    array:
-                      -
-                        template: templateWithList
-                        foo: fooYaml""",
-        "nestedBean");
-    TigerGlobalConfiguration.readTemplates(
-        FileUtils.readFileToString(
-            new File("src/test/resources/exampleTemplates.yml"), StandardCharsets.UTF_8),
-        "nestedBean.array");
-    var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class).get();
-    assertThat(dummyBean.getNestedBean().getArray().get(0))
-        .hasFieldOrPropertyWithValue("foo", "fooYaml")
-        .hasFieldOrPropertyWithValue(
-            "inner",
-            NestedBean.builder()
-                .array(
-                    List.of(
-                        NestedBean.builder().foo("templateEntry0").build(),
-                        NestedBean.builder().foo("templateEntry1").build(),
-                        NestedBean.builder().foo("templateEntry2").build()))
-                .build());
-  }
-
-  @SneakyThrows
-  @Test
-  void overwriteTemplateList_shouldReplaceNotMerge() {
-    TigerGlobalConfiguration.reset();
-    TigerGlobalConfiguration.readFromYaml(
-        """
-                    array:
-                      -
-                        template: templateWithList
-                        foo: fooYaml
-                        inner:
-                          array:
-                            - foo: yamlEntry0
-                            - foo: yamlEntry1""",
-        "nestedBean");
-    TigerGlobalConfiguration.readTemplates(
-        FileUtils.readFileToString(
-            new File("src/test/resources/exampleTemplates.yml"), StandardCharsets.UTF_8),
-        "nestedBean.array");
-    var dummyBean = TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class).get();
-    assertThat(dummyBean.getNestedBean().getArray().get(0).getInner().getArray())
-        .containsExactly(
-            NestedBean.builder().foo("yamlEntry0").build(),
-            NestedBean.builder().foo("yamlEntry1").build());
-  }
-
-  @SneakyThrows
-  @Test
-  void overwriteTemplateListFromYamlAndEnv_shouldReplaceNotMerge() {
-    new EnvironmentVariables("nestedBean.array.0.inner.array.0.foo", "envEntry0")
-        .execute(
-            () -> {
-              TigerGlobalConfiguration.reset();
-              TigerGlobalConfiguration.readFromYaml(
-                  """
-                              array:
-                                -
-                                  template: templateWithList
-                                  foo: fooYaml
-                                  inner:
-                                    array:
-                                      - foo: yamlEntry0
-                                      - foo: yamlEntry1""",
-                  "nestedBean");
-              TigerGlobalConfiguration.readTemplates(
-                  FileUtils.readFileToString(
-                      new File("src/test/resources/exampleTemplates.yml"), StandardCharsets.UTF_8),
-                  "nestedBean.array");
-              var dummyBean =
-                  TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class).get();
-              assertThat(dummyBean.getNestedBean().getArray().get(0).getInner().getArray())
-                  .containsOnly(
-                      NestedBean.builder().foo("envEntry0").build(),
-                      NestedBean.builder().foo("yamlEntry1").build());
-            });
-  }
-
-  @SneakyThrows
-  @Test
-  void addTemplateInEnv_shouldNotReplaceYamlEntries() {
-    new EnvironmentVariables("nestedBean.array.0.inner.array.0.foo", "envEntry0")
-        .and("nestedBean.array.0.template", "templateWithList")
-        .execute(
-            () -> {
-              TigerGlobalConfiguration.reset();
-              TigerGlobalConfiguration.readFromYaml(
-                  """
-                              array:
-                                -
-                                  foo: fooYaml
-                                  inner:
-                                    array:
-                                      - foo: yamlEntry0
-                                      - foo: yamlEntry1""",
-                  "nestedBean");
-              TigerGlobalConfiguration.readTemplates(
-                  FileUtils.readFileToString(
-                      new File("src/test/resources/exampleTemplates.yml"), StandardCharsets.UTF_8),
-                  "nestedBean.array");
-              var dummyBean =
-                  TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class).get();
-              assertThat(dummyBean.getNestedBean().getArray().get(0).getInner().getArray())
-                  .containsOnly(
-                      NestedBean.builder().foo("envEntry0").build(),
-                      NestedBean.builder().foo("yamlEntry1").build());
-            });
-  }
-
-  @SneakyThrows
-  @Test
-  void applyTemplateInEnv_shouldSuccesfullyReplaceTemplateList() {
-    new EnvironmentVariables("nestedBean.array.0.inner.array.0.foo", "envEntry0")
-        .and("nestedBean.array.0.template", "templateWithList")
-        .execute(
-            () -> {
-              TigerGlobalConfiguration.reset();
-              TigerGlobalConfiguration.readFromYaml(
-                  """
-                              array:
-                                -
-                                  foo: fooYaml""",
-                  "nestedBean");
-              TigerGlobalConfiguration.readTemplates(
-                  FileUtils.readFileToString(
-                      new File("src/test/resources/exampleTemplates.yml"), StandardCharsets.UTF_8),
-                  "nestedBean.array");
-              var dummyBean =
-                  TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class).get();
-              assertThat(dummyBean.getNestedBean().getArray().get(0).getInner().getArray())
-                  .containsOnly(NestedBean.builder().foo("envEntry0").build());
-            });
-  }
-
   @Test
   void fillGenericObjectShouldWork() {
     TigerGlobalConfiguration.reset();
@@ -657,24 +510,6 @@ public class TigerConfigurationTest { // NOSONAR
     TigerGlobalConfiguration.putValue(
         "foo.value.bar", "schmoo", ConfigurationValuePrecedence.RUNTIME_EXPORT);
     assertThat(TigerGlobalConfiguration.readString("foo.value.bar")).isEqualTo("schmoo");
-  }
-
-  @SneakyThrows
-  @Test
-  void readWithTigerConfiguration() {
-    TigerGlobalConfiguration.readFromYaml(
-        FileUtils.readFileToString(
-            new File(
-                "../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr"
-                    + "/templates.yaml"),
-            Charset.defaultCharset()),
-        "tiger");
-    assertThat(TigerGlobalConfiguration.instantiateConfigurationBean(TestCfg.class, "tiger"))
-        .get()
-        .extracting(TestCfg::getTemplates)
-        .asList()
-        .extracting("templateName")
-        .contains("idp-ref", "idp-rise-ru", "idp-rise-tu", "epa2", "epa2-fdv");
   }
 
   @SneakyThrows
@@ -917,26 +752,6 @@ public class TigerConfigurationTest { // NOSONAR
         .execute(() -> assertThat(TigerGlobalConfiguration.readString("foobar")).isEqualTo("123"));
   }
 
-  @SneakyThrows
-  @Test
-  void readWithTigerConfigurationAndRemoveOneValue() {
-    TigerGlobalConfiguration.readFromYaml(
-        FileUtils.readFileToString(
-            new File(
-                "../tiger-testenv-mgr/src/main/resources/de/gematik/test/tiger/testenvmgr"
-                    + "/templates.yaml"),
-            Charset.defaultCharset()),
-        "tiger");
-    assertThat(TigerGlobalConfiguration.readString("tiger.templates.0.type")).isEqualTo("docker");
-    TigerGlobalConfiguration.listSources()
-        .forEach(
-            source ->
-                source.removeValue(new TigerConfigurationKey("tiger", "templates", "0", "type")));
-    assertThatThrownBy(() -> TigerGlobalConfiguration.readString("tiger.templates.0.type"))
-        .isInstanceOf(TigerConfigurationException.class)
-        .hasMessage("Could not find value for 'tiger.templates.0.type'");
-  }
-
   @ParameterizedTest
   @CsvSource({
     "foo|bar, foo_bar",
@@ -1046,12 +861,6 @@ public class TigerConfigurationTest { // NOSONAR
     private final NestedBean inner;
     private final String template;
     @JsonProperty private List<NestedBean> array;
-  }
-
-  @Data
-  public static class TestCfg {
-
-    @JsonProperty private List<CfgTemplate> templates;
   }
 
   @Data

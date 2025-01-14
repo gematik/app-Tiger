@@ -93,11 +93,6 @@ serverKey_xxx:
   # specified a default name will be used (default is "./target/serverLogs/[key of server in tiger.yaml].log")
   logFile: ./target/serverLogs/serverKey_xxx.log
 
-  # OPTIONAL list of pki certs and keys to initialize
-  # the local Tiger Proxy of the test suite with
-  # Default value is empty array
-  # For more details see "PKI configuration" section below
-  pkiKeys: []
   # OPTIONAL type specific list of environmental variable assignments to be used
   # when starting the server node.
   # Each entry has to have the format ENV_VAR_NAME=VALUE
@@ -239,28 +234,6 @@ Their meaning and format are explained in the related section.
 
 The configuration of the Tiger Proxy is explained in detail in the section xref:_configuring_the_local_test_suite_tiger_proxy[]
 
-==== PKI configuration in pkiKeys
-
-The pkiKeys property contains a list of certificates and keys to be provided to the local Tiger Proxy of the test suite.
-Each entry has to provide a unique id, type and pem property.
-
-[source,yaml,title="PKI configuration"]
-----
-  pkiKeys:
-      # MANDATORY unique key/certificate id
-    - id: disc_sig
-      # MANDATORY one of [Certificate|Key]
-      type: Certificate
-      # MANDATORY base64 encoded multiline string representing the certificate / key.
-      pem: "MIICsTCCAligAwIBAgIHA61I5ACUjTAKBggqhkjOPQQDAjCBhDELMAkGA1UEBhMC
-  REUxHzAdBgNVBAoMFmdlbWF0aWsgR21iSCBOT1QtVkFMSUQxMjAwBgNVBAsMKUtv
-  .....
-  xiKK4dW1R7MD334OpOPTFjeEhIVV"
-    - id: disc_enc
-      type: Key
-      pem: "ISUADOGBESBXEZOBXWEDHBXOU..."
-----
-
 [#_configuring_pki_identities_in_tiger_proxys_tls_section]
 ==== Configuring PKI identities in Tiger Proxy's tls section
 
@@ -396,7 +369,6 @@ dockerContainer_001:
 
 
   # The following properties are explained in the General properties section above
-  pkiKeys: []
   environment: []
   urlMappings: []
   exports: []
@@ -512,7 +484,6 @@ externalJar_001:
       - --paramarg3=testvalue1
 
   # The following properties are explained in the General properties section above
-  pkiKeys: []
   environment: []
   urlMappings: []
   exports: []
@@ -558,7 +529,6 @@ externalUrl_001:
   logFile: ./target/serverLogs/externalUrl_001.log
 
   # The following properties are explained in the General properties section above
-  pkiKeys: []
   # IGNORE for this type as it has no effect
   environment: []
   urlMappings: []
@@ -658,7 +628,6 @@ tigerProxy_001:
     ...
 
   # The following properties are explained in the General properties section above
-  pkiKeys: []
   environment: []
   urlMappings: []
   exports: []

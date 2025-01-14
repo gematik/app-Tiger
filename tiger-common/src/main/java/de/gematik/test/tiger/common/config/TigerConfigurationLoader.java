@@ -59,7 +59,6 @@ public class TigerConfigurationLoader {
       new TigerConfigurationSourcesManager();
   @Getter private ObjectMapper objectMapper;
   private ObjectMapper strictObjectMapper;
-  private List<TigerTemplateSource> loadedTemplates;
 
   public TigerConfigurationLoader() {
     initialize();
@@ -112,16 +111,12 @@ public class TigerConfigurationLoader {
 
   public void reset() {
     sourcesManager.reset();
-    loadedTemplates.clear();
     initializeObjectMapper();
   }
 
   public void initialize() {
     if (objectMapper == null) {
       initializeObjectMapper();
-    }
-    if (loadedTemplates == null) {
-      loadedTemplates = new ArrayList<>();
     }
   }
 
@@ -317,33 +312,6 @@ public class TigerConfigurationLoader {
     return readStringOptional(key).map(TigerConfigurationLoader::parseBoolean);
   }
 
-  public void readTemplates(String templatesYaml, String... baseKeys) {
-    Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
-    final Object loadedYaml = yaml.load(templatesYaml);
-
-    if (loadedYaml instanceof Map<?, ?> asMap
-        && asMap.containsKey("templates")
-        && asMap.get("templates") instanceof List<?> aslist) {
-      aslist.stream()
-          .filter(Map.class::isInstance)
-          .map(Map.class::cast)
-          .filter(m -> m.containsKey("templateName"))
-          .forEach(
-              m ->
-                  loadedTemplates.add(
-                      TigerTemplateSource.builder()
-                          .templateName(m.get("templateName").toString())
-                          .targetPath(new TigerConfigurationKey(baseKeys))
-                          .values(
-                              addConfigurationFileToMap(
-                                  m, new TigerConfigurationKey(), new HashMap<>()))
-                          .build()));
-    } else {
-      throw new TigerConfigurationException(
-          "Error while loading templates: Expected templates-nodes with list of templates");
-    }
-  }
-
   public void loadEnvironmentVariables() {
     sourcesManager
         .getSortedStream()
@@ -401,8 +369,7 @@ public class TigerConfigurationLoader {
     for (AbstractTigerConfigurationSource configurationSource :
         sourcesManager.getSortedListReversed()) {
       loadedAndSortedProperties =
-          configurationSource.applyTemplatesAndAddValuesToMap(
-              loadedTemplates, loadedAndSortedProperties);
+          configurationSource.addValuesToMap(loadedAndSortedProperties);
     }
 
     return loadedAndSortedProperties;

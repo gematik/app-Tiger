@@ -69,11 +69,19 @@ import org.junit.jupiter.api.TestInfo;
 public abstract class AbstractTigerProxyTest {
 
   public static boolean unirestInitialized = false;
+  public static UnirestInstance unirestInstance;
+
   static {
     synchronized (AbstractTigerProxyTest.class) {
       if (!unirestInitialized && !Unirest.isRunning()) {
         Unirest.config().reset();
         Unirest.config().connectTimeout(1000).socketTimeout(1000).automaticRetries(false);
+        unirestInstance =
+          new UnirestInstance(
+            new Config()
+              .connectTimeout(5 * 1000)
+              .socketTimeout(5 * 1000)
+              .automaticRetries(false));
         unirestInitialized = true;
       }
     }

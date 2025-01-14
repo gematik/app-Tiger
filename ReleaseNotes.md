@@ -2,6 +2,10 @@
 
 # Release 3.5.1
 
+## Breaking Changes
+
+* TGR-1615: Tiger-templates are no longer supported, and neither are "pkiKeys" for servers. Consider migrating your testsuite if you relied on these or contact us directly. No usage of these complicated features is known to us.
+
 ## Features
 
 * TGR-1100: cleaned up Tiger Proxy configuration properties documentation in fileSaveInfo

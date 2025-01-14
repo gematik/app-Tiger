@@ -111,23 +111,6 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
             });
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"withPkiKeys", "withUrlMappings"})
-  void testExternalUrl_withDetails(String cfgFileName) {
-    assertThatNoException()
-        .isThrownBy(
-            () -> {
-              TigerGlobalConfiguration.reset();
-              TigerGlobalConfiguration.initializeWithCliProperties(
-                  Map.of(
-                      "TIGER_TESTENV_CFGFILE",
-                      "src/test/resources/de/gematik/test/tiger/testenvmgr/testExternalUrl_"
-                          + cfgFileName
-                          + ".yaml"));
-              createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment);
-            });
-  }
-
   @Test
   @TigerTest(
       tigerYaml =

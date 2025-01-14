@@ -233,11 +233,6 @@ public class TigerGlobalConfiguration {
     return globalConfigurationLoader.readBooleanOptional(key);
   }
 
-  public static synchronized void readTemplates(String templatesYaml, String... baseKeys) {
-    assertGlobalConfigurationIsInitialized();
-    globalConfigurationLoader.readTemplates(templatesYaml, baseKeys);
-  }
-
   private static void assertGlobalConfigurationIsInitialized() {
     if (!initialized) {
       TigerGlobalConfiguration.initialize();
