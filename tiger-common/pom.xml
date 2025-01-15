@@ -220,6 +220,7 @@
                         <enabled>
                             <option>DEFINITIONS_FOR_ALL_OBJECTS</option>
                             <option>NULLABLE_FIELDS_BY_DEFAULT</option>
+                            <option>MAP_VALUES_AS_ADDITIONAL_PROPERTIES</option>
                         </enabled>
                     </options>
                     <modules>
