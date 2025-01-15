@@ -163,7 +163,7 @@ public class NettySslContextFactory {
                         // ACCEPT is currently the only mode supported by both OpenSsl and JDK
                         // providers.
                         ApplicationProtocolConfig.SelectedListenerFailureBehavior.ACCEPT,
-                        ApplicationProtocolNames.HTTP_2,
+//                        ApplicationProtocolNames.HTTP_2, //TODO TGR-1699
                         ApplicationProtocolNames.HTTP_1_1));
     if (SslProvider.isAlpnSupported(SslContext.defaultServerProvider())) {
       configureALPN.accept(sslContextBuilder.sslProvider(SslContext.defaultServerProvider()));

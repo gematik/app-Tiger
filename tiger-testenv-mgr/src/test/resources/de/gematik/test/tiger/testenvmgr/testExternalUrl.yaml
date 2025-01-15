@@ -1,7 +1,3 @@
-tigerProxy:
-  forwardToProxy:
-    hostname: $SYSTEM
-
 servers:
   testExternalUrl:
     type: externalUrl

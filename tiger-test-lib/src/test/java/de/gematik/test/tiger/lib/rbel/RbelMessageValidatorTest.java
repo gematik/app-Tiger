@@ -568,9 +568,10 @@ class RbelMessageValidatorTest extends AbstractRbelMessageValidatorTest {
     glue.currentRequestMessageAttributeDoesNotMatch("$.body.foo", "foo");
   }
 
-    @Test
+  @Test
   void testCurrentRequestMatchesJsonSchemaWithPlaceholdersReplacement() {
-    val responseToCheck = """
+    val responseToCheck =
+        """
       HTTP/1.1 200 OK
       Content-Length: 18
 
@@ -978,5 +979,49 @@ class RbelMessageValidatorTest extends AbstractRbelMessageValidatorTest {
     localProxyRbelMessageListenerTestAdapter.addMessage(convertedMessage);
 
     return validator;
+  }
+
+  @Test
+  void testSchemaValidationFailureMessagePropagated() {
+    readTgrFileAndStoreForRbelMessageValidator("src/test/resources/testdata/jsonSchemaCheck.tgr");
+    RbelMessageValidator validator = rbelMessageValidator;
+
+    RequestParameter rootElementRequest =
+        RequestParameter.builder()
+            .rbelPath("$.body.regStat")
+            .requireRequestMessage(false)
+            .startFromLastMessage(false)
+            .build();
+    validator.filterRequestsAndStoreInContext(rootElementRequest);
+    assertThat(validator.getCurrentResponse()).isNotNull();
+
+    var assertionError =
+        assertThrows(
+            AssertionError.class,
+            () ->
+                validator.assertAttributeOfCurrentResponseMatchesAs(
+                    "$.body",
+                    ModeType.JSON_SCHEMA,
+                    """
+                      {
+                         "$schema": "https://json-schema.org/draft/2020-12/schema",
+                         "description": "a description",
+                         "required" : [
+                           "regStat",
+                           "foobar"
+                         ],
+                         "properties": {
+                           "regStat" : {
+                             "type" : "string",
+                             "enum" : [ "registerede", "deregistered" ]
+                           }
+                         }
+                       }
+                    """,
+                    ""));
+
+    assertThat(assertionError.getMessage())
+        .contains("$.regStat: does not have a value in the enumeration")
+        .contains("required property 'foobar' not found");
   }
 }

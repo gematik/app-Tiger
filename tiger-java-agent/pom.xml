@@ -26,7 +26,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.5.0</version>
+        <version>3.6.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -34,7 +34,7 @@
         <dependency>
             <groupId>net.bytebuddy</groupId>
             <artifactId>byte-buddy</artifactId>
-            <version>1.15.3</version>
+            <version>1.15.11</version>
         </dependency>
         <!-- test -->
         <dependency>

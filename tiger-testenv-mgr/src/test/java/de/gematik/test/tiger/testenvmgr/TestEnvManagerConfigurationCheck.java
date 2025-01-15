@@ -170,7 +170,7 @@ additionalYamls:
     assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
         .isInstanceOf(TigerConfigurationException.class)
         .hasMessageContaining(
-            "The key ('proxyCfg') in yaml file should not be used anymore, it is omitted!");
+            "The key ('proxyCfg') in yaml file should not be used anymore! It is deprecated without a replacement!");
   }
 
   @Test
@@ -286,57 +286,6 @@ additionalYamls:
               final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
             })
         .isInstanceOf(TigerTestEnvException.class);
-  }
-
-  @Test
-  void testCreateUnknownTemplate() {
-    TigerGlobalConfiguration.setRequireTigerYaml(false);
-    TigerGlobalConfiguration.readFromYaml(
-        """
-                    servers:
-                      unknownTemplate:
-                        template: some_template_that_does_not_exist
-                        type: externalUrl
-                        source:
-                          - https://idp-test.zentral.idp.splitdns.ti-dienste.de/""",
-        "tiger");
-    TigerGlobalConfiguration.initialize();
-    assertThatThrownBy(TigerTestEnvMgr::new).isInstanceOf(TigerConfigurationException.class);
-  }
-
-  @Test
-  void testCreateInvalidPkiKeys_wrongType() {
-    TigerGlobalConfiguration.initializeWithCliProperties(
-        Map.of(
-            "TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testInvalidPkiKeys_wrongType.yaml"));
-    assertThatThrownBy(TigerTestEnvMgr::new).isInstanceOf(TigerConfigurationException.class);
-  }
-
-  @Test
-  void testCreateInvalidPkiKeys_missingCertificate() {
-    TigerGlobalConfiguration.initializeWithCliProperties(
-        Map.of(
-            "TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testInvalidPkiKeys_missingCertificate.yaml"));
-
-    final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-    assertThatExceptionOfType(TigerConfigurationException.class)
-        .isThrownBy(envMgr::setUpEnvironment)
-        .withMessage("Your certificate is empty, please check your .yaml-file for disc_sig");
-  }
-
-  @Test
-  void testCreateInvalidPkiKeys_emptyCertificate() {
-    TigerGlobalConfiguration.initializeWithCliProperties(
-        Map.of(
-            "TIGER_TESTENV_CFGFILE",
-            "src/test/resources/de/gematik/test/tiger/testenvmgr/testInvalidPkiKeys_emptyCertificate.yaml"));
-
-    final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-    assertThatExceptionOfType(TigerConfigurationException.class)
-        .isThrownBy(envMgr::setUpEnvironment)
-        .withMessage("Your certificate is empty, please check your .yaml-file for disc_sig");
   }
 
   @Test

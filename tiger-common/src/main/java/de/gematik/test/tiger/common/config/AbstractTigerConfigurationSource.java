@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.common.config;
 
-import java.util.List;
 import java.util.Map;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -35,8 +34,7 @@ public abstract class AbstractTigerConfigurationSource
 
   public abstract AbstractTigerConfigurationSource copy();
 
-  public abstract Map<TigerConfigurationKey, String> applyTemplatesAndAddValuesToMap(
-      List<TigerTemplateSource> loadedTemplates,
+  public abstract Map<TigerConfigurationKey, String> addValuesToMap(
       Map<TigerConfigurationKey, String> loadedAndSortedProperties);
 
   public abstract Map<TigerConfigurationKey, String> getValues();

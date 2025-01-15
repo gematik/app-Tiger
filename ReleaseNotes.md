@@ -1,10 +1,44 @@
 # Changelog Tiger Test platform
 
+# Release 3.5.1
+
+## Breaking Changes
+
+* TGR-1615: Tiger-templates are no longer supported, and neither are "pkiKeys" for servers. Consider migrating your testsuite if you relied on these or contact us directly. No usage of these complicated features is known to us.
+
+## Features
+
+* TGR-1100: cleaned up Tiger Proxy configuration properties documentation in fileSaveInfo
+* TGR-1608: Tiger-Proxy: Infinite loop prevention for HTTP-Requests. After 10 loops the Proxy will simply close the
+  connection, saving an error to the Tiger-Proxy log.
+* TGR-1563: headers in traffic visualization are now fixed on top and are always visible
+
+## Bugfixes
+
+* TGR-1698: Tiger-Proxy: Default for namedGroups changed. This solves issues when connecting to a Tiger-Proxy with a client that uses a non-standard ECC-group. The new default can be overriden via `tiger.tigerProxy.defaultNamedGroups`.
+
 # Release 3.5.0
 
-## Bugfix
+* Serenity BDD 4.2.11
+* Cucumber 7.20.1
+* RestAssured 5.5.0
+* Selenium 4.19.1
+* Appium 9.3.0
+* Spring Boot 3.4.1
+* Logback 1.5.15
+
+## Bugfixes
 
 * TGR-1693: Tiger-Proxy: In the menu the correct information about a message is again being displayed.
+* TGR-1694: Fixed missing messages in UI traffic visualization when using proxy mesh setup.
+
+## Features
+
+* TGR-1696: When JSON Schema validation fails, the error message now contains the validation messages.
+
+## Bugfixes
+
+* TGR-1329: Tiger-Proxy: During a TLS-Handshake the Tiger-Proxy no longer signals HTTP/2-support in the ALPN
 
 # Release 3.4.7
 

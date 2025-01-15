@@ -41,7 +41,6 @@ import java.lang.reflect.Method;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,11 +68,15 @@ import org.junit.jupiter.api.TestInfo;
 public abstract class AbstractTigerProxyTest {
 
   public static boolean unirestInitialized = false;
+  public static final UnirestInstance unirestInstance =
+      new UnirestInstance(
+          new Config().connectTimeout(5 * 1000).socketTimeout(5 * 1000).automaticRetries(false));
+
   static {
     synchronized (AbstractTigerProxyTest.class) {
       if (!unirestInitialized && !Unirest.isRunning()) {
         Unirest.config().reset();
-        Unirest.config().connectTimeout(1000).socketTimeout(1000);
+        Unirest.config().connectTimeout(1000).socketTimeout(1000).automaticRetries(false);
         unirestInitialized = true;
       }
     }
@@ -138,7 +141,7 @@ public abstract class AbstractTigerProxyTest {
         Arrays.concatenate(
             "This is a meaningless string which will be binary content. And some more test chars: "
                 .getBytes(StandardCharsets.UTF_8),
-            RandomUtils.nextBytes(100));
+            RandomUtils.insecure().randomBytes(100));
     runtimeInfo
         .getWireMock()
         .register(post("/foobar").willReturn(ok().withBody(binaryMessageContent)));
@@ -165,15 +168,15 @@ public abstract class AbstractTigerProxyTest {
                 .willReturn(responseDefinition().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
     runtimeInfo
-      .getWireMock()
-      .register(
-        get("/api")
-          .willReturn(status(200).withStatusMessage("").withBody("{'request':'body'}")));
+        .getWireMock()
+        .register(
+            get("/api")
+                .willReturn(status(200).withStatusMessage("").withBody("{'request':'body'}")));
     runtimeInfo
-      .getWireMock()
-      .register(
-        get("/apifoo")
-          .willReturn(status(200).withStatusMessage("").withBody("{'request':'body'}")));
+        .getWireMock()
+        .register(
+            get("/apifoo")
+                .willReturn(status(200).withStatusMessage("").withBody("{'request':'body'}")));
   }
 
   @BeforeEach
@@ -277,7 +280,7 @@ public abstract class AbstractTigerProxyTest {
 
   @SneakyThrows
   public int startKonnektorAlikeServerReturningAlways555(
-      Optional<TigerConfigurationPkiIdentity> clientIdentity) {
+      Optional<TigerConfigurationPkiIdentity> clientIdentity) { // NOSONAR
     shouldServerRun.set(true);
     SSLContext sslContext = getSSLContext(clientIdentity);
     SSLServerSocketFactory ssf = sslContext.getServerSocketFactory();
@@ -306,7 +309,8 @@ public abstract class AbstractTigerProxyTest {
     return serverSocket.getLocalPort();
   }
 
-  protected SSLContext getSSLContext(Optional<TigerConfigurationPkiIdentity> clientIdentity)
+  protected SSLContext getSSLContext(
+      Optional<TigerConfigurationPkiIdentity> clientIdentity) // NOSONAR
       throws Exception {
     SSLContext sslContext = SSLContext.getInstance("TLS", new BouncyCastleJsseProvider());
     final TigerConfigurationPkiIdentity serverCert =
@@ -318,14 +322,12 @@ public abstract class AbstractTigerProxyTest {
     final X509TrustManager x509TrustManager =
         new X509TrustManager() {
           @Override
-          public void checkClientTrusted(X509Certificate[] chain, String authType)
-              throws CertificateException {
+          public void checkClientTrusted(X509Certificate[] chain, String authType) {
             // swallow
           }
 
           @Override
-          public void checkServerTrusted(X509Certificate[] chain, String authType)
-              throws CertificateException {
+          public void checkServerTrusted(X509Certificate[] chain, String authType) {
             // swallow
           }
 

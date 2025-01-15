@@ -113,7 +113,6 @@ class TestTigerDirector {
         });
   }
 
-  @SneakyThrows
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void testDirector_ClearMessagesNoLocalProxy(boolean clearEnvironmentStartupTraffic) {
@@ -417,9 +416,15 @@ class TestTigerDirector {
     try {
       test.run();
     } catch (Throwable t) {
-      throw new RuntimeException(t);
+      if (t instanceof RuntimeException) {
+        throw (RuntimeException) t;
+      } else {
+        throw new RuntimeException(t);
+      }
     } finally {
-      TigerDirector.getTigerTestEnvMgr().shutDown();
+      if (TigerDirector.isInitialized()) {
+        TigerDirector.getTigerTestEnvMgr().shutDown();
+      }
       cleanup.run();
     }
   }

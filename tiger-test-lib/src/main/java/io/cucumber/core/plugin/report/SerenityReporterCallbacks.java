@@ -20,6 +20,7 @@ package io.cucumber.core.plugin.report;
 import static org.awaitility.Awaitility.await;
 
 import com.google.common.collect.Streams;
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelAnsiColors;
@@ -31,6 +32,7 @@ import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import de.gematik.test.tiger.lib.TigerDirector;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.env.FeatureUpdate;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioUpdate;
@@ -85,6 +87,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import net.serenitybdd.core.Serenity;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.jexl3.JexlException;
@@ -443,6 +446,11 @@ public class SerenityReporterCallbacks {
     return map;
   }
 
+  private enum StepState {
+    STARTED,
+    FINISHED
+  }
+
   // -------------------------------------------------------------------------------------------------------------------------------------
   //
   // test step start
@@ -455,7 +463,7 @@ public class SerenityReporterCallbacks {
     TestStep testStep = event.getTestStep();
     if (!(testStep instanceof HookTestStep) && testStep instanceof PickleStepTestStep) {
       var result = TestResult.EXECUTING.name();
-      updateStepInformation(context, testCase, testStep, result);
+      updateStepInformation(context, testCase, testStep, result, StepState.STARTED);
     }
 
     Step currentStep = context.getCurrentStep(testCase);
@@ -466,11 +474,16 @@ public class SerenityReporterCallbacks {
   }
 
   private void updateStepInformation(
-      ScenarioContextDelegate context, TestCase testCase, TestStep testStep, String result) {
+      ScenarioContextDelegate context,
+      TestCase testCase,
+      TestStep testStep,
+      String result,
+      StepState stepState) {
     var dryRun = TestCaseDelegate.of(testCase).isDryRun();
     var status = dryRun ? TestResult.TEST_DISCOVERED.name() : result;
     int dataVariantIndex = extractScenarioDataVariantIndex(context, testCase);
-    informWorkflowUiAboutCurrentStep(context, testCase, testStep, status, dryRun, dataVariantIndex);
+    informWorkflowUiAboutCurrentStep(
+        context, testCase, testStep, status, dryRun, dataVariantIndex, stepState);
   }
 
   private void addBannerMessageToUpdate(
@@ -519,7 +532,7 @@ public class SerenityReporterCallbacks {
       var testCase = event.getTestCase();
       if (context.getCurrentStep(testCase) != null) {
         var result = event.getResult().getStatus().name();
-        updateStepInformation(context, testCase, testStep, result);
+        updateStepInformation(context, testCase, testStep, result, StepState.FINISHED);
 
         if (TigerDirector.isSerenityAvailable()) {
           addStepEvidence();
@@ -548,7 +561,8 @@ public class SerenityReporterCallbacks {
       TestStep testStep,
       String status,
       boolean isDryRun,
-      int variantDataIndex) {
+      int variantDataIndex,
+      StepState stepState) {
 
     String scenarioId = scenarioIdFrom(testCase);
     Scenario scenario = context.getCurrentScenarioDefinition(scenarioId);
@@ -561,13 +575,7 @@ public class SerenityReporterCallbacks {
     TigerStatusUpdate.TigerStatusUpdateBuilder builder = TigerStatusUpdate.builder();
 
     String featureName = feature.map(Feature::getName).orElse("?");
-    List<MessageMetaDataDto> stepMessagesMetaDataList =
-        List.copyOf( // to avoid concurrent modification during iteration
-                LocalProxyRbelMessageListener.getInstance().getStepRbelMessages())
-            .stream()
-            .map(MessageMetaDataDto::createFrom)
-            // to allow later modification in model when step is actually performed
-            .collect(Collectors.toCollection(ArrayList::new));
+
     Map<String, String> variantDataMap = getVariantDataMap(context, scenarioId, variantDataIndex);
 
     if (!isDryRun) {
@@ -579,17 +587,23 @@ public class SerenityReporterCallbacks {
                 context.getFeatureURI(), convertLocation(testCase.getLocation()))
             .toString();
 
-    Step currentStep = context.getCurrentStep(testCase);
-    StepUpdate currentStepUpdate =
+    val currentStep = context.getCurrentStep(testCase);
+    val stepDescription = getDescriptionWithReplacements(currentStep, variantDataMap);
+    val stepToolTip = getStepToolTip(currentStep);
+
+    val currentStepMessages = getCurrentStepMessages(isDryRun, stepState);
+    val messageMetaData = getMessageMetaData(currentStepMessages);
+
+    val currentStepUpdate =
         StepUpdate.builder()
-            .description(getDescriptionWithReplacements(currentStep, variantDataMap))
-            .tooltip(getStepToolTip(currentStep))
+            .description(stepDescription)
+            .tooltip(stepToolTip)
             .status(TestResult.valueOf(status))
             .stepIndex(stepIndex)
-            .rbelMetaData(stepMessagesMetaDataList)
+            .rbelMetaData(messageMetaData)
             .build();
 
-    ScenarioUpdate scenarioUpdate =
+    val scenarioUpdate =
         ScenarioUpdate.builder()
             .isDryRun(isDryRun)
             .description(replaceOutlineParameters(scenario.getName(), variantDataMap, false))
@@ -603,7 +617,7 @@ public class SerenityReporterCallbacks {
             .steps(Map.of(String.valueOf(stepIndex), currentStepUpdate))
             .build();
 
-    FeatureUpdate featureUpdate =
+    val featureUpdate =
         FeatureUpdate.builder()
             .description(featureName)
             .scenarios(convertToLinkedHashMap(scenarioUniqueId, scenarioUpdate))
@@ -611,7 +625,25 @@ public class SerenityReporterCallbacks {
     TigerDirector.getTigerTestEnvMgr()
         .receiveTestEnvUpdate(
             builder.featureMap(convertToLinkedHashMap(featureName, featureUpdate)).build());
-    LocalProxyRbelMessageListener.getInstance().getStepRbelMessages().clear();
+    LocalProxyRbelMessageListener.getInstance().removeStepRbelMessages(currentStepMessages);
+  }
+
+  private static @NotNull List<MessageMetaDataDto> getMessageMetaData(
+      List<RbelElement> currentStepMessages) {
+    return currentStepMessages.stream()
+        .map(MessageMetaDataDto::createFrom)
+        // to allow later modification in model when step is actually performed
+        .collect(Collectors.toCollection(ArrayList::new));
+  }
+
+  private static List<RbelElement> getCurrentStepMessages(boolean isDryRun, StepState stepState) {
+    if (isDryRun || stepState != StepState.FINISHED) {
+      return Collections.emptyList();
+    }
+    TigerDirector.getTigerTestEnvMgr()
+        .getLocalTigerProxyOptional()
+        .ifPresent(TigerProxy::waitForAllCurrentMessagesToBeParsed);
+    return LocalProxyRbelMessageListener.getInstance().getStepRbelMessages();
   }
 
   private static int findStepIndex(io.cucumber.plugin.event.Location location, List<Step> steps) {

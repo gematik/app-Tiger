@@ -529,6 +529,23 @@ This JSON encoded message consists of:
 }
 ----
 
+=== Adding notes to messages
+
+To add notes to certain messages, you can add a list of criteria with messages
+that shall be added to any message in the rbel log matching the specific criterion.
+
+[source,yaml]
+----
+tigerProxy:
+    proxyId: meshProxy2
+    notes:
+        - message: "This is a note on the HTTP method"
+          jexlCriterion: "isRequest && path == '$.method'"
+        - message: "Hackers were here..."
+          jexlCriterion: "element.decryptedUsingKeyWithId == 'mySuperSecretKey'"
+----
+
+
 [#_rbel_path_details]
 === Understanding RBelPath
 
@@ -862,6 +879,10 @@ Default is false.
 This flag activates the rewriting of the location-header for 3xx responses.
 If activated the location-header will be modified so the client will still use the proxy to reach the new location.
 Default is true.
+
+==== maxLoopCounter
+
+By default, the Tiger Proxy will keep count of the number of requests it executes on itself (e.g. when a request is forwarded to the Tiger Proxy itself). If this counter exceeds the value of `maxLoopCounter` the request will be aborted. The default value is 10 (Meaning after 10 loops the request will end in an error). Note: This behavior can only be customized for all Tiger Proxies.
 
 === Understanding filtering
 

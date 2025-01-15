@@ -18,7 +18,6 @@ package de.gematik.test.tiger.common.config;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -50,29 +49,17 @@ public class BasicTigerConfigurationSource extends AbstractTigerConfigurationSou
   }
 
   /**
-   * merges all properties of this source with loadedAndSortedProperties, then applying all
-   * referenced templates from the loadedTemplates list.
+   * merges all properties of this source with loadedAndSortedProperties
    *
-   * @param loadedTemplates list of loaded tiger server templates
    * @param loadedAndSortedProperties current set of tiger properties
    * @return a new merged map of properties
    */
-  public synchronized Map<TigerConfigurationKey, String> applyTemplatesAndAddValuesToMap(
-      List<TigerTemplateSource> loadedTemplates,
+  public synchronized Map<TigerConfigurationKey, String> addValuesToMap(
       Map<TigerConfigurationKey, String> loadedAndSortedProperties) {
     Map<TigerConfigurationKey, String> finalValues = new HashMap<>();
 
     finalValues.putAll(loadedAndSortedProperties);
     finalValues.putAll(values);
-
-    final List<TigerConfigurationKey> appliedTemplates =
-        loadedTemplates.stream()
-            .map(
-                template ->
-                    template.applyToApplicablesAndReturnAppliedTemplateKeys(this, finalValues))
-            .flatMap(List::stream)
-            .toList();
-    appliedTemplates.forEach(finalValues::remove);
 
     return finalValues;
   }

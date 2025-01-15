@@ -48,11 +48,7 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.Map.Entry;
@@ -67,7 +63,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -181,32 +176,11 @@ public class TigerTestEnvMgr
     }
   }
 
-  private static void readTemplates() {
-    // read configuration from file and templates from classpath resource
-    try {
-      final URL templatesUrl = TigerTestEnvMgr.class.getResource("templates.yaml");
-      final String templatesYaml =
-          IOUtils.toString(Objects.requireNonNull(templatesUrl).toURI(), StandardCharsets.UTF_8);
-      TigerGlobalConfiguration.readTemplates(templatesYaml, TIGER, "servers");
-    } catch (IOException | URISyntaxException e) {
-      throw new TigerConfigurationException("Unable to read templates YAML!", e);
-    }
-  }
-
   private static Configuration readConfiguration() {
     TigerGlobalConfiguration.initialize();
-    readTemplates();
     addDefaults();
-    final Configuration configuration =
-        TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class, TIGER)
-            .orElseGet(Configuration::new);
-    for (CfgServer cfgServer : configuration.getServers().values()) {
-      if (StringUtils.isNotEmpty(cfgServer.getTemplate())) {
-        throw new TigerConfigurationException(
-            "Could not resolve template '" + cfgServer.getTemplate() + "'");
-      }
-    }
-    return configuration;
+    return TigerGlobalConfiguration.instantiateConfigurationBean(Configuration.class, TIGER)
+        .orElseGet(Configuration::new);
   }
 
   private static void addDefaults() {

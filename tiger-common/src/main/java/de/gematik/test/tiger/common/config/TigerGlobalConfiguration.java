@@ -184,14 +184,6 @@ public class TigerGlobalConfiguration {
   }
 
   @SneakyThrows
-  public static synchronized <T> Optional<T> instantiateConfigurationBeanStrict(
-      Class<T> configurationBeanClass, String... baseKeys) {
-    assertGlobalConfigurationIsInitialized();
-    return globalConfigurationLoader.instantiateConfigurationBeanStrict(
-        configurationBeanClass, baseKeys);
-  }
-
-  @SneakyThrows
   public static synchronized <T> T instantiateConfigurationBean(
       TypeReference<T> configurationBeanType, String... baseKeys) {
     assertGlobalConfigurationIsInitialized();
@@ -231,11 +223,6 @@ public class TigerGlobalConfiguration {
   public static synchronized Optional<Boolean> readBooleanOptional(String key) {
     assertGlobalConfigurationIsInitialized();
     return globalConfigurationLoader.readBooleanOptional(key);
-  }
-
-  public static synchronized void readTemplates(String templatesYaml, String... baseKeys) {
-    assertGlobalConfigurationIsInitialized();
-    globalConfigurationLoader.readTemplates(templatesYaml, baseKeys);
   }
 
   private static void assertGlobalConfigurationIsInitialized() {

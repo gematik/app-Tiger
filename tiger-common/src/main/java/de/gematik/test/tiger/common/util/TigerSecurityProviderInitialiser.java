@@ -16,12 +16,17 @@
 
 package de.gematik.test.tiger.common.util;
 
+import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TIGER_PROXY_DEFAULT_NAMED_GROUPS;
+
 import java.security.Security;
+import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 
+@Slf4j
 public class TigerSecurityProviderInitialiser {
+
   private static boolean isInitialised = false;
 
   public static synchronized void initialize() {
@@ -31,6 +36,9 @@ public class TigerSecurityProviderInitialiser {
       Security.insertProviderAt(new BouncyCastleProvider(), 1);
       Security.removeProvider(BouncyCastleJsseProvider.PROVIDER_NAME);
       Security.insertProviderAt(new BouncyCastleJsseProvider(), 2);
+      System.setProperty(
+          "jdk.tls.namedGroups",
+          String.join(",", TIGER_PROXY_DEFAULT_NAMED_GROUPS.getValueOrDefault()));
       Security.addProvider(new BouncyCastlePQCProvider());
       isInitialised = true;
     }
