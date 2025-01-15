@@ -8,7 +8,6 @@ lib:
 
 servers:
   idp-rise-tu-noproxy:
-    template: idp-rise-tu
     type: externalUrl
     startupTimeoutSec: 2
     healthcheckUrl: NONE

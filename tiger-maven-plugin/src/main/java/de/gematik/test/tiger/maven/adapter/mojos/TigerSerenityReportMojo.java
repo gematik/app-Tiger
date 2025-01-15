@@ -81,6 +81,12 @@ public class TigerSerenityReportMojo extends AbstractMojo {
       TigerBrowserUtil.openUrlInBrowser(
           reportDirectory.toPath() + "\\index.html", "browser for serenity report");
     }
+    logFullHtmlReportUri();
     getLog().info("  - " + singlePageReporter.getDescription() + ": " + generatedReport.toUri());
+  }
+
+  public void logFullHtmlReportUri() {
+    Path index = getReportDirectory().toPath().resolve("index.html");
+    getLog().info("  - Full Report: %s".formatted(index.toUri()));
   }
 }

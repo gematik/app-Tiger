@@ -19,11 +19,12 @@ package de.gematik.test.tiger.common.config;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
+import org.apache.commons.lang3.StringUtils;
 
 /** A specialized class that checks for old/deprecated keys. */
 public final class DeprecatedKeysUsageChecker {
 
-  private static final List<DeprecatedKeyDescriptor> deprecatedKeysMap =
+  private static List<DeprecatedKeyDescriptor> deprecatedKeys =
       List.of(
           DeprecatedKeyDescriptor.builder()
               .compareKey("tiger.servers.*.tigerproxyconfiguration.serverport")
@@ -43,7 +44,6 @@ public final class DeprecatedKeysUsageChecker {
           DeprecatedKeyDescriptor.builder()
               .compareKey("tiger.servers.*.tigerproxyconfiguration.proxycfg.*")
               .deprecatedKey("proxyCfg")
-              .newKey("")
               .build(),
           DeprecatedKeyDescriptor.builder()
               .compareKey("tiger.servers.*.externaljaroptions.healthcheck")
@@ -104,6 +104,18 @@ public final class DeprecatedKeysUsageChecker {
               .compareKey("tiger.tigerproxy.proxyRoutes.*.basicAuth")
               .deprecatedKey("basicAuth")
               .newKey("authentication")
+              .build(),
+          DeprecatedKeyDescriptor.builder()
+              .compareKey("tiger.servers.*.template")
+              .deprecatedKey("template")
+              .build(),
+          DeprecatedKeyDescriptor.builder()
+              .compareKey("tiger.servers.*.pkiKeys")
+              .deprecatedKey("pkiKeys")
+              .build(),
+          DeprecatedKeyDescriptor.builder()
+              .compareKey("templates")
+              .deprecatedKey("templates")
               .build());
 
   private DeprecatedKeysUsageChecker() {}
@@ -114,7 +126,7 @@ public final class DeprecatedKeysUsageChecker {
       throw new TigerConfigurationException("Tiger configuration map is null!");
     }
     StringJoiner joiner = new StringJoiner("\n");
-    for (DeprecatedKeyDescriptor deprecatedKey : deprecatedKeysMap) {
+    for (DeprecatedKeyDescriptor deprecatedKey : deprecatedKeys) {
       valueMap.keySet().stream()
           .filter(
               key ->
@@ -123,7 +135,7 @@ public final class DeprecatedKeysUsageChecker {
           .findFirst()
           .ifPresent(
               a -> {
-                if (!deprecatedKey.getNewKey().isEmpty()) {
+                if (StringUtils.isNotEmpty(deprecatedKey.getNewKey())) {
                   joiner.add(
                       "The key ('"
                           + deprecatedKey.getDeprecatedKey()
@@ -134,7 +146,7 @@ public final class DeprecatedKeysUsageChecker {
                   joiner.add(
                       "The key ('"
                           + deprecatedKey.getDeprecatedKey()
-                          + "') in yaml file should not be used anymore, it is omitted!");
+                          + "') in yaml file should not be used anymore! It is deprecated without a replacement!");
                 }
               });
     }

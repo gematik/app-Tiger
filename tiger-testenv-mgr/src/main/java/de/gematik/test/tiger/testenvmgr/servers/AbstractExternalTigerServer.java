@@ -22,7 +22,6 @@ import static org.awaitility.Awaitility.await;
 
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.data.config.CfgTemplate;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.web.InsecureTrustAllManager;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
@@ -101,7 +100,7 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
         getStartupTimeoutSec().orElse(DEFAULT_STARTUP_TIMEOUT_IN_SECONDS) * 1000L / 2;
     final int pollIntervalMs =
         Optional.ofNullable(getConfiguration())
-            .map(CfgTemplate::getStartupPollIntervalMs)
+            .map(CfgServer::getStartupPollIntervalMs)
             .orElseGet(EXTERNAL_SERVER_STARTUP_POLL_INTERVAL_IN_MS::getValueOrDefault);
 
     if (isHealthCheckNone()) {

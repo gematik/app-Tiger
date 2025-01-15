@@ -25,7 +25,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.5.0</version>
+        <version>3.6.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -34,9 +34,9 @@
         <version.node>v20.11.1</version.node>
         <version.npm>10.2.4</version.npm>
         <version.httpbin>1.4.0</version.httpbin>
-        <version.mapstruct>1.6.0</version.mapstruct>
+        <version.mapstruct>1.6.3</version.mapstruct>
         <version.lombok-mapstruct-binding>0.2.0</version.lombok-mapstruct-binding>
-        <version.swagger-parser>2.1.22</version.swagger-parser>
+        <version.swagger-parser>2.1.24</version.swagger-parser>
         <version.jackson-databind-nullable>0.2.6</version.jackson-databind-nullable>
     </properties>
     <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok-mapstruct-binding -->
@@ -205,7 +205,7 @@
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
-            <version>25.0.0</version>
+            <version>26.0.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -267,7 +267,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.8.0</version>
+                <version>3.8.1</version>
                 <executions>
                     <execution>
                         <id>copy</id>

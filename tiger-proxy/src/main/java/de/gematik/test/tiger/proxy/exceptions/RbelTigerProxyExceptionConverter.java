@@ -20,6 +20,7 @@ import de.gematik.rbellogger.converter.*;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.*;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
@@ -47,7 +48,10 @@ public class RbelTigerProxyExceptionConverter implements RbelConverterPlugin {
           "receiver", RbelElement.wrap(rbelElement, routingException.getReceiverAddress()));
     }
 
-    rbelElement.addFacet(
-        RbelMessageInfoFacet.newErrorSymbol(routingException.getCause().getMessage()));
+    final String errorMessage =
+        Optional.ofNullable(routingException.getCause())
+            .map(Throwable::getMessage)
+            .orElseGet(routingException::getMessage);
+    rbelElement.addFacet(RbelMessageInfoFacet.newErrorSymbol(errorMessage));
   }
 }

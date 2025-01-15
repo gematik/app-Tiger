@@ -22,6 +22,7 @@ import static de.gematik.test.tiger.mockserver.netty.HttpRequestHandler.PROXYING
 import static java.util.Collections.singletonList;
 
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
+import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
 import de.gematik.test.tiger.mockserver.lifecycle.LifeCycle;
 import de.gematik.test.tiger.mockserver.mock.Expectation;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
@@ -49,6 +50,7 @@ import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 /*
  * @author jamesdbloom
@@ -62,6 +64,7 @@ public class MockServer extends LifeCycle {
   private final Map<SocketAddress, TigerConnectionStatus> connectionStatusMap = new ConcurrentHashMap<>();
   private NettySslContextFactory serverSslContextFactory;
   private NettySslContextFactory clientSslContextFactory;
+  private MockServerInfiniteLoopChecker infiniteLoopChecker;
 
   /**
    * Start the instance using the ports provided
@@ -91,10 +94,12 @@ public class MockServer extends LifeCycle {
 
     serverSslContextFactory = new NettySslContextFactory(configuration, true);
     clientSslContextFactory = new NettySslContextFactory(configuration, false);
+    val httpClient = new NettyHttpClient(configuration, getEventLoopGroup(), clientSslContextFactory);
+    infiniteLoopChecker = new MockServerInfiniteLoopChecker(httpClient);
 
     actionHandler =
         new HttpActionHandler(
-            configuration, getEventLoopGroup(), httpState, clientSslContextFactory);
+            configuration, httpState, httpClient);
     serverServerBootstrap =
         new ServerBootstrap()
             .group(bossGroup, workerGroup)
@@ -153,7 +158,7 @@ public class MockServer extends LifeCycle {
   }
 
   @RequiredArgsConstructor
-  static class MockServerChannelInitializer extends ChannelInitializer<SocketChannel> {
+  class MockServerChannelInitializer extends ChannelInitializer<SocketChannel> {
 
     private final MockServerConfiguration configuration;
     private final MockServer mockServer;
@@ -166,7 +171,7 @@ public class MockServer extends LifeCycle {
       ch.pipeline().addLast(new ConnectionCounterHandler(mockServer));
 
       ch.pipeline()
-          .addLast(new PortUnificationHandler(configuration, mockServer, httpState, actionHandler));
+          .addLast(new PortUnificationHandler(configuration, mockServer, httpState, actionHandler, infiniteLoopChecker));
     }
   }
 }

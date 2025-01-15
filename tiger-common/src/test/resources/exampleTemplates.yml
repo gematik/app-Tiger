@@ -1,8 +1,0 @@
-templates:
-  - templateName: templateWithList
-    foo: fooTemplate
-    inner:
-      array:
-        - foo: templateEntry0
-        - foo: templateEntry1
-        - foo: templateEntry2

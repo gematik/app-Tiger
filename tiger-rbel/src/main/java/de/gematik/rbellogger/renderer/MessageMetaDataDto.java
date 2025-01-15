@@ -86,10 +86,10 @@ public class MessageMetaDataDto {
                     .map(RbelElement::getUuid)
                     .orElse(null));
 
-    builder.additionalInformation(el.findAllNestedFacets(RbelMessageInfoFacet.class)
-      .stream()
-      .map(RbelMessageInfoFacet::getMenuInfoString)
-      .toList());
+    builder.additionalInformation(
+        el.findAllNestedFacets(RbelMessageInfoFacet.class).stream()
+            .map(RbelMessageInfoFacet::getMenuInfoString)
+            .toList());
     builder.menuInfoString(
         el.getFacet(RbelMessageInfoFacet.class)
             .map(RbelMessageInfoFacet::getMenuInfoString)

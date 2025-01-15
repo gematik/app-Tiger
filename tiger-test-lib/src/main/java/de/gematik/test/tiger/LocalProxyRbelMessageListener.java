@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -56,7 +55,18 @@ public class LocalProxyRbelMessageListener implements IRbelMessageListener {
   private final List<RbelElement> rbelMessages = new ArrayList<>();
 
   /** list of messages received from local Tiger Proxy per step, to be forwarded to workflow UI */
-  @Getter private final List<RbelElement> stepRbelMessages = new ArrayList<>();
+  private final List<RbelElement> stepRbelMessages =
+      Collections.synchronizedList(new ArrayList<>());
+
+  public List<RbelElement> getStepRbelMessages() {
+    synchronized (stepRbelMessages) {
+      return List.copyOf(stepRbelMessages);
+    }
+  }
+
+  public void removeStepRbelMessages(List<RbelElement> elements) {
+    stepRbelMessages.removeAll(elements);
+  }
 
   private static LocalProxyRbelMessageListener instance;
 

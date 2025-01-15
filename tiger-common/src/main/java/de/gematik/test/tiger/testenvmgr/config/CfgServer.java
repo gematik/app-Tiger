@@ -16,24 +16,50 @@
 
 package de.gematik.test.tiger.testenvmgr.config;
 
-import de.gematik.test.tiger.common.data.config.CfgTemplate;
+import de.gematik.test.tiger.common.data.config.CfgExternalJarOptions;
+import de.gematik.test.tiger.common.data.config.CfgHelmChartOptions;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
-@EqualsAndHashCode(callSuper = true)
 @Data
-public class CfgServer extends CfgTemplate {
+public class CfgServer {
 
   private String hostname;
 
-  /** References a template to set up the server. You can override properties. */
-  private String template;
+  private String type;
 
   /**
    * References another server which has to be booted prior to this. Multiple servers can be
    * referenced, divided by comma.
    */
   private String dependsUpon;
+
+  private List<String> source = new ArrayList<>();
+  private String version;
+  private Integer startupTimeoutSec;
+  private Integer startupPollIntervalMs;
+  private boolean active = true;
+  private String healthcheckUrl;
+  private Integer healthcheckReturnCode;
+  private String logFile;
+
+  private CfgExternalJarOptions externalJarOptions;
+  private TigerProxyConfiguration tigerProxyConfiguration;
+  private CfgHelmChartOptions helmChartOptions = new CfgHelmChartOptions();
+
+  /** list of env vars to be set for docker, external Jar/TigerProxy */
+  private List<String> environment = new ArrayList<>();
+
+  /** mappings for local tiger proxy to be set when this server is active */
+  private final List<String> urlMappings = new ArrayList<>();
+
+  /**
+   * properties to be exported to subsequent nodes as env vars and set as system properties to
+   * current jvm
+   */
+  private final List<String> exports = new ArrayList<>();
 
   private int uiRank = -1;
 }

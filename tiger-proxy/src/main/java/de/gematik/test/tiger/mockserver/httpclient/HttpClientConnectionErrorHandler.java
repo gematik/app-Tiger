@@ -24,11 +24,13 @@ import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import java.util.concurrent.CompletableFuture;
+import lombok.extern.slf4j.Slf4j;
 
 /*
  * @author jamesdbloom
  */
 @ChannelHandler.Sharable
+@Slf4j
 public class HttpClientConnectionErrorHandler extends ChannelDuplexHandler {
 
   @Override

@@ -21,9 +21,7 @@ import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.data.config.PkiType;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
-import de.gematik.test.tiger.common.pki.KeyMgr;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -168,8 +166,6 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
               .toList());
     }
 
-    loadPkiForProxy();
-
     try {
       if (testEnvMgr.isShuttingDown()) {
         log.debug("Skipping startup, already shutting down...");
@@ -201,7 +197,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
   private void reloadConfiguration() {
     try {
       this.configuration =
-          TigerGlobalConfiguration.instantiateConfigurationBeanStrict(
+          TigerGlobalConfiguration.instantiateConfigurationBean(
                   getConfigurationBeanClass(), "tiger", "servers", getServerId())
               .orElseThrow(
                   () ->
@@ -216,53 +212,6 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
 
   public Class<? extends CfgServer> getConfigurationBeanClass() {
     return CfgServer.class;
-  }
-
-  private void loadPkiForProxy() {
-    if (!getConfiguration().getPkiKeys().isEmpty()) {
-      log.info("Loading PKI resources for instance {}...", getServerId());
-    }
-    getConfiguration().getPkiKeys().stream()
-        .filter(key -> key.getType() == PkiType.CERTIFICATE)
-        .forEach(
-            key -> {
-              if (StringUtils.isBlank(key.getPem())) {
-                throw new TigerConfigurationException(
-                    "Your certificate is empty, please check your .yaml-file for " + key.getId());
-              }
-              log.info("Adding certificate {}", key.getId());
-              getTigerTestEnvMgr()
-                  .getLocalTigerProxyOptional()
-                  .ifPresent(
-                      proxy ->
-                          proxy.addKey(
-                              key.getId(),
-                              KeyMgr.readCertificateFromPem(
-                                      "-----BEGIN CERTIFICATE-----\n"
-                                          + key.getPem().replace(" ", "\n")
-                                          + "\n-----END CERTIFICATE-----")
-                                  .getPublicKey()));
-            });
-    getConfiguration().getPkiKeys().stream()
-        .filter(key -> key.getType() == PkiType.KEY)
-        .forEach(
-            key -> {
-              if (StringUtils.isBlank(key.getPem())) {
-                throw new TigerConfigurationException(
-                    "Your Key is empty, please check your .yaml-file for " + key.getId());
-              }
-              log.info("Adding key {}", key.getId());
-              getTigerTestEnvMgr()
-                  .getLocalTigerProxyOptional()
-                  .ifPresent(
-                      proxy ->
-                          proxy.addKey(
-                              key.getId(),
-                              KeyMgr.readKeyFromPem(
-                                  "-----BEGIN PRIVATE KEY-----\n"
-                                      + key.getPem().replace(" ", "\n")
-                                      + "\n-----END PRIVATE KEY-----")));
-            });
   }
 
   public abstract void performStartup();
@@ -290,7 +239,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
 
     // set default values for all types
     if (getConfiguration().getStartupTimeoutSec() == null) {
-      log.info("Defaulting startup timeout sec to 20sec for server {}", serverId);
+      log.info("Defaulting startup timeout sec to 20 sec for server {}", serverId);
       getConfiguration().setStartupTimeoutSec(20);
     }
   }
