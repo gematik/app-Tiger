@@ -710,6 +710,9 @@
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
+                        <configuration>
+                            <argLine>${failsafeJacocoAgent}</argLine>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

@@ -379,7 +379,7 @@
                     <parallel>classes</parallel>
                     <rerunFailingTestsCount>2</rerunFailingTestsCount>
                     <argLine>
-                        -javaagent:${project.parent.basedir}/tiger-java-agent/target/tiger-java-agent-${project.version}.jar
+                        -javaagent:${project.parent.basedir}/tiger-java-agent/target/tiger-java-agent-${project.version}.jar ${surefireJacocoAgent}
                     </argLine>
                 </configuration>
             </plugin>

@@ -17,8 +17,11 @@
 package de.gematik.test.tiger.maven.adapter.mojos;
 
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -26,6 +29,8 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** This mojo will modify the argLine property as to attach the Tiger Java Agent */
 @Data
@@ -33,6 +38,7 @@ import org.apache.maven.project.MavenProject;
 @Mojo(name = "attach-tiger-agent", defaultPhase = LifecyclePhase.PRE_INTEGRATION_TEST)
 public class AttachTigerJavaAgent extends AbstractMojo {
 
+  private static final Logger log = LoggerFactory.getLogger(AttachTigerJavaAgent.class);
   /** Skip running this plugin. Default is false. */
   @Parameter private boolean skip = false;
 
@@ -65,7 +71,12 @@ public class AttachTigerJavaAgent extends AbstractMojo {
     }
 
     String agentAttachOption = "-javaagent:" + agentArtifact.getFile().getAbsolutePath();
-    getProject().getProperties().setProperty("argLine", agentAttachOption);
+    final String oldArgLine = getProject().getProperties().getProperty("argLine");
+    final String newArgLine = Stream.of(agentAttachOption, oldArgLine)
+      .filter(StringUtils::isNotBlank)
+      .collect(Collectors.joining(" "));
+    getProject().getProperties().setProperty("argLine", newArgLine);
+    log.info("FOOOBAR: Changing argLine from \n{}\n to \n{}", oldArgLine, newArgLine);
     getLog().info("Agent attached: " + agentAttachOption);
   }
 }
