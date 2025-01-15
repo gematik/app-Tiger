@@ -249,11 +249,8 @@ public class TestTigerSerenityReporterPlugin {
     String scenarioUniqueId = findScenarioUniqueId(testCase);
     ScenarioUpdate scenario =
         status.getFeatureMap().get(featureName).getScenarios().get(scenarioUniqueId);
-    // steps 0 and 1 are background steps
-    assertThat(scenario.getSteps().get("0").getStatus()).isEqualTo(TestResult.PENDING);
-    assertThat(scenario.getSteps().get("1").getStatus()).isEqualTo(TestResult.PENDING);
-    assertThat(scenario.getSteps().get("2").getStatus()).isEqualTo(TestResult.PASSED);
-    assertThat(scenario.getSteps().get("3").getStatus()).isEqualTo(TestResult.FAILED);
+    assertThat(scenario.getSteps().get("0").getStatus()).isEqualTo(TestResult.PASSED);
+    assertThat(scenario.getSteps().get("1").getStatus()).isEqualTo(TestResult.FAILED);
   }
 
   @Test
@@ -383,7 +380,7 @@ public class TestTigerSerenityReporterPlugin {
 
     @Override
     public List<Argument> getDefinitionArgument() {
-      return null;
+      return List.of();
     }
 
     @Override

@@ -186,10 +186,10 @@ public class TigerGlue {
    *
    * @param message message to be displayed in the Workflow UI.
    */
-  @When("TGR pause test run execution with message {string}")
-  @Wenn("TGR pausiere Testausführung mit Nachricht {string}")
+  @When("TGR pause test run execution with message {tigerResolvedString}")
+  @Wenn("TGR pausiere Testausführung mit Nachricht {tigerResolvedString}")
   public void tgrPauseExecutionWithMessage(String message) {
-    TigerDirector.pauseExecution(TigerGlobalConfiguration.resolvePlaceholders(message));
+    TigerDirector.pauseExecution(message);
   }
 
   /**
@@ -211,6 +211,7 @@ public class TigerGlue {
 
   @When("TGR show HTML Notification:")
   @Wenn("TGR zeige HTML Notification:")
+  @ResolvableArgument
   public void tgrShowHtmlNotification(String message) {
     final String bannerMessage = TigerGlobalConfiguration.resolvePlaceholders(message);
     if (TigerDirector.getLibConfig().isActivateWorkflowUi()) {

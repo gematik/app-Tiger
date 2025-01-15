@@ -1,10 +1,19 @@
 # Changelog Tiger Test platform
 
-# Release 3.5.1
+# Release 3.6.1
+
+* KOB-29: Workflow UI and Serenity Reports: placeholders for tiger configuration variables are now resolved on both the
+  Workflow UI and the serenity html reports.
+    * **NOTE**: there may be a change in behaviour from the previous version where the full test step description was
+      resolved in the Workflow UI. The new implementation only resolves variables when the step where they are used
+      makes this resolution.
+
+# Release 3.6.0
 
 ## Breaking Changes
 
-* TGR-1615: Tiger-templates are no longer supported, and neither are "pkiKeys" for servers. Consider migrating your testsuite if you relied on these or contact us directly. No usage of these complicated features is known to us.
+* TGR-1615: Tiger-templates are no longer supported, and neither are "pkiKeys" for servers. Consider migrating your
+  testsuite if you relied on these or contact us directly. No usage of these complicated features is known to us.
 
 ## Features
 
@@ -15,7 +24,8 @@
 
 ## Bugfixes
 
-* TGR-1698: Tiger-Proxy: Default for namedGroups changed. This solves issues when connecting to a Tiger-Proxy with a client that uses a non-standard ECC-group. The new default can be overriden via `tiger.tigerProxy.defaultNamedGroups`.
+* TGR-1698: Tiger-Proxy: Default for namedGroups changed. This solves issues when connecting to a Tiger-Proxy with a
+  client that uses a non-standard ECC-group. The new default can be overriden via `tiger.tigerProxy.defaultNamedGroups`.
 
 # Release 3.5.0
 

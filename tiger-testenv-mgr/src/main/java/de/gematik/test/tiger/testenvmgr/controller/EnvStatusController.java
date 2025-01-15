@@ -109,7 +109,9 @@ public class EnvStatusController implements TigerUpdateListener {
                 if (scenarioUpdate.getStatus() != TestResult.UNUSED) {
                   scenario.setStatus(scenarioUpdate.getStatus());
                 }
-                scenario.setDescription(scenarioUpdate.getDescription());
+                if (!scenarioUpdate.getDescription().isEmpty()) {
+                  scenario.setDescription(scenarioUpdate.getDescription());
+                }
                 scenario.setExampleKeys(scenarioUpdate.getExampleKeys());
                 scenario.setExampleList(scenarioUpdate.getExampleList());
                 scenario.setVariantIndex(scenarioUpdate.getVariantIndex());
@@ -129,7 +131,9 @@ public class EnvStatusController implements TigerUpdateListener {
               if (scenario.getSteps().containsKey(stepKey)) {
                 StepUpdate step = scenario.getSteps().get(stepKey);
                 fillInStatus(scenario, step, stepUpdate);
-                step.setDescription(stepUpdate.getDescription());
+                if (!stepUpdate.getDescription().isEmpty()) {
+                  step.setDescription(stepUpdate.getDescription());
+                }
                 step.setTooltip(stepUpdate.getTooltip());
                 step.setStepIndex(stepUpdate.getStepIndex());
                 fillInMetaData(step, stepUpdate);

@@ -471,6 +471,7 @@ public class RBelValidatorGlue {
    */
   @Dann("TGR prüfe aktueller Request stimmt im Body überein mit:")
   @Then("TGR current request body matches:")
+  @ResolvableArgument
   public void currentRequestBodyMatches(final String docString) {
     currentRequestMessageAttributeMatches(
         "$.body", TigerParameterTypeDefinitions.tigerResolvedString(docString));
@@ -513,9 +514,11 @@ public class RBelValidatorGlue {
    */
   @Dann("TGR prüfe aktueller Request im Knoten {tigerResolvedString} stimmt überein mit:")
   @Then("TGR current request at {tigerResolvedString} matches:")
+  @ResolvableArgument
   public void currentRequestMessageAtMatchesDocString(
       final String rbelPath, final String docString) {
-    currentRequestMessageAttributeMatches(rbelPath, docString);
+    currentRequestMessageAttributeMatches(
+        rbelPath, TigerParameterTypeDefinitions.tigerResolvedString(docString));
   }
 
   /**
@@ -531,6 +534,7 @@ public class RBelValidatorGlue {
       "TGR prüfe aktueller Request im Knoten {tigerResolvedString} stimmt als {modeType} überein"
           + " mit:")
   @Then("TGR current request at {tigerResolvedString} matches as {modeType}:")
+  @ResolvableArgument
   public void currentRequestAtMatchesAsJsonOrXml(
       final String rbelPath, final ModeType mode, final String oracleDocStr) {
     rbelValidator.assertAttributeOfCurrentRequestMatchesAs(
@@ -655,6 +659,7 @@ public class RBelValidatorGlue {
    */
   @Dann("TGR prüfe aktuelle Antwort stimmt im Body überein mit:")
   @Then("TGR current response body matches:")
+  @ResolvableArgument
   public void currentResponseBodyMatches(final String docString) {
     currentResponseMessageAttributeMatches(
         "$.body", TigerParameterTypeDefinitions.tigerResolvedString(docString));
@@ -717,9 +722,11 @@ public class RBelValidatorGlue {
    */
   @Dann("TGR prüfe aktuelle Antwort im Knoten {tigerResolvedString} stimmt überein mit:")
   @Then("TGR current response at {tigerResolvedString} matches:")
+  @ResolvableArgument
   public void currentResponseMessageAtMatchesDocString(
       final String rbelPath, final String docString) {
-    currentResponseMessageAttributeMatches(rbelPath, docString);
+    currentResponseMessageAttributeMatches(
+        rbelPath, TigerParameterTypeDefinitions.tigerResolvedString(docString));
   }
 
   /**
@@ -732,6 +739,7 @@ public class RBelValidatorGlue {
    */
   @Dann("TGR prüfe aktuelle Antwort im Knoten {tigerResolvedString} stimmt nicht überein mit:")
   @Then("TGR current response at {tigerResolvedString} does not match:")
+  @ResolvableArgument
   public void currentResponseMessageAtDoesNotMatchDocString(
       final String rbelPath, final String docString) {
     rbelValidator.assertAttributeOfCurrentResponseMatches(
@@ -751,6 +759,7 @@ public class RBelValidatorGlue {
       "TGR prüfe aktuelle Antwort im Knoten {tigerResolvedString} stimmt als {modeType} überein"
           + " mit:")
   @Then("TGR current response at {tigerResolvedString} matches as {modeType}:")
+  @ResolvableArgument
   public void currentResponseAtMatchesAsJsonOrXml(
       final String rbelPath, final ModeType mode, final String oracleDocStr) {
     rbelValidator.assertAttributeOfCurrentResponseMatchesAs(
@@ -782,6 +791,7 @@ public class RBelValidatorGlue {
   @Then(
       "TGR current response at {tigerResolvedString} matches as XML and diff options"
           + " {tigerResolvedString}:")
+  @ResolvableArgument
   public void currentResponseAtMatchesAsXMLAndDiffOptions(
       final String rbelPath, String diffOptionsCSV, final String xmlDocStr) {
     rbelValidator.assertAttributeOfCurrentResponseMatchesAs(

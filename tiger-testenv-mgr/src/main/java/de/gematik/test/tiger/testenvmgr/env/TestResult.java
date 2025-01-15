@@ -16,6 +16,8 @@
 
 package de.gematik.test.tiger.testenvmgr.env;
 
+import io.cucumber.plugin.event.Status;
+
 public enum TestResult {
   FAILED,
   PASSED,
@@ -25,5 +27,9 @@ public enum TestResult {
   UNDEFINED,
   UNUSED,
   AMBIGUOUS,
-  TEST_DISCOVERED
+  TEST_DISCOVERED;
+
+  public static TestResult from(Status status) {
+    return TestResult.valueOf(status.name());
+  }
 }
