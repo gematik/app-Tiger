@@ -197,7 +197,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
   private void reloadConfiguration() {
     try {
       this.configuration =
-          TigerGlobalConfiguration.instantiateConfigurationBeanStrict(
+          TigerGlobalConfiguration.instantiateConfigurationBean(
                   getConfigurationBeanClass(), "tiger", "servers", getServerId())
               .orElseThrow(
                   () ->
