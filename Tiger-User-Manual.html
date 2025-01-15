@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="generator" content="Asciidoctor 2.0.20">
+<meta name="generator" content="Asciidoctor 2.0.23">
 <meta name="description" content="User Manual for Tiger">
 <meta name="author" content="TIGER@gematik.de">
 <title>Tiger User Manual</title>
@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 3.5.0 - 2025-01-08</span>
+<span id="revdate">Version 3.6.0 - 2025-01-15</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -240,10 +240,11 @@ video {
 <li><a href="#tls-keys-certificates-a-quick-tour-on-proxies">4.4. TLS, keys, certificates a quick tour on proxies</a></li>
 <li><a href="#modifications">4.5. Modifications</a></li>
 <li><a href="#_mesh_setup_traffic_endpoints">4.6. Mesh set up</a></li>
-<li><a href="#_rbel_path_details">4.7. Understanding RBelPath</a></li>
-<li><a href="#running-tiger-proxy-as-standalone-jar">4.8. Running Tiger Proxy as standalone JAR</a></li>
-<li><a href="#additional-configuration">4.9. Additional configuration</a></li>
-<li><a href="#understanding-filtering">4.10. Understanding filtering</a></li>
+<li><a href="#adding-notes-to-messages">4.7. Adding notes to messages</a></li>
+<li><a href="#_rbel_path_details">4.8. Understanding RBelPath</a></li>
+<li><a href="#running-tiger-proxy-as-standalone-jar">4.9. Running Tiger Proxy as standalone JAR</a></li>
+<li><a href="#additional-configuration">4.10. Additional configuration</a></li>
+<li><a href="#understanding-filtering">4.11. Understanding filtering</a></li>
 </ul>
 </li>
 <li><a href="#tiger-test-library-2">5. Tiger Test library</a>
@@ -690,7 +691,6 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
         &lt;maven.compiler.source&gt;17&lt;/maven.compiler.source&gt;
         &lt;maven.compiler.target&gt;17&lt;/maven.compiler.target&gt;
 
-        &lt;version.junit5&gt;5.10.3&lt;/version.junit5&gt;
         &lt;version.maven.failsafe&gt;3.3.1&lt;/version.maven.failsafe&gt;
         &lt;!-- please adapt Tiger version property to the most current one obtained from --&gt;
         &lt;!-- maven central:
@@ -698,7 +698,7 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
           or from gematik internal Nexus
           https://nexus.prod.ccs.gematik.solutions/#browse/search=keyword%3Dtiger-test-lib
         --&gt;
-        &lt;version.tiger&gt;3.1.1&lt;/version.tiger&gt;
+        &lt;version.tiger&gt;3.5.0&lt;/version.tiger&gt;
         &lt;version.logback&gt;1.5.7&lt;/version.logback&gt;
     &lt;/properties&gt;
 
@@ -1480,11 +1480,6 @@ If unsure take a <a href="https://dev.to/techworld_with_nana/yaml-tutorial-for-b
   # specified a default name will be used (default is "./target/serverLogs/[key of server in tiger.yaml].log")
   logFile: ./target/serverLogs/serverKey_xxx.log
 
-  # OPTIONAL list of pki certs and keys to initialize
-  # the local Tiger Proxy of the test suite with
-  # Default value is empty array
-  # For more details see "PKI configuration" section below
-  pkiKeys: []
   # OPTIONAL type specific list of environmental variable assignments to be used
   # when starting the server node.
   # Each entry has to have the format ENV_VAR_NAME=VALUE
@@ -1632,32 +1627,7 @@ Their meaning and format are explained in the related section.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="pki-configuration-in-pkikeys"><a class="anchor" href="#pki-configuration-in-pkikeys"></a>3.1.3. PKI configuration in pkiKeys</h4>
-<div class="paragraph">
-<p>The pkiKeys property contains a list of certificates and keys to be provided to the local Tiger Proxy of the test suite.<br>
-Each entry has to provide a unique id, type and pem property.</p>
-</div>
-<div class="listingblock">
-<div class="title">Listing 7. PKI configuration</div>
-<div class="content">
-<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">  pkiKeys:
-      # MANDATORY unique key/certificate id
-    - id: disc_sig
-      # MANDATORY one of [Certificate|Key]
-      type: Certificate
-      # MANDATORY base64 encoded multiline string representing the certificate / key.
-      pem: "MIICsTCCAligAwIBAgIHA61I5ACUjTAKBggqhkjOPQQDAjCBhDELMAkGA1UEBhMC
-  REUxHzAdBgNVBAoMFmdlbWF0aWsgR21iSCBOT1QtVkFMSUQxMjAwBgNVBAsMKUtv
-  .....
-  xiKK4dW1R7MD334OpOPTFjeEhIVV"
-    - id: disc_enc
-      type: Key
-      pem: "ISUADOGBESBXEZOBXWEDHBXOU..."</code></pre>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_configuring_pki_identities_in_tiger_proxys_tls_section"><a class="anchor" href="#_configuring_pki_identities_in_tiger_proxys_tls_section"></a>3.1.4. Configuring PKI identities in Tiger Proxy&#8217;s tls section</h4>
+<h4 id="_configuring_pki_identities_in_tiger_proxys_tls_section"><a class="anchor" href="#_configuring_pki_identities_in_tiger_proxys_tls_section"></a>3.1.3. Configuring PKI identities in Tiger Proxy&#8217;s tls section</h4>
 <div class="paragraph">
 <p>PKI identities can be supplied in a number of ways (JKS, BKS, PKCS1, PKCS8).<br>
 In every place a string can be given.<br>
@@ -1764,7 +1734,7 @@ Invalid pathname strings will also produce an exception.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="docker-container-node"><a class="anchor" href="#docker-container-node"></a>3.1.5. Docker Container node</h4>
+<h4 id="docker-container-node"><a class="anchor" href="#docker-container-node"></a>3.1.4. Docker Container node</h4>
 <div class="paragraph">
 <p>The docker container node allows to instantiate a local docker container from the configured image.<br>
 The exposed port of the docker container is available as a special token in the substitution process of the exports entries (<code>${PORT:xxxx}</code> where xxxx is the port being exposed inside the container).</p>
@@ -1812,7 +1782,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </table>
 </div>
 <div class="listingblock">
-<div class="title">Listing 8. Docker container configuration</div>
+<div class="title">Listing 7. Docker container configuration</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">dockerContainer_001:
   hostname: myDockerContainer
@@ -1857,7 +1827,6 @@ To use this server type you must include the tiger-cloud-extension dependency!
 
 
   # The following properties are explained in the General properties section above
-  pkiKeys: []
   environment: []
   urlMappings: []
   exports: []</code></pre>
@@ -1865,7 +1834,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </div>
 </div>
 <div class="sect3">
-<h4 id="docker-compose-node"><a class="anchor" href="#docker-compose-node"></a>3.1.6. Docker Compose node</h4>
+<h4 id="docker-compose-node"><a class="anchor" href="#docker-compose-node"></a>3.1.5. Docker Compose node</h4>
 <div class="paragraph">
 <p>The docker compose node is a very tricky type of node because we use testcontainer library, which is not exactly up to date in terms of docker compose support.<br>
 So many of the yaml compose files will need to be modified to work with the testcontainer library.</p>
@@ -1893,7 +1862,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </table>
 </div>
 <div class="listingblock">
-<div class="title">Listing 9. Docker compose configuration</div>
+<div class="title">Listing 8. Docker compose configuration</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">  type: compose
   dependsUpon: csv string
@@ -1912,7 +1881,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 10. Demis docker compose example</div>
+<div class="title">Listing 9. Demis docker compose example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">demis_001:
   type: compose
@@ -1923,7 +1892,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </div>
 </div>
 <div class="sect3">
-<h4 id="external-jar-node"><a class="anchor" href="#external-jar-node"></a>3.1.7. External Jar node</h4>
+<h4 id="external-jar-node"><a class="anchor" href="#external-jar-node"></a>3.1.6. External Jar node</h4>
 <div class="paragraph">
 <p>The External Jar node is along with the Docker container node the most important/used node for test environments.<br>
 Any Jar archive executable which can be started with the <code>java -jar</code> command can be configured as an external Jar node.</p>
@@ -1961,7 +1930,7 @@ Tiger will use the following order to try to find a matching file:</p>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 11. External jar configuration</div>
+<div class="title">Listing 10. External jar configuration</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">externalJar_001:
   hostname: mySpecialJar
@@ -2007,7 +1976,6 @@ Tiger will use the following order to try to find a matching file:</p>
       - --paramarg3=testvalue1
 
   # The following properties are explained in the General properties section above
-  pkiKeys: []
   environment: []
   urlMappings: []
   exports: []</code></pre>
@@ -2019,7 +1987,7 @@ To change the JVM used you can set the property <code>tiger.lib.javaHome</code> 
 </div>
 </div>
 <div class="sect3">
-<h4 id="external-url-node"><a class="anchor" href="#external-url-node"></a>3.1.8. External URL node</h4>
+<h4 id="external-url-node"><a class="anchor" href="#external-url-node"></a>3.1.7. External URL node</h4>
 <div class="paragraph">
 <p>The symbolic node type that will not start a server instance, but simply allows external services to be used via the configured hostname.<br>
 This is achieved by the test environment manager instructing the local Tiger Proxy to provide a route for the symbolic hostname to the external URL of the service.</p>
@@ -2032,7 +2000,7 @@ If it is ever necessary to change the external URL, the test suite does not have
 <p>Given the nature of this type, the environment section has no effect and is not to be used.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 12. External URL configuration</div>
+<div class="title">Listing 11. External URL configuration</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">externalUrl_001:
   hostname: myExternalServer
@@ -2059,7 +2027,6 @@ If it is ever necessary to change the external URL, the test suite does not have
   logFile: ./target/serverLogs/externalUrl_001.log
 
   # The following properties are explained in the General properties section above
-  pkiKeys: []
   # IGNORE for this type as it has no effect
   environment: []
   urlMappings: []
@@ -2068,7 +2035,7 @@ If it is ever necessary to change the external URL, the test suite does not have
 </div>
 </div>
 <div class="sect3">
-<h4 id="helm-chart-node"><a class="anchor" href="#helm-chart-node"></a>3.1.9. Helm Chart node</h4>
+<h4 id="helm-chart-node"><a class="anchor" href="#helm-chart-node"></a>3.1.8. Helm Chart node</h4>
 <div class="paragraph">
 <p>The helm chart node allows to start a helm chart from the configured source (local helm chart file / folder or remote helm chart).<br>
 The helm chart is started and the server is ready when all pods are up and running, if port-forward is used (if exposedPorts are set), then port-forwarding is also done and the startup is finished and the service can be used for testing.</p>
@@ -2086,7 +2053,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </table>
 </div>
 <div class="listingblock">
-<div class="title">Listing 13. Helm chart configuration</div>
+<div class="title">Listing 12. Helm chart configuration</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
   testHelmChart_Nginx:
@@ -2131,14 +2098,14 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </div>
 </div>
 <div class="sect3">
-<h4 id="tiger-proxy-node"><a class="anchor" href="#tiger-proxy-node"></a>3.1.10. Tiger Proxy node</h4>
+<h4 id="tiger-proxy-node"><a class="anchor" href="#tiger-proxy-node"></a>3.1.9. Tiger Proxy node</h4>
 <div class="paragraph">
 <p>The most complex and versatile node type.<br>
 The Tiger Proxy will be started as an embedded spring boot application.<br>
 This way the start-up time can be minimized, and it is always guaranteed to start the current version.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 14. Tiger Proxy configuration</div>
+<div class="title">Listing 13. Tiger Proxy configuration</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy_001:
   hostname: myTigerProxy
@@ -2174,7 +2141,6 @@ This way the start-up time can be minimized, and it is always guaranteed to star
     ...
 
   # The following properties are explained in the General properties section above
-  pkiKeys: []
   environment: []
   urlMappings: []
   exports: []</code></pre>
@@ -2185,14 +2151,14 @@ This way the start-up time can be minimized, and it is always guaranteed to star
 </div>
 </div>
 <div class="sect3">
-<h4 id="httpbin-node"><a class="anchor" href="#httpbin-node"></a>3.1.11. httpbin node</h4>
+<h4 id="httpbin-node"><a class="anchor" href="#httpbin-node"></a>3.1.10. httpbin node</h4>
 <div class="paragraph">
 <p>The httpbin simply starts a <a href="https://github.com/gaul/java-httpbin">httpbin</a> server.<br>
 This provides several endpoints against which you can perform all kinds of http requests.<br>
 The server port on which the server starts can be configured.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 15. httpbin configuration</div>
+<div class="title">Listing 14. httpbin configuration</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">httpbin:
     type: httpbin
@@ -2326,28 +2292,18 @@ tigerProxy:
   adminPort: 7777
   # logLevel of the proxy-server. DEBUG and TRACE will print traffic, so use with care!
   proxyLogLevel: TRACE
-  # section to configure whether and where the proxy should dump
-  # a traffic HTML report on shutdown
+  # section to configure whether and where the proxy should dump a tiger traffic file on shutdown
   fileSaveInfo:
-    # should the cleartext http-traffic be logged to a file?
+    # should the traffic be logged to a file?
     writeToFile: true
     # configure the file name
     filename: "foobar.tgr"
-    # default false
+    # default false, removes any potentially existing saved tgr traffic file on startup.
     clearFileOnBoot: true
     # read traffic from a file at startup
     sourceFile: "sourceFile.tgr"
     # filter messages read from file (JEXL expression)
     readFilter: "message.statusCode == '200'"
-    # List of notes that should be added to the traffic
-    notes:
-        # The message to be added as a note
-      - message: "This is a note on the HTTP method"
-        # Only add this note to elements that EXACTLY match the given JEXL expression.
-        # This will be checked for every message and every node in every message.
-        jexlCriterion: "isRequest &amp;&amp; path == '$.method'"
-      - message: "Hackers were here..."
-        jexlCriterion: "element.decryptedUsingKeyWithId == 'mySuperSecretKey'"
 
   # a list of routing entries the proxy should apply to traffic
   proxyRoutes:
@@ -2511,7 +2467,7 @@ tigerProxy:
 <div class="sect2">
 <h3 id="standalone-mode-vs-implicit-startup-with-test-suite"><a class="anchor" href="#standalone-mode-vs-implicit-startup-with-test-suite"></a>3.4. Standalone mode vs. implicit startup with test suite</h3>
 <div class="paragraph">
-<p>If your test environment is very "expensive" to start or if you are developing your test suite scenarios thus starting many test runs in short time, you might want to keep your test environment running and not shut it down after each run.<br>
+<p>If your test environment is very "expensive" to start or if you are developing your test suite scenarios thus starting many test runs in a short time, you might want to keep your test environment running and not shut it down after each run.<br>
 To do so, you can simply use the tiger maven plugin to start your test environment in standalone mode.</p>
 </div>
 <div class="paragraph">
@@ -3363,7 +3319,25 @@ For each received traffic data pair (request/response) the Tiger Proxy will push
 </div>
 </div>
 <div class="sect2">
-<h3 id="_rbel_path_details"><a class="anchor" href="#_rbel_path_details"></a>4.7. Understanding RBelPath</h3>
+<h3 id="adding-notes-to-messages"><a class="anchor" href="#adding-notes-to-messages"></a>4.7. Adding notes to messages</h3>
+<div class="paragraph">
+<p>To add notes to certain messages, you can add a list of criteria with messages<br>
+that shall be added to any message in the rbel log matching the specific criterion.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">tigerProxy:
+    proxyId: meshProxy2
+    notes:
+        - message: "This is a note on the HTTP method"
+          jexlCriterion: "isRequest &amp;&amp; path == '$.method'"
+        - message: "Hackers were here..."
+          jexlCriterion: "element.decryptedUsingKeyWithId == 'mySuperSecretKey'"</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_rbel_path_details"><a class="anchor" href="#_rbel_path_details"></a>4.8. Understanding RBelPath</h3>
 <div class="paragraph">
 <p>RBeL-Path is a XPath or JSON-Path inspired expression-language enabling the quick traversal of captured RBeL-Traffic (navigation of the RbelElement-tree).</p>
 </div>
@@ -3474,7 +3448,7 @@ This expression would also work if the HTTP-message contained a JSON-Object with
 So to use special characters please URL encode them (Space is a special case since + and ' ' are allowed, depending on the exact position).</p>
 </div>
 <div class="sect3">
-<h4 id="arrays"><a class="anchor" href="#arrays"></a>4.7.1. Arrays</h4>
+<h4 id="arrays"><a class="anchor" href="#arrays"></a>4.8.1. Arrays</h4>
 <div class="paragraph">
 <p>To make things easy and consistent, the entries of an array are simply stored as a map with the index as key.<br>
 So the following expression will return the first element of the array:</p>
@@ -3484,7 +3458,7 @@ So the following expression will return the first element of the array:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="differentiating-between-multiple-elements"><a class="anchor" href="#differentiating-between-multiple-elements"></a>4.7.2. Differentiating between multiple elements</h4>
+<h4 id="differentiating-between-multiple-elements"><a class="anchor" href="#differentiating-between-multiple-elements"></a>4.8.2. Differentiating between multiple elements</h4>
 <div class="paragraph">
 <p>When a key is present multiple times, all elements are returned.<br>
 To differentiate between them, you can use the index:</p>
@@ -3505,7 +3479,7 @@ To differentiate between them, you can use the index:</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="alternate-keys"><a class="anchor" href="#alternate-keys"></a>4.7.3. Alternate keys</h4>
+<h4 id="alternate-keys"><a class="anchor" href="#alternate-keys"></a>4.8.3. Alternate keys</h4>
 <div class="paragraph">
 <p>To find alternating values, concatenate them using the pipe symbols, like so:<br>
 <code>$.body.['foo'|'bar'].key</code></p>
@@ -3518,7 +3492,7 @@ So if only always one of the two elements is present, only a single element will
 </div>
 </div>
 <div class="sect3">
-<h4 id="case-insensitive-matching"><a class="anchor" href="#case-insensitive-matching"></a>4.7.4. Case-insensitive matching</h4>
+<h4 id="case-insensitive-matching"><a class="anchor" href="#case-insensitive-matching"></a>4.8.4. Case-insensitive matching</h4>
 <div class="paragraph">
 <p>Sometimes it can be helpful to match keys in a case-insensitive manner.<br>
 To achieve this you can use the <code>~</code>-operator:<br>
@@ -3534,7 +3508,7 @@ With this expression, the following nodes will be found: <code>$.body.foo.key</c
 </div>
 </div>
 <div class="sect3">
-<h4 id="_jexl_expressions"><a class="anchor" href="#_jexl_expressions"></a>4.7.5. JEXL expressions</h4>
+<h4 id="_jexl_expressions"><a class="anchor" href="#_jexl_expressions"></a>4.8.5. JEXL expressions</h4>
 <div class="paragraph">
 <p>RBeL-Path can be integrated with JEXL-expression, giving a much more powerful and flexible tool to extract certain element.<br>
 This can be done using the syntax from the following example:</p>
@@ -3631,7 +3605,7 @@ Lets explain this using an example.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="nested-rbelpath-expressions"><a class="anchor" href="#nested-rbelpath-expressions"></a>4.7.6. Nested RbelPath expressions</h4>
+<h4 id="nested-rbelpath-expressions"><a class="anchor" href="#nested-rbelpath-expressions"></a>4.8.6. Nested RbelPath expressions</h4>
 <div class="paragraph">
 <p>Consider the following rbel tree:</p>
 </div>
@@ -3698,7 +3672,7 @@ Currently it is not recommended to use these. (e.g. <code>$.body.[?(not (@.. == 
 </div>
 </div>
 <div class="sect3">
-<h4 id="debugging-rbel-expressions"><a class="anchor" href="#debugging-rbel-expressions"></a>4.7.7. Debugging Rbel-Expressions</h4>
+<h4 id="debugging-rbel-expressions"><a class="anchor" href="#debugging-rbel-expressions"></a>4.8.7. Debugging Rbel-Expressions</h4>
 <div class="paragraph">
 <p>To help users create RbelPath-Expressions there is a Debug-Functionality which produces log message designed to help.<br>
 These can be activated by <code>RbelOptions.activateRbelPathDebugging();</code>.<br>
@@ -3732,7 +3706,7 @@ It brings various options:</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="running-tiger-proxy-as-standalone-jar"><a class="anchor" href="#running-tiger-proxy-as-standalone-jar"></a>4.8. Running Tiger Proxy as standalone JAR</h3>
+<h3 id="running-tiger-proxy-as-standalone-jar"><a class="anchor" href="#running-tiger-proxy-as-standalone-jar"></a>4.9. Running Tiger Proxy as standalone JAR</h3>
 <div class="paragraph">
 <p>If you only want to run a Tiger Proxy instance without test environment manager or test library you may do so (e.g. in certain tracing set-ups).<br>
 A spring boot executable JAR is available via <a href="https://repo1.maven.org/maven2/de/gematik/test/tiger-standalone-proxy">maven central</a>.</p>
@@ -3751,12 +3725,12 @@ localResources: false</code></pre>
 </div>
 </div>
 <div class="sect2">
-<h3 id="additional-configuration"><a class="anchor" href="#additional-configuration"></a>4.9. Additional configuration</h3>
+<h3 id="additional-configuration"><a class="anchor" href="#additional-configuration"></a>4.10. Additional configuration</h3>
 <div class="paragraph">
 <p>There are some additional configuration-flags in the Tiger Proxy:</p>
 </div>
 <div class="sect3">
-<h4 id="performance"><a class="anchor" href="#performance"></a>4.9.1. Performance</h4>
+<h4 id="performance"><a class="anchor" href="#performance"></a>4.10.1. Performance</h4>
 <div class="paragraph">
 <p>Below some properties along with their respective default values:</p>
 </div>
@@ -3848,7 +3822,7 @@ If the optional flag <code>ignoreConnectionErrors</code> is true, no connection 
 </div>
 </div>
 <div class="sect3">
-<h4 id="activatetrafficlogging"><a class="anchor" href="#activatetrafficlogging"></a>4.9.2. activateTrafficLogging</h4>
+<h4 id="activatetrafficlogging"><a class="anchor" href="#activatetrafficlogging"></a>4.10.2. activateTrafficLogging</h4>
 <div class="paragraph">
 <p>This flag controls whether the Tiger Proxy will log all traffic.<br>
 If activated every request and response is noted in the log.<br>
@@ -3858,7 +3832,7 @@ Default is true.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="rewritehostheader"><a class="anchor" href="#rewritehostheader"></a>4.9.3. rewriteHostHeader</h4>
+<h4 id="rewritehostheader"><a class="anchor" href="#rewritehostheader"></a>4.10.3. rewriteHostHeader</h4>
 <div class="paragraph">
 <p>This flag activates the rewriting of the host-header.<br>
 If activated the host-header will be rewritten to the target host (only applicable for reverse proxy routes).<br>
@@ -3866,16 +3840,22 @@ Default is false.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="rewritelocationheader"><a class="anchor" href="#rewritelocationheader"></a>4.9.4. rewriteLocationHeader</h4>
+<h4 id="rewritelocationheader"><a class="anchor" href="#rewritelocationheader"></a>4.10.4. rewriteLocationHeader</h4>
 <div class="paragraph">
 <p>This flag activates the rewriting of the location-header for 3xx responses.<br>
 If activated the location-header will be modified so the client will still use the proxy to reach the new location.<br>
 Default is true.</p>
 </div>
 </div>
+<div class="sect3">
+<h4 id="maxloopcounter"><a class="anchor" href="#maxloopcounter"></a>4.10.5. maxLoopCounter</h4>
+<div class="paragraph">
+<p>By default, the Tiger Proxy will keep count of the number of requests it executes on itself (e.g. when a request is forwarded to the Tiger Proxy itself). If this counter exceeds the value of <code>maxLoopCounter</code> the request will be aborted. The default value is 10 (Meaning after 10 loops the request will end in an error). Note: This behavior can only be customized for all Tiger Proxies.</p>
+</div>
+</div>
 </div>
 <div class="sect2">
-<h3 id="understanding-filtering"><a class="anchor" href="#understanding-filtering"></a>4.10. Understanding filtering</h3>
+<h3 id="understanding-filtering"><a class="anchor" href="#understanding-filtering"></a>4.11. Understanding filtering</h3>
 <div class="paragraph">
 <p>The filtering of messages in the tiger proxy consists of three main stages.<br>
 These are:</p>
@@ -3897,7 +3877,7 @@ These are:</p>
 <p>Lets dive a bit deeper!</p>
 </div>
 <div class="sect3">
-<h4 id="traffic-filter"><a class="anchor" href="#traffic-filter"></a>4.10.1. Traffic filter</h4>
+<h4 id="traffic-filter"><a class="anchor" href="#traffic-filter"></a>4.11.1. Traffic filter</h4>
 <div class="paragraph">
 <p>At the core of the Tiger Proxy sits a RbelLogger instance.<br>
 Here the messages are parsed and stored.<br>
@@ -3931,7 +3911,7 @@ They are however kept in memory since the partner, the response in that case, do
 </div>
 </div>
 <div class="sect3">
-<h4 id="tiger-proxy-log-filter"><a class="anchor" href="#tiger-proxy-log-filter"></a>4.10.2. Tiger Proxy Log filter</h4>
+<h4 id="tiger-proxy-log-filter"><a class="anchor" href="#tiger-proxy-log-filter"></a>4.11.2. Tiger Proxy Log filter</h4>
 <div class="paragraph">
 <p>When you display the messages on the Tiger Proxy Log you have the ability to filter out certain messages to be displayed exclusively.<br>
 The messages, which are filtered out, do still remain stored in the Tiger Proxy.<br>
@@ -3947,7 +3927,7 @@ This way they are consistent across different Tiger Proxy Log filters (message #
 </div>
 </div>
 <div class="sect3">
-<h4 id="pagination"><a class="anchor" href="#pagination"></a>4.10.3. Pagination</h4>
+<h4 id="pagination"><a class="anchor" href="#pagination"></a>4.11.3. Pagination</h4>
 <div class="paragraph">
 <p>Finally, pagination is applied in the Tiger Proxy Log.<br>
 This comes after the Tiger Proxy Log-Filter has been applied.<br>
@@ -4122,7 +4102,7 @@ In order to use these steps you must ensure that the relevant traffic is routed 
 </ul>
 </div>
 <div class="listingblock">
-<div class="title">Listing 16. Tiger response validation steps example</div>
+<div class="title">Listing 15. Tiger response validation steps example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature Tiger validation steps
 
@@ -4188,7 +4168,7 @@ In order to use these steps you must ensure that the relevant traffic is routed 
 </ul>
 </div>
 <div class="listingblock">
-<div class="title">Listing 17. Tiger request validation steps example</div>
+<div class="title">Listing 16. Tiger request validation steps example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature Tiger request validation steps
 
@@ -5036,24 +5016,29 @@ certain value</p>
 <div class="sect3">
 <h4 id="usage-examples"><a class="anchor" href="#usage-examples"></a>5.4.3. Usage examples</h4>
 <div class="listingblock">
-<div class="title">Listing 18. Tiger Rbel Builder steps example</div>
+<div class="title">Listing 17. Tiger Rbel Builder steps example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature: Tiger - RbelBuilder
 
-  Scenario: Replace/change certain values/nodes in a rbel object
+  Scenario: Replace/change/add certain values/nodes in a rbel object
     # changing primitive value
     Given TGR creates a new Rbel object 'someObjName' with content '{"address": {"street": "Friedrichstr 136","city": "Berlin","postalCode": "10115"}}'
-    Then TGR sets Rbel object 'someObjName' at '$address.street' to new value 'Hauptstrasse'
+    Then TGR sets Rbel object 'someObjName' at '$.address.street' to new value 'Hauptstrasse'
     Then TGR asserts '!{rbelObject:serialize("someObjName")}' equals '{"address": {"street": "Hauptstrasse","city": "Berlin","postalCode": "10115"}}' of type JSON
 
+    # adding primitive value
+    Given TGR creates a new Rbel object 'someAddress' with content '{"address": {"city": "Berlin","postalCode": "10115"}}'
+    Then TGR sets Rbel object 'someAddress' at '$.address.street' to new value 'Friedrichstr'
+    Then TGR asserts '!{rbelObject:serialize("someAddress")}' equals '{"address": {"street": "Friedrichstr","city": "Berlin","postalCode": "10115"}}' of type JSON
+
     # replacing object nodes
-    Given TGR creates a new Rbel object 'phoneNumbers' with content '{"phoneNumbers": [{"type": "home",  "number": "030-1234567"},{  "type": "mobile", "number": "0176-123456788"  }]}'
-    When TGR sets Rbel object 'phoneNumbers' at '$phoneNumbers.1' to new value '{"type" : "work", "number" : "0176-199999"}'
-    Then TGR asserts '!{rbelObject:serialize("phoneNumbers")}' equals '{"phoneNumbers": [{"type": "home",  "number": "030-1234567"},{  "type": "work", "number": "0176-199999"}]}' of type JSON
+    Given TGR creates a new Rbel object 'phoneNumbers' with content '{"phoneNumbers": [{"type": "home",  "number": "030-1234567"},{"type": "mobile", "number": "0176-123456788"}]}'
+    When TGR sets Rbel object 'phoneNumbers' at '$.phoneNumbers.1' to new value '{"type" : "work", "number" : "0176-199999"}'
+    Then TGR asserts '!{rbelObject:serialize("phoneNumbers")}' equals '{"phoneNumbers": [{"type": "home",  "number": "030-1234567"},{"type": "work", "number": "0176-199999"}]}' of type JSON
 
     # adding new nodes to an array
-    When TGR extends Rbel object 'phoneNumbers' at path '$phoneNumbers' by a new entry '{"type" : "home", "number" : "0176-12345566778"}'
-    Then TGR asserts '!{rbelObject:serialize("phoneNumbers")}' equals '{"phoneNumbers": [{"type": "home",  "number": "030-1234567"},{"type": "work", "number": "0176-199999"},{"type" : "home", "number" : "0176-12345566778"}]}' of type JSON</code></pre>
+    When TGR extends Rbel object 'phoneNumbers' at path '$.phoneNumbers' by a new entry '{"type": "mobile", "number": "0176-123456788"}'
+    Then TGR asserts '!{rbelObject:serialize("phoneNumbers")}' equals '{"phoneNumbers": [{"type": "home",  "number": "030-1234567"}, {"type" : "work", "number" : "0176-199999"},{"type": "mobile", "number": "0176-123456788"}]}' of type JSON</code></pre>
 </div>
 </div>
 </div>
@@ -5064,7 +5049,7 @@ certain value</p>
 <p>The Tiger HTTP client steps are a set of Cucumber steps that enable you to perform simple HTTP requests, with bodies, default and custom headers.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 19. Tiger response validation steps example</div>
+<div class="title">Listing 18. Tiger response validation steps example</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-gherkin hljs" data-lang="gherkin">Feature: HTTP/HTTPS GlueCode Test feature
 
@@ -5646,7 +5631,7 @@ It will be first checked, whether the expected value is equal to the actual one,
 We are working on it :)</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 20. Simple adapted example from the IDP test suite</div>
+<div class="title">Listing 19. Simple adapted example from the IDP test suite</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">  {
     "alg": "dir",
@@ -6258,7 +6243,7 @@ The server "B" should now use the activated server, without having to set it man
 The first part here before the equal is the name of the environment variable passed into server "B" while booting, the second part behind the equal is the name of the property. compare this to the exports in the two serverA-options):</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 21. Configuring using placeholders and exports</div>
+<div class="title">Listing 20. Configuring using placeholders and exports</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-YAML hljs" data-lang="YAML">servers:
   serverAInternet:
@@ -6403,7 +6388,7 @@ You can simply set an environment variable to do the job for you.<br>
 Below are the relevant snippets:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 22. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 21. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-YAML hljs" data-lang="YAML">tigerProxy:
     proxyRoutes:
@@ -6427,7 +6412,7 @@ Below are the relevant snippets:</p>
 This can be done by using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 23. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
+<div class="title">Listing 22. tiger.yaml with the Tiger Proxy routing everything to the local server</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-YAML hljs" data-lang="YAML">tigerProxy:
     proxyRoutes:
@@ -6452,7 +6437,7 @@ To do this we have to reference the configured URL from above, since the value c
 We can solve this using placeholders:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 24. The testsuite</div>
+<div class="title">Listing 23. The testsuite</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-Gherkin hljs" data-lang="Gherkin">    TGR current response with attribute "$.body.ReplyStructure.Header.Sender.url" matches "http://127.0.0.1:${backend.server.port}"</code></pre>
 </div>
@@ -7365,7 +7350,7 @@ It can be used both as a standalone server or as a server directly inside of tig
 We do this as part of a tiger testsuite.</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 25. tiger.yaml</div>
+<div class="title">Listing 24. tiger.yaml</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
   zionServer:
@@ -7408,7 +7393,7 @@ And please return it as an XML!</p>
 So we reference an external file, where we do the heavy lifting:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 26. tiger.yaml</div>
+<div class="title">Listing 25. tiger.yaml</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
   zionServer:
@@ -7426,7 +7411,7 @@ So we reference an external file, where we do the heavy lifting:</p>
 </div>
 </div>
 <div class="listingblock">
-<div class="title">Listing 27. complicatedResponse.xml</div>
+<div class="title">Listing 26. complicatedResponse.xml</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;?xml version="1.0" encoding="utf-8" ?&gt;
 &lt;requestDescription&gt;
@@ -7492,7 +7477,7 @@ So to access it directly, use <code>${myLoopVariable}</code>.<br>
 You can then also combine the loop-variable with JEXL like so:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 28. complicatedResponse.xml</div>
+<div class="title">Listing 27. complicatedResponse.xml</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;?xml version="1.0" encoding="utf-8" ?&gt;
 &lt;requestDescription&gt;
@@ -7528,7 +7513,7 @@ You can then also combine the loop-variable with JEXL like so:</p>
 Consider the following example:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 29. complicatedResponse.xml</div>
+<div class="title">Listing 28. complicatedResponse.xml</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;?xml version="1.0" encoding="utf-8" ?&gt;
 &lt;requestDescription&gt;
@@ -7555,7 +7540,7 @@ Please note that the tgrIf-statement, like the tgrFor, has to be beneath the tar
 This can be done via an attribute in XML, but it can also be done using a tag:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 30. complicatedResponse.xml</div>
+<div class="title">Listing 29. complicatedResponse.xml</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-xml hljs" data-lang="xml">&lt;?xml version="1.0" encoding="utf-8" ?&gt;
 &lt;requestDescription&gt;
@@ -7595,7 +7580,7 @@ The following example should clarify the mechanism:</p>
 <p>We want measure the length of the response by google to a query:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 31. tiger.yaml</div>
+<div class="title">Listing 30. tiger.yaml</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
   zionServer:
@@ -7643,7 +7628,7 @@ This allows subdividing responses.<br>
 Consider the following example, where we check the password of the calling party (which is given in cleartext in the request header).</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 32. tiger.yaml</div>
+<div class="title">Listing 31. tiger.yaml</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
   zionServer:
@@ -7685,7 +7670,7 @@ The assigned values can then be used in the response or be used in additional ma
 Here is an example:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 33. tiger.yaml</div>
+<div class="title">Listing 32. tiger.yaml</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
   zionServer:
@@ -7726,7 +7711,7 @@ The path to match will combine paths specified in the different levels of the ne
 For example:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 34. tiger.yaml</div>
+<div class="title">Listing 33. tiger.yaml</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-yaml hljs" data-lang="yaml">servers:
   zionServer:
@@ -7774,7 +7759,7 @@ You can also embed one into the other.</p>
 For this we use the following response body file:</p>
 </div>
 <div class="listingblock">
-<div class="title">Listing 35. complicatedResponse.json</div>
+<div class="title">Listing 34. complicatedResponse.json</div>
 <div class="content">
 <pre class="highlightjs highlight"><code class="language-json hljs" data-lang="json">{
   "myToken": {
@@ -9265,7 +9250,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-01-08 15:12:33 +0100
+Last updated 2025-01-15 11:59:55 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
