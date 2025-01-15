@@ -87,7 +87,7 @@ class TestTigerProxyInfiniteLoops extends AbstractTigerProxyTest {
             .build());
 
     assertThatNoException()
-        .isThrownBy(() -> Unirest.get("http://localhost:" + tigerProxy.getProxyPort()).asString());
+        .isThrownBy(() -> unirestInstance.get("http://localhost:" + tigerProxy.getProxyPort()).asString());
   }
 
   @Test
@@ -110,7 +110,7 @@ class TestTigerProxyInfiniteLoops extends AbstractTigerProxyTest {
             .build());
 
     assertThatThrownBy(
-            () -> Unirest.get("http://localhost:" + tigerProxy.getProxyPort()).asString())
+            () -> unirestInstance.get("http://localhost:" + tigerProxy.getProxyPort()).asString())
         .isInstanceOf(UnirestException.class);
   }
 }
