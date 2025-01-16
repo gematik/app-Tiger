@@ -23,9 +23,11 @@ servers:
       proxyPort: 9003
       proxyRoutes:
         - from: http://httpbin
-          to: http://localhost:${free.port.4}
+          to:
+            - http://localhost:${free.port.4}
         - from: /httpbin
-          to: http://localhost:${free.port.4}
+          to:
+            - http://localhost:${free.port.4}
 
 lib:
   rbelPathDebugging: false
