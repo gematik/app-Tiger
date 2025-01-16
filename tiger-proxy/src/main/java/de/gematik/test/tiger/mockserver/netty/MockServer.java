@@ -61,7 +61,8 @@ public class MockServer extends LifeCycle {
 
   private final InetSocketAddress remoteSocket;
   private HttpActionHandler actionHandler;
-  private final Map<SocketAddress, TigerConnectionStatus> connectionStatusMap = new ConcurrentHashMap<>();
+  private final Map<SocketAddress, TigerConnectionStatus> connectionStatusMap =
+      new ConcurrentHashMap<>();
   private NettySslContextFactory serverSslContextFactory;
   private NettySslContextFactory clientSslContextFactory;
   private MockServerInfiniteLoopChecker infiniteLoopChecker;
@@ -94,12 +95,11 @@ public class MockServer extends LifeCycle {
 
     serverSslContextFactory = new NettySslContextFactory(configuration, true);
     clientSslContextFactory = new NettySslContextFactory(configuration, false);
-    val httpClient = new NettyHttpClient(configuration, getEventLoopGroup(), clientSslContextFactory);
+    val httpClient =
+        new NettyHttpClient(configuration, getEventLoopGroup(), clientSslContextFactory);
     infiniteLoopChecker = new MockServerInfiniteLoopChecker(httpClient);
 
-    actionHandler =
-        new HttpActionHandler(
-            configuration, httpState, httpClient);
+    actionHandler = new HttpActionHandler(configuration, httpState, httpClient);
     serverServerBootstrap =
         new ServerBootstrap()
             .group(bossGroup, workerGroup)
@@ -171,7 +171,9 @@ public class MockServer extends LifeCycle {
       ch.pipeline().addLast(new ConnectionCounterHandler(mockServer));
 
       ch.pipeline()
-          .addLast(new PortUnificationHandler(configuration, mockServer, httpState, actionHandler, infiniteLoopChecker));
+          .addLast(
+              new PortUnificationHandler(
+                  configuration, mockServer, httpState, actionHandler, infiniteLoopChecker));
     }
   }
 }

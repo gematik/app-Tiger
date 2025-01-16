@@ -35,17 +35,20 @@ class TestHttp2 extends AbstractTigerProxyTest {
   void testHttp2ViaTls() {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
-    final HttpResponse<String> response = HttpClient.newBuilder()
-      .sslContext(tigerProxy.buildSslContext())
-      .version(Version.HTTP_2)
-      .build()
-      .send(HttpRequest.newBuilder()
-        .uri(new URI("https://localhost:" + tigerProxy.getProxyPort() + "/foobar"))
-        .version(Version.HTTP_2)
-        .GET()
-        .build(), BodyHandlers.ofString());
+    final HttpResponse<String> response =
+        HttpClient.newBuilder()
+            .sslContext(tigerProxy.buildSslContext())
+            .version(Version.HTTP_2)
+            .build()
+            .send(
+                HttpRequest.newBuilder()
+                    .uri(new URI("https://localhost:" + tigerProxy.getProxyPort() + "/foobar"))
+                    .version(Version.HTTP_2)
+                    .GET()
+                    .build(),
+                BodyHandlers.ofString());
 
-    //TODO TGR-1699: Check, that the response is really HTTP/2
+    // TODO TGR-1699: Check, that the response is really HTTP/2
     assertThat(response.statusCode()).isEqualTo(666);
   }
 
@@ -54,17 +57,20 @@ class TestHttp2 extends AbstractTigerProxyTest {
   void testHttp2Plain() {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
-    final HttpResponse<String> response = HttpClient.newBuilder()
-      .sslContext(tigerProxy.buildSslContext())
-      .version(Version.HTTP_2)
-      .build()
-      .send(HttpRequest.newBuilder()
-        .uri(new URI("http://localhost:" + tigerProxy.getProxyPort() + "/foobar"))
-        .version(Version.HTTP_2)
-        .GET()
-        .build(), BodyHandlers.ofString());
+    final HttpResponse<String> response =
+        HttpClient.newBuilder()
+            .sslContext(tigerProxy.buildSslContext())
+            .version(Version.HTTP_2)
+            .build()
+            .send(
+                HttpRequest.newBuilder()
+                    .uri(new URI("http://localhost:" + tigerProxy.getProxyPort() + "/foobar"))
+                    .version(Version.HTTP_2)
+                    .GET()
+                    .build(),
+                BodyHandlers.ofString());
 
-    //TODO TGR-1699: Check, that the response is really HTTP/2
+    // TODO TGR-1699: Check, that the response is really HTTP/2
     assertThat(response.statusCode()).isEqualTo(666);
   }
 }

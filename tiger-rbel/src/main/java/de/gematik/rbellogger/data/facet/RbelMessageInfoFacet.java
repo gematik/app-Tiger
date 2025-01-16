@@ -30,6 +30,7 @@ public class RbelMessageInfoFacet implements RbelFacet {
   private final String title;
 
   public static RbelFacet newErrorSymbol(String menuInfoString) {
-    return new RbelMessageInfoFacet("fa-triangle-exclamation", "text-danger", menuInfoString, "ERR", "Error");
+    return new RbelMessageInfoFacet(
+        "fa-triangle-exclamation", "text-danger", menuInfoString, "ERR", "Error");
   }
 }

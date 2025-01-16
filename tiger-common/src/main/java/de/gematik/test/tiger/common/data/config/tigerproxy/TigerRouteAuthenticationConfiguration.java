@@ -37,9 +37,10 @@ public class TigerRouteAuthenticationConfiguration implements Serializable {
     if (StringUtils.isNotEmpty(bearerToken)) {
       return Optional.of("Bearer " + bearerToken);
     } else if (StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) {
-      return Optional.of("Basic "
-                         + Base64.getEncoder()
-                           .encodeToString((username + ":" + password).getBytes(StandardCharsets.US_ASCII)));
+      return Optional.of(
+          "Basic "
+              + Base64.getEncoder()
+                  .encodeToString((username + ":" + password).getBytes(StandardCharsets.US_ASCII)));
     } else {
       return Optional.empty();
     }

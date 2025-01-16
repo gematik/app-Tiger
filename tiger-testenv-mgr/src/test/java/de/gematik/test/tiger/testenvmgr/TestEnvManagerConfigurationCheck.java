@@ -170,7 +170,8 @@ additionalYamls:
     assertThatThrownBy(() -> TigerGlobalConfiguration.initializeWithCliProperties(yamlMap))
         .isInstanceOf(TigerConfigurationException.class)
         .hasMessageContaining(
-            "The key ('proxyCfg') in yaml file should not be used anymore! It is deprecated without a replacement!");
+            "The key ('proxyCfg') in yaml file should not be used anymore! It is deprecated without"
+                + " a replacement!");
   }
 
   @Test

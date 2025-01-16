@@ -161,14 +161,14 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
             getTigerProxyConfiguration());
     outputForwardProxyConfigLogs(proxyConfiguration);
     proxyConfiguration.ifPresent(mockServerConfiguration::proxyConfiguration);
-    mockServerConfiguration.exceptionHandlingCallback((t, c) -> {
-      try {
-      getMockServerToRbelConverter()
-        .convertErrorResponse(null, null, t);
-      } catch (Exception e) {
-        log.error("Error while converting error response", e);
-      }
-    });
+    mockServerConfiguration.exceptionHandlingCallback(
+        (t, c) -> {
+          try {
+            getMockServerToRbelConverter().convertErrorResponse(null, null, t);
+          } catch (Exception e) {
+            log.error("Error while converting error response", e);
+          }
+        });
 
     if (getTigerProxyConfiguration().getDirectReverseProxy() == null) {
       mockServer =

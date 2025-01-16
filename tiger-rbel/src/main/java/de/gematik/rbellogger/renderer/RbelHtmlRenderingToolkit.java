@@ -320,10 +320,7 @@ public class RbelHtmlRenderingToolkit {
   }
 
   public String menuTab(final RbelElement rbelElement) {
-    final String metaData =
-        new JSONObject(
-                MessageMetaDataDto.createFrom(rbelElement))
-            .toString();
+    final String metaData = new JSONObject(MessageMetaDataDto.createFrom(rbelElement)).toString();
     return "createMenuEntry(" + metaData + ")";
   }
 

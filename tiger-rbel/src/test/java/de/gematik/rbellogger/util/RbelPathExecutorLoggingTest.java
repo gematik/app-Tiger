@@ -53,9 +53,7 @@ class RbelPathExecutorLoggingTest {
     final String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks("src/test/resources/sampleMessages/rbelPath.curl");
 
-    return RbelLogger.build()
-        .getRbelConverter()
-        .convertElement(curlMessage.getBytes(), null);
+    return RbelLogger.build().getRbelConverter().convertElement(curlMessage.getBytes(), null);
   }
 
   @Test

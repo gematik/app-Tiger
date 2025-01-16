@@ -51,8 +51,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
   private static final byte[] CRLF_BYTES = CRLF.getBytes(UTF_8);
   private static final String HTTP_PREFIX = "HTTP/";
   private static final byte[] HTTP_PREFIX_BYTES = HTTP_PREFIX.getBytes(UTF_8);
-  @Getter
-  private final boolean lenientParsingMode;
+  @Getter private final boolean lenientParsingMode;
 
   public static final Map<String, RbelHttpCodingConverter> HTTP_CODINGS_MAP =
       Map.of(
@@ -96,8 +95,9 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
   }
 
   public RbelHttpResponseConverter(RbelConfiguration configuration) {
-    this.lenientParsingMode = Optional.ofNullable(configuration.getLenientHttpParsing())
-      .orElseGet(LENIENT_HTTP_PARSING::getValueOrDefault);
+    this.lenientParsingMode =
+        Optional.ofNullable(configuration.getLenientHttpParsing())
+            .orElseGet(LENIENT_HTTP_PARSING::getValueOrDefault);
   }
 
   @Override
@@ -134,10 +134,12 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
           endOfHeaderIndexOpt = Optional.of(content.size());
         } else {
           targetElement.addFacet(
-            RbelNoteFacet.builder()
-              .style(NoteStyling.WARN)
-              .value("Unable to determine end of HTTP header. Does the header end with double CRLF?")
-              .build());
+              RbelNoteFacet.builder()
+                  .style(NoteStyling.WARN)
+                  .value(
+                      "Unable to determine end of HTTP header. Does the header end with double"
+                          + " CRLF?")
+                  .build());
           return;
         }
       }
@@ -345,18 +347,22 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
         "Transfer-Encoding");
   }
 
-  private int checkContentLength(final RbelElement targetElement, final int bodyDataStartOffset, final RbelHttpHeaderFacet headerMap) {
+  private int checkContentLength(
+      final RbelElement targetElement,
+      final int bodyDataStartOffset,
+      final RbelHttpHeaderFacet headerMap) {
     val messageBodyIsPresent = bodyDataStartOffset < targetElement.getContent().size();
 
     if (messageBodyIsPresent) {
       if (headerMap.getCaseInsensitiveMatches("Content-Length").findAny().isEmpty()
           && headerMap.getCaseInsensitiveMatches("Transfer-Encoding").findAny().isEmpty()) {
         targetElement.addFacet(
-          RbelNoteFacet.builder()
-            .style(styleParsingError(targetElement))
-            .value(
-              "Did not find content-length or transfer-encoding header. One of them is required.")
-            .build());
+            RbelNoteFacet.builder()
+                .style(styleParsingError(targetElement))
+                .value(
+                    "Did not find content-length or transfer-encoding header. One of them is"
+                        + " required.")
+                .build());
         if (!lenientParsingMode && isTcpMessage(targetElement)) {
           throw new RbelConversionException("No content-length or transfer-encoding header found");
         }
@@ -404,11 +410,12 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
   void checkEolValue(String eol, RbelElement targetElement) {
     if (!eol.equals(CRLF)) {
       targetElement.addFacet(
-        RbelNoteFacet.builder()
-          .style(NoteStyling.INFO)
-          .value(
-            "Non-standard line endings detected. Expected CRLF, but found: " + Hex.toHexString(eol.getBytes()))
-          .build());
+          RbelNoteFacet.builder()
+              .style(NoteStyling.INFO)
+              .value(
+                  "Non-standard line endings detected. Expected CRLF, but found: "
+                      + Hex.toHexString(eol.getBytes()))
+              .build());
     }
   }
 }

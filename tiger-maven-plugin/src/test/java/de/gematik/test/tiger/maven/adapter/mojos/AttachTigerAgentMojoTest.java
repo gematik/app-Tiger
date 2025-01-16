@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.maven.adapter.mojos;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -49,7 +48,6 @@ class AttachTigerAgentMojoTest {
 
     mojo.execute();
 
-    assertThat(properties.getProperty("argLine"))
-      .matches("-javaagent:.* -javaagent:someValue");
+    assertThat(properties.getProperty("argLine")).matches("-javaagent:.* -javaagent:someValue");
   }
 }

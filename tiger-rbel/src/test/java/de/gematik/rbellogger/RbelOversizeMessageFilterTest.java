@@ -43,9 +43,7 @@ class RbelOversizeMessageFilterTest {
             + RandomStringUtils.insecure().nextAlphabetic(50_000_000)
             + "\"}\r\n";
     val rbelLogger = RbelLogger.build();
-    msg = rbelLogger
-        .getRbelConverter()
-        .convertElement(oversizedRequest.getBytes(), null);
+    msg = rbelLogger.getRbelConverter().convertElement(oversizedRequest.getBytes(), null);
   }
 
   @Test

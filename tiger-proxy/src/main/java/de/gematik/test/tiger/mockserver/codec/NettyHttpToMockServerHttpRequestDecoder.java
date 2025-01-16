@@ -62,10 +62,6 @@ public class NettyHttpToMockServerHttpRequestDecoder
     }
     out.add(
         fullHttpRequestToMockServerRequest.mapFullHttpRequestToMockServerRequest(
-            fullHttpRequest,
-            preservedHeaders,
-            senderAddress,
-            getAlpnProtocol(ctx),
-            sslSession));
+            fullHttpRequest, preservedHeaders, senderAddress, getAlpnProtocol(ctx), sslSession));
   }
 }

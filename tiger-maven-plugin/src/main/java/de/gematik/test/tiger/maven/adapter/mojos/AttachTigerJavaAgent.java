@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 public class AttachTigerJavaAgent extends AbstractMojo {
 
   private static final Logger log = LoggerFactory.getLogger(AttachTigerJavaAgent.class);
+
   /** Skip running this plugin. Default is false. */
   @Parameter private boolean skip = false;
 
@@ -72,9 +73,10 @@ public class AttachTigerJavaAgent extends AbstractMojo {
 
     String agentAttachOption = "-javaagent:" + agentArtifact.getFile().getAbsolutePath();
     final String oldArgLine = getProject().getProperties().getProperty("argLine");
-    final String newArgLine = Stream.of(agentAttachOption, oldArgLine)
-      .filter(StringUtils::isNotBlank)
-      .collect(Collectors.joining(" "));
+    final String newArgLine =
+        Stream.of(agentAttachOption, oldArgLine)
+            .filter(StringUtils::isNotBlank)
+            .collect(Collectors.joining(" "));
     getProject().getProperties().setProperty("argLine", newArgLine);
     log.info("FOOOBAR: Changing argLine from \n{}\n to \n{}", oldArgLine, newArgLine);
     getLog().info("Agent attached: " + agentAttachOption);

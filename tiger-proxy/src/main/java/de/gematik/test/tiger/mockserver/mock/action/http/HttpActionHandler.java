@@ -19,7 +19,6 @@ package de.gematik.test.tiger.mockserver.mock.action.http;
 import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.*;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
-import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -91,8 +90,8 @@ public class HttpActionHandler {
     if (expectation != null && expectation.getHttpAction() != null) {
       final HttpAction action = expectation.getHttpAction();
       scheduler.schedule(
-          () -> action.handle(request, ctx.channel(), this, responseWriter, synchronous),
-          synchronous);
+          () -> action.handle(request, ctx.channel(), this, responseWriter, synchronous)
+      );
     } else if (proxyingRequest) {
       if (request.getHeaders() != null
           && request

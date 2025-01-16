@@ -146,7 +146,8 @@ public final class DeprecatedKeysUsageChecker {
                   joiner.add(
                       "The key ('"
                           + deprecatedKey.getDeprecatedKey()
-                          + "') in yaml file should not be used anymore! It is deprecated without a replacement!");
+                          + "') in yaml file should not be used anymore! It is deprecated without a"
+                          + " replacement!");
                 }
               });
     }

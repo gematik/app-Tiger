@@ -65,33 +65,31 @@ public class TigerRoutingErrorFacet implements RbelFacet {
                                                 "Timestamp",
                                                 p(routingException.getTimestamp().toString())))
                                         .with(
-                                          Optional.ofNullable(routingException.getSenderAddress())
-                                              .map(
-                                                  sender ->
-                                                      context.packAsInfoLine(
-                                                          "Sender", p(sender.toString())))
+                                            Optional.ofNullable(routingException.getSenderAddress())
+                                                .map(
+                                                    sender ->
+                                                        context.packAsInfoLine(
+                                                            "Sender", p(sender.toString())))
                                                 .orElse(Collections.emptyList()))
                                         .with(
-                                          Optional.ofNullable(routingException.getReceiverAddress())
-                                            .map(receiver ->
-                                            context.packAsInfoLine(
-                                                "Receiver",
-                                                p(receiver.toString())))
-                                            .orElse(Collections.emptyList())))
-                                        .with(
-                                            collapsibleBox(
-                                                "Stacktrace",
-                                                buildScrollableTextbox(
-                                                    ExceptionUtils.getStackTrace(
-                                                        routingException))))));
+                                            Optional.ofNullable(
+                                                    routingException.getReceiverAddress())
+                                                .map(
+                                                    receiver ->
+                                                        context.packAsInfoLine(
+                                                            "Receiver", p(receiver.toString())))
+                                                .orElse(Collections.emptyList())))
+                                .with(
+                                    collapsibleBox(
+                                        "Stacktrace",
+                                        buildScrollableTextbox(
+                                            ExceptionUtils.getStackTrace(routingException))))));
           }
         });
   }
 
-  @Getter
-  private final TigerProxyRoutingException exception;
-  @Getter
-  private RbelElement errorElement;
+  @Getter private final TigerProxyRoutingException exception;
+  @Getter private RbelElement errorElement;
   private RbelMultiMap<RbelElement> childMap = new RbelMultiMap<>();
 
   public TigerRoutingErrorFacet(TigerProxyRoutingException exception) {
@@ -100,8 +98,7 @@ public class TigerRoutingErrorFacet implements RbelFacet {
 
   public void setErrorElement(RbelElement errorElement) {
     this.errorElement = errorElement;
-    this.childMap = new RbelMultiMap<RbelElement>()
-      .with("error", errorElement);
+    this.childMap = new RbelMultiMap<RbelElement>().with("error", errorElement);
   }
 
   @Override

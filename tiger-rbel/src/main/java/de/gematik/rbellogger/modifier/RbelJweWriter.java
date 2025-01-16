@@ -86,9 +86,9 @@ public class RbelJweWriter implements RbelElementWriter {
         .flatMap(RbelKey::getMatchingPublicKey)
         .orElseThrow(
             () ->
-              new InvalidEncryptionInfo(
-                "Could not find matching public key to \n"
-                + rbelJweFacet.getEncryptionInfo().printTreeStructure()));
+                new InvalidEncryptionInfo(
+                    "Could not find matching public key to \n"
+                        + rbelJweFacet.getEncryptionInfo().printTreeStructure()));
   }
 
   private void writeHeaderInJwe(

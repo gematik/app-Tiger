@@ -16,7 +16,6 @@
 
 package de.gematik.rbellogger.data.facet;
 
-
 import lombok.Builder;
 
 public class RbelResponseFacet extends RbelMessageInfoFacet {

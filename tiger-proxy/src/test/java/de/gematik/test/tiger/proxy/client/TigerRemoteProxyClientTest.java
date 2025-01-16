@@ -645,8 +645,7 @@ class TigerRemoteProxyClientTest {
     tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
 
     unirestInstance.config().automaticRetries(false);
-    assertThatThrownBy(() -> unirestInstance.get("http://myserv.er/error").asString())
-      .isNotNull();
+    assertThatThrownBy(() -> unirestInstance.get("http://myserv.er/error").asString()).isNotNull();
 
     await().atMost(8, TimeUnit.SECONDS).until(() -> listenerCallCounter.get() > 0);
 

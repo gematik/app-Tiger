@@ -878,13 +878,12 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             .build());
 
     executeRequestToPathWhileOnlyTrusting(
-      "www.schmoobar.com", "src/test/resources/rsaStoreWithChain.jks;gematik");
+        "www.schmoobar.com", "src/test/resources/rsaStoreWithChain.jks;gematik");
   }
 
   @SneakyThrows
   @Test
-  void onlyOneServerIdentityButDynamicFallback_fallbackShouldBeUsed()
-      throws UnirestException {
+  void onlyOneServerIdentityButDynamicFallback_fallbackShouldBeUsed() throws UnirestException {
     spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .tls(
@@ -892,14 +891,14 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                     .serverIdentity(
                         new TigerConfigurationPkiIdentity(
                             "src/test/resources/rsaStoreWithChain.jks;gematik"))
-                  .serverRootCa(
-                    new TigerConfigurationPkiIdentity(
-                      "src/test/resources/selfSignedCa/rootCa.p12;00"))
+                    .serverRootCa(
+                        new TigerConfigurationPkiIdentity(
+                            "src/test/resources/selfSignedCa/rootCa.p12;00"))
                     .build())
             .build());
 
     executeRequestToPathWhileOnlyTrusting(
-      "www.schmoobar.com", "src/test/resources/selfSignedCa/rootCa.p12;00");
+        "www.schmoobar.com", "src/test/resources/selfSignedCa/rootCa.p12;00");
   }
 
   private void executeRequestToPathWhileOnlyTrusting(String host, String fileLoadingInformation) {
@@ -927,7 +926,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
       ks.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);
     }
     TrustManagerFactory tmf =
-      TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 
     tmf.init(ks);
 

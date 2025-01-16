@@ -156,12 +156,13 @@ public class ClientBootstrapFactory {
         .orElse(0);
   }
 
-  private boolean isLocalPortOfChannelEqualToIncomingPortInQuestion(int port, Entry<ChannelId, ReusableChannel> entry) {
-      val loc = entry.getValue().getFutureOutgoingChannel().channel().localAddress();
-      if (loc instanceof InetSocketAddress localAddress) {
-        return localAddress.getPort() == port;
-      }
-      return false;
+  private boolean isLocalPortOfChannelEqualToIncomingPortInQuestion(
+      int port, Entry<ChannelId, ReusableChannel> entry) {
+    val loc = entry.getValue().getFutureOutgoingChannel().channel().localAddress();
+    if (loc instanceof InetSocketAddress localAddress) {
+      return localAddress.getPort() == port;
+    }
+    return false;
   }
 
   public static class ReusableChannelMap {

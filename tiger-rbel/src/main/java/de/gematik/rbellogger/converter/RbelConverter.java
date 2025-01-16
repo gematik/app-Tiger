@@ -80,7 +80,8 @@ public class RbelConverter {
       // the outside check is done to avoid the synchronized overhead for most calls
       synchronized (converterPlugins) {
         if (shallInitializeConverters) {
-          new RbelConverterInitializer(this, rbelConfiguration, activateRbelParsingFor).addConverters();
+          new RbelConverterInitializer(this, rbelConfiguration, activateRbelParsingFor)
+              .addConverters();
           shallInitializeConverters = false;
         }
       }

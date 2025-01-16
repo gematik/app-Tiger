@@ -84,9 +84,7 @@ class JsonConverterTest {
             "src/test/resources/sampleMessages/getChallenge.curl");
 
     final RbelElement convertedMessage =
-        RbelLogger.build()
-            .getRbelConverter()
-            .convertElement(curlMessage.getBytes(), null);
+        RbelLogger.build().getRbelConverter().convertElement(curlMessage.getBytes(), null);
 
     assertThat(RbelHtmlRenderer.render(List.of(convertedMessage))).isNotBlank();
 

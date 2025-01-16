@@ -311,8 +311,7 @@ public class TigerConfigurationLoader {
 
     for (AbstractTigerConfigurationSource configurationSource :
         sourcesManager.getSortedListReversed()) {
-      loadedAndSortedProperties =
-          configurationSource.addValuesToMap(loadedAndSortedProperties);
+      loadedAndSortedProperties = configurationSource.addValuesToMap(loadedAndSortedProperties);
     }
 
     return loadedAndSortedProperties;
