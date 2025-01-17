@@ -26,9 +26,13 @@ import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
@@ -51,6 +55,29 @@ class ConfigurationSchemaTest {
       final JsonNode example = loadExample(exampleConfiguration);
 
       final Set<ValidationMessage> validationMessages = jsonSchema.validate(example);
+      assertThat(validationMessages).isEmpty();
+    }
+  }
+
+  @Test
+  void testValidTestenvMgrConfigs() throws Exception {
+    final JsonSchema jsonSchema = loadSchema();
+    final Path testenvMgrPath = Paths.get("../tiger-testenv-mgr/src/test/resources");
+    final Set<Path> configsInTestenvMgr =
+        Files.walk(testenvMgrPath)
+            .filter(path -> path.getFileName().toString().endsWith(".yaml"))
+            .filter(path -> !path.getFileName().toString().contains("Invalid"))
+            .collect(Collectors.toSet());
+
+    for (Path testenvMgrConfigPath : configsInTestenvMgr) {
+      final String filename = testenvMgrConfigPath.toAbsolutePath().toString();
+      final JsonNode example = loadExample(filename);
+
+      final Set<ValidationMessage> validationMessages =
+          jsonSchema.validate(example).stream()
+              .filter(message -> !message.getError().contains("string"))
+              .collect(Collectors.toSet());
+
       assertThat(validationMessages).isEmpty();
     }
   }
