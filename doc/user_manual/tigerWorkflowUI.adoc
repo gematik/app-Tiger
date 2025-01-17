@@ -136,7 +136,7 @@ lib:
 
 This will enable a third section in the main window of the Workflow UI where a sequence diagram is displayed.
 
-image::media/maincontent_sequence_diagram.png[title="Traffic Visualization"]
+image::screenshots/trafficVisualization.png[title="Traffic Visualization"]
 
 The sequence diagram shows the messages that were exchanged between the servers under test.
 By clicking on a message in the sequence diagram, the corresponding Rbel Log Details will be displayed in the Rbel Log Details section.

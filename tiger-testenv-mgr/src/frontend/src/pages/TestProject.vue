@@ -126,7 +126,7 @@
                 execution</a>
               <a id="test-server-log-tab" class="btn execution-pane-buttons" @click="showTab('logs_pane', $event)">Server
                 Logs</a>
-              <a v-if="features.trafficVisualization" class="btn execution-pane-buttons"
+              <a v-if="features.trafficVisualization" id="test-traffic-visualization-tab" class="btn execution-pane-buttons"
                  @click="showTab('visualization_pane', $event)">Traffic
                 Visualization</a>
             </div>
@@ -808,7 +808,7 @@ function setReasonWithoutReplacing(reason: QuitReason) {
 }
 
 .engraved {
-  box-shadow: inset 0px 5px 10px 0px rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 5px 10px 0 rgba(0, 0, 0, 0.25);
   border: none;
 }
 

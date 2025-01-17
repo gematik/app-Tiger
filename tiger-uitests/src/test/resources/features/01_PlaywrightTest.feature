@@ -38,7 +38,7 @@ Feature: Playwright Test feature
     When TGR send empty DELETE request to "http://httpbin/not_a_file"
     Then TGR find last request to path ".*"
     And TGR assert "!{rbel:currentRequestAsString('$.method')}" matches "THIS_ON_PURPOSE_SHALL_NEVER_MATCH"
-    And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "\/not_a_file\/?"
+    And TGR assert "!{rbel:currentRequestAsString('$.path')}" matches "/not_a_file"
 
   Scenario: Request with custom header
     When TGR send empty GET request to "http://httpbin/not_a_file" with headers:

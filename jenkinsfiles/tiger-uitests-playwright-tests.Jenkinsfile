@@ -154,6 +154,45 @@ pipeline {
             }
         }
 
+        stage('Integration Test for Sequencediagram Tests') {
+            environment {
+                TIGER_DOCKER_HOST = dockerGetCurrentHostname()
+            }
+
+            parallel {
+                stage('Start Tiger and Dummy Featurefile for sequencediagram Tests') {
+                    steps {
+                        script {
+                            withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
+                                sh """
+                                cd tiger-uitests
+                                rm -f mvn-playwright-log.txt
+                                mvn --no-transfer-progress  -P start-tiger-dummy-for-sequencediagram-tests failsafe:integration-test | tee mvn-playwright-log.txt
+                               """
+                            }
+                        }
+                    }
+                }
+                stage('Run playwright test for sequencediagram tests') {
+                    steps {
+                        sh """
+                            cd tiger-uitests
+                            mvn --no-transfer-progress -P run-playwright-test-for-sequencediagram-tests failsafe:integration-test failsafe:verify
+                        """
+                        // clean up mvn-playwright-log.txt and shutdown testenv as soon as tests have ended to minimize time container is running
+                        sh """
+                          cd tiger-uitests
+                          rm -f mvn-playwright-log.txt
+                          export ENV_PID=\"`ps -ef | grep java | grep start-tiger-dummy-for-sequencediagram-tests | awk -F\\   \'{ print \$2; }\'`\"
+                          if [ \"\$ENV_PID\" ]; then
+                            kill \$ENV_PID
+                          fi
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Commit screenshots') {
             steps {
                 script {

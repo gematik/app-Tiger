@@ -363,7 +363,7 @@ public class TigerDirector {
         if (!libConfig.startBrowser) {
           log.info(
               "Workflow UI http://localhost:" + TESTENV_MGR_RESERVED_PORT.getValue().orElseThrow());
-          duration = 60;
+          duration = 120;
         }
         await()
             .atMost(Duration.ofSeconds(duration))

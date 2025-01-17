@@ -265,6 +265,6 @@ class XyFeaturesTest extends AbstractBase {
     String title = last.getAttribute("title");
 
     assertEquals(
-        "And TGR assert \"!{rbel:currentRequestAsString('$.method')}\" matches \"GET\"", title);
+        "TGR assert \"!{rbel:currentRequestAsString('$.method')}\" matches \"GET\"", title);
   }
 }
