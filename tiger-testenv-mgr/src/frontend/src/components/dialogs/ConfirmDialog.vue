@@ -15,17 +15,15 @@
   -->
 
 <script setup lang="ts">
-
 const props = defineProps<{
-  dialogIsOpen: boolean,
-  header: string,
-  description: string,
-  labelConfirmButton: string,
-  labelDismissButton: string,
-}>()
+  dialogIsOpen: boolean;
+  header: string;
+  description: string;
+  labelConfirmButton: string;
+  labelDismissButton: string;
+}>();
 
-defineEmits(['click-confirm', 'click-dismiss'])
-
+defineEmits(["click-confirm", "click-dismiss"]);
 </script>
 
 <template>
@@ -36,24 +34,37 @@ defineEmits(['click-confirm', 'click-dismiss'])
   </transition>
   <teleport to="body">
     <transition>
-      <div v-if="dialogIsOpen" class="modal modal-sheet d-block bg-body-secondary p-4 py-md-5" tabindex="-1"
-           role="dialog"
-           id="modal-confirm">
+      <div
+        v-if="dialogIsOpen"
+        id="modal-confirm"
+        class="modal modal-sheet d-block bg-body-secondary p-4 py-md-5"
+        tabindex="-1"
+        role="dialog"
+      >
         <div class="modal-dialog" role="document">
           <div class="modal-content rounded-3 shadow">
             <div class="modal-body p-4 text-center">
-              <h5 class="mb-0" style="color: var(--gem-primary-400)">{{ props.header }}</h5>
+              <h5 class="mb-0" style="color: var(--gem-primary-400)">
+                {{ props.header }}
+              </h5>
               <p class="mb-0">{{ props.description }}</p>
             </div>
             <div class="modal-footer flex-nowrap p-0">
-              <button type="button"
-                      @click="$emit('click-confirm')"
-                      class="btn btn-lg btn-link fs-6 text-decoration-none col-6 py-3 m-0 rounded-0 border-end" id="test-yes-play">
-                <strong>{{
-                    props.labelConfirmButton
-                  }}</strong></button>
-              <button type="button" class="btn btn-lg btn-link fs-6 text-decoration-none col-6 py-3 m-0 rounded-0" id="test-no-cancel"
-                      @click="$emit('click-dismiss')">
+              <button
+                id="test-yes-play"
+                type="button"
+                class="btn btn-lg btn-link fs-6 text-decoration-none col-6 py-3 m-0 rounded-0 border-end"
+                @click="$emit('click-confirm')"
+              >
+                >
+                <strong>{{ props.labelConfirmButton }}</strong>
+              </button>
+              <button
+                id="test-no-cancel"
+                type="button"
+                class="btn btn-lg btn-link fs-6 text-decoration-none col-6 py-3 m-0 rounded-0"
+                @click="$emit('click-dismiss')"
+              >
                 {{ props.labelDismissButton }}
               </button>
             </div>
@@ -72,6 +83,6 @@ defineEmits(['click-confirm', 'click-dismiss'])
 
 .v-enter-active,
 .v-leave-active {
-  transition: opacity .15s linear;
+  transition: opacity 0.15s linear;
 }
 </style>

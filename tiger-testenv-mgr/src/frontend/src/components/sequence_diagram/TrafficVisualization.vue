@@ -14,18 +14,23 @@
   - limitations under the License.
   -->
 <template>
-  <div class="tab-pane execution-pane-tabs" id="visualization_pane" role="tabpanel">
-    <sequence-diagram :diagram-step-description="diagramSteps"
-                      @click-on-message-with-sequence-number="handleClickOnSequenceNumber"></sequence-diagram>
+  <div
+    id="visualization_pane"
+    class="tab-pane execution-pane-tabs"
+    role="tabpanel"
+  >
+    <sequence-diagram
+      :diagram-step-description="diagramSteps"
+      @click-on-message-with-sequence-number="handleClickOnSequenceNumber"
+    ></sequence-diagram>
   </div>
 </template>
 
 <script setup lang="ts">
-import {Ref, ref, watchEffect} from 'vue';
+import { Ref, ref, watchEffect } from "vue";
 import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
 import Ui from "@/types/ui/Ui";
 import SequenceDiagram from "@/components/sequence_diagram/SequenceDiagram.vue";
-
 
 const prop = defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;
@@ -47,7 +52,9 @@ interface RbelMetaData {
   timestamp: Date | string;
 }
 
-function parseFeatureMap(featureUpdateMap: Map<string, FeatureUpdate>): RbelMetaData[] {
+function parseFeatureMap(
+  featureUpdateMap: Map<string, FeatureUpdate>,
+): RbelMetaData[] {
   const stepRbelMetaDataList: RbelMetaData[] = [];
 
   for (const [, feature] of featureUpdateMap) {
@@ -57,7 +64,7 @@ function parseFeatureMap(featureUpdateMap: Map<string, FeatureUpdate>): RbelMeta
           const rbelMetaSequenceNumber = rbelMeta.sequenceNumber;
           stepRbelMetaDataList.push({
             ...rbelMeta,
-            sequenceNumber: rbelMetaSequenceNumber
+            sequenceNumber: rbelMetaSequenceNumber,
           });
         }
       }
@@ -70,13 +77,15 @@ const parsedData = ref<RbelMetaData[]>([]);
 
 watchEffect(() => {
   parsedData.value = parseFeatureMap(prop.featureUpdateMap);
-  parsedData.value.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-  diagramSteps.value = parsedData.value.map(convertToDiagramStepString)
+  parsedData.value.sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+  );
+  diagramSteps.value = parsedData.value.map(convertToDiagramStepString);
 });
 
 function convertToDiagramStepString(metadata: RbelMetaData) {
   const arrow = isResponse(metadata) ? "-->>" : "->>";
-  return `${metadata.bundledServerNameSender || "no symbolic name"}${arrow}${metadata.bundledServerNameReceiver || "no symbolic name"}: #35;${metadata.sequenceNumber + 1}: ${metadata.menuInfoString}`
+  return `${metadata.bundledServerNameSender || "no symbolic name"}${arrow}${metadata.bundledServerNameReceiver || "no symbolic name"}: #35;${metadata.sequenceNumber + 1}: ${metadata.menuInfoString}`;
 }
 
 function isResponse(metadata: RbelMetaData) {
@@ -84,12 +93,16 @@ function isResponse(metadata: RbelMetaData) {
 }
 
 function handleClickOnSequenceNumber(sequenceNumber: number) {
-  console.info("handling sequence number" + sequenceNumber)
-  const metadata = parsedData.value.find(m => m.sequenceNumber === sequenceNumber);
+  console.info("handling sequence number" + sequenceNumber);
+  const metadata = parsedData.value.find(
+    (m) => m.sequenceNumber === sequenceNumber,
+  );
   if (metadata) {
-    prop.ui.showRbelLogDetails(metadata?.uuid, sequenceNumber.toString(), new MouseEvent("ignore"))
+    prop.ui.showRbelLogDetails(
+      metadata?.uuid,
+      sequenceNumber.toString(),
+      new MouseEvent("ignore"),
+    );
   }
 }
-
-
 </script>

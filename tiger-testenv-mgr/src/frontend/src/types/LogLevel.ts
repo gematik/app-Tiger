@@ -21,7 +21,7 @@ enum LogLevel {
   INFO,
   DEBUG,
   TRACE,
-  ALL
+  ALL,
 }
 
 export default LogLevel;

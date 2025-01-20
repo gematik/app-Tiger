@@ -24,4 +24,4 @@ enum DataType {
   BANNER = "BANNER",
 }
 
-export default DataType; 
+export default DataType;

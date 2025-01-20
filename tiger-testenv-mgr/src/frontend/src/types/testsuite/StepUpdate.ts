@@ -18,7 +18,7 @@
 import TestResult from "./TestResult";
 import MessageMetaDataDto from "@/types/rbel/MessageMetaDataDto";
 
-export interface IStep  {
+export interface IStep {
   description: string;
   tooltip: string;
   status: TestResult;
@@ -27,15 +27,15 @@ export interface IStep  {
 }
 
 export interface IJsonSteps {
-  [key:string]: IStep
+  [key: string]: IStep;
 }
 
-export default class StepUpdate  implements IStep {
-  description= "";
+export default class StepUpdate implements IStep {
+  description = "";
   tooltip = "";
   status = TestResult.UNUSED;
   stepIndex = -1;
-  rbelMetaData : MessageMetaDataDto[] = [];
+  rbelMetaData: MessageMetaDataDto[] = [];
 
   public static fromJson(json: IStep): StepUpdate {
     const step: StepUpdate = new StepUpdate();
@@ -57,11 +57,11 @@ export default class StepUpdate  implements IStep {
     return step;
   }
 
-  public static mapFromJson(jsonsteps : IJsonSteps): Map<string, StepUpdate> {
-    const map:Map<string, StepUpdate> = new Map<string, StepUpdate>();
+  public static mapFromJson(jsonsteps: IJsonSteps): Map<string, StepUpdate> {
+    const map: Map<string, StepUpdate> = new Map<string, StepUpdate>();
     if (jsonsteps) {
       Object.entries(jsonsteps).forEach(([key, value]) =>
-          map.set(key, this.fromJson(value))
+        map.set(key, this.fromJson(value)),
       );
     }
     return map;

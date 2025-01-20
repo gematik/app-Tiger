@@ -15,24 +15,50 @@
   -->
 
 <template>
-  <div class="position-fixed" id="rbellog_resize"
-       v-on:mouseenter="ui.mouseEnterHandler"
-       v-on:mousedown="ui.mouseDownHandler"
-       v-on:mouseleave="ui.mouseLeaveHandler">
-    <i v-on:click="clickedToggleIcon" :title="tooltipExpandMinimize"
-       class="fs-1 fa-solid fa-angles-left resizer-right" id="test-webui-slider"></i>
+  <div
+    id="rbellog_resize"
+    class="position-fixed"
+    @mouseenter="ui.mouseEnterHandler"
+    @mousedown="ui.mouseDownHandler"
+    @mouseleave="ui.mouseLeaveHandler"
+  >
+    <i
+      id="test-webui-slider"
+      :title="tooltipExpandMinimize"
+      class="fs-1 fa-solid fa-angles-left resizer-right"
+      @click="clickedToggleIcon"
+    ></i>
   </div>
-  <div ref="detailsPane" class="d-none position-fixed pl-3 pt-3" id="rbellog_details_pane">
+  <div
+    id="rbellog_details_pane"
+    ref="detailsPane"
+    class="d-none position-fixed pl-3 pt-3"
+  >
     <h2>
-      <img alt="RBel logo" src="/img/rbellog.png" class="rbel-logo" id="test-rbel-logo">
+      <img
+        id="test-rbel-logo"
+        alt="RBel logo"
+        src="/img/rbellog.png"
+        class="rbel-logo"
+      />
       Tiger Proxy Log
-      <a v-if="localProxyWebUiUrl" :href="`${localProxyWebUiUrl}`" target="_blank" id="test-rbel-webui-url">
+      <a
+        v-if="localProxyWebUiUrl"
+        id="test-rbel-webui-url"
+        :href="`${localProxyWebUiUrl}`"
+        target="_blank"
+      >
         <i class="fa-solid fa-up-right-from-square" title="pop out pane"></i>
       </a>
     </h2>
-    <iframe v-if="localProxyWebUiUrl" id="rbellog-details-iframe" allow="clipboard-write"
-            class="h-100 w-100"
-            :src="`${localProxyWebUiUrl}?embedded=true`" title="Rbel log view"/>
+    <iframe
+      v-if="localProxyWebUiUrl"
+      id="rbellog-details-iframe"
+      allow="clipboard-write"
+      class="h-100 w-100"
+      :src="`${localProxyWebUiUrl}?embedded=true`"
+      title="Rbel log view"
+    />
     <div v-else class="w-100 no-connection-local-proxy serverstatus-stopped">
       <i class="fas fa-project-diagram left"></i>
       No connection to local proxy.
@@ -41,33 +67,32 @@
 </template>
 <script setup lang="ts">
 import Ui from "@/types/ui/Ui";
-import {ref} from "vue";
+import { ref } from "vue";
 
 const props = defineProps<{
   localProxyWebUiUrl: string;
-  ui: Ui
-}>()
+  ui: Ui;
+}>();
 
 const detailsPane = ref<HTMLElement | null>(null);
 const tooltipExpandMinimize = ref<string>("Expand Tiger Proxy Log");
 
-
 function isMinimized(): boolean {
-  return detailsPane.value == undefined || detailsPane.value.classList.contains("d-none");
+  return (
+    detailsPane.value == undefined ||
+    detailsPane.value.classList.contains("d-none")
+  );
 }
 
 const clickedToggleIcon = (ev: MouseEvent) => {
-  props.ui.toggleRightSideBar(ev)
+  props.ui.toggleRightSideBar(ev);
   tooltipExpandMinimize.value = createTooltip();
-}
-const createTooltip = () => {
-  return (isMinimized() ? 'Expand' : 'Minimize') + ' Tiger Proxy Log';
 };
-
-
+const createTooltip = () => {
+  return (isMinimized() ? "Expand" : "Minimize") + " Tiger Proxy Log";
+};
 </script>
 <style scoped>
-
 #rbellog_resize {
   right: 2px;
   top: 0;
@@ -115,5 +140,4 @@ const createTooltip = () => {
   text-align: center;
   line-height: 15rem;
 }
-
 </style>

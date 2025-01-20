@@ -15,8 +15,7 @@
   -->
 
 <script setup lang="ts">
-import {ICellRendererParams} from "ag-grid-community";
-
+import { ICellRendererParams } from "ag-grid-community";
 
 function mapSourceToIcon(sourceName: string) {
   switch (sourceName) {
@@ -45,18 +44,22 @@ function mapSourceToIcon(sourceName: string) {
     case "SCOPE_LOCAL_CONTEXT":
       return "fa-thread";
     default:
-      return "fa-question"
+      return "fa-question";
   }
 }
 
 defineProps<{
-  params: ICellRendererParams
-}>()
+  params: ICellRendererParams;
+}>();
 </script>
 
 <!-- The following <i> element uses the "fa fa-lg" class to display an icon.
      In case of changing the class name, make sure to update the corresponding
      configuration in the "ConfigurationEditorTest.java" file. -->
 <template>
-  <i class="fa fa-lg" :title="params.value" :class="mapSourceToIcon(params.value)"/>
+  <i
+    class="fa fa-lg"
+    :title="params.value"
+    :class="mapSourceToIcon(params.value)"
+  />
 </template>

@@ -16,19 +16,18 @@
 ///
 
 export default class MessageMetaDataDto {
-  uuid: string = '';
-  menuInfoString: string = '';
-  symbol: string = '';
-  recipient: string = '';
-  sender: string = '';
-  bundledServerNameSender: string = '';
-  bundledServerNameReceiver: string = '';
+  uuid: string = "";
+  menuInfoString: string = "";
+  symbol: string = "";
+  recipient: string = "";
+  sender: string = "";
+  bundledServerNameSender: string = "";
+  bundledServerNameReceiver: string = "";
   sequenceNumber: number = -1;
-  timestamp: Date | string = '';
-  pairedUuid: string = '';
+  timestamp: Date | string = "";
+  pairedUuid: string = "";
 
   public toString() {
     return `{ uuid: "${this.uuid}" }\n`;
   }
 }
-

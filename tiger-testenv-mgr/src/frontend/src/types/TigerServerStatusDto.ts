@@ -28,7 +28,7 @@ export interface IJsonServerStatus {
 }
 
 interface IJsonServerStatuus {
-  [key: string]: IJsonServerStatus
+  [key: string]: IJsonServerStatus;
 }
 
 export default class TigerServerStatusDto {
@@ -39,8 +39,8 @@ export default class TigerServerStatusDto {
   statusMessage: string = "";
   statusUpdates: Array<string> = new Array<string>();
 
-  public static fromJson(json : IJsonServerStatus) : TigerServerStatusDto {
-    const status  = new TigerServerStatusDto();
+  public static fromJson(json: IJsonServerStatus): TigerServerStatusDto {
+    const status = new TigerServerStatusDto();
     if (json.name) {
       status.name = json.name;
     }
@@ -62,7 +62,7 @@ export default class TigerServerStatusDto {
     return status;
   }
 
-  public merge(newStatus : TigerServerStatusDto) {
+  public merge(newStatus: TigerServerStatusDto) {
     if (newStatus) {
       // update
       if (newStatus.type) {
@@ -99,8 +99,11 @@ export default class TigerServerStatusDto {
     }
   }
 
-  public static fromUpdateDto(name : string, updateDto : TigerServerStatusUpdateDto) : TigerServerStatusDto {
-    const serverStatus:TigerServerStatusDto = new TigerServerStatusDto();
+  public static fromUpdateDto(
+    name: string,
+    updateDto: TigerServerStatusUpdateDto,
+  ): TigerServerStatusDto {
+    const serverStatus: TigerServerStatusDto = new TigerServerStatusDto();
     serverStatus.name = name;
     serverStatus.baseUrl = updateDto.baseUrl;
     if (updateDto) {
@@ -110,10 +113,13 @@ export default class TigerServerStatusDto {
       serverStatus.status = updateDto.status;
       serverStatus.statusMessage = updateDto.statusMessage;
     }
-    return serverStatus
+    return serverStatus;
   }
 
-  public static addToMapFromJson(map: Map<string, TigerServerStatusDto>, jsonStatuus: IJsonServerStatuus) {
+  public static addToMapFromJson(
+    map: Map<string, TigerServerStatusDto>,
+    jsonStatuus: IJsonServerStatuus,
+  ) {
     if (jsonStatuus) {
       Object.entries(jsonStatuus).forEach(([key, value]) => {
         if (map.has(key)) {
@@ -124,5 +130,4 @@ export default class TigerServerStatusDto {
       });
     }
   }
-
 }
