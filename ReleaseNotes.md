@@ -1,6 +1,6 @@
 # Changelog Tiger Test platform
 
-# Release 3.5.1
+# Release 3.6.0
 
 ## Breaking Changes
 
