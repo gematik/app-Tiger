@@ -16,10 +16,9 @@
  */
 package de.gematik.rbellogger.data.facet;
 
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.addNotes;
-import static j2html.TagCreator.div;
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.ancestorTitle;
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.vertParentTitle;
+import static j2html.TagCreator.*;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
@@ -50,27 +49,18 @@ public class RbelLdapFacet implements RbelFacet {
               RbelElement element,
               Optional<String> key,
               RbelHtmlRenderingToolkit renderingToolkit) {
-            final RbelElement ldapMessage =
-                element
-                    .getFacetOrFail(RbelLdapFacet.class)
-                    .getChildElements()
-                    .get("textRepresentation");
+            final RbelLdapFacet facet = element.getFacetOrFail(RbelLdapFacet.class);
 
-            return div(t1ms("LDAP").with(showContentButtonAndDialog(element, renderingToolkit)))
-                .with(addNotes(element, "mb-5"))
-                .with(
-                    ancestorTitle()
-                        .with(
-                            vertParentTitle()
-                                .with(
-                                    childBoxNotifTitle(CLS_HEADER)
-                                        .with(
-                                            t2("Message")
-                                                .with(
-                                                    showContentButtonAndDialog(
-                                                        ldapMessage, renderingToolkit))
-                                                .with(addNotes(ldapMessage))
-                                                .with(renderingToolkit.convert(ldapMessage))))));
+            final boolean isRequest = element.hasFacet(RbelRequestFacet.class);
+            final String textRepresentation =
+                facet.getChildElements().get("textRepresentation").getRawStringContent();
+
+            return div(
+                h2().withClass("title").withText(isRequest ? "LDAP Request" : "LDAP Response"),
+                p().with(b().withText("Message: ")).withText(textRepresentation),
+                br(),
+                ancestorTitle()
+                    .with(vertParentTitle().with(renderingToolkit.convertNested(element))));
           }
         });
   }

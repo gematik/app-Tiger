@@ -24,9 +24,13 @@ import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.LDAPException;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.HexFormat;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.bouncycastle.asn1.ASN1InputStream;
 
 @ConverterInfo(onlyActivateFor = "ldap")
 @Slf4j
@@ -45,7 +49,11 @@ public class RbelLdapConverter implements RbelConverterPlugin {
 
   private void parseLdapMessage(final RbelElement rbelElement, final RbelConverter converter) {
     try {
-      val asn1Element = ASN1Element.decode(rbelElement.getRawContent());
+      val asn1InputStream =
+          new ASN1InputStream(new ByteArrayInputStream(rbelElement.getRawContent()));
+      val data = asn1InputStream.readObject().getEncoded();
+
+      val asn1Element = ASN1Element.decode(data);
       val ldapMessage = LDAPMessage.decode(asn1Element);
 
       val textRepresentationElement =
@@ -71,8 +79,11 @@ public class RbelLdapConverter implements RbelConverterPlugin {
 
       rbelElement.addFacet(new RbelRootFacet<>(rbelLdapFacet));
       handleRequestResponse(rbelElement, ldapMessage);
-    } catch (final ASN1Exception | LDAPException e) {
-      // ignore
+    } catch (final ASN1Exception | LDAPException | IOException e) {
+      log.debug("Attempt to parse LDAP failed: " + e.getMessage());
+      final byte[] message = rbelElement.getRawContent();
+      final String messageStr = HexFormat.of().formatHex(message);
+      log.debug(" Cannot parse: " + messageStr);
     }
   }
 
