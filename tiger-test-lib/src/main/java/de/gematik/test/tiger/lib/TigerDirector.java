@@ -420,6 +420,8 @@ public class TigerDirector {
 
   public static void assertThatTigerIsInitialized() {
     if (!initialized) {
+      log.error("\n" + Banner.toBannerStrWithCOLOR("Test env not initialized!", "red"));
+      log.error(Banner.toTextStr("Did you use TigerCucumberRunner to execute the test run?", "yellow"));
       throw new TigerStartupException(
           "Tiger test environment has not been initialized successfully!");
     }

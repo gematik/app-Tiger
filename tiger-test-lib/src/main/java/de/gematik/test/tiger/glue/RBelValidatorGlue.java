@@ -23,11 +23,13 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.lib.json.JsonChecker;
 import de.gematik.test.tiger.lib.rbel.RbelMessageValidator;
 import de.gematik.test.tiger.lib.rbel.RequestParameter;
+import io.cucumber.java.BeforeAll;
 import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Gegebensei;
 import io.cucumber.java.de.Wenn;
@@ -53,6 +55,11 @@ public class RBelValidatorGlue {
 
   public RBelValidatorGlue() {
     this(RbelMessageValidator.getInstance());
+  }
+
+  @BeforeAll
+  public static void checktestenv() {
+    TigerDirector.assertThatTigerIsInitialized();
   }
 
   // =================================================================================================================
