@@ -105,7 +105,10 @@ public class StepDescription {
 
   private String resolveStepDescriptionFull(boolean convertToHtml, boolean resolve) {
 
-    var prefix = resolve ? resolveStepDescriptionPrefix() : step.getStep().getText();
+    var keyWord = step.getStep().getKeyword();
+    var stepText = resolve ? resolveStepDescriptionPrefix() : step.getStep().getText();
+    var prefix =
+        keyWord + stepText; // Keyword already has a trailing space, so we don't need to add one
 
     var docstringOrTable = extractDocStringOrTable(convertToHtml, resolve);
 

@@ -2,12 +2,6 @@
 // details about this integration test and how it is composed / working can be found in the java file
 // tiger-maven-plugin/src/test/java/de/gematik/test/tiger/maven/adapter/mojos/EnvironmentMojoIT.java
 
-String GCLOUD_SERVICE_ACCOUNT = 'gcp-deployer-tiger-dev-jsonfile'
-String GCLOUD_PROJECT_NAME = 'gematik-all-k8s-db-dev'
-String GCLOUD_CLUSTER_NAME = 'shared-k8s-dev'
-String GCLOUD_CLUSTER_REGION = 'europe-west3-a'
-String GEMATIK_NEXUS_CREDENTIALS = 'Nexus'
-
 def CREDENTIAL_ID_GEMATIK_GIT = 'svc_gitlab_prod_credentials'
 def BRANCH = 'master'
 def JIRA_PROJECT_ID = 'TGR'
@@ -42,13 +36,12 @@ pipeline {
         }
 
         stage('Checkout') {
-              steps {
-                  git branch: BRANCH,
-                      credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
-                      url: REPO_URL
-              }
-          }
-
+            steps {
+                git branch: BRANCH,
+                        credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
+                        url: REPO_URL
+            }
+        }
 
         stage('set Version') {
             steps {
@@ -60,8 +53,6 @@ pipeline {
             steps {
                 sh """
                   mvn -ntp install -DskipTests
-                  cd tiger-uitests
-                  mvn -ntp test-compile -P start-tiger-dummy
                 """
             }
         }
@@ -70,67 +61,82 @@ pipeline {
 
         // run test
 
+        stage('Build main tests') {
+            steps {
+                script {
+                    sh """
+                            mvn -ntp test-compile -P start-tiger-dummy
+                          """
+                }
+            }
+        }
+
         stage('Integration Test') {
             environment {
-                TIGER_DOCKER_HOST = dockerGetCurrentHostname()
-				TGR_TESTENV_CFG_CHECK_MODE = 'myEnv'
-				TGR_TESTENV_CFG_DELETE_MODE = 'deleteEnv'
-				TGR_TESTENV_CFG_EDIT_MODE = 'editEnv'
-				TGR_TESTENV_CFG_MULTILINE_CHECK_MODE = 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. ...'
+                TGR_TESTENV_CFG_CHECK_MODE = 'myEnv'
+                TGR_TESTENV_CFG_DELETE_MODE = 'deleteEnv'
+                TGR_TESTENV_CFG_EDIT_MODE = 'editEnv'
+                TGR_TESTENV_CFG_MULTILINE_CHECK_MODE = 'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. ...'
             }
 
             parallel {
                 stage('Start Tiger and Dummy Featurefile') {
                     steps {
-						script {
-							def mvnProperties = "-DtgrTestPropCfgCheckMode=myProp -DtgrTestPropCfgEditMode=editProp -DtgrTestPropCfgDeleteMode=deleteProp"
+                        script {
+                            def mvnProperties = "-DtgrTestPropCfgCheckMode=myProp -DtgrTestPropCfgEditMode=editProp -DtgrTestPropCfgDeleteMode=deleteProp"
 
-                        withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
                             sh """
-                                cd tiger-uitests
-                                rm -f mvn-playwright-log.txt
-                                mvn --no-transfer-progress ${mvnProperties} -P start-tiger-dummy failsafe:integration-test | tee mvn-playwright-log.txt
-                               """
-							}
-						}
+                        cd tiger-uitests
+                        rm -f mvn-playwright-log.txt
+                        mvn --no-transfer-progress ${mvnProperties} -P start-tiger-dummy failsafe:integration-test | tee mvn-playwright-log.txt
+                       """
+                        }
                     }
                 }
                 stage('Run playwright test') {
                     steps {
                         sh """
-                            cd tiger-uitests
-                            mvn --no-transfer-progress -P run-playwright-test failsafe:integration-test failsafe:verify
-                        """
-                        // clean up mvn-playwright-log.txt and shutdown testenv as soon as tests have ended to minimize time container is running
-                        sh """
-                          cd tiger-uitests
-                          rm -f mvn-playwright-log.txt
-                          export ENV_PID=\"`ps -ef | grep java | grep setup-testenv | awk -F\\   \'{ print \$2; }\'`\"
+                    cd tiger-uitests
+                    mvn --no-transfer-progress -P run-playwright-test failsafe:integration-test failsafe:verify
+                """
+                    }
+                    post {
+                        always {
+                            // clean up mvn-playwright-log.txt and shutdown testenv as soon as tests have ended to minimize time container is running
+                            sh """
+                      cd tiger-uitests
+                      rm -f mvn-playwright-log.txt
+                          export ENV_PID=\"`ps -ef | grep java | grep start-tiger-dummy | awk -F\\   \'{ print \$2; }\'`\"
                           if [ \"\$ENV_PID\" ]; then
                             kill \$ENV_PID
                           fi
-                        """
+                    """
+                        }
                     }
                 }
             }
         }
 
-        stage('Integration Test None starting Tests') {
-            environment {
-                TIGER_DOCKER_HOST = dockerGetCurrentHostname()
+        stage('Build replay tests') {
+            steps {
+                script {
+                    sh """
+                            mvn -ntp test-compile -P start-tiger-dummy-for-unstarted-tests
+                          """
+                }
             }
+        }
 
+        stage('Integration Test None starting Tests') {
             parallel {
                 stage('Start Tiger and Dummy Featurefile for none starting Tests') {
                     steps {
                         script {
-                            withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                                sh """
+                            sh """
                                 cd tiger-uitests
                                 rm -f mvn-playwright-log.txt
                                 mvn --no-transfer-progress  -P start-tiger-dummy-for-unstarted-tests failsafe:integration-test | tee mvn-playwright-log.txt
                                """
-                            }
                         }
                     }
                 }
@@ -140,36 +146,44 @@ pipeline {
                             cd tiger-uitests
                             mvn --no-transfer-progress -P run-playwright-test-for-unstarted-tests failsafe:integration-test failsafe:verify
                         """
-                        // clean up mvn-playwright-log.txt and shutdown testenv as soon as tests have ended to minimize time container is running
-                        sh """
-                          cd tiger-uitests
-                          rm -f mvn-playwright-log.txt
-                          export ENV_PID=\"`ps -ef | grep java | grep start-tiger-dummy-for-unstarted-tests | awk -F\\   \'{ print \$2; }\'`\"
-                          if [ \"\$ENV_PID\" ]; then
-                            kill \$ENV_PID
-                          fi
-                        """
+                    }
+                    post {
+                        always {
+                            // clean up mvn-playwright-log.txt and shutdown testenv as soon as tests have ended to minimize time container is running
+                            sh """
+                              cd tiger-uitests
+                              rm -f mvn-playwright-log.txt
+                              export ENV_PID=\"`ps -ef | grep java | grep start-tiger-dummy-for-unstarted-tests | awk -F\\   \'{ print \$2; }\'`\"
+                              if [ \"\$ENV_PID\" ]; then
+                                kill \$ENV_PID
+                              fi
+                            """
+                        }
                     }
                 }
             }
         }
 
-        stage('Integration Test for Sequencediagram Tests') {
-            environment {
-                TIGER_DOCKER_HOST = dockerGetCurrentHostname()
+        stage('Build sequencediagram tests') {
+            steps {
+                script {
+                    sh """
+                            mvn -ntp test-compile -P start-tiger-dummy-for-sequencediagram-tests
+                          """
+                }
             }
+        }
 
+        stage('Integration Test for Sequencediagram Tests') {
             parallel {
                 stage('Start Tiger and Dummy Featurefile for sequencediagram Tests') {
                     steps {
                         script {
-                            withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                                sh """
+                            sh """
                                 cd tiger-uitests
                                 rm -f mvn-playwright-log.txt
                                 mvn --no-transfer-progress  -P start-tiger-dummy-for-sequencediagram-tests failsafe:integration-test | tee mvn-playwright-log.txt
                                """
-                            }
                         }
                     }
                 }
@@ -179,15 +193,19 @@ pipeline {
                             cd tiger-uitests
                             mvn --no-transfer-progress -P run-playwright-test-for-sequencediagram-tests failsafe:integration-test failsafe:verify
                         """
-                        // clean up mvn-playwright-log.txt and shutdown testenv as soon as tests have ended to minimize time container is running
-                        sh """
-                          cd tiger-uitests
-                          rm -f mvn-playwright-log.txt
-                          export ENV_PID=\"`ps -ef | grep java | grep start-tiger-dummy-for-sequencediagram-tests | awk -F\\   \'{ print \$2; }\'`\"
-                          if [ \"\$ENV_PID\" ]; then
-                            kill \$ENV_PID
-                          fi
-                        """
+                    }
+                    post {
+                        always {
+                            // clean up mvn-playwright-log.txt and shutdown testenv as soon as tests have ended to minimize time container is running
+                            sh """
+                              cd tiger-uitests
+                              rm -f mvn-playwright-log.txt
+                              export ENV_PID=\"`ps -ef | grep java | grep start-tiger-dummy-for-sequencediagram-tests | awk -F\\   \'{ print \$2; }\'`\"
+                              if [ \"\$ENV_PID\" ]; then
+                                kill \$ENV_PID
+                              fi
+                            """
+                        }
                     }
                 }
             }

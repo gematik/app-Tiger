@@ -30,16 +30,15 @@
 
     <artifactId>tiger-uitests</artifactId>
 
-    <properties>
-        <version.maven-replacer-plugin>1.4.1</version.maven-replacer-plugin>
-        <version.mockito>4.11.0</version.mockito>
-    </properties>
-
-
     <dependencies>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-test-lib</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-zion</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -51,18 +50,6 @@
             <groupId>com.microsoft.playwright</groupId>
             <artifactId>playwright</artifactId>
             <version>1.49.0</version>
-        </dependency>
-        <!-- https://mvnrepository.com/artifact/xerces/xercesImpl -->
-        <dependency>
-            <groupId>xerces</groupId>
-            <artifactId>xercesImpl</artifactId>
-            <version>2.12.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-model</artifactId>
-            <version>3.9.9</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -121,7 +108,7 @@
                                         <glue>de.gematik.test.tiger.glue</glue>
                                     </glues>
                                     <!-- optional -->
-                                    <featuresDir>${project.basedir}/src/test/resources/features</featuresDir>
+                                    <featuresDir>${project.basedir}/src/test/resources/features/main</featuresDir>
                                 </configuration>
                             </execution>
                         </executions>
@@ -135,12 +122,11 @@
                             <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
                             <includes>
                                 <!-- adapt to the class names of your driver classes -->
-                                <include>**/Driver001IT.java</include>
-                                <include>**/Driver002IT.java</include>
+                                <include>**/Driver*IT.java</include>
                             </includes>
                             <testFailureIgnore>true</testFailureIgnore>
                             <environmentVariables>
-                                <TIGER_TESTENV_CFGFILE>src/test/resources/playwright.yaml</TIGER_TESTENV_CFGFILE>
+                                <TIGER_TESTENV_CFGFILE>src/test/resources/playwright-main.yaml</TIGER_TESTENV_CFGFILE>
                             </environmentVariables>
                             <summaryFile>target/failsafe-reports/failsafe-dummy-summary.xml</summaryFile>
                             <runOrder>alphabetical</runOrder>
@@ -176,16 +162,9 @@
                         <configuration>
                             <includes>
                                 <include>
-                                    **/workflowui/*.java
+                                    **/workflowui/main/*.java
                                 </include>
                             </includes>
-                            <excludes>
-                                <!-- adapt to the class names of your driver classes -->
-                                <exclude>**/Driver*IT.java</exclude>
-                                <exclude>**/workflowui/StaticMainContentTest.java</exclude>
-                                <exclude>**/workflowui/StaticPlayFunctionalityTest.java</exclude>
-                                <exclude>**/workflowui/XDynamicPlaySidebarTest.java</exclude>
-                            </excludes>
                             <summaryFile>target/failsafe-reports/failsafe-summary.xml</summaryFile>
                         </configuration>
                         <executions>
@@ -245,7 +224,7 @@
                                         <glue>de.gematik.test.tiger.glue</glue>
                                     </glues>
                                     <!-- optional -->
-                                    <featuresDir>${project.basedir}/src/test/resources/features</featuresDir>
+                                    <featuresDir>${project.basedir}/src/test/resources/features/replay</featuresDir>
                                 </configuration>
                             </execution>
                         </executions>
@@ -259,11 +238,11 @@
                             <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
                             <includes>
                                 <!-- adapt to the class names of your driver classes -->
-                                <include>**/Driver003IT.java</include>
+                                <include>**/Driver*IT.java</include>
                             </includes>
                             <testFailureIgnore>true</testFailureIgnore>
                             <environmentVariables>
-                                <TIGER_TESTENV_CFGFILE>src/test/resources/playwright2.yaml</TIGER_TESTENV_CFGFILE>
+                                <TIGER_TESTENV_CFGFILE>src/test/resources/playwright-replay.yaml</TIGER_TESTENV_CFGFILE>
                             </environmentVariables>
                             <summaryFile>target/failsafe-reports/failsafe-dummy-summary.xml</summaryFile>
                             <runOrder>alphabetical</runOrder>
@@ -299,24 +278,9 @@
                         <configuration>
                             <includes>
                                 <include>
-                                    **/workflowui/*.java
+                                    **/workflowui/replay/*.java
                                 </include>
                             </includes>
-                            <excludes>
-                                <!-- adapt to the class names of your driver classes -->
-                                <exclude>**/Driver*IT.java</exclude>
-                                <exclude>**/workflowui/C*.java</exclude>
-                                <exclude>**/workflowui/T*.java</exclude>
-                                <exclude>**/workflowui/XY*.java</exclude>
-                                <exclude>**/workflowui/Xy*.java</exclude>
-                                <exclude>**/workflowui/Z*.java</exclude>
-                                <exclude>**/workflowui/StaticMainContentTests.java</exclude>
-                                <exclude>**/workflowui/StaticRbelLogTests.java</exclude>
-                                <exclude>**/workflowui/StaticSidebarTests.java</exclude>
-                                <exclude>**/workflowui/XDynamicMainContentTests.java</exclude>
-                                <exclude>**/workflowui/XDynamicSidebarTests.java</exclude>
-                                <exclude>**/workflowui/XLaterTests.java</exclude>
-                            </excludes>
                             <summaryFile>target/failsafe-reports/failsafe-summary.xml</summaryFile>
                         </configuration>
                         <executions>
@@ -376,7 +340,8 @@
                                         <glue>de.gematik.test.tiger.glue</glue>
                                     </glues>
                                     <!-- optional -->
-                                    <featuresDir>${project.basedir}/src/test/resources/features</featuresDir>
+                                    <featuresDir>${project.basedir}/src/test/resources/features/sequencediagram
+                                    </featuresDir>
                                 </configuration>
                             </execution>
                         </executions>
@@ -390,11 +355,12 @@
                             <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
                             <includes>
                                 <!-- adapt to the class names of your driver classes -->
-                                <include>**/Driver004IT.java</include>
+                                <include>**/Driver*IT.java</include>
                             </includes>
                             <testFailureIgnore>true</testFailureIgnore>
                             <environmentVariables>
-                                <TIGER_TESTENV_CFGFILE>src/test/resources/playwright3.yaml</TIGER_TESTENV_CFGFILE>
+                                <TIGER_TESTENV_CFGFILE>src/test/resources/playwright-sequencediagram.yaml
+                                </TIGER_TESTENV_CFGFILE>
                             </environmentVariables>
                             <summaryFile>target/failsafe-reports/failsafe-dummy-summary-sequence.xml</summaryFile>
                             <runOrder>alphabetical</runOrder>
@@ -429,13 +395,8 @@
                         <version>${version.maven.failsafe}</version>
                         <configuration>
                             <includes>
-                                <include>**/workflowui/AbstractBase.java</include>
-                                <include>**/workflowui/TrafficVisualisationTest.java</include>
+                                <include>**/workflowui/sequencediagram/*.java</include>
                             </includes>
-                            <excludes>
-                                <!-- adapt to the class names of your driver classes -->
-                                <exclude>**/Driver*IT.java</exclude>
-                            </excludes>
                             <summaryFile>target/failsafe-reports/failsafe-summary.xml</summaryFile>
                         </configuration>
                         <executions>

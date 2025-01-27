@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 gematik GmbH
+ * Copyright 2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,18 +12,20 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package de.gematik.test.tiger.playwright.workflowui;
+package de.gematik.test.tiger.playwright.workflowui.main;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import de.gematik.test.tiger.playwright.workflowui.AbstractBase;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
@@ -64,7 +66,9 @@ class ZQuitTests extends AbstractBase {
     page.locator(".test-rbel-link").first().click();
     List<String> allNumbers = page.locator(".test-rbel-link").allTextContents();
     String number1 = allNumbers.get(0);
-    String number2 = String.valueOf(Integer.parseInt(allNumbers.get(allNumbers.size() - 1)) + 1);
+    String number2 = allNumbers.get(allNumbers.size() - 1);
+
+    Assertions.assertThat(number2).isEqualTo(String.valueOf(TOTAL_MESSAGES));
 
     await()
         .atMost(10, TimeUnit.SECONDS)
@@ -80,14 +84,14 @@ class ZQuitTests extends AbstractBase {
                     page.frameLocator("#rbellog-details-iframe")
                         .locator(".test-message-number")
                         .first())
-                .containsText(number1),
+                .hasText(number1),
         () ->
             assertThat(
                     page.frameLocator("#rbellog-details-iframe")
                         .locator(".test-message-number")
                         .last())
                 .not()
-                .containsText(number2));
+                .hasText(number2));
     String pageNo =
         page.frameLocator("#rbellog-details-iframe").locator("#pageNumberDisplay").textContent();
     page.locator("#test-webui-slider").click();
@@ -110,13 +114,13 @@ class ZQuitTests extends AbstractBase {
                         .locator(".test-message-number")
                         .first())
                 .not()
-                .equals(number1),
+                .hasText(number1),
         () ->
             assertThat(
                     page.frameLocator("#rbellog-details-iframe")
                         .locator(".test-message-number")
                         .last())
-                .equals(number2));
+                .hasText(number2));
     page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
     page.frameLocator("#rbellog-details-iframe")
         .locator("#pageSelector .dropdown-item")

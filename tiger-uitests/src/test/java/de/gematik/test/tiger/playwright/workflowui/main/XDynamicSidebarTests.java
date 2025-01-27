@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 gematik GmbH
+ * Copyright 2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  *
  */
 
-package de.gematik.test.tiger.playwright.workflowui;
+package de.gematik.test.tiger.playwright.workflowui.main;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import de.gematik.test.tiger.playwright.workflowui.AbstractBase;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -86,7 +87,8 @@ class XDynamicSidebarTests extends AbstractBase {
             .trim();
     assertThat(sidebarTitle).containsText(featureTitle.trim());
     assertThat(page.locator(".test-step-status-skipped").first().locator(".."))
-        .containsText("And TGR assert \"/not_a_file\" matches" + " \"\\/not_a_file\\/?\"");
+        .containsText(
+            "And TGR assert \"!{rbel:currentRequestAsString('$.path')}\" matches \"/not_a_file\"");
   }
 
   @Test

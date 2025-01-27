@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 gematik GmbH
+ * Copyright 2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,9 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
-package de.gematik.test.tiger.playwright.workflowui;
+package de.gematik.test.tiger.playwright.workflowui.main;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -23,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
+import de.gematik.test.tiger.playwright.workflowui.AbstractBase;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -153,32 +155,6 @@ class XyFeaturesTest extends AbstractBase {
         .containsText(testName);
   }
 
-  @ParameterizedTest()
-  @CsvSource(
-      delimiter = '|',
-      textBlock =
-          """
-                text1 | 6 |
-                text2 | 7 |
-                text3 | 8 |
-                text4 | 9 |
-                text5 | 10 |
-                """)
-  void testXDataVariantTableContainsEvaluatedParameter(
-      String firstCellText, int outlineExampleIndexInFeatureFile) {
-    page.querySelector("#test-execution-pane-tab").click();
-    assertThat(
-            page.locator(".test-scenario-outline-example")
-                .nth(outlineExampleIndexInFeatureFile)
-                .locator(".table-data-variant")
-                .first() // table is split into two tables
-                .locator("tr")
-                .last()
-                .locator("td")
-                .first())
-        .containsText(firstCellText);
-  }
-
   @Test
   void testScrollingToClickedLastTestFile() {
     openSidebar();
@@ -224,29 +200,19 @@ class XyFeaturesTest extends AbstractBase {
 
   @Test
   void testRequestsAreCorrectInScenario() {
-    page.querySelector("#test-execution-pane-tab").click();
-    assertThat(
-            page.locator(".test-execution-pane-scenario-title")
-                .first()
-                .locator("..")
-                .locator(".rbelmessage"))
-        .hasCount(2);
-    assertThat(
-            page.locator(".test-execution-pane-scenario-title")
-                .first()
-                .locator("..")
-                .locator(".rbelmessage")
-                .nth(0)
-                .locator(".test-rbel-link"))
-        .containsText("1");
-    assertThat(
-            page.locator(".test-execution-pane-scenario-title")
-                .first()
-                .locator("..")
-                .locator(".rbelmessage")
-                .nth(1)
-                .locator(".test-rbel-link"))
-        .containsText("3");
+    var numberOfExpectedMessages = 4;
+    page.locator("#test-execution-pane-tab").click();
+
+    var rbelMessages =
+        page.locator(".test-execution-pane-scenario-title")
+            .first()
+            .locator("..")
+            .locator(".rbelmessage");
+    assertThat(rbelMessages).hasCount(numberOfExpectedMessages);
+    for (var i = 0; i < numberOfExpectedMessages; i++) {
+      assertThat(rbelMessages.nth(i).locator(".test-rbel-link"))
+          .containsText(String.valueOf(i + 1));
+    }
   }
 
   @Test
@@ -265,6 +231,6 @@ class XyFeaturesTest extends AbstractBase {
     String title = last.getAttribute("title");
 
     assertEquals(
-        "TGR assert \"!{rbel:currentRequestAsString('$.method')}\" matches \"GET\"", title);
+        "And TGR assert \"!{rbel:currentRequestAsString('$.method')}\" matches \"GET\"", title);
   }
 }

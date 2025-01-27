@@ -86,7 +86,7 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
   protected static final int TOTAL_MESSAGES = 62;
   private static BrowserContext context;
 
-  private static boolean tracingEnabled =
+  private static final boolean tracingEnabled =
       Boolean.parseBoolean(System.getProperty("tiger.test.tracing", "true"));
 
   private static void checkPort() {
@@ -100,11 +100,12 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
         .until(
             () -> {
               if (Files.exists(path)) {
-                FileInputStream fis = new FileInputStream(path.toString());
-                await()
-                    .pollInterval(200, TimeUnit.MILLISECONDS)
-                    .atMost(30, TimeUnit.SECONDS)
-                    .until(() -> getPort(fis) != null);
+                try (FileInputStream fis = new FileInputStream(path.toString())) {
+                  await()
+                      .pollInterval(200, TimeUnit.MILLISECONDS)
+                      .atMost(30, TimeUnit.SECONDS)
+                      .until(() -> getPort(fis) != null);
+                }
                 return true;
               } else {
                 return false;
@@ -130,9 +131,9 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
   }
 
   // Shared between all tests in this class.
-  static Playwright playwright;
-  static Browser browser;
-  static Page page;
+  protected static Playwright playwright;
+  protected static Browser browser;
+  protected static Page page;
 
   @BeforeAll
   static synchronized void launchBrowser() throws IOException {
@@ -211,11 +212,11 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
     }
   }
 
-  Path getPath(String file) {
+  protected Path getPath(String file) {
     return Paths.get("..", doc, user_manual, screenshots, file);
   }
 
-  void screenshotElementById(Page page, String fileName, String elementId) {
+  protected void screenshotElementById(Page page, String fileName, String elementId) {
     page.evaluate("document.getElementById(\"" + elementId + "\").style.backgroundColor='yellow'");
     screenshot(page, fileName);
     page.evaluate(
@@ -224,7 +225,7 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
             + "\").style.removeProperty(\"background-color\")");
   }
 
-  void screenshotByClassname(Page page, String fileName, String classname) {
+  protected void screenshotByClassname(Page page, String fileName, String classname) {
     page.evaluate(
         "document.getElementsByClassName(\"" + classname + "\")[0].style.backgroundColor='yellow'");
     screenshot(page, fileName);
@@ -234,11 +235,11 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
             + "\")[0].style.removeProperty(\"background-color\")");
   }
 
-  void screenshot(Page page, String fileName) {
+  protected void screenshot(Page page, String fileName) {
     page.screenshot(new Page.ScreenshotOptions().setFullPage(false).setPath(getPath(fileName)));
   }
 
-  void openSidebar() {
+  protected void openSidebar() {
     int ctr = 0;
     while (ctr < 3 && page.locator(".test-sidebar-collapsed").isVisible()) {
       page.querySelector("#test-tiger-logo").click();
@@ -265,7 +266,7 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
     assertThat(page.locator(".test-sidebar-open")).isVisible();
   }
 
-  void closeSidebar() {
+  protected void closeSidebar() {
     if (page.locator(".test-sidebar-open").isVisible()) {
       page.querySelector("#test-tiger-logo").click();
     }
