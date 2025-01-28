@@ -16,18 +16,47 @@
 
 package io.cucumber.core.plugin;
 
+import io.cucumber.messages.types.Scenario;
+import io.cucumber.messages.types.Step;
+import io.cucumber.plugin.event.TestCase;
 import java.net.URI;
 import lombok.Getter;
-import lombok.experimental.Delegate;
+import net.thucydides.model.domain.DataTable;
 
-public class ScenarioContextDelegate {
+@SuppressWarnings({"java:S1172", "java:S1874"})
+public class ScenarioContextDelegate implements IScenarioContext {
 
   @Getter private final URI featureURI;
 
-  public ScenarioContextDelegate(URI featureURI, ScenarioContextParallel context) {
+  public ScenarioContextDelegate(URI featureURI, ScenarioContext context) {
     this.featureURI = featureURI;
     this.context = context;
   }
 
-  @Delegate private final ScenarioContextParallel context;
+  private final ScenarioContext context;
+
+  @Override
+  public Scenario getCurrentScenarioDefinition(String scenarioId) {
+    return context.getCurrentScenarioDefinition();
+  }
+
+  @Override
+  public DataTable getTable(String scenarioId) {
+    return context.getTable();
+  }
+
+  @Override
+  public Step getCurrentStep(TestCase testCase) {
+    return context.getCurrentStep();
+  }
+
+  @Override
+  public Scenario currentScenarioOutline(String scenarioId) {
+    return context.currentScenarioOutline();
+  }
+
+  @Override
+  public boolean isAScenarioOutline(String scenarioId) {
+    return context.isAScenarioOutline();
+  }
 }

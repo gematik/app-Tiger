@@ -21,6 +21,7 @@ tigerProxy:
 
 ## Bugfixes
 
+* TGR-1427: Use non parallel serenity reporter to circumvent wrong logging behavior of parallel reporter.
 * TGR-1653: When a modification condition references parts of request (e.g. "isResponse && request.url =$ 'foobar'"),
   modification will be applied instead of ignored.
   Also, modifications will be applied in the order they are given.

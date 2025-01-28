@@ -39,7 +39,7 @@ import de.gematik.test.tiger.testenvmgr.env.StepUpdate;
 import de.gematik.test.tiger.testenvmgr.env.TestResult;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import io.cucumber.core.plugin.FeatureFileLoader;
-import io.cucumber.core.plugin.ScenarioContextDelegate;
+import io.cucumber.core.plugin.IScenarioContext;
 import io.cucumber.core.plugin.SerenityUtils;
 import io.cucumber.core.plugin.report.EvidenceReport.ReportContext;
 import io.cucumber.core.runner.TestCaseDelegate;
@@ -143,7 +143,7 @@ public class SerenityReporterCallbacks {
   // test run start
   //
   @SuppressWarnings("java:S1172")
-  public void handleTestRunStarted(Event ignoredEvent, ScenarioContextDelegate ignoredContext) {
+  public void handleTestRunStarted(Event ignoredEvent) {
     synchronized (startupMutex) {
       if (TigerDirector.isInitialized()) {
         return;
@@ -157,8 +157,7 @@ public class SerenityReporterCallbacks {
   }
 
   @SuppressWarnings("java:S1172")
-  public void handleTestRunFinished(
-      TestRunFinished ignoredEvent, ScenarioContextDelegate ignoredContext) {
+  public void handleTestRunFinished(TestRunFinished ignoredEvent) {
     scenarioAlreadyFailed.remove();
     featureExecutionMonitor.stopTestRun();
   }
@@ -201,7 +200,7 @@ public class SerenityReporterCallbacks {
   // test case start
   //
   public void handleTestCaseStarted(
-      TestCaseStarted testCaseStartedEvent, ScenarioContextDelegate context) {
+      TestCaseStarted testCaseStartedEvent, IScenarioContext context) {
     shouldAbortTestExecution();
     scenarioAlreadyFailed.set(Boolean.FALSE);
 
@@ -216,7 +215,7 @@ public class SerenityReporterCallbacks {
     featureExecutionMonitor.startTestCase(testCaseStartedEvent);
   }
 
-  public int extractScenarioDataVariantIndex(ScenarioContextDelegate context, TestCase testCase) {
+  public int extractScenarioDataVariantIndex(IScenarioContext context, TestCase testCase) {
     Location searchLocation = new LocationConverter().convertLocation(testCase.getLocation());
     var scenarioId = scenarioIdFrom(testCase);
     return Streams.mapWithIndex(
@@ -238,7 +237,7 @@ public class SerenityReporterCallbacks {
   }
 
   private void informWorkflowUiAboutCurrentScenario(
-      Feature feature, TestCase testCase, ScenarioContextDelegate context, boolean isDryRun) {
+      Feature feature, TestCase testCase, IScenarioContext context, boolean isDryRun) {
     String scenarioId = scenarioIdFrom(testCase);
     Scenario scenario = context.getCurrentScenarioDefinition(scenarioId);
 
@@ -282,7 +281,7 @@ public class SerenityReporterCallbacks {
   }
 
   private Map<String, String> getVariantDataMap(
-      ScenarioContextDelegate context, String scenarioId, int dataVariantIndex) {
+      IScenarioContext context, String scenarioId, int dataVariantIndex) {
     if (context.isAScenarioOutline(scenarioId)) {
       List<Examples> examples = context.currentScenarioOutline(scenarioId).getExamples();
       var headers =
@@ -365,7 +364,7 @@ public class SerenityReporterCallbacks {
   //
   // test step start
   //
-  public void handleTestStepStarted(TestStepStarted event, ScenarioContextDelegate context) {
+  public void handleTestStepStarted(TestStepStarted event, IScenarioContext context) {
     shouldWaitIfInPauseMode();
     shouldAbortTestExecution();
 
@@ -384,7 +383,7 @@ public class SerenityReporterCallbacks {
   }
 
   private void updateStepInformation(
-      ScenarioContextDelegate context,
+      IScenarioContext context,
       TestCase testCase,
       TestStep testStep,
       TestResult result,
@@ -428,7 +427,7 @@ public class SerenityReporterCallbacks {
   //
   // test step end
   //
-  public void handleTestStepFinished(TestStepFinished event, ScenarioContextDelegate context) {
+  public void handleTestStepFinished(TestStepFinished event, IScenarioContext context) {
     if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) return;
 
     TestStep testStep = event.getTestStep();
@@ -469,7 +468,7 @@ public class SerenityReporterCallbacks {
   }
 
   private void informWorkflowUiAboutCurrentStep(
-      ScenarioContextDelegate context,
+      IScenarioContext context,
       TestCase testCase,
       TestStep testStep,
       TestResult status,
@@ -594,7 +593,7 @@ public class SerenityReporterCallbacks {
   //
   // test case end
   //
-  public void handleTestCaseFinished(TestCaseFinished event, ScenarioContextDelegate context) {
+  public void handleTestCaseFinished(TestCaseFinished event, IScenarioContext context) {
     if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) {
       return;
     }
@@ -633,7 +632,7 @@ public class SerenityReporterCallbacks {
   @SneakyThrows
   private void createEvidenceFile(
       TestCaseFinished testCaseFinishedEvent,
-      final ScenarioContextDelegate scenarioContext,
+      final IScenarioContext scenarioContext,
       String scenarioId) {
     final EvidenceReport evidenceReport =
         getEvidenceReport(testCaseFinishedEvent, scenarioContext, scenarioId);
@@ -654,7 +653,7 @@ public class SerenityReporterCallbacks {
 
   @NotNull
   private Path createEvidenceReportFile(
-      ScenarioContextDelegate scenarioContext,
+      IScenarioContext scenarioContext,
       EvidenceReport evidenceReport,
       String scenarioId,
       int variantDataIndex)
@@ -676,9 +675,7 @@ public class SerenityReporterCallbacks {
   }
 
   private EvidenceReport getEvidenceReport(
-      TestCaseFinished testCaseFinishedEvent,
-      ScenarioContextDelegate scenarioContext,
-      String scenarioId) {
+      TestCaseFinished testCaseFinishedEvent, IScenarioContext scenarioContext, String scenarioId) {
     return evidenceRecorder.getEvidenceReportForScenario(
         new ReportContext(
             scenarioContext.getCurrentScenarioDefinition(scenarioId).getName(),

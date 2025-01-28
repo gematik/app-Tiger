@@ -131,8 +131,7 @@ public class TestTigerSerenityReporterPlugin {
     assertThat(
             listener
                 .getReporterCallbacks()
-                .extractScenarioDataVariantIndex(
-                    listener.getScenarioContextDelegate(featureUri), testCase))
+                .extractScenarioDataVariantIndex(listener.getContext(featureUri), testCase))
         .isEqualTo(-1);
 
     TigerEnvStatusDto status = envStatusController.getStatus();
@@ -180,7 +179,7 @@ public class TestTigerSerenityReporterPlugin {
     ScenarioOutlineTestCaseAdapter testCase =
         (ScenarioOutlineTestCaseAdapter) startedEvent.getTestCase();
 
-    ScenarioContextDelegate context = listener.getScenarioContextDelegate(featureUri);
+    IScenarioContext context = listener.getContext(featureUri);
     SerenityReporterCallbacks reporterCallbacks = listener.getReporterCallbacks();
 
     assertThat(reporterCallbacks.extractScenarioDataVariantIndex(context, testCase)).isZero();
