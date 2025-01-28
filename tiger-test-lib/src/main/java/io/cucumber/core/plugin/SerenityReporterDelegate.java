@@ -27,6 +27,7 @@ import io.cucumber.plugin.event.WriteEvent;
 import java.net.URI;
 import lombok.experimental.Delegate;
 
+@SuppressWarnings("java:S1874")
 public class SerenityReporterDelegate implements ISerenityReporter {
 
   @Delegate private final SerenityReporter reporter = new SerenityReporter();
