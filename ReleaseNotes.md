@@ -9,14 +9,15 @@
     * **NOTE**: there may be a change in behaviour from the previous version where the full test step description was
       resolved in the Workflow UI. The new implementation only resolves variables when the step where they are used
       makes this resolution.
-* TGR-1699: Tiger-Proxy: Routes now only match if the proxy type of the request is matching as well. This new behaviour can be deactivated using the flag `matchForProxyType`:
+* TGR-1699: Tiger-Proxy: Routes now only match if the proxy type of the request is matching as well. This new behaviour
+  can be deactivated using the flag `matchForProxyType`:
 
 ```yaml
 tigerProxy:
-    proxyRoutes:
-      - from: /foobar
-        to: http://orf.at/blub/
-        matchForProxyType: false
+  proxyRoutes:
+    - from: /foobar
+      to: http://orf.at/blub/
+      matchForProxyType: false
 ```
 
 ## Bugfixes
@@ -25,6 +26,8 @@ tigerProxy:
 * TGR-1653: When a modification condition references parts of request (e.g. "isResponse && request.url =$ 'foobar'"),
   modification will be applied instead of ignored.
   Also, modifications will be applied in the order they are given.
+* TGR-1725: Example names in junit reports are now displayed with the name of the scenario outline (instead of
+  Examples.Example #1.1)
 
 # Release 3.6.0
 
