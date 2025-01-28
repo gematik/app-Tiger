@@ -39,7 +39,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 @RequiredArgsConstructor
 @ResetTigerConfiguration
 @WireMockTest
-class TigerProxyRoutingTest {
+class TigerProxyRouteManipulationTest {
 
   private UnirestInstance unirestInstance;
   @Autowired private TigerProxy tigerProxy;

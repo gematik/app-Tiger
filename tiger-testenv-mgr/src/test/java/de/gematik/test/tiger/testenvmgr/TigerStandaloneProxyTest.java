@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import kong.unirest.HttpResponse;
 import kong.unirest.Unirest;
+import kong.unirest.UnirestInstance;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.jcip.annotations.NotThreadSafe;
@@ -44,6 +45,7 @@ import org.junit.jupiter.api.Test;
 public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
 
   static File standaloneJar;
+  private static UnirestInstance unirestInstance;
 
   @BeforeAll
   public static void getJarFile() throws IOException {
@@ -53,6 +55,9 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
             .filter(f -> !f.getName().contains("javadoc"))
             .findFirst()
             .get();
+
+    unirestInstance = Unirest.spawnInstance();
+    unirestInstance.config().proxy(null);
 
     File newFile =
         new File(standaloneJar.getParentFile().getAbsolutePath() + File.separatorChar + "test.jar");
@@ -167,9 +172,7 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
             + TigerGlobalConfiguration.readString("free.port." + offset + "5")
             + "\n"
             + "      proxyRoutes: \n"
-            + "      - from: http://127.0.0.1:"
-            + TigerGlobalConfiguration.readString("free.port." + offset + "5")
-            + "\n"
+            + "      - from: /\n"
             + "        to: http://127.0.0.1:"
             + TigerGlobalConfiguration.readString("free.port." + offset + "0")
             + "\n";
@@ -192,7 +195,8 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
               + TigerGlobalConfiguration.readString("free.port." + offset + "5")
               + "/");
       HttpResponse<String> response =
-          Unirest.get(
+          unirestInstance
+              .get(
                   "http://127.0.0.1:"
                       + TigerGlobalConfiguration.readString("free.port." + offset + "5")
                       + "/")
@@ -207,7 +211,8 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
                 + "/webui");
         // check webui is "working"
         response =
-            Unirest.get(
+            unirestInstance
+                .get(
                     "http://127.0.0.1:"
                         + TigerGlobalConfiguration.readString("free.port." + offset + "4")
                         + "/webui")

@@ -37,7 +37,7 @@ class TigerRouteSelectorTest extends AbstractTigerProxyTest {
             .proxyRoutes(
                 List.of(
                     TigerConfigurationRoute.builder()
-                        .from("/")
+                        .from("http://backend")
                         .to(
                             List.of(
                                 "http://localhost:" + TestSocketUtils.findAvailableTcpPort(),
@@ -46,7 +46,7 @@ class TigerRouteSelectorTest extends AbstractTigerProxyTest {
             .build());
 
     val response =
-        proxyRest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+        proxyRest.get("http://backend/foobar").asString();
     assertThat(response.getStatus()).isEqualTo(666);
   }
 
@@ -80,7 +80,7 @@ class TigerRouteSelectorTest extends AbstractTigerProxyTest {
             .proxyRoutes(
                 List.of(
                     TigerConfigurationRoute.builder()
-                        .from("/")
+                        .from("http://backend")
                         .to(
                             List.of(
                                 "http://localhost:" + TestSocketUtils.findAvailableTcpPort(),
@@ -89,7 +89,7 @@ class TigerRouteSelectorTest extends AbstractTigerProxyTest {
             .build());
 
     val response =
-        proxyRest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+        proxyRest.get("http://backend/foobar").asString();
     assertThat(response.getStatus()).isEqualTo(666);
   }
 }

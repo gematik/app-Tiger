@@ -294,14 +294,14 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             .proxyRoutes(
                 List.of(
                     TigerConfigurationRoute.builder()
-                        .from("/")
+                        .from("http://backend/")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
             .build());
 
     tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
 
-    proxyRest.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+    proxyRest.get("http://backend/foobar").asString();
     awaitMessagesInTiger(2);
 
     assertThat(callCounter.get()).isEqualTo(2);
@@ -621,7 +621,6 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     AtomicInteger checkCounter = new AtomicInteger(0);
     final UnirestInstance unirestInstance = Unirest.spawnInstance();
     unirestInstance.config().verifySsl(true);
-    unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
     SSLContext ctx = SSLContext.getInstance("TLSv1.2");
     ctx.init(
         null,

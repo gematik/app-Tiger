@@ -270,7 +270,10 @@ public class HttpRequest extends HttpMessage<HttpRequest> {
         + " "
         + createUserAgentString()
         + " Request-Length: "
-        + createMessageSizeString();
+        + createMessageSizeString()
+        + " sent as "
+        + createProxyTypeString()
+        + " request";
   }
 
   private String createProtocolString() {
@@ -301,5 +304,17 @@ public class HttpRequest extends HttpMessage<HttpRequest> {
     } else {
       return FileUtils.byteCountToDisplaySize(getBody().length);
     }
+  }
+
+  private String createProxyTypeString() {
+    if (isForwardProxyRequest()) {
+      return "Forward-Proxy";
+    } else {
+      return "Reverse-Proxy";
+    }
+  }
+
+  public boolean isForwardProxyRequest() {
+    return Optional.ofNullable(forwardProxyRequest).orElse(false);
   }
 }

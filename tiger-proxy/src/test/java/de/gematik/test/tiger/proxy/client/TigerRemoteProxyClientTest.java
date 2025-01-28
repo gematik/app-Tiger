@@ -58,6 +58,7 @@ import kong.unirest.UnirestInstance;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -269,6 +270,24 @@ class TigerRemoteProxyClientTest {
         .extracting("from", "to", "disableRbelLogging")
         .contains(
             tuple("http://myserv.er", "http://localhost:" + runtimeInfo.getHttpPort(), false));
+  }
+
+  @Test
+  void deleteNonExistingRoute_shouldGiveNoException() {
+    assertThatNoException().isThrownBy(() -> tigerRemoteProxyClient.removeRoute("nonExistingId"));
+  }
+
+  @Test
+  void deleteInternalRoute_shouldGiveException() {
+    val internalRouteId = tigerRemoteProxyClient.getRoutes()
+      .stream()
+      .filter(TigerProxyRoute::isInternalRoute)
+      .map(TigerProxyRoute::getId)
+      .findFirst().get();
+
+    assertThatThrownBy(() -> tigerRemoteProxyClient.removeRoute(internalRouteId))
+      .isInstanceOf(TigerRemoteProxyClientException.class)
+      .hasMessageContaining("Is internal route!");
   }
 
   @Test

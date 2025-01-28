@@ -35,7 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 public class HttpState {
 
   private static final ThreadLocal<Integer> LOCAL_PORT = new ThreadLocal<>(); // NOSONAR
-  private final String uniqueLoopPreventionHeaderValue = "MockServer_" + UUIDService.getUUID();
   private final Scheduler scheduler;
   private final MockServerConfiguration configuration;
   private final List<Expectation> expectations = new ArrayList<>();
@@ -107,10 +106,6 @@ public class HttpState {
     setPort(request);
 
     return false;
-  }
-
-  public String getUniqueLoopPreventionHeaderName() {
-    return "x-forwarded-by";
   }
 
   public List<Expectation> retrieveActiveExpectations() {

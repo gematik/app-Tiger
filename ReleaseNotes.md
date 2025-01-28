@@ -2,11 +2,22 @@
 
 # Release 3.6.1
 
+## Features
+
 * KOB-29: Workflow UI and Serenity Reports: placeholders for tiger configuration variables are now resolved on both the
   Workflow UI and the serenity html reports.
     * **NOTE**: there may be a change in behaviour from the previous version where the full test step description was
       resolved in the Workflow UI. The new implementation only resolves variables when the step where they are used
       makes this resolution.
+* TGR-1699: Tiger-Proxy: Routes now only match if the proxy type of the request is matching as well. This new behaviour can be deactivated using the flag `matchForProxyType`:
+
+```yaml
+tigerProxy:
+    proxyRoutes:
+      - from: /foobar
+        to: http://orf.at/blub/
+        matchForProxyType: false
+```
 
 ## Bugfixes
 

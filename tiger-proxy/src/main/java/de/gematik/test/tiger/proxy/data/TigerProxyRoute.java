@@ -45,6 +45,12 @@ public class TigerProxyRoute implements Serializable {
   private TigerRouteAuthenticationConfiguration authentication;
   private List<String> criterions;
   @Builder.Default private List<String> hosts = new ArrayList<>();
+  /**
+   * Should the route be matched for both forward- and reverse-proxy-requests?
+   * If true only requests matching the proxy-mode suggested by the "from" attribute
+   * will be handled.
+   */
+  @Builder.Default private boolean matchForProxyType = true;
 
   public static TigerProxyRoute convertFromTigerConfigurationRoute(
       TigerConfigurationRoute tigerRoute, ForwardProxyInfo forwardProxyInfo) {
@@ -57,6 +63,7 @@ public class TigerProxyRoute implements Serializable {
         .hosts(tigerRoute.getHosts())
         .criterions(tigerRoute.getCriterions())
         .disableRbelLogging(tigerRoute.isDisableRbelLogging())
+        .matchForProxyType(tigerRoute.isMatchForProxyType())
         .build();
   }
 

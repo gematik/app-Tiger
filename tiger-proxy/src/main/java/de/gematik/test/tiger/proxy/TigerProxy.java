@@ -23,6 +23,7 @@ import static de.gematik.test.tiger.mockserver.model.HttpRequest.request;
 import de.gematik.rbellogger.converter.HttpPairingInBinaryChannelConverter;
 import de.gematik.rbellogger.util.RbelMessagesSupplier;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
+import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
@@ -364,6 +365,11 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   public void removeRoute(final String routeId) {
     if (!mockServer.isRunning()) {
       return;
+    }
+    val candidate = tigerRouteMap.get(routeId);
+    if (candidate != null && candidate.isInternalRoute()) {
+      throw new TigerConfigurationException(
+          "Could not delete route with id '" + routeId + "': route is internal route!");
     }
     mockServer.removeExpectation(routeId);
     final TigerProxyRoute route = tigerRouteMap.remove(routeId);

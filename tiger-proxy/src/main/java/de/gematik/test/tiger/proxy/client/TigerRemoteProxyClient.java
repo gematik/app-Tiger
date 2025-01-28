@@ -213,13 +213,42 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   @Override
   public void removeRoute(String routeId) {
     Assert.hasText(routeId, () -> "No route ID given!");
+
+    final Optional<Boolean> isInternalOptional =
+        Unirest.get(remoteProxyUrl + "/route")
+            .asObject(new GenericType<List<TigerProxyRoute>>() {})
+            .getBody()
+            .stream()
+            .filter(route -> StringUtils.equals(route.getId(), routeId))
+            .findFirst()
+            .map(TigerProxyRoute::isInternalRoute);
+    if (isInternalOptional.isEmpty()) {
+      return; // route does not exist on remote, delete therefore successful
+    }
+
+    if (Boolean.TRUE.equals(isInternalOptional.get())) {
+      throw new TigerRemoteProxyClientException(
+          "Could not delete route with id '" + routeId + "': Is internal route!");
+    }
+
     Unirest.delete(remoteProxyUrl + "/route/" + routeId)
-        .asEmpty()
+        .asString()
         .ifFailure(
             httpResponse -> {
               throw new TigerRemoteProxyClientException(
-                  "Unable to remove route. Got " + httpResponse);
+                  "Unable to remove route. Got " + httpResponse.getBody());
             });
+  }
+
+  @Override
+  public void clearAllRoutes() {
+    Unirest.get(remoteProxyUrl + "/route")
+        .asObject(new GenericType<List<TigerProxyRoute>>() {})
+        .getBody()
+        .stream()
+        .filter(route -> !route.isInternalRoute())
+        .map(TigerProxyRoute::getId)
+        .forEach(this::removeRoute);
   }
 
   @Override

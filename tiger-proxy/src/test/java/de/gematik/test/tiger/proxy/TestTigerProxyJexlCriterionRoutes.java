@@ -48,7 +48,7 @@ class TestTigerProxyJexlCriterionRoutes extends AbstractTigerProxyTest {
           tigerProxy.addRoute(route1);
           tigerProxy.addRoute(route2);
 
-          proxyRest
+          unirestInstance
               .get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar/blub.html")
               .asString();
           awaitMessagesInTiger(2);
@@ -80,26 +80,26 @@ class TestTigerProxyJexlCriterionRoutes extends AbstractTigerProxyTest {
     spawnTigerProxyWith(new TigerProxyConfiguration());
     tigerProxy.addRoute(
         TigerConfigurationRoute.builder()
-            .from("/foobar/")
+            .from("http://backend/foobar/")
             .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar/")
             .criterions(List.of("$.header.foo != 'bar'"))
             .build());
     tigerProxy.addRoute(
         TigerConfigurationRoute.builder()
-            .from("/foobar/")
+            .from("http://backend/foobar/")
             .to("http://localhost:" + fakeBackendServerPort + "/foobar/")
             .criterions(List.of("$.header.foo == 'bar'"))
             .build());
 
     assertThat(
             proxyRest
-                .get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar/blub.html")
+                .get("http://backend/foobar/blub.html")
                 .asString()
                 .getStatus())
         .isEqualTo(777);
     assertThat(
             proxyRest
-                .get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar/blub.nohtml")
+                .get("http://backend/foobar/blub.nohtml")
                 .header("foo", "bar")
                 .asString()
                 .getStatus())

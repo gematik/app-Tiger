@@ -122,10 +122,32 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
 
   public boolean matches(HttpRequest request) {
     return protocolMatches(this.requestPattern.getProtocol(), request.getProtocol())
+        && proxyingMatches(request)
         && secureMatches(request)
         && hostMatches(request)
         && pathMatches(this.requestPattern.getPath(), addTrailingSlashIfMissing(request.getPath()))
         && (expectationCallback == null || expectationCallback.matches(request));
+  }
+
+  private boolean proxyingMatches(HttpRequest request) {
+    if (tigerRoute != null && !tigerRoute.isMatchForProxyType()) {
+      return true;
+    }
+    boolean proxyingMatches =
+        request.isForwardProxyRequest() == requestPattern.isForwardProxyRequest();
+    if (!proxyingMatches) {
+      log.atTrace()
+          .addArgument(request::getForwardProxyRequest)
+          .addArgument(
+              () ->
+                  Optional.ofNullable(tigerRoute)
+                      .map(TigerProxyRoute::createShortDescription)
+                      .orElse("<>"))
+          .addArgument(requestPattern::getForwardProxyRequest)
+          .log(
+              "Proxying technique doesnt match: Request is forward? ({}), while route {} is forward? ({})");
+    }
+    return proxyingMatches;
   }
 
   private boolean secureMatches(HttpRequest request) {

@@ -72,9 +72,7 @@ public class TigerProxyHealthIndicator implements HealthIndicator {
       unirestInstance.config().automaticRetries(false);
       unirestInstance
           .get(
-              "http://localhost:"
-                  + adminPort
-                  + "/?healthEndPointUuid="
+              "http://tiger.proxy/?healthEndPointUuid="
                   + tigerProxy.getHealthEndpointRequestUuid())
           .asString();
       lastSuccessfulRequest = Optional.of(timestamp);
