@@ -28,6 +28,7 @@ tigerProxy:
   Also, modifications will be applied in the order they are given.
 * TGR-1725: Example names in junit reports are now displayed with the name of the scenario outline (instead of
   Examples.Example #1.1)
+* TGR-1728: LDAP parsing: allows multiple messages per request; attributes parent element fixed
 
 # Release 3.6.0
 
@@ -398,8 +399,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-    key = PLUGIN_PROPERTY_NAME,
-    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+        key = PLUGIN_PROPERTY_NAME,
+        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

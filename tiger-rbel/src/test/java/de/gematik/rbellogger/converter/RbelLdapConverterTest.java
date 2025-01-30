@@ -95,11 +95,10 @@ class RbelLdapConverterTest {
             + " controls={Control(oid=1.2.840.113556.1.4.805, isCritical=true, value={null})})";
 
     RbelElementAssertion.assertThat(convertedElement)
+        .hasCorrectParentKeysSetInAllElements()
         .hasFacet(RbelLdapFacet.class)
         .hasFacet(RbelRequestFacet.class)
-        .extractChildWithPath("$.attributes")
-        .doesNotHaveFacet(RbelLdapAttributesFacet.class)
-        .andTheInitialElement()
+        .doesNotHaveChildWithPath("$.attributes")
         .extractChildWithPath("$.textRepresentation")
         .hasStringContentEqualTo(expectedLdapMessage)
         .andTheInitialElement()
@@ -120,6 +119,7 @@ class RbelLdapConverterTest {
             + "Attribute(name=dc, values={'example'})}))";
 
     RbelElementAssertion.assertThat(convertedElement)
+        .hasCorrectParentKeysSetInAllElements()
         .hasFacet(RbelLdapFacet.class)
         .hasFacet(RbelResponseFacet.class)
         .extractChildWithPath("$.textRepresentation")
@@ -161,6 +161,7 @@ class RbelLdapConverterTest {
     final RbelElement convertedElement = rbelConverter.convertElement(messageWithSuffix, null);
 
     RbelElementAssertion.assertThat(convertedElement)
+        .hasCorrectParentKeysSetInAllElements()
         .hasFacet(RbelLdapFacet.class)
         .hasFacet(RbelResponseFacet.class)
         .extractChildWithPath("$.textRepresentation")
@@ -202,6 +203,7 @@ class RbelLdapConverterTest {
       final RbelElement convertedElement = rbelConverter.convertElement(message, null);
 
       RbelElementAssertion.assertThat(convertedElement)
+          .hasCorrectParentKeysSetInAllElements()
           .hasFacet(RbelLdapFacet.class)
           .extractChildWithPath("$.textRepresentation")
           .hasStringContentEqualTo(entry.getValue());
@@ -214,7 +216,6 @@ class RbelLdapConverterTest {
     final String html = RbelHtmlRenderer.render(List.of(convertedElement));
 
     assertThat(html)
-        .contains("LDAP Response")
         .contains("LDAPMessage(msgID=2")
         .contains("dn=" + quoted("dc=example,dc=com"))
         .contains(

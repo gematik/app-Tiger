@@ -23,6 +23,7 @@ import de.gematik.rbellogger.util.RbelPathAble;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import org.assertj.core.api.*;
 
@@ -184,5 +185,21 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
 
   public ListAssert<RbelElement> getChildrenWithPath(String rbelPath) {
     return new ListAssert<>(actual.findRbelPathMembers(rbelPath));
+  }
+
+  public RbelElementAssertion hasCorrectParentKeysSetInAllElements() {
+    hasCorrectParentKeysSetInAllElements(actual);
+    return this;
+  }
+
+  private void hasCorrectParentKeysSetInAllElements(RbelElement actual) {
+    for (Entry<String, RbelElement> child : actual.getChildNodesWithKey().entries()) {
+      if (child.getValue().getParentNode() != actual) {
+        failWithMessage(
+          "Expecting all parents to be correct. Fail for child %s of element %s",
+          child.getKey(), actual.findNodePath());
+      }
+      hasCorrectParentKeysSetInAllElements(child.getValue());
+    }
   }
 }

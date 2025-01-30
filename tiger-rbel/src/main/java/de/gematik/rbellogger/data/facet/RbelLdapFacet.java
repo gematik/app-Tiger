@@ -51,16 +51,17 @@ public class RbelLdapFacet implements RbelFacet {
               RbelHtmlRenderingToolkit renderingToolkit) {
             final RbelLdapFacet facet = element.getFacetOrFail(RbelLdapFacet.class);
 
-            final boolean isRequest = element.hasFacet(RbelRequestFacet.class);
             final String textRepresentation =
                 facet.getChildElements().get("textRepresentation").getRawStringContent();
 
-            return div(
-                h2().withClass("title").withText(isRequest ? "LDAP Request" : "LDAP Response"),
-                p().with(b().withText("Message: ")).withText(textRepresentation),
-                br(),
-                ancestorTitle()
-                    .with(vertParentTitle().with(renderingToolkit.convertNested(element))));
+            return ancestorTitle()
+                .with(
+                    vertParentTitle()
+                        .with(
+                            div()
+                                .withClass("tile is-child pe-3")
+                                .with(pre(textRepresentation).withClass("json language-json"))
+                                .with(renderingToolkit.convertNested(element))));
           }
         });
   }

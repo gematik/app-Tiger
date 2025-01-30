@@ -27,6 +27,7 @@ import de.gematik.rbellogger.data.facet.*;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HexFormat;
+import java.util.Optional;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -67,14 +68,11 @@ public class RbelLdapConverter implements RbelConverterPlugin {
               rbelElement,
               converter);
 
-      RbelElement attributes = converter.convertElement("attributes", rbelElement);
-      val attributesFacet = extractAttributes(ldapMessage, rbelElement, converter);
-      if (!attributesFacet.isEmpty()) {
-        attributes.addFacet(attributesFacet);
-      }
+      val attributes = extractAttributes(ldapMessage, rbelElement, converter);
 
       val rbelLdapFacet =
-          new RbelLdapFacet(textRepresentationElement, msgIdElement, protocolOpElement, attributes);
+          new RbelLdapFacet(
+              textRepresentationElement, msgIdElement, protocolOpElement, attributes.orElse(null));
       rbelElement.addFacet(rbelLdapFacet);
 
       rbelElement.addFacet(new RbelRootFacet<>(rbelLdapFacet));
@@ -106,7 +104,7 @@ public class RbelLdapConverter implements RbelConverterPlugin {
     return converter.convertElement(value, parentElement);
   }
 
-  private RbelLdapAttributesFacet extractAttributes(
+  private Optional<RbelElement> extractAttributes(
       final LDAPMessage ldapMessage,
       final RbelElement parentElement,
       final RbelConverter converter) {
@@ -114,13 +112,17 @@ public class RbelLdapConverter implements RbelConverterPlugin {
 
     if (ldapMessage.getProtocolOp() instanceof SearchResultEntryProtocolOp) {
       final SearchResultEntryProtocolOp op = ldapMessage.getSearchResultEntryProtocolOp();
+      val result = new RbelElement(new byte[] {}, parentElement);
+
       for (final Attribute attr : op.getAttributes()) {
         for (final String value : attr.getValues()) {
-          attributesFacet.put(attr.getName(), converter.convertElement(value, parentElement));
+          attributesFacet.put(attr.getName(), converter.convertElement(value, result));
         }
       }
+      result.addFacet(attributesFacet);
+      return Optional.of(result);
     }
 
-    return attributesFacet;
+    return Optional.empty();
   }
 }
