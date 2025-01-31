@@ -76,7 +76,7 @@
         <version.mockito>5.14.2</version.mockito>
         <version.mockserver>5.15.0</version.mockserver>
         <version.io.rest-assured>5.5.0</version.io.rest-assured>
-        <version.serenity.core>4.2.11</version.serenity.core>
+        <version.serenity.core>4.2.15</version.serenity.core>
         <version.serenity.maven.plugin>4.2.9</version.serenity.maven.plugin>
         <version.slf4j>2.0.16</version.slf4j>
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>

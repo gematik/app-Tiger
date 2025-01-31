@@ -23,6 +23,7 @@ tigerProxy:
 ## Bugfixes
 
 * TGR-1427: Use non parallel serenity reporter to circumvent wrong logging behavior of parallel reporter.
+* TGR-1609: report actual error cause for exceptions produced by serenity rest.
 * TGR-1653: When a modification condition references parts of request (e.g. "isResponse && request.url =$ 'foobar'"),
   modification will be applied instead of ignored.
   Also, modifications will be applied in the order they are given.
@@ -399,8 +400,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+    key = PLUGIN_PROPERTY_NAME,
+    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }
