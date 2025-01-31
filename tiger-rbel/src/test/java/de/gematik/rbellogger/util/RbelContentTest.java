@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -80,6 +81,23 @@ class RbelContentTest {
     assertEquals(10, bytes.getChunks().get(0).length);
     assertArrayEquals(bytes.subArray(0, 3), firstChunk);
     assertArrayEquals(bytes.subArray(3, 6), secondChunk);
+  }
+
+  @Test
+  void inputStream() throws IOException {
+    RbelContent bytes = RbelContent.builder().chunkSize(10).build();
+    byte[] input = "0123456789AB".getBytes();
+    byte[] firstChunk = Arrays.copyOfRange(input, 0, 3);
+    byte[] secondChunk = Arrays.copyOfRange(input, 3, 6);
+
+    bytes.append(firstChunk);
+    bytes.append(secondChunk);
+
+    try (var inputStream = bytes.toInputStream()) {
+      var inputStreamBytes = inputStream.readAllBytes();
+      assertEquals(bytes.size(), inputStreamBytes.length);
+      assertArrayEquals(bytes.subArray(0, 6), inputStreamBytes);
+    }
   }
 
   @Test

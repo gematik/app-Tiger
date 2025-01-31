@@ -34,6 +34,8 @@ import java.util.function.BiPredicate;
 import javax.annotation.Nullable;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.SneakyThrows;
+import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -209,22 +211,27 @@ public class RbelContent {
     return byteArray;
   }
 
+  @SneakyThrows
   public InputStream toInputStream() {
-    return new SequenceInputStream(
-        new Enumeration<>() {
-          final Iterator<byte[]> iterator =
-              chunks != null ? chunks.iterator() : Collections.emptyIterator();
+    return BoundedInputStream.builder()
+        .setInputStream(
+            new SequenceInputStream(
+                new Enumeration<>() {
+                  final Iterator<byte[]> iterator =
+                      chunks != null ? chunks.iterator() : Collections.emptyIterator();
 
-          @Override
-          public boolean hasMoreElements() {
-            return iterator.hasNext();
-          }
+                  @Override
+                  public boolean hasMoreElements() {
+                    return iterator.hasNext();
+                  }
 
-          @Override
-          public InputStream nextElement() {
-            return new ByteArrayInputStream(iterator.next());
-          }
-        });
+                  @Override
+                  public InputStream nextElement() {
+                    return new ByteArrayInputStream(iterator.next());
+                  }
+                }))
+        .setMaxCount(size)
+        .get();
   }
 
   public byte[] subArray(int from, int to) {
