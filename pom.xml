@@ -47,7 +47,7 @@
         <version.commons-jexl3>3.4.0</version.commons-jexl3>
         <version.commons-collections>3.2.2</version.commons-collections>
         <version.commons-collections4>4.4</version.commons-collections4>
-        <version.cucumber>7.20.1</version.cucumber>
+        <version.cucumber>7.21.0</version.cucumber>
         <version.groovy>4.0.24</version.groovy>
         <version.gson>2.11.0</version.gson>
         <version.hamcrest>2.2</version.hamcrest>
@@ -76,7 +76,7 @@
         <version.mockito>5.14.2</version.mockito>
         <version.mockserver>5.15.0</version.mockserver>
         <version.io.rest-assured>5.5.0</version.io.rest-assured>
-        <version.serenity.core>4.2.15</version.serenity.core>
+        <version.serenity.core>4.2.16</version.serenity.core>
         <version.serenity.maven.plugin>4.2.9</version.serenity.maven.plugin>
         <version.slf4j>2.0.16</version.slf4j>
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>

@@ -2,6 +2,9 @@
 
 # Release 3.6.1
 
+* Serenity BDD 4.2.16
+* Cucumber 7.21.0
+
 ## Features
 
 * KOB-29: Workflow UI and Serenity Reports: placeholders for tiger configuration variables are now resolved on both the
@@ -30,6 +33,7 @@ tigerProxy:
 * TGR-1725: Example names in junit reports are now displayed with the name of the scenario outline (instead of
   Examples.Example #1.1)
 * TGR-1728: LDAP parsing: allows multiple messages per request; attributes parent element fixed
+* BDDPAR-70: Allow comments in descriptions of feature files
 
 # Release 3.6.0
 
