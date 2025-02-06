@@ -165,7 +165,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     mockServerConfiguration.exceptionHandlingCallback(
         (t, c) -> {
           try {
-            getMockServerToRbelConverter().convertErrorResponse(null, null, t);
+            var errorResponse = getMockServerToRbelConverter().convertErrorResponse(null, null, t);
+            triggerListener(errorResponse);
           } catch (Exception e) {
             log.error("Error while converting error response", e);
           }

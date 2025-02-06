@@ -83,7 +83,7 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
   private static final String screenshots = "screenshots";
   protected static final int NUMBER_OF_FEATURES = 2;
   protected static final int NUMBER_OF_SCENARIOS = 27;
-  protected static final int TOTAL_MESSAGES = 62;
+  protected static final int TOTAL_MESSAGES = 58;
   private static BrowserContext context;
 
   private static final boolean tracingEnabled =

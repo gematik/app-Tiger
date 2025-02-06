@@ -107,6 +107,7 @@
                                     <glues>
                                         <glue>de.gematik.test.tiger.glue</glue>
                                     </glues>
+                                    <driverClassName>Driver${ctr}ITMain</driverClassName>
                                     <!-- optional -->
                                     <featuresDir>${project.basedir}/src/test/resources/features/main</featuresDir>
                                 </configuration>
@@ -122,7 +123,7 @@
                             <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
                             <includes>
                                 <!-- adapt to the class names of your driver classes -->
-                                <include>**/Driver*IT.java</include>
+                                <include>**/Driver*ITMain.java</include>
                             </includes>
                             <testFailureIgnore>true</testFailureIgnore>
                             <environmentVariables>
@@ -223,6 +224,7 @@
                                     <glues>
                                         <glue>de.gematik.test.tiger.glue</glue>
                                     </glues>
+                                    <driverClassName>Driver${ctr}ITReplay</driverClassName>
                                     <!-- optional -->
                                     <featuresDir>${project.basedir}/src/test/resources/features/replay</featuresDir>
                                 </configuration>
@@ -238,7 +240,7 @@
                             <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
                             <includes>
                                 <!-- adapt to the class names of your driver classes -->
-                                <include>**/Driver*IT.java</include>
+                                <include>**/Driver*ITReplay.java</include>
                             </includes>
                             <testFailureIgnore>true</testFailureIgnore>
                             <environmentVariables>
@@ -339,6 +341,7 @@
                                     <glues>
                                         <glue>de.gematik.test.tiger.glue</glue>
                                     </glues>
+                                    <driverClassName>Driver${ctr}ITSequencediagram</driverClassName>
                                     <!-- optional -->
                                     <featuresDir>${project.basedir}/src/test/resources/features/sequencediagram
                                     </featuresDir>
@@ -355,7 +358,7 @@
                             <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
                             <includes>
                                 <!-- adapt to the class names of your driver classes -->
-                                <include>**/Driver*IT.java</include>
+                                <include>**/Driver*ITSequencediagram.java</include>
                             </includes>
                             <testFailureIgnore>true</testFailureIgnore>
                             <environmentVariables>

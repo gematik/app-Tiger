@@ -38,6 +38,15 @@ import org.junit.jupiter.api.*;
 @TestMethodOrder(MethodOrderer.MethodName.class)
 class XYDynamicRbelLogTests extends AbstractBase {
 
+  @AfterEach
+  void closeOpenModal() {
+    var modalCloseButton =
+        page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose");
+    if (modalCloseButton.isVisible()) {
+      modalCloseButton.click();
+    }
+  }
+
   @Test
   void testHExecutionPaneRbelWebUiURLExists() {
     page.querySelector("#test-execution-pane-tab").click();
@@ -180,7 +189,6 @@ class XYDynamicRbelLogTests extends AbstractBase {
         page.frameLocator("#rbellog-details-iframe").locator("#requestFromContent");
 
     page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionInput").fill("");
-    page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
     assertAll(
         () -> assertThat(requestToContent).containsText("no request"),
         () -> assertThat(requestFromContent).containsText("no request"),
@@ -210,7 +218,6 @@ class XYDynamicRbelLogTests extends AbstractBase {
             () ->
                 assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
                     .hasText("4 of %d did match the filter criteria.".formatted(TOTAL_MESSAGES)));
-    page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
     assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
         .containsText("4 of %d did match the filter criteria.".formatted(TOTAL_MESSAGES));
   }
