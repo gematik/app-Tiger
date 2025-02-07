@@ -45,6 +45,8 @@ tigerProxy:
   After a test case is finished, we associate any trailing messages with the last step.
   This should ensure that messages are associated with the step they were triggered
   by and no messages are missing.
+* TGR-1739: TigerProxy: fixed an issue where the TigerProxy would incorrectly identify an unreachable route destination
+  as reachable.
 
 # Release 3.6.0
 
