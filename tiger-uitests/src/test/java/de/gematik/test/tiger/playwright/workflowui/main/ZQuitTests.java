@@ -328,11 +328,13 @@ class ZQuitTests extends AbstractBase {
         .containsText("1");
     page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
     assertThat(page.frameLocator("#rbellog-details-iframe").locator("#pageSelector .dropdown-item"))
-        .hasCount(4);
+        .hasCount(TOTAL_PAGES);
     page.frameLocator("#rbellog-details-iframe")
         .locator("#pageSelector .dropdown-item")
         .last()
         .click();
+    var expectedFirstMessageNumber = String.valueOf(MESSAGES_PER_PAGE * (TOTAL_PAGES - 1) + 1);
+    var expectedLastMessageNumber = String.valueOf(TOTAL_MESSAGES);
     await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
@@ -341,9 +343,9 @@ class ZQuitTests extends AbstractBase {
                         page.frameLocator("#rbellog-details-iframe")
                             .locator(".test-message-number")
                             .first())
-                    .containsText("61"));
-    assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").first())
-        .containsText("61");
+                    .containsText(expectedFirstMessageNumber));
+    assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last())
+        .containsText(expectedLastMessageNumber);
   }
 
   @Test

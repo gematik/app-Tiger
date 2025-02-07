@@ -84,6 +84,9 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
   protected static final int NUMBER_OF_FEATURES = 2;
   protected static final int NUMBER_OF_SCENARIOS = 27;
   protected static final int TOTAL_MESSAGES = 58;
+  protected static final int MESSAGES_PER_PAGE = 20;
+  protected static final int TOTAL_PAGES =
+      (int) Math.ceil(TOTAL_MESSAGES / (MESSAGES_PER_PAGE * 1.0));
   private static BrowserContext context;
 
   private static final boolean tracingEnabled =
