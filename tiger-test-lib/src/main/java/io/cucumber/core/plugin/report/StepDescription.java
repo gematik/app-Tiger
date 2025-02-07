@@ -107,8 +107,11 @@ public class StepDescription {
 
     var keyWord = step.getStep().getKeyword();
     var stepText = resolve ? resolveStepDescriptionPrefix() : step.getStep().getText();
+    var converter = converter(convertToHtml);
     var prefix =
-        keyWord + stepText; // Keyword already has a trailing space, so we don't need to add one
+        converter.apply(
+            keyWord
+                + stepText); // Keyword already has a trailing space, so we don't need to add one
 
     var docstringOrTable = extractDocStringOrTable(convertToHtml, resolve);
 
@@ -189,6 +192,10 @@ public class StepDescription {
     return resolve && getShouldResolveStepArgument()
         ? StepDescription::tryResolvePlaceholders
         : UnaryOperator.identity();
+  }
+
+  private UnaryOperator<String> converter(boolean convertToHtml) {
+    return convertToHtml ? StringEscapeUtils::escapeHtml4 : UnaryOperator.identity();
   }
 
   private String docStringHtml(DocStringArgument docStringArgument, boolean resolve) {
