@@ -443,4 +443,10 @@ public class RbelConverter {
         .ifPresent(future -> future.complete(true));
     element.removeFacetsOfType(MessageProcessingStateFacet.class);
   }
+
+  public static void waitUntilFullyProcessed(RbelElement msg) {
+    msg.getFacet(MessageProcessingStateFacet.class)
+        .map(MessageProcessingStateFacet::getProcessed)
+        .ifPresent(CompletableFuture::join);
+  }
 }

@@ -20,7 +20,12 @@ package io.cucumber.core.plugin.report;
 import static org.awaitility.Awaitility.await;
 
 import com.google.common.collect.Streams;
+import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelRequestFacet;
+import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
+import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelAnsiColors;
@@ -31,6 +36,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import de.gematik.test.tiger.lib.TigerDirector;
+import de.gematik.test.tiger.lib.rbel.RbelMessageValidator;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.env.FeatureUpdate;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
@@ -88,6 +94,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
+import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
@@ -540,6 +548,68 @@ public class SerenityReporterCallbacks {
     LocalProxyRbelMessageListener.getInstance().removeStepRbelMessages(currentStepMessages);
   }
 
+  private void updateLastStepMessages(
+      IScenarioContext context, TestCase testCase, int variantDataIndex) {
+
+    val steps = testCase.getTestSteps();
+
+    if (steps.isEmpty()) {
+      return;
+    }
+
+    if (steps.get(steps.size() - 1) instanceof PickleStepTestStep pickleTestStep) {
+
+      val feature = featureFrom(context.getFeatureURI());
+
+      val stepIndex = findStepIndex(pickleTestStep, steps);
+
+      val featureName = feature.map(Feature::getName).orElse("?");
+
+      val scenarioUniqueId =
+          ScenarioRunner.findScenarioUniqueId(
+                  context.getFeatureURI(), convertLocation(testCase.getLocation()))
+              .toString();
+
+      val currentStepMessages = getCurrentStepMessages(false, StepState.FINISHED);
+
+      if (currentStepMessages.isEmpty()) {
+        return;
+      }
+
+      val messageMetaData = getMessageMetaData(currentStepMessages);
+
+      val currentStepUpdate =
+          StepUpdate.builder()
+              .status(TestResult.UNUSED)
+              .stepIndex(stepIndex)
+              .rbelMetaData(messageMetaData)
+              .build();
+
+      val scenarioUpdate =
+          ScenarioUpdate.builder()
+              .uniqueId(scenarioUniqueId)
+              .status(TestResult.UNUSED)
+              .steps(Map.of(String.valueOf(stepIndex), currentStepUpdate))
+              .variantIndex(variantDataIndex)
+              .build();
+
+      val featureUpdate =
+          FeatureUpdate.builder()
+              .description(featureName)
+              .scenarios(convertToLinkedHashMap(scenarioUniqueId, scenarioUpdate))
+              .build();
+
+      val statusUpdate =
+          TigerStatusUpdate.builder()
+              .featureMap(convertToLinkedHashMap(featureName, featureUpdate))
+              .build();
+
+      TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(statusUpdate);
+
+      LocalProxyRbelMessageListener.getInstance().removeStepRbelMessages(currentStepMessages);
+    }
+  }
+
   private String getHtmlDescription(
       StepDescription description, boolean isDryRun, TestResult stepResult) {
     if (isDryRun) {
@@ -561,14 +631,50 @@ public class SerenityReporterCallbacks {
         .collect(Collectors.toCollection(ArrayList::new));
   }
 
-  private static List<RbelElement> getCurrentStepMessages(boolean isDryRun, StepState stepState) {
+  private List<RbelElement> getCurrentStepMessages(boolean isDryRun, StepState stepState) {
     if (isDryRun || stepState != StepState.FINISHED) {
       return Collections.emptyList();
     }
+    val waitTime = RbelMessageValidator.RBEL_REQUEST_TIMEOUT.getValueOrDefault();
+    try {
+      Awaitility.await()
+          .atMost(waitTime, TimeUnit.SECONDS)
+          .pollInterval(200, TimeUnit.MILLISECONDS)
+          .until(this::getFullyProcessedStepMessages, this::allRequestsPaired);
+    } catch (ConditionTimeoutException e) {
+      log.atWarn()
+          .addArgument(waitTime)
+          .log("Not all messages are processed and paired after {} seconds.");
+    }
+    return LocalProxyRbelMessageListener.getInstance().getStepRbelMessages();
+  }
+
+  private List<RbelElement> getFullyProcessedStepMessages() {
     TigerDirector.getTigerTestEnvMgr()
         .getLocalTigerProxyOptional()
-        .ifPresent(TigerProxy::waitForAllCurrentMessagesToBeParsed);
+        .map(TigerProxy::getRbelLogger)
+        .map(RbelLogger::getMessageHistory)
+        .map(List::copyOf)
+        .orElseGet(Collections::emptyList)
+        .forEach(RbelConverter::waitUntilFullyProcessed);
     return LocalProxyRbelMessageListener.getInstance().getStepRbelMessages();
+  }
+
+  private boolean allRequestsPaired(List<RbelElement> stepMessages) {
+    var messages = new HashSet<>(stepMessages);
+
+    return stepMessages.stream()
+        .filter(
+            message ->
+                message.hasFacet(RbelRequestFacet.class)
+                    && !message.hasFacet(TigerNonPairedMessageFacet.class))
+        .allMatch(
+            message ->
+                message
+                    .getFacet(TracingMessagePairFacet.class)
+                    .map(TracingMessagePairFacet::getResponse)
+                    .stream()
+                    .anyMatch(messages::contains));
   }
 
   private static int findStepIndex(TestStep step, List<TestStep> steps) {
@@ -603,6 +709,10 @@ public class SerenityReporterCallbacks {
       return;
     }
 
+    int dataVariantIndex = extractScenarioDataVariantIndex(context, testCase);
+
+    updateLastStepMessages(context, testCase, dataVariantIndex);
+
     String scenarioStatus = event.getResult().getStatus().toString();
 
     // dump overall status for updates while test is still running
@@ -620,8 +730,6 @@ public class SerenityReporterCallbacks {
         scFailed > 0 ? scFailed + " failed or error" : "");
 
     if (TigerDirector.getLibConfig().createRbelHtmlReports) {
-      int dataVariantIndex = extractScenarioDataVariantIndex(context, testCase);
-
       createRbelLogReport(testCase.getName(), testCase.getUri(), dataVariantIndex);
     }
 

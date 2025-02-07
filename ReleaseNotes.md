@@ -39,6 +39,12 @@ tigerProxy:
   Examples.Example #1.1)
 * TGR-1728: LDAP parsing: allows multiple messages per request; attributes parent element fixed
 * BDDPAR-70: Allow comments in descriptions of feature files
+* TGR-1736: When a test step is finished, we wait for all messages to be fully processed and propagated and all
+  requests to be paired with responses before sending the step update to the UI.
+  The wait time is configurable via the property `tiger.rbel.request.timeout`.
+  After a test case is finished, we associate any trailing messages with the last step.
+  This should ensure that messages are associated with the step they were triggered
+  by and no messages are missing.
 
 # Release 3.6.0
 
