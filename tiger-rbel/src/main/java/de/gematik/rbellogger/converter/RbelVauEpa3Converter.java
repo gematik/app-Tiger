@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.rbellogger.converter;
@@ -195,8 +196,9 @@ public class RbelVauEpa3Converter implements RbelConverterPlugin {
           case "M2" -> parseM2(element, context);
           case "M3" -> parseM3(element, context);
           case "M4" -> parseM4(element, context);
-          default -> element.addFacet(
-              new RbelNoteFacet("Unknown VAU EPA3 message type: " + messageTypeContent));
+          default ->
+              element.addFacet(
+                  new RbelNoteFacet("Unknown VAU EPA3 message type: " + messageTypeContent));
         }
       }
     } catch (RuntimeException e) {

@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-
-    Copyright 2024 gematik GmbH
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-        http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
--->
+  ~ Copyright 2024 gematik GmbH
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
+  -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -43,7 +42,7 @@
         <dependency>
             <groupId>com.github.oshi</groupId>
             <artifactId>oshi-core</artifactId>
-            <version>6.6.5</version>
+            <version>6.6.6</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -143,7 +142,7 @@
         <dependency>
             <groupId>com.networknt</groupId>
             <artifactId>json-schema-validator</artifactId>
-            <version>1.5.4</version>
+            <version>1.5.5</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -206,7 +205,7 @@
             <plugin>
                 <groupId>com.github.victools</groupId>
                 <artifactId>jsonschema-maven-plugin</artifactId>
-                <version>4.31.1</version>
+                <version>4.37.0</version>
                 <executions>
                     <execution>
                         <goals>
@@ -225,6 +224,7 @@
                         <enabled>
                             <option>DEFINITIONS_FOR_ALL_OBJECTS</option>
                             <option>NULLABLE_FIELDS_BY_DEFAULT</option>
+                            <option>INLINE_ALL_SCHEMAS</option>
                             <option>MAP_VALUES_AS_ADDITIONAL_PROPERTIES</option>
                         </enabled>
                     </options>

@@ -4,6 +4,11 @@
 
 * Serenity BDD 4.2.16
 * Cucumber 7.21.0
+* RestAssured 5.5.0
+* Selenium 4.19.1
+* Appium 9.3.0
+* Spring Boot 3.4.2
+* Logback 1.5.16
 
 ## Features
 
@@ -62,7 +67,7 @@ tigerProxy:
 * Selenium 4.19.1
 * Appium 9.3.0
 * Spring Boot 3.4.1
-* Logback 1.5.15
+* Logback 1.5.6
 
 ## Bugfixes
 
@@ -404,8 +409,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-    key = PLUGIN_PROPERTY_NAME,
-    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+        key = PLUGIN_PROPERTY_NAME,
+        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

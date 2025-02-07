@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.lib.email;
@@ -42,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
@@ -77,6 +79,11 @@ class EmailParsingTest {
 
     greenMail = new GreenMail(ServerSetup.verbose(tigerGreenmailSetup));
     greenMail.start();
+  }
+
+  @BeforeEach
+  void resetTigerConfig() {
+    TigerGlobalConfiguration.reset();
   }
 
   @AfterEach
@@ -143,6 +150,18 @@ class EmailParsingTest {
            port: ${tiger.config_ports.smtps.greenmailServerPort}
      activateRbelParsingFor:
         - smtp
+   servers:
+     pop3sProxy:
+        type: tigerProxy
+        tigerProxyConfiguration:
+          adminPort: ${tiger.config_ports.pop3s.admin}
+          proxyPort: ${tiger.config_ports.pop3s.proxy}
+          directReverseProxy:
+             hostname: 127.0.0.1
+             port: ${tiger.config_ports.pop3s.greenmailServerPort}
+          activateRbelParsingFor:
+            - pop3
+            - mime
    """)
   @Test
   void testSendEmailOverTigerProxy(TigerTestEnvMgr tigerTestEnvMgr) {
@@ -155,7 +174,7 @@ class EmailParsingTest {
         "here the body of the email\r\n",
         smtpProxy);
 
-    var message = retrieveByPopSecure(pop3Address.getPort());
+    var message = retrieveByPopSecure(pop3sProxyPort); // pop3Address.getPort());
     assertEqual(message, ExpectedMail.smallMessage());
 
     expectReceivedMessages(tigerTestEnvMgr, 12);
