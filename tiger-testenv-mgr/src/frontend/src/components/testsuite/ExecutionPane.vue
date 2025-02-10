@@ -32,14 +32,17 @@
       <div id="execution_table" class="pt-1">
         <div
           v-if="featureUpdateMap.size === 0"
-          class="alert w-100 text-center"
+          class="waiting-spinner alert w-100 text-center"
           style="height: 200px"
         >
           <i class="fa-solid fa-spinner fa-spin left fa-2x"></i> Waiting for
           first Feature / Scenario to start...
         </div>
         <div v-else class="w-100">
-          <div v-for="(feature, key) in featureUpdateMap" :key="key">
+          <div
+            v-for="(feature, featureKey) in featureUpdateMap"
+            :key="featureKey"
+          >
             <h3 class="featuretitle test-execution-pane-feature-title">
               <TestStatusBadge
                 :test-status="feature[1].status"
@@ -48,7 +51,10 @@
                 :link="feature[1].getLink(feature[1].description)"
               ></TestStatusBadge>
             </h3>
-            <div v-for="(scenario, key) in feature[1].scenarios" :key="key">
+            <div
+              v-for="(scenario, scenarioKey) in feature[1].scenarios"
+              :key="scenarioKey"
+            >
               <h4 class="scenariotitle test-execution-pane-scenario-title">
                 <TestStatusBadge
                   :test-status="scenario[1].status"
@@ -288,5 +294,9 @@ h4.scenariotitle {
 
 .blue {
   color: darkblue;
+}
+
+.waiting-spinner {
+  z-index: -1;
 }
 </style>

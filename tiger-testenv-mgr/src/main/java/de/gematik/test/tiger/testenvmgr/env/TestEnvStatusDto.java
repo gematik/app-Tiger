@@ -34,6 +34,7 @@ public class TestEnvStatusDto {
 
   private String bannerMessage;
   private String bannerColor;
+  private TigerStatusUpdate.BannerDetails bannerDetails;
 
   private BannerType bannerType;
   private boolean bannerIsHtml;
@@ -44,6 +45,7 @@ public class TestEnvStatusDto {
       LinkedHashMap<String, TigerServerStatusUpdateDto> servers,
       String bannerMessage,
       String bannerColor,
+      TigerStatusUpdate.BannerDetails bannerDetails,
       BannerType bannerType,
       boolean isHtml) {
     this.index = index;
@@ -51,6 +53,7 @@ public class TestEnvStatusDto {
     this.servers = servers;
     this.bannerMessage = bannerMessage;
     this.bannerColor = bannerColor;
+    this.bannerDetails = bannerDetails;
     this.bannerType = bannerType;
     this.bannerIsHtml = isHtml;
   }
@@ -62,6 +65,7 @@ public class TestEnvStatusDto {
         .bannerMessage(update.getBannerMessage())
         .bannerColor(update.getBannerColor())
         .bannerType(update.getBannerType())
+        .bannerDetails(update.getBannerDetails())
         .bannerIsHtml(update.isBannerIsHtml())
         .index(update.getIndex())
         .build();

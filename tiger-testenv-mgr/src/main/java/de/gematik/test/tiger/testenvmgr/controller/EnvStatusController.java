@@ -62,6 +62,7 @@ public class EnvStatusController implements TigerUpdateListener {
         tigerEnvStatus.setBannerMessage(update.getBannerMessage());
         tigerEnvStatus.setBannerColor(update.getBannerColor());
         tigerEnvStatus.setBannerType(update.getBannerType());
+        tigerEnvStatus.setBannerDetails(update.getBannerDetails());
         tigerEnvStatus.setBannerIsHtml(update.isBannerIsHtml());
       }
       // TODO make sure to check that the index is the expected next number, if not we do have to

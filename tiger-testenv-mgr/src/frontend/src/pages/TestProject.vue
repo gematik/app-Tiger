@@ -473,48 +473,48 @@ function connectToWebSocket() {
             if (sideBarCollapsed.value) {
               toggleLeftSideBar();
             }
-          } else {
-            const pushedMessage: TestEnvStatusDto = new TestEnvStatusDto();
-            pushedMessage.index = json.index;
-            pushedMessage.bannerMessage = json.bannerMessage;
-            pushedMessage.bannerColor = json.bannerColor;
-            pushedMessage.bannerIsHtml = json.bannerIsHtml;
-            if (json.bannerType) {
-              pushedMessage.bannerType = json.bannerType as BannerType;
-            }
-            if (json.featureMap) {
-              FeatureUpdate.addToMapFromJson(
-                pushedMessage.featureMap,
-                json.featureMap,
-              );
-            }
-            if (json.servers) {
-              TigerServerStatusUpdateDto.addToMapFromJson(
-                pushedMessage.servers,
-                json.servers,
-              );
-            }
-
-            // Deal with initial phase buffering all notifications till fetch returned data
-            if (!fetchedInitialStatus) {
-              debug("MESSAGE PREFETCH: " + pushedMessage.index);
-              preFetchMessageList.push(pushedMessage);
-              return;
-            }
-
-            if (reloadTimeoutHandle) {
-              clearTimeout(reloadTimeoutHandle);
-            }
-            replayingCachedMessages();
-
-            debug(
-              "Check push message order " +
-                pushedMessage.index +
-                " ?== " +
-                (currentMessageIndex + 1),
-            );
-            checkMessageOrderAndProcessAccordingly(pushedMessage);
           }
+          const pushedMessage: TestEnvStatusDto = new TestEnvStatusDto();
+          pushedMessage.index = json.index;
+          pushedMessage.bannerMessage = json.bannerMessage;
+          pushedMessage.bannerColor = json.bannerColor;
+          pushedMessage.bannerIsHtml = json.bannerIsHtml;
+          pushedMessage.bannerDetails = json.bannerDetails;
+          if (json.bannerType) {
+            pushedMessage.bannerType = json.bannerType as BannerType;
+          }
+          if (json.featureMap) {
+            FeatureUpdate.addToMapFromJson(
+              pushedMessage.featureMap,
+              json.featureMap,
+            );
+          }
+          if (json.servers) {
+            TigerServerStatusUpdateDto.addToMapFromJson(
+              pushedMessage.servers,
+              json.servers,
+            );
+          }
+
+          // Deal with initial phase buffering all notifications till fetch returned data
+          if (!fetchedInitialStatus) {
+            debug("MESSAGE PREFETCH: " + pushedMessage.index);
+            preFetchMessageList.push(pushedMessage);
+            return;
+          }
+
+          if (reloadTimeoutHandle) {
+            clearTimeout(reloadTimeoutHandle);
+          }
+          replayingCachedMessages();
+
+          debug(
+            "Check push message order " +
+              pushedMessage.index +
+              " ?== " +
+              (currentMessageIndex + 1),
+          );
+          checkMessageOrderAndProcessAccordingly(pushedMessage);
         }
       });
     },

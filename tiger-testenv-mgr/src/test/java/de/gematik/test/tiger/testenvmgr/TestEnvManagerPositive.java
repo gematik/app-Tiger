@@ -26,6 +26,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.io.IOException;
@@ -159,7 +160,9 @@ class TestEnvManagerPositive extends AbstractTestTigerTestEnvMgr {
       TigerTestEnvMgr envMgr) {
     executeWithSecureShutdown(
         () -> {
-          assertThatThrownBy(() -> envMgr.setUpEnvironment())
+          assertThatThrownBy(envMgr::setUpEnvironment)
+              .isInstanceOf(TigerEnvironmentStartupException.class)
+              .cause()
               .isInstanceOf(TigerTestEnvException.class)
               .hasMessageContaining("/foo/bar/wrong/url")
               .hasMessageContaining("Timeout");

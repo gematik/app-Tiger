@@ -145,7 +145,8 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
                       .orElse("<>"))
           .addArgument(requestPattern::getForwardProxyRequest)
           .log(
-              "Proxying technique doesnt match: Request is forward? ({}), while route {} is forward? ({})");
+              "Proxying technique doesnt match: Request is forward? ({}), while route {} is"
+                  + " forward? ({})");
     }
     return proxyingMatches;
   }

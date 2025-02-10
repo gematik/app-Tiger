@@ -18,6 +18,7 @@
 import TigerServerStatusUpdateDto from "./TigerServerStatusUpdateDto";
 import FeatureUpdate from "./testsuite/FeatureUpdate";
 import BannerType from "@/types/BannerType";
+import { BannerDetails } from "@/types/BannerDetails";
 
 export default class TestEnvStatusDto {
   index: number = -1;
@@ -30,6 +31,7 @@ export default class TestEnvStatusDto {
   bannerColor: string | null = null;
   bannerType: BannerType = BannerType.MESSAGE;
   bannerIsHtml: boolean = false;
+  bannerDetails: BannerDetails | null = null;
 
   public static sortArray(array: Array<TestEnvStatusDto>) {
     // sort prefetched Messages based on index;

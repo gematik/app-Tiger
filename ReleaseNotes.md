@@ -28,6 +28,8 @@ tigerProxy:
       matchForProxyType: false
 ```
 
+* TGR-1683: Workflow UI: improve display of error messages for exceptions happening during environment startup.
+
 ## Bugfixes
 
 * TGR-1427: Use non parallel serenity reporter to circumvent wrong logging behavior of parallel reporter.

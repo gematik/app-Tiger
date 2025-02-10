@@ -34,12 +34,12 @@ import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.exceptions.GenericTigerException;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.config.Configuration;
-import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import de.gematik.test.tiger.testenvmgr.env.*;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerLogListener;
@@ -506,18 +506,8 @@ public class TigerTestEnvMgr
       }
 
       log.info(Ansi.colorize("Finished set up test environment OK", RbelAnsiColors.GREEN_BOLD));
-    } catch (RuntimeException rte) {
-      receiveTestEnvUpdate(
-          TigerStatusUpdate.builder()
-              .bannerMessage(
-                  "<p class=\"failed\">Start up of Test environment failed!</p>"
-                      + "<p class=\"smallcode\">"
-                      + rte.getMessage()
-                      + "</p>")
-              .bannerColor("red")
-              .bannerType(BannerType.MESSAGE)
-              .bannerIsHtml(true)
-              .build());
+    } catch (GenericTigerException rte) {
+      shutDown();
       throw rte;
     }
   }
@@ -595,10 +585,7 @@ public class TigerTestEnvMgr
                             startServer(toBeStartedServer);
                           }))
           .get();
-    } catch (RuntimeException e) {
-      shutDown();
-      throw e;
-    } catch (ExecutionException e) {
+    } catch (RuntimeException | ExecutionException e) {
       throw new TigerEnvironmentStartupException("Error during server startup", e);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();

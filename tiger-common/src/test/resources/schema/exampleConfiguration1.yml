@@ -59,4 +59,3 @@ tigerGlue:
   #features are executed, we use two test variables
   helloTestFeature1: "global value for helloTestFeature1"
   helloTestFeature2: "global value for helloTestFeature2"
-

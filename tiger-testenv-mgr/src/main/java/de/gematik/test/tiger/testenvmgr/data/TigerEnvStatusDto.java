@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.testenvmgr.data;
 
 import de.gematik.test.tiger.testenvmgr.env.FeatureUpdate;
+import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
@@ -30,5 +31,6 @@ public class TigerEnvStatusDto {
   private String bannerMessage;
   private String bannerColor;
   private BannerType bannerType;
+  private TigerStatusUpdate.BannerDetails bannerDetails;
   private boolean bannerIsHtml;
 }

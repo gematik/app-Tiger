@@ -40,10 +40,10 @@ public class TigerConfigurationRoute {
   private TigerRouteAuthenticationConfiguration authentication;
   private List<String> criterions;
   @Builder.Default private List<String> hosts = new ArrayList<>();
+
   /**
-   * Should the route be matched for both forward- and reverse-proxy-requests?
-   * If false only requests matching the proxy-mode suggested by the "from" attribute
-   * will be handled.
+   * Should the route be matched for both forward- and reverse-proxy-requests? If false only
+   * requests matching the proxy-mode suggested by the "from" attribute will be handled.
    */
   @Builder.Default private boolean matchForProxyType = true;
 }

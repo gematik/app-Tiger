@@ -91,11 +91,7 @@ class TestTigerProxyJexlCriterionRoutes extends AbstractTigerProxyTest {
             .criterions(List.of("$.header.foo == 'bar'"))
             .build());
 
-    assertThat(
-            proxyRest
-                .get("http://backend/foobar/blub.html")
-                .asString()
-                .getStatus())
+    assertThat(proxyRest.get("http://backend/foobar/blub.html").asString().getStatus())
         .isEqualTo(777);
     assertThat(
             proxyRest

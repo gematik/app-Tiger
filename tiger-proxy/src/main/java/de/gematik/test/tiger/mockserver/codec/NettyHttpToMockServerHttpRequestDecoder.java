@@ -61,11 +61,16 @@ public class NettyHttpToMockServerHttpRequestDecoder
       preservedHeaders = PreserveHeadersNettyRemoves.preservedHeaders(ctx.channel());
       senderAddress = ctx.channel().remoteAddress();
       sslSession = ctx.channel().attr(SniHandler.SSL_SESSION).get();
-      isProxying = Optional.ofNullable(ctx.channel().attr(HttpRequestHandler.PROXYING).get())
-        .orElse(false);
+      isProxying =
+          Optional.ofNullable(ctx.channel().attr(HttpRequestHandler.PROXYING).get()).orElse(false);
     }
     out.add(
         fullHttpRequestToMockServerRequest.mapFullHttpRequestToMockServerRequest(
-            fullHttpRequest, preservedHeaders, senderAddress, getAlpnProtocol(ctx), sslSession, isProxying));
+            fullHttpRequest,
+            preservedHeaders,
+            senderAddress,
+            getAlpnProtocol(ctx),
+            sslSession,
+            isProxying));
   }
 }

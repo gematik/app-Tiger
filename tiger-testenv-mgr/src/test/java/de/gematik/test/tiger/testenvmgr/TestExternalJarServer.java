@@ -21,6 +21,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatNoException
 
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.io.IOException;
@@ -132,6 +133,8 @@ class TestExternalJarServer extends AbstractTestTigerTestEnvMgr {
     executeWithSecureShutdown(
         () -> {
           assertThatThrownBy(envMgr::setUpEnvironment)
+              .isInstanceOf(TigerEnvironmentStartupException.class)
+              .cause()
               .isInstanceOf(TigerTestEnvException.class)
               .hasMessageStartingWith("Local jar-file")
               .hasMessageContaining("miniJarWHICHDOESNOTEXIST.jar")

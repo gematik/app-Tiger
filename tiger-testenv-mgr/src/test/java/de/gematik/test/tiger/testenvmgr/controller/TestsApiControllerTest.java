@@ -158,7 +158,8 @@ class TestsApiControllerTest {
             new ErrorDto()
                 .errorCode("400")
                 .errorMessage(
-                    "Failed to convert value of type 'java.lang.String' to required type 'java.util.UUID'; Invalid UUID string: "
+                    "Failed to convert value of type 'java.lang.String' to required type"
+                        + " 'java.util.UUID'; Invalid UUID string: "
                         + somethingNotUuid));
   }
 

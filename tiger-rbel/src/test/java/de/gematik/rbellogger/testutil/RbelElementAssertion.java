@@ -196,8 +196,8 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
     for (Entry<String, RbelElement> child : actual.getChildNodesWithKey().entries()) {
       if (child.getValue().getParentNode() != actual) {
         failWithMessage(
-          "Expecting all parents to be correct. Fail for child %s of element %s",
-          child.getKey(), actual.findNodePath());
+            "Expecting all parents to be correct. Fail for child %s of element %s",
+            child.getKey(), actual.findNodePath());
       }
       hasCorrectParentKeysSetInAllElements(child.getValue());
     }

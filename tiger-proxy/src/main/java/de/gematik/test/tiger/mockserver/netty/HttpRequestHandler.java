@@ -94,9 +94,10 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
           request,
           response()
               .withStatusCode(BAD_REQUEST.code())
-              .withBody(Optional.ofNullable(ex.getMessage())
-                .map(e -> e.getBytes(StandardCharsets.UTF_8))
-                .orElse("<null>".getBytes())));
+              .withBody(
+                  Optional.ofNullable(ex.getMessage())
+                      .map(e -> e.getBytes(StandardCharsets.UTF_8))
+                      .orElse("<null>".getBytes())));
     }
   }
 

@@ -27,6 +27,7 @@ import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.AbstractTigerServer;
 import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.List;
 import java.util.Map;
@@ -305,9 +306,11 @@ additionalYamls:
         "tiger");
 
     final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-    assertThatExceptionOfType(TigerConfigurationException.class)
-        .isThrownBy(envMgr::setUpEnvironment)
-        .withMessage(
+    assertThatThrownBy(envMgr::setUpEnvironment)
+        .isInstanceOf(TigerEnvironmentStartupException.class)
+        .cause()
+        .isInstanceOf(TigerConfigurationException.class)
+        .hasMessage(
             "The urlMappings configuration 'https://bla' is not correct. Please check your"
                 + " .yaml-file.");
   }
@@ -327,9 +330,11 @@ additionalYamls:
         "tiger");
 
     final TigerTestEnvMgr envMgr = new TigerTestEnvMgr();
-    assertThatExceptionOfType(TigerConfigurationException.class)
-        .isThrownBy(envMgr::setUpEnvironment)
-        .withMessage(
+    assertThatThrownBy(envMgr::setUpEnvironment)
+        .isInstanceOf(TigerEnvironmentStartupException.class)
+        .cause()
+        .isInstanceOf(TigerConfigurationException.class)
+        .hasMessage(
             "The urlMappings configuration 'https://bla -->' is not correct. Please check your"
                 + " .yaml-file.");
   }

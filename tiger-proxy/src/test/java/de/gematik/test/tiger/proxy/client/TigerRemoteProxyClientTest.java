@@ -279,15 +279,16 @@ class TigerRemoteProxyClientTest {
 
   @Test
   void deleteInternalRoute_shouldGiveException() {
-    val internalRouteId = tigerRemoteProxyClient.getRoutes()
-      .stream()
-      .filter(TigerProxyRoute::isInternalRoute)
-      .map(TigerProxyRoute::getId)
-      .findFirst().get();
+    val internalRouteId =
+        tigerRemoteProxyClient.getRoutes().stream()
+            .filter(TigerProxyRoute::isInternalRoute)
+            .map(TigerProxyRoute::getId)
+            .findFirst()
+            .get();
 
     assertThatThrownBy(() -> tigerRemoteProxyClient.removeRoute(internalRouteId))
-      .isInstanceOf(TigerRemoteProxyClientException.class)
-      .hasMessageContaining("Is internal route!");
+        .isInstanceOf(TigerRemoteProxyClientException.class)
+        .hasMessageContaining("Is internal route!");
   }
 
   @Test

@@ -43,20 +43,22 @@ class TigerConfigurationObjectMapperBuilder {
 
   public TigerConfigurationObjectMapperBuilder(TigerConfigurationLoader configurationLoader) {
     SimpleModule skipEvaluationModule = new SimpleModule();
-    skipEvaluationModule.addDeserializer(String.class, new SkipEvaluationDeserializer(configurationLoader));
+    skipEvaluationModule.addDeserializer(
+        String.class, new SkipEvaluationDeserializer(configurationLoader));
     this.objectMapper =
-      JsonMapper.builder()
-        .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
-        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CASE)
-        .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
-        .addModule(new JavaTimeModule())
-        .addModule(new AllowDelayedPrimitiveResolvementModule(configurationLoader))
-        .addModule(skipEvaluationModule)
-        .defaultAttributes(
-          ContextAttributes.getEmpty()
-            .withSharedAttributes(Map.of(TIGER_CONFIGURATION_ATTRIBUTE_KEY, configurationLoader)))
-        .build();
+        JsonMapper.builder()
+            .configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true)
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .propertyNamingStrategy(PropertyNamingStrategies.LOWER_CASE)
+            .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
+            .addModule(new JavaTimeModule())
+            .addModule(new AllowDelayedPrimitiveResolvementModule(configurationLoader))
+            .addModule(skipEvaluationModule)
+            .defaultAttributes(
+                ContextAttributes.getEmpty()
+                    .withSharedAttributes(
+                        Map.of(TIGER_CONFIGURATION_ATTRIBUTE_KEY, configurationLoader)))
+            .build();
   }
 
   public ObjectMapper retrieveLenientObjectMapper() {
@@ -81,7 +83,7 @@ class TigerConfigurationObjectMapperBuilder {
     @Override
     public void setupModule(SetupContext setupContext) {
       setupContext.addDeserializationProblemHandler(
-        new ClazzFallbackConverter(tigerConfigurationLoader));
+          new ClazzFallbackConverter(tigerConfigurationLoader));
     }
   }
 
@@ -89,22 +91,22 @@ class TigerConfigurationObjectMapperBuilder {
   @AllArgsConstructor
   @Slf4j
   public static class SkipEvaluationDeserializer extends JsonDeserializer<String>
-    implements ContextualDeserializer {
+      implements ContextualDeserializer {
 
     private final TigerConfigurationLoader configurationLoader;
     private boolean skipEvaluation;
 
     @Override
     public JsonDeserializer<?> createContextual(
-      DeserializationContext ctxt, BeanProperty property) {
+        DeserializationContext ctxt, BeanProperty property) {
       this.skipEvaluation =
-        property != null && property.getAnnotation(TigerSkipEvaluation.class) != null;
+          property != null && property.getAnnotation(TigerSkipEvaluation.class) != null;
       return new SkipEvaluationDeserializer(configurationLoader, skipEvaluation);
     }
 
     @Override
     public String deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
-      throws IOException {
+        throws IOException {
       final String valueAsString = jsonParser.getValueAsString();
       if (skipEvaluation) {
         return valueAsString;
@@ -121,11 +123,11 @@ class TigerConfigurationObjectMapperBuilder {
 
     @Override
     public Object handleWeirdStringValue(
-      DeserializationContext ctxt, Class<?> targetType, String valueToConvert, String failureMsg)
-      throws IOException {
+        DeserializationContext ctxt, Class<?> targetType, String valueToConvert, String failureMsg)
+        throws IOException {
       if (valueToConvert.contains("!{") || valueToConvert.contains("${")) {
         final String substitute =
-          TokenSubstituteHelper.substitute(valueToConvert, tigerConfigurationLoader);
+            TokenSubstituteHelper.substitute(valueToConvert, tigerConfigurationLoader);
         if (!substitute.equals(valueToConvert)) {
           final TextNode replacedTextNode = ctxt.getNodeFactory().textNode(substitute);
           return ctxt.readTreeAsValue(replacedTextNode, targetType);
@@ -136,8 +138,8 @@ class TigerConfigurationObjectMapperBuilder {
     }
 
     Object returnTigerSpecificFallbackValue(
-      DeserializationContext ctxt, Class<?> targetType, String valueToConvert, String failureMsg)
-      throws IOException {
+        DeserializationContext ctxt, Class<?> targetType, String valueToConvert, String failureMsg)
+        throws IOException {
       if (targetType.equals(Boolean.class)
           || targetType.equals(Integer.class)
           || targetType.equals(Long.class)

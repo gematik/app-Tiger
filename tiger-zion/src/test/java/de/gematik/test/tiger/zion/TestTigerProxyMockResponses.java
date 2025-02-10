@@ -31,6 +31,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.zion.config.*;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -582,6 +583,8 @@ class TestTigerProxyMockResponses {
       skipEnvironmentSetup = true)
   void bodyFileWithNonExistentFile_shouldThrowException(TigerTestEnvMgr testEnvMgr) {
     assertThatThrownBy(testEnvMgr::setUpEnvironment)
+        .isInstanceOf(TigerEnvironmentStartupException.class)
+        .cause()
         .isInstanceOf(ConfigurationPropertiesBindException.class)
         .hasRootCauseInstanceOf(NoSuchFileException.class)
         .hasRootCauseMessage(Paths.get("this", "is", "not", "a", "real", "file.yaml").toString());

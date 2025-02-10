@@ -45,11 +45,39 @@
       Workflow message
     </h4>
     <div v-if="bannerMessage" class="banner">
-      <div v-if="(bannerMessage as BannerMessage).isHtml">
+      <div
+        v-if="(bannerMessage as BannerMessage).isHtml"
+        class="banner-main-message"
+      >
         <div v-html="`${(bannerMessage as BannerMessage).text}`"></div>
       </div>
-      <div v-else :style="`color: ${(bannerMessage as BannerMessage).color};`">
+      <div
+        v-else
+        :style="`color: ${(bannerMessage as BannerMessage).color};`"
+        class="banner-main-message"
+      >
         {{ (bannerMessage as BannerMessage).text }}
+      </div>
+      <div v-if="(bannerMessage as BannerMessage).bannerDetails">
+        <p class="small-code">
+          {{ (bannerMessage as BannerMessage).bannerDetails?.detailedMessage }}
+        </p>
+        <p>
+          {{
+            (bannerMessage as BannerMessage).bannerDetails?.exceptionClassName
+          }}
+        </p>
+        <button
+          v-if="(bannerMessage as BannerMessage).bannerDetails?.stackTrace"
+          class="btn-sm btn-light"
+          data-bs-toggle="collapse"
+          data-bs-target="#bannerStackTrace"
+        >
+          Show Stacktrace
+        </button>
+        <pre id="bannerStackTrace" class="mt-2 collapse">{{
+          (bannerMessage as BannerMessage).bannerDetails?.stackTrace
+        }}</pre>
       </div>
     </div>
     <div
@@ -131,11 +159,14 @@ function confirmFail() {
 }
 
 .banner {
+  margin-bottom: 0;
+  padding: 0.5rem;
+}
+
+.banner-main-message {
   font-weight: bolder;
   font-size: 150%;
-  margin-bottom: 0;
   text-align: center;
-  padding: 0.5rem;
 }
 
 .btn-banner-close {
