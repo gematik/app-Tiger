@@ -56,7 +56,6 @@ defineEmits(["click-confirm", "click-dismiss"]);
                 class="btn btn-lg btn-link fs-6 text-decoration-none col-6 py-3 m-0 rounded-0 border-end"
                 @click="$emit('click-confirm')"
               >
-                >
                 <strong>{{ props.labelConfirmButton }}</strong>
               </button>
               <button
