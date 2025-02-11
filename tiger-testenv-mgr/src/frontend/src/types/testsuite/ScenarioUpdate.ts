@@ -16,7 +16,7 @@
 ///
 
 import TestResult from "./TestResult";
-import StepUpdate, {IJsonSteps} from "./StepUpdate";
+import StepUpdate, { IJsonSteps } from "./StepUpdate";
 import FeatureUpdate from "./FeatureUpdate";
 import ScenarioIdentifier from "./ScenarioIdentifier";
 
@@ -43,7 +43,7 @@ interface IJsonScenario {
 }
 
 export interface IJsonScenarios {
-  [key: string]: IJsonScenario
+  [key: string]: IJsonScenario;
 }
 
 export interface IJsonOutlineList {
@@ -79,29 +79,32 @@ export default class ScenarioUpdate implements IScenarioUpdate {
       scenario.status = FeatureUpdate.mapToTestResult(scenario.steps);
     }
     if (json.uniqueId) {
-      scenario.uniqueId = json.uniqueId
+      scenario.uniqueId = json.uniqueId;
     }
-    scenario.isDryRun = json.isDryRun
+    scenario.isDryRun = json.isDryRun;
     return scenario;
   }
 
   public static mapFromJson(
-    jsonscenarios: IJsonScenarios
+    jsonscenarios: IJsonScenarios,
   ): Map<string, ScenarioUpdate> {
     const map: Map<string, ScenarioUpdate> = new Map<string, ScenarioUpdate>();
     if (jsonscenarios) {
       Object.entries(jsonscenarios).forEach(([key, value]) =>
-        map.set(key, this.fromJson(value))
+        map.set(key, this.fromJson(value)),
       );
     }
     return map;
   }
 
-  public static mapScenarioOutlineFromJson(outlineList: IJsonOutlineList): Map<string, string> {
+  public static mapScenarioOutlineFromJson(
+    outlineList: IJsonOutlineList,
+  ): Map<string, string> {
     const map: Map<string, string> = new Map<string, string>();
     if (outlineList) {
       Object.entries(outlineList).forEach(([key, value]) =>
-        map.set(key, value));
+        map.set(key, value),
+      );
     }
     return map;
   }
@@ -142,7 +145,9 @@ export default class ScenarioUpdate implements IScenarioUpdate {
         this.steps.set(key, newStep);
       }
     } else {
-      console.error(`RECEIVED a NULL step in scenario ${scenario.description} for key ${key}`);
+      console.error(
+        `RECEIVED a NULL step in scenario ${scenario.description} for key ${key}`,
+      );
     }
   }
 
@@ -158,10 +163,16 @@ export default class ScenarioUpdate implements IScenarioUpdate {
     if (this.variantIndex === -1) {
       return featureName.trim() + "_" + this.description.trim();
     } else {
-      return featureName.trim() + "_" + this.description.trim() + "[" + (this.variantIndex + 1) + "]";
+      return (
+        featureName.trim() +
+        "_" +
+        this.description.trim() +
+        "[" +
+        (this.variantIndex + 1) +
+        "]"
+      );
     }
   }
-
 
   public toString() {
     return `{ description: "${this.description}",\nstatus: "${

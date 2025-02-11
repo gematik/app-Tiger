@@ -1,0 +1,6 @@
+additionalConfigurationFiles:
+  - filename: additionalYaml.yaml
+    baseKey: external
+
+  - filename: foo/bar/additionalYaml.yaml
+    baseKey: nested

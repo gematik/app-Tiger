@@ -320,10 +320,7 @@ public class RbelHtmlRenderingToolkit {
   }
 
   public String menuTab(final RbelElement rbelElement) {
-    final String metaData =
-        new JSONObject(
-                MessageMetaDataDto.createFrom(rbelElement))
-            .toString();
+    final String metaData = new JSONObject(MessageMetaDataDto.createFrom(rbelElement)).toString();
     return "createMenuEntry(" + metaData + ")";
   }
 
@@ -392,7 +389,7 @@ public class RbelHtmlRenderingToolkit {
                     link2CSS(
                         localRessources
                             ? "../webjars/font-awesome/css/all.min.css"
-                            : "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"),
+                            : "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"),
                     link().withRel("icon").withType("image/png").withHref(getLogoBase64Str()),
                     tag("style")
                         .withId("rbel_css")

@@ -25,17 +25,18 @@ export interface IJsonServerStatusUpdate {
 }
 
 interface IJsonServerStatusUpdates {
-  [key: string]: IJsonServerStatusUpdate
+  [key: string]: IJsonServerStatusUpdate;
 }
 
 export default class TigerServerStatusUpdateDto {
-  statusMessage: string = '';
+  statusMessage: string = "";
   type: string = "UNSET";
-  baseUrl: string = '';
+  baseUrl: string = "";
   status: TigerServerStatus = TigerServerStatus.NEW;
 
-
-  public static fromJson(json: IJsonServerStatusUpdate): TigerServerStatusUpdateDto {
+  public static fromJson(
+    json: IJsonServerStatusUpdate,
+  ): TigerServerStatusUpdateDto {
     const serverStatus = new TigerServerStatusUpdateDto();
     serverStatus.statusMessage = json.statusMessage;
     serverStatus.type = json.type;
@@ -44,8 +45,9 @@ export default class TigerServerStatusUpdateDto {
     return serverStatus;
   }
 
-
-  public merge(serverStatus: TigerServerStatusUpdateDto) : TigerServerStatusUpdateDto {
+  public merge(
+    serverStatus: TigerServerStatusUpdateDto,
+  ): TigerServerStatusUpdateDto {
     if (serverStatus.statusMessage) {
       this.statusMessage = serverStatus.statusMessage;
     }
@@ -61,7 +63,10 @@ export default class TigerServerStatusUpdateDto {
     return this;
   }
 
-  public static addToMapFromJson(map: Map<string, TigerServerStatusUpdateDto>, jsonStatusUpdates: IJsonServerStatusUpdates) {
+  public static addToMapFromJson(
+    map: Map<string, TigerServerStatusUpdateDto>,
+    jsonStatusUpdates: IJsonServerStatusUpdates,
+  ) {
     if (jsonStatusUpdates) {
       Object.entries(jsonStatusUpdates).forEach(([key, value]) => {
         if (map.has(key)) {
@@ -72,5 +77,4 @@ export default class TigerServerStatusUpdateDto {
       });
     }
   }
-
 }

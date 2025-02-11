@@ -15,7 +15,7 @@
 /// limitations under the License.
 ///
 import TestResult from "./TestResult";
-import ScenarioUpdate, {IJsonScenarios} from "./ScenarioUpdate";
+import ScenarioUpdate, { IJsonScenarios } from "./ScenarioUpdate";
 import StepUpdate from "@/types/testsuite/StepUpdate";
 
 interface IFeatureUpdate {
@@ -31,7 +31,7 @@ export interface IJsonFeature {
 }
 
 interface IJsonFeatures {
-  [key: string]: IJsonFeature
+  [key: string]: IJsonFeature;
 }
 
 export default class FeatureUpdate implements IFeatureUpdate {
@@ -51,7 +51,10 @@ export default class FeatureUpdate implements IFeatureUpdate {
     return feature;
   }
 
-  public static addToMapFromJson(map: Map<string, FeatureUpdate>, jsonfeatures: IJsonFeatures) {
+  public static addToMapFromJson(
+    map: Map<string, FeatureUpdate>,
+    jsonfeatures: IJsonFeatures,
+  ) {
     if (jsonfeatures) {
       Object.entries(jsonfeatures).forEach(([key, value]) => {
         if (map.has(key)) {
@@ -73,13 +76,13 @@ export default class FeatureUpdate implements IFeatureUpdate {
 
     if (feature.scenarios) {
       for (const key of feature.scenarios.keys()) {
-        const scenario: ScenarioUpdate | undefined = this.scenarios.get(key)
+        const scenario: ScenarioUpdate | undefined = this.scenarios.get(key);
         const newScenario = feature.scenarios.get(key);
         if (newScenario) {
           if (scenario) {
-            scenario.merge(newScenario)
+            scenario.merge(newScenario);
           } else {
-            this.scenarios.set(key, newScenario)
+            this.scenarios.set(key, newScenario);
           }
         } else {
           console.error(`No or empty scenario ${key} provided`);
@@ -94,7 +97,9 @@ export default class FeatureUpdate implements IFeatureUpdate {
     return `{ description: "${this.description}",\nstatus: "${this.status}",\nscenario: "${FeatureUpdate.mapToString(this.scenarios)}"\n}`;
   }
 
-  public static mapToString(map: Map<string, FeatureUpdate | ScenarioUpdate | StepUpdate>) {
+  public static mapToString(
+    map: Map<string, FeatureUpdate | ScenarioUpdate | StepUpdate>,
+  ) {
     let str = `{\n  map: "${typeof map.entries().next()}",`;
     for (const entry of map.entries()) {
       str += `${entry[0]}: ${entry[1].toString()},\n`;
@@ -102,9 +107,11 @@ export default class FeatureUpdate implements IFeatureUpdate {
     return str + "\n}";
   }
 
-  public static mapToTestResult(map: Map<string, FeatureUpdate | ScenarioUpdate | StepUpdate>): TestResult {
+  public static mapToTestResult(
+    map: Map<string, FeatureUpdate | ScenarioUpdate | StepUpdate>,
+  ): TestResult {
     let result: TestResult = TestResult.UNUSED;
-    map.forEach(entryValue => {
+    map.forEach((entryValue) => {
       if (result !== TestResult.FAILED) {
         switch (entryValue.status) {
           case TestResult.SKIPPED:

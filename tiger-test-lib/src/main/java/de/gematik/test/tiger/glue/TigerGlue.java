@@ -60,6 +60,19 @@ public class TigerGlue {
   }
 
   /**
+   * NoOp step to allow marking test suites as being from a specific version, this step is shown in
+   * the workflow ui, the serenity report and can be validated by the Titus validator.
+   *
+   * @param testsuite name of the test suite
+   * @param version version of the test suite
+   */
+  @Given("TGR testsuite {string} version [string}")
+  @Gegebensei("TGR Testsuite {string} Version [string}")
+  public void testsuiteAndVersion(String testsuite, String version) {
+    log.info("Running testsuite {} version {}", testsuite, version);
+  }
+
+  /**
    * Sets the given key to the given value in the global configuration store. Variable substitution
    * is performed.
    *
@@ -186,10 +199,10 @@ public class TigerGlue {
    *
    * @param message message to be displayed in the Workflow UI.
    */
-  @When("TGR pause test run execution with message {string}")
-  @Wenn("TGR pausiere Testausführung mit Nachricht {string}")
+  @When("TGR pause test run execution with message {tigerResolvedString}")
+  @Wenn("TGR pausiere Testausführung mit Nachricht {tigerResolvedString}")
   public void tgrPauseExecutionWithMessage(String message) {
-    TigerDirector.pauseExecution(TigerGlobalConfiguration.resolvePlaceholders(message));
+    TigerDirector.pauseExecution(message);
   }
 
   /**
@@ -211,6 +224,7 @@ public class TigerGlue {
 
   @When("TGR show HTML Notification:")
   @Wenn("TGR zeige HTML Notification:")
+  @ResolvableArgument
   public void tgrShowHtmlNotification(String message) {
     final String bannerMessage = TigerGlobalConfiguration.resolvePlaceholders(message);
     if (TigerDirector.getLibConfig().isActivateWorkflowUi()) {

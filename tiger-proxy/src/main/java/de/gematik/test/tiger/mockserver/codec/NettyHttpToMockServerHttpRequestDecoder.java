@@ -21,6 +21,7 @@ import static de.gematik.test.tiger.mockserver.socket.tls.SniHandler.getAlpnProt
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.mappers.FullHttpRequestToMockServerHttpRequest;
 import de.gematik.test.tiger.mockserver.model.Header;
+import de.gematik.test.tiger.mockserver.netty.HttpRequestHandler;
 import de.gematik.test.tiger.mockserver.socket.tls.SniHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
@@ -28,6 +29,7 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import java.net.SocketAddress;
 import java.security.cert.Certificate;
 import java.util.List;
+import java.util.Optional;
 import javax.net.ssl.SSLSession;
 
 /*
@@ -53,12 +55,14 @@ public class NettyHttpToMockServerHttpRequestDecoder
       ChannelHandlerContext ctx, FullHttpRequest fullHttpRequest, List<Object> out) {
     List<Header> preservedHeaders = null;
     SocketAddress senderAddress = null;
-    SocketAddress remoteAddress = null;
     SSLSession sslSession = null;
+    boolean isProxying = false;
     if (ctx != null && ctx.channel() != null) {
       preservedHeaders = PreserveHeadersNettyRemoves.preservedHeaders(ctx.channel());
       senderAddress = ctx.channel().remoteAddress();
       sslSession = ctx.channel().attr(SniHandler.SSL_SESSION).get();
+      isProxying =
+          Optional.ofNullable(ctx.channel().attr(HttpRequestHandler.PROXYING).get()).orElse(false);
     }
     out.add(
         fullHttpRequestToMockServerRequest.mapFullHttpRequestToMockServerRequest(
@@ -66,6 +70,7 @@ public class NettyHttpToMockServerHttpRequestDecoder
             preservedHeaders,
             senderAddress,
             getAlpnProtocol(ctx),
-            sslSession));
+            sslSession,
+            isProxying));
   }
 }

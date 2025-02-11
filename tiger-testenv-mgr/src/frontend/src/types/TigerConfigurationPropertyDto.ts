@@ -16,14 +16,13 @@
 ///
 
 export default class TigerConfigurationPropertyDto {
-    key: string;
-    value: string;
-    source: string;
+  key: string;
+  value: string;
+  source: string;
 
-
-    constructor(key: string, value: string, source: string) {
-        this.key = key;
-        this.value = value;
-        this.source = source;
-    }
+  constructor(key: string, value: string, source: string) {
+    this.key = key;
+    this.value = value;
+    this.source = source;
+  }
 }

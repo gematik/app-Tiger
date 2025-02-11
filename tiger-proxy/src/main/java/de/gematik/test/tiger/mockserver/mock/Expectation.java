@@ -58,13 +58,18 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
   private final ExpectationCallback expectationCallback;
 
   @Builder(toBuilder = true)
-  public Expectation(HttpRequest requestPattern, String id, int priority, List<String> hostRegexes, ExpectationCallback expectationCallback) {
+  public Expectation(
+      HttpRequest requestPattern,
+      String id,
+      int priority,
+      List<String> hostRegexes,
+      ExpectationCallback expectationCallback) {
     this.requestPattern = requestPattern;
     this.priority = priority;
     if (id == null) {
       this.id = UUID.randomUUID().toString();
     } else {
-    this.id = id;
+      this.id = id;
     }
     if (hostRegexes == null) {
       this.hostRegexes = List.of();
@@ -76,7 +81,7 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
     this.expectationCallback = expectationCallback;
     this.httpAction =
         HttpAction.of(new HttpOverrideForwardedRequest())
-          .setExpectationForwardAndResponseCallback(expectationCallback);
+            .setExpectationForwardAndResponseCallback(expectationCallback);
   }
 
   public static Expectation buildReverseProxyRoute(
@@ -117,11 +122,33 @@ public class Expectation extends ObjectWithJsonToString implements Comparable<Ex
 
   public boolean matches(HttpRequest request) {
     return protocolMatches(this.requestPattern.getProtocol(), request.getProtocol())
+        && proxyingMatches(request)
         && secureMatches(request)
         && hostMatches(request)
-        && pathMatches(
-            this.requestPattern.getPath(), addTrailingSlashIfMissing(request.getPath()))
+        && pathMatches(this.requestPattern.getPath(), addTrailingSlashIfMissing(request.getPath()))
         && (expectationCallback == null || expectationCallback.matches(request));
+  }
+
+  private boolean proxyingMatches(HttpRequest request) {
+    if (tigerRoute != null && !tigerRoute.isMatchForProxyType()) {
+      return true;
+    }
+    boolean proxyingMatches =
+        request.isForwardProxyRequest() == requestPattern.isForwardProxyRequest();
+    if (!proxyingMatches) {
+      log.atTrace()
+          .addArgument(request::getForwardProxyRequest)
+          .addArgument(
+              () ->
+                  Optional.ofNullable(tigerRoute)
+                      .map(TigerProxyRoute::createShortDescription)
+                      .orElse("<>"))
+          .addArgument(requestPattern::getForwardProxyRequest)
+          .log(
+              "Proxying technique doesnt match: Request is forward? ({}), while route {} is"
+                  + " forward? ({})");
+    }
+    return proxyingMatches;
   }
 
   private boolean secureMatches(HttpRequest request) {

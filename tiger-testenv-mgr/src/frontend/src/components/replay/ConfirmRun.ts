@@ -14,12 +14,12 @@
 /// See the License for the specific language governing permissions and
 /// limitations under the License.
 ///
-import {ref} from "vue";
-import {runScenario} from "@/components/replay/ScenarioRunner";
+import { ref } from "vue";
+import { runScenario } from "@/components/replay/ScenarioRunner";
 import ScenarioIdentifier from "@/types/testsuite/ScenarioIdentifier";
 
 export function useConfirmRun() {
-  const dialogIsOpen = ref(false)
+  const dialogIsOpen = ref(false);
 
   function openDialog() {
     if (dialogIsOpen.value) {
@@ -37,7 +37,5 @@ export function useConfirmRun() {
     dialogIsOpen.value = false;
   }
 
-  return {openDialog, onClickConfirm, onClickDismiss, dialogIsOpen};
+  return { openDialog, onClickConfirm, onClickDismiss, dialogIsOpen };
 }
-
-

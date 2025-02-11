@@ -87,7 +87,8 @@ class TestTigerProxyInfiniteLoops extends AbstractTigerProxyTest {
             .build());
 
     assertThatNoException()
-        .isThrownBy(() -> unirestInstance.get("http://localhost:" + tigerProxy.getProxyPort()).asString());
+        .isThrownBy(
+            () -> unirestInstance.get("http://localhost:" + tigerProxy.getProxyPort()).asString());
   }
 
   @Test

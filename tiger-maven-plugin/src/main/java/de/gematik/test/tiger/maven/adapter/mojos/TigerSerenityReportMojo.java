@@ -20,13 +20,23 @@ import de.gematik.test.tiger.common.web.TigerBrowserUtil;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import net.serenitybdd.reports.email.SinglePageHtmlReporter;
 import net.thucydides.core.reports.html.HtmlAggregateStoryReporter;
+import net.thucydides.model.domain.ReportData;
+import net.thucydides.model.domain.TestOutcome;
+import net.thucydides.model.domain.TestStep;
+import net.thucydides.model.reports.OutcomeFormat;
 import net.thucydides.model.reports.ResultChecker;
+import net.thucydides.model.reports.TestOutcomeLoader;
 import net.thucydides.model.reports.TestOutcomes;
+import net.thucydides.model.reports.json.JSONTestOutcomeReporter;
 import net.thucydides.model.requirements.FileSystemRequirements;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -65,6 +75,21 @@ public class TigerSerenityReportMojo extends AbstractMojo {
       getLog().warn("Report directory does not exist yet: " + reportDirectory);
       return;
     }
+    TestOutcomes testOutcomesToManipulate =
+        TestOutcomeLoader.loadTestOutcomes()
+            .inFormat(OutcomeFormat.JSON)
+            .from(reportDirectory)
+            .withRequirementsTags();
+
+    var outcomesReporter = new JSONTestOutcomeReporter();
+    outcomesReporter.setOutputDirectory(reportDirectory);
+
+    for (TestOutcome outcome : testOutcomesToManipulate.getOutcomes()) {
+      List<TestStep> allSteps = collectSteps(outcome);
+      replaceTigerResolvedStepDescriptions(allSteps);
+      outcomesReporter.generateReportFor(outcome);
+    }
+
     HtmlAggregateStoryReporter reporter =
         new HtmlAggregateStoryReporter("default", new FileSystemRequirements(requirementsBaseDir));
     reporter.setSourceDirectory(reportDirectory);
@@ -83,6 +108,41 @@ public class TigerSerenityReportMojo extends AbstractMojo {
     }
     logFullHtmlReportUri();
     getLog().info("  - " + singlePageReporter.getDescription() + ": " + generatedReport.toUri());
+  }
+
+  private List<TestStep> collectSteps(TestOutcome outcome) {
+    var result = new ArrayList<TestStep>();
+    outcome
+        .getTestSteps()
+        .forEach(
+            step -> {
+              result.add(step);
+              result.addAll(collectChildren(step));
+            });
+    return result;
+  }
+
+  private List<TestStep> collectChildren(TestStep step) {
+    var result = new ArrayList<TestStep>();
+    var children = step.getChildren();
+    result.addAll(children);
+    children.forEach(child -> result.addAll(collectChildren(child)));
+    return result;
+  }
+
+  private void replaceTigerResolvedStepDescriptions(List<TestStep> steps) {
+    steps.forEach(step -> getTigerResolvedStepDescription(step).ifPresent(step::setDescription));
+  }
+
+  private Optional<String> getTigerResolvedStepDescription(TestStep step) {
+    var reportDataWithDescription =
+        step.getReportData().stream()
+            .filter(data -> data.getTitle().equals("Tiger Resolved Step Description"))
+            .findAny();
+    reportDataWithDescription.ifPresent(reportData -> step.getReportData().remove(reportData));
+    return reportDataWithDescription
+        .map(ReportData::getContents)
+        .map(StringEscapeUtils::unescapeJava);
   }
 
   public void logFullHtmlReportUri() {

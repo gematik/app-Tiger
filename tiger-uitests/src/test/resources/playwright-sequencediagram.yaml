@@ -1,0 +1,67 @@
+servers:
+  mainServer:
+    type: zion
+    healthcheckUrl:
+      http://mainServer
+    healthcheckReturnCode: 200
+    zionConfiguration:
+      serverPort: ${free.port.50}
+      mockResponses:
+        helloZionBackendServer:
+          requestCriterions:
+            - message.method == 'GET'
+            - message.path == '/helloZionBackendServer'
+          backendRequests:
+            sayHello:
+              method: POST
+              url: "http://backendServer/helloBackend"
+              assignments:
+                backendResponseBody: "$.body"
+              executeAfterSelection: true
+          response:
+            statusCode: 200
+            body: ${backendResponseBody}
+        healthCheckResponse:
+          importance: 20 # more important so others don't get evaluated.
+          requestCriterions:
+            - message.method == 'GET'
+            - message.path == '/'
+          response:
+            statusCode: 200
+
+  backendServer:
+    type: zion
+    healthcheckUrl:
+      http://backendServer
+    healthcheckReturnCode: 200
+    zionConfiguration:
+      serverPort: ${free.port.55}
+      mockResponses:
+        helloFromBackend:
+          request:
+            method: POST
+            path: "/helloBackend"
+          response:
+            statusCode: 200
+            body: '{"Hello": "from backend"}'
+        healthCheck:
+          requestCriterions:
+            - message.method == 'GET'
+            - message.path == '/'
+          response:
+            statusCode: 200
+            body: '{"status":"UP"}'
+          importance: 10
+
+
+lib:
+  rbelPathDebugging: false
+  activateWorkflowUi: true
+  startBrowser: false
+  trafficVisualization: true
+
+
+logging:
+  level:
+    de.gematik.test.tiger.zion: TRACE
+    de.gematik.test.tiger.testenvmgr.servers: DEBUG

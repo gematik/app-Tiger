@@ -20,6 +20,7 @@ package io.cucumber.core.plugin;
 import static io.cucumber.core.options.Constants.EXECUTION_DRY_RUN_PROPERTY_NAME;
 import static io.cucumber.core.options.Constants.FEATURES_PROPERTY_NAME;
 import static io.cucumber.core.options.Constants.FILTER_TAGS_PROPERTY_NAME;
+import static io.cucumber.junit.platform.engine.Constants.JUNIT_PLATFORM_SHORT_NAMING_STRATEGY_EXAMPLE_NAME_PROPERTY_NAME;
 
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
@@ -44,6 +45,7 @@ public class TigerLauncherDiscoveryListener implements LauncherDiscoveryListener
     TigerGlobalConfiguration.initialize();
     backupInitialConfigParameters(request.getConfigurationParameters());
     forceDryRun();
+    setExampleNamingStrategy();
     setDefaultFilterTags(request.getConfigurationParameters());
   }
 
@@ -76,5 +78,12 @@ public class TigerLauncherDiscoveryListener implements LauncherDiscoveryListener
   private void forceDryRun() {
     boolean autoRunOnStart = TigerConfigurationKeys.RUN_TESTS_ON_START.getValueOrDefault();
     System.setProperty(EXECUTION_DRY_RUN_PROPERTY_NAME, Boolean.toString(!autoRunOnStart));
+  }
+
+  private static void setExampleNamingStrategy() {
+    if (System.getProperty(JUNIT_PLATFORM_SHORT_NAMING_STRATEGY_EXAMPLE_NAME_PROPERTY_NAME)
+        == null) {
+      System.setProperty(JUNIT_PLATFORM_SHORT_NAMING_STRATEGY_EXAMPLE_NAME_PROPERTY_NAME, "pickle");
+    }
   }
 }

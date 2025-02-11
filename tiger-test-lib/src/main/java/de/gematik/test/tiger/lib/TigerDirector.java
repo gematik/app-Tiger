@@ -22,7 +22,6 @@ import static org.awaitility.Awaitility.await;
 
 import com.google.common.annotations.VisibleForTesting;
 import de.gematik.rbellogger.RbelOptions;
-import de.gematik.rbellogger.util.IRbelMessageListener;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.Ansi;
@@ -35,6 +34,7 @@ import de.gematik.test.tiger.lib.exception.TigerStartupException;
 import de.gematik.test.tiger.lib.rbel.RbelMessageValidator;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
 import de.gematik.test.tiger.lib.serenityrest.SerenityRestUtils;
+import de.gematik.test.tiger.lib.shutdown.ShutdownReason;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
 import de.gematik.test.tiger.testenvmgr.controller.TestExecutionController;
@@ -51,7 +51,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -112,7 +111,7 @@ public class TigerDirector {
       // get free port
       startTestEnvMgr();
       startWorkflowUi();
-      setupTestEnvironment(Optional.empty());
+      setupTestEnvironment();
       setDefaultProxyToLocalTigerProxy();
       initialized = true;
       if (getTigerTestEnvMgr().isLocalTigerProxyActive()) {
@@ -123,7 +122,7 @@ public class TigerDirector {
       }
     } catch (RuntimeException e) {
       initialized = false;
-      quit(true);
+      quit(new ShutdownReason("Start up of Test environment failed!", true, e));
       throw e;
     }
   }
@@ -158,11 +157,11 @@ public class TigerDirector {
                 + " in config");
         tigerTestEnvMgr.getConfiguration().setLocalProxyActive(false);
       }
-      setupTestEnvironment(Optional.empty());
+      setupTestEnvironment();
       initialized = true;
     } catch (RuntimeException e) {
       initialized = false;
-      quit(true);
+      quit(new ShutdownReason("Start up of Test environment failed!", true, e));
       throw e;
     }
   }
@@ -204,20 +203,20 @@ public class TigerDirector {
                   }
 
                   if (!tigerTestEnvMgr.isShuttingDown()) {
-                    quit(true);
+                    quit(ShutdownReason.REGULAR_SHUTDOWN_USER_ACKNOWLEDGE);
                   }
                 }));
   }
 
   public static void waitForAcknowledgedQuit() {
-    quit(true);
+    quit(ShutdownReason.REGULAR_SHUTDOWN_USER_ACKNOWLEDGE);
   }
 
-  private static void quit(boolean shouldUserAcknowledgeShutdown) {
+  private static void quit(ShutdownReason shutdownReason) {
     try {
       if (getLibConfig() != null
           && getLibConfig().isActivateWorkflowUi()
-          && shouldUserAcknowledgeShutdown) {
+          && shutdownReason.isShouldUserAcknowledgeShutdown()) {
         // This method is called in the shut down hook of the JVM and we experienced that using the
         // logger
         // sometimes kept this message from appearing in the console, so resorting to System.out
@@ -229,8 +228,13 @@ public class TigerDirector {
         if (tigerTestEnvMgr != null) {
           tigerTestEnvMgr.receiveTestEnvUpdate(
               TigerStatusUpdate.builder()
-                  .bannerMessage("Test run finished, press SHUTDOWN")
-                  .bannerColor("green")
+                  .bannerMessage(shutdownReason.getMessage())
+                  .bannerColor(shutdownReason.getException().map(e -> "red").orElse("green"))
+                  .bannerDetails(
+                      shutdownReason
+                          .getException()
+                          .map(TigerStatusUpdate.BannerDetails::new)
+                          .orElse(null))
                   .bannerType(BannerType.TESTRUN_ENDED)
                   .build());
           try {
@@ -260,20 +264,18 @@ public class TigerDirector {
     }
   }
 
-  private static void setupTestEnvironment(
-      Optional<IRbelMessageListener> tigerProxyMessageListener) {
+  private static void setupTestEnvironment() {
     if (SKIP_ENVIRONMENT_SETUP.getValueOrDefault().equals(Boolean.FALSE)) {
       log.info(
           "\n" + Banner.toBannerStr("SETTING UP TESTENV...", RbelAnsiColors.BLUE_BOLD.toString()));
-      tigerTestEnvMgr.setUpEnvironment(tigerProxyMessageListener);
+      tigerTestEnvMgr.setUpEnvironment();
       log.info("\n" + Banner.toBannerStr("TESTENV SET UP OK", RbelAnsiColors.BLUE_BOLD.toString()));
     }
   }
 
   public static synchronized void readConfiguration() {
     libConfig =
-        TigerGlobalConfiguration.instantiateConfigurationBean(
-                TigerLibConfig.class, "TIGER_LIB")
+        TigerGlobalConfiguration.instantiateConfigurationBean(TigerLibConfig.class, "TIGER_LIB")
             .orElseGet(TigerLibConfig::new);
   }
 
@@ -334,7 +336,7 @@ public class TigerDirector {
         () -> {
           await().pollDelay(300, TimeUnit.MILLISECONDS).until(() -> true);
           tigerTestEnvMgr.abortTestExecution();
-          quit(false);
+          quit(ShutdownReason.REGULAR_SHUTDOWN_NO_ACKNOWLEDGE);
         });
 
     testExecutionController.setPauseListener(
@@ -363,7 +365,7 @@ public class TigerDirector {
         if (!libConfig.startBrowser) {
           log.info(
               "Workflow UI http://localhost:" + TESTENV_MGR_RESERVED_PORT.getValue().orElseThrow());
-          duration = 60;
+          duration = 120;
         }
         await()
             .atMost(Duration.ofSeconds(duration))
@@ -420,6 +422,9 @@ public class TigerDirector {
 
   public static void assertThatTigerIsInitialized() {
     if (!initialized) {
+      log.error("\n" + Banner.toBannerStrWithCOLOR("Test env not initialized!", "red"));
+      log.error(
+          Banner.toTextStr("Did you use TigerCucumberRunner to execute the test run?", "yellow"));
       throw new TigerStartupException(
           "Tiger test environment has not been initialized successfully!");
     }

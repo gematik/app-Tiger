@@ -15,33 +15,32 @@
   -->
 
 <script setup lang="ts">
-
-import {inject, onMounted, onUnmounted, Ref, ref} from "vue";
-import "ag-grid-community/styles/ag-grid.css"
-import "ag-grid-community/styles/ag-theme-alpine.css"
+import { inject, onMounted, onUnmounted, Ref, ref } from "vue";
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
 import TigerConfigurationPropertyDto from "@/types/TigerConfigurationPropertyDto";
 import ConfigurationValueCell from "@/components/global_configuration/ConfigurationValueCell.vue";
-import ConfigurationSourceCell from "@/components/global_configuration/ConfigurationSourceCell.vue"
+import ConfigurationSourceCell from "@/components/global_configuration/ConfigurationSourceCell.vue";
 import EditActionButtons from "@/components/global_configuration/EditActionButtons.vue";
 import ConfigurationValueCellEditor from "@/components/global_configuration/ConfigurationValueCellEditor.vue";
-import {Emitter} from "mitt";
-import {useConfigurationLoader} from "@/components/global_configuration/ConfigurationLoader";
-import {CellClickedEvent, ColDef, GridApi} from "ag-grid-community";
-import {AgGridVue} from "ag-grid-vue3";
+import { Emitter } from "mitt";
+import { useConfigurationLoader } from "@/components/global_configuration/ConfigurationLoader";
+import { CellClickedEvent, ColDef, GridApi } from "ag-grid-community";
+import { AgGridVue } from "ag-grid-vue3";
 
 const {
   loadConfigurationProperties,
   deleteConfigurationProperty,
   saveConfigurationProperty,
-  importConfig
+  importConfig,
 } = useConfigurationLoader();
 
-const emitter: Emitter<any> = inject('emitter') as Emitter<any>;
+const emitter: Emitter<any> = inject("emitter") as Emitter<any>;
 const configurationProperties = ref(new Array<TigerConfigurationPropertyDto>());
 
 const editorGrid: Ref<typeof AgGridVue | null> = ref(null);
 const gridApi: Ref<GridApi | null | undefined> = ref(undefined);
-const importFileStatus = ref('');
+const importFileStatus = ref("");
 
 const isImportButtonDisabled = ref(false);
 const isRefreshButtonDisabled = ref(false);
@@ -49,17 +48,17 @@ const isRefreshButtonDisabled = ref(false);
 onMounted(async () => {
   configurationProperties.value = await loadConfigurationProperties();
   if (editorGrid.value) {
-    gridApi.value = editorGrid.value.api
+    gridApi.value = editorGrid.value.api;
   }
   emitter.on("cellValueSaved", onCellValueSaved);
-})
+});
 
 onUnmounted(() => {
-  emitter.off("cellValueSaved", onCellValueSaved)
-})
+  emitter.off("cellValueSaved", onCellValueSaved);
+});
 
 async function onCellValueSaved(data: TigerConfigurationPropertyDto) {
-  const response = await saveConfigurationProperty(data)
+  const response = await saveConfigurationProperty(data);
   if (response.ok) {
     configurationProperties.value = await loadConfigurationProperties();
   }
@@ -67,45 +66,48 @@ async function onCellValueSaved(data: TigerConfigurationPropertyDto) {
 
 function onCellClicked(params: CellClickedEvent) {
   if (isClickInActionsColumn(params)) {
-    const action = (params.event?.target as HTMLElement).dataset.action
-    if (action === 'delete') {
+    const action = (params.event?.target as HTMLElement).dataset.action;
+    if (action === "delete") {
       deleteRow(params.data);
-    } else if (action === 'edit') {
+    } else if (action === "edit") {
       startEdit(params);
     }
   }
 }
 
 function isClickInActionsColumn(params: CellClickedEvent) {
-  return params.column['colId'] === 'action' && (params.event?.target as HTMLElement).dataset.action;
+  return (
+    params.column["colId"] === "action" &&
+    (params.event?.target as HTMLElement).dataset.action
+  );
 }
 
 function onClearFilters() {
   gridApi.value?.setFilterModel(null);
 }
 
-
 function onClickImport() {
   isImportButtonDisabled.value = true;
-  const fileInput = document.createElement('input');
-  fileInput.type = 'file';
-  fileInput.accept = '.yaml';
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = ".yaml";
   fileInput.onchange = async () => {
     if (fileInput.files && fileInput.files.length > 0) {
       try {
         const response = await importConfig(fileInput.files[0]);
         if (response.ok) {
           configurationProperties.value = await loadConfigurationProperties();
-          importFileStatus.value = '';
+          importFileStatus.value = "";
         } else {
           const errorJson = await response.json();
           importFileStatus.value = `Something went wrong with the import: ${errorJson.error}`;
         }
       } catch (error) {
-        const message = (error instanceof Error) ? error.message : 'An unknown error occurred';
+        const message =
+          error instanceof Error ? error.message : "An unknown error occurred";
         importFileStatus.value = `Something went wrong with the import: ${message}`;
       }
-      fileInput.remove()
+      fileInput.remove();
     }
   };
   fileInput.click();
@@ -128,19 +130,21 @@ async function deleteRow(data: TigerConfigurationPropertyDto) {
 async function startEdit(params: CellClickedEvent) {
   if (params.node.rowIndex !== null) {
     params.api.startEditingCell({
-          rowIndex: params.node.rowIndex,
-          colKey: 'value',
-        }
-    );
+      rowIndex: params.node.rowIndex,
+      colKey: "value",
+    });
   }
 }
 
 const defaultColDef: ColDef = {
-  sortable: true, filter: true, editable: false, resizable: true,
+  sortable: true,
+  filter: true,
+  editable: false,
+  resizable: true,
   icons: {
     menu: '<i class="fa fa-filter"/>',
-  }
-}
+  },
+};
 
 const columnDefs: ColDef[] = [
   {
@@ -155,72 +159,93 @@ const columnDefs: ColDef[] = [
     field: "key",
     flex: 6,
     cellEditorPopup: true,
-    minWidth: 80
+    minWidth: 80,
   },
   {
-    headerName: "Value", field: "value",
-    colId: 'value',
+    headerName: "Value",
+    field: "value",
+    colId: "value",
     cellRenderer: ConfigurationValueCell,
     cellEditorPopup: true,
     cellEditor: ConfigurationValueCellEditor,
-    cellEditorPopupPosition: 'over',
+    cellEditorPopupPosition: "over",
     flex: 8,
     autoHeight: true,
     editable: true,
-    minWidth: 90
+    minWidth: 90,
   },
   {
     headerName: "Action",
     cellRenderer: EditActionButtons,
-    colId: 'action',
+    colId: "action",
     cellClass: "text-end",
     flex: 1,
     filter: false,
-    minWidth: 83
-  }
-
+    minWidth: 83,
+  },
 ];
-
-
 </script>
 
 <template>
   <div class="config-editor container flex items-center">
     <div class="text-start py-1">
-      <button class="btn btn-outline-secondary btn-sm me-1" type="button" id="test-tg-config-editor-btn-clear-filters"
-              @click.prevent="onClearFilters" title="clear the filters applied to the table">Clear filters
+      <button
+        id="test-tg-config-editor-btn-clear-filters"
+        class="btn btn-outline-secondary btn-sm me-1"
+        type="button"
+        title="clear the filters applied to the table"
+        @click.prevent="onClearFilters"
+      >
+        Clear filters
       </button>
-      <a class="btn btn-outline-secondary btn-sm me-1" type="button" id="test-tg-config-editor-btn-export"
-         href="/global_configuration/file"
-         download="global_configuration.json"
-         title="export the configuration as a file"
-      >Export
+      <a
+        id="test-tg-config-editor-btn-export"
+        class="btn btn-outline-secondary btn-sm me-1"
+        type="button"
+        href="/global_configuration/file"
+        download="global_configuration.json"
+        title="export the configuration as a file"
+        >Export
       </a>
 
-      <button class="btn btn-outline-secondary btn-sm me-1" type="button" id="test-tg-config-editor-btn-import"
-              @click.prevent="onClickImport" :disabled="isImportButtonDisabled" title="import a configuration file">Import
+      <button
+        id="test-tg-config-editor-btn-import"
+        class="btn btn-outline-secondary btn-sm me-1"
+        type="button"
+        :disabled="isImportButtonDisabled"
+        title="import a configuration file"
+        @click.prevent="onClickImport"
+      >
+        Import
       </button>
 
-      <button class="btn btn-outline-secondary btn-sm me-1" type="button" id="test-tg-config-editor-btn-refresh"
-              @click.prevent="onClickRefresh" :disabled="isRefreshButtonDisabled" title="refresh the configuration">Refresh
+      <button
+        id="test-tg-config-editor-btn-refresh"
+        class="btn btn-outline-secondary btn-sm me-1"
+        type="button"
+        :disabled="isRefreshButtonDisabled"
+        title="refresh the configuration"
+        @click.prevent="onClickRefresh"
+      >
+        Refresh
       </button>
     </div>
     <div v-if="importFileStatus" class="alert alert-danger" role="alert">
       <i class="fas fa-exclamation-triangle"></i> {{ importFileStatus }}
     </div>
     <ag-grid-vue
-        class="ag-theme-alpine editor-table"
-        id="test-tg-config-editor-table"
-        ref="editorGrid"
-        :rowData="configurationProperties"
-        :columnDefs="columnDefs"
-        :defaultColDef="defaultColDef"
-        suppressClickEdit="false"
-        suppressNavigable="true"
-        suppressMenuHide="true"
-        cellClass="no-border"
-        domLayout="autoHeight"
-        @cell-clicked="onCellClicked"
+      id="test-tg-config-editor-table"
+      ref="editorGrid"
+      class="ag-theme-alpine editor-table"
+      :row-data="configurationProperties"
+      :column-defs="columnDefs"
+      :default-col-def="defaultColDef"
+      suppress-click-edit="false"
+      suppress-navigable="true"
+      suppress-menu-hide="true"
+      cell-class="no-border"
+      dom-layout="autoHeight"
+      @cell-clicked="onCellClicked"
     >
     </ag-grid-vue>
   </div>
@@ -231,5 +256,4 @@ const columnDefs: ColDef[] = [
   width: 100%;
   height: 100%;
 }
-
 </style>

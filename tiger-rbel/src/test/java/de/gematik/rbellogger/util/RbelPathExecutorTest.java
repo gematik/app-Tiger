@@ -47,9 +47,9 @@ class RbelPathExecutorTest {
   private static final RbelConverter RBEL_CONVERTER =
       RbelLogger.build(
               new RbelConfiguration()
-                .activateConversionFor("X509")
-                .activateConversionFor("asn1")
-                .setLenientHttpParsing(true))
+                  .activateConversionFor("X509")
+                  .activateConversionFor("asn1")
+                  .setLenientHttpParsing(true))
           .getRbelConverter();
   private static RbelElement jwtMessage;
   private static RbelElement xmlMessage;
@@ -174,7 +174,7 @@ class RbelPathExecutorTest {
   @Test
   void eliminateContentInRbelPathResult() throws IOException {
     val convertedMessage =
-      readAndConvertCurlMessage("src/test/resources/sampleMessages/getChallenge.curl");
+        readAndConvertCurlMessage("src/test/resources/sampleMessages/getChallenge.curl");
 
     Assertions.assertThat(convertedMessage.findElement("$.body.challenge.signature"))
         .containsSame(convertedMessage.findElement("$.body.challenge.content.signature").get());

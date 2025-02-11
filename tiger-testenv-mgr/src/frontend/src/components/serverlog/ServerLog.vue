@@ -15,83 +15,134 @@
   -->
 
 <template>
-  <div class="tab-pane execution-pane-tabs" id="logs_pane" role="tabpanel">
+  <div id="logs_pane" class="tab-pane execution-pane-tabs" role="tabpanel">
     <div class="ps-3 sticky-element">
       <table aria-label="Filter and search toolbar of the server log tab pane">
         <thead>
-        <tr>
-          <th>Filter servers:</th>
-          <th class="ps-2">Filter by Text:</th>
-          <th>Loglevel:</th>
-        </tr>
+          <tr>
+            <th>Filter servers:</th>
+            <th class="ps-2">Filter by Text:</th>
+            <th>Loglevel:</th>
+          </tr>
         </thead>
         <tbody>
-        <tr>
-          <td>
-            <div class="ps-0 pt-2 pb-4">
-              <div class="justify-content-between" id="test-server-log-pane-buttons" style="display: inline-block;">
-                <div class="btn active server-buttons" id="test-server-log-pane-server-all"
-                     @click="setServer(selectedServers, '__all__', $event)">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
-                       class="bi bi-circle-fill" fill="currentColor" viewBox="0 0 16 16">
-                    <circle cx="8" cy="8" r="8"/>
-                  </svg>
-                  Show all logs
-                </div>
-                <div v-for="(serverName,logIndex) in logServers" :key="logIndex" style="display: inline-block;">
-                  <div class="btn server-buttons"
-                       :id="`test-server-log-pane-server-${serverName}`"
-                       @click="setServer(selectedServers, serverName, $event)">
-                    <svg xmlns="http://www.w3.org/2000/svg"
-                         width="16" height="16" fill="currentColor" class="bi bi-circle-fill" viewBox="0 0 16 16">
-                      <circle cx="8" cy="8" r="8"/>
+          <tr>
+            <td>
+              <div class="ps-0 pt-2 pb-4">
+                <div
+                  id="test-server-log-pane-buttons"
+                  class="justify-content-between"
+                  style="display: inline-block"
+                >
+                  <div
+                    id="test-server-log-pane-server-all"
+                    class="btn active server-buttons"
+                    @click="setServer(selectedServers, '__all__', $event)"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      class="bi bi-circle-fill"
+                      fill="currentColor"
+                      viewBox="0 0 16 16"
+                    >
+                      <circle cx="8" cy="8" r="8" />
                     </svg>
-                    {{ serverName }}
+                    Show all logs
+                  </div>
+                  <div
+                    v-for="(serverName, logIndex) in logServers"
+                    :key="logIndex"
+                    style="display: inline-block"
+                  >
+                    <div
+                      :id="`test-server-log-pane-server-${serverName}`"
+                      class="btn server-buttons"
+                      @click="setServer(selectedServers, serverName, $event)"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        fill="currentColor"
+                        class="bi bi-circle-fill"
+                        viewBox="0 0 16 16"
+                      >
+                        <circle cx="8" cy="8" r="8" />
+                      </svg>
+                      {{ serverName }}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </td>
-          <td>
-            <div class="container-fluid ps-2 pt-2 pb-4">
-              <input v-model="selectedText" placeholder="filter text" id="test-server-log-pane-input-text"/>
-            </div>
-          </td>
-          <td>
-            <div class="container-fluid ps-0 pt-2 pb-4">
-              <select class="selectpicker" v-model="selectedLoglevel" id="test-server-log-pane-select">
-                <option v-for="(loglevelName,logIndex) in getLogLevel()" :key="logIndex" :value="LogLevel[loglevelName]"
-                        :id="`test-server-log-pane-select-${loglevelName}`">
-                  {{ loglevelName }}
-                </option>
-              </select>
-            </div>
-          </td>
-        </tr>
+            </td>
+            <td>
+              <div class="container-fluid ps-2 pt-2 pb-4">
+                <input
+                  id="test-server-log-pane-input-text"
+                  v-model="selectedText"
+                  placeholder="filter text"
+                />
+              </div>
+            </td>
+            <td>
+              <div class="container-fluid ps-0 pt-2 pb-4">
+                <select
+                  id="test-server-log-pane-select"
+                  v-model="selectedLoglevel"
+                  class="selectpicker"
+                >
+                  <option
+                    v-for="(loglevelName, logIndex) in getLogLevel()"
+                    :id="`test-server-log-pane-select-${loglevelName}`"
+                    :key="logIndex"
+                    :value="LogLevel[loglevelName]"
+                  >
+                    {{ loglevelName }}
+                  </option>
+                </select>
+              </div>
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
 
-    <div :class="`logList row type-${serverLog.logLevel.toLowerCase()} test-server-log-pane-log-row`"
-         v-for="(serverLog, logIndex) in filteredLogs(serverLogs, selectedServers, selectedText, selectedLoglevel)"
-         :key="logIndex">
-      <div class="col-1 test-server-log-pane-log-1">{{ serverLog.serverName }}</div>
-      <div class="col-2 logDate test-server-log-pane-log-2">{{ getReadableTime(serverLog.localDateTime) }}</div>
-      <div :class="`col-9 type-${serverLog.logLevel.toLowerCase()} test-server-log-pane-log-3`">
+    <div
+      v-for="(serverLog, logIndex) in filteredLogs(
+        serverLogs,
+        selectedServers,
+        selectedText,
+        selectedLoglevel,
+      )"
+      :key="logIndex"
+      :class="`logList row type-${serverLog.logLevel.toLowerCase()} test-server-log-pane-log-row`"
+    >
+      <div class="col-1 test-server-log-pane-log-1">
+        {{ serverLog.serverName }}
+      </div>
+      <div class="col-2 logDate test-server-log-pane-log-2">
+        {{ getReadableTime(serverLog.localDateTime) }}
+      </div>
+      <div
+        :class="`col-9 type-${serverLog.logLevel.toLowerCase()} test-server-log-pane-log-3`"
+      >
         [{{ serverLog.logLevel.toUpperCase() }}]
-        <span v-if="serverLog.logMessage" v-html="serverLog.logMessage.replaceAll('\n', '<br/>')"></span>
+        <span
+          v-if="serverLog.logMessage"
+          v-html="serverLog.logMessage.replaceAll('\n', '<br/>')"
+        ></span>
       </div>
     </div>
   </div>
-
 </template>
 
 <script setup lang="ts">
-
 import TigerServerLogDto from "@/types/TigerServerLogDto";
 import LogLevel from "@/types/LogLevel";
-import {DateTimeFormatter, LocalDateTime} from "@js-joda/core";
-import {ref} from "vue";
+import { DateTimeFormatter, LocalDateTime } from "@js-joda/core";
+import { ref } from "vue";
 
 const props = defineProps<{
   serverLogs: Array<TigerServerLogDto>;
@@ -104,8 +155,9 @@ const props = defineProps<{
 const selectedText = ref(props.selectedText);
 const selectedLoglevel = ref(props.selectedLoglevel);
 
-const formatter: DateTimeFormatter = DateTimeFormatter.ofPattern('MM/dd/yyyy HH:mm:ss.SSS');
-
+const formatter: DateTimeFormatter = DateTimeFormatter.ofPattern(
+  "MM/dd/yyyy HH:mm:ss.SSS",
+);
 
 function getReadableTime(localDateTime: LocalDateTime): string {
   if (localDateTime) {
@@ -116,9 +168,13 @@ function getReadableTime(localDateTime: LocalDateTime): string {
 
 const ALL: string = "__all__";
 
-function setServer(selectedServers: Array<string>, serverId: string, event: MouseEvent) {
+function setServer(
+  selectedServers: Array<string>,
+  serverId: string,
+  event: MouseEvent,
+) {
   event.preventDefault();
-  const buttons = document.getElementsByClassName('server-buttons');
+  const buttons = document.getElementsByClassName("server-buttons");
   if (serverId === ALL) {
     for (const button of buttons) {
       button.classList.toggle("active", false);
@@ -160,11 +216,20 @@ function getLogLevel(): Array<string> {
   return logLevelValues;
 }
 
-function filteredLogs(serverLogs: Array<TigerServerLogDto>, selectedServers: Array<string>, selectedText: string, selectedLoglevel: string) {
-  if (selectedServers && selectedServers.length > 0 && selectedServers.indexOf(ALL) === -1) {
+function filteredLogs(
+  serverLogs: Array<TigerServerLogDto>,
+  selectedServers: Array<string>,
+  selectedText: string,
+  selectedLoglevel: string,
+) {
+  if (
+    selectedServers &&
+    selectedServers.length > 0 &&
+    selectedServers.indexOf(ALL) === -1
+  ) {
     return serverLogs.filter((log) => {
       return selectedServers.some((selectedServer) => {
-        const filteredLog = filterLogLevel(log, selectedText, selectedLoglevel)
+        const filteredLog = filterLogLevel(log, selectedText, selectedLoglevel);
         if (selectedServer === (log.serverName as string)) {
           return filteredLog;
         }
@@ -177,20 +242,25 @@ function filteredLogs(serverLogs: Array<TigerServerLogDto>, selectedServers: Arr
   }
 }
 
-function filterLogLevel(log: TigerServerLogDto, selectedText: string, selectedLoglevel: string): TigerServerLogDto | null {
+function filterLogLevel(
+  log: TigerServerLogDto,
+  selectedText: string,
+  selectedLoglevel: string,
+): TigerServerLogDto | null {
   const logLevel: LogLevel = LogLevel[log.logLevel as keyof typeof LogLevel];
   if (logLevel <= parseInt(selectedLoglevel)) {
     if (selectedText) {
-      if ((log.logMessage?.indexOf(selectedText) !== -1) ||
-          (log.logLevel?.indexOf(selectedText) !== -1) ||
-          (getReadableTime(log.localDateTime).indexOf(selectedText) !== -1)) {
+      if (
+        log.logMessage?.indexOf(selectedText) !== -1 ||
+        log.logLevel?.indexOf(selectedText) !== -1 ||
+        getReadableTime(log.localDateTime).indexOf(selectedText) !== -1
+      ) {
         return log;
       }
     } else return log;
   }
   return null;
 }
-
 </script>
 
 <style scoped>
@@ -232,7 +302,7 @@ function filterLogLevel(log: TigerServerLogDto, selectedText: string, selectedLo
 }
 
 .server-buttons.active {
-  background: #FCFCFD;
+  background: #fcfcfd;
   color: var(--bs-success);
   cursor: default;
 }
@@ -243,5 +313,4 @@ function filterLogLevel(log: TigerServerLogDto, selectedText: string, selectedLo
   background-color: #ffffff;
   padding: 10px;
 }
-
 </style>

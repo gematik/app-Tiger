@@ -16,6 +16,8 @@
 
 package de.gematik.test.tiger.proxy.handler;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Optional;
 import java.util.function.Predicate;
 import lombok.AccessLevel;
@@ -60,5 +62,11 @@ public class TigerExceptionUtils {
     } else {
       return getCauseWithMessageMatching(exception.getCause(), messageMatcher);
     }
+  }
+
+  public static String getStackTraceAsString(Throwable throwable) {
+    StringWriter stringWriter = new StringWriter();
+    throwable.printStackTrace(new PrintWriter(stringWriter));
+    return stringWriter.toString();
   }
 }

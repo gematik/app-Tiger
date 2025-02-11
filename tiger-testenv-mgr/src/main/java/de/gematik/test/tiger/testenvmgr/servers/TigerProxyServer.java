@@ -45,6 +45,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 public class TigerProxyServer extends AbstractExternalTigerServer {
 
   @Getter private ConfigurableApplicationContext applicationContext;
+  @Getter private TigerProxy tigerProxyBean;
 
   public TigerProxyServer(
       TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
@@ -156,6 +157,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
             .build());
     addServerNameForPort(tigerProxyConfiguration.getProxyPort(), this.getServerId());
     addServerNameForPort(tigerProxyConfiguration.getAdminPort(), this.getServerId());
+    tigerProxyBean = applicationContext.getBean(TigerProxy.class);
   }
 
   @Override

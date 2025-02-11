@@ -15,39 +15,45 @@
   -->
 
 <script setup lang="ts">
-
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog.vue";
-import {useConfirmRun} from "@/components/replay/ConfirmRun";
+import { useConfirmRun } from "@/components/replay/ConfirmRun";
 import ScenarioIdentifier from "@/types/testsuite/ScenarioIdentifier";
 
-
 const props = defineProps<{
-  scenario: ScenarioIdentifier
-  showPlayButton: boolean
+  scenario: ScenarioIdentifier;
+  showPlayButton: boolean;
 }>();
 
-const {openDialog, onClickConfirm, onClickDismiss, dialogIsOpen} = useConfirmRun();
-
+const { openDialog, onClickConfirm, onClickDismiss, dialogIsOpen } =
+  useConfirmRun();
 </script>
 
 <template>
-  <button v-if="props.showPlayButton" @click="openDialog" class="btn btn-outline-secondary btn-sm play-button test-play-button"
-          title="Run Scenario"><i
-      class="fa fa-play"></i> Run
+  <button
+    v-if="props.showPlayButton"
+    class="btn btn-outline-secondary btn-sm play-button test-play-button"
+    title="Run Scenario"
+    @click="openDialog"
+  >
+    <i class="fa fa-play"></i> Run
   </button>
-  <button v-else @click="openDialog" class="btn btn-outline-secondary btn-sm replay-button"
-          title="Replay Scenario"><i
-      class="fa fa-rotate-right"></i> Replay
+  <button
+    v-else
+    class="btn btn-outline-secondary btn-sm replay-button"
+    title="Replay Scenario"
+    @click="openDialog"
+  >
+    <i class="fa fa-rotate-right"></i> Replay
   </button>
 
-
-  <confirm-dialog :dialog-is-open="dialogIsOpen"
-                  @click-confirm="() => onClickConfirm(props.scenario)"
-                  @click-dismiss="onClickDismiss"
-                  :header="props.showPlayButton? 'Run Scenario': 'Replay Scenario'"
-                  description=""
-                  :label-confirm-button="props.showPlayButton? 'Yes, run' : 'Yes, replay'"
-                  label-dismiss-button="Cancel">
-
+  <confirm-dialog
+    :dialog-is-open="dialogIsOpen"
+    :header="props.showPlayButton ? 'Run Scenario' : 'Replay Scenario'"
+    description=""
+    :label-confirm-button="props.showPlayButton ? 'Yes, run' : 'Yes, replay'"
+    label-dismiss-button="Cancel"
+    @click-confirm="() => onClickConfirm(props.scenario)"
+    @click-dismiss="onClickDismiss"
+  >
   </confirm-dialog>
 </template>

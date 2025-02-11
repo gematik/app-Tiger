@@ -17,12 +17,10 @@
 package de.gematik.test.tiger.mockserver.mock.action.http;
 
 import static de.gematik.test.tiger.mockserver.character.Character.NEW_LINE;
-import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.*;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.notFoundResponse;
-import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
+import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.filters.HopByHopHeaderFilter;
 import de.gematik.test.tiger.mockserver.httpclient.HttpRequestInfo;
@@ -34,6 +32,7 @@ import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.model.*;
 import de.gematik.test.tiger.mockserver.netty.responsewriter.NettyResponseWriter;
 import de.gematik.test.tiger.mockserver.scheduler.Scheduler;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
 import java.net.InetSocketAddress;
@@ -42,6 +41,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 /*
  * @author jamesdbloom
@@ -78,42 +78,23 @@ public class HttpActionHandler {
       final ChannelHandlerContext ctx,
       boolean proxyingRequest,
       final boolean synchronous) {
-    if (request.getHeaders() == null
-        || !request
-            .getHeaders()
-            .containsEntry(
-                httpStateHandler.getUniqueLoopPreventionHeaderName(),
-                httpStateHandler.getUniqueLoopPreventionHeaderValue())) {
-      log.debug("received request:{}", request);
-    }
     final Expectation expectation = httpStateHandler.firstMatchingExpectation(request);
 
     if (expectation != null && expectation.getHttpAction() != null) {
       final HttpAction action = expectation.getHttpAction();
       scheduler.schedule(
-          () -> action.handle(request, ctx.channel(), this, responseWriter, synchronous),
-          synchronous);
-    } else if (proxyingRequest) {
-      if (request.getHeaders() != null
-          && request
-              .getHeaders()
-              .containsEntry(
-                  httpStateHandler.getUniqueLoopPreventionHeaderName(),
-                  httpStateHandler.getUniqueLoopPreventionHeaderValue())) {
-
-        log.trace(
-            "received \"x-forwarded-by\" header caused by exploratory HTTP proxy or proxy"
-                + " loop - falling back to no proxy:{}",
-            request);
-        returnNotFound(responseWriter, request, null);
+          () -> action.handle(request, ctx.channel(), this, responseWriter, synchronous));
+    } else {
+      if (!proxyingRequest) {
+        log.info("No route found for {}", request.printLogLineDescription());
+        closeChannelWithErrorMessage(
+            responseWriter,
+            request,
+            new TigerProxyRoutingException(
+                "No route found", RbelHostname.create(getRemoteAddress(ctx)), null, null));
       } else {
         final InetSocketAddress remoteAddress = getRemoteAddress(ctx);
-        final HttpRequest clonedRequest =
-            hopByHopHeaderFilter
-                .onRequest(request)
-                .withHeader(
-                    httpStateHandler.getUniqueLoopPreventionHeaderName(),
-                    httpStateHandler.getUniqueLoopPreventionHeaderValue());
+        final HttpRequest clonedRequest = hopByHopHeaderFilter.onRequest(request);
         final HttpForwardActionResult responseFuture =
             new HttpForwardActionResult(
                 clonedRequest,
@@ -133,63 +114,28 @@ public class HttpActionHandler {
                 if (response == null) {
                   response = notFoundResponse();
                 }
-                if (response.containsHeader(
-                    httpStateHandler.getUniqueLoopPreventionHeaderName(),
-                    httpStateHandler.getUniqueLoopPreventionHeaderValue())) {
-                  response.removeHeader(httpStateHandler.getUniqueLoopPreventionHeaderName());
-                  log.debug("no expectation for: {} returning response: {}", request, response);
-                } else {
-                  log.debug(
-                      "returning response:{}\nfor forwarded request"
-                          + NEW_LINE
-                          + NEW_LINE
-                          + " in json:{}",
-                      request,
-                      response);
-                }
+                log.debug(
+                    "returning response:{}\nfor forwarded request"
+                        + NEW_LINE
+                        + NEW_LINE
+                        + " in json:{}",
+                    request,
+                    response);
                 responseWriter.writeResponse(request, response);
-              } catch (SocketCommunicationException sce) {
-                log.warn("Exception while writing response", sce);
-                returnNotFound(responseWriter, request, sce.getMessage());
-              } catch (InterruptedException | ExecutionException | TimeoutException throwable) {
-                if (throwable instanceof TimeoutException) {
+              } catch (SocketCommunicationException
+                  | InterruptedException
+                  | ExecutionException
+                  | TimeoutException e) {
+                if (e instanceof TimeoutException) {
                   Thread.currentThread().interrupt();
                 }
-                if (sslHandshakeException(throwable)) {
-                  log.error(
-                      "TLS handshake exception while proxying request {} to remote address {}"
-                          + " with channel {}",
-                      (ctx != null ? String.valueOf(ctx.channel()) : ""),
-                      request,
-                      remoteAddress);
-                  returnNotFound(
-                      responseWriter,
-                      request,
-                      "TLS handshake exception while proxying request to remote address"
-                          + remoteAddress);
-                } else if (!connectionClosedException(throwable)) {
-                  log.error(
-                      "connection closed while proxying request to remote address {}",
-                      remoteAddress,
-                      throwable);
-                  returnNotFound(
-                      responseWriter,
-                      request,
-                      "connection closed while proxying request to remote address "
-                          + remoteAddress);
-                } else {
-                  log.error("Exception while proxying request", throwable);
-                  returnNotFound(responseWriter, request, throwable.getMessage());
-                }
+
+                closeChannelWithErrorMessage(responseWriter, request, e, remoteAddress);
               }
             },
             synchronous,
             throwable -> throwable.getMessage().contains("Connection refused"));
       }
-
-    } else {
-      log.error("Returning not found for {}", request.printLogLineDescription());
-      returnNotFound(responseWriter, request, null);
     }
   }
 
@@ -215,18 +161,19 @@ public class HttpActionHandler {
                     .getHttpResponse()
                     .get(configuration.maxFutureTimeoutInMillis(), MILLISECONDS);
             responseWriter.writeResponse(request, response);
-            log.debug(
-                "returning response: {} for forwarded request"
-                    + NEW_LINE
-                    + NEW_LINE
-                    + " in json: {}"
-                    + NEW_LINE
-                    + NEW_LINE
-                    + "\nfor action: {} from expectation: {}",
-                response,
-                responseFuture.getHttpRequest(),
-                action,
-                action.getExpectationId());
+            log.atDebug()
+                .addArgument(response)
+                .addArgument(responseFuture::getHttpRequest)
+                .addArgument(action)
+                .addArgument(action::getExpectationId)
+                .log(
+                    "returning response: {} for forwarded request"
+                        + NEW_LINE
+                        + NEW_LINE
+                        + " in json: {}"
+                        + NEW_LINE
+                        + NEW_LINE
+                        + "\nfor action: {} from expectation: {}");
           } catch (RuntimeException
               | InterruptedException
               | ExecutionException
@@ -253,6 +200,7 @@ public class HttpActionHandler {
           request);
     } catch (Exception exception) {
       log.error("Error while returning response", exception);
+      closeChannelWithErrorMessage(responseWriter, request, exception);
     }
   }
 
@@ -262,51 +210,35 @@ public class HttpActionHandler {
       log.debug("closing channel due to close action");
       responseWriter.closeChannel();
     } else {
-      if (connectionException(exception)) {
-        log.error(
-            "failed to connect to remote socket while forwarding request {} for action {}",
-            request,
-            action,
-            exception);
-        returnNotFound(
-            responseWriter, request, "failed to connect to remote socket while forwarding request");
-      } else if (sslHandshakeException(exception)) {
-        log.error(
-            "TLS handshake exception while forwarding request {} for action {}",
-            request,
-            action,
-            exception);
-        returnNotFound(responseWriter, request, "TLS handshake exception while forwarding request");
-      } else {
-        log.error("Exception while forwarding request", exception);
-        returnNotFound(responseWriter, request, exception != null ? exception.getMessage() : null);
-      }
+      closeChannelWithErrorMessage(responseWriter, request, exception);
     }
   }
 
-  private void returnNotFound(
-      NettyResponseWriter responseWriter, HttpRequest request, String error) {
-    HttpResponse response = notFoundResponse();
-    if (request.getHeaders() != null
-        && request
-            .getHeaders()
-            .containsEntry(
-                httpStateHandler.getUniqueLoopPreventionHeaderName(),
-                httpStateHandler.getUniqueLoopPreventionHeaderValue())) {
-      response.withHeader(
-          httpStateHandler.getUniqueLoopPreventionHeaderName(),
-          httpStateHandler.getUniqueLoopPreventionHeaderValue());
-      log.trace("no expectation for: {} returning response: {}", request, notFoundResponse());
-    } else if (isNotBlank(error)) {
-      log.debug(
-          "error: {} handling request: {} returning response: {}",
-          error,
-          request,
-          notFoundResponse());
-    } else {
-      log.debug("no expectation for: {} returning response: {}", request, notFoundResponse());
+  private void closeChannelWithErrorMessage(
+      NettyResponseWriter responseWriter,
+      HttpRequest request,
+      Throwable error,
+      InetSocketAddress... remoteAddress) {
+    log.debug(
+        "error: {} handling request: {} returning response: {}",
+        error,
+        request,
+        notFoundResponse());
+    val ctx = responseWriter.getCtx();
+    if (configuration.exceptionHandlingCallback() != null && ctx.channel().isOpen()) {
+      if (error instanceof TigerProxyRoutingException routingException) {
+        configuration.exceptionHandlingCallback().accept(routingException, ctx);
+      } else {
+        RbelHostname senderAddress = null;
+        if (remoteAddress.length > 0) {
+          senderAddress = RbelHostname.create(remoteAddress[0]);
+        }
+        val routingException =
+            new TigerProxyRoutingException(error.getMessage(), senderAddress, null, error);
+        configuration.exceptionHandlingCallback().accept(routingException, ctx);
+      }
     }
-    responseWriter.writeResponse(request, response);
+    responseWriter.closeChannel();
   }
 
   public HttpForwardActionHandler getHttpForwardActionHandler() {

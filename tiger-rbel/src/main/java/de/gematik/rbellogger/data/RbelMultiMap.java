@@ -137,6 +137,10 @@ public class RbelMultiMap<T> implements Map<String, T> {
         "This method is not supported as it would not respect the order of the entries");
   }
 
+  public List<Entry<String, T>> entries() {
+    return new ArrayList<>(values);
+  }
+
   public Stream<Entry<String, T>> stream() {
     return values.stream();
   }

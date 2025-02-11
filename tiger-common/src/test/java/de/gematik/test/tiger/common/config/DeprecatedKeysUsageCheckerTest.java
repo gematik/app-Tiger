@@ -64,12 +64,9 @@ class DeprecatedKeysUsageCheckerTest {
             "The key ('bar') in yaml file should not be used anymore, use 'baz' instead!"),
         Arguments.of(
             "foo.bar",
-            DeprecatedKeyDescriptor.builder()
-                .compareKey("foo.bar")
-                .deprecatedKey("foo")
-                .build(),
-            "The key ('foo') in yaml file should not be used anymore! It is deprecated without a replacement!")
-      );
+            DeprecatedKeyDescriptor.builder().compareKey("foo.bar").deprecatedKey("foo").build(),
+            "The key ('foo') in yaml file should not be used anymore! It is deprecated without a"
+                + " replacement!"));
   }
 
   @ParameterizedTest

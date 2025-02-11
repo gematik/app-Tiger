@@ -62,6 +62,8 @@ You can add multiple routes that match the same URL.
 If multiple matches are found the most specific route is select.
 For example if you have two routes `/` and `/foo` then for a request to `/foo/bar` the route `/foo` will be selected.
 
+A route will only match when the proxy-mode is met. A reverse-proxy-route will thus not match when a forward-proxy request is received. To disable this proxy-mode matching you can set the flag `matchForProxyType` to false (default is true).
+
 ==== to
 
 The target of the mapping.
@@ -219,6 +221,31 @@ tigerProxy:
 
 Please note that the phrase "Bearer " will be added automatically.
 Please do not add it yourself!
+
+==== matchForProxyType
+
+By default, a proxy route will only match when the proxy-mode defined by the `from` attribute is met. For example, a route with `from: /foo` will not match with a forward-proxy request like so:
+
+`curl -x localhost:59163 http://backend.domain/`
+
+To enable matching for both proxy-modes you can use the `matchForProxyType`-flag:
+
+[source,yaml]
+```
+tigerProxy:
+    proxyRoutes:
+      - from: /foobar
+        to: http://orf.at/blub/
+        matchForProxyType: false
+```
+
+This will match with both of the following requests:
+
+[source,shell]
+```
+curl -x localhost:59163 http://backend.domain/foobar
+curl http://localhost:59163/foobar
+```
 
 === TLS, keys, certificates a quick tour on proxies
 

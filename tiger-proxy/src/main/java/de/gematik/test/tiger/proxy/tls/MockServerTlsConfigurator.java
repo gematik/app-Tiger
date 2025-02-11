@@ -217,6 +217,9 @@ public class MockServerTlsConfigurator {
     if (tigerProxyConfiguration.getTls().getServerRootCa() != null) {
       usingGenericCa = false;
       return tigerProxyConfiguration.getTls().getServerRootCa();
+    } else if (serverRootCa != null) {
+      usingGenericCa = true;
+      return serverRootCa;
     } else {
       usingGenericCa = true;
       return generateNewCaCertificate();

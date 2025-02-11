@@ -95,11 +95,10 @@ class RbelLdapConverterTest {
             + " controls={Control(oid=1.2.840.113556.1.4.805, isCritical=true, value={null})})";
 
     RbelElementAssertion.assertThat(convertedElement)
+        .hasCorrectParentKeysSetInAllElements()
         .hasFacet(RbelLdapFacet.class)
         .hasFacet(RbelRequestFacet.class)
-        .extractChildWithPath("$.attributes")
-        .doesNotHaveFacet(RbelLdapAttributesFacet.class)
-        .andTheInitialElement()
+        .doesNotHaveChildWithPath("$.attributes")
         .extractChildWithPath("$.textRepresentation")
         .hasStringContentEqualTo(expectedLdapMessage)
         .andTheInitialElement()
@@ -120,6 +119,7 @@ class RbelLdapConverterTest {
             + "Attribute(name=dc, values={'example'})}))";
 
     RbelElementAssertion.assertThat(convertedElement)
+        .hasCorrectParentKeysSetInAllElements()
         .hasFacet(RbelLdapFacet.class)
         .hasFacet(RbelResponseFacet.class)
         .extractChildWithPath("$.textRepresentation")
@@ -144,6 +144,42 @@ class RbelLdapConverterTest {
         .hasStringContentEqualTo("example");
   }
 
+  @SneakyThrows
+  @Test
+  void convertMessage_shouldConvertCorrectResponseWithSuffix() {
+    final ObjectMapper jsonMapper =
+        new ObjectMapper().configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+    final Map<String, String> test_case =
+        jsonMapper.readValue(
+            FileUtils.readFileToByteArray(
+                new File("src/test/resources/ldap/ldapMessageWithSuffix.json")),
+            new TypeReference<>() {});
+
+    final byte[] messageWithSuffix = HexFormat.of().parseHex(test_case.get("message"));
+    final String expectedLdapMessage = test_case.get("expected");
+
+    final RbelElement convertedElement = rbelConverter.convertElement(messageWithSuffix, null);
+
+    RbelElementAssertion.assertThat(convertedElement)
+        .hasCorrectParentKeysSetInAllElements()
+        .hasFacet(RbelLdapFacet.class)
+        .hasFacet(RbelResponseFacet.class)
+        .extractChildWithPath("$.textRepresentation")
+        .hasStringContentEqualTo(expectedLdapMessage)
+        .andTheInitialElement()
+        .extractChildWithPath("$.msgId")
+        .hasStringContentEqualTo("1")
+        .andTheInitialElement()
+        .extractChildWithPath("$.protocolOp")
+        .hasStringContentEqualTo("SearchResultEntryProtocolOp")
+        .andTheInitialElement()
+        .extractChildWithPath("$.attributes")
+        .hasFacet(RbelLdapAttributesFacet.class)
+        .andTheInitialElement()
+        .extractChildWithPath("$.attributes.telematikid")
+        .hasStringContentEqualTo("5-SMC-B-Testkarte-883110000129221");
+  }
+
   @Test
   void convertMessage_shouldIgnoreInvalidLdapMessage() {
     final RbelElement convertedElement = rbelConverter.convertElement(INVALID_LDAP_MESSAGE, null);
@@ -159,7 +195,7 @@ class RbelLdapConverterTest {
         new ObjectMapper().configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
     final Map<String, String> test_cases =
         jsonMapper.readValue(
-            FileUtils.readFileToByteArray(new File("src/test/resources/ldapMessages.json")),
+            FileUtils.readFileToByteArray(new File("src/test/resources/ldap/ldapMessages.json")),
             new TypeReference<>() {});
 
     for (Map.Entry<String, String> entry : test_cases.entrySet()) {
@@ -167,6 +203,7 @@ class RbelLdapConverterTest {
       final RbelElement convertedElement = rbelConverter.convertElement(message, null);
 
       RbelElementAssertion.assertThat(convertedElement)
+          .hasCorrectParentKeysSetInAllElements()
           .hasFacet(RbelLdapFacet.class)
           .extractChildWithPath("$.textRepresentation")
           .hasStringContentEqualTo(entry.getValue());

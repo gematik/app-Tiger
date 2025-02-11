@@ -16,7 +16,9 @@
 
 package de.gematik.test.tiger.testenvmgr.util;
 
-public class TigerEnvironmentStartupException extends RuntimeException {
+import de.gematik.test.tiger.exceptions.GenericTigerException;
+
+public class TigerEnvironmentStartupException extends GenericTigerException {
   public TigerEnvironmentStartupException(String s, Exception e) {
     super(s, e);
   }

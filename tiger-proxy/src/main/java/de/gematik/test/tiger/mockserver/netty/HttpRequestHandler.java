@@ -36,6 +36,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.AttributeKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
@@ -93,7 +94,10 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<HttpRequest>
           request,
           response()
               .withStatusCode(BAD_REQUEST.code())
-              .withBody(ex.getMessage().getBytes(StandardCharsets.UTF_8)));
+              .withBody(
+                  Optional.ofNullable(ex.getMessage())
+                      .map(e -> e.getBytes(StandardCharsets.UTF_8))
+                      .orElse("<null>".getBytes())));
     }
   }
 

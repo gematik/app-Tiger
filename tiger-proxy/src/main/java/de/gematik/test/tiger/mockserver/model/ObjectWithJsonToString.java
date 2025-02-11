@@ -28,8 +28,7 @@ public abstract class ObjectWithJsonToString extends ObjectWithReflectiveEqualsH
   @Override
   public String toString() {
     try {
-      String valueAsString =
-          ObjectMapperFactory.createObjectMapper(true, false).writeValueAsString(this);
+      String valueAsString = ObjectMapperFactory.createObjectMapper().writeValueAsString(this);
       if (valueAsString.startsWith(ESCAPED_QUOTE) && valueAsString.endsWith(ESCAPED_QUOTE)) {
         valueAsString = valueAsString.substring(1, valueAsString.length() - 1);
       }

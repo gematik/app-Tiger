@@ -23,6 +23,7 @@ import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
 import de.gematik.test.tiger.testenvmgr.data.TigerServerStatusDto;
 import de.gematik.test.tiger.testenvmgr.env.*;
+import io.micrometer.common.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +62,7 @@ public class EnvStatusController implements TigerUpdateListener {
         tigerEnvStatus.setBannerMessage(update.getBannerMessage());
         tigerEnvStatus.setBannerColor(update.getBannerColor());
         tigerEnvStatus.setBannerType(update.getBannerType());
+        tigerEnvStatus.setBannerDetails(update.getBannerDetails());
         tigerEnvStatus.setBannerIsHtml(update.isBannerIsHtml());
       }
       // TODO make sure to check that the index is the expected next number, if not we do have to
@@ -109,9 +111,15 @@ public class EnvStatusController implements TigerUpdateListener {
                 if (scenarioUpdate.getStatus() != TestResult.UNUSED) {
                   scenario.setStatus(scenarioUpdate.getStatus());
                 }
-                scenario.setDescription(scenarioUpdate.getDescription());
-                scenario.setExampleKeys(scenarioUpdate.getExampleKeys());
-                scenario.setExampleList(scenarioUpdate.getExampleList());
+                if (!StringUtils.isBlank(scenarioUpdate.getDescription())) {
+                  scenario.setDescription(scenarioUpdate.getDescription());
+                }
+                if (scenarioUpdate.getExampleKeys() != null) {
+                  scenario.setExampleKeys(scenarioUpdate.getExampleKeys());
+                }
+                if (scenarioUpdate.getExampleList() != null) {
+                  scenario.setExampleList(scenarioUpdate.getExampleList());
+                }
                 scenario.setVariantIndex(scenarioUpdate.getVariantIndex());
                 scenario.setDryRun(scenarioUpdate.isDryRun());
                 fillInStepData(scenarioUpdate, scenario);
@@ -128,9 +136,15 @@ public class EnvStatusController implements TigerUpdateListener {
             (stepKey, stepUpdate) -> {
               if (scenario.getSteps().containsKey(stepKey)) {
                 StepUpdate step = scenario.getSteps().get(stepKey);
-                fillInStatus(scenario, step, stepUpdate);
-                step.setDescription(stepUpdate.getDescription());
-                step.setTooltip(stepUpdate.getTooltip());
+                if (stepUpdate.getStatus() != null) {
+                  fillInStatus(scenario, step, stepUpdate);
+                }
+                if (!StringUtils.isBlank(stepUpdate.getDescription())) {
+                  step.setDescription(stepUpdate.getDescription());
+                }
+                if (!StringUtils.isBlank(stepUpdate.getTooltip())) {
+                  step.setTooltip(stepUpdate.getTooltip());
+                }
                 step.setStepIndex(stepUpdate.getStepIndex());
                 fillInMetaData(step, stepUpdate);
               } else {

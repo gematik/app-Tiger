@@ -70,17 +70,12 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
                         .replaceWith("GET")
                         .build(),
                     RbelModificationDescription.builder()
-                        .condition("isRequest")
-                        .targetElement("$.method")
-                        .replaceWith("GET")
-                        .build(),
-                    RbelModificationDescription.builder()
                         .condition("isResponse")
                         .targetElement("$.body")
                         .replaceWith(jsonBody)
                         .build(),
                     RbelModificationDescription.builder()
-                        .condition("isResponse")
+                        .condition("isResponse && request.url =$ 'foobar'")
                         .targetElement("$.header.Some-Header-Field")
                         .replaceWith("modified value")
                         .build()))
@@ -107,6 +102,61 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
   }
 
   @Test
+  void keepOrderOfModifications() {
+    spawnTigerProxyWithDefaultRoutesAndWith(
+        TigerProxyConfiguration.builder()
+            .proxyRoutes(
+                List.of(
+                    TigerConfigurationRoute.builder()
+                        .from("http://backend")
+                        .to("http://localhost:" + fakeBackendServerPort)
+                        .build()))
+            .modifications(
+                List.of(
+                    RbelModificationDescription.builder()
+                        .condition("isRequest")
+                        .targetElement("$.path")
+                        .replaceWith("/foobar")
+                        .build(),
+                    RbelModificationDescription.builder()
+                        .condition("isRequest")
+                        .targetElement("$.method")
+                        .replaceWith("GET")
+                        .build(),
+                    RbelModificationDescription.builder()
+                        .condition("isRequest")
+                        .targetElement("$.header.user-agent")
+                        .replaceWith("modified user-agent")
+                        .build(),
+                    RbelModificationDescription.builder()
+                        .condition("isRequest")
+                        .targetElement("$.header.user-agent")
+                        .replaceWith("modified user-agent 2")
+                        .build(),
+                    RbelModificationDescription.builder()
+                        .condition("isResponse && request.url =$ 'foobar'")
+                        .targetElement("$.header.Some-Header-Field")
+                        .replaceWith("modified value")
+                        .build(),
+                    RbelModificationDescription.builder()
+                        .condition("isResponse && request.url =$ 'foobar'")
+                        .targetElement("$.header.Some-Header-Field")
+                        .replaceWith("modified value 2")
+                        .build()))
+            .build());
+
+    proxyRest.post("http://backend/notFoobar").asJson();
+    awaitMessagesInTiger(2);
+
+    assertThat(tigerProxy.getRbelMessagesList().get(0))
+        .extractChildWithPath("$.header.user-agent")
+        .hasStringContentEqualTo("modified user-agent 2");
+    assertThat(tigerProxy.getRbelMessagesList().get(1))
+        .extractChildWithPath("$.header.Some-Header-Field")
+        .hasStringContentEqualTo("modified value 2");
+  }
+
+  @Test
   void replaceStuffForReverseRoute() {
     spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
@@ -127,6 +177,11 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
                         .condition("isResponse")
                         .targetElement("$.body")
                         .replaceWith("{\"another\":{\"node\":{\"path\":\"correctValue\"}}}")
+                        .build(),
+                    RbelModificationDescription.builder()
+                        .condition("isResponse && request.url =$ 'foobar'")
+                        .targetElement("$.header.Some-Header-Field")
+                        .replaceWith("modified value")
                         .build()))
             .build());
 
@@ -141,6 +196,9 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
         .get()
         .extracting(RbelElement::getRawStringContent)
         .isEqualTo("correctValue");
+    assertThat(tigerProxy.getRbelMessagesList().get(1))
+        .extractChildWithPath("$.header.Some-Header-Field")
+        .hasStringContentEqualTo("modified value");
   }
 
   @Test

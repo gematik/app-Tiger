@@ -28,6 +28,7 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -268,7 +269,9 @@ class ForwardProxyInfoTest {
       skipEnvironmentSetup = true)
   void localSourceServerNotRunningAndForwardProxyConfigured_shouldGiveStartupError(
       TigerTestEnvMgr envMgr) {
-    assertThatThrownBy(() -> envMgr.setUpEnvironment())
+    assertThatThrownBy(envMgr::setUpEnvironment)
+        .isInstanceOf(TigerEnvironmentStartupException.class)
+        .cause()
         .isInstanceOf(TigerTestEnvException.class)
         .hasMessageStartingWith(
             "Timeout waiting for external server 'virtualExternalServer' to respond at");

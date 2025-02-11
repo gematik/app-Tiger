@@ -25,21 +25,23 @@ enum TestResult {
   UNDEFINED = "UNDEFINED",
   UNUSED = "UNUSED",
   AMBIGUOUS = "AMBIGUOUS",
-  TEST_DISCOVERED = "TEST_DISCOVERED"
+  TEST_DISCOVERED = "TEST_DISCOVERED",
 }
 
 export default TestResult;
 
-export function currentOverallTestRunStatus(featureUpdateMap: Map<string, FeatureUpdate>): string {
+export function currentOverallTestRunStatus(
+  featureUpdateMap: Map<string, FeatureUpdate>,
+): string {
   if (!featureUpdateMap.size) {
     return "pending";
   }
   let status = "passed";
-  featureUpdateMap.forEach(feature => {
+  featureUpdateMap.forEach((feature) => {
     if (feature.status === TestResult.FAILED) {
       status = "failed";
     }
-    feature.scenarios.forEach(scenario => {
+    feature.scenarios.forEach((scenario) => {
       if (scenario.status === TestResult.FAILED) {
         status = "failed";
       }
@@ -48,25 +50,26 @@ export function currentOverallTestRunStatus(featureUpdateMap: Map<string, Featur
   return status;
 }
 
-export function getTestResultIcon(testResult: string, iconFamily: string): string {
+export function getTestResultIcon(
+  testResult: string,
+  iconFamily: string,
+): string {
   if (!iconFamily) {
-    iconFamily = "solid"
+    iconFamily = "solid";
   }
-  if (testResult === 'PASSED') {
-    return 'test-passed fa-circle-check fa-' + iconFamily;
-  } else if (testResult === 'FAILED') {
-    return 'fa-triangle-exclamation fa-solid test-failed';
-  } else if (testResult === 'SKIPPED') {
-    return 'test-skipped fa-circle-down fa-' + iconFamily;
-  } else if (testResult === 'EXECUTING') {
-    return 'fa-solid fa-spinner blue fa-spin test-running'; // there is no regular for spinner
-  } else if (testResult === 'PENDING') {
-    return 'fa-solid fa-spinner fa-spin test-pending'; // there is no regular for spinner
-  } else if (testResult === 'TEST_DISCOVERED') {
-    return 'test_discovered fa-eye fa-' + iconFamily;
+  if (testResult === "PASSED") {
+    return "test-passed fa-circle-check fa-" + iconFamily;
+  } else if (testResult === "FAILED") {
+    return "fa-triangle-exclamation fa-solid test-failed";
+  } else if (testResult === "SKIPPED") {
+    return "test-skipped fa-circle-down fa-" + iconFamily;
+  } else if (testResult === "EXECUTING") {
+    return "fa-solid fa-spinner blue fa-spin test-running"; // there is no regular for spinner
+  } else if (testResult === "PENDING") {
+    return "fa-solid fa-spinner fa-spin test-pending"; // there is no regular for spinner
+  } else if (testResult === "TEST_DISCOVERED") {
+    return "test_discovered fa-eye fa-" + iconFamily;
   } else {
-    return 'fa-circle-question fa-' + iconFamily;
+    return "fa-circle-question fa-" + iconFamily;
   }
 }
-
-

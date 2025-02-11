@@ -81,7 +81,7 @@ public class RbelJwtWriter implements RbelElementWriter {
 
     if (!jwtFacet.getSignature().getFacetOrFail(RbelJwtSignature.class).isValid()) {
       throw new InvalidJwtSignatureException(
-        "The signature is invalid\n" + jwtFacet.getSignature().printTreeStructure());
+          "The signature is invalid\n" + jwtFacet.getSignature().printTreeStructure());
     }
 
     try {
@@ -114,17 +114,17 @@ public class RbelJwtWriter implements RbelElementWriter {
                     .findCorrespondingPrivateKey(newSignatureKeyName)
                     .orElseThrow(
                         () ->
-                          new RbelJwtSignatureModificationException(
-                            "Could not find private key matching '"
-                            + newSignatureKeyName
-                            + "'"));
+                            new RbelJwtSignatureModificationException(
+                                "Could not find private key matching '"
+                                    + newSignatureKeyName
+                                    + "'"));
               }
             })
         .map(RbelKey::getKey)
         .orElseThrow(
             () ->
-              new RbelJwtSignatureModificationException(
-                "Could not find key '" + newSignatureKeyName + "'"));
+                new RbelJwtSignatureModificationException(
+                    "Could not find key '" + newSignatureKeyName + "'"));
   }
 
   private Key extractJwsKey(RbelJwtFacet jwtFacet) {
@@ -138,12 +138,12 @@ public class RbelJwtWriter implements RbelElementWriter {
         .flatMap(this::getKeyBasedOnEncryptionType)
         .orElseThrow(
             () ->
-              new InvalidJwtSignatureException(
-                "Could not find the key matching signature \n"
-                + jwtFacet.getSignature().printTreeStructureWithoutColors()
-                + "\n"
-                + "(If the private key is unknown then a new signature can not be"
-                + " written)"));
+                new InvalidJwtSignatureException(
+                    "Could not find the key matching signature \n"
+                        + jwtFacet.getSignature().printTreeStructureWithoutColors()
+                        + "\n"
+                        + "(If the private key is unknown then a new signature can not be"
+                        + " written)"));
   }
 
   private void writeHeaderInJws(

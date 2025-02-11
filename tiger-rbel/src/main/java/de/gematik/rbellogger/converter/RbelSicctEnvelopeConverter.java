@@ -46,8 +46,7 @@ public class RbelSicctEnvelopeConverter implements RbelConverterPlugin {
                 if (msgType == SicctMessageType.C_COMMAND) {
                   element
                       .findMessage()
-                      .addFacet(
-                          new RbelRequestFacet(requestInfoString(envelopeFacet), false));
+                      .addFacet(new RbelRequestFacet(requestInfoString(envelopeFacet), false));
                 } else {
                   element
                       .findMessage()

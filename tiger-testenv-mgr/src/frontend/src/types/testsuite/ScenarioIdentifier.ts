@@ -18,8 +18,7 @@
 export default class ScenarioIdentifier {
   uniqueId: string;
 
-  constructor(uniqueId: string,
-  ) {
+  constructor(uniqueId: string) {
     this.uniqueId = uniqueId;
   }
 }

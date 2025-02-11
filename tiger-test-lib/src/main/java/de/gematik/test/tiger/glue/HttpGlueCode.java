@@ -103,6 +103,7 @@ public class HttpGlueCode {
       "TGR eine leere {requestType} Anfrage an {tigerResolvedUrl} und den folgenden Headern"
           + " sendet:")
   @Dann("TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} mit folgenden Headern:")
+  @ResolvableArgument
   public void sendEmptyRequestWithHeaders(Method method, URI address, DataTable customHeaders) {
     log.info("Sending empty {} request with headers to {}", method, address);
     Map<String, String> defaultHeaders =
@@ -131,6 +132,7 @@ public class HttpGlueCode {
   @Dann(
       "TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten"
           + " mit folgenden Headern:")
+  @ResolvableArgument
   public void sendEmptyRequestWithHeadersNonBlocking(
       Method method, URI address, DataTable customHeaders) {
     log.info("Sending empty {} non-blocking request with headers to {}", method, address);
@@ -210,6 +212,7 @@ public class HttpGlueCode {
   @When("TGR send {requestType} request to {tigerResolvedUrl} with:")
   @Wenn("TGR eine {requestType} Anfrage an {tigerResolvedUrl} mit den folgenden Daten sendet:")
   @Dann("TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit folgenden Daten:")
+  @ResolvableArgument
   public void sendRequestWithParams(Method method, URI address, DataTable parameters) {
     List<Map<String, String>> dataAsMaps = parameters.asMaps();
     if (dataAsMaps.size() != 1) {
@@ -257,6 +260,7 @@ public class HttpGlueCode {
   @Dann(
       "TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit folgenden mehrzeiligen"
           + " Daten:")
+  @ResolvableArgument
   public void sendRequestWithMultiLineBody(Method method, URI address, String body) {
     log.info("Sending complex {} request with body to {}", method, address);
     executeCommandWithContingentWait(() -> sendResolvedBody(method, address, body));
@@ -272,6 +276,7 @@ public class HttpGlueCode {
   @Dann(
       "TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit ContentType {string} und"
           + " folgenden mehrzeiligen Daten:")
+  @ResolvableArgument
   public void sendRequestWithMultiLineBody(
       Method method, URI address, String contentType, String body) {
     log.info("Sending complex {} request with body to {}", method, address);
@@ -298,6 +303,7 @@ public class HttpGlueCode {
   @Dann(
       "TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten mit"
           + " folgenden Daten:")
+  @ResolvableArgument
   public void sendRequestWithParamsNonBlocking(Method method, URI address, DataTable parameters) {
     List<Map<String, String>> dataAsMaps = parameters.asMaps();
     if (dataAsMaps.size() != 1) {
@@ -339,6 +345,7 @@ public class HttpGlueCode {
   @When("TGR set default headers:")
   @Dann("TGR setze folgende default headers:")
   @Wenn("TGR folgende default headers gesetzt werden:")
+  @ResolvableArgument
   public void setDefaultHeaders(String docstring) {
     Arrays.stream(docstring.split("\n"))
         .filter(line -> !line.isEmpty())
