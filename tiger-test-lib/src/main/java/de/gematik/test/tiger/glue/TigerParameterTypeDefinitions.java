@@ -30,11 +30,12 @@ import io.restassured.http.Method;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import lombok.SneakyThrows;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * contains ParameterType definitions for cucumber prarameters. The method name is used as name of
+ * contains ParameterType definitions for cucumber parameters. The method name is used as name of
  * the parameter type in cucumber steps. The regex is used to check if the parameter value matches
  * using Regex. All parameter types do support resolution using the TigerGlobalConfiguration.
  *
@@ -44,6 +45,21 @@ import org.jetbrains.annotations.NotNull;
 public class TigerParameterTypeDefinitions {
   private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
   private static RbelLoggerWriter rbelLoggerWriter;
+  // THe type names are defined as the names of the methods. It is therefore necessary to manually
+  // add to this list any
+  // new resolved variable type that is added to this class.
+  private static final List<String> resolvedVariableTypeNames =
+      List.of("tigerResolvedString", "tigerResolvedUrl");
+
+  /**
+   * checks if the given typeName is a resolved variable type <br>
+   *
+   * @param typeName the name of the type
+   * @return true if the typeName is a resolved variable type
+   */
+  public static boolean isResolvedVariableType(String typeName) {
+    return resolvedVariableTypeNames.contains(typeName);
+  }
 
   protected TigerParameterTypeDefinitions() {}
 

@@ -65,7 +65,8 @@ public class TigerRouteSelector {
       connection.setRequestMethod("HEAD");
       InsecureTrustAllManager.allowAllSsl(connection);
       connection.connect();
-      return true;
+      var responseCode = connection.getResponseCode();
+      return responseCode != -1;
     } catch (IOException e) {
       return false;
     }

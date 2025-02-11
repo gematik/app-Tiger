@@ -20,7 +20,12 @@ package io.cucumber.core.plugin.report;
 import static org.awaitility.Awaitility.await;
 
 import com.google.common.collect.Streams;
+import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelRequestFacet;
+import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
+import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelAnsiColors;
@@ -28,10 +33,10 @@ import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
-import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import de.gematik.test.tiger.lib.TigerDirector;
+import de.gematik.test.tiger.lib.rbel.RbelMessageValidator;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.env.FeatureUpdate;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
@@ -40,18 +45,14 @@ import de.gematik.test.tiger.testenvmgr.env.StepUpdate;
 import de.gematik.test.tiger.testenvmgr.env.TestResult;
 import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import io.cucumber.core.plugin.FeatureFileLoader;
-import io.cucumber.core.plugin.ScenarioContextDelegate;
+import io.cucumber.core.plugin.IScenarioContext;
 import io.cucumber.core.plugin.SerenityUtils;
 import io.cucumber.core.plugin.report.EvidenceReport.ReportContext;
 import io.cucumber.core.runner.TestCaseDelegate;
-import io.cucumber.messages.types.Background;
-import io.cucumber.messages.types.DocString;
 import io.cucumber.messages.types.Examples;
 import io.cucumber.messages.types.Feature;
-import io.cucumber.messages.types.FeatureChild;
 import io.cucumber.messages.types.Location;
 import io.cucumber.messages.types.Scenario;
-import io.cucumber.messages.types.Step;
 import io.cucumber.messages.types.TableCell;
 import io.cucumber.messages.types.TableRow;
 import io.cucumber.plugin.event.Event;
@@ -91,9 +92,10 @@ import lombok.val;
 import net.serenitybdd.core.Serenity;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.jexl3.JexlException;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
+import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
@@ -101,13 +103,12 @@ import org.json.JSONObject;
 public class SerenityReporterCallbacks {
 
   public static final String TARGET_DIR = "target";
-  private static final TigerTypedConfigurationKey<Integer> MAX_STEP_DESCRIPTION_DISPLAY_LENGTH =
-      new TigerTypedConfigurationKey<>(
-          "tiger.lib.maxStepDescriptionDisplayLengthOnWebUi", Integer.class, 300);
 
   private static final Object startupMutex = new Object();
   private static RuntimeException tigerStartupFailedException;
   @Getter @Setter private static boolean pauseMode;
+  private final ThreadLocal<Boolean> scenarioAlreadyFailed =
+      ThreadLocal.withInitial(() -> Boolean.FALSE);
 
   @SuppressWarnings("java:S5852")
   private final Pattern showSteps =
@@ -150,7 +151,7 @@ public class SerenityReporterCallbacks {
   // test run start
   //
   @SuppressWarnings("java:S1172")
-  public void handleTestRunStarted(Event ignoredEvent, ScenarioContextDelegate ignoredContext) {
+  public void handleTestRunStarted(Event ignoredEvent) {
     synchronized (startupMutex) {
       if (TigerDirector.isInitialized()) {
         return;
@@ -164,8 +165,8 @@ public class SerenityReporterCallbacks {
   }
 
   @SuppressWarnings("java:S1172")
-  public void handleTestRunFinished(
-      TestRunFinished ignoredEvent, ScenarioContextDelegate ignoredContext) {
+  public void handleTestRunFinished(TestRunFinished ignoredEvent) {
+    scenarioAlreadyFailed.remove();
     featureExecutionMonitor.stopTestRun();
   }
 
@@ -207,8 +208,9 @@ public class SerenityReporterCallbacks {
   // test case start
   //
   public void handleTestCaseStarted(
-      TestCaseStarted testCaseStartedEvent, ScenarioContextDelegate context) {
+      TestCaseStarted testCaseStartedEvent, IScenarioContext context) {
     shouldAbortTestExecution();
+    scenarioAlreadyFailed.set(Boolean.FALSE);
 
     Optional<Feature> currentFeature = featureFrom(context.getFeatureURI());
 
@@ -216,11 +218,12 @@ public class SerenityReporterCallbacks {
     boolean isDryRun = TestCaseDelegate.of(testCase).isDryRun();
     currentFeature.ifPresent(
         feature -> informWorkflowUiAboutCurrentScenario(feature, testCase, context, isDryRun));
+
     evidenceRecorder.reset();
     featureExecutionMonitor.startTestCase(testCaseStartedEvent);
   }
 
-  public int extractScenarioDataVariantIndex(ScenarioContextDelegate context, TestCase testCase) {
+  public int extractScenarioDataVariantIndex(IScenarioContext context, TestCase testCase) {
     Location searchLocation = new LocationConverter().convertLocation(testCase.getLocation());
     var scenarioId = scenarioIdFrom(testCase);
     return Streams.mapWithIndex(
@@ -241,29 +244,15 @@ public class SerenityReporterCallbacks {
     return Optional.ofNullable(featureLoader.getFeature(currentFeaturePath));
   }
 
-  private List<Step> getStepsIncludingBackgroundFromFeatureForScenario(
-      Feature feature, Scenario scenario) {
-    List<Step> steps = new ArrayList<>();
-    feature.getChildren().stream()
-        .map(FeatureChild::getBackground)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .map(Background::getSteps)
-        .forEach(steps::addAll);
-    steps.addAll(scenario.getSteps());
-    return steps;
-  }
-
   private void informWorkflowUiAboutCurrentScenario(
-      Feature feature, TestCase testCase, ScenarioContextDelegate context, boolean isDryRun) {
+      Feature feature, TestCase testCase, IScenarioContext context, boolean isDryRun) {
     String scenarioId = scenarioIdFrom(testCase);
     Scenario scenario = context.getCurrentScenarioDefinition(scenarioId);
 
     int dataVariantIndex = extractScenarioDataVariantIndex(context, testCase);
 
-    List<Step> steps = getStepsIncludingBackgroundFromFeatureForScenario(feature, scenario);
-
     log.info("Scenario location {}", scenario.getLocation());
+
     Map<String, String> variantDataMap = getVariantDataMap(context, scenarioId, dataVariantIndex);
     log.debug("Current row for scenario variant {} {}", dataVariantIndex, variantDataMap);
     String scenarioUniqueId =
@@ -281,7 +270,7 @@ public class SerenityReporterCallbacks {
                     ? context.getTable(scenarioId).getHeaders()
                     : null)
             .exampleList(variantDataMap)
-            .steps(stepUpdates(steps, variantDataMap))
+            .steps(stepUpdates(StepDescription.extractStepDescriptions(testCase)))
             .build();
     FeatureUpdate featureUpdate =
         FeatureUpdate.builder()
@@ -300,7 +289,7 @@ public class SerenityReporterCallbacks {
   }
 
   private Map<String, String> getVariantDataMap(
-      ScenarioContextDelegate context, String scenarioId, int dataVariantIndex) {
+      IScenarioContext context, String scenarioId, int dataVariantIndex) {
     if (context.isAScenarioOutline(scenarioId)) {
       List<Examples> examples = context.currentScenarioOutline(scenarioId).getExamples();
       var headers =
@@ -312,9 +301,6 @@ public class SerenityReporterCallbacks {
       var values =
           findExampleRow(dataVariantIndex, examples)
               .map(SerenityReporterCallbacks::getCellValues)
-              .map(
-                  list ->
-                      list.stream().map(SerenityReporterCallbacks::tryResolvePlaceholders).toList())
               .orElse(Collections.emptyList());
       return createMap(headers, values);
     } else {
@@ -362,83 +348,14 @@ public class SerenityReporterCallbacks {
     return parsedLine;
   }
 
-  private String getStepToolTip(Step step) {
-    return getStepDescription(step, false, false);
-  }
-
-  private String getStepDescription(Step step, boolean convertToHtml, boolean resolve) {
-    UnaryOperator<String> converter =
-        convertToHtml ? StringEscapeUtils::escapeHtml4 : UnaryOperator.identity();
-    UnaryOperator<String> resolver =
-        resolve ? SerenityReporterCallbacks::tryResolvePlaceholders : UnaryOperator.identity();
-    final String resolvedText = resolver.apply(step.getText());
-    final StringBuilder stepText =
-        new StringBuilder(step.getKeyword()).append(converter.apply(resolvedText));
-    if (convertToHtml) {
-      step.getDocString()
-          .map(DocString::getContent)
-          .map(resolver)
-          .ifPresent(
-              resolvedDocStr ->
-                  stepText
-                      .append("<div class=\"steps-docstring\">")
-                      .append(converter.apply(resolvedDocStr))
-                      .append("</div>"));
-      step.getDataTable()
-          .ifPresent(
-              dataTable -> {
-                stepText.append("<br/><table class=\"table table-sm table-data-table\">");
-                dataTable
-                    .getRows()
-                    .forEach(
-                        row -> {
-                          stepText.append("<tr>");
-                          row.getCells().stream()
-                              .map(TableCell::getValue)
-                              .map(resolver)
-                              .forEach(
-                                  resolvedCellText ->
-                                      stepText
-                                          .append("<td>")
-                                          .append(converter.apply(resolvedCellText))
-                                          .append("</td>"));
-                          stepText.append("</tr>");
-                        });
-                stepText.append("</table>");
-              });
-    } else {
-      step.getDataTable()
-          .ifPresent(
-              dataTable -> {
-                stepText.append("\n");
-                dataTable
-                    .getRows()
-                    .forEach(
-                        row -> {
-                          row.getCells().stream()
-                              .map(TableCell::getValue)
-                              .map(resolver)
-                              .forEach(
-                                  resolvedCellText ->
-                                      stepText
-                                          .append(converter.apply(resolvedCellText))
-                                          .append("\t\t\t"));
-                          stepText.append("\n");
-                        });
-              });
-    }
-    return stepText.toString();
-  }
-
-  private LinkedHashMap<String, StepUpdate> stepUpdates(
-      List<Step> steps, Map<String, String> outlineParameters) {
+  private LinkedHashMap<String, StepUpdate> stepUpdates(List<StepDescription> testSteps) {
     var map = new LinkedHashMap<String, StepUpdate>();
     Streams.mapWithIndex(
-            steps.stream(),
+            testSteps.stream(),
             (step, stepIndex) ->
                 StepUpdate.builder()
-                    .description(getDescriptionWithReplacements(step, outlineParameters))
-                    .tooltip(getStepToolTip(step))
+                    .description(step.getUnresolvedDescriptionHtml())
+                    .tooltip(step.getTooltip())
                     .status(TestResult.PENDING)
                     .stepIndex(Math.toIntExact(stepIndex))
                     .build())
@@ -455,32 +372,32 @@ public class SerenityReporterCallbacks {
   //
   // test step start
   //
-  public void handleTestStepStarted(TestStepStarted event, ScenarioContextDelegate context) {
+  public void handleTestStepStarted(TestStepStarted event, IScenarioContext context) {
     shouldWaitIfInPauseMode();
     shouldAbortTestExecution();
 
     var testCase = event.getTestCase();
     TestStep testStep = event.getTestStep();
     if (!(testStep instanceof HookTestStep) && testStep instanceof PickleStepTestStep) {
-      var result = TestResult.EXECUTING.name();
+      var result =
+          Boolean.TRUE.equals(scenarioAlreadyFailed.get())
+              ? TestResult.SKIPPED
+              : TestResult.EXECUTING;
       updateStepInformation(context, testCase, testStep, result, StepState.STARTED);
-    }
-
-    Step currentStep = context.getCurrentStep(testCase);
-    if (currentStep != null) {
       evidenceRecorder.openStepContext(
-          new ReportStepConfiguration(getStepDescription(currentStep, true, false)));
+          new ReportStepConfiguration(
+              StepDescription.of((PickleStepTestStep) testStep).getUnresolvedDescriptionHtml()));
     }
   }
 
   private void updateStepInformation(
-      ScenarioContextDelegate context,
+      IScenarioContext context,
       TestCase testCase,
       TestStep testStep,
-      String result,
+      TestResult result,
       StepState stepState) {
     var dryRun = TestCaseDelegate.of(testCase).isDryRun();
-    var status = dryRun ? TestResult.TEST_DISCOVERED.name() : result;
+    var status = dryRun ? TestResult.TEST_DISCOVERED : result;
     int dataVariantIndex = extractScenarioDataVariantIndex(context, testCase);
     informWorkflowUiAboutCurrentStep(
         context, testCase, testStep, status, dryRun, dataVariantIndex, stepState);
@@ -518,7 +435,7 @@ public class SerenityReporterCallbacks {
   //
   // test step end
   //
-  public void handleTestStepFinished(TestStepFinished event, ScenarioContextDelegate context) {
+  public void handleTestStepFinished(TestStepFinished event, IScenarioContext context) {
     if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) return;
 
     TestStep testStep = event.getTestStep();
@@ -531,7 +448,10 @@ public class SerenityReporterCallbacks {
 
       var testCase = event.getTestCase();
       if (context.getCurrentStep(testCase) != null) {
-        var result = event.getResult().getStatus().name();
+        var result = TestResult.from(event.getResult().getStatus());
+        if (TestResult.FAILED.equals(result)) {
+          scenarioAlreadyFailed.set(true);
+        }
         updateStepInformation(context, testCase, testStep, result, StepState.FINISHED);
 
         if (TigerDirector.isSerenityAvailable()) {
@@ -556,10 +476,10 @@ public class SerenityReporterCallbacks {
   }
 
   private void informWorkflowUiAboutCurrentStep(
-      ScenarioContextDelegate context,
+      IScenarioContext context,
       TestCase testCase,
       TestStep testStep,
-      String status,
+      TestResult status,
       boolean isDryRun,
       int variantDataIndex,
       StepState stepState) {
@@ -569,8 +489,8 @@ public class SerenityReporterCallbacks {
     PickleStepTestStep pickleTestStep = (PickleStepTestStep) testStep;
 
     Optional<Feature> feature = featureFrom(context.getFeatureURI());
-    var steps = getStepsIncludingBackgroundFromFeatureForScenario(feature.orElseThrow(), scenario);
-    var stepIndex = findStepIndex(pickleTestStep.getStep().getLocation(), steps);
+    var steps = testCase.getTestSteps();
+    var stepIndex = findStepIndex(pickleTestStep, steps);
 
     TigerStatusUpdate.TigerStatusUpdateBuilder builder = TigerStatusUpdate.builder();
 
@@ -587,18 +507,15 @@ public class SerenityReporterCallbacks {
                 context.getFeatureURI(), convertLocation(testCase.getLocation()))
             .toString();
 
-    val currentStep = context.getCurrentStep(testCase);
-    val stepDescription = getDescriptionWithReplacements(currentStep, variantDataMap);
-    val stepToolTip = getStepToolTip(currentStep);
-
+    val stepDescription = StepDescription.of(pickleTestStep);
     val currentStepMessages = getCurrentStepMessages(isDryRun, stepState);
     val messageMetaData = getMessageMetaData(currentStepMessages);
 
-    val currentStepUpdate =
+    StepUpdate currentStepUpdate =
         StepUpdate.builder()
-            .description(stepDescription)
-            .tooltip(stepToolTip)
-            .status(TestResult.valueOf(status))
+            .description(getHtmlDescription(stepDescription, isDryRun, status))
+            .tooltip(stepDescription.getTooltip())
+            .status(status)
             .stepIndex(stepIndex)
             .rbelMetaData(messageMetaData)
             .build();
@@ -617,6 +534,9 @@ public class SerenityReporterCallbacks {
             .steps(Map.of(String.valueOf(stepIndex), currentStepUpdate))
             .build();
 
+    if (TestResult.EXECUTING.equals(status)) {
+      stepDescription.recordResolvedDescription();
+    }
     val featureUpdate =
         FeatureUpdate.builder()
             .description(featureName)
@@ -628,6 +548,81 @@ public class SerenityReporterCallbacks {
     LocalProxyRbelMessageListener.getInstance().removeStepRbelMessages(currentStepMessages);
   }
 
+  private void updateLastStepMessages(
+      IScenarioContext context, TestCase testCase, int variantDataIndex) {
+
+    val steps = testCase.getTestSteps();
+
+    if (steps.isEmpty()) {
+      return;
+    }
+
+    if (steps.get(steps.size() - 1) instanceof PickleStepTestStep pickleTestStep) {
+
+      val feature = featureFrom(context.getFeatureURI());
+
+      val stepIndex = findStepIndex(pickleTestStep, steps);
+
+      val featureName = feature.map(Feature::getName).orElse("?");
+
+      val scenarioUniqueId =
+          ScenarioRunner.findScenarioUniqueId(
+                  context.getFeatureURI(), convertLocation(testCase.getLocation()))
+              .toString();
+
+      val currentStepMessages = getCurrentStepMessages(false, StepState.FINISHED);
+
+      if (currentStepMessages.isEmpty()) {
+        return;
+      }
+
+      val messageMetaData = getMessageMetaData(currentStepMessages);
+
+      val currentStepUpdate =
+          StepUpdate.builder()
+              .status(TestResult.UNUSED)
+              .stepIndex(stepIndex)
+              .rbelMetaData(messageMetaData)
+              .build();
+
+      val scenarioUpdate =
+          ScenarioUpdate.builder()
+              .uniqueId(scenarioUniqueId)
+              .status(TestResult.UNUSED)
+              .steps(Map.of(String.valueOf(stepIndex), currentStepUpdate))
+              .variantIndex(variantDataIndex)
+              .build();
+
+      val featureUpdate =
+          FeatureUpdate.builder()
+              .description(featureName)
+              .scenarios(convertToLinkedHashMap(scenarioUniqueId, scenarioUpdate))
+              .build();
+
+      val statusUpdate =
+          TigerStatusUpdate.builder()
+              .featureMap(convertToLinkedHashMap(featureName, featureUpdate))
+              .build();
+
+      TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(statusUpdate);
+
+      LocalProxyRbelMessageListener.getInstance().removeStepRbelMessages(currentStepMessages);
+    }
+  }
+
+  private String getHtmlDescription(
+      StepDescription description, boolean isDryRun, TestResult stepResult) {
+    if (isDryRun) {
+      return description.getUnresolvedDescriptionHtml();
+    } else if (TestResult.EXECUTING.equals(stepResult)) {
+      return description.getResolvedDescriptionHtml();
+    } else {
+      // Sending an empty string so that when the test is not Executing, the description is not
+      // changed.
+      return "";
+    }
+  }
+
   private static @NotNull List<MessageMetaDataDto> getMessageMetaData(
       List<RbelElement> currentStepMessages) {
     return currentStepMessages.stream()
@@ -636,24 +631,55 @@ public class SerenityReporterCallbacks {
         .collect(Collectors.toCollection(ArrayList::new));
   }
 
-  private static List<RbelElement> getCurrentStepMessages(boolean isDryRun, StepState stepState) {
+  private List<RbelElement> getCurrentStepMessages(boolean isDryRun, StepState stepState) {
     if (isDryRun || stepState != StepState.FINISHED) {
       return Collections.emptyList();
     }
-    TigerDirector.getTigerTestEnvMgr()
-        .getLocalTigerProxyOptional()
-        .ifPresent(TigerProxy::waitForAllCurrentMessagesToBeParsed);
+    val waitTime = RbelMessageValidator.RBEL_REQUEST_TIMEOUT.getValueOrDefault();
+    try {
+      Awaitility.await()
+          .atMost(waitTime, TimeUnit.SECONDS)
+          .pollInterval(200, TimeUnit.MILLISECONDS)
+          .until(this::getFullyProcessedStepMessages, this::allRequestsPaired);
+    } catch (ConditionTimeoutException e) {
+      log.atWarn()
+          .addArgument(waitTime)
+          .log("Not all messages are processed and paired after {} seconds.");
+    }
     return LocalProxyRbelMessageListener.getInstance().getStepRbelMessages();
   }
 
-  private static int findStepIndex(io.cucumber.plugin.event.Location location, List<Step> steps) {
-    var loc = convertLocation(location);
-    return Streams.mapWithIndex(steps.stream().map(Step::getLocation), Pair::of)
-        .filter(pair -> pair.getLeft().equals(loc))
-        .findFirst()
-        .map(Pair::getRight)
-        .map(Math::toIntExact)
-        .orElse(-1);
+  private List<RbelElement> getFullyProcessedStepMessages() {
+    TigerDirector.getTigerTestEnvMgr()
+        .getLocalTigerProxyOptional()
+        .map(TigerProxy::getRbelLogger)
+        .map(RbelLogger::getMessageHistory)
+        .map(List::copyOf)
+        .orElseGet(Collections::emptyList)
+        .forEach(RbelConverter::waitUntilFullyProcessed);
+    return LocalProxyRbelMessageListener.getInstance().getStepRbelMessages();
+  }
+
+  private boolean allRequestsPaired(List<RbelElement> stepMessages) {
+    var messages = new HashSet<>(stepMessages);
+
+    return stepMessages.stream()
+        .filter(
+            message ->
+                message.hasFacet(RbelRequestFacet.class)
+                    && !message.hasFacet(TigerNonPairedMessageFacet.class))
+        .allMatch(
+            message ->
+                message
+                    .getFacet(TracingMessagePairFacet.class)
+                    .map(TracingMessagePairFacet::getResponse)
+                    .stream()
+                    .anyMatch(messages::contains));
+  }
+
+  private static int findStepIndex(TestStep step, List<TestStep> steps) {
+    var pickleSteps = steps.stream().filter(PickleStepTestStep.class::isInstance).toList();
+    return pickleSteps.indexOf(step);
   }
 
   private static Location convertLocation(io.cucumber.plugin.event.Location location) {
@@ -669,17 +695,11 @@ public class SerenityReporterCallbacks {
     }
   }
 
-  private String getDescriptionWithReplacements(Step step, Map<String, String> variantDataMap) {
-    return StringUtils.abbreviate(
-        replaceOutlineParameters(getStepDescription(step, true, true), variantDataMap, true),
-        MAX_STEP_DESCRIPTION_DISPLAY_LENGTH.getValueOrDefault());
-  }
-
   // -------------------------------------------------------------------------------------------------------------------------------------
   //
   // test case end
   //
-  public void handleTestCaseFinished(TestCaseFinished event, ScenarioContextDelegate context) {
+  public void handleTestCaseFinished(TestCaseFinished event, IScenarioContext context) {
     if (TigerDirector.getTigerTestEnvMgr().isShouldAbortTestExecution()) {
       return;
     }
@@ -688,6 +708,10 @@ public class SerenityReporterCallbacks {
     if (TestCaseDelegate.of(testCase).isDryRun()) {
       return;
     }
+
+    int dataVariantIndex = extractScenarioDataVariantIndex(context, testCase);
+
+    updateLastStepMessages(context, testCase, dataVariantIndex);
 
     String scenarioStatus = event.getResult().getStatus().toString();
 
@@ -706,8 +730,6 @@ public class SerenityReporterCallbacks {
         scFailed > 0 ? scFailed + " failed or error" : "");
 
     if (TigerDirector.getLibConfig().createRbelHtmlReports) {
-      int dataVariantIndex = extractScenarioDataVariantIndex(context, testCase);
-
       createRbelLogReport(testCase.getName(), testCase.getUri(), dataVariantIndex);
     }
 
@@ -718,7 +740,7 @@ public class SerenityReporterCallbacks {
   @SneakyThrows
   private void createEvidenceFile(
       TestCaseFinished testCaseFinishedEvent,
-      final ScenarioContextDelegate scenarioContext,
+      final IScenarioContext scenarioContext,
       String scenarioId) {
     final EvidenceReport evidenceReport =
         getEvidenceReport(testCaseFinishedEvent, scenarioContext, scenarioId);
@@ -739,7 +761,7 @@ public class SerenityReporterCallbacks {
 
   @NotNull
   private Path createEvidenceReportFile(
-      ScenarioContextDelegate scenarioContext,
+      IScenarioContext scenarioContext,
       EvidenceReport evidenceReport,
       String scenarioId,
       int variantDataIndex)
@@ -761,9 +783,7 @@ public class SerenityReporterCallbacks {
   }
 
   private EvidenceReport getEvidenceReport(
-      TestCaseFinished testCaseFinishedEvent,
-      ScenarioContextDelegate scenarioContext,
-      String scenarioId) {
+      TestCaseFinished testCaseFinishedEvent, IScenarioContext scenarioContext, String scenarioId) {
     return evidenceRecorder.getEvidenceReportForScenario(
         new ReportContext(
             scenarioContext.getCurrentScenarioDefinition(scenarioId).getName(),

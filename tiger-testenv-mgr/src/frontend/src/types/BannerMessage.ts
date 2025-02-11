@@ -16,27 +16,39 @@
 ///
 
 import BannerType from "./BannerType";
+import { BannerDetails } from "@/types/BannerDetails";
 
 export default class BannerMessage {
   text: string | null;
-  color: string |null;
+  color: string | null;
   type: BannerType;
   isHtml: boolean;
+  bannerDetails: BannerDetails | null;
 
   constructor() {
     this.text = "";
     this.color = "";
     this.type = BannerType.MESSAGE;
     this.isHtml = false;
+    this.bannerDetails = null;
   }
 
-  public static fromJson(json: {  bannerMessage:string, bannerColor:string, bannerType: string, bannerIsHtml: boolean } ) : BannerMessage {
-    const msg:BannerMessage = new BannerMessage();
+  public static fromJson(json: {
+    bannerMessage: string;
+    bannerColor: string;
+    bannerType: string;
+    bannerIsHtml: boolean;
+    bannerDetails: BannerDetails;
+  }): BannerMessage {
+    const msg: BannerMessage = new BannerMessage();
     msg.text = json.bannerMessage;
     msg.color = json.bannerColor;
     msg.isHtml = json.bannerIsHtml;
     if (json.bannerType) {
       msg.type = json.bannerType as BannerType;
+    }
+    if (json.bannerDetails) {
+      msg.bannerDetails = json.bannerDetails;
     }
     return msg;
   }

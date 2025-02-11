@@ -32,25 +32,25 @@ public class RbelModifier {
   private final RbelKeyManager rbelKeyManager;
   private final RbelConverter rbelConverter;
   private final List<RbelElementWriter> elementWriterList;
-  private final Map<String, RbelModificationDescription> modificationsMap = new HashMap<>();
+  private final Map<String, RbelModificationDescription> modificationsMap = new LinkedHashMap<>();
 
   @Builder
   public RbelModifier(RbelKeyManager rbelKeyManager, RbelConverter rbelConverter) {
     this.rbelKeyManager = rbelKeyManager;
     this.rbelConverter = rbelConverter;
     this.elementWriterList =
-      new ArrayList<>(
-        List.of(
-          new RbelHttpHeaderWriter(),
-          new RbelHttpMessageWriter(),
-          new RbelJsonWriter(),
-          new RbelUriWriter(),
-          new RbelUriParameterWriter(),
-          new RbelJwtWriter(this.rbelKeyManager),
-          new RbelJwtSignatureWriter(),
-          new RbelJweWriter(this.rbelKeyManager),
-          new RbelVauErpWriter(),
-          new RbelVauEpaWriter()));
+        new ArrayList<>(
+            List.of(
+                new RbelHttpHeaderWriter(),
+                new RbelHttpMessageWriter(),
+                new RbelJsonWriter(),
+                new RbelUriWriter(),
+                new RbelUriParameterWriter(),
+                new RbelJwtWriter(this.rbelKeyManager),
+                new RbelJwtSignatureWriter(),
+                new RbelJweWriter(this.rbelKeyManager),
+                new RbelVauErpWriter(),
+                new RbelVauEpaWriter()));
   }
 
   public RbelElement applyModifications(final RbelElement message) {
@@ -58,14 +58,18 @@ public class RbelModifier {
     for (RbelModificationDescription modification : modificationsMap.values()) {
       if (shouldBeApplied(modification, message)) {
         final Optional<RbelElement> targetOptional =
-          modifiedMessage.findElement(modification.getTargetElement());
+            modifiedMessage.findElement(modification.getTargetElement());
         if (targetOptional.isEmpty()) {
           continue;
         }
 
-        final byte[] input = applyModification(modification, targetOptional.get());
+        var target = targetOptional.get();
+
+        final Optional<byte[]> input = applyModification(modification, target);
         reduceTtl(modification);
-        modifiedMessage = rbelConverter.convertElement(input, null);
+        if (input.isPresent()) {
+          modifiedMessage = rbelConverter.convertElement(input.get(), null);
+        }
       }
     }
     deleteOutdatedModifications();
@@ -74,7 +78,7 @@ public class RbelModifier {
 
   private void deleteOutdatedModifications() {
     for (Iterator<RbelModificationDescription> ks = modificationsMap.values().iterator();
-      ks.hasNext(); ) {
+        ks.hasNext(); ) {
       RbelModificationDescription next = ks.next();
       if (next.getDeleteAfterNExecutions() != null && next.getDeleteAfterNExecutions() <= 0) {
         ks.remove();
@@ -99,37 +103,40 @@ public class RbelModifier {
     return TigerJexlExecutor.matchesAsJexlExpression(message, modification.getCondition());
   }
 
-  private byte[] applyModification(
-    RbelModificationDescription modification, RbelElement targetElement) {
-    RbelElement oldTargetElement = targetElement.getParentNode();
-    RbelElement oldTargetModifiedChild = targetElement;
+  private Optional<byte[]> applyModification(
+      RbelModificationDescription modification, RbelElement targetElement) {
+    RbelElement currentParent = targetElement.getParentNode();
+    RbelElement currentChildToBeModified = targetElement;
     byte[] newContent = applyRegexAndReturnNewContent(targetElement, modification);
-    while (oldTargetElement != null) {
+    if (Arrays.equals(newContent, targetElement.getRawContent())) {
+      return Optional.empty();
+    }
+    while (currentParent != null) {
       Optional<byte[]> found = Optional.empty();
       for (RbelElementWriter writer : elementWriterList) {
-        if (writer.canWrite(oldTargetElement)) {
-          found = Optional.of(writer.write(oldTargetElement, oldTargetModifiedChild, newContent));
+        if (writer.canWrite(currentParent)) {
+          found = Optional.of(writer.write(currentParent, currentChildToBeModified, newContent));
           break;
         }
       }
       if (found.isEmpty()) {
         throw new RbelModificationException(
-          "Could not rewrite element with facets "
-          + oldTargetElement.getFacets().stream()
-            .map(Object::getClass)
-            .map(Class::getSimpleName)
-            .toList()
-          + "!");
+            "Could not rewrite element with facets "
+                + currentParent.getFacets().stream()
+                    .map(Object::getClass)
+                    .map(Class::getSimpleName)
+                    .toList()
+                + "!");
       }
       newContent = found.get();
-      oldTargetModifiedChild = oldTargetElement;
-      oldTargetElement = oldTargetElement.getParentNode();
+      currentChildToBeModified = currentParent;
+      currentParent = currentParent.getParentNode();
     }
-    return newContent;
+    return Optional.of(newContent);
   }
 
   private byte[] applyRegexAndReturnNewContent(
-    RbelElement targetElement, RbelModificationDescription modification) {
+      RbelElement targetElement, RbelModificationDescription modification) {
     if (StringUtils.isEmpty(modification.getRegexFilter())) {
       if (modification.getReplaceWith() == null) {
         return "".getBytes(targetElement.getElementCharset());
@@ -137,9 +144,9 @@ public class RbelModifier {
       return modification.getReplaceWith().getBytes(targetElement.getElementCharset());
     } else {
       return targetElement
-        .getRawStringContent()
-        .replaceAll(modification.getRegexFilter(), modification.getReplaceWith())
-        .getBytes(targetElement.getElementCharset());
+          .getRawStringContent()
+          .replaceAll(modification.getRegexFilter(), modification.getReplaceWith())
+          .getBytes(targetElement.getElementCharset());
     }
   }
 

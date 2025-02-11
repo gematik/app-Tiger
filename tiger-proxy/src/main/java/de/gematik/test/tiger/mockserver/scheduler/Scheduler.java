@@ -39,7 +39,6 @@ public class Scheduler {
 
   private final MockServerConfiguration configuration;
   private final ScheduledExecutorService scheduler;
-
   private final boolean synchronous;
 
   public static class SchedulerThreadFactory implements ThreadFactory {
@@ -106,7 +105,7 @@ public class Scheduler {
     }
   }
 
-  public void schedule(Runnable command, boolean synchronous) {
+  public void schedule(Runnable command) {
     Integer port = getPort();
     run(command, port);
   }

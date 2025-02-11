@@ -23,6 +23,7 @@ import static de.gematik.test.tiger.mockserver.model.HttpRequest.request;
 import de.gematik.rbellogger.converter.HttpPairingInBinaryChannelConverter;
 import de.gematik.rbellogger.util.RbelMessagesSupplier;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
+import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
@@ -149,6 +150,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
             .tigerProxyConfiguration(getTigerProxyConfiguration())
             .mockServerConfiguration(mockServerConfiguration)
             .tigerProxyName(getName())
+            .serverRootCa(serverRootCa)
             .build();
     tlsConfigurator.execute();
     serverRootCa = tlsConfigurator.getServerRootCa();
@@ -161,14 +163,15 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
             getTigerProxyConfiguration());
     outputForwardProxyConfigLogs(proxyConfiguration);
     proxyConfiguration.ifPresent(mockServerConfiguration::proxyConfiguration);
-    mockServerConfiguration.exceptionHandlingCallback((t, c) -> {
-      try {
-      getMockServerToRbelConverter()
-        .convertErrorResponse(null, null, t);
-      } catch (Exception e) {
-        log.error("Error while converting error response", e);
-      }
-    });
+    mockServerConfiguration.exceptionHandlingCallback(
+        (t, c) -> {
+          try {
+            var errorResponse = getMockServerToRbelConverter().convertErrorResponse(null, null, t);
+            triggerListener(errorResponse);
+          } catch (Exception e) {
+            log.error("Error while converting error response", e);
+          }
+        });
 
     if (getTigerProxyConfiguration().getDirectReverseProxy() == null) {
       mockServer =
@@ -364,6 +367,11 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   public void removeRoute(final String routeId) {
     if (!mockServer.isRunning()) {
       return;
+    }
+    val candidate = tigerRouteMap.get(routeId);
+    if (candidate != null && candidate.isInternalRoute()) {
+      throw new TigerConfigurationException(
+          "Could not delete route with id '" + routeId + "': route is internal route!");
     }
     mockServer.removeExpectation(routeId);
     final TigerProxyRoute route = tigerRouteMap.remove(routeId);

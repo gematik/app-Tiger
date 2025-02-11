@@ -26,6 +26,7 @@ import de.gematik.test.tiger.mockserver.model.HttpProtocol;
 import de.gematik.test.tiger.mockserver.url.URLParser;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http2.HttpConversionUtil;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -70,7 +71,8 @@ public class FullHttpRequestToMockServerHttpRequest {
       List<Header> preservedHeaders,
       SocketAddress senderAddress,
       Optional<HttpProtocol> protocol,
-      SSLSession sslSession) {
+      SSLSession sslSession,
+      boolean isProxying) {
     HttpRequest httpRequest = new HttpRequest();
     try {
       if (fullHttpRequest != null) {
@@ -90,7 +92,7 @@ public class FullHttpRequestToMockServerHttpRequest {
         setHeaders(httpRequest, fullHttpRequest, preservedHeaders);
         setBody(httpRequest, fullHttpRequest);
         setSocketAddress(httpRequest, fullHttpRequest, isSecure, port, senderAddress);
-        setForwardProxyRequest(httpRequest, fullHttpRequest);
+        setForwardProxyRequest(httpRequest, fullHttpRequest, isProxying);
 
         jdkCertificateToMockServerX509Certificate.setClientCertificates(
             httpRequest, clientCertificates);
@@ -103,14 +105,19 @@ public class FullHttpRequestToMockServerHttpRequest {
     return httpRequest;
   }
 
-  private void setForwardProxyRequest(HttpRequest httpRequest, FullHttpRequest fullHttpRequest) {
-    try {
-      final String host = new URI(fullHttpRequest.uri()).getHost();
-      if (StringUtils.isNotBlank(host)) {
-        httpRequest.setForwardProxyRequest(true);
+  private void setForwardProxyRequest(
+      HttpRequest httpRequest, FullHttpRequest fullHttpRequest, boolean isProxying) {
+    if (isProxying) {
+      httpRequest.setForwardProxyRequest(true);
+    } else {
+      try {
+        final String uriHost = new URI(fullHttpRequest.uri()).getHost();
+        if (StringUtils.isNotBlank(uriHost) || fullHttpRequest.method() == HttpMethod.CONNECT) {
+          httpRequest.setForwardProxyRequest(true);
+        }
+      } catch (URISyntaxException e) {
+        httpRequest.setForwardProxyRequest(false);
       }
-    } catch (URISyntaxException e) {
-      httpRequest.setForwardProxyRequest(false);
     }
   }
 

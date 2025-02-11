@@ -15,29 +15,37 @@
   -->
 
 <template>
-  <TestProject/>
+  <TestProject />
 </template>
 
 <script lang="ts">
-import {defineComponent} from 'vue';
+import { defineComponent } from "vue";
 import TestProject from "@/pages/TestProject.vue";
 import "bootstrap";
 
 export default defineComponent({
-  name: 'App',
+  name: "App",
   components: {
-    TestProject
-  }
+    TestProject,
+  },
 });
 </script>
 
 <style lang="css">
-.left, i.fa.left, i.far.left, i.fas.left, i.fa-solid.left {
+.left,
+i.fa.left,
+i.far.left,
+i.fas.left,
+i.fa-solid.left {
   margin-right: 0.5rem;
   padding-right: 0;
 }
 
-.right, i.fa.right, i.far.right, i.fas.right, i.fa-solid.right {
+.right,
+i.fa.right,
+i.far.right,
+i.fas.right,
+i.fa-solid.right {
   padding-left: 0.5rem;
 }
 
@@ -64,11 +72,13 @@ export default defineComponent({
   color: var(--gem-warning-400) !important;
 }
 
-.pending, .unused {
+.pending,
+.unused {
   color: var(--gem-neutral-400) !important;
 }
 
-.undefined, .ambiguous {
+.undefined,
+.ambiguous {
   color: orchid !important;
 }
 
@@ -88,11 +98,13 @@ export default defineComponent({
   background: var(--gem-warning-100) !important;
 }
 
-.bg-pending, .bg-unused {
+.bg-pending,
+.bg-unused {
   background: var(--gem-neutral-100) !important;
 }
 
-.bg-undefined, .bg-ambiguous {
+.bg-undefined,
+.bg-ambiguous {
   background: #ffccff !important;
 }
 

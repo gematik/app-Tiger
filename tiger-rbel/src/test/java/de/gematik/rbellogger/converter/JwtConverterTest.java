@@ -96,8 +96,7 @@ class JwtConverterTest {
 
     rbelConverter.convertElement(keyMessage.getBytes(), null);
     final RbelElement convertedMessage =
-        rbelConverter.convertElement(
-            challengeMessage.getBytes(), null);
+        rbelConverter.convertElement(challengeMessage.getBytes(), null);
     final RbelJwtSignature signature =
         convertedMessage
             .findElement("$.body.challenge.signature")

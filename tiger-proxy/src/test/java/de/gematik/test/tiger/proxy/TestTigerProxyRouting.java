@@ -134,11 +134,11 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
 
   public static Stream<Arguments> nestedAndShallowPathTestCases() {
     return Stream.of(
-      /*
-       * The cases 5, 7 & 13, 15 SHOULD result in an actual path without terminating slash.
-       * However, if no deep path is set the actual HTTP request will be a "GET /", regardless
-       * of the actual base path.
-       */
+        /*
+         * The cases 5, 7 & 13, 15 SHOULD result in an actual path without terminating slash.
+         * However, if no deep path is set the actual HTTP request will be a "GET /", regardless
+         * of the actual base path.
+         */
 
         // toPath, requestPath, actualPath, expectedReturnCode
         Arguments.of("/deep", "/foobar", "/deep/foobar", 777),
@@ -242,9 +242,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
 
     backendServer.getWireMock().getServeEvents().clear();
 
-    proxyRest.get("http://mydomain" + requestPath)
-        .asString()
-        .getStatus();
+    proxyRest.get("http://mydomain" + requestPath).asString().getStatus();
     awaitMessagesInTiger(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0))

@@ -16,31 +16,33 @@
 
 <template>
   <span :class="`${highlightText ? 'statustext' : ''}`">
-    <i :class="`statusbadge ${testStatus.toLowerCase()} left ${getTestResultIcon(testStatus, 'solid')}`"
-       :title="`${testStatus}`"
-       :id="`${link}`"></i>
+    <i
+      :id="`${link}`"
+      :class="`statusbadge ${testStatus.toLowerCase()} left ${getTestResultIcon(testStatus, 'solid')}`"
+      :title="`${testStatus}`"
+    ></i>
     {{ text }}
   </span>
-  <span :class="`statusbadge ${getStatusFGAndBGColorClass(testStatus)} badge rounded-pill test-feature-status-word`">
-      {{ testStatus }}
-    </span>
+  <span
+    :class="`statusbadge ${getStatusFGAndBGColorClass(testStatus)} badge rounded-pill test-feature-status-word`"
+  >
+    {{ testStatus }}
+  </span>
 </template>
 
 <script setup lang="ts">
-
-import {getTestResultIcon} from "@/types/testsuite/TestResult";
+import { getTestResultIcon } from "@/types/testsuite/TestResult";
 
 defineProps<{
-  testStatus: string
-  highlightText: boolean
-  text: string
-  link: string
+  testStatus: string;
+  highlightText: boolean;
+  text: string;
+  link: string;
 }>();
 
 function getStatusFGAndBGColorClass(status: string): string {
   return `${status.toLowerCase()} bg-${status.toLowerCase()} test-status-${status.toLowerCase()}`;
 }
-
 </script>
 
 <style scoped>

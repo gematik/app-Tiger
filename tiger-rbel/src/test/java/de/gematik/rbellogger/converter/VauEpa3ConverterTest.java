@@ -55,13 +55,13 @@ public class VauEpa3ConverterTest {
   @Test
   void shouldRenderCleanHtml() {
     val rbelLogger =
-      RbelLogger.build(
-        new RbelConfiguration()
-          .activateConversionFor("epa3-vau")
-          .addCapturer(
-            RbelFileReaderCapturer.builder()
-              .rbelFile("src/test/resources/vau3WithInnerGzip.tgr")
-              .build()));
+        RbelLogger.build(
+            new RbelConfiguration()
+                .activateConversionFor("epa3-vau")
+                .addCapturer(
+                    RbelFileReaderCapturer.builder()
+                        .rbelFile("src/test/resources/vau3WithInnerGzip.tgr")
+                        .build()));
     try (final var capturer = rbelLogger.getRbelCapturer()) {
       capturer.initialize();
     }
@@ -139,6 +139,4 @@ public class VauEpa3ConverterTest {
         .extractChildWithPath("$.body.decrypted.body.resourceType")
         .hasStringContentEqualTo("Bundle");
   }
-
-
 }

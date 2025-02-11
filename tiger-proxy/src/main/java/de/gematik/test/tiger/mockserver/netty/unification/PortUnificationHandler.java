@@ -373,7 +373,8 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
           .addArgument(() -> ctx.channel().isActive())
           .addArgument(() -> ctx.channel().isOpen())
           .log(
-              "Routing error caught by port unification handler -> closing pipeline ({}) active {}, open {}");
+              "Routing error caught by port unification handler -> closing pipeline ({}) active {},"
+                  + " open {}");
     } else if (connectionClosedException(throwable)) {
       log.error(
           "exception caught by port unification handler -> closing pipeline {}",

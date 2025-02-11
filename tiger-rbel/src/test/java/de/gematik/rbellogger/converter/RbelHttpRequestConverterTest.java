@@ -138,15 +138,24 @@ class RbelHttpRequestConverterTest {
 
   @ParameterizedTest
   @CsvSource({
-    "'DELETE /foo/bar HTTP/1.1\nHost: localhost:8080\nConnection: Keep-Alive\n\n', Non-standard line endings detected. Expected CRLF, but found",
-    "'HTTP/1.1 408\nHost: localhost:8080\nConnection: Keep-Alive\n\n', Non-standard line endings detected. Expected CRLF, but found"
+    "'DELETE /foo/bar HTTP/1.1\n"
+        + "Host: localhost:8080\n"
+        + "Connection: Keep-Alive\n\n"
+        + "', Non-standard line endings detected. Expected CRLF, but found",
+    "'HTTP/1.1 408\n"
+        + "Host: localhost:8080\n"
+        + "Connection: Keep-Alive\n\n"
+        + "', Non-standard line endings detected. Expected CRLF, but found"
   })
-  // Non CRLF-Line endings are not allowed in HTTP messages, but should be accepted (https://www.rfc-editor.org/rfc/rfc2616#section-19.3)
+  // Non CRLF-Line endings are not allowed in HTTP messages, but should be accepted
+  // (https://www.rfc-editor.org/rfc/rfc2616#section-19.3)
   void testDefectLineBreaks(String defunctMessage, String errorMessageContains) {
-    assertThat(lenientRbelConverter.parseMessage(defunctMessage.getBytes(), null, null, Optional.empty()))
-      .hasFacet(RbelHttpMessageFacet.class);
+    assertThat(
+            lenientRbelConverter.parseMessage(
+                defunctMessage.getBytes(), null, null, Optional.empty()))
+        .hasFacet(RbelHttpMessageFacet.class);
     assertThat(rbelConverter.parseMessage(defunctMessage.getBytes(), null, null, Optional.empty()))
-      .hasFacet(RbelHttpMessageFacet.class);
+        .hasFacet(RbelHttpMessageFacet.class);
     assertThat(rbelConverter.parseMessage(defunctMessage.getBytes(), null, null, Optional.empty()))
         .extractFacet(RbelNoteFacet.class)
         .hasFieldOrPropertyWithValue("style", NoteStyling.INFO)
@@ -155,34 +164,53 @@ class RbelHttpRequestConverterTest {
         .contains(errorMessageContains);
   }
 
-
   @ParameterizedTest
   @CsvSource({
-    "'GET /foo/bar HTTP/1.0\r\nSome-Header: Value', 'No body found in HTTP message (Does the message contain correct line breaks?)'",
-    "'HTTP/1.1 402\r\nSome-Header: Value', 'Unable to determine end of HTTP header. Does the header end with double CRLF?'",
-    "'OPTIONS /foo/bar HTTP/1.0\r\nSome-Header: Value\r\n', 'No body found in HTTP message (Does the message contain correct line breaks?)'",
-    "'HTTP/1.1 404 Not Found\r\nSome-Header: Value\r\n', 'Unable to determine end of HTTP header. Does the header end with double CRLF?'"
+    "'GET /foo/bar HTTP/1.0\r\n"
+        + "Some-Header: Value', 'No body found in HTTP message (Does the message contain correct"
+        + " line breaks?)'",
+    "'HTTP/1.1 402\r\n"
+        + "Some-Header: Value', 'Unable to determine end of HTTP header. Does the header end with"
+        + " double CRLF?'",
+    "'OPTIONS /foo/bar HTTP/1.0\r\n"
+        + "Some-Header: Value\r\n"
+        + "', 'No body found in HTTP message (Does the message contain correct line breaks?)'",
+    "'HTTP/1.1 404 Not Found\r\n"
+        + "Some-Header: Value\r\n"
+        + "', 'Unable to determine end of HTTP header. Does the header end with double CRLF?'"
   })
   void testBasicHttpErrors(String defunctMessage, String errorMessageContains) {
     assertThat(lenientRbelConverter.convertElement(defunctMessage, null))
-      .hasFacet(RbelHttpMessageFacet.class);
+        .hasFacet(RbelHttpMessageFacet.class);
     assertThat(rbelConverter.convertElement(defunctMessage, null))
-      .hasFacet(RbelHttpMessageFacet.class);
-    val convertedMessage = rbelConverter.parseMessage(defunctMessage.getBytes(), null, null, Optional.empty());
+        .hasFacet(RbelHttpMessageFacet.class);
+    val convertedMessage =
+        rbelConverter.parseMessage(defunctMessage.getBytes(), null, null, Optional.empty());
     assertThat(convertedMessage.getNotes())
-      .extracting("value").asString().contains(errorMessageContains);
+        .extracting("value")
+        .asString()
+        .contains(errorMessageContains);
   }
 
   @ParameterizedTest
   @CsvSource({
-    "'PUT /foo/bar HTTP/1.0\r\nSome-Header: Value\r\n\r\nSome body, but no content-length defined', Did not find content-length or transfer-encoding header",
-    "'HTTP/1.1 406\r\nSome-Header: Value\r\n\r\nSome body, but no content-length defined', Did not find content-length or transfer-encoding header",
-    "'PATCH /foo/bar HTTP/1.1\r\nConnection: Keep-Alive\r\n\r\n', HTTP/1.1 request does not contain Host header"
+    "'PUT /foo/bar HTTP/1.0\r\n"
+        + "Some-Header: Value\r\n\r\n"
+        + "Some body, but no content-length defined', Did not find content-length or"
+        + " transfer-encoding header",
+    "'HTTP/1.1 406\r\n"
+        + "Some-Header: Value\r\n\r\n"
+        + "Some body, but no content-length defined', Did not find content-length or"
+        + " transfer-encoding header",
+    "'PATCH /foo/bar HTTP/1.1\r\n"
+        + "Connection: Keep-Alive\r\n\r\n"
+        + "', HTTP/1.1 request does not contain Host header"
   })
-  // These errors only stop the parsing if the message is send via TCP (otherwise the message can still be safely parsed)
+  // These errors only stop the parsing if the message is send via TCP (otherwise the message can
+  // still be safely parsed)
   void testTcpHttpErrors(String defunctMessage, String errorMessageContains) {
     assertThat(lenientRbelConverter.convertElement(defunctMessage, null))
-      .hasFacet(RbelHttpMessageFacet.class);
+        .hasFacet(RbelHttpMessageFacet.class);
     assertThat(rbelConverter.convertElement(defunctMessage, null))
         .extractFacet(RbelNoteFacet.class)
         .hasFieldOrPropertyWithValue("style", NoteStyling.INFO)

@@ -25,6 +25,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
+import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.io.IOException;
@@ -141,6 +142,8 @@ class TestEnvDownload {
         "http://localhost:" + runtimeInfo.getHttpPort() + "/failDownload");
 
     assertThatThrownBy(() -> createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment))
+        .isInstanceOf(TigerEnvironmentStartupException.class)
+        .cause()
         .isInstanceOf(TigerTestEnvException.class);
 
     assertThat(
@@ -150,6 +153,8 @@ class TestEnvDownload {
         .isEmpty();
 
     assertThatThrownBy(() -> createTestEnvMgrSafelyAndExecute(TigerTestEnvMgr::setUpEnvironment))
+        .isInstanceOf(TigerEnvironmentStartupException.class)
+        .cause()
         .isInstanceOf(TigerTestEnvException.class);
 
     verify(2, getRequestedFor(urlEqualTo("/failDownload")));

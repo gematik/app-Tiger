@@ -19,8 +19,8 @@ import ScenarioIdentifier from "@/types/testsuite/ScenarioIdentifier";
 
 export function runScenario(scenarioIdentifier: ScenarioIdentifier) {
   fetch(import.meta.env.BASE_URL + "run", {
-    headers: new Headers({'content-type': 'application/json'}),
+    headers: new Headers({ "content-type": "application/json" }),
     method: "POST",
-    body: JSON.stringify(scenarioIdentifier)
+    body: JSON.stringify(scenarioIdentifier),
   });
 }

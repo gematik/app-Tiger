@@ -54,7 +54,6 @@ public class TigerConfigurationKeys {
     "brainpoolP512r1"
   };
 
-
   public static final TigerTypedConfigurationKey<Integer> TESTENV_MGR_RESERVED_PORT =
       new TigerTypedConfigurationKey<>("tiger.lib.workflowUiPort", Integer.class);
   public static final TigerTypedConfigurationKey<Integer> LOCALPROXY_ADMIN_RESERVED_PORT =
@@ -68,9 +67,7 @@ public class TigerConfigurationKeys {
       new TigerTypedConfigurationKey<>("tiger.tigerProxy.maxLoopCounter", Integer.class, 10);
   public static final TigerTypedConfigurationKey<String[]> TIGER_PROXY_DEFAULT_NAMED_GROUPS =
       new TigerTypedConfigurationKey<>(
-          "tiger.tigerProxy.defaultNamedGroups",
-          String[].class,
-        DEFAULT_NAMED_GROUPS_FALLBACK);
+          "tiger.tigerProxy.defaultNamedGroups", String[].class, DEFAULT_NAMED_GROUPS_FALLBACK);
   public static final TigerTypedConfigurationKey<Boolean> SKIP_ENVIRONMENT_SETUP =
       new TigerTypedConfigurationKey<>("tiger.skipEnvironmentSetup", Boolean.class, false);
   public static final TigerTypedConfigurationKey<Boolean> SHOW_TIGER_LOGO =
@@ -104,5 +101,4 @@ public class TigerConfigurationKeys {
 
   public static final TigerConfigurationKey CUCUMBER_ENGINE_RUNTIME_CONFIGURATION = // NOSONAR
       new TigerConfigurationKey("tiger.cucumber.runtime-configuration");
-
 }

@@ -131,24 +131,34 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
         .forEach(parameter -> queryStringParameters.remove(parameter.getName()));
   }
 
-  public void applyModifications(HttpResponse response) {
+  public void applyModifications(HttpRequest request, HttpResponse response) {
     if (!tigerProxy.getModifications().isEmpty()) {
-      parseMessageAndApplyModifications(response);
+      parseMessageAndApplyModifications(request, response);
     }
   }
 
-  public void parseMessageAndApplyModifications(HttpResponse response) {
+  public void parseMessageAndApplyModifications(HttpRequest request, HttpResponse response) {
+    RbelElement requestElement = null;
+    if (!isHealthEndpointRequest(request)) {
+      requestElement = retrieveParsedRequest(request).join();
+    }
     final RbelElement responseElement =
         tigerProxy
             .getRbelLogger()
             .getRbelConverter()
             .convertElement(
                 tigerProxy.getMockServerToRbelConverter().responseToRbelMessage(response));
+    if (requestElement != null) {
+      postProcessingAfterBothMessageParsed(requestElement, responseElement);
+    }
     final RbelElement modifiedResponse =
         tigerProxy.getRbelLogger().getRbelModifier().applyModifications(responseElement);
-    if (modifiedResponse == responseElement) {
-      return;
+    if (modifiedResponse != responseElement) {
+      modifyOriginalResponse(response, modifiedResponse);
     }
+  }
+
+  private void modifyOriginalResponse(HttpResponse response, RbelElement modifiedResponse) {
     response.withBody(extractSafe(modifiedResponse, "$.body").getRawContent());
     response.getHeaderMultimap().clear();
     for (RbelElement modifiedHeader : modifiedResponse.findRbelPathMembers("$.header.*")) {
@@ -208,7 +218,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
 
   private HttpResponse handleResponse(HttpRequest req, HttpResponse resp) {
     rewriteLocationHeaderIfApplicable(resp);
-    applyModifications(resp);
+    applyModifications(req, resp);
     if (shouldLogTraffic()) {
       parseMessages(req, resp);
     }
@@ -296,6 +306,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
     }
 
     CompletableFuture<RbelElement> futureParsedRequest = retrieveParsedRequest(req);
+    requestLogIdToParsingFuture.remove(req.getLogCorrelationId());
     return getTigerProxy()
         .getMockServerToRbelConverter()
         .convertResponse(
@@ -307,7 +318,8 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
         .thenCombine(
             futureParsedRequest,
             (parsedResponse, parsedRequest) -> {
-              postProcessingAfterBothMessageParsed(parsedResponse, parsedRequest);
+              postProcessingAfterBothMessageParsed(parsedRequest, parsedResponse);
+              getTigerProxy().triggerListener(parsedResponse);
               return null;
             })
         .thenAccept(ignore -> {}) // Here just to have the future stay a CompletableFuture<Void>
@@ -325,7 +337,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
             });
   }
 
-  private void postProcessingAfterBothMessageParsed(RbelElement response, RbelElement request) {
+  private void postProcessingAfterBothMessageParsed(RbelElement request, RbelElement response) {
     val pairFacet = TracingMessagePairFacet.builder().response(response).request(request).build();
     request.addFacet(pairFacet);
     response.addFacet(pairFacet);
@@ -336,6 +348,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
             .orElse(RbelHttpResponseFacet.builder())
             .request(request)
             .build());
+
     request
         .getFacet(TlsFacet.class)
         .ifPresent(
@@ -356,13 +369,11 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
               response.addFacet(respTlsFacet);
             });
     addBundledServerNameToHostnameFacet(response);
-
-    getTigerProxy().triggerListener(response);
   }
 
   private CompletableFuture<RbelElement> retrieveParsedRequest(HttpRequest req) {
     CompletableFuture<RbelElement> requestParsingFuture =
-        requestLogIdToParsingFuture.remove(req.getLogCorrelationId());
+        requestLogIdToParsingFuture.get(req.getLogCorrelationId());
 
     if (requestParsingFuture == null) {
       log.error(

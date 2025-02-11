@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.proxy.tls;
@@ -174,8 +175,10 @@ public class DynamicKeyAndCertificateFactory implements KeyAndCertificateFactory
         || IPAddress.isValidIPv6(alternativeName)
         || IPAddress.isValidIPv4WithNetmask(alternativeName)
         || IPAddress.isValidIPv4(alternativeName)) {
+      log.info("IP {}", alternativeName);
       return new GeneralName(GeneralName.iPAddress, alternativeName);
     } else {
+      log.info("DNS {}", alternativeName);
       return new GeneralName(GeneralName.dNSName, alternativeName);
     }
   }

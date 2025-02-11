@@ -31,6 +31,8 @@ public class TigerRouteDto {
   private String from;
   private String to;
   private boolean disableRbelLogging;
+  private boolean isInternalRoute;
+  private boolean matchForProxyType;
 
   public static TigerRouteDto create(TigerProxyRoute route) {
     return TigerRouteDto.builder()
@@ -38,6 +40,8 @@ public class TigerRouteDto {
         .to(route.getTo())
         .id(route.getId())
         .disableRbelLogging(route.isDisableRbelLogging())
+        .isInternalRoute(route.isInternalRoute())
+        .matchForProxyType(route.isMatchForProxyType())
         .build();
   }
 }

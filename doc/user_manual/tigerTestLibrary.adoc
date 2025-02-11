@@ -409,3 +409,8 @@ If a scenario is identified that has no test case with a matching TCID, it will 
 Background blocks will be merged to each scenario before exporting its steps to Polarion.
 
 For more details on how to perform the synchronisation, all choices for the annotations and how to upload generated test run reports to Polarion and Aurora, please check the README.md in the PolarionToolbox project on the Gematik GitLab.
+
+=== JUnit test report when using Scenario Outlines
+
+When using Scenario Outlines in your feature files, the JUnit test report will show each example that has run in the scenario outline as a single test case.
+To create a name for each example that is referencing the scenario outline, the system property `cucumber.junit-platform.naming-strategy.short.example-name` is set to the value `pickle` in case it is not set by the environment.

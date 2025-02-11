@@ -15,68 +15,97 @@
   -->
 
 <script setup lang="ts">
-
 import ScenarioIdentifier from "@/types/testsuite/ScenarioIdentifier";
-import {ref} from "vue";
+import { ref } from "vue";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog.vue";
-import {useConfirmRun} from "@/components/replay/ConfirmRun";
+import { useConfirmRun } from "@/components/replay/ConfirmRun";
 
-const isHovering = ref(false)
+const isHovering = ref(false);
 
 const props = defineProps<{
-  scenario: ScenarioIdentifier
-  showPlayButton: boolean
+  scenario: ScenarioIdentifier;
+  showPlayButton: boolean;
 }>();
 
-console.log("props ", props)
+console.log("props ", props);
 
-const {openDialog, onClickConfirm, onClickDismiss, dialogIsOpen} = useConfirmRun();
+const { openDialog, onClickConfirm, onClickDismiss, dialogIsOpen } =
+  useConfirmRun();
 </script>
 
 <template>
   <div>
-    <div v-if="props.showPlayButton" @click="openDialog" role="button" class="btn btn-link p-0 small-play-button test-play-small-button"
-         title="Run Scenario">
-    <span @mouseenter="isHovering = true" @mouseleave="isHovering = false" class="fa-stack fa-2xs circle-arrow d-flex"
-          style="flex-shrink: 0;">
-      <i class="fa fa-regular fa-circle fa-stack-2x outer-circle" :class="{'fa-solid': isHovering}"></i>
-      <i class="fas fa-play fa-stack-1x inner-arrow" :class="{'fa-inverse': isHovering}"></i>
-    </span>
+    <div
+      v-if="props.showPlayButton"
+      role="button"
+      class="btn btn-link p-0 small-play-button test-play-small-button"
+      title="Run Scenario"
+      @click="openDialog"
+    >
+      <span
+        class="fa-stack fa-2xs circle-arrow d-flex"
+        style="flex-shrink: 0"
+        @mouseenter="isHovering = true"
+        @mouseleave="isHovering = false"
+      >
+        <i
+          class="fa fa-regular fa-circle fa-stack-2x outer-circle"
+          :class="{ 'fa-solid': isHovering }"
+        ></i>
+        <i
+          class="fas fa-play fa-stack-1x inner-arrow"
+          :class="{ 'fa-inverse': isHovering }"
+        ></i>
+      </span>
     </div>
 
-    <div v-else @click="openDialog" role="button" class="btn btn-link p-0 small-play-button"
-         title="Replay Scenario">
-    <span @mouseenter="isHovering = true" @mouseleave="isHovering = false" class="fa-stack fa-2xs circle-arrow d-flex"
-          style="flex-shrink: 0;">
-      <i class="fa fa-regular fa-circle fa-stack-2x outer-circle" :class="{'fa-solid': isHovering}"></i>
-      <i class="fas fa-rotate-right fa-stack-1x inner-arrow" :class="{'fa-inverse': isHovering}"></i>
-    </span>
+    <div
+      v-else
+      role="button"
+      class="btn btn-link p-0 small-play-button"
+      title="Replay Scenario"
+      @click="openDialog"
+    >
+      <span
+        class="fa-stack fa-2xs circle-arrow d-flex"
+        style="flex-shrink: 0"
+        @mouseenter="isHovering = true"
+        @mouseleave="isHovering = false"
+      >
+        <i
+          class="fa fa-regular fa-circle fa-stack-2x outer-circle"
+          :class="{ 'fa-solid': isHovering }"
+        ></i>
+        <i
+          class="fas fa-rotate-right fa-stack-1x inner-arrow"
+          :class="{ 'fa-inverse': isHovering }"
+        ></i>
+      </span>
     </div>
 
-
-    <confirm-dialog :dialog-is-open="dialogIsOpen"
-                    @click-confirm="() => onClickConfirm(props.scenario)"
-                    @click-dismiss="onClickDismiss"
-                    :header="props.showPlayButton? 'Run Scenario': 'Replay Scenario'"
-                    description=""
-                    :label-confirm-button="props.showPlayButton? 'Yes, run' : 'Yes, replay'"
-                    label-dismiss-button="Cancel">
-
+    <confirm-dialog
+      :dialog-is-open="dialogIsOpen"
+      :header="props.showPlayButton ? 'Run Scenario' : 'Replay Scenario'"
+      description=""
+      :label-confirm-button="props.showPlayButton ? 'Yes, run' : 'Yes, replay'"
+      label-dismiss-button="Cancel"
+      @click-confirm="() => onClickConfirm(props.scenario)"
+      @click-dismiss="onClickDismiss"
+    >
     </confirm-dialog>
   </div>
 </template>
 
 <style scoped>
-
 .fa-stack.circle-arrow {
   font-size: 8px;
 }
 
 .outer-circle {
-  color: var(--gem-primary-400)
+  color: var(--gem-primary-400);
 }
 
 .inner-arrow:not(.fa-inverse) {
-  color: var(--gem-primary-400)
+  color: var(--gem-primary-400);
 }
 </style>

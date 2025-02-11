@@ -39,7 +39,7 @@ import org.junit.jupiter.api.BeforeEach;
 
 @Slf4j
 @Getter
-@WireMockTest
+@WireMockTest(httpsEnabled = true)
 public abstract class AbstractTestTigerTestEnvMgr {
 
   private static byte[] winstoneBytes;

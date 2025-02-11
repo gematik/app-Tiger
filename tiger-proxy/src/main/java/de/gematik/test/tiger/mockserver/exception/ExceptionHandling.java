@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
@@ -50,15 +49,6 @@ public class ExceptionHandling {
       Pattern.compile( // NOSONAR
           "^.*(?:connection.*(?:reset|closed|abort|broken)|broken.*pipe).*$",
           Pattern.CASE_INSENSITIVE);
-
-  public static <T> T handleThrowable(Callable<T> callable) {
-    try {
-      return callable.call();
-    } catch (Exception e) {
-      log.warn("Exception thrown", e);
-      throw new RuntimeException(e);
-    }
-  }
 
   /** Closes the specified channel after all queued write requests are flushed. */
   public static void closeOnFlush(Channel ch) {

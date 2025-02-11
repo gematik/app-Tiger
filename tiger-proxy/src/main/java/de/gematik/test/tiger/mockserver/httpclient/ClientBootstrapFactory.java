@@ -38,6 +38,8 @@ import io.netty.channel.WriteBufferWaterMark;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.AttributeKey;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -148,7 +150,7 @@ public class ClientBootstrapFactory {
   }
 
   public int getLoopCounterForOpenConnectionFromPort(int port) {
-    return channelMap.channelMap.entries().stream()
+    return channelMap.getEntries().stream()
         .filter(e -> isLocalPortOfChannelEqualToIncomingPortInQuestion(port, e))
         .mapToInt(
             entry -> entry.getValue().getFutureOutgoingChannel().channel().attr(LOOP_COUNTER).get())
@@ -156,16 +158,17 @@ public class ClientBootstrapFactory {
         .orElse(0);
   }
 
-  private boolean isLocalPortOfChannelEqualToIncomingPortInQuestion(int port, Entry<ChannelId, ReusableChannel> entry) {
-      val loc = entry.getValue().getFutureOutgoingChannel().channel().localAddress();
-      if (loc instanceof InetSocketAddress localAddress) {
-        return localAddress.getPort() == port;
-      }
-      return false;
+  private boolean isLocalPortOfChannelEqualToIncomingPortInQuestion(
+      int port, Entry<ChannelId, ReusableChannel> entry) {
+    val loc = entry.getValue().getFutureOutgoingChannel().channel().localAddress();
+    if (loc instanceof InetSocketAddress localAddress) {
+      return localAddress.getPort() == port;
+    }
+    return false;
   }
 
   public static class ReusableChannelMap {
-    public final Multimap<ChannelId, ReusableChannel> channelMap =
+    private final Multimap<ChannelId, ReusableChannel> channelMap =
         Multimaps.synchronizedListMultimap(ArrayListMultimap.create());
 
     public synchronized ChannelFuture getChannelToReuse(RequestInfo<?> requestInfo) {
@@ -175,6 +178,10 @@ public class ClientBootstrapFactory {
           .findAny()
           .map(ReusableChannel::getFutureOutgoingChannel)
           .orElse(null);
+    }
+
+    public Collection<Entry<ChannelId, ReusableChannel>> getEntries() {
+      return new ArrayList<>(channelMap.entries());
     }
 
     public synchronized ChannelFuture getChannelInUse(RequestInfo<?> requestInfo) {

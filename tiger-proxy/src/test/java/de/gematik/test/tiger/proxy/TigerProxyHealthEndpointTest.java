@@ -18,6 +18,7 @@ package de.gematik.test.tiger.proxy;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -26,6 +27,7 @@ import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.mockserver.netty.MockServer;
+import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
@@ -151,6 +153,26 @@ class TigerProxyHealthEndpointTest {
     JSONObject response =
         healthUnirestInstance.get(getHealthEndpointUrl()).asJson().getBody().getObject();
     validateHealthRecord(response, "UP", "UP", true, 4, 5, false, true);
+  }
+
+  @Test
+  @Order(2)
+  void catchAllReverseProxyRouteExists_HealthcheckShouldStillWork() {
+    tigerProxy.addRoute(
+        TigerProxyRoute.builder().from("/").to("http://some.bogus.address").build());
+    assertThat(healthUnirestInstance.get(getHealthEndpointUrl()).asEmpty().isSuccess()).isTrue();
+  }
+
+  @Test
+  @Order(2)
+  void catchAllUniversalRouteExists_HealthcheckShouldStillWork() {
+    tigerProxy.addRoute(
+        TigerProxyRoute.builder()
+            .from("/")
+            .to("http://some.bogus.address")
+            .matchForProxyType(false)
+            .build());
+    assertThat(healthUnirestInstance.get(getHealthEndpointUrl()).asEmpty().isSuccess()).isTrue();
   }
 
   // ATTENTION this method must be run as last method as it destroys the mock server client inside

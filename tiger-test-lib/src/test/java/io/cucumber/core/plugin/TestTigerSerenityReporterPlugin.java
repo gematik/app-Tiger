@@ -131,8 +131,7 @@ public class TestTigerSerenityReporterPlugin {
     assertThat(
             listener
                 .getReporterCallbacks()
-                .extractScenarioDataVariantIndex(
-                    listener.getScenarioContextDelegate(featureUri), testCase))
+                .extractScenarioDataVariantIndex(listener.getContext(featureUri), testCase))
         .isEqualTo(-1);
 
     TigerEnvStatusDto status = envStatusController.getStatus();
@@ -180,7 +179,7 @@ public class TestTigerSerenityReporterPlugin {
     ScenarioOutlineTestCaseAdapter testCase =
         (ScenarioOutlineTestCaseAdapter) startedEvent.getTestCase();
 
-    ScenarioContextDelegate context = listener.getScenarioContextDelegate(featureUri);
+    IScenarioContext context = listener.getContext(featureUri);
     SerenityReporterCallbacks reporterCallbacks = listener.getReporterCallbacks();
 
     assertThat(reporterCallbacks.extractScenarioDataVariantIndex(context, testCase)).isZero();
@@ -249,11 +248,8 @@ public class TestTigerSerenityReporterPlugin {
     String scenarioUniqueId = findScenarioUniqueId(testCase);
     ScenarioUpdate scenario =
         status.getFeatureMap().get(featureName).getScenarios().get(scenarioUniqueId);
-    // steps 0 and 1 are background steps
-    assertThat(scenario.getSteps().get("0").getStatus()).isEqualTo(TestResult.PENDING);
-    assertThat(scenario.getSteps().get("1").getStatus()).isEqualTo(TestResult.PENDING);
-    assertThat(scenario.getSteps().get("2").getStatus()).isEqualTo(TestResult.PASSED);
-    assertThat(scenario.getSteps().get("3").getStatus()).isEqualTo(TestResult.FAILED);
+    assertThat(scenario.getSteps().get("0").getStatus()).isEqualTo(TestResult.PASSED);
+    assertThat(scenario.getSteps().get("1").getStatus()).isEqualTo(TestResult.FAILED);
   }
 
   @Test
@@ -383,7 +379,7 @@ public class TestTigerSerenityReporterPlugin {
 
     @Override
     public List<Argument> getDefinitionArgument() {
-      return null;
+      return List.of();
     }
 
     @Override

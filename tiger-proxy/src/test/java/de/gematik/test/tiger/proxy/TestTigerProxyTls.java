@@ -294,14 +294,14 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             .proxyRoutes(
                 List.of(
                     TigerConfigurationRoute.builder()
-                        .from("/")
+                        .from("http://backend/")
                         .to("http://localhost:" + fakeBackendServerPort)
                         .build()))
             .build());
 
     tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
 
-    proxyRest.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+    proxyRest.get("http://backend/foobar").asString();
     awaitMessagesInTiger(2);
 
     assertThat(callCounter.get()).isEqualTo(2);
@@ -621,7 +621,6 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     AtomicInteger checkCounter = new AtomicInteger(0);
     final UnirestInstance unirestInstance = Unirest.spawnInstance();
     unirestInstance.config().verifySsl(true);
-    unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
     SSLContext ctx = SSLContext.getInstance("TLSv1.2");
     ctx.init(
         null,
@@ -682,6 +681,28 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
     assertThat(response.getStatus()).isEqualTo(666);
     assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
+  }
+
+  @Test
+  void restartMockServer_generatedCaShouldBeUnchanged()
+      throws UnirestException {
+    final TigerConfigurationPkiIdentity clientIdentity =
+        new TigerConfigurationPkiIdentity("src/test/resources/rsa.p12;00");
+
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
+    final SSLContext sslContext = tigerProxy.buildSslContext();
+
+    proxyRest.get("http://backend/foobar").asJson();
+
+    tigerProxy
+        .getTigerProxyConfiguration()
+        .setTls(TigerTlsConfiguration.builder().forwardMutualTlsIdentity(clientIdentity).build());
+    tigerProxy.restartMockserver();
+    var ownRestClient = Unirest.spawnInstance();
+    ownRestClient.config().proxy("localhost", tigerProxy.getProxyPort()).sslContext(sslContext);
+
+    final HttpResponse<JsonNode> response = ownRestClient.get("http://backend/foobar").asJson();
+    assertThat(response.getStatus()).isEqualTo(666);
   }
 
   @Test
@@ -878,13 +899,12 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             .build());
 
     executeRequestToPathWhileOnlyTrusting(
-      "www.schmoobar.com", "src/test/resources/rsaStoreWithChain.jks;gematik");
+        "www.schmoobar.com", "src/test/resources/rsaStoreWithChain.jks;gematik");
   }
 
   @SneakyThrows
   @Test
-  void onlyOneServerIdentityButDynamicFallback_fallbackShouldBeUsed()
-      throws UnirestException {
+  void onlyOneServerIdentityButDynamicFallback_fallbackShouldBeUsed() throws UnirestException {
     spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .tls(
@@ -892,14 +912,14 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                     .serverIdentity(
                         new TigerConfigurationPkiIdentity(
                             "src/test/resources/rsaStoreWithChain.jks;gematik"))
-                  .serverRootCa(
-                    new TigerConfigurationPkiIdentity(
-                      "src/test/resources/selfSignedCa/rootCa.p12;00"))
+                    .serverRootCa(
+                        new TigerConfigurationPkiIdentity(
+                            "src/test/resources/selfSignedCa/rootCa.p12;00"))
                     .build())
             .build());
 
     executeRequestToPathWhileOnlyTrusting(
-      "www.schmoobar.com", "src/test/resources/selfSignedCa/rootCa.p12;00");
+        "www.schmoobar.com", "src/test/resources/selfSignedCa/rootCa.p12;00");
   }
 
   private void executeRequestToPathWhileOnlyTrusting(String host, String fileLoadingInformation) {
@@ -927,7 +947,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
       ks.setCertificateEntry("chainCert" + chainCertCtr++, chainCert);
     }
     TrustManagerFactory tmf =
-      TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
 
     tmf.init(ks);
 

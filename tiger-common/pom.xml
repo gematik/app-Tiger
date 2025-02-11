@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-
-    Copyright 2024 gematik GmbH
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-        http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
--->
+  ~ Copyright 2024 gematik GmbH
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
+  -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -23,7 +22,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.6.0</version>
+        <version>3.6.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -35,6 +34,7 @@
 
         <version.jfiglet>1.0.1</version.jfiglet>
         <version.snakeyaml>2.3</version.snakeyaml>
+        <version.jsonschema-generator>4.37.0</version.jsonschema-generator>
     </properties>
 
     <dependencies>
@@ -42,7 +42,7 @@
         <dependency>
             <groupId>com.github.oshi</groupId>
             <artifactId>oshi-core</artifactId>
-            <version>6.6.5</version>
+            <version>6.6.6</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -115,6 +115,12 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.github.victools</groupId>
+            <artifactId>jsonschema-generator</artifactId>
+            <version>${version.jsonschema-generator}</version>
+        </dependency>
+
         <!-- Test dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -131,6 +137,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <version>${version.spring-boot}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>1.5.5</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -189,6 +201,42 @@
             <plugin>
                 <artifactId>sonar-maven-plugin</artifactId>
                 <groupId>org.sonarsource.scanner.maven</groupId>
+            </plugin>
+            <plugin>
+                <groupId>com.github.victools</groupId>
+                <artifactId>jsonschema-maven-plugin</artifactId>
+                <version>4.37.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <classNames>
+                        <className>de.gematik.test.tiger.testenvmgr.config.Configuration</className>
+                    </classNames>
+                    <schemaVersion>DRAFT_2020_12</schemaVersion>
+                    <schemaFileName>{0}.json</schemaFileName>
+                    <schemaFilePath>target/schemas</schemaFilePath>
+                    <options>
+                        <enabled>
+                            <option>DEFINITIONS_FOR_ALL_OBJECTS</option>
+                            <option>NULLABLE_FIELDS_BY_DEFAULT</option>
+                            <option>INLINE_ALL_SCHEMAS</option>
+                            <option>MAP_VALUES_AS_ADDITIONAL_PROPERTIES</option>
+                        </enabled>
+                    </options>
+                    <modules>
+                        <module>
+                            <name>Jackson</name>
+                            <options>
+                                <option>FLATTENED_ENUMS_FROM_JSONVALUE</option>
+                            </options>
+                        </module>
+                    </modules>
+                </configuration>
             </plugin>
         </plugins>
     </build>

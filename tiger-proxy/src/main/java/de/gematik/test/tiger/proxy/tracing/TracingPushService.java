@@ -19,7 +19,6 @@ package de.gematik.test.tiger.proxy.tracing;
 import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.facet.MessageProcessingStateFacet;
 import de.gematik.rbellogger.data.facet.PreviousMessageFacet;
 import de.gematik.rbellogger.data.facet.ProxyTransmissionHistory;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
@@ -39,7 +38,6 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.*;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -127,7 +125,6 @@ public class TracingPushService {
             msg.getUuid());
       }
     }
-    RbelConverter.setMessageFullyProcessed(msg);
   }
 
   private void sendNonPairedMessage(RbelElement msg) {
@@ -298,9 +295,7 @@ public class TracingPushService {
 
   private void waitForMessageFullyProcessed(RbelElement msg) {
     log.atTrace().addArgument(() -> getSequenceNumber(msg)).log("Waiting for message #{}");
-    msg.getFacet(MessageProcessingStateFacet.class)
-        .map(MessageProcessingStateFacet::getProcessed)
-        .ifPresent(CompletableFuture::join);
+    RbelConverter.waitUntilFullyProcessed(msg);
   }
 
   private void waitForPreviousMessageFullyProcessed(RbelElement msg) {

@@ -235,11 +235,11 @@ public class HttpRequest extends HttpMessage<HttpRequest> {
   public InetSocketAddress socketAddressFromHostHeader() {
     if (receiverAddress != null && receiverAddress.getHost() != null) {
       boolean isSsl =
-        receiverAddress.getScheme() != null
+          receiverAddress.getScheme() != null
               && receiverAddress.getScheme().equals(SocketAddress.Scheme.HTTPS);
       return new InetSocketAddress(
-        receiverAddress.getHost(),
-        receiverAddress.getPort() != null ? receiverAddress.getPort() : isSsl ? 443 : 80);
+          receiverAddress.getHost(),
+          receiverAddress.getPort() != null ? receiverAddress.getPort() : isSsl ? 443 : 80);
     } else if (isNotBlank(getFirstHeader(HOST.toString()))) {
       boolean isSsl = Optional.ofNullable(isSecure()).orElse(false);
       String[] hostHeaderParts = getFirstHeader(HOST.toString()).split(":");
@@ -270,7 +270,10 @@ public class HttpRequest extends HttpMessage<HttpRequest> {
         + " "
         + createUserAgentString()
         + " Request-Length: "
-        + createMessageSizeString();
+        + createMessageSizeString()
+        + " sent as "
+        + createProxyTypeString()
+        + " request";
   }
 
   private String createProtocolString() {
@@ -301,5 +304,17 @@ public class HttpRequest extends HttpMessage<HttpRequest> {
     } else {
       return FileUtils.byteCountToDisplaySize(getBody().length);
     }
+  }
+
+  private String createProxyTypeString() {
+    if (isForwardProxyRequest()) {
+      return "Forward-Proxy";
+    } else {
+      return "Reverse-Proxy";
+    }
+  }
+
+  public boolean isForwardProxyRequest() {
+    return Optional.ofNullable(forwardProxyRequest).orElse(false);
   }
 }

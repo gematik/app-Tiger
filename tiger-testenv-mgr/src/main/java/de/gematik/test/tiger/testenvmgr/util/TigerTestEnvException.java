@@ -16,9 +16,9 @@
 
 package de.gematik.test.tiger.testenvmgr.util;
 
-public class TigerTestEnvException extends RuntimeException {
+import de.gematik.test.tiger.exceptions.GenericTigerException;
 
-  private static final long serialVersionUID = 7701810722390571308L;
+public class TigerTestEnvException extends GenericTigerException {
 
   public TigerTestEnvException(final String msg) {
     super(msg);

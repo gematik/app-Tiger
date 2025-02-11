@@ -20,6 +20,7 @@ import static de.gematik.rbellogger.file.RbelFileWriter.PAIRED_MESSAGE_UUID;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
@@ -271,7 +272,11 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   }
 
   public void triggerListener(RbelElement element) {
-    getRbelMessageListeners().forEach(listener -> listener.triggerNewReceivedMessage(element));
+    try {
+      getRbelMessageListeners().forEach(listener -> listener.triggerNewReceivedMessage(element));
+    } finally {
+      RbelConverter.setMessageFullyProcessed(element);
+    }
   }
 
   @Override

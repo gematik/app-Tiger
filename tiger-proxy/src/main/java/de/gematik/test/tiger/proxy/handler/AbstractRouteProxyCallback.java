@@ -72,11 +72,11 @@ public abstract class AbstractRouteProxyCallback extends AbstractTigerRouteCallb
     String unmatchedRequestPath = requestPath.replaceFirst(getTargetUrl().toString(), "");
     if (!sourceUri.getPath().equals("/")) {
       unmatchedRequestPath =
-        unmatchedRequestPath.substring(
-          Math.min(unmatchedRequestPath.length(), sourceUri.getPath().length()));
+          unmatchedRequestPath.substring(
+              Math.min(unmatchedRequestPath.length(), sourceUri.getPath().length()));
     }
     final String actualUrl =
-      concatenateUrlFragments(getTargetUrl().getPath(), unmatchedRequestPath);
+        concatenateUrlFragments(getTargetUrl().getPath(), unmatchedRequestPath);
     if (unmatchedRequestPath.isBlank() && shouldAddTrailingSlash(requestPath)) {
       return concatenateUrlFragments(actualUrl, "/");
     } else {

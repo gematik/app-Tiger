@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.testenvmgr.env;
 
+import de.gematik.test.tiger.proxy.handler.TigerExceptionUtils;
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -41,6 +42,7 @@ public class TigerStatusUpdate {
       String bannerMessage,
       String bannerColor,
       BannerType bannerType,
+      BannerDetails bannerDetails,
       boolean isHtml) {
     this.featureMap = featureMap == null ? new LinkedHashMap<>() : new LinkedHashMap<>(featureMap);
     this.serverUpdate =
@@ -48,7 +50,7 @@ public class TigerStatusUpdate {
     this.bannerMessage = bannerMessage;
     this.bannerColor = bannerColor;
     this.bannerIsHtml = isHtml;
-
+    this.bannerDetails = bannerDetails;
     this.bannerType = Objects.requireNonNullElse(bannerType, BannerType.MESSAGE);
     synchronized (indexMutex) {
       index = lastIndex++;
@@ -61,6 +63,7 @@ public class TigerStatusUpdate {
       Map<String, TigerServerStatusUpdate> serverUpdate,
       String bannerMessage,
       String bannerColor,
+      BannerDetails bannerDetails,
       BannerType bannerType) {
     this(
         dummyIndexForJackson,
@@ -69,6 +72,7 @@ public class TigerStatusUpdate {
         bannerMessage,
         bannerColor,
         bannerType,
+        bannerDetails,
         false);
   }
 
@@ -79,6 +83,24 @@ public class TigerStatusUpdate {
   private String bannerMessage;
   private String bannerColor;
   private BannerType bannerType;
+  private BannerDetails bannerDetails;
 
   private boolean bannerIsHtml;
+
+  @Data
+  public static class BannerDetails {
+    private final String detailedMessage;
+    private String stackTrace;
+    private String exceptionClassName;
+
+    public BannerDetails(Exception exception) {
+      this.detailedMessage = exception.getMessage();
+      this.exceptionClassName = exception.getClass().getName();
+      this.stackTrace = TigerExceptionUtils.getStackTraceAsString(exception);
+    }
+
+    public BannerDetails(String detailedMessage) {
+      this.detailedMessage = detailedMessage;
+    }
+  }
 }

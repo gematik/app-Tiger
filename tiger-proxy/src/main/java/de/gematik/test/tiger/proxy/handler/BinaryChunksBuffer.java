@@ -90,6 +90,7 @@ public class BinaryChunksBuffer {
                         || f instanceof RbelResponseFacet
                         || f instanceof RbelRequestFacet)) {
       rbelConverter.removeMessage(result);
+      RbelConverter.setMessageFullyProcessed(result);
       return Optional.empty();
     }
 

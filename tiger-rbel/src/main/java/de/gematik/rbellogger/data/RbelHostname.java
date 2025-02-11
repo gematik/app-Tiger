@@ -59,6 +59,9 @@ public class RbelHostname implements Serializable {
   }
 
   public static RbelHostname create(SocketAddress clientAddress) {
+    if (clientAddress == null) {
+      return null;
+    }
     if (clientAddress instanceof InetSocketAddress inetSocketAddress) {
       return new RbelHostname(inetSocketAddress.getHostName(), inetSocketAddress.getPort());
     } else {

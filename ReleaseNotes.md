@@ -1,10 +1,63 @@
 # Changelog Tiger Test platform
 
+# Release 3.6.1
+
+* Serenity BDD 4.2.16
+* Cucumber 7.21.0
+* RestAssured 5.5.0
+* Selenium 4.19.1
+* Appium 9.3.0
+* Spring Boot 3.4.2
+* Logback 1.5.16
+
+## Features
+
+* KOB-29: Workflow UI and Serenity Reports: placeholders for tiger configuration variables are now resolved on both the
+  Workflow UI and the serenity html reports.
+    * **NOTE**: there may be a change in behaviour from the previous version where the full test step description was
+      resolved in the Workflow UI. The new implementation only resolves variables when the step where they are used
+      makes this resolution.
+* TGR-1699: Tiger-Proxy: Routes now only match if the proxy type of the request is matching as well. This new behaviour
+  can be deactivated using the flag `matchForProxyType`:
+
+```yaml
+tigerProxy:
+  proxyRoutes:
+    - from: /foobar
+      to: http://orf.at/blub/
+      matchForProxyType: false
+```
+
+* TGR-1683: Workflow UI: improve display of error messages for exceptions happening during environment startup.
+
+## Bugfixes
+
+* TGR-1427: Use non parallel serenity reporter to circumvent wrong logging behavior of parallel reporter.
+* TGR-1609: report actual error cause for exceptions produced by serenity rest.
+* TGR-1653: When a modification condition references parts of request (e.g. "isResponse && request.url =$ 'foobar'"),
+  modification will be applied instead of ignored.
+  Also, modifications will be applied in the order they are given.
+* TGR-1700: Reuse existing CA certificate for dynamic server identities even when restarting the Tiger-Proxy. This is
+  necessary to avoid issues with the CA certificate being changed and the client not trusting the server anymore.
+* TGR-1725: Example names in junit reports are now displayed with the name of the scenario outline (instead of
+  Examples.Example #1.1)
+* TGR-1728: LDAP parsing: allows multiple messages per request; attributes parent element fixed
+* BDDPAR-70: Allow comments in descriptions of feature files
+* TGR-1736: When a test step is finished, we wait for all messages to be fully processed and propagated and all
+  requests to be paired with responses before sending the step update to the UI.
+  The wait time is configurable via the property `tiger.rbel.request.timeout`.
+  After a test case is finished, we associate any trailing messages with the last step.
+  This should ensure that messages are associated with the step they were triggered
+  by and no messages are missing.
+* TGR-1739: TigerProxy: fixed an issue where the TigerProxy would incorrectly identify an unreachable route destination
+  as reachable.
+
 # Release 3.6.0
 
 ## Breaking Changes
 
-* TGR-1615: Tiger-templates are no longer supported, and neither are "pkiKeys" for servers. Consider migrating your testsuite if you relied on these or contact us directly. No usage of these complicated features is known to us.
+* TGR-1615: Tiger-templates are no longer supported, and neither are "pkiKeys" for servers. Consider migrating your
+  testsuite if you relied on these or contact us directly. No usage of these complicated features is known to us.
 
 ## Features
 
@@ -15,7 +68,8 @@
 
 ## Bugfixes
 
-* TGR-1698: Tiger-Proxy: Default for namedGroups changed. This solves issues when connecting to a Tiger-Proxy with a client that uses a non-standard ECC-group. The new default can be overriden via `tiger.tigerProxy.defaultNamedGroups`.
+* TGR-1698: Tiger-Proxy: Default for namedGroups changed. This solves issues when connecting to a Tiger-Proxy with a
+  client that uses a non-standard ECC-group. The new default can be overriden via `tiger.tigerProxy.defaultNamedGroups`.
 
 # Release 3.5.0
 
@@ -25,7 +79,7 @@
 * Selenium 4.19.1
 * Appium 9.3.0
 * Spring Boot 3.4.1
-* Logback 1.5.15
+* Logback 1.5.6
 
 ## Bugfixes
 

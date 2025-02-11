@@ -24,9 +24,14 @@ import com.unboundid.ldap.sdk.Attribute;
 import com.unboundid.ldap.sdk.LDAPException;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.HexFormat;
+import java.util.Optional;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.bouncycastle.asn1.ASN1InputStream;
 
 @ConverterInfo(onlyActivateFor = "ldap")
 @Slf4j
@@ -45,7 +50,11 @@ public class RbelLdapConverter implements RbelConverterPlugin {
 
   private void parseLdapMessage(final RbelElement rbelElement, final RbelConverter converter) {
     try {
-      val asn1Element = ASN1Element.decode(rbelElement.getRawContent());
+      val asn1InputStream =
+          new ASN1InputStream(new ByteArrayInputStream(rbelElement.getRawContent()));
+      val data = asn1InputStream.readObject().getEncoded();
+
+      val asn1Element = ASN1Element.decode(data);
       val ldapMessage = LDAPMessage.decode(asn1Element);
 
       val textRepresentationElement =
@@ -59,20 +68,20 @@ public class RbelLdapConverter implements RbelConverterPlugin {
               rbelElement,
               converter);
 
-      RbelElement attributes = converter.convertElement("attributes", rbelElement);
-      val attributesFacet = extractAttributes(ldapMessage, rbelElement, converter);
-      if (!attributesFacet.isEmpty()) {
-        attributes.addFacet(attributesFacet);
-      }
+      val attributes = extractAttributes(ldapMessage, rbelElement, converter);
 
       val rbelLdapFacet =
-          new RbelLdapFacet(textRepresentationElement, msgIdElement, protocolOpElement, attributes);
+          new RbelLdapFacet(
+              textRepresentationElement, msgIdElement, protocolOpElement, attributes.orElse(null));
       rbelElement.addFacet(rbelLdapFacet);
 
       rbelElement.addFacet(new RbelRootFacet<>(rbelLdapFacet));
       handleRequestResponse(rbelElement, ldapMessage);
-    } catch (final ASN1Exception | LDAPException e) {
-      // ignore
+    } catch (final ASN1Exception | LDAPException | IOException e) {
+      log.debug("Attempt to parse LDAP failed: " + e.getMessage());
+      final byte[] message = rbelElement.getRawContent();
+      final String messageStr = HexFormat.of().formatHex(message);
+      log.debug(" Cannot parse: " + messageStr);
     }
   }
 
@@ -95,7 +104,7 @@ public class RbelLdapConverter implements RbelConverterPlugin {
     return converter.convertElement(value, parentElement);
   }
 
-  private RbelLdapAttributesFacet extractAttributes(
+  private Optional<RbelElement> extractAttributes(
       final LDAPMessage ldapMessage,
       final RbelElement parentElement,
       final RbelConverter converter) {
@@ -103,13 +112,17 @@ public class RbelLdapConverter implements RbelConverterPlugin {
 
     if (ldapMessage.getProtocolOp() instanceof SearchResultEntryProtocolOp) {
       final SearchResultEntryProtocolOp op = ldapMessage.getSearchResultEntryProtocolOp();
+      val result = new RbelElement(new byte[] {}, parentElement);
+
       for (final Attribute attr : op.getAttributes()) {
         for (final String value : attr.getValues()) {
-          attributesFacet.put(attr.getName(), converter.convertElement(value, parentElement));
+          attributesFacet.put(attr.getName(), converter.convertElement(value, result));
         }
       }
+      result.addFacet(attributesFacet);
+      return Optional.of(result);
     }
 
-    return attributesFacet;
+    return Optional.empty();
   }
 }

@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.lib.serenityrest;
 
-import de.gematik.test.tiger.exceptions.GenericTigerException;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import io.restassured.RestAssured;
 import lombok.AccessLevel;
@@ -36,30 +35,20 @@ public class SerenityRestUtils {
         (requestSpec, responseSpec, ctx) -> {
           try {
             log.trace(
-                "Sending Request "
-                    + requestSpec.getMethod()
-                    + " "
-                    + requestSpec.getURI()
-                    + " via proxy "
-                    + requestSpec.getProxySpecification());
+                "Sending Request {} {} via proxy {}",
+                requestSpec.getMethod(),
+                requestSpec.getURI(),
+                requestSpec.getProxySpecification());
             return ctx.next(requestSpec, responseSpec);
           } catch (Exception e) {
-            throw new TigerSerenityRestException(
-                "Error while retrieving "
-                    + requestSpec.getMethod()
-                    + " "
-                    + requestSpec.getURI()
-                    + " via proxy "
-                    + requestSpec.getProxySpecification(),
+            log.error(
+                "Failed sending request {} {} via proxy {}",
+                requestSpec.getMethod(),
+                requestSpec.getURI(),
+                requestSpec.getProxySpecification(),
                 e);
+            throw e;
           }
         });
-  }
-
-  private static class TigerSerenityRestException extends GenericTigerException {
-
-    public TigerSerenityRestException(String s, Exception e) {
-      super(s, e);
-    }
   }
 }

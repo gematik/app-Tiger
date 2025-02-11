@@ -18,120 +18,183 @@
 <template>
   <div>
     <div class="row">
-
       <!-- side bar -->
       <div
-          :class="`${sideBarCollapsed ? 'sidebar-collapsed test-sidebar-collapsed' : 'col-md-3 test-sidebar-open'} ${quitTestrunOngoing ? 'sidebar-state-quit test-sidebar-quit' : (pauseTestrunOngoing ? 'sidebar-state-paused test-sidebar-paused' : '')}`"
-          id="sidebar-left">
+        id="sidebar-left"
+        :class="`${sideBarCollapsed ? 'sidebar-collapsed test-sidebar-collapsed' : 'col-md-3 test-sidebar-open'} ${quitTestrunOngoing ? 'sidebar-state-quit test-sidebar-quit' : pauseTestrunOngoing ? 'sidebar-state-paused test-sidebar-paused' : ''}`"
+      >
         <!-- side bar title -->
-        <h3 :class="`sidebar-title ${quitTestrunOngoing ? 'sidebar-state-quit' : (pauseTestrunOngoing ? 'sidebar-state-paused' : '')}`">
-          <img v-on:click="toggleLeftSideBar"
-               class="navbar-brand" id="test-tiger-logo" src="/img/tiger-mono-64.png" width="36" alt="Tiger logo"/>
+        <h3
+          :class="`sidebar-title ${quitTestrunOngoing ? 'sidebar-state-quit' : pauseTestrunOngoing ? 'sidebar-state-paused' : ''}`"
+        >
+          <img
+            id="test-tiger-logo"
+            class="navbar-brand"
+            src="/img/tiger-mono-64.png"
+            width="36"
+            alt="Tiger logo"
+            @click="toggleLeftSideBar"
+          />
           <span id="test-sidebar-title">Workflow UI</span>
-          <button type="button" v-on:click="toggleLeftSideBar"
-                  class="btn btn-sm mt-3 float-end resizer-left-icon">
-            <i class="fa-lg fa-solid fa-angles-left" id="test-sidebar-close-icon"></i>
+          <button
+            type="button"
+            class="btn btn-sm mt-3 float-end resizer-left-icon"
+            @click="toggleLeftSideBar"
+          >
+            <i
+              id="test-sidebar-close-icon"
+              class="fa-lg fa-solid fa-angles-left"
+            ></i>
           </button>
         </h3>
         <!-- interaction buttons -->
         <div class="toolbar rounded bg-light m-2 p-2 engraved">
-          <button type="button" title="Quit test run"
-                  :class="`btn btn-sm btn-danger m-1 ${(quitTestrunOngoing ? 'disabled active' : 'enabled')}`"
-                  v-on:click="quitTestrun">
-            <i class="fa-lg fa-solid fa-power-off fa-fw" id="test-sidebar-quit-icon"></i>
+          <button
+            type="button"
+            title="Quit test run"
+            :class="`btn btn-sm btn-danger m-1 ${quitTestrunOngoing ? 'disabled active' : 'enabled'}`"
+            @click="quitTestrun"
+          >
+            <i
+              id="test-sidebar-quit-icon"
+              class="fa-lg fa-solid fa-power-off fa-fw"
+            ></i>
           </button>
-          <button type="button" title="Pause test run"
-                  :class="`btn btn-sm m-1 ${(pauseTestrunOngoing && ! quitTestrunOngoing ? 'btn-success' : 'btn-warning')} ${(quitTestrunOngoing ? 'disabled' : '')}`"
-                  v-on:click="pauseTestrun">
-            <i :class="`fa-lg fa-solid ${(pauseTestrunOngoing && ! quitTestrunOngoing ? 'fa-play' : 'fa-pause')} fa-fw`"
-               id="test-sidebar-pause-icon"></i>
+          <button
+            type="button"
+            title="Pause test run"
+            :class="`btn btn-sm m-1 ${pauseTestrunOngoing && !quitTestrunOngoing ? 'btn-success' : 'btn-warning'} ${quitTestrunOngoing ? 'disabled' : ''}`"
+            @click="pauseTestrun"
+          >
+            <i
+              id="test-sidebar-pause-icon"
+              :class="`fa-lg fa-solid ${pauseTestrunOngoing && !quitTestrunOngoing ? 'fa-play' : 'fa-pause'} fa-fw`"
+            ></i>
           </button>
-          <button type="button" title="Configuration Editor"
-                  :class="`btn btn-sm m-1 btn-secondary ${(quitTestrunOngoing ? 'disabled active' : 'enabled')}`"
-                  id="test-sidebar-tg-config-editor-icon"
-                  v-on:click="() => configEditorSidePanelIsOpened = true"
+          <button
+            id="test-sidebar-tg-config-editor-icon"
+            type="button"
+            title="Configuration Editor"
+            :class="`btn btn-sm m-1 btn-secondary ${quitTestrunOngoing ? 'disabled active' : 'enabled'}`"
+            @click="() => (configEditorSidePanelIsOpened = true)"
           >
             <i class="fa-lg fa-solid fa-gears fa-fw"></i>
           </button>
           <div v-if="hasTestRunFinished">
-            <div style="color: red;" class="finishedMessage" id="test-sidebar-stop-message">Test run finished, press
-              QUIT button
+            <div
+              id="test-sidebar-stop-message"
+              style="color: red"
+              class="finishedMessage"
+            >
+              Test run finished, press QUIT button
             </div>
           </div>
 
-          <VueSidePanel v-model="configEditorSidePanelIsOpened"
-                        side="left"
-                        width="85%"
-                        lock-scroll
-                        hide-close-btn>
+          <VueSidePanel
+            v-model="configEditorSidePanelIsOpened"
+            side="left"
+            width="85%"
+            lock-scroll
+            hide-close-btn
+          >
             <template #header>
               <div class="container">
-                <h1 style="color:var(--gem-primary-400)">Tiger Global Configuration Editor<span class="float-end"
-                                                                                                role="button"
-                                                                                                @click="configEditorSidePanelIsOpened = false"
-                                                                                                id="test-tg-config-editor-btn-close"><i
-                    class="fa fa-window-close"></i></span></h1>
+                <h1 style="color: var(--gem-primary-400)">
+                  Tiger Global Configuration Editor
+                  <span
+                    id="test-tg-config-editor-btn-close"
+                    class="float-end"
+                    role="button"
+                    @click="configEditorSidePanelIsOpened = false"
+                    ><i class="fa fa-window-close" />
+                  </span>
+                </h1>
               </div>
             </template>
             <template #default>
               <div class="container-fluid">
                 <div class="row">
-                  <TigerConfigurationEditor ref="tigerConfigEditor"/>
+                  <TigerConfigurationEditor ref="tigerConfigEditor" />
                 </div>
               </div>
             </template>
-
           </VueSidePanel>
         </div>
         <!-- test run status -->
         <h4>
           <i
-              :class="`${currentOverallTestRunStatus(featureUpdateMap)} fa-xl fa-solid fa-square-poll-vertical left`"
-              id="test-sidebar-status-icon">
+            id="test-sidebar-status-icon"
+            :class="`${currentOverallTestRunStatus(featureUpdateMap)} fa-xl fa-solid fa-square-poll-vertical left`"
+          >
           </i>
           <span id="test-sidebar-status">Status</span>
         </h4>
-        <TestStatus :featureUpdateMap="featureUpdateMap" :started="started"/>
+        <TestStatus :feature-update-map="featureUpdateMap" :started="started" />
         <!-- feature list -->
         <h4>
-          <i class="fa-lg fa-solid fa-address-card left"
-             id="test-sidebar-feature-icon"></i>
+          <i
+            id="test-sidebar-feature-icon"
+            class="fa-lg fa-solid fa-address-card left"
+          ></i>
           <span id="test-sidebar-feature">Features</span>
         </h4>
-        <FeatureList :featureUpdateMap="featureUpdateMap"/>
+        <FeatureList :feature-update-map="featureUpdateMap" />
         <!-- server status -->
         <h4>
           <i
-              :class="`serverstatus-${currentOverallServerStatus(currentServerStatus)} fa-xl fa-solid fa-server left`"
-              id="test-sidebar-server-icon">
+            id="test-sidebar-server-icon"
+            :class="`serverstatus-${currentOverallServerStatus(currentServerStatus)} fa-xl fa-solid fa-server left`"
+          >
           </i>
           <span id="test-sidebar-server">Servers</span>
         </h4>
-        <ServerStatus :serverStatusData="currentServerStatus"/>
+        <ServerStatus :server-status-data="currentServerStatus" />
         <div class="container">
-          <div class="mt-2 small text-muted ms-2" id="test-sidebar-version"> Tiger version: {{ version }}</div>
-          <div class="mt-2 small text-muted ms-2" id="test-sidebar-build"> Build: {{ build }}</div>
+          <div id="test-sidebar-version" class="mt-2 small text-muted ms-2">
+            Tiger version: {{ version }}
+          </div>
+          <div id="test-sidebar-build" class="mt-2 small text-muted ms-2">
+            Build: {{ build }}
+          </div>
         </div>
       </div>
 
-      <div :class="`${sideBarCollapsed ? 'col-md-11' : 'col-md-9'}`" id="main-content">
-
+      <div
+        id="main-content"
+        :class="`${sideBarCollapsed ? 'col-md-11' : 'col-md-9'}`"
+      >
         <!-- execution pane buttons -->
         <nav class="navbar navbar-expand-lg">
           <div class="container-fluid">
             <div class="navbar-nav justify-content-start"></div>
             <div class="navbar-nav execution-pane-nav justify-content-between">
-              <a id="test-execution-pane-tab" class="btn active execution-pane-buttons"
-                 @click="showTab('execution_pane', $event)">Test
-                execution</a>
-              <a id="test-server-log-tab" class="btn execution-pane-buttons" @click="showTab('logs_pane', $event)">Server
-                Logs</a>
-              <a v-if="features.trafficVisualization" class="btn execution-pane-buttons"
-                 @click="showTab('visualization_pane', $event)">Traffic
-                Visualization</a>
+              <a
+                id="test-execution-pane-tab"
+                class="btn active execution-pane-buttons"
+                @click="showTab('execution_pane', $event)"
+                >Test execution</a
+              >
+              <a
+                id="test-server-log-tab"
+                class="btn execution-pane-buttons"
+                @click="showTab('logs_pane', $event)"
+                >Server Logs</a
+              >
+              <a
+                v-if="features.trafficVisualization"
+                id="test-traffic-visualization-tab"
+                class="btn execution-pane-buttons"
+                @click="showTab('visualization_pane', $event)"
+                >Traffic Visualization</a
+              >
             </div>
             <div class="navbar-nav justify-content-end px-5">
-              <img alt="gematik logo" class="gematik-logo" id="test-gematik-logo" src="/img/gematik.svg">
+              <img
+                id="test-gematik-logo"
+                alt="gematik logo"
+                class="gematik-logo"
+                src="/img/gematik.svg"
+              />
             </div>
           </div>
         </nav>
@@ -139,28 +202,39 @@
         <!-- tabs -->
         <div class="tab-content">
           <execution-pane
-              :featureUpdateMap="featureUpdateMap"
-              :bannerMessage="bannerData.length ? bannerData[bannerData.length-1] : false"
-              :localProxyWebUiUrl="localProxyWebUiUrl"
-              :ui="ui"
-              :started="started"
-              :quitTestrunOngoing="quitTestrunOngoing"
-              :quit-reason="quitReason"/>
-          <ServerLog :serverLogs="serverLogList" :logServers="logServers" :selectedServers="selectedServers"
-                     :selectedLoglevel="LogLevel.ALL.toString()" :selected-text="''"/>
+            :feature-update-map="featureUpdateMap"
+            :banner-message="
+              bannerData.length ? bannerData[bannerData.length - 1] : false
+            "
+            :local-proxy-web-ui-url="localProxyWebUiUrl"
+            :ui="ui"
+            :started="started"
+            :quit-testrun-ongoing="quitTestrunOngoing"
+            :quit-reason="quitReason"
+          />
+          <ServerLog
+            :server-logs="serverLogList"
+            :log-servers="logServers"
+            :selected-servers="selectedServers"
+            :selected-loglevel="LogLevel.ALL.toString()"
+            :selected-text="''"
+          />
           <traffic-visualization
-              v-if="features.trafficVisualization"
-              :featureUpdateMap="featureUpdateMap"
-              :ui="ui"/>
+            v-if="features.trafficVisualization"
+            :feature-update-map="featureUpdateMap"
+            :ui="ui"
+          />
         </div>
-        <rbel-log-details-pane :ui="ui" :local-proxy-web-ui-url="localProxyWebUiUrl"></rbel-log-details-pane>
+        <rbel-log-details-pane
+          :ui="ui"
+          :local-proxy-web-ui-url="localProxyWebUiUrl"
+        ></rbel-log-details-pane>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-
 /**
  * The communication with the backend is quite complex so here is a basic description of the process:
  *
@@ -187,9 +261,9 @@
  *
  * Sounds complicated and YES it is, but its also safe / defensive and reducing the load on the server
  */
-import {onMounted, provide, ref, Ref} from "vue";
+import { onMounted, provide, ref, Ref } from "vue";
 import SockJS from "sockjs-client";
-import Stomp, {Client, Frame, Message} from "webstomp-client";
+import Stomp, { Client, Frame, Message } from "webstomp-client";
 import TigerServerStatusUpdateDto from "@/types/TigerServerStatusUpdateDto";
 import TestEnvStatusDto from "@/types/TestEnvStatusDto";
 import ServerStatus from "@/components/server/ServerStatus.vue";
@@ -200,26 +274,24 @@ import ServerLog from "@/components/serverlog/ServerLog.vue";
 import FeatureList from "@/components/testsuite/FeatureList.vue";
 import TestStatus from "@/components/testsuite/TestStatus.vue";
 import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
-import {currentOverallServerStatus} from "@/types/TigerServerStatus";
-import {currentOverallTestRunStatus} from "@/types/testsuite/TestResult";
+import { currentOverallServerStatus } from "@/types/TigerServerStatus";
+import { currentOverallTestRunStatus } from "@/types/testsuite/TestResult";
 import Ui from "@/types/ui/Ui";
 import BannerType from "@/types/BannerType";
 import TigerServerLogDto from "@/types/TigerServerLogDto";
 import LogLevel from "@/types/LogLevel";
-import mitt, {Emitter} from "mitt";
+import mitt, { Emitter } from "mitt";
 import TigerConfigurationEditor from "@/components/global_configuration/TigerConfigurationEditor.vue";
-import 'vue3-side-panel/dist/vue3-side-panel.css';
-import {VueSidePanel} from "vue3-side-panel";
+import "vue3-side-panel/dist/vue3-side-panel.css";
+import { VueSidePanel } from "vue3-side-panel";
 import TrafficVisualization from "@/components/sequence_diagram/TrafficVisualization.vue";
-import {useConfigurationLoader} from "@/components/global_configuration/ConfigurationLoader";
-import {Features} from "@/types/Features";
+import { useConfigurationLoader } from "@/components/global_configuration/ConfigurationLoader";
+import { Features } from "@/types/Features";
 import RbelLogDetailsPane from "@/components/testsuite/RbelLogDetailsPane.vue";
 import QuitReason from "@/types/QuitReason";
 
-
-const {loadSubsetOfProperties} = useConfigurationLoader();
+const { loadSubsetOfProperties } = useConfigurationLoader();
 const features = ref(new Features());
-
 
 const baseURL = import.meta.env.BASE_URL;
 let socket: WebSocket;
@@ -232,12 +304,14 @@ let fetchedInitialStatus = false;
 const bannerData: Ref<BannerMessage[]> = ref([]);
 
 /** array to collect any subscription messages coming in while the initial fetch has not completed. */
-let preFetchMessageList: Array<TestEnvStatusDto> = new Array<TestEnvStatusDto>();
+let preFetchMessageList: Array<TestEnvStatusDto> =
+  new Array<TestEnvStatusDto>();
 
 /** array to cache any incoming messages if we detected an out of order message
  * (so we can not merge as there are some messages missing inbetween).
  */
-let outOfOrderMessageList: Array<TestEnvStatusDto> = new Array<TestEnvStatusDto>();
+let outOfOrderMessageList: Array<TestEnvStatusDto> =
+  new Array<TestEnvStatusDto>();
 
 /** timestamp when we detected the first out of order message, after 2 seconds we will do a refetch,
  * but we hope that in the meantime the missing message(s) are coming in, so we can merge and spare the fetch.
@@ -248,17 +322,23 @@ let firstOutOfOrderTimestamp: number = -1;
 let currentMessageIndex: number = -1;
 
 /** list of status of all servers wehave received any message so far. */
-const currentServerStatus: Ref<Map<string, TigerServerStatusDto>> = ref(new Map<string, TigerServerStatusDto>());
+const currentServerStatus: Ref<Map<string, TigerServerStatusDto>> = ref(
+  new Map<string, TigerServerStatusDto>(),
+);
 
 /** complex map of features which contain a map of scenarios, which contain a map of steps,
  * representing the current state of the test run.
  */
-const featureUpdateMap: Ref<Map<string, FeatureUpdate>> = ref(new Map<string, FeatureUpdate>());
+const featureUpdateMap: Ref<Map<string, FeatureUpdate>> = ref(
+  new Map<string, FeatureUpdate>(),
+);
 
 /** list of server logs which contain a log message, a timestamp, a server name and the log level.
  */
 
-const serverLogList: Ref<Array<TigerServerLogDto>> = ref(new Array<TigerServerLogDto>());
+const serverLogList: Ref<Array<TigerServerLogDto>> = ref(
+  new Array<TigerServerLogDto>(),
+);
 
 const logServers: Ref<Array<string>> = ref(new Array<string>());
 
@@ -273,7 +353,7 @@ let ui = ref();
 
 const quitTestrunOngoing: Ref<boolean> = ref(false);
 const pauseTestrunOngoing: Ref<boolean> = ref(false);
-const quitReason: Ref<QuitReason> = ref({message: '', details: ''});
+const quitReason: Ref<QuitReason> = ref({ message: "", details: "" });
 
 const sideBarCollapsed: Ref<boolean> = ref(true);
 
@@ -294,9 +374,8 @@ onMounted(() => {
   fetchInitialServerStatus();
   fetchTigerVersion();
   fetchTigerBuild();
-  loadFeaturesFlags()
+  loadFeaturesFlags();
 });
-
 
 const DEBUG = true;
 
@@ -312,8 +391,8 @@ function setTestRunFinished() {
 
 function showTab(tabid: string, event: MouseEvent) {
   event.preventDefault();
-  const buttons = document.getElementsByClassName('execution-pane-buttons');
-  const tabs = document.getElementsByClassName('execution-pane-tabs');
+  const buttons = document.getElementsByClassName("execution-pane-buttons");
+  const tabs = document.getElementsByClassName("execution-pane-tabs");
   for (let i = 0; i < buttons.length; i++) {
     buttons[i].classList.toggle("active", false);
     tabs[i].classList.toggle("active", false);
@@ -324,7 +403,9 @@ function showTab(tabid: string, event: MouseEvent) {
 
 let reloadTimeoutHandle: number;
 
-function checkMessageOrderAndProcessAccordingly(pushedMessage: TestEnvStatusDto) {
+function checkMessageOrderAndProcessAccordingly(
+  pushedMessage: TestEnvStatusDto,
+) {
   if (pushedMessage.index > currentMessageIndex + 1) {
     // out of order message received
     if (firstOutOfOrderTimestamp === -1) {
@@ -334,7 +415,10 @@ function checkMessageOrderAndProcessAccordingly(pushedMessage: TestEnvStatusDto)
       // resorting to re fetch the status
       firstOutOfOrderTimestamp = -1;
       currentServerStatus.value.clear();
-      console.warn(Date.now() + ` Missing push messages for more then 1 second in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Triggering refetch`);
+      console.warn(
+        Date.now() +
+          ` Missing push messages for more then 1 second in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Triggering refetch`,
+      );
       currentMessageIndex = -1;
       preFetchMessageList = new Array<TestEnvStatusDto>();
       preFetchMessageList.push(pushedMessage);
@@ -343,16 +427,23 @@ function checkMessageOrderAndProcessAccordingly(pushedMessage: TestEnvStatusDto)
       // adding message to cache
       outOfOrderMessageList.push(pushedMessage);
       TestEnvStatusDto.sortArray(outOfOrderMessageList);
-      console.warn(Date.now() + ` Missing push messages in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Cached message ${pushedMessage.index} firstOutOfOrderMsgTimestamp ` + firstOutOfOrderTimestamp);
+      console.warn(
+        Date.now() +
+          ` Missing push messages in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Cached message ${pushedMessage.index} firstOutOfOrderMsgTimestamp ` +
+          firstOutOfOrderTimestamp,
+      );
       reloadTimeoutHandle = setTimeout(() => {
         firstOutOfOrderTimestamp = -1;
         currentServerStatus.value.clear();
-        console.warn(Date.now() + ` TO handler - Missing push messages for more then 1 second in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Triggering refetch`);
+        console.warn(
+          Date.now() +
+            ` TO handler - Missing push messages for more then 1 second in range > ${currentMessageIndex} and < ${pushedMessage.index} ! Triggering refetch`,
+        );
         currentMessageIndex = -1;
         preFetchMessageList = new Array<TestEnvStatusDto>();
         preFetchMessageList.push(pushedMessage);
         fetchInitialServerStatus();
-      }, 1000)
+      }, 1000);
     }
   } else {
     // TODO evt. there could be earlier messages coming very late??
@@ -366,114 +457,147 @@ function checkMessageOrderAndProcessAccordingly(pushedMessage: TestEnvStatusDto)
 function connectToWebSocket() {
   socket = new SockJS(baseURL + "testEnv");
 
-  stompClient = Stomp.over(socket, {debug: false});
+  stompClient = Stomp.over(socket, { debug: false });
   stompClient.connect(
-      {},
-      () => {
-        stompClient.subscribe(baseURL + "topic/envStatus", (tick: Message) => {
-          const json = JSON.parse(tick.body);
+    {},
+    () => {
+      stompClient.subscribe(baseURL + "topic/envStatus", (tick: Message) => {
+        const json = JSON.parse(tick.body);
 
-          debug("RECEIVED " + json.index + "\n" + tick.body);
+        debug("RECEIVED " + json.index + "\n" + tick.body);
 
-          if (!json.servers) json.servers = {};
-          if (json.bannerType) {
-            if (json.bannerType === BannerType.TESTRUN_ENDED) {
-              setTestRunFinished();
-              if (sideBarCollapsed.value) {
-                toggleLeftSideBar();
-              }
-            } else {
-              const pushedMessage: TestEnvStatusDto = new TestEnvStatusDto();
-              pushedMessage.index = json.index;
-              pushedMessage.bannerMessage = json.bannerMessage;
-              pushedMessage.bannerColor = json.bannerColor;
-              pushedMessage.bannerIsHtml = json.bannerIsHtml;
-              if (json.bannerType) {
-                pushedMessage.bannerType = json.bannerType as BannerType;
-              }
-              if (json.featureMap) {
-                FeatureUpdate.addToMapFromJson(pushedMessage.featureMap, json.featureMap);
-              }
-              if (json.servers) {
-                TigerServerStatusUpdateDto.addToMapFromJson(pushedMessage.servers, json.servers);
-              }
-
-              // Deal with initial phase buffering all notifications till fetch returned data
-              if (!fetchedInitialStatus) {
-                debug("MESSAGE PREFETCH: " + pushedMessage.index);
-                preFetchMessageList.push(pushedMessage);
-                return;
-              }
-
-              if (reloadTimeoutHandle) {
-                clearTimeout(reloadTimeoutHandle);
-              }
-              replayingCachedMessages();
-
-              debug("Check push message order " + pushedMessage.index + " ?== " + (currentMessageIndex + 1));
-              checkMessageOrderAndProcessAccordingly(pushedMessage);
+        if (!json.servers) json.servers = {};
+        if (json.bannerType) {
+          if (json.bannerType === BannerType.TESTRUN_ENDED) {
+            setTestRunFinished();
+            if (sideBarCollapsed.value) {
+              toggleLeftSideBar();
             }
           }
-        });
-      },
-      (error: Frame | CloseEvent) => {
-        if (error?.type === 'close') {
-          shutdownWorkflowUi({
-            message: "Backend of Workflow UI no longer active",
-            details: 'Connection to backend closed. \nRbelLog details pane has no more filtering / search support!'
-          });
+          const pushedMessage: TestEnvStatusDto = new TestEnvStatusDto();
+          pushedMessage.index = json.index;
+          pushedMessage.bannerMessage = json.bannerMessage;
+          pushedMessage.bannerColor = json.bannerColor;
+          pushedMessage.bannerIsHtml = json.bannerIsHtml;
+          pushedMessage.bannerDetails = json.bannerDetails;
+          if (json.bannerType) {
+            pushedMessage.bannerType = json.bannerType as BannerType;
+          }
+          if (json.featureMap) {
+            FeatureUpdate.addToMapFromJson(
+              pushedMessage.featureMap,
+              json.featureMap,
+            );
+          }
+          if (json.servers) {
+            TigerServerStatusUpdateDto.addToMapFromJson(
+              pushedMessage.servers,
+              json.servers,
+            );
+          }
+
+          // Deal with initial phase buffering all notifications till fetch returned data
+          if (!fetchedInitialStatus) {
+            debug("MESSAGE PREFETCH: " + pushedMessage.index);
+            preFetchMessageList.push(pushedMessage);
+            return;
+          }
+
+          if (reloadTimeoutHandle) {
+            clearTimeout(reloadTimeoutHandle);
+          }
+          replayingCachedMessages();
+
+          debug(
+            "Check push message order " +
+              pushedMessage.index +
+              " ?== " +
+              (currentMessageIndex + 1),
+          );
+          checkMessageOrderAndProcessAccordingly(pushedMessage);
         }
-        console.error("Websocket error: " + JSON.stringify(error));
+      });
+    },
+    (error: Frame | CloseEvent) => {
+      if (error?.type === "close") {
+        shutdownWorkflowUi({
+          message: "Backend of Workflow UI no longer active",
+          details:
+            "Connection to backend closed. \nRbelLog details pane has no more filtering / search support!",
+        });
       }
+      console.error("Websocket error: " + JSON.stringify(error));
+    },
   );
 
-
   socketLog = new SockJS(baseURL + "testLog");
-  stompClientForLogs = Stomp.over(socketLog, {debug: false});
+  stompClientForLogs = Stomp.over(socketLog, { debug: false });
   stompClientForLogs.connect(
-      {},
-      () => {
-        stompClientForLogs.subscribe(baseURL + "topic/serverLog", (tick: Message) => {
+    {},
+    () => {
+      stompClientForLogs.subscribe(
+        baseURL + "topic/serverLog",
+        (tick: Message) => {
           debug("RECEIVED LOG " + tick.body);
-          const receivedLogMessage: TigerServerLogDto = TigerServerLogDto.fromJson(JSON.parse(tick.body));
+          const receivedLogMessage: TigerServerLogDto =
+            TigerServerLogDto.fromJson(JSON.parse(tick.body));
 
-          if (logServers.value.indexOf(receivedLogMessage.serverName as string) === -1) {
+          if (
+            logServers.value.indexOf(
+              receivedLogMessage.serverName as string,
+            ) === -1
+          ) {
             logServers.value.push(receivedLogMessage.serverName as string);
           }
-          const index = serverLogList.value.findIndex((msg) => receivedLogMessage.localDateTime.isAfter(msg.localDateTime))
+          const index = serverLogList.value.findIndex((msg) =>
+            receivedLogMessage.localDateTime.isAfter(msg.localDateTime),
+          );
           serverLogList.value.splice(index, 0, receivedLogMessage);
-        });
-      },
-      (error: Frame | CloseEvent) => {
-        console.error("Websocket error: " + JSON.stringify(error));
-      }
+        },
+      );
+    },
+    (error: Frame | CloseEvent) => {
+      console.error("Websocket error: " + JSON.stringify(error));
+    },
   );
 }
 
 let socketLog: WebSocket;
 let stompClientForLogs: Client;
 
-
 function replayingCachedMessages() {
   debug("Check for replaying cached messages " + outOfOrderMessageList.length);
   if (outOfOrderMessageList.length) {
-    debug("First cached index:" + outOfOrderMessageList[0].index + " vs " + currentMessageIndex);
-    if (outOfOrderMessageList[0].index === currentMessageIndex + 1
-        && TestEnvStatusDto.checkMessagesInArrayAreWellOrdered(outOfOrderMessageList)) {
+    debug(
+      "First cached index:" +
+        outOfOrderMessageList[0].index +
+        " vs " +
+        currentMessageIndex,
+    );
+    if (
+      outOfOrderMessageList[0].index === currentMessageIndex + 1 &&
+      TestEnvStatusDto.checkMessagesInArrayAreWellOrdered(outOfOrderMessageList)
+    ) {
       debug("REPLAYING cached messages");
-      outOfOrderMessageList.forEach(cachedMessage => {
+      outOfOrderMessageList.forEach((cachedMessage) => {
         mergeMessage(currentServerStatus.value, cachedMessage);
       });
       outOfOrderMessageList = new Array<TestEnvStatusDto>();
       firstOutOfOrderTimestamp = -1;
     } else {
-      debug("Still missing some messages in cache, so wait " + (Date.now() - firstOutOfOrderTimestamp));
+      debug(
+        "Still missing some messages in cache, so wait " +
+          (Date.now() - firstOutOfOrderTimestamp),
+      );
       debug("oooml: " + JSON.stringify(outOfOrderMessageList));
     }
   }
 }
 
-function mergeMessage(map: Map<string, TigerServerStatusDto>, message: TestEnvStatusDto) {
+function mergeMessage(
+  map: Map<string, TigerServerStatusDto>,
+  message: TestEnvStatusDto,
+) {
   debug("MESSAGE MERGE: " + message.index);
   updateServerStatus(map, message.servers);
   updateFeatureMap(message.featureMap);
@@ -490,114 +614,131 @@ function mergeMessage(map: Map<string, TigerServerStatusDto>, message: TestEnvSt
 
 function fetchInitialServerStatus() {
   fetch(baseURL + "status")
-      .then((response) => response.text())
-      .then((data) => {
-        debug("FETCH: " + data);
-        const json = JSON.parse(data);
+    .then((response) => response.text())
+    .then((data) => {
+      debug("FETCH: " + data);
+      const json = JSON.parse(data);
 
-        const fetchedServerStatus = new Map<string, TigerServerStatusDto>();
-        TigerServerStatusDto.addToMapFromJson(fetchedServerStatus, json.servers);
+      const fetchedServerStatus = new Map<string, TigerServerStatusDto>();
+      TigerServerStatusDto.addToMapFromJson(fetchedServerStatus, json.servers);
 
-        if (fetchedServerStatus.has("local_tiger_proxy")) {
-          const url = fetchedServerStatus.get("local_tiger_proxy")?.baseUrl;
-          if (url) {
-            const originalUrl = new URL(url);
-            const originalPort = originalUrl.port;
-            const winUrl = window.location.host;
-            const myArray = winUrl.split(":");
-            const newHostname = myArray[0];
-            localProxyWebUiUrl.value = `http://${newHostname}:${originalPort}`;
-          }
+      if (fetchedServerStatus.has("local_tiger_proxy")) {
+        const url = fetchedServerStatus.get("local_tiger_proxy")?.baseUrl;
+        if (url) {
+          const originalUrl = new URL(url);
+          const originalPort = originalUrl.port;
+          const winUrl = window.location.host;
+          const myArray = winUrl.split(":");
+          const newHostname = myArray[0];
+          localProxyWebUiUrl.value = `http://${newHostname}:${originalPort}`;
         }
+      }
 
-        if (currentServerStatus.value.size !== 0) {
-          console.error("Fetching while currentServerStatus is set is not supported!")
-          return;
+      if (currentServerStatus.value.size !== 0) {
+        console.error(
+          "Fetching while currentServerStatus is set is not supported!",
+        );
+        return;
+      }
+
+      // sort prefetched Messages based on index;
+      TestEnvStatusDto.sortArray(preFetchMessageList);
+
+      // if notification list is missing a message (index not increased by one) abort and fetch anew assuming we might get a more current state
+      const indexConsistent =
+        TestEnvStatusDto.checkMessagesInArrayAreWellOrdered(
+          preFetchMessageList,
+        );
+      if (!indexConsistent) {
+        debug(
+          "prefetched message list is not consistent \nwait 500ms and refetch!",
+        );
+        // TODO add them to the outOfOrderMessage list and return
+        window.setTimeout(fetchInitialServerStatus, 500);
+        return;
+      }
+
+      featureUpdateMap.value.clear();
+      FeatureUpdate.addToMapFromJson(featureUpdateMap.value, json.featureMap);
+      debug("FETCH FEATURE MERGE DONE");
+
+      if (json.bannerMessage) {
+        bannerData.value.splice(0, bannerData.value.length);
+        bannerData.value.push(BannerMessage.fromJson(json));
+      }
+
+      preFetchMessageList.forEach((testEnvStatusDtoMessage) => {
+        if (testEnvStatusDtoMessage.index > json.currentIndex) {
+          mergeMessage(fetchedServerStatus, testEnvStatusDtoMessage);
         }
-
-        // sort prefetched Messages based on index;
-        TestEnvStatusDto.sortArray(preFetchMessageList);
-
-        // if notification list is missing a message (index not increased by one) abort and fetch anew assuming we might get a more current state
-        const indexConsistent = TestEnvStatusDto.checkMessagesInArrayAreWellOrdered(preFetchMessageList);
-        if (!indexConsistent) {
-          debug("prefetched message list is not consistent \nwait 500ms and refetch!");
-          // TODO add them to the outOfOrderMessage list and return
-          window.setTimeout(fetchInitialServerStatus, 500);
-          return;
-        }
-
-        featureUpdateMap.value.clear();
-        FeatureUpdate.addToMapFromJson(featureUpdateMap.value, json.featureMap);
-        debug("FETCH FEATURE MERGE DONE");
-
-        if (json.bannerMessage) {
-          bannerData.value.splice(0, bannerData.value.length);
-          bannerData.value.push(BannerMessage.fromJson(json));
-        }
-
-        preFetchMessageList.forEach((testEnvStatusDtoMessage) => {
-          if (testEnvStatusDtoMessage.index > json.currentIndex) {
-            mergeMessage(fetchedServerStatus, testEnvStatusDtoMessage);
-          }
-        });
-        currentMessageIndex = json.currentIndex;
-        fetchedServerStatus.forEach((value, key) => currentServerStatus.value.set(key, value));
-        fetchedInitialStatus = true;
-        debug("FETCH DONE " + currentMessageIndex);
-        //TODO now check outOfOrder list if there is any new messages with higher index in list
-        debug("OOFList: " + JSON.stringify(outOfOrderMessageList));
-        outOfOrderMessageList = new Array<TestEnvStatusDto>();
       });
+      currentMessageIndex = json.currentIndex;
+      fetchedServerStatus.forEach((value, key) =>
+        currentServerStatus.value.set(key, value),
+      );
+      fetchedInitialStatus = true;
+      debug("FETCH DONE " + currentMessageIndex);
+      //TODO now check outOfOrder list if there is any new messages with higher index in list
+      debug("OOFList: " + JSON.stringify(outOfOrderMessageList));
+      outOfOrderMessageList = new Array<TestEnvStatusDto>();
+    });
 }
 
 function fetchTigerVersion() {
   fetch(baseURL + "status/version")
-      .then((response) => response.text())
-      .then((data) => {
-        debug("FETCH Version: " + data);
-        version.value = data;
-      });
+    .then((response) => response.text())
+    .then((data) => {
+      debug("FETCH Version: " + data);
+      version.value = data;
+    });
 }
 
 function fetchTigerBuild() {
   fetch(baseURL + "status/build")
-      .then((response) => response.text())
-      .then((data) => {
-        debug("FETCH Build: " + data);
-        build.value = data;
-      });
+    .then((response) => response.text())
+    .then((data) => {
+      debug("FETCH Build: " + data);
+      build.value = data;
+    });
 }
 
-function updateServerStatus(serverStatus: Map<string, TigerServerStatusDto>, update: Map<string, TigerServerStatusUpdateDto>) {
+function updateServerStatus(
+  serverStatus: Map<string, TigerServerStatusDto>,
+  update: Map<string, TigerServerStatusUpdateDto>,
+) {
   update.forEach((value: TigerServerStatusUpdateDto, key: string) => {
-        if (serverStatus.has(key)) {
-          const statusUpdate = serverStatus.get(key) as TigerServerStatusDto;
-          if (statusUpdate) {
-            statusUpdate.mergeFromUpdateDto(value);
-          } else {
-            console.error(`No or empty status update received for server ${key}`);
-          }
-        } else {
-          serverStatus.set(key, TigerServerStatusDto.fromUpdateDto(key, value));
-        }
-        if (key == "local_tiger_proxy") {
-          if (value.baseUrl) {
-            localProxyWebUiUrl.value = value.baseUrl;
-          }
-        }
+    if (serverStatus.has(key)) {
+      const statusUpdate = serverStatus.get(key) as TigerServerStatusDto;
+      if (statusUpdate) {
+        statusUpdate.mergeFromUpdateDto(value);
+      } else {
+        console.error(`No or empty status update received for server ${key}`);
       }
-  );
+    } else {
+      serverStatus.set(key, TigerServerStatusDto.fromUpdateDto(key, value));
+    }
+    if (key == "local_tiger_proxy") {
+      if (value.baseUrl) {
+        localProxyWebUiUrl.value = value.baseUrl;
+      }
+    }
+  });
 }
 
 function updateFeatureMap(update: Map<string, FeatureUpdate>) {
   update.forEach((featureUpdate: FeatureUpdate, featureKey: string) => {
     if (featureUpdate.description) {
       debug("FEATURE UPDATE " + featureUpdate.description);
-      const featureToBeUpdated: FeatureUpdate | undefined = featureUpdateMap.value.get(featureKey);
+      const featureToBeUpdated: FeatureUpdate | undefined =
+        featureUpdateMap.value.get(featureKey);
       if (!featureToBeUpdated) {
         // add new feature
-        debug("add new feature " + featureKey + " => " + JSON.stringify(featureUpdate));
+        debug(
+          "add new feature " +
+            featureKey +
+            " => " +
+            JSON.stringify(featureUpdate),
+        );
         const feature = new FeatureUpdate().merge(featureUpdate);
         featureUpdateMap.value.set(featureKey, feature);
         debug("added new feature " + featureKey + " => " + feature.toString());
@@ -609,49 +750,52 @@ function updateFeatureMap(update: Map<string, FeatureUpdate>) {
 }
 
 function toggleLeftSideBar() {
-  document.getElementById("execution_table")?.style.removeProperty('width');
-  document.getElementById("workflow-messages")?.style.removeProperty('width');
+  document.getElementById("execution_table")?.style.removeProperty("width");
+  document.getElementById("workflow-messages")?.style.removeProperty("width");
   sideBarCollapsed.value = !sideBarCollapsed.value;
 }
 
-
 function quitTestrun(ev: MouseEvent) {
   ev.preventDefault();
-  fetch(baseURL + "testExecution/quit", {method: 'PUT'})
-      .then(response => {
-            console.log("RES: " + JSON.stringify(response));
-            if (!response.ok) {
-              alert("Failed to abort test execution! " + response.statusText);
-              return false;
-            }
-            shutdownWorkflowUi({message: 'Quit on user request!', details: ''});
-          },
-          error => {
-            console.log("ERR: " + JSON.stringify(error))
-          })
-      .catch(error => {
-        console.log("CATCH: " + JSON.stringify(error))
-      });
+  fetch(baseURL + "testExecution/quit", { method: "PUT" })
+    .then(
+      (response) => {
+        console.log("RES: " + JSON.stringify(response));
+        if (!response.ok) {
+          alert("Failed to abort test execution! " + response.statusText);
+          return false;
+        }
+        shutdownWorkflowUi({ message: "Quit on user request!", details: "" });
+      },
+      (error) => {
+        console.log("ERR: " + JSON.stringify(error));
+      },
+    )
+    .catch((error) => {
+      console.log("CATCH: " + JSON.stringify(error));
+    });
   return false;
 }
 
 function pauseTestrun(ev: MouseEvent) {
   pauseTestrunOngoing.value = !pauseTestrunOngoing.value;
   ev.preventDefault();
-  fetch(baseURL + "testExecution/pause", {method: 'PUT'})
-      .then(response => {
-            console.log("RES: " + JSON.stringify(response));
-            if (!response.ok) {
-              alert("Failed to pause test execution! " + response.statusText);
-              return false;
-            }
-          },
-          error => {
-            console.log("ERR: " + JSON.stringify(error))
-          })
-      .catch(error => {
-        console.log("CATCH: " + JSON.stringify(error))
-      });
+  fetch(baseURL + "testExecution/pause", { method: "PUT" })
+    .then(
+      (response) => {
+        console.log("RES: " + JSON.stringify(response));
+        if (!response.ok) {
+          alert("Failed to pause test execution! " + response.statusText);
+          return false;
+        }
+      },
+      (error) => {
+        console.log("ERR: " + JSON.stringify(error));
+      },
+    )
+    .catch((error) => {
+      console.log("CATCH: " + JSON.stringify(error));
+    });
   return false;
 }
 
@@ -664,11 +808,14 @@ function setReasonWithoutReplacing(reason: QuitReason) {
   //if the quitReason has already something set, we do not overwrite it. So that if the user explicitly quit,
   //this reason is not overwritten by the subsequent loss of websocket connection.
   quitReason.value = {
-    message: quitReason.value.message ? quitReason.value.message : reason.message,
-    details: quitReason.value.details ? quitReason.value.details : reason.details
+    message: quitReason.value.message
+      ? quitReason.value.message
+      : reason.message,
+    details: quitReason.value.details
+      ? quitReason.value.details
+      : reason.details,
   };
 }
-
 </script>
 <style>
 #logs_pane {
@@ -692,11 +839,13 @@ function setReasonWithoutReplacing(reason: QuitReason) {
   max-height: 100vh;
 }
 
-#sidebar-left.sidebar-state-paused, .sidebar-title.sidebar-state-paused {
-  background-color: #FDD288;
+#sidebar-left.sidebar-state-paused,
+.sidebar-title.sidebar-state-paused {
+  background-color: #fdd288;
 }
 
-#sidebar-left.sidebar-state-quit, .sidebar-title.sidebar-state-quit {
+#sidebar-left.sidebar-state-quit,
+.sidebar-title.sidebar-state-quit {
   color: red;
   background-color: lightcoral;
 }
@@ -718,12 +867,17 @@ function setReasonWithoutReplacing(reason: QuitReason) {
   max-width: 60px;
 }
 
-.sidebar-collapsed .alert, .sidebar-collapsed h4 > span, .sidebar-collapsed h3 > span,
-.sidebar-collapsed button.resizer-left-icon, .sidebar-collapsed .container, .sidebar-collapsed .finishedMessage {
+.sidebar-collapsed .alert,
+.sidebar-collapsed h4 > span,
+.sidebar-collapsed h3 > span,
+.sidebar-collapsed button.resizer-left-icon,
+.sidebar-collapsed .container,
+.sidebar-collapsed .finishedMessage {
   display: none;
 }
 
-.sidebar-collapsed h4, .sidebar-collapsed h3 {
+.sidebar-collapsed h4,
+.sidebar-collapsed h3 {
   text-align: center;
   padding-left: 0 !important;
 }
@@ -774,7 +928,7 @@ function setReasonWithoutReplacing(reason: QuitReason) {
 }
 
 .execution-pane-buttons.active {
-  background: #FCFCFD;
+  background: #fcfcfd;
   color: var(--bs-primary);
   cursor: default;
 }
@@ -782,7 +936,6 @@ function setReasonWithoutReplacing(reason: QuitReason) {
 .footer-spacing {
   margin-top: 20rem;
 }
-
 
 .steps-docstring {
   color: #0a8694;
@@ -808,12 +961,12 @@ function setReasonWithoutReplacing(reason: QuitReason) {
 }
 
 .engraved {
-  box-shadow: inset 0px 5px 10px 0px rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 5px 10px 0 rgba(0, 0, 0, 0.25);
   border: none;
 }
 
-
-.ag-cell-focus, .ag-cell-no-focus {
+.ag-cell-focus,
+.ag-cell-no-focus {
   border: none !important;
 }
 
@@ -822,5 +975,4 @@ function setReasonWithoutReplacing(reason: QuitReason) {
   border: none !important;
   outline: none;
 }
-
 </style>
