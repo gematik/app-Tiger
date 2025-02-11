@@ -37,6 +37,8 @@ tigerProxy:
 * TGR-1653: When a modification condition references parts of request (e.g. "isResponse && request.url =$ 'foobar'"),
   modification will be applied instead of ignored.
   Also, modifications will be applied in the order they are given.
+* TGR-1700: Reuse existing CA certificate for dynamic server identities even when restarting the Tiger-Proxy. This is
+  necessary to avoid issues with the CA certificate being changed and the client not trusting the server anymore.
 * TGR-1725: Example names in junit reports are now displayed with the name of the scenario outline (instead of
   Examples.Example #1.1)
 * TGR-1728: LDAP parsing: allows multiple messages per request; attributes parent element fixed

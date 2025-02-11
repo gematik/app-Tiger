@@ -150,6 +150,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
             .tigerProxyConfiguration(getTigerProxyConfiguration())
             .mockServerConfiguration(mockServerConfiguration)
             .tigerProxyName(getName())
+            .serverRootCa(serverRootCa)
             .build();
     tlsConfigurator.execute();
     serverRootCa = tlsConfigurator.getServerRootCa();

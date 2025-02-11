@@ -684,6 +684,28 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   }
 
   @Test
+  void restartMockServer_generatedCaShouldBeUnchanged()
+      throws UnirestException {
+    final TigerConfigurationPkiIdentity clientIdentity =
+        new TigerConfigurationPkiIdentity("src/test/resources/rsa.p12;00");
+
+    spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
+    final SSLContext sslContext = tigerProxy.buildSslContext();
+
+    proxyRest.get("http://backend/foobar").asJson();
+
+    tigerProxy
+        .getTigerProxyConfiguration()
+        .setTls(TigerTlsConfiguration.builder().forwardMutualTlsIdentity(clientIdentity).build());
+    tigerProxy.restartMockserver();
+    var ownRestClient = Unirest.spawnInstance();
+    ownRestClient.config().proxy("localhost", tigerProxy.getProxyPort()).sslContext(sslContext);
+
+    final HttpResponse<JsonNode> response = ownRestClient.get("http://backend/foobar").asJson();
+    assertThat(response.getStatus()).isEqualTo(666);
+  }
+
+  @Test
   void tigerProxyAsServerWithActivatedOcspStapling_shouldSendValidOcspResponseInHandshake() {
     spawnTigerProxyAndConnectWithBouncyCastleAndCheckServerCertificate(
         serverCertificate ->
