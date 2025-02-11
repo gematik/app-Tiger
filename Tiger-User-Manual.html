@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 3.6.0 - 2025-01-15</span>
+<span id="revdate">Version 3.6.1 - 2025-02-11</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -257,6 +257,7 @@ video {
 <li><a href="#exemplaric-scenario-konnektorfarm-eau-validation">5.6. Exemplaric scenario Konnektorfarm EAU validation</a></li>
 <li><a href="#using-tiger-test-lib-helper-classes">5.7. Using Tiger test lib helper classes</a></li>
 <li><a href="#synchronizing-bdd-scenarios-with-polarion-test-cases-gematik-only">5.8. Synchronizing BDD scenarios with Polarion test cases (Gematik only)</a></li>
+<li><a href="#junit-test-report-when-using-scenario-outlines">5.9. JUnit test report when using Scenario Outlines</a></li>
 </ul>
 </li>
 <li><a href="#_tiger_configuration">6. Tiger Configuration</a>
@@ -2687,6 +2688,9 @@ Please note: You can freely add parts (e.g. <a href="http://foobar/extra/part" c
 If multiple matches are found the most specific route is select.<br>
 For example if you have two routes <code>/</code> and <code>/foo</code> then for a request to <code>/foo/bar</code> the route <code>/foo</code> will be selected.</p>
 </div>
+<div class="paragraph">
+<p>A route will only match when the proxy-mode is met. A reverse-proxy-route will thus not match when a forward-proxy request is received. To disable this proxy-mode matching you can set the flag <code>matchForProxyType</code> to false (default is true).</p>
+</div>
 </div>
 <div class="sect3">
 <h4 id="to"><a class="anchor" href="#to"></a>4.3.2. to</h4>
@@ -2941,6 +2945,36 @@ Here either Basic access authentication or Bearer Token can be used:</p>
 <div class="paragraph">
 <p>Please note that the phrase "Bearer " will be added automatically.<br>
 Please do not add it yourself!</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="matchforproxytype"><a class="anchor" href="#matchforproxytype"></a>4.3.9. matchForProxyType</h4>
+<div class="paragraph">
+<p>By default, a proxy route will only match when the proxy-mode defined by the <code>from</code> attribute is met. For example, a route with <code>from: /foo</code> will not match with a forward-proxy request like so:</p>
+</div>
+<div class="paragraph">
+<p><code>curl -x localhost:59163 <a href="http://backend.domain/" class="bare">http://backend.domain/</a></code></p>
+</div>
+<div class="paragraph">
+<p>To enable matching for both proxy-modes you can use the <code>matchForProxyType</code>-flag:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">tigerProxy:
+    proxyRoutes:
+      - from: /foobar
+        to: http://orf.at/blub/
+        matchForProxyType: false</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>This will match with both of the following requests:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlightjs highlight"><code class="language-none hljs">curl -x localhost:59163 http://backend.domain/foobar
+curl http://localhost:59163/foobar</code></pre>
+</div>
 </div>
 </div>
 </div>
@@ -5782,6 +5816,21 @@ All classes listed here are part of the tiger-common module
 <div class="sect3">
 <h4 id="complete-set-of-helper-steps-in-tiger-glue-code"><a class="anchor" href="#complete-set-of-helper-steps-in-tiger-glue-code"></a>5.7.1. Complete set of helper steps in Tiger glue code</h4>
 <div class="sect4">
+<h5 id="tgr-testsuite-string-version-string"><a class="anchor" href="#tgr-testsuite-string-version-string"></a>TGR testsuite {string} version [string}</h5>
+
+</div>
+<div class="sect4">
+<h5 id="tgr-testsuite-string-version-string-2"><a class="anchor" href="#tgr-testsuite-string-version-string-2"></a>TGR Testsuite {string} Version [string}</h5>
+<div class="paragraph indent">
+<p>NoOp step to allow marking test suites as being from a specific version, this step is shown in<br>
+the workflow ui, the serenity report and can be validated by the Titus validator.</p>
+</div>
+<div class="paragraph indent">
+<p><strong>param</strong> testsuite name of the test suite<br>
+<strong>param</strong> version version of the test suite</p>
+</div>
+</div>
+<div class="sect4">
 <h5 id="tgr-setze-globale-variable-tigerresolvedstring-auf-tigerresolvedstring"><a class="anchor" href="#tgr-setze-globale-variable-tigerresolvedstring-auf-tigerresolvedstring"></a>TGR setze globale Variable {tigerResolvedString} auf {tigerResolvedString}</h5>
 
 </div>
@@ -5898,11 +5947,11 @@ UI and don&#8217;t work on a regular console (no failure, there is just no pause
 </div>
 </div>
 <div class="sect4">
-<h5 id="tgr-pause-test-run-execution-with-message-string"><a class="anchor" href="#tgr-pause-test-run-execution-with-message-string"></a>TGR pause test run execution with message {string}</h5>
+<h5 id="tgr-pause-test-run-execution-with-message-tigerresolvedstring"><a class="anchor" href="#tgr-pause-test-run-execution-with-message-tigerresolvedstring"></a>TGR pause test run execution with message {tigerResolvedString}</h5>
 
 </div>
 <div class="sect4">
-<h5 id="tgr-pausiere-testausführung-mit-nachricht-string"><a class="anchor" href="#tgr-pausiere-testausführung-mit-nachricht-string"></a>TGR pausiere Testausführung mit Nachricht {string}</h5>
+<h5 id="tgr-pausiere-testausführung-mit-nachricht-tigerresolvedstring"><a class="anchor" href="#tgr-pausiere-testausführung-mit-nachricht-tigerresolvedstring"></a>TGR pausiere Testausführung mit Nachricht {tigerResolvedString}</h5>
 <div class="paragraph indent">
 <p>Pauses the validation test suite with a message. Please note, these steps are only modified for<br>
 the Workflow UI and don&#8217;t work on a regular console (no failure, there is just no popup /<br>
@@ -6120,6 +6169,13 @@ Background blocks will be merged to each scenario before exporting its steps to 
 </div>
 <div class="paragraph">
 <p>For more details on how to perform the synchronisation, all choices for the annotations and how to upload generated test run reports to Polarion and Aurora, please check the README.md in the PolarionToolbox project on the Gematik GitLab.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="junit-test-report-when-using-scenario-outlines"><a class="anchor" href="#junit-test-report-when-using-scenario-outlines"></a>5.9. JUnit test report when using Scenario Outlines</h3>
+<div class="paragraph">
+<p>When using Scenario Outlines in your feature files, the JUnit test report will show each example that has run in the scenario outline as a single test case.<br>
+To create a name for each example that is referencing the scenario outline, the system property <code>cucumber.junit-platform.naming-strategy.short.example-name</code> is set to the value <code>pickle</code> in case it is not set by the environment.</p>
 </div>
 <div style="page-break-after: always;"></div>
 </div>
@@ -6889,7 +6945,7 @@ The feature needs to be explicitly enabled in the <code>tiger.yaml</code> config
 </div>
 <div class="imageblock">
 <div class="content">
-<img src="media/maincontent_sequence_diagram.png" alt="maincontent sequence diagram">
+<img src="screenshots/trafficVisualization.png" alt="trafficVisualization">
 </div>
 <div class="title">Figure 37. Traffic Visualization</div>
 </div>
@@ -8902,7 +8958,8 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 <div class="sect3">
 <h4 id="fm02-when-using-maven-no-tests-are-executed"><a class="anchor" href="#fm02-when-using-maven-no-tests-are-executed"></a>12.1.2. FM02 When using maven, no tests are executed.</h4>
 <div class="paragraph">
-<p>Please first make sure that either the surefire or failsafe plugin is enabled and shown as running in the console. If you use Junit4 test annotations, you have to make sure that the junit vintage engine from the Junit5 library is included in the dependencies.</p>
+<p>Please first make sure that either the surefire or failsafe plugin is enabled and shown as running in the console.<br>
+If you use Junit4 test annotations, you have to make sure that the junit vintage engine from the Junit5 library is included in the dependencies.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -8940,13 +8997,15 @@ Additionally, the OpenApi specification yaml can be found in the <a href="https:
 <h4 id="fm04-i-dont-see-any-log-output-there-are-only-warnings-about-outdated-versions-at-the-beginning"><a class="anchor" href="#fm04-i-dont-see-any-log-output-there-are-only-warnings-about-outdated-versions-at-the-beginning"></a>12.1.4. FM04 I don&#8217;t see any log output, there are only warnings about outdated versions at the beginning</h4>
 <div class="paragraph">
 <p>Apparently you included SLF4J V2 dependencies.<br>
-We currently use the logback classic 1.2.x branch, which is delivered in the most recent SpringBoot version. This is not compatible to SLF4J 2.x.x.</p>
+We currently use the logback classic 1.2.x branch, which is delivered in the most recent SpringBoot version.<br>
+This is not compatible to SLF4J 2.x.x.</p>
 </div>
 </div>
 <div class="sect3">
 <h4 id="fm05-there-are-selenium-version-conflicts-when-i-want-to-run-my-project-with-springboot-and-tiger-with-selenium"><a class="anchor" href="#fm05-there-are-selenium-version-conflicts-when-i-want-to-run-my-project-with-springboot-and-tiger-with-selenium"></a>12.1.5. FM05 There are selenium version conflicts when I want to run my project with SpringBoot and tiger with selenium</h4>
 <div class="paragraph">
-<p>SpringBoot deploys an outdated selenium version. To solve the conflicts, please use the versions stated in the release notes via dependency managent in the maven pom.xml.</p>
+<p>SpringBoot deploys an outdated selenium version.<br>
+To solve the conflicts, please use the versions stated in the release notes via dependency managent in the maven pom.xml.</p>
 </div>
 </div>
 </div>
@@ -8971,7 +9030,8 @@ We currently use the logback classic 1.2.x branch, which is delivered in the mos
 <h4 id="fe02-when-using-the-tiger-cloud-extensions-healthcheck-at-docker-servertypes-in-gematik-sw-factory-fails"><a class="anchor" href="#fe02-when-using-the-tiger-cloud-extensions-healthcheck-at-docker-servertypes-in-gematik-sw-factory-fails"></a>12.2.2. FE02 When using the tiger-cloud-extensions, healthcheck at docker servertypes in Gematik SW factory fails</h4>
 <div class="paragraph">
 <p>Tiger expects that Docker Daemon starts the container locally.<br>
-However, if this is not the case, you may use the environment variable TIGER_DOCKER_HOST to share on which server instance the container is started and the HealthcheckURL is adjusted accordingly. For purposes of the Gematik SW-factory, the following code snippet is recommended for the pipeline script:</p>
+However, if this is not the case, you may use the environment variable TIGER_DOCKER_HOST to share on which server instance the container is started and the HealthcheckURL is adjusted accordingly.<br>
+For purposes of the Gematik SW-factory, the following code snippet is recommended for the pipeline script:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -8993,14 +9053,18 @@ However, if this is not the case, you may use the environment variable TIGER_DOC
 <h4 id="fw01-in-the-workflow-ui-scenarios-are-listed-twice-and-are-refreshed-the-same-time-as-if-they-ran-parallely"><a class="anchor" href="#fw01-in-the-workflow-ui-scenarios-are-listed-twice-and-are-refreshed-the-same-time-as-if-they-ran-parallely"></a>12.3.1. FW01 In the workflow UI scenarios are listed twice and are refreshed the same time (as if they ran parallely)</h4>
 <div class="paragraph">
 <p>Usually, this only happens when the test suite is started in intellij and TigerCucumberListener is delivered as a plugin in TigerCucumberListener.<br>
-This is no longer necessary since v1.3 because the listener is added automatically. Due to this manual adjustment, two listeners are running that communicate the scenarios twice to the workflow UI.<br>
+This is no longer necessary since v1.3 because the listener is added automatically.<br>
+Due to this manual adjustment, two listeners are running that communicate the scenarios twice to the workflow UI.<br>
 If this happens in a mvn call, please check the tiger-maven-plugin configuration or the generated driver classes in terms of additional plugins in CucumberOptions.</p>
 </div>
 </div>
 <div class="sect3">
 <h4 id="fw02-after-having-pressed-shutdown-in-the-workflow-ui-i-cannot-see-messages-in-rbellog-details-pane-anymore"><a class="anchor" href="#fw02-after-having-pressed-shutdown-in-the-workflow-ui-i-cannot-see-messages-in-rbellog-details-pane-anymore"></a>12.3.2. FW02 After having pressed shutdown in the workflow UI, I cannot see messages in RbelLog Details Pane anymore</h4>
 <div class="paragraph">
-<p>By stopping the test runs, the workflow UI backend is terminated as well. You may recognize this by the light-red color of the side bar. However, navigating in the RbelLog Details Pane requires a running backend. In addition, RbelPath- and JEXL inspect dialogues are not working.</p>
+<p>By stopping the test runs, the workflow UI backend is terminated as well.<br>
+You may recognize this by the light-red color of the side bar.<br>
+However, navigating in the RbelLog Details Pane requires a running backend.<br>
+In addition, RbelPath- and JEXL inspect dialogues are not working.</p>
 </div>
 </div>
 </div>
@@ -9025,7 +9089,8 @@ If this happens in a mvn call, please check the tiger-maven-plugin configuration
 <div class="sect3">
 <h4 id="fo02-docker-container-creation-fails"><a class="anchor" href="#fo02-docker-container-creation-fails"></a>12.4.2. FO02 Docker container creation fails</h4>
 <div class="paragraph">
-<p>Use the command below to remove all unused containers. Or look for containers starting with "tiger", stop and remove them.</p>
+<p>Use the command below to remove all unused containers.<br>
+Or look for containers starting with "tiger", stop and remove them.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -9056,10 +9121,12 @@ javax.net.ssl.SSLException: failed to set certificate and key</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The tiger proxy uses a mockserver internally which creates a SSLContext when handling the first request. Adding additional names after the first request will not update the created SSLContext and the exception will be thrown.</p>
+<p>The tiger proxy uses a mockserver internally which creates a SSLContext when handling the first request.<br>
+Adding additional names after the first request will not update the created SSLContext and the exception will be thrown.</p>
 </div>
 <div class="paragraph">
-<p>A workaround for this behaviour is to explicitly restart the internal mockserver after adding an alternative name. E.g.:</p>
+<p>A workaround for this behaviour is to explicitly restart the internal mockserver after adding an alternative name.<br>
+E.g.:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -9078,7 +9145,8 @@ proxy.restartMockserver();</code></pre>
 <div class="sect3">
 <h4 id="fm02-bei-der-nutzung-von-maven-werden-keine-tests-ausgeführt"><a class="anchor" href="#fm02-bei-der-nutzung-von-maven-werden-keine-tests-ausgeführt"></a>12.4.5. FM02 Bei der Nutzung von maven werden keine Tests ausgeführt</h4>
 <div class="paragraph">
-<p>Bitte stell zuerst sicher, dass entweder das surefire oder das failsafe plugin aktiviert ist und auch in der Konsole als ausgeführt angezeigt wird. Solltest Du Junit4 Test Annotationen verwenden so musst Du noch sicherstellen, dass die junit vintage engine aus der Junit5 Library in den dependencies mit angeführt ist.</p>
+<p>Bitte stell zuerst sicher, dass entweder das surefire oder das failsafe plugin aktiviert ist und auch in der Konsole als ausgeführt angezeigt wird.<br>
+Solltest Du Junit4 Test Annotationen verwenden so musst Du noch sicherstellen, dass die junit vintage engine aus der Junit5 Library in den dependencies mit angeführt ist.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -9116,13 +9184,22 @@ proxy.restartMockserver();</code></pre>
 <h4 id="fm04-ich-sehe-keine-log-ausgabe-lediglich-am-anfang-stehen-warnungen-über-veraltete-versionen"><a class="anchor" href="#fm04-ich-sehe-keine-log-ausgabe-lediglich-am-anfang-stehen-warnungen-über-veraltete-versionen"></a>12.4.7. FM04 Ich sehe keine Log-Ausgabe, lediglich am Anfang stehen Warnungen über veraltete Versionen</h4>
 <div class="paragraph">
 <p>Du hast anscheinend Dependencies zu SLF4J V2 eingebunden.<br>
-Wir verwenden derzeit den logback classic 1.2.x branch, da dieser in der von uns verwendeten Spring Boot Version mitgeliefert wird. Dieses ist NICHT kompatibel zu SLF4J 2.x.x!</p>
+Wir verwenden derzeit den logback classic 1.2.x branch, da dieser in der von uns verwendeten Spring Boot Version mitgeliefert wird.<br>
+Dieses ist NICHT kompatibel zu SLF4J 2.x.x!</p>
 </div>
 </div>
 <div class="sect3">
 <h4 id="fm05-wenn-ich-in-meinem-projekt-spring-boot-und-tiger-mit-selenium-nutzen-will-gibt-es-versionskonflikte-bei-selenium"><a class="anchor" href="#fm05-wenn-ich-in-meinem-projekt-spring-boot-und-tiger-mit-selenium-nutzen-will-gibt-es-versionskonflikte-bei-selenium"></a>12.4.8. FM05 Wenn ich in meinem Projekt Spring Boot und Tiger mit Selenium nutzen will, gibt es Versionskonflikte bei Selenium</h4>
 <div class="paragraph">
-<p>Spring Boot liefert eine veraltete Version von Selenium aus. Um die Konflikte zu lösen, bitte die in den ReleaseNotes angeführten Versionen über DependencyManagement im maven pom.xml lösen.</p>
+<p>Spring Boot liefert eine veraltete Version von Selenium aus.<br>
+Um die Konflikte zu lösen, bitte die in den ReleaseNotes angeführten Versionen über DependencyManagement im maven pom.xml lösen.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="fm06-wenn-ich-scenario-outlines-nutze-werden-die-tests-im-junit-report-nicht-mit-dem-namen-des-scenarios-angezeigt-sondern-z-b-als-examples-example-1-1"><a class="anchor" href="#fm06-wenn-ich-scenario-outlines-nutze-werden-die-tests-im-junit-report-nicht-mit-dem-namen-des-scenarios-angezeigt-sondern-z-b-als-examples-example-1-1"></a>12.4.9. FM06 Wenn ich Scenario Outlines nutze, werden die Tests im junit Report nicht mit dem Namen des Scenarios angezeigt, sondern z.B. als Examples.Example #1.1.</h4>
+<div class="paragraph">
+<p>Vermutlich ist die System Property <code>cucumber.junit-platform.naming-strategy.short.example-name</code> (meist im File junit-platform.properties) auf etwas anderes als "pickle" gesetzt.<br>
+Wenn diese Property nicht explizit gesetzt wurde, wird sie von Tiger automatisch auf "pickle" gesetzt.</p>
 </div>
 </div>
 </div>
@@ -9147,7 +9224,8 @@ Wir verwenden derzeit den logback classic 1.2.x branch, da dieser in der von uns
 <h4 id="fe02-wenn-ich-die-tiger-cloud-extensions-nutze-schlägt-der-healthcheck-bei-docker-servertypen-in-der-gematik-sw-factory-fehl"><a class="anchor" href="#fe02-wenn-ich-die-tiger-cloud-extensions-nutze-schlägt-der-healthcheck-bei-docker-servertypen-in-der-gematik-sw-factory-fehl"></a>12.5.2. FE02 Wenn ich die tiger-cloud-extensions nutze, schlägt der Healthcheck bei docker Servertypen in der Gematik SW Factory fehl</h4>
 <div class="paragraph">
 <p>Normalerweise geht Tiger davon aus, dass der Docker Daemon die Container am lokalen Rechner startet.<br>
-Sollte dies nicht so sein, so kann man Tiger mit der Umgebungsvariable TIGER_DOCKER_HOST mitteilen, auf welchem Rechner die Container gestartet werden und die HealthcheckURL wird dementsprechend angepasst. Für die Gematik SW-Factory empfiehlt sich folgendes Code Snippet für das Pipeline-Skript:</p>
+Sollte dies nicht so sein, so kann man Tiger mit der Umgebungsvariable TIGER_DOCKER_HOST mitteilen, auf welchem Rechner die Container gestartet werden und die HealthcheckURL wird dementsprechend angepasst.<br>
+Für die Gematik SW-Factory empfiehlt sich folgendes Code Snippet für das Pipeline-Skript:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -9168,14 +9246,19 @@ Sollte dies nicht so sein, so kann man Tiger mit der Umgebungsvariable TIGER_DOC
 <div class="sect3">
 <h4 id="fw01-in-der-workflow-ui-sind-die-szenarios-doppelt-aufgeführt-und-werden-auch-zeitgleich-aktualisiert-es-scheint-als-ob-sie-parallel-ablaufen"><a class="anchor" href="#fw01-in-der-workflow-ui-sind-die-szenarios-doppelt-aufgeführt-und-werden-auch-zeitgleich-aktualisiert-es-scheint-als-ob-sie-parallel-ablaufen"></a>12.6.1. FW01 In der Workflow UI sind die Szenarios doppelt aufgeführt und werden auch zeitgleich aktualisiert (es scheint, als ob sie parallel ablaufen)</h4>
 <div class="paragraph">
-<p>Passiert eigentlich nur, wenn die Testsuite aus Intellij gestartet wurde und in der RuntimeConfiguration der TigerCucumberListener als plugin mitgegeben wird. Dies ist seit v1.3 nicht mehr notwendig, weil der Listener automatisch hinzugefügt wird. Durch den manuellen Eintrag laufen also dann zwei Listener, welche die Szenarien dann auch doppelt an die Workflow UI kommunizieren &#8230;&#8203;<br>
+<p>Passiert eigentlich nur, wenn die Testsuite aus Intellij gestartet wurde und in der RuntimeConfiguration der TigerCucumberListener als plugin mitgegeben wird.<br>
+Dies ist seit v1.3 nicht mehr notwendig, weil der Listener automatisch hinzugefügt wird.<br>
+Durch den manuellen Eintrag laufen also dann zwei Listener, welche die Szenarien dann auch doppelt an die Workflow UI kommunizieren &#8230;&#8203;<br>
 Sollte dieser Effekt auch bei einem mvn call auftreten, dann bitte die Konfiguration des tiger-maven-plugins überprüfen, bzw. die generierten Treiberklassen bezüglich zusätzlicher Plugins in den CucumberOptions checken.</p>
 </div>
 </div>
 <div class="sect3">
 <h4 id="fw02-nachdem-ich-auf-shutdown-in-der-workflow-ui-gedrückt-habe-kann-ich-die-nachrichten-in-der-rbellog-details-pane-nicht-mehr-ansehen"><a class="anchor" href="#fw02-nachdem-ich-auf-shutdown-in-der-workflow-ui-gedrückt-habe-kann-ich-die-nachrichten-in-der-rbellog-details-pane-nicht-mehr-ansehen"></a>12.6.2. FW02 Nachdem ich auf Shutdown in der Workflow UI gedrückt habe, kann ich die Nachrichten in der RbelLog Details Pane nicht mehr ansehen</h4>
 <div class="paragraph">
-<p>Durch das Beenden des Testlaufs ist das Backend der Workflow UI auch beendet worden. Dies kannst Du auch daran erkennen, dass die linke Seitenleiste nun blass rot eingefärbt ist. Das Navigieren in der RbelLog Details Pane benötigt aber das Backend und klappt daher zum jetzigen Zeitpunkt nicht mehr. Auch die RbelPath- und JEXL Inspect Dialoge sind nicht mehr funktional.</p>
+<p>Durch das Beenden des Testlaufs ist das Backend der Workflow UI auch beendet worden.<br>
+Dies kannst Du auch daran erkennen, dass die linke Seitenleiste nun blass rot eingefärbt ist.<br>
+Das Navigieren in der RbelLog Details Pane benötigt aber das Backend und klappt daher zum jetzigen Zeitpunkt nicht mehr.<br>
+Auch die RbelPath- und JEXL Inspect Dialoge sind nicht mehr funktional.</p>
 </div>
 </div>
 </div>
@@ -9200,7 +9283,8 @@ Sollte dieser Effekt auch bei einem mvn call auftreten, dann bitte die Konfigura
 <div class="sect3">
 <h4 id="fo02-docker-container-creation-fails-2"><a class="anchor" href="#fo02-docker-container-creation-fails-2"></a>12.7.2. FO02 Docker container creation fails</h4>
 <div class="paragraph">
-<p>Use the command below to remove all unused containers. Or look for containers starting with "tiger", stop and remove them.</p>
+<p>Use the command below to remove all unused containers.<br>
+Or look for containers starting with "tiger", stop and remove them.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -9231,10 +9315,12 @@ javax.net.ssl.SSLException: failed to set certificate and key</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>The tiger proxy uses a mockserver internally which creates a SSLContext when handling the first request. Adding additional names after the first request will not update the created SSLContext and the exception will be thrown.</p>
+<p>The tiger proxy uses a mockserver internally which creates a SSLContext when handling the first request.<br>
+Adding additional names after the first request will not update the created SSLContext and the exception will be thrown.</p>
 </div>
 <div class="paragraph">
-<p>A workaround for this behaviour is to explicitly restart the internal mockserver after adding an alternative name. E.g.:</p>
+<p>A workaround for this behaviour is to explicitly restart the internal mockserver after adding an alternative name.<br>
+E.g.:</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -9250,7 +9336,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-01-15 11:59:55 +0100
+Last updated 2025-02-11 13:47:05 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
