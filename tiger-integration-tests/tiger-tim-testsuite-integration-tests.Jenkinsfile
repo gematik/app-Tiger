@@ -19,7 +19,8 @@
 def CREDENTIAL_ID_GEMATIK_GIT = 'svc_gitlab_prod_credentials'
 def REPO_URL = createGitUrl('git/communications/ti-m/ti-m-testsuite')
 def BRANCH = 'main'
-def POM = 'pom.xml'
+def POM = 'ci-pom.xml'
+def PARENT_POM = 'parent-pom.xml'
 
 pipeline {
       options {
@@ -63,14 +64,14 @@ pipeline {
 
         stage('Set Tiger version in TI-M') {
             steps {
-                sh "grep -q tiger.version ${POM}"
-                sh "sed -i -e 's@<tiger.version>.*</tiger.version>@<tiger.version>${TIGER_VERSION}</tiger.version>@' ${POM}"
+                sh "grep -q tiger.version ${PARENT_POM}"
+                sh "sed -i -e 's@<tiger.version>.*</tiger.version>@<tiger.version>${TIGER_VERSION}</tiger.version>@' ${PARENT_POM}"
             }
         }
 
         stage('Build') {
             steps {
-                mavenBuild(POM,"-Dprofile.ci")
+                mavenBuild(POM)
             }
         }
 
@@ -87,7 +88,7 @@ pipeline {
 
             }
             steps {
-                mavenVerify(POM, "-Dprofile.ci")
+                mavenVerify(POM)
             }
         }
 
@@ -96,7 +97,7 @@ pipeline {
                 script {
                     if (params.UPDATE == 'YES') {
                         catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                            sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${POM}"
+                            sh "sed -i -e 's@<version.tiger>.*</version.tiger>@<version.tiger>${TIGER_VERSION}</version.tiger>@' ${PARENT_POM}"
                             sh """
                                 git add -A
                                 git commit -m "Tiger version updated"
