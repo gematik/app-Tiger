@@ -1,5 +1,19 @@
 # Changelog Tiger Test platform
 
+# Release 3.7.0
+
+## Features
+
+* TGR-1727: Tiger Maven Plugin: the tiger plugin can now create a serenity json summary report. This is active by
+  default. You can configure which reports get generated in the maven configuration. E.g.:
+
+```xml
+
+<configuration>
+    <reports>html,single-page-html,json-summary</reports>
+</configuration>
+```
+
 # Release 3.6.1
 
 * Serenity BDD 4.2.16
