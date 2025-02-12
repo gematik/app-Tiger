@@ -20,7 +20,6 @@ def CREDENTIAL_ID_GEMATIK_GIT = 'svc_gitlab_prod_credentials'
 def REPO_URL = createGitUrl('git/Testtools/epa-iop-tests')
 def BRANCH = 'master'
 def POM_PATH = 'pom.xml'
-def TEAMS_URL = 'https://teams.microsoft.com/l/channel/19%3ac0d9de5fe84a4a3da5278a9446049318%40thread.tacv2/Jenkins-CI?groupId=01cda61b-5c5e-4000-ad6a-7b087feaf0e8&tenantId=30092c62-4dbf-43bf-a33f-10d21b5b660a'
 
 
 pipeline {
@@ -81,7 +80,6 @@ pipeline {
                  script {
                      if (params.UPDATE == 'YES') {
                          sendEMailNotification(getPatientEMailList() + "," + getTigerEMailList())
-                         sendTeamsNotification(TEAMS_URL)
                      }
                  }
             }

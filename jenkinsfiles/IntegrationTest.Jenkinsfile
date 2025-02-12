@@ -1,11 +1,42 @@
 @Library('gematik-jenkins-shared-library') _
 
-def JIRA_PROJECT_ID = 'TGR'
+import groovy.transform.Field
 
-// using tiger as artefact id fails as the metadata xml fo tiger is purged randomly on nexus (SWF-247)
-def ARTIFACT_ID = 'tiger-testenv-mgr'
-def GROUP_ID = "de.gematik.test"
+@Field def JIRA_PROJECT_ID = 'TGR'
 
+// using tiger as artefact id fails as the metadata xml of tiger is purged randomly on nexus (SWF-247)
+// Field annotation allows to use the variables inside of functions
+@Field def ARTIFACT_ID = 'tiger-testenv-mgr'
+@Field def NEXUS_GROUP_ID = "de.gematik.test"
+
+def CHANNEL_ID = "19:5e4a353b87974bfca7ac6ac55ad7358b@thread.tacv2"
+def GROUP_ID = "9c4c4366-476c-465d-8188-940f661574c3"
+
+@Field def TEST_RESULTS = [:]
+
+def runTestJob(jobName, displayName) {
+  if (!NEW_VERSION?.trim()) {
+    VERSION = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
+    NEW_VERSION = nexusGetLatestVersion(VERSION, ARTIFACT_ID, NEXUS_GROUP_ID).trim()
+  }
+  TEST_RESULTS[displayName] = "❌ " + NEW_VERSION
+  catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+    build job: jobName,
+          parameters: [
+              string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
+              string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
+          ]
+    TEST_RESULTS[displayName] = "✅ " + NEW_VERSION
+  }
+}
+
+def runTestJobWithoutVersion(jobName, displayName) {
+  TEST_RESULTS[displayName] = "❌ FAILED"
+  catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+    build job: jobName
+    TEST_RESULTS[displayName] = "✅ SUCCESS"
+  }
+}
 
 pipeline {
     options {
@@ -25,248 +56,100 @@ pipeline {
 
 
     stages {
-        stage('Apollo-Testsuite Integrationtest') {
-            steps {
-                script {
-                    if (!NEW_VERSION?.trim()) {
-                        VERSION = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
-                        NEW_VERSION = nexusGetLatestVersion(VERSION, ARTIFACT_ID, GROUP_ID).trim()
-                    }
-                }
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    build job: 'Tiger-Integrationtest-TIGER-Apollo-Testsuite',
-                            parameters: [
-                                    string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
-                                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
-                            ]
-                }
-            }
-        }
-        stage('Authenticator Integrationtest') {
-            steps {
-                script {
-                    if (!NEW_VERSION?.trim()) {
-                        VERSION = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
-                        NEW_VERSION = nexusGetLatestVersion(VERSION, ARTIFACT_ID, GROUP_ID).trim()
-                    }
-                }
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    build job: 'Tiger-Integrationtest-TIGER-Authenticator',
-                            parameters: [
-                                    string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
-                                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
-                            ]
-                }
-            }
-        }
+      stage ('Parallel Tests') {
+        parallel {
+          stage('Apollo') {
+              steps {
+                  runTestJob('Tiger-Integrationtest-TIGER-Apollo-Testsuite', 'Apollo')
+              }
+          }
+          stage('Authenticator') {
+              steps {
+                  runTestJob('Tiger-Integrationtest-TIGER-Authenticator', 'Authenticator')
+              }
+          }
 
-        stage('EAU Integrationtest') {
-            steps {
-                script {
-                    if (!NEW_VERSION?.trim()) {
-                        VERSION = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
-                        NEW_VERSION = nexusGetLatestVersion(VERSION, ARTIFACT_ID, GROUP_ID).trim()
-                    }
-                }
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    build job: 'Tiger-Integrationtest-TIGER-EAU',
-                            parameters: [
-                                    string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
-                                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
-                            ]
-                }
-            }
-        }
+          stage('EAU') {
+              steps {
+                  runTestJob('Tiger-Integrationtest-TIGER-EAU', 'EAU')
+              }
+          }
 
-        stage('IDP-Integrationtest') {
-            steps {
-                script {
-                    if (!NEW_VERSION?.trim()) {
-                        VERSION = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
-                        NEW_VERSION = nexusGetLatestVersion(VERSION, ARTIFACT_ID, GROUP_ID).trim()
-                    }
-                }
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    build job: 'Tiger-Integrationtest-TIGER-IDP',
-                            parameters: [
-                                    string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
-                                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
-                            ]
-                }
-            }
-        }
+          stage('IDP') {
+              steps {
+                 runTestJob('Tiger-Integrationtest-TIGER-IDP', 'IDP')
+              }
+          }
 
-        stage('Konnektor-e2e-Integrationtest') {
-            steps {
-                script {
-                    if (!NEW_VERSION?.trim()) {
-                        VERSION = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
-                        NEW_VERSION = nexusGetLatestVersion(VERSION, ARTIFACT_ID, GROUP_ID).trim()
-                    }
-                }
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    build job: 'Tiger-Integrationtest-TIGER-Konnektor-e2e',
-                            parameters: [
-                                    string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
-                                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
-                            ]
-                }
-            }
-        }
+          stage('KIM') {
+              steps {
+                  runTestJob('Tiger-Integrationtest-TIGER-KIM', 'KIM')
+              }
+          }
 
-        stage('TI-M-Testsuite-Integrationtest') {
-            steps {
-                script {
-                    if (!NEW_VERSION?.trim()) {
-                        VERSION = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
-                        NEW_VERSION = nexusGetLatestVersion(VERSION, ARTIFACT_ID, GROUP_ID).trim()
-                    }
-                }
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    build job: 'Tiger-Integrationtest-TIGER-TI-M-Testsuite',
-                            parameters: [
-                                    string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
-                                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
-                            ]
-                }
-            }
-        }
+          stage('Kon-E2E') {
+              steps {
+                  runTestJob('Tiger-Integrationtest-TIGER-Konnektor-e2e', 'Kon-E2E')
+              }
+          }
 
-        stage('TKME-Integrationtest') {
-            steps {
-                script {
-                    if (!NEW_VERSION?.trim()) {
-                        VERSION = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
-                        NEW_VERSION = nexusGetLatestVersion(VERSION, ARTIFACT_ID, GROUP_ID).trim()
-                    }
-                }
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    build job: 'Tiger-Integrationtest-TIGER-TKME',
-                            parameters: [
-                                    string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
-                                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
-                            ]
-                }
-            }
-        }
+          stage('TI-M') {
+              steps {
+                  runTestJob('Tiger-Integrationtest-TIGER-TI-M-Testsuite','TI-M')
+              }
+          }
 
-        stage('PolarionToolbox-Integrationtest') {
-            steps {
-                script {
-                    if (!NEW_VERSION?.trim()) {
-                        VERSION = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
-                        NEW_VERSION = nexusGetLatestVersion(VERSION, ARTIFACT_ID, GROUP_ID).trim()
-                    }
-                }
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    build job: 'Tiger-Integrationtest-TIGER-Polarion-Toolbox',
-                            parameters: [
-                                    string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
-                                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
-                            ]
-                }
-            }
-        }
+          stage('TKME') {
+              steps {
+                  runTestJob('Tiger-Integrationtest-TIGER-TKME', 'TKME')
+              }
+          }
 
-        stage('Tiger-Cloud-Extension-Integrationtest') {
-            steps {
-                script {
-                    if (!NEW_VERSION?.trim()) {
-                        VERSION = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
-                        NEW_VERSION = nexusGetLatestVersion(VERSION, ARTIFACT_ID, GROUP_ID).trim()
-                    }
-                }
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    build job: 'Tiger-Integrationtest-TIGER-Cloud-Extension',
-                            parameters: [
-                                    string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
-                                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
-                            ]
-                }
-            }
-        }
+          stage('POTO') {
+              steps {
+                  runTestJob('Tiger-Integrationtest-TIGER-Polarion-Toolbox','POTO')
+              }
+          }
 
-        stage('Tiger-Pssim-Extension-Integrationtest') {
-            steps {
-                script {
-                    if (!NEW_VERSION?.trim()) {
-                        VERSION = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
-                        NEW_VERSION = nexusGetLatestVersion(VERSION, ARTIFACT_ID, GROUP_ID).trim()
-                    }
-                }
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    build job: 'Tiger-Integrationtest-TIGER-PSSIM',
-                            parameters: [
-                                    string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
-                                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
-                            ]
-                }
-            }
-        }
+          stage('Tiger-Cloud') {
+              steps {
+                  runTestJob('Tiger-Integrationtest-TIGER-Cloud-Extension','Tiger-Cloud')
+              }
+          }
 
-        stage('Tiger-on-Fhir Integrationtest') {
-            steps {
-                script {
-                    if (!NEW_VERSION?.trim()) {
-                        VERSION = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
-                        NEW_VERSION = nexusGetLatestVersion(VERSION, ARTIFACT_ID, GROUP_ID).trim()
-                    }
-                }
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    build job: 'Tiger-Integrationtest-TIGER-FHIR',
-                            parameters: [
-                                    string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
-                                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
-                            ]
-                }
-            }
+          stage('Tiger-Pssim') {
+              steps {
+                  runTestJob('Tiger-Integrationtest-TIGER-PSSIM', 'Tiger-Pssim')
+              }
+          }
+
+          stage('Tiger-on-Fhir') {
+              steps {
+                  runTestJob('Tiger-Integrationtest-TIGER-FHIR','Tiger-on-Fhir')
+              }
+          }
+          stage('TGR Example') {
+              steps {
+                  runTestJob('Tiger-Integrationtest-TIGER-Manual-Example', 'TGR Example')
+              }
+          }
+          stage('TGR Custom Fail Msg') {
+              steps {
+                  runTestJobWithoutVersion('Tiger-Integrationtest-TIGER-Custom-Fail-Message', 'TGR Custom Fail Msg')
+              }
+          }
+          stage('TGR Cucumber Tags') {
+              steps {
+                  runTestJob('Tiger-Integrationtest-TIGER-Cucumber-Tags','TGR Cucumber Tags')
+              }
+          }
         }
-        stage('Tiger Manual ExampleIntegrationtest') {
-            steps {
-                script {
-                    if (!NEW_VERSION?.trim()) {
-                        VERSION = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
-                        NEW_VERSION = nexusGetLatestVersion(VERSION, ARTIFACT_ID, GROUP_ID).trim()
-                    }
-                }
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    build job: 'Tiger-Integrationtest-TIGER-Manual-Example',
-                            parameters: [
-                                    string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
-                                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
-                            ]
-                }
-            }
-        }
-        stage('Tiger Custom Fail Message Integrationtest') {
-            steps {
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    build job: 'Tiger-Integrationtest-TIGER-Custom-Fail-Message'
-                }
-            }
-        }
-        stage('Tiger Cucumber Tags Integrationtest') {
-            steps {
-                script {
-                    if (!NEW_VERSION?.trim()) {
-                        VERSION = jiraCheckAndGetSingleVersion(jiraGetVersions(JIRA_PROJECT_ID))
-                        NEW_VERSION = nexusGetLatestVersion(VERSION, ARTIFACT_ID, GROUP_ID).trim()
-                    }
-                }
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    build job: 'Tiger-Integrationtest-TIGER-Cucumber-Tags',
-                            parameters: [
-                                    string(name: 'TIGER_VERSION', value: String.valueOf("${NEW_VERSION}")),
-                                    string(name: 'UPDATE', value: String.valueOf(params.UPDATE)),
-                            ]
-                }
-            }
-        }
+      }
     }
 
     post {
         always {
-            sendEMailNotification(getTigerEMailList())
+                teamsSendNotificationToChannel(CHANNEL_ID, GROUP_ID, ["facts": TEST_RESULTS ] )
         }
     }
 }
