@@ -56,7 +56,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: BRANCH,
+                git branch: TESTSUITE_BRANCH,
                   credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
                   url: REPO_URL
             }
