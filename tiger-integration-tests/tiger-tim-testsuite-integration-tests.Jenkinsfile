@@ -39,12 +39,12 @@ pipeline {
               TIM_TRUSTSTORE = 'src/main/resources/certs/truststore.p12'
               TIM_KEYSTORE = 'src/main/resources/certs/c_keystore.p12'
               BRANCH_LOWER_CASE = sh(returnStdout: true, script: "echo ${BRANCH_NAME} | tr '[:upper:]' '[:lower:]' | tr '/' '_' | tr -d '\n'")
-
       }
 
       parameters {
           string(name: 'TIGER_VERSION', description: 'Bitte die aktuelle Version für das Projekt eingeben, format [0-9]+.[0-9]+.[0-9]+ \nHinweis: Version 0.0.[0-9] ist keine gültige Version!')
           choice(name: 'UPDATE', choices: ['NO', 'YES'], description: 'Flag, um zu prüfen, ob die neue Tiger-Version in einigen Projekten aktualisiert werden soll')
+          string(name: 'TESTSUITE_BRANCH', defaultValue: "${BRANCH}", description: 'Bitte den Branch der zu testenden Testsuite angeben')
       }
 
     stages {
@@ -56,7 +56,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: BRANCH,
+                git branch: TESTSUITE_BRANCH,
                   credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
                   url: REPO_URL
             }
@@ -71,7 +71,7 @@ pipeline {
 
         stage('Build') {
             steps {
-                mavenBuild(POM)
+                mavenBuild(POM,"-Dtestsuite.branch=${TESTSUITE_BRANCH}")
             }
         }
 
@@ -88,7 +88,7 @@ pipeline {
 
             }
             steps {
-                mavenVerify(POM)
+                mavenVerify(POM"-Dtestsuite.branch=${TESTSUITE_BRANCH}")
             }
         }
 
