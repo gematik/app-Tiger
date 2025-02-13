@@ -56,7 +56,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: TESTSUITE_BRANCH,
+                git branch: BRANCH,
                   credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
                   url: REPO_URL
             }
@@ -88,7 +88,7 @@ pipeline {
 
             }
             steps {
-                mavenVerify(POM"-Dtestsuite.branch=${TESTSUITE_BRANCH}")
+                mavenVerify(POM,"-Dtestsuite.branch=${TESTSUITE_BRANCH}")
             }
         }
 
