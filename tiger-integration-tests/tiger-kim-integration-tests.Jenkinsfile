@@ -92,18 +92,9 @@ pipeline {
         }
         stage('Run Kim Test for KIM v1_5_2') {
             steps {
-                script {
-                    runKimStages("1_5_2")
-                }
-            }
-        }
-        stage("Stop all") {
-            steps {
-                dir('kim-tiger-dc') {
-                    withEnv(['NO_UI=true', "DOCKER_HOSTNAME=${env.DOCKER_HOSTNAME}"]) {
-                        script {
-                            sh "./stop.sh"
-                        }
+                timeout(time: 20, unit: 'MINUTES') {
+                    script {
+                        runKimStages("1_5_2")
                     }
                 }
             }
@@ -111,6 +102,16 @@ pipeline {
     }
 
     post {
+        always {
+            //kim cleanup
+            dir('kim-tiger-dc') {
+                withEnv(['NO_UI=true', "DOCKER_HOSTNAME=${env.DOCKER_HOSTNAME}"]) {
+                    script {
+                        sh "./stop.sh"
+                    }
+                }
+            }
+        }
         changed {
             sendEMailNotification(getTigerEMailList())
         }
