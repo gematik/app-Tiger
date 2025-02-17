@@ -2,6 +2,9 @@
 
 # Release 3.7.0
 
+## Breaking Changes
+* TGR-1623: "TGR find request to path ..." changed to "TGR find first request to path" to match the German translation
+
 ## Features
 
 * TGR-1727: Tiger Maven Plugin: the tiger plugin can now create a serenity json summary report. This is active by

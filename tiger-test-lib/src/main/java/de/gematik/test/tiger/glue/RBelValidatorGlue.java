@@ -173,7 +173,7 @@ public class RBelValidatorGlue {
    * @param path path to match
    */
   @Wenn("TGR finde die erste Anfrage mit Pfad {string}")
-  @When("TGR find request to path {string}")
+  @When("TGR find first request to path {string}")
   public void findRequestToPath(final String path) {
     rbelValidator.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(path).build().resolvePlaceholders());
@@ -190,7 +190,7 @@ public class RBelValidatorGlue {
   @Wenn(
       "TGR finde die erste Anfrage mit Pfad {string} und Knoten {string} der mit {string}"
           + " übereinstimmt")
-  @When("TGR find request to path {string} with {string} matching {string}")
+  @When("TGR find first request to path {string} with {string} matching {string}")
   public void findRequestToPathWithCommand(
       final String path, final String rbelPath, final String value) {
     rbelValidator.filterRequestsAndStoreInContext(
@@ -251,7 +251,7 @@ public class RBelValidatorGlue {
    * @param rbelPath rbel path to node/attribute
    */
   @Wenn("TGR finde die erste Anfrage mit Pfad {string} die den Knoten {string} enthält")
-  @When("TGR find request to path {string} containing node {string}")
+  @When("TGR find first request to path {string} containing node {string}")
   public void findFirstRequestToPathContainingNode(final String path, final String rbelPath) {
     rbelValidator.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(path).rbelPath(rbelPath).build().resolvePlaceholders());
