@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>tiger</artifactId>
+        <groupId>de.gematik.test</groupId>
+        <version>3.7.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <properties>
+        <version.frontend-maven-plugin>1.15.1</version.frontend-maven-plugin>
+        <version.node>v20.11.1</version.node>
+        <version.npm>10.2.4</version.npm>
+    </properties>
+
+    <artifactId>tiger-proxy-scrollable-webui</artifactId>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.8.1</version>
+                <executions>
+                    <execution>
+                        <id>copy</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <artifactItems>
+                        <artifactItem>
+                            <groupId>org.jenkins-ci</groupId>
+                            <artifactId>winstone</artifactId>
+                            <version>${version.winstone}</version>
+                            <type>jar</type>
+                            <overWrite>false</overWrite>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <destFileName>winstone.jar</destFileName>
+                        </artifactItem>
+                    </artifactItems>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>${version.frontend-maven-plugin}</version>
+
+                <executions>
+                    <execution>
+                        <id>Install node and npm</id>
+                        <goals>
+                            <goal>install-node-and-npm</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <!-- https://github.com/eirslett/frontend-maven-plugin#proxy-settings -->
+                            <npmInheritsProxyConfigFromMaven>false</npmInheritsProxyConfigFromMaven>
+                            <nodeVersion>${version.node}</nodeVersion>
+                            <npmVersion>${version.npm}</npmVersion>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>npm install</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <arguments>install</arguments>
+                        </configuration>
+                    </execution>
+
+                    <execution>
+                        <id>npm build</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <arguments>run build</arguments>
+                        </configuration>
+                    </execution>
+                    <!-- Run Unit tests with Jest -->
+                    <execution>
+                        <id>npm-unit-test</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <phase>test</phase>
+                        <configuration>
+                            <arguments>run test</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+                <configuration>
+                    <nodeVersion>${version.node}</nodeVersion>
+                    <workingDirectory>${project.basedir}/src/frontend</workingDirectory>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

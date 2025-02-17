@@ -1,0 +1,49 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix && npm run format",
+    "test": "",
+    "format": "prettier --write src/",
+    "postinstall": "patch-package"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^6.7.2",
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
+    "@fortawesome/free-regular-svg-icons": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
+    "@fortawesome/vue-fontawesome": "^3.0.8",
+    "@popperjs/core": "^2.11.8",
+    "@vueuse/core": "^12.4.0",
+    "bootstrap": "^5.3.3",
+    "highlight.js": "^11.11.1",
+    "patch-package": "^8.0.0",
+    "simple-syntax-highlighter": "^3.1.1",
+    "vue": "^3.5.13",
+    "vue-virtual-scroller": "^2.0.0-beta.8"
+  },
+  "devDependencies": {
+    "@types/bootstrap": "^5.2.10",
+    "@types/node": "^22.10.10",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/eslint-config-prettier": "^10.1.0",
+    "@vue/eslint-config-typescript": "^14.3.0",
+    "@vue/tsconfig": "^0.7.0",
+    "eslint": "^9.18.0",
+    "eslint-plugin-vue": "^9.32.0",
+    "jiti": "^2.4.2",
+    "prettier": "^3.4.2",
+    "sass": "^1.83.4",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.5",
+    "vite-svg-loader": "^5.1.0",
+    "vue-svg-loader": "^0.16.0",
+    "vue-tsc": "^2.2.0"
+  }
+}

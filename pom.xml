@@ -176,6 +176,7 @@
         <module>tiger-test-utils</module>
         <module>tiger-java-agent</module>
         <module>tiger-proxy</module>
+        <module>tiger-proxy-scrollable-webui</module>
         <module>tiger-standalone-proxy</module>
         <module>tiger-testenv-mgr</module>
         <module>tiger-zion</module>
@@ -728,6 +729,7 @@
                             </includes>
                             <excludes>
                                 <exclude>**/target/**/*</exclude>
+                                <exclude>**/node_modules/**/*</exclude>
                             </excludes>
                             <trimTrailingWhitespace/>
                             <endWithNewline/>
@@ -757,6 +759,7 @@
                         </includes>
                         <excludes>
                             <exclude>**/target/**/*</exclude>
+                            <exclude>**/node_modules/**/*</exclude>
                         </excludes>
                     </markdown>
                 </configuration>

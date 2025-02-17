@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.proxy;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.proxy.controller.TigerScrollableWebUiController;
 import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.tracing.TracingPushService;
@@ -43,6 +44,7 @@ public class TigerProxyConfigurator
   private final ServletWebServerApplicationContext webServerAppCtxt;
   private final TigerProxyConfiguration tigerProxyConfiguration;
   private final TigerWebUiController tigerWebUiController;
+  private final TigerScrollableWebUiController tigerScrollableWebUiController;
 
   @Bean
   public TigerProxy tigerProxy() {
@@ -52,6 +54,7 @@ public class TigerProxyConfigurator
     tracingPushService = new TracingPushService(template, tigerProxy);
     tracingPushService.addWebSocketListener();
     tigerWebUiController.setTigerProxy(tigerProxy);
+    tigerScrollableWebUiController.setTigerProxy(tigerProxy);
     tigerProxy.addRbelMessageListener(tigerWebUiController::informClientOfNewMessageArrival);
     if (shouldSubscribeAfterStart) {
       tigerProxy.subscribeToTrafficEndpoints();
