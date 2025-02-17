@@ -82,7 +82,7 @@
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
         <spotless-maven-plugin.version>2.44.2</spotless-maven-plugin.version>
         <spotless.google-java-format.version>1.18.1</spotless.google-java-format.version>
-        <version.spring-boot>3.3.4</version.spring-boot>
+        <version.spring-boot>3.4.2</version.spring-boot>
         <version.spring>5.3.20</version.spring>
         <version.system-stubs>2.1.7</version.system-stubs>
         <version.unirest>3.14.5</version.unirest>

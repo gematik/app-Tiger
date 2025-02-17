@@ -3,6 +3,7 @@
 # Release 3.7.0
 
 ## Breaking Changes
+
 * TGR-1623: "TGR find request to path ..." changed to "TGR find first request to path" to match the German translation
 
 ## Features
@@ -106,7 +107,7 @@ tigerProxy:
 ## Features
 
 * TGR-1696: When JSON Schema validation fails, the error message now contains the validation messages.
-
+ 
 ## Bugfixes
 
 * TGR-1329: Tiger-Proxy: During a TLS-Handshake the Tiger-Proxy no longer signals HTTP/2-support in the ALPN

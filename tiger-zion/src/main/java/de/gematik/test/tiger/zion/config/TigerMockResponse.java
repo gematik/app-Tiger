@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.zion.config;
@@ -19,6 +20,7 @@ package de.gematik.test.tiger.zion.config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import jakarta.validation.Valid;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +42,7 @@ public class TigerMockResponse {
 
   @TigerSkipEvaluation @Builder.Default private List<String> requestCriterions = new ArrayList<>();
   private ZionRequestMatchDefinition request;
-  private TigerMockResponseDescription response;
+  @Valid private TigerMockResponseDescription response;
   @Builder.Default private Map<String, TigerMockResponse> nestedResponses = new HashMap<>();
 
   @Builder.Default

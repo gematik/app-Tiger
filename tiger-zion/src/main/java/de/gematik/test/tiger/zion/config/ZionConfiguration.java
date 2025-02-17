@@ -12,11 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.zion.config;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
@@ -30,7 +32,7 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public class ZionConfiguration {
 
-  private Map<String, TigerMockResponse> mockResponses = new HashMap<>();
+  @Valid private Map<String, TigerMockResponse> mockResponses = new HashMap<>();
   private Map<String, String> mockResponseFiles = new HashMap<>();
   private ZionSpyConfiguration spy;
   private int serverPort;
