@@ -36,6 +36,7 @@
 
     <properties>
         <version.maven-replacer-plugin>1.4.1</version.maven-replacer-plugin>
+        <version.serenity.core>4.2.16</version.serenity.core>
     </properties>
 
     <dependencies>
@@ -65,6 +66,13 @@
                     <artifactId>logback-classic</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>net.serenity-bdd</groupId>
+            <artifactId>serenity-core</artifactId>
+            <version>${version.serenity.core}</version>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- needed for MavenProject class -->
