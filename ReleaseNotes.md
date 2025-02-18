@@ -2,10 +2,6 @@
 
 # Release 3.7.0
 
-## Breaking Changes
-
-* TGR-1623: "TGR find request to path ..." changed to "TGR find first request to path" to match the German translation
-
 ## Features
 
 * TGR-1727: Tiger Maven Plugin: the tiger plugin can now create a serenity json summary report. This is active by
@@ -17,6 +13,9 @@
     <reports>html,single-page-html,json-summary</reports>
 </configuration>
 ```
+* TGR-1623: "TGR find request to path ..." changed to "TGR find first request to path" to match the German translation, 
+  old english step is now deprecated 
+
 
 # Release 3.6.1
 
@@ -107,7 +106,7 @@ tigerProxy:
 ## Features
 
 * TGR-1696: When JSON Schema validation fails, the error message now contains the validation messages.
- 
+
 ## Bugfixes
 
 * TGR-1329: Tiger-Proxy: During a TLS-Handshake the Tiger-Proxy no longer signals HTTP/2-support in the ALPN

@@ -180,6 +180,22 @@ public class RBelValidatorGlue {
   }
 
   /**
+   * please use "TGR find first request to path {string} with {string} matching {string}" instead.
+   */
+  @Deprecated
+  @When("TGR find request to path {string} with {string} matching {string}")
+  public void findRequestToPathWithCommand_Deprecated(
+          final String path, final String rbelPath, final String value) {
+    rbelValidator.filterRequestsAndStoreInContext(
+            RequestParameter.builder()
+                    .path(path)
+                    .rbelPath(rbelPath)
+                    .value(value)
+                    .build()
+                    .resolvePlaceholders());
+  }
+
+  /**
    * find the first request where path and node value equal or match as regex and memorize it in the
    * {@link #rbelValidator} instance.
    *
