@@ -179,10 +179,21 @@ public class RBelValidatorGlue {
         RequestParameter.builder().path(path).build().resolvePlaceholders());
   }
 
+
   /**
-   * please use "TGR find first request to path {string} with {string} matching {string}" instead.
+   * DEPRECATED please use "TGR find first request to path {string}" instead.
    */
-  @Deprecated
+  @Deprecated(since = "3.7.0", forRemoval = true)
+  @When("TGR find request to path {string}")
+  public void findRequestToPathDeprecated(final String path) {
+    rbelValidator.filterRequestsAndStoreInContext(
+            RequestParameter.builder().path(path).build().resolvePlaceholders());
+  }
+
+  /**
+   * DEPRECATED please use "TGR find first request to path {string} with {string} matching {string}" instead.
+   */
+  @Deprecated(since = "3.7.0", forRemoval = true)
   @When("TGR find request to path {string} with {string} matching {string}")
   public void findRequestToPathWithCommand_Deprecated(
           final String path, final String rbelPath, final String value) {
@@ -271,6 +282,16 @@ public class RBelValidatorGlue {
   public void findFirstRequestToPathContainingNode(final String path, final String rbelPath) {
     rbelValidator.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(path).rbelPath(rbelPath).build().resolvePlaceholders());
+  }
+
+  /**
+   * DEPRECATED please use "TGR find first request to path {string} with {string} containing node {string}" instead.
+   */
+  @Deprecated(since = "3.7.0", forRemoval = true)
+  @When("TGR find request to path {string} containing node {string}")
+  public void findFirstRequestToPathContainingNodeDeprecated(final String path, final String rbelPath) {
+    rbelValidator.filterRequestsAndStoreInContext(
+            RequestParameter.builder().path(path).rbelPath(rbelPath).build().resolvePlaceholders());
   }
 
   /**
