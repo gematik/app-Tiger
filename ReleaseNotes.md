@@ -6,6 +6,7 @@
 
 * TGR-1727: Tiger Maven Plugin: the tiger plugin can now create a serenity json summary report. This is active by
   default. You can configure which reports get generated in the maven configuration. E.g.:
+* TGR-1740: adding package.json to the dependabot checks
 
 ```xml
 

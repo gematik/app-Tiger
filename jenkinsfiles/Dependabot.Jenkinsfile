@@ -33,6 +33,11 @@ pipeline {
                          dependabot('maven', 'git/Testtools/tiger/tiger')
                     }
                 }
+                stage('npm_and_yarn') {
+                    steps {
+                         dependabot('npm_and_yarn', 'git/Testtools/tiger/tiger')
+                    }
+                }
             }
         }
     }
