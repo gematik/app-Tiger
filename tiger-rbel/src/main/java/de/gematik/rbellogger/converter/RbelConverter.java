@@ -109,8 +109,10 @@ public class RbelConverter {
     boolean elementIsOversized =
         skipParsingWhenMessageLargerThanKb > -1
             && (convertedInput.getSize() > skipParsingWhenMessageLargerThanKb * 1024L);
+    boolean inputWasIgnoredDueToOversize = false;
     for (RbelConverterPlugin plugin : converterPlugins) {
       if (elementIsOversized && !plugin.ignoreOversize()) {
+        inputWasIgnoredDueToOversize = true;
         continue;
       }
       try {
@@ -121,6 +123,16 @@ public class RbelConverter {
         conversionException.printDetailsToLog(log);
         conversionException.addErrorNoteFacetToElement();
       }
+    }
+    if (inputWasIgnoredDueToOversize
+        && convertedInput.getParentNode() == null
+        && convertedInput.getFacets().stream()
+            .noneMatch(
+                f ->
+                    f instanceof RbelRootFacet
+                        || f instanceof RbelResponseFacet
+                        || f instanceof RbelRequestFacet)) {
+      convertedInput.addOrReplaceFacet(new UnparsedChunkFacet());
     }
     return convertedInput;
   }

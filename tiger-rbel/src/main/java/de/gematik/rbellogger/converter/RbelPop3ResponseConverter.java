@@ -45,6 +45,11 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
   private static final byte[] CRLF_DOT_CRLF_BYTES = EmailConversionUtils.CRLF_DOT_CRLF.getBytes();
 
   @Override
+  public boolean ignoreOversize() {
+    return true;
+  }
+
+  @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
     buildPop3ResponseFacet(element, context)
         .ifPresentOrElse(
@@ -111,12 +116,14 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
           .flatMap(
               command ->
                   switch (command) {
-                    case CAPA, RETR, TOP, LIST, UIDL -> lines.length < 3
-                        ? Optional.empty()
-                        : Optional.of(buildResponseFacet(element, status, null, lines));
-                    case USER, PASS, NOOP -> lines.length > 2
-                        ? Optional.empty()
-                        : Optional.of(buildResponseFacet(element, status, null, lines));
+                    case CAPA, RETR, TOP, LIST, UIDL ->
+                        lines.length < 3
+                            ? Optional.empty()
+                            : Optional.of(buildResponseFacet(element, status, null, lines));
+                    case USER, PASS, NOOP ->
+                        lines.length > 2
+                            ? Optional.empty()
+                            : Optional.of(buildResponseFacet(element, status, null, lines));
                     default -> Optional.empty();
                   });
     }
