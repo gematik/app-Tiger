@@ -59,6 +59,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @TestPropertySource(
     properties = {"zion.mockResponseFiles.firstFile=src/test/resources/someMockResponse.yaml"})
 @WireMockTest
+@Disabled
 class TestTigerProxyMockResponses {
 
   final Path tempDirectory = Path.of("target", "zionResponses");

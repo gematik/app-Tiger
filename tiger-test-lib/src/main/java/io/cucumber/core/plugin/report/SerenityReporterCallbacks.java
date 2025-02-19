@@ -839,22 +839,16 @@ public class SerenityReporterCallbacks {
   }
 
   public String getFileNameFor(String type, String scenarioName, int dataVariantIndex) {
-    if (scenarioName.length() > 80) { // Serenity can not deal with longer filenames
+    scenarioName = replaceSpecialCharacters(scenarioName);
+    if (scenarioName.length() > 30) { // Windows files-system can not deal with longer filenames
       scenarioName =
-          scenarioName.substring(0, 60)
+          scenarioName.substring(0, 30)
               + UUID.nameUUIDFromBytes(scenarioName.getBytes(StandardCharsets.UTF_8));
     }
     if (dataVariantIndex != -1) {
-      scenarioName = scenarioName + "_" + (dataVariantIndex + 1);
+      scenarioName += "_" + (dataVariantIndex + 1);
     }
-    scenarioName =
-        type
-            + "_"
-            + replaceSpecialCharacters(scenarioName)
-            + "_"
-            + sdf.format(new Date())
-            + ".html";
-    return scenarioName;
+    return type + "_" + scenarioName + "_" + sdf.format(new Date()) + ".html";
   }
 
   public String replaceSpecialCharacters(String name) {

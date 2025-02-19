@@ -59,6 +59,7 @@ import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -297,7 +298,12 @@ public class TestTigerSerenityReporterPlugin {
             .get();
     assertThat(logFile.getName())
         .startsWith(
-            "rbel_" + listener.getReporterCallbacks().replaceSpecialCharacters(scenarioName));
+            "rbel_"
+                + StringUtils.abbreviate(
+                    listener.getReporterCallbacks().replaceSpecialCharacters(scenarioName),
+                    "",
+                    0,
+                    30));
     assertThat(logFile)
         .exists()
         .hasName(listener.getReporterCallbacks().replaceSpecialCharacters(logFile.getName()))
