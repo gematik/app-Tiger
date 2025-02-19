@@ -118,13 +118,13 @@ pipeline {
         success {
             script {
                 if (params.UPDATE == 'YES')
-                    sendEMailNotification(getTigerEMailList() + "," + "rafael.schirru@gematik.de")
+                    sendEMailNotification(getTigerEMailList() + "," + getCommunicationsEMailList())
             }
         }
         failure {
             script {
                 if (params.UPDATE == 'YES')
-                    sendEMailNotification(getTigerEMailList() + "," + "rafael.schirru@gematik.de")
+                    sendEMailNotification(getTigerEMailList() + "," + getCommunicationsEMailList())
             }
         }
     }
