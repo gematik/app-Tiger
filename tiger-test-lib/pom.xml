@@ -146,6 +146,11 @@
             <artifactId>mockito-core</artifactId>
             <!-- hardcoded. excluded from serenity because of clash with system-stubs-core -->
         </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- needed for java junit / testng test code parsing -->
         <dependency>
             <groupId>com.github.javaparser</groupId>
