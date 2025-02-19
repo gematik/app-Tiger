@@ -42,6 +42,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 /**
@@ -212,17 +213,17 @@ public class TigerGlobalConfiguration {
 
   public static synchronized boolean readBoolean(String key) {
     assertGlobalConfigurationIsInitialized();
-    return globalConfigurationLoader.readBoolean(key);
+    return BooleanUtils.toBoolean(readString(key));
   }
 
   public static synchronized boolean readBoolean(String key, boolean defaultValue) {
     assertGlobalConfigurationIsInitialized();
-    return globalConfigurationLoader.readBoolean(key, defaultValue);
+    return readBooleanOptional(key).orElse(defaultValue);
   }
 
   public static synchronized Optional<Boolean> readBooleanOptional(String key) {
     assertGlobalConfigurationIsInitialized();
-    return globalConfigurationLoader.readBooleanOptional(key);
+    return readStringOptional(key).map(BooleanUtils::toBoolean);
   }
 
   private static void assertGlobalConfigurationIsInitialized() {

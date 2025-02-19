@@ -835,6 +835,36 @@ public class TigerConfigurationTest { // NOSONAR
             });
   }
 
+  @ParameterizedTest
+  @CsvSource({
+    "true, true",
+    "TRUE, true",
+    "tRUe, true",
+    "on , true",
+    "yes, true",
+    "false, false",
+    "x gti, false",
+    "y, true",
+    "n, false",
+    "T, true",
+    "t, true",
+    "F, false",
+    "f, false",
+    "1, true",
+    "0, false",
+  })
+  void getBoolean_shouldResolveBeforeParsing(String booleanString, boolean expectedBoolean) {
+    TigerGlobalConfiguration.putValue("test.booleanAsString", booleanString);
+    TigerGlobalConfiguration.putValue("test.toBeResolved", "${test.booleanAsString}");
+    assertThat(TigerGlobalConfiguration.readString("test.booleanAsString"))
+        .isEqualTo(booleanString);
+    assertThat(TigerGlobalConfiguration.readBoolean("test.booleanAsString"))
+        .isEqualTo(expectedBoolean);
+    assertThat(TigerGlobalConfiguration.readString("test.toBeResolved")).isEqualTo(booleanString);
+    assertThat(TigerGlobalConfiguration.readBoolean("test.toBeResolved"))
+        .isEqualTo(expectedBoolean);
+  }
+
   @Data
   @Builder
   public static class DummyBean {

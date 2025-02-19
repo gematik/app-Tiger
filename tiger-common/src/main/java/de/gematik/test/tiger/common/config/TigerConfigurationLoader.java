@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.yaml.snakeyaml.Yaml;
@@ -49,10 +50,6 @@ public class TigerConfigurationLoader {
 
   public TigerConfigurationLoader() {
     initialize();
-  }
-
-  private static boolean parseBoolean(String rawValue) {
-    return "1".equals(rawValue) || Boolean.parseBoolean(rawValue);
   }
 
   private static String mapConflictResolver(String e1, String e2, String propertySourceName) {
@@ -244,15 +241,15 @@ public class TigerConfigurationLoader {
   }
 
   public boolean readBoolean(String key) {
-    return parseBoolean(readString(key));
+    return BooleanUtils.toBoolean(readString(key));
   }
 
   public boolean readBoolean(String key, boolean defValue) {
-    return readStringOptional(key).map(TigerConfigurationLoader::parseBoolean).orElse(defValue);
+    return readStringOptional(key).map(BooleanUtils::toBoolean).orElse(defValue);
   }
 
   public Optional<Boolean> readBooleanOptional(String key) {
-    return readStringOptional(key).map(TigerConfigurationLoader::parseBoolean);
+    return readStringOptional(key).map(BooleanUtils::toBoolean);
   }
 
   public void loadEnvironmentVariables() {

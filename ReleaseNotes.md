@@ -6,7 +6,6 @@
 
 * TGR-1727: Tiger Maven Plugin: the tiger plugin can now create a serenity json summary report. This is active by
   default. You can configure which reports get generated in the maven configuration. E.g.:
-* TGR-1740: adding package.json to the dependabot checks
 
 ```xml
 
@@ -14,9 +13,15 @@
     <reports>html,single-page-html,json-summary</reports>
 </configuration>
 ```
-* TGR-1623: "TGR find request to path ..." changed to "TGR find first request to path" to match the German translation, 
-  old english step is now deprecated 
 
+* TGR-1740: adding package.json to the dependabot checks
+* TGR-1623: "TGR find request to path ..." changed to "TGR find first request to path" to match the German translation,
+  old english step is now deprecated
+
+## Bugfixes
+
+* TGR-1760: Tiger Global Configuration: reading a boolean out of the configuration will now resolve placeholders before
+  parsing the resulting string into a boolean.
 
 # Release 3.6.1
 
