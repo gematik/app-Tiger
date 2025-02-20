@@ -6,6 +6,9 @@
 
 * TGR-1727: Tiger Maven Plugin: the tiger plugin can now create a serenity json summary report. This is active by
   default. You can configure which reports get generated in the maven configuration. E.g.:
+* TGR-1755: **Breaking Change:** Add additional (formerly hidden) mime message levels in encrypted MIME messages, one
+  for the binary
+  signed content structure and one for the rfc822 message structure.
 
 ```xml
 

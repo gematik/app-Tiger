@@ -146,6 +146,7 @@ public class RbelConverterInitializer {
                 RbelPop3ResponseConverter.class,
                 RbelMimeConverter.class,
                 RbelEncryptedMailConverter.class,
+                RbelPkcs7Converter.class,
                 RbelSmtpCommandConverter.class,
                 RbelSmtpResponseConverter.class));
     Reflections reflections = new Reflections("de.gematik");

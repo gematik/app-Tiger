@@ -58,6 +58,13 @@ public class RbelConversionException extends GenericTigerException {
     this.converter = plugin;
   }
 
+  public RbelConversionException(
+      String message, RbelElement currentElement, RbelConverterPlugin plugin) {
+    super(message);
+    this.currentElement = currentElement;
+    this.converter = plugin;
+  }
+
   public static RbelConversionException wrapIfNotAConversionException(
       Exception input, RbelConverterPlugin plugin, RbelElement currentElement) {
     if (input instanceof RbelConversionException conversionException) {
