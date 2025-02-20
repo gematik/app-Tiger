@@ -55,8 +55,7 @@ class RbelHtmlRendererTest {
               new RbelConfiguration()
                   .activateConversionFor("X509")
                   .activateConversionFor("pop3")
-                  .activateConversionFor("mime")
-                  .activateConversionFor("asn1"))
+                  .activateConversionFor("mime"))
           .getRbelConverter();
   private static final RbelHtmlRenderer RENDERER = new RbelHtmlRenderer();
 
@@ -71,8 +70,7 @@ class RbelHtmlRendererTest {
         readCurlFromFileWithCorrectedLineBreaks(
             "src/test/resources/sampleMessages/jwtMessage.curl");
 
-    final RbelElement convertedMessage =
-        RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+    final RbelElement convertedMessage = RBEL_CONVERTER.convertElement(curlMessage, null);
 
     final String render =
         RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()));
@@ -82,7 +80,6 @@ class RbelHtmlRendererTest {
 
   @Test
   void valueShading() throws IOException {
-    RENDERER.setRenderAsn1Objects(true);
     RENDERER.setRenderNestedObjectsWithoutFacetRenderer(true);
     final String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(
@@ -147,7 +144,6 @@ class RbelHtmlRendererTest {
 
   @Test
   void advancedShading() throws IOException {
-    RENDERER.setRenderAsn1Objects(true);
     RENDERER.setRenderNestedObjectsWithoutFacetRenderer(true);
     final String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(
@@ -198,8 +194,7 @@ class RbelHtmlRendererTest {
         readCurlFromFileWithCorrectedLineBreaks(
             "src/test/resources/sampleMessages/jwtMessage.curl");
 
-    final RbelElement convertedMessage =
-        RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+    final RbelElement convertedMessage = RBEL_CONVERTER.convertElement(curlMessage, null);
 
     final ZonedDateTime transmissionTime = ZonedDateTime.now();
 
@@ -232,13 +227,11 @@ class RbelHtmlRendererTest {
   void shouldRenderXmlMessagesDirectly() throws IOException {
     byte[] xmlBytes = FileUtils.readFileToByteArray(new File("src/test/resources/randomXml.xml"));
     final RbelElement convertedMessage =
-        RbelLogger.build()
-            .getRbelConverter()
-            .parseMessage(
-                xmlBytes,
-                new RbelHostname("sender", 13421),
-                new RbelHostname("receiver", 14512),
-                Optional.of(ZonedDateTime.now()));
+        RBEL_CONVERTER.parseMessage(
+            xmlBytes,
+            new RbelHostname("sender", 13421),
+            new RbelHostname("receiver", 14512),
+            Optional.of(ZonedDateTime.now()));
 
     final String convertedHtml = RENDERER.render(List.of(convertedMessage));
     FileUtils.writeStringToFile(new File("target/directXml.html"), convertedHtml);
@@ -250,13 +243,11 @@ class RbelHtmlRendererTest {
   void shouldRenderHtmlMessagesWithoutError() throws IOException {
     byte[] htmlBytes = FileUtils.readFileToByteArray(new File("src/test/resources/sample.html"));
     final RbelElement convertedMessage =
-        RbelLogger.build()
-            .getRbelConverter()
-            .parseMessage(
-                htmlBytes,
-                new RbelHostname("sender", 13421),
-                new RbelHostname("receiver", 14512),
-                Optional.of(ZonedDateTime.now()));
+        RBEL_CONVERTER.parseMessage(
+            htmlBytes,
+            new RbelHostname("sender", 13421),
+            new RbelHostname("receiver", 14512),
+            Optional.of(ZonedDateTime.now()));
 
     final String convertedHtml = RENDERER.render(List.of(convertedMessage));
     FileUtils.writeStringToFile(new File("target/directHtml.html"), convertedHtml);
@@ -271,8 +262,7 @@ class RbelHtmlRendererTest {
         readCurlFromFileWithCorrectedLineBreaks(
             "src/test/resources/sampleMessages/jwtMessage.curl");
 
-    final RbelElement convertedMessage =
-        RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+    final RbelElement convertedMessage = RBEL_CONVERTER.convertElement(curlMessage, null);
 
     final String render =
         RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()));
@@ -292,8 +282,7 @@ class RbelHtmlRendererTest {
         readCurlFromFileWithCorrectedLineBreaks(
             "src/test/resources/sampleMessages/jwtMessage.curl");
 
-    final RbelElement convertedMessage =
-        RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
+    final RbelElement convertedMessage = RBEL_CONVERTER.convertElement(curlMessage, null);
 
     final String render =
         RbelHtmlRenderer.render(wrapHttpMessage(convertedMessage, ZonedDateTime.now()));
@@ -324,7 +313,7 @@ class RbelHtmlRendererTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"+OK foobar foobar", "-ERR barfoo"})
-  void shouldRenderPop3Responses(String response) throws IOException {
+  void shouldRenderPop3Responses(String response) {
     String pop3Message = response + "\r\nbody\r\n.\r\n";
     byte[] htmlBytes = pop3Message.getBytes(StandardCharsets.UTF_8);
     final RbelElement convertedMessage =

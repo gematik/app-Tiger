@@ -186,7 +186,8 @@ class RbelJexlExecutorTest {
         "$.header.['Cache-Control'] =~ 'max-age=300'",
         "$.header.[~'cache-control'] =~ 'max-age=300'",
         "$..['urn:telematik:claims:email'] == 'emailValue'",
-        "$..kid.* =~ 'discSig'"
+        "$..kid.* =~ 'discSig'",
+        "$.foo.bar.not.there == null"
       })
   void testVariousJexlExpressions(String jexlExpression) {
     assertThat(TigerJexlExecutor.matchesAsJexlExpression(response, jexlExpression)).isTrue();

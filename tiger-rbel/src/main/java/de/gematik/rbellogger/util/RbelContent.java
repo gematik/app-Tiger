@@ -24,12 +24,7 @@ import java.io.SequenceInputStream;
 import java.lang.ref.WeakReference;
 import java.nio.charset.Charset;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.function.BiPredicate;
 import javax.annotation.Nullable;
 import lombok.Builder;
@@ -37,6 +32,7 @@ import lombok.Getter;
 import lombok.SneakyThrows;
 import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.tuple.Pair;
 
 @Getter
@@ -495,5 +491,21 @@ public class RbelContent {
 
   public boolean contains(byte[] searchContent) {
     return indexOf(searchContent) >= 0;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+
+    if (!(o instanceof RbelContent that)) return false;
+
+    if (this.size != that.size) return false;
+
+    return Arrays.equals(this.toByteArray(), that.toByteArray());
+  }
+
+  @Override
+  public int hashCode() {
+    return new HashCodeBuilder(17, 37).append(size).append(toByteArray()).toHashCode();
   }
 }

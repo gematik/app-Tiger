@@ -22,13 +22,18 @@
 
 * TGR-1727: Tiger Maven Plugin: the tiger plugin can now create a serenity json summary report. This is active by
   default. You can configure which reports get generated in the maven configuration. E.g.:
-
+* TGR-1625: RBel: OIDs in ASN.1 now feature the dot-notation as well as a human-readable name (if existing in an
+  internal database)
+* TGR-1625: Tiger-Proxy: The "activateConversionFor" list is now case-insensitive.
+* TGR-1625: OCSP-Responses can now be converted. To activate, add "OCSP" to the `activateConversionFor` list.
 * TGR-1740: adding package.json to the dependabot checks
 * TGR-1623: "TGR find request to path ..." changed to "TGR find first request to path" to match the German translation,
   old english step is now deprecated
 
 ## Bugfixes
 
+* TGR-1625: Nested ASN.1-objects are no longer displayed as seperate entities when they reside immediately in another
+  ASN.1 structure. This helps make longer structures, for example X.509-certificates, more readable.
 * TGR-1753: Shorten rbel-log file names in serenity report further to avoid too long file names when extracting report
   on Windows
 * TGR-1760: Tiger Global Configuration: reading a boolean out of the configuration will now resolve placeholders before
@@ -456,8 +461,20 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-  key = PLUGIN_PROPERTY_NAME,
+  <<<<<<<HEAD
+  <<<<<<<HEAD
+  key=PLUGIN_PROPERTY_NAME,
   value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+=======
+key =PLUGIN_PROPERTY_NAME,
+value ="io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+  >>>>>>>30c1b38860c56e35d988982718405c95b15212e5
+
+=======
+key =PLUGIN_PROPERTY_NAME,
+value ="io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+  >>>>>>>690f7a4c480e978e89001c5401e0dc40a2f60b8c
+
 public class Driver1IT {
 
 }

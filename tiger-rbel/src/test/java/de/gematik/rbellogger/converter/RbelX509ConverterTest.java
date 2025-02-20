@@ -17,39 +17,54 @@
 package de.gematik.rbellogger.converter;
 
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import java.io.IOException;
 import java.util.List;
 import lombok.SneakyThrows;
+import org.apache.commons.io.FileUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class RbelX509ConverterTest {
 
   private RbelElement xmlMessage;
+  private RbelElement rawX509Certificate;
 
+  @SneakyThrows
   @BeforeEach
   public void setUp() throws IOException {
-    xmlMessage =
+    final RbelConverter converter =
         RbelLogger.build(
                 RbelConfiguration.builder().activateRbelParsingFor(List.of("X509")).build())
-            .getRbelConverter()
-            .convertElement(
-                readCurlFromFileWithCorrectedLineBreaks(
-                        "src/test/resources/sampleMessages/xmlMessage.curl")
-                    .getBytes(),
-                null);
+            .getRbelConverter();
+    xmlMessage =
+        converter.convertElement(
+            readCurlFromFileWithCorrectedLineBreaks(
+                    "src/test/resources/sampleMessages/xmlMessage.curl")
+                .getBytes(),
+            null);
+
+    rawX509Certificate =
+        converter.convertElement(
+            new TigerPkiIdentity("src/test/resources/idpEnc.p12").getCertificate().getEncoded(),
+            null);
   }
 
   @SneakyThrows
   @Test
   void shouldRenderCleanHtml() {
-    assertThat(RbelHtmlRenderer.render(List.of(xmlMessage))).isNotBlank();
+    final String render = RbelHtmlRenderer.render(List.of(xmlMessage, rawX509Certificate));
+    FileUtils.writeStringToFile(
+        FileUtils.getFile("target", "rbelX509ConverterTest.html"), render, "UTF-8");
+    assertThat(render).isNotBlank();
   }
 
   @SneakyThrows
@@ -58,7 +73,7 @@ class RbelX509ConverterTest {
     final RbelElement certificateElement =
         xmlMessage.findElement("$..[?(@.subject=~'.*TEST-ONLY.*')]").get();
 
-    assertThat(certificateElement)
+    Assertions.assertThat(certificateElement)
         .isEqualTo(
             xmlMessage
                 .findElement(
@@ -71,5 +86,14 @@ class RbelX509ConverterTest {
   void shouldParseX500ContentAsWell() {
     assertThat(xmlMessage.findElement("$..subject.CN").get().getRawStringContent())
         .isEqualTo("IDP Sig 3");
+  }
+
+  @SneakyThrows
+  @Test
+  void accessExtensionViaHumanReadableName() {
+    assertThat(xmlMessage)
+        .andPrintTree()
+        .extractChildWithPath("$..extensions.[?(@.oid.name == 'keyUsage')]")
+        .hasGivenValueAtPosition("$.critical", Boolean.TRUE);
   }
 }

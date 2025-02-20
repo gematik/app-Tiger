@@ -18,7 +18,6 @@ package de.gematik.test.tiger.proxy.controller;
 
 import static j2html.TagCreator.*;
 
-import com.google.common.html.HtmlEscapers;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
@@ -26,7 +25,6 @@ import de.gematik.rbellogger.exceptions.RbelPathException;
 import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
-import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.rbellogger.util.RbelJexlExecutor;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
@@ -596,26 +594,13 @@ public class TigerWebUiController implements ApplicationContextAware {
             .map(key -> targetElement.getParentNode())
             .orElse(targetElement);
 
-    return HtmlEscapers.htmlEscaper()
-        .escape(
-            RbelElementTreePrinter.builder()
-                .rootElement(rootElement)
-                .printFacets(false)
-                .build()
-                .execute())
-        .replace(RbelAnsiColors.RESET.toString(), "</span>")
-        .replace(
-            RbelAnsiColors.RED_BOLD.toString(),
-            "<span class='text-warning "
-                + (addJexlResponseLinkCssClass ? "jexlResponseLink' style='cursor: pointer;'" : "'")
-                + ">")
-        .replace(RbelAnsiColors.CYAN.toString(), "<span class='text-info'>")
-        .replace(
-            RbelAnsiColors.YELLOW_BRIGHT.toString(),
-            "<span class='text-danger has-text-weight-bold'>")
-        .replace(RbelAnsiColors.GREEN.toString(), "<span class='text-warning'>")
-        .replace(RbelAnsiColors.BLUE.toString(), "<span class='text-success'>")
-        .replace("\n", "<br/>");
+    return RbelElementTreePrinter.builder()
+        .rootElement(rootElement)
+        .printFacets(true)
+        .htmlEscaping(true)
+        .addJexlResponseLinkCssClass(addJexlResponseLinkCssClass)
+        .build()
+        .execute();
   }
 
   @GetMapping(value = "/webfonts/{fontfile}", produces = "text/css")

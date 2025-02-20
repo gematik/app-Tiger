@@ -18,7 +18,7 @@ pipeline {
         maven 'Default'
     }
     environment {
-        JAVA_TOOL_OPTIONS = '-Xmx16g  -Xms1g -Dgwt.extraJvmArgs="-Xmx16g -Xms1g"'
+        JAVA_TOOL_OPTIONS = '-Xmx16g  -Xms4g -Dgwt.extraJvmArgs="-Xmx16g -Xms4g"'
     }
 
 

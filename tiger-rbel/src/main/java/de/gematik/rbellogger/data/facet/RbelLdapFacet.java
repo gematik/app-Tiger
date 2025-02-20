@@ -59,7 +59,7 @@ public class RbelLdapFacet implements RbelFacet {
                     vertParentTitle()
                         .with(
                             div()
-                                .withClass("tile is-child pe-3")
+                                .withClass("tile is-child pe-2")
                                 .with(pre(textRepresentation).withClass("json language-json"))
                                 .with(renderingToolkit.convertNested(element))));
           }

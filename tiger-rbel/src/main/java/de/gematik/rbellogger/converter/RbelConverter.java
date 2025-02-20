@@ -18,6 +18,7 @@ package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.RbelConverterInitializer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelElementConvertionPair;
 import de.gematik.rbellogger.data.RbelHostname;
@@ -48,6 +49,7 @@ import org.apache.commons.lang3.tuple.Pair;
 public class RbelConverter {
 
   static {
+    BrainpoolCurves.init();
     TigerSecurityProviderInitialiser.initialize();
   }
 
@@ -105,6 +107,7 @@ public class RbelConverter {
   }
 
   public RbelElement convertElement(final RbelElement convertedInput) {
+    long timeBeforeConversion = System.nanoTime();
     initializeConverters(new RbelConfiguration());
     boolean elementIsOversized =
         skipParsingWhenMessageLargerThanKb > -1
@@ -134,6 +137,8 @@ public class RbelConverter {
                         || f instanceof RbelRequestFacet)) {
       convertedInput.addOrReplaceFacet(new UnparsedChunkFacet());
     }
+    long timeAfterConversion = System.nanoTime();
+    convertedInput.setConversionTimeInNanos(timeAfterConversion - timeBeforeConversion);
     return convertedInput;
   }
 

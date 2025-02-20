@@ -21,6 +21,7 @@ import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.data.facet.RbelValueFacet;
 import de.gematik.rbellogger.util.RbelPathAble;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -29,7 +30,7 @@ import org.assertj.core.api.*;
 
 public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, RbelElement> {
 
-  private RbelElement initial;
+  private final RbelElement initial;
 
   public RbelElementAssertion(RbelElement actual) {
     super(actual, RbelElementAssertion.class);
@@ -61,6 +62,17 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
           actual.printTreeStructureWithoutColors());
     }
     return new RbelElementAssertion(kids.get(0), this.actual);
+  }
+
+  public RbelElementAssertion hasGivenValueAtPosition(String rbelPath, Object expectedValue) {
+    extractChildWithPath(rbelPath).hasValueEqualTo(expectedValue);
+    return this;
+  }
+
+  public RbelElementAssertion hasGivenFacetAtPosition(
+      String rbelPath, Class<? extends RbelFacet> expectedFacet) {
+    extractChildWithPath(rbelPath).hasFacet(expectedFacet);
+    return this;
   }
 
   public RbelElementAssertion extractChildWithPath(String rbelPath, int index) {
@@ -126,6 +138,7 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
     return this.myself;
   }
 
+  @Override
   public StringAssert asString() {
     return new StringAssert(actual.getRawStringContent());
   }
@@ -142,9 +155,11 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
   public RbelElementAssertion doesNotHaveFacet(Class<? extends RbelFacet> facetToTest) {
     if (actual.hasFacet(facetToTest)) {
       failWithMessage(
-          "Expecting element to have NOT facet of type %s, but it was found along with %s\n"
-              + "at element:\n"
-              + "$.%s",
+          """
+                Expecting element to have NOT facet of type %s, but it was found along with %s
+                at element:
+                $.%s
+            """,
           facetToTest.getSimpleName(), new ArrayList<>(actual.getFacets()), actual.findNodePath());
     }
     return this.myself;
@@ -153,10 +168,9 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
   public RbelElementAssertion hasValueEqualTo(Object expected) {
     hasFacet(RbelValueFacet.class);
     final Object actualValue = actual.getFacetOrFail(RbelValueFacet.class).getValue();
-    if (!expected.equals(actualValue)) {
-      failWithMessage(
-          "Expecting element to have value of %s, but found %s instead", expected, actualValue);
-    }
+    Assertions.assertThat(actualValue)
+        .as("Checking value at position $.%s", actual.findNodePath())
+        .isEqualTo(expected);
     return this.myself;
   }
 
@@ -201,5 +215,12 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
       }
       hasCorrectParentKeysSetInAllElements(child.getValue());
     }
+  }
+
+  public RbelElementAssertion hasCharset(Charset charset) {
+    Assertions.assertThat(actual.getElementCharset())
+        .as("Checking charset of element at position $.%s", actual.findNodePath())
+        .isEqualTo(charset);
+    return this;
   }
 }

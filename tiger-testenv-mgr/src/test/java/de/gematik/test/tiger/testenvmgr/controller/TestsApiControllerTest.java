@@ -158,7 +158,8 @@ class TestsApiControllerTest {
     assertThat(result.getErrorCode()).isEqualTo(String.valueOf(HttpStatus.BAD_REQUEST.value()));
     assertThat(result.getErrorMessage())
         .isEqualTo(
-            "Method parameter 'testRunId': Failed to convert value of type 'java.lang.String' to required type 'java.util.UUID'; Invalid UUID string: "
+            "Method parameter 'testRunId': Failed to convert value of type 'java.lang.String' to"
+                + " required type 'java.util.UUID'; Invalid UUID string: "
                 + somethingNotUuid);
   }
 

@@ -26,5 +26,5 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class GetMessagesFilterScrollableDto {
-    private String rbelPath;
+  private String rbelPath;
 }

@@ -17,11 +17,14 @@
 package de.gematik.rbellogger.data.util;
 
 import static de.gematik.rbellogger.util.RbelAnsiColors.*;
+import static de.gematik.rbellogger.util.RbelContextDecorator.forceStringConvert;
 
+import com.google.common.html.HtmlEscapers;
 import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.facet.RbelFacet;
+import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import java.util.Iterator;
 import java.util.Map;
@@ -42,6 +45,9 @@ public class RbelElementTreePrinter {
   @Builder.Default private final boolean printKeys = false;
   @Builder.Default private final boolean printFacets = true;
   @Builder.Default private final boolean printColors = true;
+  @Builder.Default private final boolean printParsingTimes = false;
+  @Builder.Default private final boolean htmlEscaping = false;
+  @Builder.Default private final boolean addJexlResponseLinkCssClass = false;
 
   public String execute() {
     final RbelElement position = new RbelElement();
@@ -52,9 +58,33 @@ public class RbelElementTreePrinter {
             return new RbelMultiMap<RbelElement>().with(findKeyOfRootElement(), rootElement);
           }
         });
-    return executeRecursive(
-        position, "", Math.max(maximumLevels, maximumLevels + 1) // avoid overflow problems
-        );
+    final String rawResult =
+        executeRecursive(
+            position, "", Math.max(maximumLevels, maximumLevels + 1) // avoid overflow problems
+            );
+    if (htmlEscaping) {
+      return performHtmlEscaping(rawResult);
+    } else {
+      return rawResult;
+    }
+  }
+
+  private String performHtmlEscaping(String rawResult) {
+    return HtmlEscapers.htmlEscaper()
+        .escape(rawResult)
+        .replace(RbelAnsiColors.RESET.toString(), "</span>")
+        .replace(
+            RbelAnsiColors.RED_BOLD.toString(),
+            "<span class='text-warning "
+                + (addJexlResponseLinkCssClass ? "jexlResponseLink' style='cursor: pointer;'" : "'")
+                + ">")
+        .replace(RbelAnsiColors.CYAN.toString(), "<span class='text-info'>")
+        .replace(
+            RbelAnsiColors.YELLOW_BRIGHT.toString(),
+            "<span class='text-danger has-text-weight-bold'>")
+        .replace(RbelAnsiColors.GREEN.toString(), "<span class='text-warning'>")
+        .replace(RbelAnsiColors.BLUE.toString(), "<span class='text-success'>")
+        .replace("\n", "<br/>");
   }
 
   private String findKeyOfRootElement() {
@@ -79,17 +109,22 @@ public class RbelElementTreePrinter {
       Map.Entry<String, RbelElement> childNode = iterator.next();
       String switchString;
       String padString;
+      String linkSign = childNode.getValue().hasFacet(RbelRootFacet.class) ? ">" : "─";
       if (iterator.hasNext()) {
-        switchString = "├──";
+        switchString = "├" + linkSign + "─";
         padString = "|  ";
       } else {
-        switchString = "└──";
+        switchString = "└" + linkSign + "─";
         padString = "   ";
       }
       // the tree structure
-      result.append(cl(YELLOW_BRIGHT)).append(padding).append(switchString).append(cl(RESET));
+      result
+          .append(colorCommand(YELLOW_BRIGHT))
+          .append(padding)
+          .append(switchString)
+          .append(colorCommand(RESET));
       // name of the node
-      result.append(cl(RED_BOLD)).append(childNode.getKey()).append(cl(RESET));
+      result.append(colorCommand(RED_BOLD)).append(childNode.getKey()).append(colorCommand(RESET));
       // print content
       result.append(printContentOf(childNode.getValue()));
       // print facet
@@ -104,7 +139,7 @@ public class RbelElementTreePrinter {
   }
 
   private String printFacets(RbelElement value) {
-    if (!RbelOptions.isActivateFacetsPrinting()) {
+    if (!printFacets) {
       return "";
     }
     final String facetsString =
@@ -119,37 +154,32 @@ public class RbelElementTreePrinter {
     if (StringUtils.isEmpty(facetsString)) {
       return "";
     }
-    return cl(CYAN) + " (" + facetsString + ")" + cl(RESET);
+    return colorCommand(CYAN) + " (" + facetsString + ")" + colorCommand(RESET);
   }
 
   private String printContentOf(RbelElement value) {
     if (!printContent) {
       return "";
     }
-    String content = value.getRawStringContent();
-    if (content == null) {
-      content =
-          value
-              .seekValue()
-              .map(Object::toString)
-              .map(strValue -> "Value: " + strValue)
-              .orElse("<null>");
+    String content;
+    if (printParsingTimes) {
+      content = (value.getConversionTimeInNanos() / 1000) / 1000. + "ms ";
+    } else {
+      content = "";
     }
-    if (content == null) {
-      return "";
-    }
+
+    content += forceStringConvert(value);
     return " ("
-        + cl(BLUE)
-        + StringUtils.substring(
+        + colorCommand(BLUE)
+        + StringUtils.abbreviate(
             content.replace("\n", "\\n").replace("\r", "\\r"),
             0,
             RbelOptions.getRbelPathTreeViewValueOutputLength())
-        + (content.length() > RbelOptions.getRbelPathTreeViewValueOutputLength() ? "..." : "")
-        + cl(RESET)
+        + colorCommand(RESET)
         + ")";
   }
 
-  private String cl(RbelAnsiColors color) {
+  private String colorCommand(RbelAnsiColors color) {
     if (printColors) {
       return color.toString();
     } else {
