@@ -1,3 +1,4 @@
+tigerProxy:
 additionalConfigurationFiles:
   - filename: src/test/resources/additionalYamlsNotCurrentDir/foo/bar/additionalYaml.yaml
     baseKey: rootFolder

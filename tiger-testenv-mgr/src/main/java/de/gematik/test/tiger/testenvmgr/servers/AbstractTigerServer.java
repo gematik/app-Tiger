@@ -47,9 +47,19 @@ import org.apache.commons.lang3.StringUtils;
 public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
 
   public static final int DEFAULT_STARTUP_TIMEOUT_IN_SECONDS = 20;
+  private static final String LETTTER_DIGIT_REGEX = "[a-zA-Z0-9]";
+  private static final String LETTER_DIGIT_HYPHEN_REGEX = "[a-zA-Z0-9\\-]";
+  private static final String SERVER_NAME_REGEX =
+      "^"
+          + LETTTER_DIGIT_REGEX
+          + "+("
+          + LETTER_DIGIT_HYPHEN_REGEX
+          + "+"
+          + LETTTER_DIGIT_REGEX
+          + ")*$";
   // protected because implementing servers use this var
   protected final org.slf4j.Logger log;
-  private final String hostname;
+  private String hostname;
   private final String serverId;
   private final List<String> environmentProperties = new ArrayList<>();
   private final List<TigerProxyRoute> serverRoutes = new ArrayList<>();
@@ -204,6 +214,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
                       new TigerEnvironmentStartupException(
                           "Could not reload configuration for server with id %s", getServerId()));
       tigerTestEnvMgr.getConfiguration().getServers().put(getServerId(), configuration);
+      hostname = determineHostname(configuration, serverId);
     } catch (TigerConfigurationException e) {
       throw new TigerEnvironmentStartupException(
           "Could not reload configuration for server " + getServerId(), e);
@@ -235,12 +246,41 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     if (StringUtils.isBlank(serverId)) {
       throw new TigerTestEnvException("Server Id must not be blank!");
     }
+    assertThatServerNameIsCorrect();
     assertCfgPropertySet(getConfiguration(), "type");
+    assertThatServerNameIsUnique();
 
     // set default values for all types
     if (getConfiguration().getStartupTimeoutSec() == null) {
       log.info("Defaulting startup timeout sec to 20 sec for server {}", serverId);
       getConfiguration().setStartupTimeoutSec(20);
+    }
+  }
+
+  private void assertThatServerNameIsUnique() {
+    tigerTestEnvMgr.getServers().values().stream()
+        .filter(other -> other != this)
+        .filter(other -> other.getHostname().equalsIgnoreCase(hostname))
+        .findAny()
+        .ifPresent(
+            other -> {
+              throw new TigerConfigurationException(
+                  "Non-unique hostname detected: '"
+                      + other.getHostname()
+                      + "' of server '"
+                      + other.getServerId()
+                      + "' is (case-insensitive) equal to '"
+                      + hostname
+                      + "' of server '"
+                      + getServerId()
+                      + "'");
+            });
+  }
+
+  private void assertThatServerNameIsCorrect() {
+    if (!getHostname().matches(SERVER_NAME_REGEX)) {
+      throw new TigerConfigurationException(
+          "Hostname '" + getHostname() + "' not valid (used for server '" + getServerId() + "')");
     }
   }
 
@@ -257,7 +297,8 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
       target = mthd.invoke(target);
       if (target == null) {
         throw new TigerTestEnvException(
-            "Server %s must have property %s be set and not be NULL!", getServerId(), propertyName);
+            "Server '%s' must have property %s be set and not be NULL!",
+            getServerId(), propertyName);
       }
       if (target instanceof List) {
         assertListCfgPropertySet((List<?>) target, propertyName);

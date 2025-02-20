@@ -2,11 +2,13 @@
 
 As outlined in xref:tiger_user_manual.adoc#_overview[the overview section] the test environment manager is one of the three core components of the Tiger test framework.
 Its main task is to start various test server nodes configured in the `tiger.yaml` configuration file and initialize the local Tiger Proxy for the test suite.
-To choose a different test environmental configuration file you may set the environment variable `TIGER_TESTENV_CFGFILE`.
+
+=== Tiger.yaml files and how they are chosen and loaded
 
 The test environment manager first checks if the env variable is set and tries to load the configuration file from this value.
 If this file does not exist the test environment manager tries to load the configuration from `tiger.yaml`.
 If none of these files exist it will fail the start-up.
+To choose a different test environment configuration file you may set the environment variable `TIGER_TESTENV_CFGFILE`.
 
 If the environment variable is not set it searches for files named `tiger.yaml` or `tiger.yml`.
 If none of these files exist it will fail the start-up.

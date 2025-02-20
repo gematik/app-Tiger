@@ -22,8 +22,10 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfigurati
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 @Data
+@Accessors(fluent = false, chain = true)
 public class CfgServer {
 
   private String hostname;

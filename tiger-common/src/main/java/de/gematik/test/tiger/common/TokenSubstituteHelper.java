@@ -99,6 +99,9 @@ public final class TokenSubstituteHelper {
     String result = value;
     boolean keepOnReplacing = true;
     int iterationsLeft = MAXIMUM_NUMBER_OF_REPLACEMENTS;
+    if (value == null) {
+      return null;
+    }
     while (keepOnReplacing) {
       keepOnReplacing = false;
       for (Pair<Character, ReplacerFunction> replacer : REPLACER_ORDER) {

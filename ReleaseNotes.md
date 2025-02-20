@@ -2,11 +2,12 @@
 
 # Release 3.7.0
 
-## Features
+## Breaking Changes
 
-* TGR-1727: Tiger Maven Plugin: the tiger plugin can now create a serenity json summary report. This is active by
-  default. You can configure which reports get generated in the maven configuration. E.g.:
-* TGR-1755: **Breaking Change:** Add additional (formerly hidden) mime message levels in encrypted MIME messages, one
+* TGR-1623: "TGR find request to path ..." changed to "TGR find first request to path" to match the German translation
+* TGR-1748: Every server now has to have a valid hostname (either the given server-name or, if present, the
+  hostname-property). This check is now done explicitly at startup.
+* TGR-1755: Add additional (formerly hidden) mime message levels in encrypted MIME messages, one
   for the binary
   signed content structure and one for the rfc822 message structure.
 
@@ -16,6 +17,11 @@
     <reports>html,single-page-html,json-summary</reports>
 </configuration>
 ```
+
+## Features
+
+* TGR-1727: Tiger Maven Plugin: the tiger plugin can now create a serenity json summary report. This is active by
+  default. You can configure which reports get generated in the maven configuration. E.g.:
 
 * TGR-1740: adding package.json to the dependabot checks
 * TGR-1623: "TGR find request to path ..." changed to "TGR find first request to path" to match the German translation,
@@ -450,8 +456,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-    key = PLUGIN_PROPERTY_NAME,
-    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+  key = PLUGIN_PROPERTY_NAME,
+  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }
