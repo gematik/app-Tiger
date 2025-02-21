@@ -22,7 +22,6 @@ def BASE_DIR = 'tiger-testsuite-baseimage'
 def POM_PATH = BASE_DIR + '/pom.xml'
 def JIRA_PROJECT_ID = 'TGR'
 def IMAGE_NAME = "tiger/tiger-testsuite-baseimage"
-def VERSION = "latest"
 
 pipeline {
     options {
@@ -55,7 +54,6 @@ pipeline {
         }
 
         stage('gitCreateBranch') {
-            when { branch BRANCH }
             steps {
                 gitCreateBranch()
             }
@@ -83,11 +81,8 @@ pipeline {
                 }
 
                 stage('Push Docker Image') {
-                    when {
-                        branch BRANCH
-                    }
                     steps {
-                        dockerPushImage(IMAGE_NAME, VERSION, 'tiger-gar-writer', DOCKER_TARGET_REGISTRY)
+                        dockerPushImage(IMAGE_NAME, JIRA_VERSION, 'tiger-gar-writer', DOCKER_TARGET_REGISTRY)
                     }
                 }
 
