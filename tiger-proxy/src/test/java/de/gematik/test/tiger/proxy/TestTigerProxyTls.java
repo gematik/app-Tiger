@@ -52,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.net.ssl.*;
 import kong.unirest.*;
@@ -68,11 +69,11 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContexts;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-import org.bouncycastle.tls.CertificateRequest;
+import org.bouncycastle.tls.*;
 import org.bouncycastle.tls.DefaultTlsClient;
+import org.bouncycastle.tls.ServerOnlyTlsAuthentication;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsClientProtocol;
-import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.jetbrains.annotations.NotNull;
@@ -369,7 +370,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .tls(
                 TigerTlsConfiguration.builder()
-                    .serverTlsProtocols(Stream.of(serverTlsVersion.split(",")).toList())
+                    .serverTlsProtocols(
+                        Stream.of(serverTlsVersion.split(",")).collect(Collectors.toList()))
                     .build())
             .build());
 
@@ -682,7 +684,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   }
 
   @Test
-  void restartMockServer_generatedCaShouldBeUnchanged() throws UnirestException {
+  void restartMockServer_generatedCaShouldBeUnchanged()
+      throws UnirestException {
     final TigerConfigurationPkiIdentity clientIdentity =
         new TigerConfigurationPkiIdentity("src/test/resources/rsa.p12;00");
 
@@ -752,15 +755,10 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
       tlsClientProtocol.connect(
           new DefaultTlsClient(new BcTlsCrypto()) {
             public TlsAuthentication getAuthentication() {
-              return new TlsAuthentication() {
+              return new ServerOnlyTlsAuthentication() {
                 public void notifyServerCertificate(TlsServerCertificate serverCertificate) {
                   serverCertificateConsumer.accept(serverCertificate);
                   checkCounter.incrementAndGet();
-                }
-
-                @Override
-                public TlsCredentials getClientCredentials(CertificateRequest certificateRequest) {
-                  return null;
                 }
               };
             }
@@ -828,12 +826,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     final UnirestInstance mutualTlsInstance = Unirest.spawnInstance();
     mutualTlsInstance.config().sslContext(sslContext);
 
-    assertThatNoException()
-        .isThrownBy(
-            () ->
-                mutualTlsInstance
-                    .get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar")
-                    .asString());
+    mutualTlsInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
   }
 
   @Test
@@ -905,11 +898,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                     .build())
             .build());
 
-    assertThatNoException()
-        .isThrownBy(
-            () ->
-                executeRequestToPathWhileOnlyTrusting(
-                    "www.schmoobar.com", "src/test/resources/rsaStoreWithChain.jks;gematik"));
+    executeRequestToPathWhileOnlyTrusting(
+        "www.schmoobar.com", "src/test/resources/rsaStoreWithChain.jks;gematik");
   }
 
   @SneakyThrows
@@ -928,11 +918,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                     .build())
             .build());
 
-    assertThatNoException()
-        .isThrownBy(
-            () ->
-                executeRequestToPathWhileOnlyTrusting(
-                    "www.schmoobar.com", "src/test/resources/selfSignedCa/rootCa.p12;00"));
+    executeRequestToPathWhileOnlyTrusting(
+        "www.schmoobar.com", "src/test/resources/selfSignedCa/rootCa.p12;00");
   }
 
   private void executeRequestToPathWhileOnlyTrusting(String host, String fileLoadingInformation) {

@@ -179,34 +179,31 @@ public class RBelValidatorGlue {
         RequestParameter.builder().path(path).build().resolvePlaceholders());
   }
 
+
   /**
-   * Please use "TGR find first request to path {string}" instead.
-   *
-   * @deprecated
+   * DEPRECATED please use "TGR find first request to path {string}" instead.
    */
   @Deprecated(since = "3.7.0", forRemoval = true)
   @When("TGR find request to path {string}")
   public void findRequestToPathDeprecated(final String path) {
     rbelValidator.filterRequestsAndStoreInContext(
-        RequestParameter.builder().path(path).build().resolvePlaceholders());
+            RequestParameter.builder().path(path).build().resolvePlaceholders());
   }
 
   /**
-   * Please use "TGR find first request to path {string} with {string} matching {string}" instead.
-   *
-   * @deprecated
+   * DEPRECATED please use "TGR find first request to path {string} with {string} matching {string}" instead.
    */
   @Deprecated(since = "3.7.0", forRemoval = true)
   @When("TGR find request to path {string} with {string} matching {string}")
-  public void findRequestToPathWithCommandDeprecated(
-      final String path, final String rbelPath, final String value) {
+  public void findRequestToPathWithCommand_Deprecated(
+          final String path, final String rbelPath, final String value) {
     rbelValidator.filterRequestsAndStoreInContext(
-        RequestParameter.builder()
-            .path(path)
-            .rbelPath(rbelPath)
-            .value(value)
-            .build()
-            .resolvePlaceholders());
+            RequestParameter.builder()
+                    .path(path)
+                    .rbelPath(rbelPath)
+                    .value(value)
+                    .build()
+                    .resolvePlaceholders());
   }
 
   /**
@@ -288,17 +285,13 @@ public class RBelValidatorGlue {
   }
 
   /**
-   * DEPRECATED please use "TGR find first request to path {string} with {string} containing node
-   * {string}" instead.
-   *
-   * @deprecated
+   * DEPRECATED please use "TGR find first request to path {string} with {string} containing node {string}" instead.
    */
   @Deprecated(since = "3.7.0", forRemoval = true)
   @When("TGR find request to path {string} containing node {string}")
-  public void findFirstRequestToPathContainingNodeDeprecated(
-      final String path, final String rbelPath) {
+  public void findFirstRequestToPathContainingNodeDeprecated(final String path, final String rbelPath) {
     rbelValidator.filterRequestsAndStoreInContext(
-        RequestParameter.builder().path(path).rbelPath(rbelPath).build().resolvePlaceholders());
+            RequestParameter.builder().path(path).rbelPath(rbelPath).build().resolvePlaceholders());
   }
 
   /**

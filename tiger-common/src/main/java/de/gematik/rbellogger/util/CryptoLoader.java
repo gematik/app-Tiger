@@ -60,20 +60,15 @@ public class CryptoLoader {
   }
 
   public static X509Certificate getCertificateFromPem(final byte[] crt) {
-    final InputStream in = new ByteArrayInputStream(crt);
-    return getCertificateFromPem(in);
-  }
-
-  public static X509Certificate getCertificateFromPem(InputStream in) {
     try {
       final CertificateFactory certFactory =
           CertificateFactory.getInstance("X.509", BOUNCY_CASTLE_PROVIDER);
+      final InputStream in = new ByteArrayInputStream(crt);
       final X509Certificate x509Certificate = (X509Certificate) certFactory.generateCertificate(in);
       if (x509Certificate == null) {
         throw new TigerPkiException("Error while loading certificate (null)!");
       }
       return x509Certificate;
-
     } catch (final CertificateException ex) {
       throw new TigerPkiException("Error while loading certificate!", ex);
     }

@@ -21,10 +21,12 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -79,6 +81,25 @@ class CharsetTest {
 
     assertThat(bodyElement.getElementCharset()).isEqualTo(ISO_8859_1);
     assertThat(bodyElement.getRawStringContent()).isEqualTo("àáâãäåæçèéêëìíîï");
+  }
+
+  @Test
+  void readAsn1() throws IOException {
+    final String curlMessage =
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/sampleMessages/certificate.curl");
+
+    final RbelConfiguration configuration = new RbelConfiguration();
+    configuration.activateConversionFor("asn1");
+    final RbelElement convertedMessage =
+        RbelLogger.build(configuration)
+            .getRbelConverter()
+            .convertElement(curlMessage.getBytes(), null);
+
+    assertThat(convertedMessage.findElement("$.body.0.5.0.0.1.content").get().getElementCharset())
+        .isEqualTo(StandardCharsets.US_ASCII);
+    assertThat(convertedMessage.findElement("$.body.0.5.1.0.1.content").get().getElementCharset())
+        .isEqualTo(StandardCharsets.UTF_8);
   }
 
   @Test

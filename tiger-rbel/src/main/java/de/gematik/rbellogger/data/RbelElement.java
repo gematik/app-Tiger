@@ -31,7 +31,6 @@ import javax.annotation.Nullable;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.bouncycastle.util.encoders.Hex;
 
 @SuppressWarnings("unchecked")
 @Getter
@@ -50,7 +49,6 @@ public class RbelElement extends RbelPathAble {
   @Setter private Optional<Charset> charset;
 
   private final long size;
-  @Setter private long conversionTimeInNanos = 0;
 
   public byte[] getRawContent() {
     return content.isNull() ? null : content.toByteArray();
@@ -175,7 +173,7 @@ public class RbelElement extends RbelPathAble {
   }
 
   public boolean hasFacet(Class<? extends RbelFacet> clazz) {
-    return getFacetStream().anyMatch(facet -> clazz.isAssignableFrom(facet.getClass()));
+    return getFacet(clazz).isPresent();
   }
 
   public RbelElement addFacet(RbelFacet facet) {
@@ -223,11 +221,12 @@ public class RbelElement extends RbelPathAble {
   }
 
   private List<RbelElement> traverseAndReturnNestedMembersInternal() {
-    log.atTrace()
-        .addArgument(this::findNodePath)
-        .addArgument(
-            () -> getFacetStream().map(Object::getClass).map(Class::getSimpleName).toList())
-        .log("Traversing into {}: facets are {}");
+    if (log.isTraceEnabled()) {
+      log.trace(
+          "Traversing into {}: facets are {}",
+          findNodePath(),
+          getFacets().stream().map(Object::getClass).map(Class::getSimpleName).toList());
+    }
     if (hasFacet(RbelRootFacet.class)) {
       return List.of(this);
     } else {
@@ -307,9 +306,7 @@ public class RbelElement extends RbelPathAble {
   }
 
   public Optional<String> printValue() {
-    return getFacet(RbelValueFacet.class)
-        .map(RbelValueFacet::getValue)
-        .map(value -> value instanceof byte[] ar ? Hex.toHexString(ar) : value.toString());
+    return getFacet(RbelValueFacet.class).map(RbelValueFacet::getValue).map(Object::toString);
   }
 
   public <T> Optional<T> seekValue(Class<T> clazz) {

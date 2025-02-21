@@ -17,16 +17,19 @@
 package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.facet.RbelBase64Facet;
+import de.gematik.rbellogger.data.facet.RbelJsonFacet;
+import de.gematik.rbellogger.data.facet.RbelRootFacet;
+import de.gematik.rbellogger.data.facet.RbelXmlFacet;
 import de.gematik.rbellogger.util.RbelContent;
 import java.util.Base64;
 import java.util.Optional;
 
-public class RbelBase64JsonConverter implements RbelConverterPlugin {
+public class RbelBase64JsonConverter extends RbelJsonConverter {
 
   @Override
   public void consumeElement(RbelElement rbel, RbelConverter context) {
-    if (rbel.getSize() == 0 || rbel.hasFacet(RbelRootFacet.class)) {
+    if (rbel.getSize() == 0) {
       return;
     }
     var content = rbel.getContent();

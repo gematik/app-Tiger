@@ -46,7 +46,10 @@ class RbelPathExecutorTest {
 
   private static final RbelConverter RBEL_CONVERTER =
       RbelLogger.build(
-              new RbelConfiguration().activateConversionFor("ASN1").setLenientHttpParsing(true))
+              new RbelConfiguration()
+                  .activateConversionFor("X509")
+                  .activateConversionFor("asn1")
+                  .setLenientHttpParsing(true))
           .getRbelConverter();
   private static RbelElement jwtMessage;
   private static RbelElement xmlMessage;
@@ -147,7 +150,7 @@ class RbelPathExecutorTest {
 
   @Test
   void findAllMembers() {
-    assertThat(jwtMessage.findRbelPathMembers("$..*")).hasSize(198);
+    assertThat(jwtMessage.findRbelPathMembers("$..*")).hasSize(224);
   }
 
   @Test

@@ -180,10 +180,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
           performRenderingForBody(renderingToolkit, httpMessageFacet, httpRequestFacet);
     } else {
       // non parseable message
-      messageBodyElements.add(
-          div()
-              .withClass("container")
-              .with(ancestorTitle().with(renderingToolkit.convert(element))));
+      messageBodyElements.add(renderingToolkit.convert(element));
     }
     return collapsibleCard(
         div().with(messageTitleElements).withClass("full-width"),

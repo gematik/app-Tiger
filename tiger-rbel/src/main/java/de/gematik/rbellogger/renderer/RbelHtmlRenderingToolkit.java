@@ -39,7 +39,6 @@ import j2html.tags.DomContent;
 import j2html.tags.EmptyTag;
 import j2html.tags.Tag;
 import j2html.tags.UnescapedText;
-import j2html.tags.specialized.ArticleTag;
 import j2html.tags.specialized.DivTag;
 import j2html.tags.specialized.PTag;
 import java.io.File;
@@ -143,17 +142,17 @@ public class RbelHtmlRenderingToolkit {
 
   @SuppressWarnings({"rawtypes", "java:S3740"})
   public static ContainerTag ancestorTitle() {
-    return div().withClass("tile is-ancestor pe-2");
+    return div().withClass("tile is-ancestor pe-3");
   }
 
   @SuppressWarnings({"rawtypes", "java:S3740"})
   public static ContainerTag vertParentTitle() {
-    return div().withClass("tile is-vertical is-parent pe-2");
+    return div().withClass("tile is-vertical is-parent pe-3");
   }
 
   @SuppressWarnings({"rawtypes", "java:S3740"})
   public static ContainerTag childBoxNotifTitle(final String addClasses) {
-    return div().withClass("tile is-child box notification pe-2 " + addClasses);
+    return div().withClass("tile is-child box notification pe-3 " + addClasses);
   }
 
   @SuppressWarnings({"rawtypes", "java:S3740"})
@@ -631,22 +630,21 @@ public class RbelHtmlRenderingToolkit {
         .filter(pair -> pair.getValue().isPresent())
         .map(
             pair ->
-                generateSubsection(
-                    pair.getKey().findNodePath(), pair.getKey(), pair.getValue().get()))
+                article()
+                    .withClass("message is-ancestor notification is-warning my-6 py-3 px-3")
+                    .with(
+                        div(h2(pair.getKey().findNodePath())
+                                .withClass("title")
+                                .withStyle("word-break: keep-all;"))
+                            .withClass("message-header")
+                            .with(addNotes(pair.getKey()))
+                            .with(showContentButtonAndDialog(pair.getKey(), this)),
+                        div(div(pair.getValue()
+                                    .get()
+                                    .withClass("notification tile is-child box pe-3"))
+                                .withClass("notification tile is-parent pe-3"))
+                            .withClass("message-body px-0")))
         .toList();
-  }
-
-  public ArticleTag generateSubsection(String title, RbelElement element, ContainerTag content) {
-    return article()
-        .withClass("message is-ancestor notification is-warning my-6 py-3 px-3")
-        .with(
-            div(h2(title).withClass("title").withStyle("word-break: break-word;"))
-                .withClass("message-header")
-                .with(addNotes(element))
-                .with(showContentButtonAndDialog(element, this)),
-            div(div(content.withClass("notification tile is-child box pe-2"))
-                    .withClass("notification tile is-parent pe-2"))
-                .withClass("message-body px-0"));
   }
 
   public List<DomContent> packAsInfoLine(String parameterName, DomContent... contentObject) {

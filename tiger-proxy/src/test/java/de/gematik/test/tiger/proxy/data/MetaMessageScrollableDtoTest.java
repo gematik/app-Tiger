@@ -16,17 +16,18 @@
 
 package de.gematik.test.tiger.proxy.data;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.AbstractTigerProxyTest;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Slf4j
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)

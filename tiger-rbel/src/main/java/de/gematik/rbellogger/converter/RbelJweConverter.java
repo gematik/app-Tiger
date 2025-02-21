@@ -16,6 +16,7 @@
 
 package de.gematik.rbellogger.converter;
 
+import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.elements.RbelJweEncryptionInfo;
 import de.gematik.rbellogger.data.facet.RbelJweFacet;
@@ -34,6 +35,10 @@ import org.jose4j.lang.JoseException;
 public class RbelJweConverter implements RbelConverterPlugin {
 
   public static final int MAX_JWE_DOT_SEPARATOR_COUNT = 4;
+
+  static {
+    BrainpoolCurves.init();
+  }
 
   @Override
   public void consumeElement(final RbelElement rbel, final RbelConverter context) {

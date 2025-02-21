@@ -31,19 +31,25 @@ import de.gematik.rbellogger.data.facet.RbelUriFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-@Slf4j
 public class RbelAsn1ConverterTest {
 
   private static RbelLogger rbelLogger;
 
   @BeforeAll
   public static void initRbelLogger() {
+    rbelLogger =
+        RbelLogger.build(
+            new RbelConfiguration()
+                .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+                .activateConversionFor("asn1"));
+  }
+
+  public void parseRezepsCapture() {
     rbelLogger =
         RbelLogger.build(
             new RbelConfiguration()
@@ -59,22 +65,14 @@ public class RbelAsn1ConverterTest {
   @SneakyThrows
   @Test
   void shouldRenderCleanHtml() {
+    parseRezepsCapture();
     assertThat(RbelHtmlRenderer.render(rbelLogger.getMessageHistory())).isNotBlank();
   }
 
   @Test
   void checkXmlInPkcs7InXml() throws IOException {
     // check OID
-    /*RbelElement convertMessage = null;
-    long t1 = System.currentTimeMillis();
-    final String input =
-        readCurlFromFileWithCorrectedLineBreaks("src/test/resources/xmlWithNestedPkcs7.curl");
-    for (int i = 0; i < 20; i++) {
-      convertMessage = rbelLogger.getRbelConverter().convertElement(input, null);
-    }
-    long t2 = System.currentTimeMillis();
-    System.out.println("Time: " + (t2 - t1) / 20 + "ms");*/
-    RbelElement convertMessage =
+    final RbelElement convertMessage =
         rbelLogger
             .getRbelConverter()
             .convertElement(
@@ -84,56 +82,8 @@ public class RbelAsn1ConverterTest {
     assertThat(
             convertMessage.findRbelPathMembers("$..author.type.value").stream()
                 .map(RbelElement::getRawStringContent)
-                .toList())
+                .collect(Collectors.toList()))
         .contains("Practitioner");
-  }
-
-  @Test
-  void charsetShouldBeDecodedCorrectly() throws IOException {
-    final String curlMessage =
-        readCurlFromFileWithCorrectedLineBreaks(
-            "src/test/resources/sampleMessages/certificate.curl");
-
-    final RbelElement convertedMessage =
-        rbelLogger.getRbelConverter().convertElement(curlMessage.getBytes(), null);
-
-    assertThat(convertedMessage.findElement("$.body.0.5.0.0.1.content").get().getElementCharset())
-        .isEqualTo(StandardCharsets.US_ASCII);
-    assertThat(convertedMessage.findElement("$.body.0.5.1.0.1.content").get().getElementCharset())
-        .isEqualTo(StandardCharsets.UTF_8);
-  }
-
-  @Test
-  void parseEmbededAsn1() throws IOException {
-    final RbelElement convertMessage =
-        rbelLogger
-            .getRbelConverter()
-            .convertElement(
-                readCurlFromFileWithCorrectedLineBreaks("src/test/resources/smallNestedAsn1.curl"),
-                null);
-
-    // just some assertions into the nested ASN.1 structure
-    assertThat(convertMessage)
-        .extractChildWithPath("$..[?(@.0.name == 'pkcs1-MGF')]")
-        .hasGivenValueAtPosition("$.1.0.name", "sha-256");
-  }
-
-  @Test
-  void parseXmlWithRandomLinebreaks_shouldTrimStringBeforeParsing() {
-    final RbelElement convertMessage =
-        rbelLogger
-            .getRbelConverter()
-            .convertElement(
-                "<data>\r\r"
-                    + "MEEGCSqGSIb3DQEBCjA0oA8wDQYJYIZIAWUDBAIBBQChHDAaBgkqhkiG9w0BAQgwDQYJYIZIAWUDBAIBBQCiAwIBIA"
-                    + "\t \n"
-                    + " </data>",
-                null);
-
-    // just some assertions into the nested ASN.1 structure
-    assertThat(convertMessage)
-        .extractChildWithPath("$..[?(@.0.name == 'pkcs1-MGF')]")
-        .hasGivenValueAtPosition("$.1.0.name", "sha-256");
   }
 
   @Test
@@ -141,46 +91,50 @@ public class RbelAsn1ConverterTest {
     final RbelElement convertMessage =
         rbelLogger.getRbelConverter().convertElement("MAMKAVU=", null);
 
-    assertThat(convertMessage).hasGivenValueAtPosition("$.0", BigInteger.valueOf(85L));
-  }
-
-  @Test
-  void nestedStringShouldBePresentInContentNodeAndValue() {
-    final RbelElement convertMessage =
-        rbelLogger.getRbelConverter().convertElement("MAkGA1UEBhMCREU=", null);
-
-    assertThat(convertMessage)
-        .hasGivenValueAtPosition("$.1", "DE")
-        .extractChildWithPath("$.1.content")
-        .hasStringContentEqualTo("DE")
-        .hasCharset(StandardCharsets.US_ASCII);
+    assertThat(convertMessage.findRbelPathMembers("$.0").get(0).seekValue(BigInteger.class))
+        .get()
+        .extracting(BigInteger::intValueExact)
+        .isEqualTo(85);
   }
 
   @Test
   void testVariousRbelPathInPcap() {
+    parseRezepsCapture();
     // check OID
     final RbelElement rbelMessage = rbelLogger.getMessageList().get(58);
     // The extractChildPath moves the pointer from the given element to its child so subsequent
     // chaining
     // starts from the "new root" element and thus the code will fail,
     assertThat(rbelMessage) // NOSONAR
-        .hasGivenValueAtPosition("$.body.0.2.0", "1.2.840.10045.4.3.2")
-        // check X509-Version (Tagged-sequence)
-        .hasGivenValueAtPosition("$.body.0.0.content", BigInteger.valueOf(2))
-        // check OCSP URL
-        .hasGivenFacetAtPosition(
-            "$.body.0.7.content.3.1.content.0.1.content.content", RbelUriFacet.class)
-        .hasGivenFacetAtPosition("$.body.0.7.content.3.1.content.0", RbelAsn1Facet.class)
-        .hasGivenFacetAtPosition("$.body.0.7.content.3.1.content.0", RbelAsn1Facet.class)
-        .hasGivenFacetAtPosition(
-            "$.body.0.7.content.3.1.content.0.1", RbelAsn1TaggedValueFacet.class)
-        .hasGivenValueAtPosition("$.body.0.7.content.3.1.content.0.1.tag", 6)
+        .extractChildWithPath("$.body.0.2.0")
+        .hasValueEqualTo("1.2.840.10045.4.3.2");
+    // check X509-Version (Tagged-sequence)
+    assertThat(rbelMessage)
+        .extractChildWithPath("$.body.0.0.content")
+        .hasValueEqualTo(BigInteger.valueOf(2));
+    // check OCSP URL
+    assertThat(rbelMessage)
         .extractChildWithPath("$.body.0.7.content.3.1.content.0.1.content.content")
-        .hasStringContentEqualTo("http://ehca.gematik.de/ocsp/")
-        // Parse y-coordinate of signature (Nested in BitString)
-        .andTheInitialElement()
-        .hasGivenValueAtPosition(
-            "$.body.2.content.1",
+        .hasFacet(RbelUriFacet.class);
+    assertThat(rbelMessage)
+        .extractChildWithPath("$.body.0.7.content.3.1.content.0")
+        .hasFacet(RbelAsn1Facet.class);
+    assertThat(rbelMessage)
+        .extractChildWithPath("$.body.0.7.content.3.1.content.0")
+        .hasFacet(RbelAsn1Facet.class);
+    assertThat(rbelMessage)
+        .extractChildWithPath("$.body.0.7.content.3.1.content.0.1")
+        .hasFacet(RbelAsn1TaggedValueFacet.class);
+    assertThat(rbelMessage)
+        .extractChildWithPath("$.body.0.7.content.3.1.content.0.1.tag")
+        .hasValueEqualTo(6);
+    assertThat(rbelMessage)
+        .extractChildWithPath("$.body.0.7.content.3.1.content.0.1.content.content")
+        .hasStringContentEqualTo("http://ehca.gematik.de/ocsp/");
+    // Parse y-coordinate of signature (Nested in BitString)
+    assertThat(rbelMessage)
+        .extractChildWithPath("$.body.2.content.1")
+        .hasValueEqualTo(
             new BigInteger(
                 "9528585714247878020400211740123936754253798904841060501006300662224159406199"));
   }

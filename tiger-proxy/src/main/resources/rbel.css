@@ -15,7 +15,7 @@
 }
 
 .rbel-main-content {
-    /*margin-left: 20%;*/
+    margin-left: 20%;
 }
 
 .mainsection {
@@ -113,27 +113,23 @@ div.message-header {
 .notification .tile .message-body {
     padding: .25rem;
 }
-
 .is-size-4 {
     font-size: 1.3rem !important;
 }
-
 td {
     padding: .3rem !important;
     border-style: unset;
 }
-
-.card-content {
+.card-content{
     padding: .5rem;
 }
-
 pre {
     color: #fa4 !important;
     background-color: #444 !important;
     white-space: pre-wrap;
     word-wrap: break-word;
     padding: .5rem;
-    font-size: .7rem;
+    font-size: .7em;
     margin-bottom: 0;
 }
 
@@ -151,6 +147,7 @@ pre.json {
 
 pre.binary {
     max-width: 800px;
+    padding: 0.7rem 1.5rem;
 }
 
 pre.value, pre.json, pre.value div, pre.json div {
@@ -309,7 +306,7 @@ pre.json {
 #scrollLockBtn,
 #collapsibleMessageHeaderBtn,
 #collapsibleMessageDetailsBtn {
-    display: inline-flex;
+    display:inline-flex;
 }
 
 @media screen and (max-width: 1023px) {
@@ -329,7 +326,7 @@ pre.json {
     padding-bottom: 1rem;
     line-height: 1.5;
     padding: 0.5rem 0.75rem;
-    color: rgba(255, 255, 255, .7);
+    color: rgba(255,255,255,.7);
 }
 
 .navbar-end .navbar-item {
@@ -369,7 +366,6 @@ pre.json {
     font-weight: 400;
     height: 2em;
 }
-
 .dropdown-content-black {
     background-color: #373a3c;
 }
@@ -379,12 +375,10 @@ pre.json {
     margin-left: 2em;
     margin-top: 0.5em;
 }
-
 .dropdown-content {
     max-height: 100vh;
     overflow: auto;
 }
-
 .box {
     background-color: #fff;
     border-radius: 6px;
@@ -393,65 +387,51 @@ pre.json {
     padding: 1.25rem;
     margin-bottom: 1.5rem;
 }
-
 #contextParent {
     padding-left: 0.8rem;
     padding-right: 0.8rem;
 }
-
 .col.is-one-fifth {
     flex: none;
     width: 20%;
 }
 
 .is-size-1 {
-    font-size: 3rem !important
+    font-size:3rem!important
 }
 
 .is-size-2 {
-    font-size: 2.5rem !important
+    font-size:2.5rem!important
 }
 
 .is-size-3 {
-    font-size: 2rem !important
+    font-size:2rem!important
 }
 
-.is-size-5 {
-    font-size: 1.25rem !important
+.is-size-5{
+    font-size:1.25rem!important
 }
-
-.is-size-6 {
-    font-size: 1rem !important
+.is-size-6{
+    font-size:1rem!important
 }
-
-.is-size-7 {
-    font-size: .75rem !important
+.is-size-7{
+    font-size:.75rem!important
 }
 
 a.has-text-link:focus,
-a.has-text-link:hover {
-    color: #205bbc !important
+a.has-text-link:hover{
+    color:#205bbc!important
 }
-
-.has-text-dark {
-    color: #373a3c !important
+.has-text-dark{
+    color:#373a3c!important
 }
-
 a.has-text-dark:focus,
-a.has-text-dark:hover {
-    color: #1f2021 !important
-}
-
-.has-text-weight-bold {
-    font-weight: 700 !important
-}
-
-.has-text-weight-light {
-    font-weight: 300 !important
-}
+a.has-text-dark:hover{color:#1f2021!important}
+.has-text-weight-bold{font-weight:700!important}
+.has-text-weight-light{font-weight:300!important}
 
 .has-text-warning {
-    color: #9b479f !important;
+    color: #9b479f!important;
 }
 
 a {
@@ -459,26 +439,18 @@ a {
     color: #029acf;
     text-decoration: none;
 }
-
 a.mt-3.is-block {
     text-decoration: none;
 }
 
-.has-background-dark {
-    background-color: #373a3c !important
-}
-
-.has-text-danger {
-    color: #d9831f !important
-}
-
+.has-background-dark{background-color:#373a3c!important}
+.has-text-danger{color:#d9831f!important}
 .has-text-success {
-    color: #469408 !important;
+    color: #469408!important;
     text-decoration: none;
 }
-
 .has-text-link {
-    color: #029acf !important;
+    color: #029acf!important;
 }
 
 .button .icon:last-child:not(:first-child) {
@@ -508,27 +480,23 @@ a.mt-3.is-block {
 }
 
 .tile.is-child {
-    margin: 0 !important;
+    margin: 0!important;
 }
 
-.tile.is-vertical > .tile.is-child {
-    margin-top: 1.5rem !important;
+.tile.is-vertical>.tile.is-child {
+    margin-top: 1.5rem!important;
 }
-
 .tile.is-vertical {
     flex-direction: column;
 }
-
 .tile.is-parent {
     padding-left: 1rem;
     padding-top: 0rem;
     padding-bottom: 0.75rem;
 }
-
 .card-header {
     padding: 0rem 0rem;
 }
-
 .notification {
     background-color: #f5f5f5;
     border-radius: 4px;
@@ -547,13 +515,11 @@ a.mt-3.is-block {
     color: #0fc5d9;
     border: 1px solid #8aecf7;
 }
-
 .notification.is-success {
     background-color: #f9fef5;
     color: #469408;
     border: 1px solid #90f540;
 }
-
 .notification .title {
     color: currentColor;
 }
@@ -582,7 +548,6 @@ a.mt-3.is-block {
     padding-right: 0.75em;
     white-space: nowrap;
 }
-
 .msg-sequence {
     height: 2.5rem !important;
 }
@@ -597,7 +562,7 @@ a.mt-3.is-block {
 
 .btn-dark {
     border: 1px solid #27292b;
-    background-image: linear-gradient(180deg, #3e4244 0%, #373a3c 60%, #303234 100%);
+    background-image: linear-gradient(180deg,#3e4244 0%,#373a3c 60%,#303234 100%);
     -webkit-filter: none;
     filter: none;
 }
@@ -616,7 +581,6 @@ article.message {
     margin-left: 1.5em;
     margin-bottom: 1em;
 }
-
 #jexlModal,
 #filterModal {
     max-width: 75%;
@@ -627,7 +591,6 @@ article.message {
     font-size: 1.5rem;
     margin-right: 1rem;
 }
-
 .tabs {
     align-items: stretch;
     display: flex;
@@ -637,15 +600,12 @@ article.message {
     overflow-x: auto;
     white-space: nowrap;
 }
-
 .tabs > .icon {
     margin-right: 0.5rem;
 }
-
 .field {
     display: flex;
 }
-
 .field-label {
     margin-right: 1.5rem;
     text-align: right;
@@ -668,12 +628,12 @@ article.message {
 
 .btn-success {
     color: #fff;
-    background-color: #469408 !important;
-    border-color: #469408 !important;
+    background-color: #469408!important;
+    border-color: #469408!important;
 }
 
 .btn-outline-success {
-    border-color: #469408 !important;
+    border-color: #469408!important;
     color: #469408;
 }
 
@@ -684,7 +644,7 @@ article.message {
 }
 
 .text-success {
-    color: #469408 !important;
+    color: #469408!important;
 }
 
 .notification.is-warning {
@@ -711,5 +671,5 @@ p {
 }
 
 .bg-success {
-    background-color: #469408 !important;
+    background-color: #469408!important;
 }

@@ -77,14 +77,14 @@ public class RbelConversionException extends GenericTigerException {
   }
 
   public void printDetailsToLog(Logger log) {
-    log.atDebug().log(this::generateGenericConversionErrorMessage);
+    log.atInfo().log(this::generateGenericConversionErrorMessage);
     log.debug("Stack trace", this);
-    if (log.isTraceEnabled()) {
-      log.trace(
+    if (log.isDebugEnabled()) {
+      log.debug(
           "Content in failed conversion-attempt was (B64-encoded) {}",
           Base64.getEncoder().encodeToString(currentElement.getRawContent()));
       if (currentElement.getParentNode() != null) {
-        log.trace(
+        log.debug(
             "Parent-Content in failed conversion-attempt was (B64-encoded) {}",
             Base64.getEncoder().encodeToString(currentElement.getParentNode().getRawContent()));
       }

@@ -58,7 +58,7 @@ class RbelElementTreePrinterTest {
             .printTreeStructure();
 
     assertThat(responseCodeTree)
-        .contains("(" + expectedValueInPrintedTree + ")")
+        .contains(" (" + expectedValueInPrintedTree + ")")
         .contains("──" + expectedKeyInPrintedTree + " ");
   }
 }

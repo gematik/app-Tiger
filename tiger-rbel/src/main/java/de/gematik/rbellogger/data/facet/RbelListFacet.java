@@ -20,7 +20,6 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -42,14 +41,5 @@ public class RbelListFacet implements RbelFacet {
 
   public boolean isEmpty() {
     return childNodes.isEmpty();
-  }
-
-  public static RbelElement wrap(
-      final RbelElement parent,
-      final Function<RbelElement, List<RbelElement>> childNodeFactory,
-      final byte[] content) {
-    final RbelElement result = new RbelElement(content, parent);
-    result.addFacet(new RbelListFacet(childNodeFactory.apply(result)));
-    return result;
   }
 }

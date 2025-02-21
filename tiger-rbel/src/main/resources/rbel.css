@@ -15,6 +15,7 @@
  */
 
 
+
 hex-viewer {
     display: inline !important;
 }
@@ -70,11 +71,11 @@ td {
 }
 
 .rbel-main-content {
-    /*margin-left: 20%;*/
+    margin-left: 20%;
 }
 
 .mainsection {
-    flex-wrap: wrap-reverse;
+   flex-wrap: wrap-reverse;
 }
 
 /* Layout für große Bildschirme */
@@ -146,6 +147,7 @@ pre.json {
 
 pre.binary {
     max-width: 800px;
+    padding: 0.7rem 1.5rem;
 }
 
 pre.value, pre.json, pre.value div, pre.json div {
@@ -448,7 +450,7 @@ pre {
     white-space: pre-wrap;
     word-wrap: break-word;
     padding: .5rem;
-    font-size: .7rem;
+    font-size: .7em;
     margin-bottom: 0;
 }
 
@@ -469,6 +471,7 @@ pre.json {
 
 pre.binary {
     max-width: 800px;
+    padding: 0.7rem 1.5rem;
 }
 
 pre.value, pre.json, pre.value div, pre.json div {

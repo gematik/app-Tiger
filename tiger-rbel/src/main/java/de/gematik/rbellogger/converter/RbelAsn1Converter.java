@@ -16,11 +16,8 @@
 
 package de.gematik.rbellogger.converter;
 
-import static de.gematik.rbellogger.data.util.OidDictionary.buildAndAddAsn1OidFacet;
-
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.*;
-import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.util.RbelException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -32,13 +29,10 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.Base64.Decoder;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.apache.commons.io.input.BoundedInputStream;
+import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -50,7 +44,6 @@ import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1PrintableString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1String;
@@ -65,215 +58,143 @@ public class RbelAsn1Converter implements RbelConverterPlugin {
 
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter context) {
-    // Avoid re-parsing of ASN.1 structures already parsed by other converters.
-    // This might happen if the element is an X.509 certificate or an OCSP-Response
-    if (rbelElement.getContent().size() < 3 || rbelElement.hasFacet(RbelRootFacet.class)) {
-      return;
+    if (!tryToParseAsn1Structure(
+            new ByteArrayInputStream(rbelElement.getRawContent()), context, rbelElement)
+        && !safeConvertBase64Using(rbelElement, Base64.getDecoder(), context)) {
+      safeConvertBase64Using(rbelElement, Base64.getUrlDecoder(), context);
     }
-
-    tryToParseAsn1Structure(rbelElement.getContent().toInputStream(), context, rbelElement)
-        .or(
-            () ->
-                decodeIntoInputStream(rbelElement, Base64.getDecoder())
-                    .flatMap(stream -> tryToParseAsn1Structure(stream, context, rbelElement)))
-        .or(
-            () ->
-                decodeIntoInputStream(rbelElement, Base64.getUrlDecoder())
-                    .flatMap(stream -> tryToParseAsn1Structure(stream, context, rbelElement)))
-        .ifPresent(facet -> rbelElement.addFacet(new RbelRootFacet<>(facet)));
   }
 
-  private Optional<InputStream> decodeIntoInputStream(RbelElement rbelElement, Decoder decoder) {
+  private boolean safeConvertBase64Using(
+      RbelElement rbelElement, Decoder decoder, RbelConverter context) {
+    InputStream data;
+
     try {
-      return Optional.ofNullable(decoder.wrap(trimmedInputStream(rbelElement)));
-    } catch (RuntimeException e) {
-      return Optional.empty();
+      data = decoder.wrap(withoutTrailingNewLine(rbelElement.getRawContent()));
+    } catch (IllegalArgumentException e) {
+      return false;
     }
+    if (data != null) {
+      return tryToParseAsn1Structure(data, context, rbelElement);
+    }
+    return false;
   }
 
   @SneakyThrows
-  private InputStream trimmedInputStream(RbelElement element) {
-    byte[] data = element.getContent().toByteArray();
-    int start = 0;
-    int end = data.length;
-    while (start < end && Character.isWhitespace((char) data[start])) {
-      start++;
+  private InputStream withoutTrailingNewLine(byte[] data) {
+    if (data.length > 0 && data[data.length - 1] == '\n') {
+      if (data.length > 1 && data[data.length - 2] == '\r') {
+        return BoundedInputStream.builder().setBufferSize(data.length - 2).setByteArray(data).get();
+      }
+      return BoundedInputStream.builder().setBufferSize(data.length - 1).setByteArray(data).get();
     }
-    while (end > start && Character.isWhitespace((char) data[end - 1])) {
-      end--;
-    }
-    final BoundedInputStream result =
-        BoundedInputStream.builder()
-            .setInputStream(new ByteArrayInputStream(data))
-            .setMaxCount(end)
-            .get();
-    if (start != result.skip(start)) {
-      throw new RbelConversionException("Error while skipping whitespace", element, this);
-    }
-    return result;
+    return new ByteArrayInputStream(data);
   }
 
-  @SneakyThrows
-  private Optional<RbelAsn1Facet> tryToParseAsn1Structure(
-      InputStream data, RbelConverter converter, RbelElement element) {
-    if (data.available() < 3 || element.hasFacet(RbelAsn1Facet.class)) {
-      return Optional.empty();
-    }
-    Optional<RbelAsn1Facet> result = Optional.empty();
+  private boolean tryToParseAsn1Structure(
+      InputStream data, RbelConverter converter, RbelElement parentNode) {
     try (ASN1InputStream input = new ASN1InputStream(data)) {
       ASN1Primitive primitive;
       while ((primitive = input.readObject()) != null) {
-        if (element.hasFacet(RbelAsn1Facet.class)
-            || element.hasFacet(RbelAsn1TaggedValueFacet.class)) {
-          log.trace("Stream with multiple ASN.1 Instances encountered! Skipping");
-          return Optional.empty();
+        if (parentNode.hasFacet(RbelAsn1Facet.class)) {
+          if (Arrays.equals(primitive.getEncoded(), parentNode.getRawContent())) {
+            return true;
+          } else {
+            log.debug("Stream with multiple ASN.1 Instances encountered! Skipping");
+            return false;
+          }
         }
 
-        if (primitive instanceof ASN1Sequence
-            || element.getParentNode() != null
-                && (element.getParentNode().hasFacet(RbelAllowAsn1FragmentsFacet.class)
-                    || element.getParentNode().hasFacet(RbelAsn1Facet.class))) {
-          result = Optional.ofNullable(convertToAsn1Facet(primitive, converter, element));
+        try {
+          convertToAsn1Facets(ASN1Sequence.getInstance(primitive), converter, parentNode);
+        } catch (IllegalArgumentException e) {
+          return false;
         }
-
         if (input.available() != 0) {
-          result.ifPresent(facet -> element.getFacets().remove(facet));
-          return Optional.empty();
+          log.warn(
+              "Found a ASN.1-Stream with more then a single element. The rest of the element will"
+                  + " be skipped");
+          parentNode.addFacet(
+              new RbelAsn1UnparsedBytesFacet(new RbelElement(input.readAllBytes(), parentNode)));
         }
+        parentNode.addFacet(new RbelRootFacet<>(parentNode.getFacetOrFail(RbelAsn1Facet.class)));
       }
-      return result;
-    } catch (IOException | RuntimeException e) {
+      return true;
+    } catch (IOException e) {
       log.trace("Error while parsing element", e);
-      return Optional.empty();
+      return false;
     }
   }
 
-  private RbelAsn1Facet convertToAsn1Facet(
+  private void convertToAsn1Facets(
       ASN1Encodable asn1, RbelConverter converter, RbelElement parentNode) throws IOException {
-    val result = RbelAsn1Facet.builder().asn1Content(asn1).build();
-    parentNode.addFacet(result);
+    parentNode.addFacet(RbelAsn1Facet.builder().asn1Content(asn1).build());
     if ((asn1 instanceof ASN1Sequence) || (asn1 instanceof ASN1Set)) {
-      convertSequence((Iterable<ASN1Encodable>) asn1, converter, parentNode);
+      List<RbelElement> rbelSequence = new ArrayList<>();
+      for (ASN1Encodable encodable : (Iterable<ASN1Encodable>) asn1) {
+        RbelElement newChild =
+            new RbelElement(encodable.toASN1Primitive().getEncoded(), parentNode);
+        convertToAsn1Facets(encodable, converter, newChild);
+        rbelSequence.add(newChild);
+      }
+      parentNode.addFacet(RbelListFacet.builder().childNodes(rbelSequence).build());
     } else if (asn1 instanceof ASN1TaggedObject asn1TaggedObject) {
-      convertTaggedObject(converter, parentNode, asn1TaggedObject);
+      final int tagNo = asn1TaggedObject.getTagNo();
+      final ASN1Primitive nestedObject = asn1TaggedObject.getBaseObject().toASN1Primitive();
+      RbelElement nestedElement = new RbelElement(nestedObject.getEncoded(), parentNode);
+      convertToAsn1Facets(nestedObject, converter, nestedElement);
+      parentNode.addFacet(
+          new RbelAsn1TaggedValueFacet(
+              RbelElement.wrap(BigInteger.valueOf(tagNo).toByteArray(), parentNode, tagNo),
+              nestedElement));
     } else if (asn1 instanceof ASN1Integer asn1Integer) {
       parentNode.addFacet(RbelValueFacet.builder().value(asn1Integer.getValue()).build());
     } else if (asn1 instanceof ASN1ObjectIdentifier asn1ObjectIdentifier) {
-      convertOid(parentNode, asn1ObjectIdentifier);
+      parentNode.addFacet(RbelValueFacet.builder().value(asn1ObjectIdentifier.getId()).build());
     } else if (asn1 instanceof ASN1OctetString asn1OctetString) {
-      convertOctetString(converter, parentNode, asn1OctetString);
+      final byte[] octets = asn1OctetString.getOctets();
+      parentNode.addFacet(RbelValueFacet.builder().value(octets).build());
+      tryToParseEmbededContentAndAddFacetIfPresent(converter, parentNode, octets);
     } else if (asn1 instanceof ASN1BitString asn1BitString) {
-      convertBitString(converter, parentNode, asn1BitString);
-    } else if (asn1 instanceof ASN1PrintableString asn1String) {
-      convertPrintableString(asn1, converter, parentNode, asn1String);
+      final byte[] octets = asn1BitString.getOctets();
+      parentNode.addFacet(RbelValueFacet.builder().value(octets).build());
+      tryToParseEmbededContentAndAddFacetIfPresent(converter, parentNode, octets);
     } else if (asn1 instanceof ASN1String asn1String) {
-      convertString(asn1, converter, parentNode, asn1String);
+      parentNode.addFacet(RbelValueFacet.builder().value(asn1String.getString()).build());
+      tryToParseEmbededContentAndAddFacetIfPresent(
+          converter, parentNode, ((ASN1Primitive) asn1).getEncoded());
+      addCharsetInformation(parentNode, asn1);
     } else if (asn1 instanceof ASN1Boolean asn1Boolean) {
       parentNode.addFacet(RbelValueFacet.builder().value(asn1Boolean.isTrue()).build());
     } else if (asn1 instanceof ASN1Null) {
       parentNode.addFacet(RbelValueFacet.builder().value(null).build());
     } else if (asn1 instanceof ASN1UTCTime asn1UTCTime) {
-      convertUtcTime(asn1, parentNode, asn1UTCTime);
+      try {
+        parentNode.addFacet(
+            RbelValueFacet.builder()
+                .value(
+                    ZonedDateTime.ofInstant(
+                        asn1UTCTime.getAdjustedDate().toInstant(), ZoneId.of("UTC")))
+                .build());
+      } catch (ParseException e) {
+        throw new RbelException("Error during time-conversion of " + asn1, e);
+      }
     } else if (asn1 instanceof ASN1GeneralizedTime asn1GeneralizedTime) {
-      convertGeneralizedTime(asn1, parentNode, asn1GeneralizedTime);
+      try {
+        parentNode.addFacet(
+            RbelValueFacet.builder()
+                .value(
+                    ZonedDateTime.ofInstant(
+                        asn1GeneralizedTime.getDate().toInstant(), ZoneId.of("UTC")))
+                .build());
+      } catch (ParseException e) {
+        throw new RbelException("Error during time-conversion of " + asn1, e);
+      }
     } else if (asn1 instanceof ASN1Enumerated asn1Enumerated) {
       parentNode.addFacet(RbelValueFacet.builder().value(asn1Enumerated.getValue()).build());
     } else {
       log.warn("Unable to convert " + asn1.getClass().getSimpleName() + "!");
     }
-    return result;
-  }
-
-  private static void convertGeneralizedTime(
-      ASN1Encodable asn1, RbelElement parentNode, ASN1GeneralizedTime asn1GeneralizedTime) {
-    try {
-      parentNode.addFacet(
-          RbelValueFacet.builder()
-              .value(
-                  ZonedDateTime.ofInstant(
-                      asn1GeneralizedTime.getDate().toInstant(), ZoneId.of("UTC")))
-              .build());
-    } catch (ParseException e) {
-      throw new RbelException("Error during time-conversion of " + asn1, e);
-    }
-  }
-
-  private static void convertUtcTime(
-      ASN1Encodable asn1, RbelElement parentNode, ASN1UTCTime asn1UTCTime) {
-    try {
-      parentNode.addFacet(
-          RbelValueFacet.builder()
-              .value(
-                  ZonedDateTime.ofInstant(
-                      asn1UTCTime.getAdjustedDate().toInstant(), ZoneId.of("UTC")))
-              .build());
-    } catch (ParseException e) {
-      throw new RbelException("Error during time-conversion of " + asn1, e);
-    }
-  }
-
-  @SneakyThrows
-  private void convertString(
-      ASN1Encodable asn1, RbelConverter converter, RbelElement parentNode, ASN1String asn1String) {
-    parentNode.addFacet(RbelValueFacet.builder().value(asn1String.getString()).build());
-    addCharsetInformation(parentNode, asn1);
-    tryToParseEmbeddedContentAndAddFacetIfPresent(
-        converter, parentNode, asn1String.getString().getBytes(parentNode.getElementCharset()));
-  }
-
-  private void convertPrintableString(
-      ASN1Encodable asn1,
-      RbelConverter converter,
-      RbelElement parentNode,
-      ASN1PrintableString asn1String) {
-    parentNode.addFacet(RbelValueFacet.builder().value(asn1String.getString()).build());
-    addCharsetInformation(parentNode, asn1);
-    tryToParseEmbeddedContentAndAddFacetIfPresent(converter, parentNode, asn1String.getOctets());
-  }
-
-  private void convertBitString(
-      RbelConverter converter, RbelElement parentNode, ASN1BitString asn1BitString) {
-    final byte[] octets = asn1BitString.getOctets();
-    parentNode.addFacet(RbelValueFacet.builder().value(octets).build());
-    tryToParseEmbeddedContentAndAddFacetIfPresent(converter, parentNode, octets);
-  }
-
-  private void convertOctetString(
-      RbelConverter converter, RbelElement parentNode, ASN1OctetString asn1OctetString) {
-    final byte[] octets = asn1OctetString.getOctets();
-    parentNode.addFacet(RbelValueFacet.builder().value(octets).build());
-    tryToParseEmbeddedContentAndAddFacetIfPresent(converter, parentNode, octets);
-  }
-
-  private static void convertOid(
-      RbelElement parentNode, ASN1ObjectIdentifier asn1ObjectIdentifier) {
-    parentNode.addFacet(RbelValueFacet.builder().value(asn1ObjectIdentifier.getId()).build());
-    buildAndAddAsn1OidFacet(parentNode, asn1ObjectIdentifier.getId());
-  }
-
-  private void convertTaggedObject(
-      RbelConverter converter, RbelElement parentNode, ASN1TaggedObject asn1TaggedObject)
-      throws IOException {
-    final int tagNo = asn1TaggedObject.getTagNo();
-    final ASN1Primitive nestedObject = asn1TaggedObject.getBaseObject().toASN1Primitive();
-    RbelElement nestedElement = new RbelElement(nestedObject.getEncoded(), parentNode);
-    convertToAsn1Facet(nestedObject, converter, nestedElement);
-    parentNode.addFacet(
-        new RbelAsn1TaggedValueFacet(
-            RbelElement.wrap(BigInteger.valueOf(tagNo).toByteArray(), parentNode, tagNo),
-            nestedElement));
-  }
-
-  private void convertSequence(
-      Iterable<ASN1Encodable> asn1, RbelConverter converter, RbelElement parentNode)
-      throws IOException {
-    List<RbelElement> rbelSequence = new ArrayList<>();
-    for (ASN1Encodable encodable : asn1) {
-      RbelElement newChild = new RbelElement(encodable.toASN1Primitive().getEncoded(), parentNode);
-      convertToAsn1Facet(encodable, converter, newChild);
-      rbelSequence.add(newChild);
-    }
-    parentNode.addFacet(RbelListFacet.builder().childNodes(rbelSequence).build());
   }
 
   private void addCharsetInformation(RbelElement parentNode, ASN1Encodable asn1) {
@@ -284,32 +205,10 @@ public class RbelAsn1Converter implements RbelConverterPlugin {
     }
   }
 
-  private void tryToParseEmbeddedContentAndAddFacetIfPresent(
+  private void tryToParseEmbededContentAndAddFacetIfPresent(
       RbelConverter converter, RbelElement parentNode, byte[] octets) {
     RbelElement nestedElement = new RbelElement(octets, parentNode);
-    val facet = new RbelNestedFacet(nestedElement);
-    try {
-      parentNode.addFacet(facet);
-      converter.convertElement(nestedElement);
-      nestedElement.getFacets().stream()
-          .filter(RbelRootFacet.class::isInstance)
-          .map(RbelRootFacet.class::cast)
-          .filter(f -> f.getRootFacet() instanceof RbelAsn1Facet)
-          .toList()
-          .forEach(f -> nestedElement.getFacets().remove(f));
-    } catch (RuntimeException e) {
-      parentNode.getFacets().remove(facet);
-    }
-  }
-
-  /**
-   * Marker-facet. This indicates that an ASN.1 fragment (a non-nested structure, e.g. a naked date)
-   * may stand for itself (without a parent ASN.1 node).
-   */
-  @Data
-  @AllArgsConstructor
-  @RequiredArgsConstructor
-  public static class RbelAllowAsn1FragmentsFacet implements RbelFacet {
-    private boolean shouldParse = true;
+    converter.convertElement(nestedElement);
+    parentNode.addFacet(new RbelNestedFacet(nestedElement));
   }
 }

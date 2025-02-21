@@ -105,10 +105,9 @@ public class RbelConverterInitializer {
     ConverterInfo converterInfo = converterClass.getAnnotation(ConverterInfo.class);
     if (converterInfo.onlyActivateFor() != null && converterInfo.onlyActivateFor().length > 0) {
       if (Arrays.stream(converterInfo.onlyActivateFor())
-          .noneMatch(
-              item ->
-                  activateRbelParsingFor.stream()
-                      .anyMatch(activated -> activated.equalsIgnoreCase(item)))) {
+          .filter(activateRbelParsingFor::contains)
+          .toList()
+          .isEmpty()) {
         log.atTrace()
             .addArgument(converterClass::getSimpleName)
             .log("SKIPPING optional converter {}");
@@ -138,7 +137,6 @@ public class RbelConverterInitializer {
                 RbelVauEpaKeyDeriver.class,
                 RbelMtomConverter.class,
                 RbelX509Converter.class,
-                RbelAsn1Converter.class,
                 RbelX500Converter.class,
                 RbelSicctEnvelopeConverter.class,
                 RbelSicctCommandConverter.class,

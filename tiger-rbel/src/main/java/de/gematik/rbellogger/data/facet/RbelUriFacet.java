@@ -64,7 +64,7 @@ public class RbelUriFacet implements RbelFacet {
                       vertParentTitle()
                           .with(
                               div()
-                                  .withClass("tile is-child pe-2")
+                                  .withClass("tile is-child pe-3")
                                   .with(urlContent)
                                   .with(addNotes(element))
                                   .with(renderingToolkit.convertNested(element))));

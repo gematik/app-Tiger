@@ -78,10 +78,10 @@ public class RbelLdapConverter implements RbelConverterPlugin {
       rbelElement.addFacet(new RbelRootFacet<>(rbelLdapFacet));
       handleRequestResponse(rbelElement, ldapMessage);
     } catch (final ASN1Exception | LDAPException | IOException e) {
-      log.trace("Attempt to parse LDAP failed", e);
-      log.atTrace()
-          .addArgument(() -> HexFormat.of().formatHex(rbelElement.getRawContent()))
-          .log("Cannot parse: {}");
+      log.debug("Attempt to parse LDAP failed: " + e.getMessage());
+      final byte[] message = rbelElement.getRawContent();
+      final String messageStr = HexFormat.of().formatHex(message);
+      log.debug(" Cannot parse: " + messageStr);
     }
   }
 

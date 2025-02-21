@@ -294,12 +294,7 @@ public class RbelContextDecorator {
       return obj.getFirst(CONTENT).map(RbelContextDecorator::forceStringConvert).orElse("");
     } else if (obj instanceof RbelElement rbelElement
         && rbelElement.hasFacet(RbelValueFacet.class)) {
-      final Object value = rbelElement.getFacetOrFail(RbelValueFacet.class).getValue();
-      if (value == null) {
-        return "<null>";
-      } else {
-        return value.toString();
-      }
+      return rbelElement.getFacetOrFail(RbelValueFacet.class).getValue().toString();
     } else if (obj.getRawStringContent() != null) {
       return obj.getRawStringContent();
     } else {

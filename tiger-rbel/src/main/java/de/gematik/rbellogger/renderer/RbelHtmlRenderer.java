@@ -20,6 +20,7 @@ import static j2html.TagCreator.*;
 
 import de.gematik.rbellogger.converter.RbelValueShader;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelAsn1Facet;
 import de.gematik.rbellogger.util.BinaryClassifier;
 import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
@@ -29,6 +30,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -41,6 +43,7 @@ public class RbelHtmlRenderer {
   public static final String OVERSIZE_REPLACEMENT_TEXT_POST = " Mb...>";
   public static final String MODAL = "modal";
   private final RbelValueShader rbelValueShader;
+  @Setter private boolean renderAsn1Objects = false;
   @Setter private boolean renderNestedObjectsWithoutFacetRenderer = false;
   @Setter private int maximumEntitySizeInBytes = 4 * 1024 * 1024;
   @Setter private String title = "Tiger Proxy Log";
@@ -186,11 +189,18 @@ public class RbelHtmlRenderer {
       final RbelElement element,
       final Optional<String> key,
       final RbelHtmlRenderingToolkit renderingToolkit) {
-    if (element.getFacets().isEmpty()) {
+    if (element.getFacets().isEmpty() && ArrayUtils.isEmpty(element.getRawContent())) {
       return Optional.empty();
     }
     final List<ContainerTag> renderedFacets =
         htmlRenderer.stream()
+            .filter(
+                renderer ->
+                    renderAsn1Objects
+                        || !(renderer
+                            .getClass()
+                            .getName()
+                            .startsWith(RbelAsn1Facet.class.getName())))
             .filter(renderer -> renderer.checkForRendering(element))
             .sorted(Comparator.comparing(RbelHtmlFacetRenderer::order))
             .map(renderer -> renderer.performRendering(element, key, renderingToolkit))
