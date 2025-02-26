@@ -2,8 +2,9 @@
 
 def runKimStages(kimVersion) {
     // init kim sim
-    executeRun("Start Tiger Proxies", "tiger", kimVersion)
+    executeRun("Copy Config", "config", kimVersion)
     executeRun("Start KIM Simulation", "kimSim", kimVersion)
+    executeRun("Start Tiger Proxies", "tiger", kimVersion)
     echo "KIM Simulation gestartet – warte 60 Sekunden..."
     sleep 60
     executeRun("Start CM Simulation", "cmSim", kimVersion)
@@ -111,6 +112,11 @@ pipeline {
                     }
                 }
             }
+
+            // Archive Tiger proxy logs as artifacts
+            archiveArtifacts artifacts: 'kim-tiger-dc/tiger-proxies-nodocker/logs/*.log',
+                             allowEmptyArchive: true,
+                             fingerprint: true
         }
         changed {
             sendEMailNotification(getTigerEMailList())
