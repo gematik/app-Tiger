@@ -31,6 +31,7 @@
 
 * TGR-1753: Shorten rbel-log file names in serenity report further to avoid too long file names when extracting report
   on Windows
+* TGR-1766: Rbel: Fixed parent-elements in POP3 Headers and XML Processing Instructions
 * TGR-1760: Tiger Global Configuration: reading a boolean out of the configuration will now resolve placeholders before
   parsing the resulting string into a boolean.
 

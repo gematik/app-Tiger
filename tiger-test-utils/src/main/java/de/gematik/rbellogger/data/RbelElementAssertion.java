@@ -20,8 +20,11 @@ import de.gematik.rbellogger.data.facet.RbelFacet;
 import de.gematik.rbellogger.data.facet.RbelValueFacet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
+import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.*;
 
+@Slf4j
 public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, RbelElement> {
 
   private RbelElement initial;
@@ -29,11 +32,13 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
   public RbelElementAssertion(RbelElement actual) {
     super(actual, RbelElementAssertion.class);
     initial = actual;
+    hasCorrectParentKeysSetInAllElements(actual);
   }
 
   private RbelElementAssertion(RbelElement actual, RbelElement initial) {
     super(actual, RbelElementAssertion.class);
     this.initial = initial;
+    hasCorrectParentKeysSetInAllElements(actual);
   }
 
   public static RbelElementAssertion assertThat(RbelElement actual) {
@@ -147,5 +152,17 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
           facetClass.getSimpleName(), new ArrayList<>(actual.getFacets()));
     }
     return new ObjectAssert<>(actual.getFacetOrFail(facetClass));
+  }
+
+  private void hasCorrectParentKeysSetInAllElements(RbelElement actual) {
+    for (Entry<String, RbelElement> child : actual.getChildNodesWithKey().entries()) {
+      if (child.getValue().getParentNode() != actual) {
+        log.error(actual.printTreeStructure());
+        failWithMessage(
+            "Expecting all parents to be correct. Fail for child $.%s of element %s",
+            child.getKey(), actual.findNodePath());
+      }
+      hasCorrectParentKeysSetInAllElements(child.getValue());
+    }
   }
 }

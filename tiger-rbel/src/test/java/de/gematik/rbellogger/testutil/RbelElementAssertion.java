@@ -25,8 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.*;
 
+@Slf4j
 public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, RbelElement> {
 
   private RbelElement initial;
@@ -34,11 +36,13 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
   public RbelElementAssertion(RbelElement actual) {
     super(actual, RbelElementAssertion.class);
     initial = actual;
+    hasCorrectParentKeysSetInAllElements(actual);
   }
 
   private RbelElementAssertion(RbelElement actual, RbelElement initial) {
     super(actual, RbelElementAssertion.class);
     this.initial = initial;
+    hasCorrectParentKeysSetInAllElements(actual);
   }
 
   public static RbelElementAssertion assertThat(RbelElement actual) {
@@ -170,7 +174,7 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
   }
 
   public RbelElementAssertion andPrintTree() {
-    System.out.println(actual.printTreeStructure());
+    log.info(actual.printTreeStructure());
     return this;
   }
 
@@ -187,16 +191,12 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
     return new ListAssert<>(actual.findRbelPathMembers(rbelPath));
   }
 
-  public RbelElementAssertion hasCorrectParentKeysSetInAllElements() {
-    hasCorrectParentKeysSetInAllElements(actual);
-    return this;
-  }
-
   private void hasCorrectParentKeysSetInAllElements(RbelElement actual) {
     for (Entry<String, RbelElement> child : actual.getChildNodesWithKey().entries()) {
       if (child.getValue().getParentNode() != actual) {
+        log.error(actual.printTreeStructure());
         failWithMessage(
-            "Expecting all parents to be correct. Fail for child %s of element %s",
+            "Expecting all parents to be correct. Fail for child $.%s of element %s",
             child.getKey(), actual.findNodePath());
       }
       hasCorrectParentKeysSetInAllElements(child.getValue());
