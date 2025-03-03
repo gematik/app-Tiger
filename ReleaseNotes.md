@@ -18,17 +18,25 @@
 </configuration>
 ```
 
+* TGR-1625: Tiger-Proxy: The X500-Parser is no longer added by default. Please use "X500", "X509" or "ASN1" to activate
+  it.
+
 ## Features
 
 * TGR-1727: Tiger Maven Plugin: the tiger plugin can now create a serenity json summary report. This is active by
   default. You can configure which reports get generated in the maven configuration. E.g.:
-
+* TGR-1625: RBel: OIDs in ASN.1 now feature the dot-notation as well as a human-readable name (if existing in an
+  internal database)
+* TGR-1625: Tiger-Proxy: The "activateConversionFor" list is now case-insensitive.
+* TGR-1625: OCSP-Responses can now be converted. To activate, add "OCSP" to the `activateConversionFor` list.
 * TGR-1740: adding package.json to the dependabot checks
 * TGR-1623: "TGR find request to path ..." changed to "TGR find first request to path" to match the German translation,
   old english step is now deprecated
 
 ## Bugfixes
 
+* TGR-1625: Nested ASN.1-objects are no longer displayed as seperate entities when they reside immediately in another
+  ASN.1 structure. This helps make longer structures, for example X.509-certificates, more readable.
 * TGR-1753: Shorten rbel-log file names in serenity report further to avoid too long file names when extracting report
   on Windows
 * TGR-1766: Rbel: Fixed parent-elements in POP3 Headers and XML Processing Instructions

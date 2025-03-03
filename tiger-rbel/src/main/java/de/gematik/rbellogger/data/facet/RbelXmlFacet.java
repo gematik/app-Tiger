@@ -81,7 +81,7 @@ public class RbelXmlFacet implements RbelFacet {
                     vertParentTitle()
                         .with(
                             div()
-                                .withClass("tile is-child pe-3")
+                                .withClass("tile is-child pe-2")
                                 .with(pre(new Text(formattedXml)).withClass("json language-xml"))
                                 .with(renderingToolkit.convertNested(element))));
           }

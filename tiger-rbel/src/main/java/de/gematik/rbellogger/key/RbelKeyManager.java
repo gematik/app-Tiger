@@ -24,6 +24,7 @@ import java.util.*;
 import java.util.stream.Stream;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.util.encoders.Hex;
 
 @Slf4j
 public class RbelKeyManager {
@@ -56,40 +57,41 @@ public class RbelKeyManager {
                           .addKey("token_key", aesKey, RbelKey.PRECEDENCE_KEY_FOLDER));
 
   private final List<RbelKey> keyList = new ArrayList<>();
+  private final Set<RbelKey> keySet = new HashSet<>();
 
   public synchronized RbelKeyManager addAll(Map<String, RbelKey> keys) {
     keyList.addAll(keys.values());
     return this;
   }
 
-  public synchronized void addKey(RbelKey rbelKey) {
+  public synchronized Optional<RbelKey> addKey(RbelKey rbelKey) {
     if (rbelKey.getKey() == null) {
-      return;
+      return Optional.empty();
     }
 
     if (keyIsPresentInList(rbelKey)) {
       log.trace("Skipping adding key: Key is already known!");
+      return Optional.empty();
     } else {
       keyList.add(rbelKey);
+      keySet.add(rbelKey);
+
+      log.debug("Added key {} (Now there are {} keys known)", rbelKey.getKeyName(), keyList.size());
+      return Optional.of(rbelKey);
     }
   }
 
-  public synchronized RbelKey addKey(String keyId, Key key, int precedence) {
+  public synchronized Optional<RbelKey> addKey(String keyId, Key key, int precedence) {
     final RbelKey rbelKey =
         RbelKey.builder().keyName(keyId).key(key).precedence(precedence).build();
 
-    if (keyIsPresentInList(rbelKey)) {
-      log.trace("Skipping adding key: Key is already known!");
-    } else {
-      keyList.add(rbelKey);
-
-      log.debug("Added key {} (Now there are {} keys known)", keyId, keyList.size());
-    }
-
-    return rbelKey;
+    return addKey(rbelKey);
   }
 
   private synchronized boolean keyIsPresentInList(RbelKey key) {
+    log.atTrace()
+        .addArgument(() -> Hex.toHexString(key.getHash()))
+        .log("Checking if key is already known: {}");
     return keyList.stream().anyMatch(oldKey -> oldKey.equals(key));
   }
 
@@ -108,8 +110,8 @@ public class RbelKeyManager {
 
   public synchronized Optional<RbelKey> findKeyByName(String keyName) {
     return getAllKeys()
-        .filter(candidate -> candidate.getKeyName() != null)
-        .filter(candidate -> candidate.getKeyName().equals(keyName))
+        .filter(
+            candidate -> candidate.getKeyName() != null && candidate.getKeyName().equals(keyName))
         .findFirst();
   }
 }

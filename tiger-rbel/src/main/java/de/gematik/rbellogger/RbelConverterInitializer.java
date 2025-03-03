@@ -105,9 +105,10 @@ public class RbelConverterInitializer {
     ConverterInfo converterInfo = converterClass.getAnnotation(ConverterInfo.class);
     if (converterInfo.onlyActivateFor() != null && converterInfo.onlyActivateFor().length > 0) {
       if (Arrays.stream(converterInfo.onlyActivateFor())
-          .filter(activateRbelParsingFor::contains)
-          .toList()
-          .isEmpty()) {
+          .noneMatch(
+              item ->
+                  activateRbelParsingFor.stream()
+                      .anyMatch(activated -> activated.equalsIgnoreCase(item)))) {
         log.atTrace()
             .addArgument(converterClass::getSimpleName)
             .log("SKIPPING optional converter {}");
@@ -148,7 +149,8 @@ public class RbelConverterInitializer {
                 RbelEncryptedMailConverter.class,
                 RbelPkcs7Converter.class,
                 RbelSmtpCommandConverter.class,
-                RbelSmtpResponseConverter.class));
+                RbelSmtpResponseConverter.class,
+                RbelAsn1Converter.class));
     Reflections reflections = new Reflections("de.gematik");
     reflections.getSubTypesOf(RbelConverterPlugin.class).stream()
         .filter(c -> !initialList.contains(c))

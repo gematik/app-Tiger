@@ -6,10 +6,11 @@
         </encoder>
     </appender>
 
-    <logger name="org.apache" level="INFO" />
-    <logger name="httpclient" level="INFO" />
+    <logger name="org.reflections" level="WARN"/>
+    <logger name="org.apache" level="INFO"/>
+    <logger name="httpclient" level="INFO"/>
 
     <root level="INFO">
-        <appender-ref ref="STDOUT" />
+        <appender-ref ref="STDOUT"/>
     </root>
 </configuration>

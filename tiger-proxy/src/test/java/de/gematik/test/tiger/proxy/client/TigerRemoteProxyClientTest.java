@@ -206,6 +206,7 @@ class TigerRemoteProxyClientTest {
 
     TigerProxyTestHelper.waitUntilMessageListInRemoteProxyClientContainsCountMessagesWithTimeout(
         tigerRemoteProxyClient, 2, 10);
+    tigerProxy.waitForAllCurrentMessagesToBeParsed();
 
     assertThat(tigerRemoteProxyClient.getRbelMessagesList().get(0))
         .extractChildWithPath("$.body")
@@ -471,6 +472,7 @@ class TigerRemoteProxyClientTest {
 
       TigerProxyTestHelper.waitUntilMessageListInRemoteProxyClientContainsCountMessagesWithTimeout(
           newlyConnectedRemoteClient, 2, 10);
+      tigerProxy.waitForAllCurrentMessagesToBeParsed();
 
       Mockito.verify(tigerWebUiController)
           .downloadTraffic(Mockito.isNull(), Mockito.any(), Mockito.any(), Mockito.any());
@@ -504,6 +506,7 @@ class TigerRemoteProxyClientTest {
         TigerProxyTestHelper
             .waitUntilMessageListInRemoteProxyClientContainsCountMessagesWithTimeout(
                 newlyConnectedRemoteClient, 4, 10);
+        tigerProxy.waitForAllCurrentMessagesToBeParsed();
 
         Mockito.verify(tigerWebUiController)
             .downloadTraffic(Mockito.isNull(), Mockito.any(), Mockito.any(), Mockito.any());

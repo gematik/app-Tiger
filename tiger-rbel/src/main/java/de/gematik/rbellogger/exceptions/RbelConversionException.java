@@ -59,6 +59,13 @@ public class RbelConversionException extends GenericTigerException {
   }
 
   public RbelConversionException(
+      String msg, Exception e, RbelElement currentElement, RbelConverterPlugin plugin) {
+    super(msg, e);
+    this.currentElement = currentElement;
+    this.converter = plugin;
+  }
+
+  public RbelConversionException(
       String message, RbelElement currentElement, RbelConverterPlugin plugin) {
     super(message);
     this.currentElement = currentElement;
@@ -77,14 +84,14 @@ public class RbelConversionException extends GenericTigerException {
   }
 
   public void printDetailsToLog(Logger log) {
-    log.atInfo().log(this::generateGenericConversionErrorMessage);
+    log.atDebug().log(this::generateGenericConversionErrorMessage);
     log.debug("Stack trace", this);
-    if (log.isDebugEnabled()) {
-      log.debug(
+    if (log.isTraceEnabled()) {
+      log.trace(
           "Content in failed conversion-attempt was (B64-encoded) {}",
           Base64.getEncoder().encodeToString(currentElement.getRawContent()));
       if (currentElement.getParentNode() != null) {
-        log.debug(
+        log.trace(
             "Parent-Content in failed conversion-attempt was (B64-encoded) {}",
             Base64.getEncoder().encodeToString(currentElement.getParentNode().getRawContent()));
       }

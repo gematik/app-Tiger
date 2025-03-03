@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,36 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package de.gematik.rbellogger.data.facet;
+
+import static j2html.TagCreator.*;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import java.util.function.Function;
 import lombok.Builder;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.Value;
 
-@Slf4j
-@Data
-@RequiredArgsConstructor
-@Builder(toBuilder = true)
-public class RbelMapFacet implements RbelFacet {
+@Value
+@Builder
+public class RbelAsn1ExtensionFacet implements RbelFacet {
 
-  private final RbelMultiMap<RbelElement> childNodes;
+  RbelElement critical;
+  RbelElement oid;
+  RbelElement value;
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
-    return childNodes;
-  }
-
-  public static RbelElement wrap(
-      final RbelElement parent,
-      final Function<RbelElement, RbelMultiMap<RbelElement>> childNodeFactory,
-      final byte[] content) {
-    final RbelElement result = new RbelElement(content, parent);
-    result.addFacet(new RbelMapFacet(childNodeFactory.apply(result)));
-    return result;
+    return new RbelMultiMap<RbelElement>()
+        .with("critical", critical)
+        .with("oid", oid)
+        .with("value", value);
   }
 }

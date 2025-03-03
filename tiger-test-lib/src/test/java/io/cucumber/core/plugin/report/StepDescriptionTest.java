@@ -51,7 +51,8 @@ class StepDescriptionTest {
   @ParameterizedTest
   @ValueSource(
       strings = {
-        "io.cucumber.core.plugin.report.StepDescriptionTest.testMethod(java.util.List<java.util.Map<String, Integer>>)",
+        "io.cucumber.core.plugin.report.StepDescriptionTest.testMethod(java.util.List<java.util.Map<String,"
+            + " Integer>>)",
         "io.cucumber.core.plugin.report.StepDescriptionTest.testMethod2(java.lang.String)",
       })
   void isMethodResolvable_OK(String methodName) {
@@ -67,9 +68,11 @@ class StepDescriptionTest {
   @ParameterizedTest
   @ValueSource(
       strings = {
-        "io.cucumber.core.plugin.report.StepDescriptionTest.testMethodNOT(java.util.List<java.util.Map<String, Integer>>)",
+        "io.cucumber.core.plugin.report.StepDescriptionTest.testMethodNOT(java.util.List<java.util.Map<String,"
+            + " Integer>>)",
         // unknown method
-        "io.cucumber.core.plugin.report.StepDescriptionTestNOT.testMethod(java.util.List<java.util.Map<String, Integer>>)",
+        "io.cucumber.core.plugin.report.StepDescriptionTestNOT.testMethod(java.util.List<java.util.Map<String,"
+            + " Integer>>)",
         // unknown class
         "io.cucumber.core.plugin.report.StepDescriptionTest.testMethod1(java.util.Map)",
         // wrong params

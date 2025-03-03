@@ -114,15 +114,14 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
 
   private RbelElement buildSmtpBody(RbelSmtpCommand command, RbelElement element, String[] lines) {
     return switch (command) {
-      case AUTH ->
-          lines.length > 2
-              ? EmailConversionUtils.createChildElement(
-                  element,
-                  Arrays.stream(lines)
-                      .skip(1)
-                      .limit(lines.length - 2L)
-                      .collect(Collectors.joining(EmailConversionUtils.CRLF)))
-              : null;
+      case AUTH -> lines.length > 2
+          ? EmailConversionUtils.createChildElement(
+              element,
+              Arrays.stream(lines)
+                  .skip(1)
+                  .limit(lines.length - 2L)
+                  .collect(Collectors.joining(EmailConversionUtils.CRLF)))
+          : null;
       case DATA -> EmailConversionUtils.parseMailBody(element, lines);
       default -> null;
     };

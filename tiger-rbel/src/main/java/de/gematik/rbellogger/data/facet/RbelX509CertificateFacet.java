@@ -22,7 +22,7 @@ import static j2html.TagCreator.*;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
+import de.gematik.rbellogger.data.util.AbstractX509FacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
@@ -33,14 +33,14 @@ import lombok.Builder;
 import lombok.Data;
 
 @Data
-public class RbelX509Facet implements RbelFacet {
+public class RbelX509CertificateFacet implements RbelFacet {
 
   static {
     RbelHtmlRenderer.registerFacetRenderer(
-        new RbelHtmlFacetRenderer() {
+        new AbstractX509FacetRenderer() {
           @Override
           public boolean checkForRendering(RbelElement element) {
-            return element.hasFacet(RbelX509Facet.class);
+            return element.hasFacet(RbelX509CertificateFacet.class);
           }
 
           @Override
@@ -48,22 +48,23 @@ public class RbelX509Facet implements RbelFacet {
               RbelElement element,
               Optional<String> key,
               RbelHtmlRenderingToolkit renderingToolkit) {
-            final RbelX509Facet x509Facet = element.getFacetOrFail(RbelX509Facet.class);
+            final RbelX509CertificateFacet x509Facet =
+                element.getFacetOrFail(RbelX509CertificateFacet.class);
             return div(
-                h2().withClass("title").withText("X509 Certificate"),
-                p().with(b().withText("Subject: "))
-                    .withText(x509Facet.getSubject().printValue().orElse("")),
-                p().with(b().withText("Issuer: "))
-                    .withText(x509Facet.getIssuer().printValue().orElse("")),
-                p().with(b().withText("Serialnumber: "))
-                    .withText(x509Facet.getSerialnumber().printValue().orElse("")),
-                p().with(b().withText("Valid From: "))
-                    .withText(x509Facet.getValidFrom().printValue().orElse("")),
-                p().with(b().withText("Valid Until: "))
-                    .withText(x509Facet.getValidUntil().printValue().orElse("")),
-                br(),
-                ancestorTitle()
-                    .with(vertParentTitle().with(renderingToolkit.convertNested(element))));
+                    h2().withClass("title").withText("X509 Certificate"),
+                    retrieveAndPrintValueNullSafe("Subject: ", x509Facet.getSubject()),
+                    retrieveAndPrintValueNullSafe("Issuer: ", x509Facet.getIssuer()),
+                    retrieveAndPrintValueNullSafe("Serialnumber: ", x509Facet.getSerialnumber()),
+                    retrieveAndPrintValueNullSafe("Valid From: ", x509Facet.getValidFrom()),
+                    retrieveAndPrintValueNullSafe("Valid Until: ", x509Facet.getValidUntil()),
+                    br())
+                .with(
+                    x509Facet.getExtensions().getChildNodes().stream()
+                        .map(ext -> renderX509Extension(ext, renderingToolkit))
+                        .toList())
+                .with(
+                    ancestorTitle()
+                        .with(vertParentTitle().with(renderingToolkit.convertNested(element))));
           }
         });
   }
@@ -73,16 +74,18 @@ public class RbelX509Facet implements RbelFacet {
   private final RbelElement validFrom;
   private final RbelElement validUntil;
   private final RbelElement subject;
+  private final RbelElement extensions;
   private final X509Certificate certificate;
 
   @Builder
-  public RbelX509Facet(
+  public RbelX509CertificateFacet(
       final RbelElement parent,
       final String serialnumber,
       final RbelElement issuer,
       final ZonedDateTime validFrom,
       final ZonedDateTime validUntil,
       final RbelElement subject,
+      final RbelElement extensions,
       final X509Certificate certificate) {
     this.serialnumber = RbelElement.wrap(parent, serialnumber);
     this.issuer = issuer;
@@ -90,6 +93,7 @@ public class RbelX509Facet implements RbelFacet {
     this.validUntil = RbelElement.wrap(parent, validUntil);
     this.subject = subject;
     this.certificate = certificate;
+    this.extensions = extensions;
   }
 
   @Override
@@ -99,6 +103,7 @@ public class RbelX509Facet implements RbelFacet {
         .with("issuer", issuer)
         .with("validFrom", validFrom)
         .with("validUntil", validUntil)
-        .with("subject", subject);
+        .with("subject", subject)
+        .with("extensions", extensions);
   }
 }

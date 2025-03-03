@@ -138,7 +138,8 @@ class TestEnvManagerConfigurationCheck {
         .rootCause()
         .isInstanceOf(TigerConfigurationException.class)
         .hasMessageContaining(
-            "Non-unique hostname detected: 'similiarName' of server 'tigerServer1' is (case-insensitive) equal to 'similiarname' of server 'tigerServer2'");
+            "Non-unique hostname detected: 'similiarName' of server 'tigerServer1' is"
+                + " (case-insensitive) equal to 'similiarname' of server 'tigerServer2'");
   }
 
   @Test

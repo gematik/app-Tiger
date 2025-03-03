@@ -33,12 +33,14 @@ import java.util.Optional;
 import java.util.stream.StreamSupport;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 
 @Data
 @Builder(toBuilder = true)
+@Slf4j
 public class RbelAsn1Facet implements RbelFacet {
 
   private static final GenericPrettyPrinter<ASN1Encodable> ASN1_PRETTY_PRINTER =
@@ -67,6 +69,11 @@ public class RbelAsn1Facet implements RbelFacet {
                 br(),
                 ancestorTitle()
                     .with(vertParentTitle().with(renderingToolkit.convertNested(element))));
+          }
+
+          @Override
+          public int order() {
+            return 10000;
           }
         });
   }
