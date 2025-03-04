@@ -15,40 +15,50 @@
 /// limitations under the License.
 ///
 
-
-
-import {defineConfig} from 'vite'
-import vue from '@vitejs/plugin-vue'
-import path from 'path';
-import svgLoader from 'vite-svg-loader';
-import {fileURLToPath, URL} from "node:url";
-
+import { defineConfig } from "vite";
+import vue from "@vitejs/plugin-vue";
+import path from "path";
+import svgLoader from "vite-svg-loader";
+import { fileURLToPath, URL } from "node:url";
+import { viteSingleFile } from "vite-plugin-singlefile";
 
 // https://vite.dev/config/
-export default defineConfig({
-  resolve: {
-    alias: {
-      "~bootstrap": path.resolve(__dirname, "node_modules/bootstrap"),
-      "~fontawesome": path.resolve(__dirname, "node_modules/@fortawesome/fontawesome-free"),
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
-    },
-  },
-  server: {
-    proxy: {
-      "/api/route": {
-        target: "http://localhost:8080",
-        changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/api/, "/"),
-      },
-      "/api": {
-        target: "http://localhost:8080",
-        changeOrigin: true,
-        rewrite: (path: string) => path.replace(/^\/api/, "/nextwebui"),
+export default defineConfig(({mode}) => {
+  const isDetachedDistMode = mode === "detached";
+
+  return {
+    resolve: {
+      alias: {
+        "~fontawesome": path.resolve(__dirname, "node_modules/@fortawesome/fontawesome-free"),
+        "@detached": path.resolve(__dirname, "dist-detached"),
+        "@": fileURLToPath(new URL("./src", import.meta.url)),
       },
     },
-  },
-  plugins: [vue(), svgLoader()],
-  build: {
-    sourcemap: true,
-  },
+    server: {
+      proxy: {
+        "/api/route": {
+          target: "http://localhost:8080",
+          changeOrigin: true,
+          rewrite: (path: string) => path.replace(/^\/api/, "/"),
+        },
+        "/api": {
+          target: "http://localhost:8080",
+          changeOrigin: true,
+          rewrite: (path: string) => path.replace(/^\/api/, "/nextwebui"),
+        },
+      },
+    },
+    define: {
+      __IS_DETACHED_MODE__: isDetachedDistMode,
+      __IS_ONLINE_MODE__: !isDetachedDistMode,
+      __USE_FONTS_OVER_CDN__: isDetachedDistMode,
+    },
+    plugins: [vue(), svgLoader(), isDetachedDistMode ? viteSingleFile() : null],
+    build: {
+      minify: true,
+      outDir: isDetachedDistMode ? "dist-detached" : "dist",
+      target: "ES2022",
+      sourcemap: true,
+    },
+  };
 });

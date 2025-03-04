@@ -79,7 +79,7 @@ export type JexlQueryResponseDto = QueryResponseDto & {
 };
 
 export type RbelTreeResponseDto = QueryResponseDto & {
-  elementsWithTree: Record<string, string> | null;
+  elementsWithTree: Record<string, string>[] | null;
 };
 
 export type RouteDto = {

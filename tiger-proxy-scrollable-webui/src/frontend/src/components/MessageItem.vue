@@ -22,6 +22,7 @@ import type { MetaMessageDto } from "@/api/MessageTypes.ts";
 import { computed, type DeepReadonly, ref, type Ref } from "vue";
 import { useResizeObserver } from "@vueuse/core";
 import ShareOutlined from "@/assets/share-outlined.svg";
+import { faShare } from "@fortawesome/free-solid-svg-icons";
 
 const props = defineProps<{
   message: DeepReadonly<MetaMessageDto>;
@@ -69,11 +70,7 @@ const seqLabel = computed(() => {
       </div>
     </div>
     <div class="grid">
-      <FontAwesomeIcon
-        icon="fs fa-share"
-        class="request align-self-center"
-        v-if="message.request"
-      />
+      <FontAwesomeIcon :icon="faShare" class="request align-self-center" v-if="message.request" />
       <ShareOutlined class="response align-self-center" v-if="!message.request" />
       <div class="text-ellipsis ms-2 align-self-center">{{ message.infoString }}</div>
       <div

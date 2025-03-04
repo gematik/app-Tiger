@@ -34,6 +34,7 @@ import StatusHeader from "@/components/StatusHeader.vue";
 import SettingsHeader from "@/components/SettingsHeader.vue";
 import RbelQueryModal from "@/components/RbelQueryModal.vue";
 import RouteModal from "@/components/RouteModal.vue";
+import ExportModal from "@/components/ExportModal.vue";
 
 const settings = useSettings();
 provide(settingsSymbol, settings);
@@ -109,15 +110,17 @@ const isEmbedded = query.has("embedded");
       </div>
     </div>
     <!-- Filter Modal -->
-    <RbelFilterModal />
+    <RbelFilterModal v-if="__IS_ONLINE_MODE__" />
     <!-- Jexl Query Modal -->
-    <RbelQueryModal />
+    <RbelQueryModal v-if="__IS_ONLINE_MODE__" />
     <!-- Raw Content of Message Modal -->
     <RawContentModal />
     <!-- Search Modal -->
     <SearchModal />
     <!-- Proxy Route Modal -->
-    <RouteModal />
+    <RouteModal v-if="__IS_ONLINE_MODE__" />
+    <!-- Export Modal -->
+    <ExportModal v-if="__IS_ONLINE_MODE__" />
     <div class="d-flex">
       <Sidebar
         v-if="!isEmbedded"

@@ -24,18 +24,28 @@ import { controlledComputed, refWithControl } from "@vueuse/core";
 import "simple-syntax-highlighter/dist/sshpre.css";
 import MessageItem from "@/components/MessageItem.vue";
 import { Modal } from "bootstrap";
-import { useSearchMessages } from "@/api/SearchMessages.ts";
+import { type SearchMessagesReturn, useSearchMessages } from "@/api/SearchMessages.ts";
 import { rbelFilterSymbol } from "@/api/RbelFilter.ts";
 
 const messageQueue = inject(messageQueueSymbol)!;
 const rbelFilter = inject(rbelFilterSymbol)!;
 const toast = inject(toastSymbol)!;
 
-const search = useSearchMessages(rbelFilter.rbelPath, {
-  onError: (errMsg: string) => {
-    toast.showToast(errMsg);
-  },
-});
+let search: SearchMessagesReturn;
+if (__IS_ONLINE_MODE__) {
+  search = useSearchMessages(rbelFilter.rbelPath, {
+    onError: (errMsg: string) => {
+      toast.showToast(errMsg);
+    },
+  });
+} else {
+  search = {
+    isLoading: ref(false),
+    resetSearch(): void {},
+    search(): void {},
+    searchResult: ref(null),
+  };
+}
 
 const searchResult = search.searchResult;
 const invalidIndexResult = ref<string | null>(null);
@@ -135,8 +145,9 @@ const nrOfSearchMatches = computed(
           />
           <div class="invalid-feedback">{{ errorMessage }}</div>
           <div class="mt-1 text-muted mb-2" v-if="!errorMessage">
-            Search for messages by sequence number (e.g. <code>#123</code>) or JEXL Expression.
-            Press <kbd>Enter &#9166;</kbd> to jump to the first result.
+            Search for messages by sequence number (e.g.
+            <code>#123</code>){{ __IS_ONLINE_MODE__ ? " or JEXL Expression" : "" }}. Press
+            <kbd>Enter &#9166;</kbd> to jump to the first result.
           </div>
           <div class="d-flex gap-2 align-items-center">
             <div>

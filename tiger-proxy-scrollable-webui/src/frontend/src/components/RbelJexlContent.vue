@@ -26,12 +26,15 @@ import SshPre from "simple-syntax-highlighter";
 import "simple-syntax-highlighter/dist/sshpre.css";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { rbelFilterSymbol } from "@/api/RbelFilter.ts";
+import { faCircleCheck, faCircleExclamation } from "@fortawesome/free-solid-svg-icons";
+
+const DEFAULT_JEXL_PATH = '"RbelHttpMessageFacet" =~facets';
 
 const rbelFilter = inject(rbelFilterSymbol)!;
 const rbelQuery = inject(rbelQueryModalSymbol)!;
 const toast = inject(toastSymbol)!;
 
-const rbelQueryPath = ref<string>("");
+const rbelQueryPath = ref<string>(DEFAULT_JEXL_PATH);
 
 const selectedMessage = computed(() => rbelQuery.selectedMessage.value ?? ({} as Message));
 const rbelTest = useRbelTestMessage(selectedMessage, rbelQueryPath, {
@@ -44,7 +47,7 @@ const rbelPathTestResult = rbelTest.rbelPathTestResult;
 defineExpose({
   reset: () => {
     rbelTest.resetTestResult();
-    rbelQueryPath.value = "";
+    rbelQueryPath.value = DEFAULT_JEXL_PATH;
   },
 });
 </script>
@@ -58,6 +61,7 @@ defineExpose({
       v-model="rbelQueryPath"
       id="rbelExpressionTextArea"
       placeholder='e.g. "RbelHttpMessageFacet" =~facets'
+      @keydown.enter.prevent="rbelTest.testRbelPathQuery"
     ></textarea>
     <div class="invalid-feedback">{{ rbelPathTestResult?.errorMessage }}</div>
     <div class="d-flex flex-row align-items-end justify-content-end gap-2 mt-4">
@@ -82,7 +86,7 @@ defineExpose({
       <div
         class="d-flex flex-row align-items-center gap-2 border-start border-success border-4 rounded p-2 py-3"
       >
-        <FontAwesomeIcon icon="fas fa-circle-check" class="text-success fs-5" />
+        <FontAwesomeIcon :icon="faCircleCheck" class="text-success fs-5" />
         <div>
           Expression <code>'{{ rbelPathTestResult?.query }}'</code> matches! Below is the entire
           message context.
@@ -93,7 +97,7 @@ defineExpose({
       <div
         class="d-flex flex-row align-items-center gap-2 border-start border-warning border-4 rounded p-2 py-3"
       >
-        <FontAwesomeIcon icon="fas fa-circle-exclamation" class="text-warning fs-5" />
+        <FontAwesomeIcon :icon="faCircleExclamation" class="text-warning fs-5" />
         <div>
           Expression <code>'{{ rbelPathTestResult?.query }}'</code> doesn't match anything in the
           message. Below is the entire message context.

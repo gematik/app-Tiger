@@ -23,7 +23,7 @@ import InspectButton from "@/components/InspectButton.vue";
 import { rbelQueryModalSymbol } from "../RbelQueryModal.ts";
 import { settingsSymbol } from "../Settings.ts";
 import { rawContentModalSymbol } from "../RawContentModal.ts";
-import hljs from "highlight.js";
+import hljs from "highlight.js/lib/core";
 import "highlight.js/styles/stackoverflow-dark.css";
 
 const props = defineProps<{ message: Message; onToggleDetailsOrHeader: () => void }>();
@@ -45,6 +45,15 @@ watch(settings.hideMessageDetails, () => {
 
 watch(settings.hideMessageHeaders, () => {
   toggleMessageHeaders.value?.(settings.hideMessageHeaders.value);
+});
+
+watch([toggleMessageDetails, toggleMessageHeaders], () => {
+  nextTick(async () => {
+    // this is a hack to properly trigger the resize of the messages for the dynamic list
+    await new Promise((resolve) => setTimeout(resolve, 1));
+    toggleMessageDetails.value?.(settings.hideMessageDetails.value);
+    toggleMessageHeaders.value?.(settings.hideMessageHeaders.value);
+  });
 });
 
 function toggle(iconEl: Element, contentEl: Element, isHidden: boolean) {
@@ -81,16 +90,19 @@ watch(messageElement, async () => {
     // Warning: If the underlying message structure changes, this might fail here; so always keep in sync!
 
     const messageHeader = messageElement.value.querySelector(".card-header");
-    const messageHeaderEntries = messageHeader?.querySelector("span");
-    if (messageHeaderEntries) {
-      const vnode = h(InspectButton, {
-        onShowModal: () => {
-          rbelQuery.show(props.message);
-        },
-      });
-      render(vnode, messageHeaderEntries);
-      await nextTick();
-      props.onToggleDetailsOrHeader();
+
+    if (__IS_ONLINE_MODE__) {
+      const messageHeaderEntries = messageHeader?.querySelector("span");
+      if (messageHeaderEntries) {
+        const vnode = h(InspectButton, {
+          onShowModal: () => {
+            rbelQuery.show(props.message);
+          },
+        });
+        render(vnode, messageHeaderEntries);
+        await nextTick();
+        props.onToggleDetailsOrHeader();
+      }
     }
 
     const rawContentModalButtons = messageElement.value.querySelectorAll(
@@ -116,10 +128,8 @@ watch(messageElement, async () => {
       }
     }
 
-    const messageContent = messageHeader?.nextElementSibling?.querySelector(
-      "div.tile.is-parent.is-vertical",
-    );
-    const messageContentToggle = messageHeader?.querySelector(".toggle-icon");
+    const messageContent = messageElement.value.querySelector(".card-content.msg-content");
+    const messageContentToggle = messageHeader?.querySelector(".toggle-icon.msg-toggle");
     if (messageContent && messageContentToggle) {
       toggleMessageDetails.value = (isHidden: boolean) => {
         toggle(messageContentToggle, messageContent, isHidden);
@@ -129,7 +139,7 @@ watch(messageElement, async () => {
         const toggledOn = elementHasToggledOnIcon(messageContentToggle);
         toggleMessageDetails.value?.(toggledOn);
       });
-      toggleMessageDetails.value?.(settings.hideMessageDetails.value);
+      // toggleMessageDetails.value?.(settings.hideMessageDetails.value);
     }
 
     const messageRequestHeader = messageContent?.firstElementChild?.querySelector(".card-content");
@@ -144,7 +154,7 @@ watch(messageElement, async () => {
         const toggledOn = elementHasToggledOnIcon(messageRequestHeaderToggle);
         toggleMessageHeaders.value?.(toggledOn);
       });
-      toggleMessageHeaders.value?.(settings.hideMessageHeaders.value);
+      // toggleMessageHeaders.value?.(settings.hideMessageHeaders.value);
     }
 
     if (messageContent?.firstElementChild !== messageContent?.lastElementChild) {
@@ -160,7 +170,7 @@ watch(messageElement, async () => {
           const toggledOn = elementHasToggledOnIcon(messageRequestBodyToggle);
           toggleMessageBody.value?.(toggledOn);
         });
-        toggleMessageBody.value?.(settings.hideMessageHeaders.value);
+        // toggleMessageBody.value?.(settings.hideMessageHeaders.value);
       }
     }
 
@@ -180,7 +190,7 @@ watch(messageElement, async () => {
 <template>
   <div class="rbel-message pb-3">
     <div v-if="props.message.type === 'loaded'" ref="messageElement" />
-    <div v-if="props.message.type === 'loading'" class="loading">
+    <div v-else class="loading">
       <div>Loading...</div>
     </div>
   </div>
@@ -193,5 +203,24 @@ watch(messageElement, async () => {
   display: flex;
   align-content: center;
   min-height: 500px;
+}
+
+// fixes overflowing the content if a table is too wide
+div:has(> .table) {
+  max-width: 100%;
+  overflow-x: auto;
+  display: block;
+
+  table {
+    td {
+      pre {
+        overflow: hidden;
+      }
+    }
+  }
+}
+
+.container {
+  max-width: 1400px !important;
 }
 </style>

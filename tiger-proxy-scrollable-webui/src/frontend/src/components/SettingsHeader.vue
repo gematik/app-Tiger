@@ -22,6 +22,15 @@ import { inject, onMounted, ref, type Ref } from "vue";
 import { Dropdown } from "bootstrap";
 import type { UseMessageQueueReturn } from "@/api/MessageQueue.ts";
 import { settingsSymbol } from "../Settings.ts";
+import {
+  faArrowDown19,
+  faArrowUp19,
+  faFileExport,
+  faGear,
+  faPowerOff,
+  faRoute,
+  faTrashCan,
+} from "@fortawesome/free-solid-svg-icons";
 
 const props = defineProps<{
   messageQueue: UseMessageQueueReturn;
@@ -41,6 +50,11 @@ onMounted(() => {
     dropdownComponent.value = new Dropdown(dropdownElement.value);
   }
 });
+
+async function onClickExportFn(ev: MouseEvent) {
+  ev.preventDefault();
+  dropdownComponent.value?.hide();
+}
 
 function onClickConfigRoutesFn(ev: MouseEvent) {
   ev.preventDefault();
@@ -70,15 +84,11 @@ function onClickQuitProxyFn(ev: MouseEvent) {
       @click="() => (settings.reverseMessageQueue.value = !reversedQueueReversed)"
     >
       <FontAwesomeIcon
-        icon="fa-solid fa-arrow-down-1-9"
+        :icon="faArrowDown19"
         title="Sort from oldest to newest"
         v-if="reversedQueueReversed"
       />
-      <FontAwesomeIcon
-        icon="fa-solid fa-arrow-up-1-9"
-        title="Sort from newest to oldest"
-        v-if="!reversedQueueReversed"
-      />
+      <FontAwesomeIcon :icon="faArrowUp19" title="Sort from newest to oldest" v-else />
     </button>
     <div class="border-end m-1" />
     <div ref="dropdownElement" class="dropdown">
@@ -90,9 +100,9 @@ function onClickQuitProxyFn(ev: MouseEvent) {
         data-bs-auto-close="outside"
         title="Settings"
       >
-        <FontAwesomeIcon icon="fa-solid fa-gear" />
+        <FontAwesomeIcon :icon="faGear" />
       </button>
-      <form class="dropdown-menu p-4">
+      <form class="dropdown-menu p-3">
         <div class="mb-3">
           <label class="form-label bold"> Message Options </label>
           <div class="form-check">
@@ -114,21 +124,31 @@ function onClickQuitProxyFn(ev: MouseEvent) {
             <label class="form-check-label" for="hideDetails"> Hide Details </label>
           </div>
         </div>
-        <div class="border-bottom mb-3" />
-        <button
-          data-bs-toggle="modal"
-          data-bs-target="#routeModal"
-          @click="onClickConfigRoutesFn"
-          class="btn btn-secondary w-100 mb-2"
-        >
-          <FontAwesomeIcon icon="fa-solid fa-route" />&nbsp;Configure Routes
-        </button>
-        <button @click="onClickResetMessagesFn" class="btn btn-danger w-100 mb-2">
-          <FontAwesomeIcon icon="fa-solid fa-trash-can" />&nbsp;Reset Messages
-        </button>
-        <button @click="onClickQuitProxyFn" class="btn btn-outline-secondary w-100">
-          <FontAwesomeIcon icon="fa-solid fa-power-off" />&nbsp;Quit Proxy
-        </button>
+        <template v-if="__IS_ONLINE_MODE__">
+          <div class="border-bottom mb-3" />
+          <button
+            data-bs-toggle="modal"
+            data-bs-target="#exportModal"
+            @click="onClickExportFn"
+            class="btn btn-secondary w-100 mb-2"
+          >
+            <FontAwesomeIcon :icon="faFileExport" />&nbsp;Export
+          </button>
+          <button
+            data-bs-toggle="modal"
+            data-bs-target="#routeModal"
+            @click="onClickConfigRoutesFn"
+            class="btn btn-secondary w-100 mb-2"
+          >
+            <FontAwesomeIcon :icon="faRoute" />&nbsp;Configure Routes
+          </button>
+          <button @click="onClickResetMessagesFn" class="btn btn-danger w-100 mb-2">
+            <FontAwesomeIcon :icon="faTrashCan" />&nbsp;Reset Messages
+          </button>
+          <button @click="onClickQuitProxyFn" class="btn btn-outline-secondary w-100">
+            <FontAwesomeIcon :icon="faPowerOff" />&nbsp;Quit Proxy
+          </button>
+        </template>
       </form>
     </div>
   </div>

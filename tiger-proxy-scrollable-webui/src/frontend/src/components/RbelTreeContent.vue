@@ -24,6 +24,7 @@ import { useRbelTestTreeMessage } from "@/api/RbelTestMessage.ts";
 import { rbelQueryModalSymbol } from "../RbelQueryModal.ts";
 import "simple-syntax-highlighter/dist/sshpre.css";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { faCircleCheck, faCircleExclamation } from "@fortawesome/free-solid-svg-icons";
 
 const DEFAULT_RBEL_PATH = "$.body";
 
@@ -113,6 +114,7 @@ watch(pathElements.value, async () => {
       v-model="rbelQueryPath"
       id="rbelExpressionTextArea"
       placeholder="e.g. $.body"
+      @keydown.enter.prevent="rbelTest.testRbelPathQuery"
     ></textarea>
     <div class="invalid-feedback">{{ rbelPathTestResult?.errorMessage }}</div>
     <div class="d-flex flex-row align-items-end justify-content-end gap-2 mt-4">
@@ -122,15 +124,12 @@ watch(pathElements.value, async () => {
     </div>
     <div
       class="card mt-3"
-      v-if="
-        rbelPathTestResult?.elementsWithTree &&
-        Object.keys(rbelPathTestResult?.elementsWithTree).length > 0
-      "
+      v-if="rbelPathTestResult?.elementsWithTree && rbelPathTestResult?.elementsWithTree.length > 0"
     >
       <div
         class="d-flex flex-row align-items-center gap-2 border-start border-success border-4 rounded p-2 py-3"
       >
-        <FontAwesomeIcon icon="fas fa-circle-check" class="text-success fs-5" />
+        <FontAwesomeIcon :icon="faCircleCheck" class="text-success fs-5" />
         <div>
           Matching elements for the expression <code>'{{ rbelPathTestResult?.query }}'</code>.
         </div>
@@ -141,13 +140,13 @@ watch(pathElements.value, async () => {
       v-if="
         rbelPathTestResult &&
         (!rbelPathTestResult?.elementsWithTree ||
-          Object.keys(rbelPathTestResult?.elementsWithTree).length === 0)
+          rbelPathTestResult?.elementsWithTree?.length === 0)
       "
     >
       <div
         class="d-flex flex-row align-items-center gap-2 border-start border-warning border-4 rounded p-2 py-3"
       >
-        <FontAwesomeIcon icon="fas fa-circle-exclamation" class="text-warning fs-5" />
+        <FontAwesomeIcon :icon="faCircleExclamation" class="text-warning fs-5" />
         <div>
           No matching elements for the expression <code>'{{ rbelPathTestResult?.query }}'</code>.
         </div>
@@ -155,12 +154,9 @@ watch(pathElements.value, async () => {
     </div>
 
     <div v-if="rbelPathTestResult?.elementsWithTree" class="d-flex flex-column">
-      <div
-        v-for="[element, htmlContent] in Object.entries(rbelPathTestResult.elementsWithTree)"
-        :key="element"
-      >
+      <div v-for="entry in rbelPathTestResult.elementsWithTree" :key="Object.keys(entry)[0]">
         <div class="ssh-pre">
-          <pre class="ssh-pre__content" ref="pathElements" v-html="htmlContent" />
+          <pre class="ssh-pre__content" ref="pathElements" v-html="Object.values(entry)[0]" />
         </div>
       </div>
     </div>

@@ -1,6 +1,14 @@
 # Tiger Proxy Web UI
 
-Start the project with:
+First, build the detached app with:
+
+```bash
+npm run build:detached
+```
+
+This step is crucial for proper export functionality within the app.
+
+Run the app in dev mode with:
 ```bash
 npm run dev
 ```

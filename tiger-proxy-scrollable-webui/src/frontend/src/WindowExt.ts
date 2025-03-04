@@ -15,18 +15,13 @@
 /// limitations under the License.
 ///
 
-/// <reference types="vite/client" />
-/**
- * Detached mode refers to the standalone mode of the web application, detached from any proxy functionality.
- */
-declare const __IS_DETACHED_MODE__: boolean;
+import type { BaseMessagesDto, HtmlMessageDto, MetaMessageDto } from "@/api/MessageTypes.ts";
 
-/**
- * Opposite of detached mode: `__IS_ONLINE_MODE__ === __IS_ONLINE_MODE__`.
- */
-declare const __IS_ONLINE_MODE__: boolean;
+export type DetachedRbelLog = {
+  messagesWithHtml: BaseMessagesDto<HtmlMessageDto>;
+  messagesWithMeta: BaseMessagesDto<MetaMessageDto>;
+};
 
-/**
- * Use fonts over CDN. This reduces the dist size drastically.
- */
-declare const __USE_FONTS_OVER_CDN__: boolean;
+export interface WindowExt extends Window {
+  __TGR_RBEL_LOG__: string | null;
+}

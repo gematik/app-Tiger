@@ -1,4 +1,5 @@
-/*
+/**
+ *
  * Copyright 2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,21 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package de.gematik.test.tiger.proxy.data;
-
-import java.util.List;
-import java.util.Map;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-
-@Data
-@Builder
-@AllArgsConstructor
-public class RbelTreeResponseScrollableDto {
-  private String messageUuid;
-  private String query;
-  private List<Map.Entry<String, String>> elementsWithTree;
-  private String errorMessage;
-}
+@import url("https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/solid.min.css");
+@import url("https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.6.0/css/fontawesome.min.css");

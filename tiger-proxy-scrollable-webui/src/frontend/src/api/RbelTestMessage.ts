@@ -57,6 +57,7 @@ export function useRbelTestMessage(
 
   const testRbelPathQuery = () => {
     handleTest(async () => {
+      rbelPath.value = rbelPath.value.trim();
       const result = await testRbelJexlQuery({
         messageUuid: message.value.uuid,
         query: rbelPath.value,
@@ -112,6 +113,7 @@ export function useRbelTestTreeMessage(
 
   const testRbelPathQuery = () => {
     handleTest(async () => {
+      rbelPath.value = rbelPath.value.trim();
       const result = await testRbelTreeQuery({
         messageUuid: message.value.uuid,
         query: rbelPath.value,

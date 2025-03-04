@@ -42,12 +42,13 @@ import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import java.util.AbstractMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.ObjLongConsumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -164,7 +165,7 @@ public class TigerScrollableWebUiController implements ApplicationContextAware {
               targetElements.stream()
                   .map(
                       rbelElement -> {
-                        final var html = createRbelTreeForElement(rbelElement, true, query);
+                        final var html = createRbelTreeForElement(rbelElement, query);
                         final var key = rbelElement.findNodePath();
                         final var el =
                             key.endsWith(RBEL_KEY_CONTENT) && !query.endsWith(RBEL_KEY_CONTENT)
@@ -172,7 +173,7 @@ public class TigerScrollableWebUiController implements ApplicationContextAware {
                                 : "$." + key;
                         return new AbstractMap.SimpleEntry<>(el, html);
                       })
-                  .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)))
+                  .collect(Collectors.toList()))
           .build();
     } catch (JexlException | TigerJexlException jexlException) {
       log.warn("Failed to perform RBelPath query '{}'", query, jexlException);
@@ -188,8 +189,7 @@ public class TigerScrollableWebUiController implements ApplicationContextAware {
     }
   }
 
-  private String createRbelTreeForElement(
-      RbelElement targetElement, boolean addJexlResponseLinkCssClass, String rbelPath) {
+  private String createRbelTreeForElement(RbelElement targetElement, String rbelPath) {
 
     RbelElement rootElement =
         targetElement
@@ -208,9 +208,7 @@ public class TigerScrollableWebUiController implements ApplicationContextAware {
         .replace(RbelAnsiColors.RESET.toString(), "</span>")
         .replace(
             RbelAnsiColors.RED_BOLD.toString(),
-            "<span class='text-warning "
-                + (addJexlResponseLinkCssClass ? "jexlResponseLink' style='cursor: pointer;'" : "'")
-                + ">")
+            "<span class='text-warning jexlResponseLink' style='cursor: pointer;'>")
         .replace(RbelAnsiColors.CYAN.toString(), "<span class='text-info'>")
         .replace(
             RbelAnsiColors.YELLOW_BRIGHT.toString(),
@@ -406,6 +404,13 @@ public class TigerScrollableWebUiController implements ApplicationContextAware {
               }
             })
         .orElse(null);
+  }
+
+  @GetMapping(value = "/trafficLog*.tgr", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+  public String downloadTrafficLog(
+      @RequestParam(name = "filterRbelPath", required = false) String filterRbelPath,
+      HttpServletResponse response) {
+    return webUiController.downloadTraffic(null, filterRbelPath, Optional.empty(), response);
   }
 
   @GetMapping(value = "/resetMessages", produces = MediaType.APPLICATION_JSON_VALUE)

@@ -15,74 +15,28 @@
 /// limitations under the License.
 ///
 
-import type {
-  GetAllMessagesDto,
-  GetMessagesDto,
-  JexlQueryResponseDto,
-  RbelTreeResponseDto,
-  RouteDto,
-  SearchMessagesDto,
-  TestFilterMessagesDto,
-} from "./MessageTypes.ts";
-import { ProxyError, ProxyRepository } from "./ProxyRepository.ts";
+import type { RouteDto } from "./MessageTypes.ts";
+import { getProxy, ProxyError, type ProxyRepository } from "./ProxyRepository.ts";
+
+export type ControllerCall<Fn extends (...args: any) => any> = (
+  props: Parameters<Fn>[0] & { signal?: AbortSignal },
+  options?: ControllerCallOptions,
+) => Promise<Awaited<ReturnType<Fn>> | void>;
 
 export interface UseProxyControllerReturn {
-  getMetaMessages: (
-    props: {
-      filterRbelPath?: string;
-    },
-    options?: ControllerCallOptions,
-  ) => Promise<GetAllMessagesDto | void>;
-  getMessages: (
-    props: {
-      fromOffset: number;
-      toOffsetExcluding: number;
-      filterRbelPath?: string;
-      signal: AbortSignal;
-    },
-    options?: ControllerCallOptions,
-  ) => Promise<GetMessagesDto | void>;
+  getMetaMessages: ControllerCall<ProxyRepository["fetchMessagesWithMeta"]>;
+  getMessages: ControllerCall<ProxyRepository["fetchMessagesWithHtml"]>;
   resetMessageQueue: (options?: ControllerCallOptions) => Promise<void>;
   quitProxy: (options?: ControllerCallOptions) => Promise<void>;
-  testFilter: (
-    props: {
-      rbelPath: string;
-      signal: AbortSignal;
-    },
-    options?: ControllerCallOptions,
-  ) => Promise<TestFilterMessagesDto | void>;
-  searchMessages: (
-    props: {
-      filterRbelPath: string;
-      searchRbelPath: string;
-      signal: AbortSignal;
-    },
-    options?: ControllerCallOptions,
-  ) => Promise<SearchMessagesDto | void>;
-  testRbelJexlQuery: (
-    props: {
-      messageUuid: string;
-      query: string;
-    },
-    options?: ControllerCallOptions,
-  ) => Promise<JexlQueryResponseDto | void>;
-  testRbelTreeQuery: (
-    props: {
-      messageUuid: string;
-      query: string;
-    },
-    options?: ControllerCallOptions,
-  ) => Promise<RbelTreeResponseDto | void>;
-  importRbelLogFile: (
-    props: { rbelFileContent: string },
-    options?: ControllerCallOptions,
-  ) => Promise<void>;
+  testFilter: ControllerCall<ProxyRepository["fetchTestFilter"]>;
+  searchMessages: ControllerCall<ProxyRepository["searchMessages"]>;
+  testRbelJexlQuery: ControllerCall<ProxyRepository["fetchTestJexlQuery"]>;
+  testRbelTreeQuery: ControllerCall<ProxyRepository["fetchTestRbelTreeQuery"]>;
+  importRbelLogFile: ControllerCall<ProxyRepository["fetchImportTraffic"]>;
+  downloadRbelLogFile: ControllerCall<ProxyRepository["fetchDownloadTraffic"]>;
   getProxyRoutes: (options?: ControllerCallOptions) => Promise<RouteDto[] | void>;
-  deleteProxyRoute: (props: { id: string }, options?: ControllerCallOptions) => Promise<void>;
-  addProxyRoute: (
-    props: { route: RouteDto },
-    options?: ControllerCallOptions,
-  ) => Promise<RouteDto | void>;
+  deleteProxyRoute: ControllerCall<ProxyRepository["fetchDeleteProxyRoute"]>;
+  addProxyRoute: ControllerCall<ProxyRepository["fetchAddProxyRoute"]>;
 }
 
 export interface UseProxyControllerOptions {
@@ -100,6 +54,8 @@ export interface ControllerCallOptions {
    */
   propagateError?: boolean;
 }
+
+const proxyRepo = getProxy();
 
 export function useProxyController(props: UseProxyControllerOptions): UseProxyControllerReturn {
   const handleError = (err: any, options?: ControllerCallOptions) => {
@@ -129,24 +85,24 @@ export function useProxyController(props: UseProxyControllerOptions): UseProxyCo
 
   return {
     getMetaMessages: (props, options) =>
-      makeCall(() => ProxyRepository.fetchMessagesWithMeta(props), options),
+      makeCall(() => proxyRepo.fetchMessagesWithMeta(props), options),
     getMessages: (props, options) =>
-      makeCall(() => ProxyRepository.fetchMessagesWithHtml(props), options),
-    resetMessageQueue: (options) => makeCall(() => ProxyRepository.fetchResetMessages(), options),
-    quitProxy: (options) => makeCall(() => ProxyRepository.fetchQuitProxy(), options),
-    testFilter: (props, options) => makeCall(() => ProxyRepository.fetchTestFilter(props), options),
-    searchMessages: (props, options) =>
-      makeCall(() => ProxyRepository.searchMessages(props), options),
+      makeCall(() => proxyRepo.fetchMessagesWithHtml(props), options),
+    resetMessageQueue: (options) => makeCall(() => proxyRepo.fetchResetMessages(), options),
+    quitProxy: (options) => makeCall(() => proxyRepo.fetchQuitProxy(), options),
+    testFilter: (props, options) => makeCall(() => proxyRepo.fetchTestFilter(props), options),
+    searchMessages: (props, options) => makeCall(() => proxyRepo.searchMessages(props), options),
     testRbelJexlQuery: (props, options) =>
-      makeCall(() => ProxyRepository.fetchTestJexlQuery(props), options),
+      makeCall(() => proxyRepo.fetchTestJexlQuery(props), options),
     testRbelTreeQuery: (props, options) =>
-      makeCall(() => ProxyRepository.fetchTestRbelTreeQuery(props), options),
+      makeCall(() => proxyRepo.fetchTestRbelTreeQuery(props), options),
     importRbelLogFile: (props, options) =>
-      makeCall(() => ProxyRepository.fetchImportTraffic(props), options),
-    getProxyRoutes: (options) => makeCall(() => ProxyRepository.fetchAllProxyRoutes(), options),
+      makeCall(() => proxyRepo.fetchImportTraffic(props), options),
+    downloadRbelLogFile: (props, options) =>
+      makeCall(() => proxyRepo.fetchDownloadTraffic(props), options),
+    getProxyRoutes: (options) => makeCall(() => proxyRepo.fetchAllProxyRoutes(), options),
     deleteProxyRoute: (props, options) =>
-      makeCall(() => ProxyRepository.fetchDeleteProxyRoute(props), options),
-    addProxyRoute: (props, options) =>
-      makeCall(() => ProxyRepository.fetchAddProxyRoute(props), options),
+      makeCall(() => proxyRepo.fetchDeleteProxyRoute(props), options),
+    addProxyRoute: (props, options) => makeCall(() => proxyRepo.fetchAddProxyRoute(props), options),
   };
 }

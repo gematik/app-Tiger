@@ -24,6 +24,8 @@ import type {
   SearchMessagesDto,
   TestFilterMessagesDto,
 } from "./MessageTypes.ts";
+import type { DetachedRbelLog, WindowExt } from "@/WindowExt.ts";
+import { inflateSync } from "fflate";
 
 export class ProxyError extends Error {
   response: Response;
@@ -34,10 +36,136 @@ export class ProxyError extends Error {
   }
 }
 
-export const ProxyRepository = {
-  /**
-   * Returns a list of all messages without content.
-   */
+export function getProxy(): ProxyRepository {
+  return __IS_DETACHED_MODE__ ? ProxyRepositoryLocal : ProxyRepositoryRemote;
+}
+
+export type ProxyRepository = {
+  fetchMessagesWithMeta(props: { filterRbelPath?: string }): Promise<GetAllMessagesDto>;
+
+  fetchMessagesWithHtml(props: {
+    fromOffset: number;
+    toOffsetExcluding: number;
+    filterRbelPath?: string;
+    signal: AbortSignal;
+  }): Promise<GetMessagesDto>;
+
+  fetchResetMessages(): Promise<void>;
+
+  fetchQuitProxy(): Promise<void>;
+
+  fetchTestFilter(props: { rbelPath: string; signal: AbortSignal }): Promise<TestFilterMessagesDto>;
+
+  searchMessages(props: {
+    filterRbelPath: string;
+    searchRbelPath: string;
+    signal: AbortSignal;
+  }): Promise<SearchMessagesDto>;
+
+  fetchTestJexlQuery(props: { messageUuid: string; query: string }): Promise<JexlQueryResponseDto>;
+
+  fetchTestRbelTreeQuery(props: {
+    messageUuid: string;
+    query: string;
+  }): Promise<RbelTreeResponseDto>;
+
+  fetchImportTraffic(props: { rbelFileContent: string }): Promise<void>;
+  fetchDownloadTraffic(props: { suffix: string; filterRbelPath?: string }): Promise<string>;
+
+  fetchAllProxyRoutes(): Promise<RouteDto[]>;
+
+  fetchAddProxyRoute(props: { route: RouteDto }): Promise<RouteDto>;
+
+  fetchDeleteProxyRoute(props: { id: string }): Promise<void>;
+};
+
+function throwNotImplemented(): never {
+  throw new Error("Not implemented");
+}
+
+let resolvedLog: DetachedRbelLog | null = null;
+
+async function getDetachedTigerLog(): Promise<DetachedRbelLog | null> {
+  if (!resolvedLog) {
+    const dataUrl = (window as unknown as WindowExt).__TGR_RBEL_LOG__;
+    if (dataUrl) {
+      const response = await fetch(dataUrl);
+      const compressed = await response.arrayBuffer();
+      const decompressed = inflateSync(new Uint8Array(compressed));
+      resolvedLog = JSON.parse(new TextDecoder().decode(decompressed)) as DetachedRbelLog;
+    } else {
+      return null;
+    }
+  }
+  return resolvedLog;
+}
+
+const ProxyRepositoryLocal: ProxyRepository = {
+  async fetchMessagesWithHtml(props: {
+    fromOffset: number;
+    toOffsetExcluding: number;
+    filterRbelPath?: string;
+  }): Promise<GetMessagesDto> {
+    const messagesWithHtml = (await getDetachedTigerLog())!.messagesWithHtml;
+    return Promise.resolve({
+      ...messagesWithHtml,
+      messages: messagesWithHtml.messages.slice(props.fromOffset, props.toOffsetExcluding),
+      fromOffset: props.fromOffset,
+      toOffsetExcluding: props.toOffsetExcluding,
+    });
+  },
+  async fetchMessagesWithMeta(): Promise<GetAllMessagesDto> {
+    const messagesWithMeta = (await getDetachedTigerLog())!.messagesWithMeta;
+    return Promise.resolve(messagesWithMeta);
+  },
+
+  fetchQuitProxy(): Promise<void> {
+    throwNotImplemented();
+  },
+  fetchResetMessages(): Promise<void> {
+    throwNotImplemented();
+  },
+  fetchTestFilter(): Promise<TestFilterMessagesDto> {
+    throwNotImplemented();
+  },
+  fetchTestJexlQuery(): Promise<JexlQueryResponseDto> {
+    throwNotImplemented();
+  },
+  fetchTestRbelTreeQuery(): Promise<RbelTreeResponseDto> {
+    throwNotImplemented();
+  },
+  searchMessages(): Promise<SearchMessagesDto> {
+    throwNotImplemented();
+  },
+  fetchAddProxyRoute(): Promise<RouteDto> {
+    throwNotImplemented();
+  },
+  fetchAllProxyRoutes(): Promise<RouteDto[]> {
+    throwNotImplemented();
+  },
+  fetchDeleteProxyRoute(): Promise<void> {
+    throwNotImplemented();
+  },
+  fetchImportTraffic(): Promise<void> {
+    throwNotImplemented();
+  },
+  fetchDownloadTraffic(): Promise<string> {
+    throwNotImplemented();
+  },
+};
+
+async function createFetchRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const result = await fetch(url, options);
+  if (!result.ok) throw new ProxyError(result);
+  const contentType = result.headers.get("Content-Type");
+  if (contentType && contentType.includes("application/json")) {
+    return (await result.json()) as T;
+  } else {
+    return (await result.text()) as unknown as T;
+  }
+}
+
+const ProxyRepositoryRemote: ProxyRepository = {
   fetchMessagesWithMeta: async ({
     filterRbelPath,
   }: {
@@ -45,14 +173,9 @@ export const ProxyRepository = {
   }): Promise<GetAllMessagesDto> => {
     const params = new URLSearchParams();
     if (filterRbelPath) params.set("filterRbelPath", filterRbelPath);
-    const result = await fetch(`/api/getMessagesWithMeta?${params.toString()}`);
-    if (!result.ok) throw new ProxyError(result);
-    return (await result.json()) as GetAllMessagesDto;
+    return createFetchRequest<GetAllMessagesDto>(`/api/getMessagesWithMeta?${params.toString()}`);
   },
 
-  /**
-   * Returns a list of messages with html content.
-   */
   fetchMessagesWithHtml: async ({
     fromOffset,
     toOffsetExcluding,
@@ -68,32 +191,19 @@ export const ProxyRepository = {
     params.set("fromOffset", fromOffset.toString());
     params.set("toOffsetExcluding", toOffsetExcluding.toString());
     if (filterRbelPath) params.set("filterRbelPath", filterRbelPath);
-    const result = await fetch(`/api/getMessagesWithHtml?${params.toString()}`, {
+    return createFetchRequest<GetMessagesDto>(`/api/getMessagesWithHtml?${params.toString()}`, {
       signal,
     });
-    if (!result.ok) throw new ProxyError(result);
-    return (await result.json()) as GetMessagesDto;
   },
 
-  /**
-   * Request to reset the message queue in the backend.
-   */
   fetchResetMessages: async (): Promise<void> => {
-    const result = await fetch(`/api/resetMessages`);
-    if (!result.ok) throw new ProxyError(result);
+    await createFetchRequest<void>(`/api/resetMessages`);
   },
 
-  /**
-   * Request to quit the backend.
-   */
   fetchQuitProxy: async (): Promise<void> => {
-    const result = await fetch(`/api/quit`);
-    if (!result.ok) throw new ProxyError(result);
+    await createFetchRequest<void>(`/api/quit`);
   },
 
-  /**
-   * Test the rbel expression.
-   */
   fetchTestFilter: async ({
     rbelPath,
     signal,
@@ -103,16 +213,12 @@ export const ProxyRepository = {
   }): Promise<TestFilterMessagesDto> => {
     const params = new URLSearchParams();
     params.set("filterRbelPath", rbelPath);
-    const result = await fetch(`/api/testFilterMessages?${params.toString()}`, {
-      signal,
-    });
-    if (!result.ok) throw new ProxyError(result);
-    return (await result.json()) as TestFilterMessagesDto;
+    return createFetchRequest<TestFilterMessagesDto>(
+      `/api/testFilterMessages?${params.toString()}`,
+      { signal },
+    );
   },
 
-  /**
-   * Search messages by rbel expression.
-   */
   searchMessages: async ({
     filterRbelPath,
     searchRbelPath,
@@ -125,16 +231,11 @@ export const ProxyRepository = {
     const params = new URLSearchParams();
     params.set("filterRbelPath", filterRbelPath);
     params.set("searchRbelPath", searchRbelPath);
-    const result = await fetch(`/api/searchMessages?${params.toString()}`, {
+    return createFetchRequest<SearchMessagesDto>(`/api/searchMessages?${params.toString()}`, {
       signal,
     });
-    if (!result.ok) throw new ProxyError(result);
-    return (await result.json()) as SearchMessagesDto;
   },
 
-  /**
-   * Test the jexl/rbel expression on a specific message.
-   */
   fetchTestJexlQuery: async ({
     messageUuid,
     query,
@@ -145,14 +246,9 @@ export const ProxyRepository = {
     const params = new URLSearchParams();
     params.set("messageUuid", messageUuid);
     params.set("query", query);
-    const result = await fetch(`/api/testJexlQuery?${params.toString()}`);
-    if (!result.ok) throw new ProxyError(result);
-    return (await result.json()) as JexlQueryResponseDto;
+    return createFetchRequest<JexlQueryResponseDto>(`/api/testJexlQuery?${params.toString()}`);
   },
 
-  /**
-   * Get partial rbel tree of a message matching the query.
-   */
   fetchTestRbelTreeQuery: async ({
     messageUuid,
     query,
@@ -163,44 +259,47 @@ export const ProxyRepository = {
     const params = new URLSearchParams();
     params.set("messageUuid", messageUuid);
     params.set("query", query);
-    const result = await fetch(`/api/testRbelExpression?${params.toString()}`);
-    if (!result.ok) throw new ProxyError(result);
-    return (await result.json()) as RbelTreeResponseDto;
+    return createFetchRequest<RbelTreeResponseDto>(`/api/testRbelExpression?${params.toString()}`);
   },
 
-  /**
-   * Import rbel traffic log file.
-   */
   fetchImportTraffic: async ({ rbelFileContent }: { rbelFileContent: string }): Promise<void> => {
-    const result = await fetch(`/api/importTraffic`, {
+    await createFetchRequest<void>(`/api/importTraffic`, {
       method: "POST",
       body: rbelFileContent,
     });
-    if (!result.ok) throw new ProxyError(result);
+  },
+
+  fetchDownloadTraffic: async ({
+    suffix,
+    filterRbelPath,
+  }: {
+    suffix: string;
+    filterRbelPath?: string;
+  }): Promise<string> => {
+    const params = new URLSearchParams();
+    if (filterRbelPath) params.set("filterRbelPath", filterRbelPath);
+    return createFetchRequest<string>(`/api/trafficLog_${suffix}.tgr?${params}`, {
+      method: "GET",
+    });
   },
 
   fetchAllProxyRoutes: async (): Promise<RouteDto[]> => {
-    const result = await fetch(`/api/route`);
-    if (!result.ok) throw new ProxyError(result);
-    return (await result.json()) as RouteDto[];
+    return createFetchRequest<RouteDto[]>(`/api/route`);
   },
 
   fetchAddProxyRoute: async ({ route }: { route: RouteDto }): Promise<RouteDto> => {
-    const result = await fetch(`/api/route`, {
+    return createFetchRequest<RouteDto>(`/api/route`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(route),
     });
-    if (!result.ok) throw new ProxyError(result);
-    return (await result.json()) as RouteDto;
   },
 
   fetchDeleteProxyRoute: async ({ id }: { id: string }): Promise<void> => {
-    const result = await fetch(`/api/route/${id}`, {
+    await createFetchRequest<void>(`/api/route/${id}`, {
       method: "DELETE",
     });
-    if (!result.ok) throw new ProxyError(result);
   },
 };

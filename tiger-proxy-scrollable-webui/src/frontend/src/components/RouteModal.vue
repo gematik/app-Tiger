@@ -23,6 +23,7 @@ import "simple-syntax-highlighter/dist/sshpre.css";
 import { useTigerProxyConfig } from "@/api/TigerRouterConfig.ts";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { toastSymbol } from "@/Toast.ts";
+import { faArrowRight, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 
 const toast = inject(toastSymbol)!;
 const { isLoading, routes, deleteRoute, addRoute } = useTigerProxyConfig({
@@ -93,10 +94,10 @@ function onAddRoute() {
                   type="button"
                   @click="route.id ? deleteRoute(route.id) : null"
                 >
-                  <FontAwesomeIcon icon="fas fa-trash-can" />
+                  <FontAwesomeIcon :icon="faTrashCan" />
                 </button>
                 <span>{{ route.from }}</span>
-                <FontAwesomeIcon icon="fas fa-arrow-right" />
+                <FontAwesomeIcon :icon="faArrowRight" />
                 <span>{{ route.to }}</span>
               </div>
             </li>
@@ -113,7 +114,7 @@ function onAddRoute() {
                 v-model="fromInput"
               />
               <span class="input-group-text" id="basic-addon1"
-                ><FontAwesomeIcon icon="fas fa-arrow-right" class="me-3" />to</span
+                ><FontAwesomeIcon :icon="faArrowRight" class="me-3" />to</span
               >
               <input
                 ref="toInputRef"

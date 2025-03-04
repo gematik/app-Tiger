@@ -19,14 +19,27 @@ import { createApp } from "vue";
 import App from "./App.vue";
 import "bootstrap";
 import "bootstrap/scss/bootstrap.scss";
-import "~fontawesome/scss/fontawesome.scss";
-import "~fontawesome/scss/solid.scss";
-import "./scss/styles.scss";
+import "@/scss/styles.scss";
 
-import { library } from "@fortawesome/fontawesome-svg-core";
+if (__USE_FONTS_OVER_CDN__) {
+  import("@/scss/fontawesome-cdn.scss");
+} else {
+  import("~fontawesome/scss/fontawesome.scss");
+  import("~fontawesome/scss/solid.scss");
+}
 
-import { fas } from "@fortawesome/free-solid-svg-icons";
+import hljs from "highlight.js/lib/core";
+import json from "highlight.js/lib/languages/json";
+import xml from "highlight.js/lib/languages/xml";
+import plaintext from "highlight.js/lib/languages/plaintext";
 
-library.add(fas);
+// Highlight.js languages currently used
+hljs.registerLanguage("json", json);
+hljs.registerLanguage("xml", xml);
+hljs.registerLanguage("html", xml);
+hljs.registerLanguage("plaintext", plaintext);
 
-createApp(App).mount("#app");
+const app = createApp(App);
+app.config.globalProperties.__IS_DETACHED_MODE__ = __IS_DETACHED_MODE__;
+app.config.globalProperties.__IS_ONLINE_MODE__ = __IS_ONLINE_MODE__;
+app.mount("#app");

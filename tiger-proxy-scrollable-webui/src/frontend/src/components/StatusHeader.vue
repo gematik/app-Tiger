@@ -20,15 +20,16 @@
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { rbelFilterSymbol } from "@/api/RbelFilter.ts";
 import { inject } from "vue";
+import { faFilter, faSearch } from "@fortawesome/free-solid-svg-icons";
 
 const rbelFilter = inject(rbelFilterSymbol)!;
 </script>
 
 <template>
   <div class="p-2 border-bottom d-flex gap-2 bg-white">
-    <div class="filter input-group w-auto">
+    <div class="filter input-group w-auto" v-if="__IS_ONLINE_MODE__">
       <span class="input-group-text">
-        <FontAwesomeIcon icon="fa-solid fa-filter" />
+        <FontAwesomeIcon :icon="faFilter" />
       </span>
       <input
         readonly
@@ -56,7 +57,7 @@ const rbelFilter = inject(rbelFilterSymbol)!;
       data-bs-toggle="modal"
       data-bs-target="#searchModal"
     >
-      <FontAwesomeIcon icon="fas fa-search" />&nbsp;Search
+      <FontAwesomeIcon :icon="faSearch" />&nbsp;Search
     </button>
   </div>
 </template>

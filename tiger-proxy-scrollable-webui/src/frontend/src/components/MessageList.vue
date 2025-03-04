@@ -27,6 +27,7 @@ import { toastSymbol } from "../Toast.ts";
 import { DynamicScroller, DynamicScrollerItem } from "vue-virtual-scroller";
 import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
 import { settingsSymbol } from "../Settings.ts";
+import { faCloudUploadAlt } from "@fortawesome/free-solid-svg-icons";
 
 const messageQueue = inject(messageQueueSymbol)!;
 const settings = inject(settingsSymbol)!;
@@ -96,7 +97,7 @@ watch(files, async (newFiles) => {
         :item="item"
         :active="active"
         :size-dependencies="[
-          item.type,
+          item,
           messageItemSizeRef,
           settings.hideMessageHeaders,
           settings.hideMessageDetails,
@@ -107,7 +108,7 @@ watch(files, async (newFiles) => {
       >
         <Message
           :message="item"
-          :key="item.uuid"
+          :key="item.uuid + item.type"
           :on-toggle-details-or-header="triggerMessageItemSize"
         />
       </DynamicScrollerItem>
@@ -120,7 +121,7 @@ watch(files, async (newFiles) => {
           <h3 class="mb-3">Feed the Tiger</h3>
           <FontAwesomeIcon
             v-if="!isUploadInProgress"
-            icon="fas fa-cloud-upload-alt"
+            :icon="faCloudUploadAlt"
             size="3x"
             class="text-primary mb-3"
           />
@@ -151,5 +152,9 @@ watch(files, async (newFiles) => {
   button {
     opacity: 0.1;
   }
+}
+
+.vue-recycle-scroller__item-wrapper {
+  overflow-y: auto;
 }
 </style>

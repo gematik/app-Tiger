@@ -87,7 +87,7 @@
                         </goals>
                         <phase>generate-resources</phase>
                         <configuration>
-                            <arguments>run build</arguments>
+                            <arguments>run build:all</arguments>
                         </configuration>
                     </execution>
                     <!-- Run Unit tests with Jest -->
