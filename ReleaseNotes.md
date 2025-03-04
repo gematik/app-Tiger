@@ -1,4 +1,4 @@
-# Changelog Tiger Test platform
+d# Changelog Tiger Test platform
 
 # Release 3.7.0
 
@@ -32,6 +32,7 @@
 * TGR-1740: adding package.json to the dependabot checks
 * TGR-1623: "TGR find request to path ..." changed to "TGR find first request to path" to match the German translation,
   old english step is now deprecated
+* TGR-1761: RbelParser: Added support for b64 encoded, gzipped messages.
 
 ## Bugfixes
 
@@ -465,8 +466,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-  key = PLUGIN_PROPERTY_NAME,
-  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+        key = PLUGIN_PROPERTY_NAME,
+        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }
