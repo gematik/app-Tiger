@@ -32,12 +32,17 @@ import {
   faTrashCan,
 } from "@fortawesome/free-solid-svg-icons";
 
-const props = defineProps<{
-  messageQueue: UseMessageQueueReturn;
-  onClickResetMessages: () => void;
-  onClickQuitProxy: () => void;
-}>();
-
+const props = withDefaults(
+  defineProps<{
+    messageQueue: UseMessageQueueReturn;
+    onClickResetMessages: () => void;
+    onClickQuitProxy: () => void;
+    noLogo?: boolean;
+  }>(),
+  {
+    noLogo: false,
+  },
+);
 const settings = inject(settingsSymbol)!;
 
 const dropdownElement: Ref<HTMLElement | null> = ref(null);
@@ -76,8 +81,10 @@ function onClickQuitProxyFn(ev: MouseEvent) {
 
 <template>
   <div class="sticky-header p-2 border-bottom d-flex justify-content-between">
-    <span class="logo text-nowrap">Tiger Proxy</span>
-    <div class="p-1 flex-grow-1" />
+    <template v-if="!noLogo">
+      <span class="logo text-nowrap">Tiger Proxy</span>
+      <div class="p-1 flex-grow-1" />
+    </template>
     <button
       type="button"
       class="btn"

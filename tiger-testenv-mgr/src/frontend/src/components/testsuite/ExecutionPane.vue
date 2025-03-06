@@ -138,13 +138,7 @@
                           <a
                             href="#"
                             class="badge rbelDetailsBadge test-rbel-link"
-                            @click="
-                              ui.showRbelLogDetails(
-                                rbelmsg.uuid,
-                                '' + rbelmsg.sequenceNumber,
-                                $event,
-                              )
-                            "
+                            @click="ui.showRbelLogDetails(rbelmsg.uuid, $event)"
                           >
                             {{ rbelmsg.sequenceNumber + 1 }}
                           </a>

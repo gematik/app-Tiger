@@ -4,6 +4,7 @@ d# Changelog Tiger Test platform
 
 ## Breaking Changes
 
+* TGR-1742: New Tiger Proxy Web UI change in behavior: delete messages before importing new ones.
 * TGR-1623: "TGR find request to path ..." changed to "TGR find first request to path" to match the German translation
 * TGR-1748: Every server now has to have a valid hostname (either the given server-name or, if present, the
   hostname-property). This check is now done explicitly at startup.
@@ -23,6 +24,7 @@ d# Changelog Tiger Test platform
 
 ## Features
 
+* TGR-1742: New Tiger Proxy Web UI: features endless scrolling and a search for rbel messages.
 * TGR-1727: Tiger Maven Plugin: the tiger plugin can now create a serenity json summary report. This is active by
   default. You can configure which reports get generated in the maven configuration. E.g.:
 * TGR-1625: RBel: OIDs in ASN.1 now feature the dot-notation as well as a human-readable name (if existing in an

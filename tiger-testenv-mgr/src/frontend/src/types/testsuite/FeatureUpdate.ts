@@ -15,7 +15,7 @@
 /// limitations under the License.
 ///
 import TestResult from "./TestResult";
-import ScenarioUpdate, { IJsonScenarios } from "./ScenarioUpdate";
+import ScenarioUpdate, { type IJsonScenarios } from "./ScenarioUpdate";
 import StepUpdate from "@/types/testsuite/StepUpdate";
 
 interface IFeatureUpdate {

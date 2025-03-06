@@ -280,7 +280,7 @@ import Ui from "@/types/ui/Ui";
 import BannerType from "@/types/BannerType";
 import TigerServerLogDto from "@/types/TigerServerLogDto";
 import LogLevel from "@/types/LogLevel";
-import mitt, { Emitter } from "mitt";
+import mitt, { type Emitter } from "mitt";
 import TigerConfigurationEditor from "@/components/global_configuration/TigerConfigurationEditor.vue";
 import "vue3-side-panel/dist/vue3-side-panel.css";
 import { VueSidePanel } from "vue3-side-panel";
@@ -288,7 +288,7 @@ import TrafficVisualization from "@/components/sequence_diagram/TrafficVisualiza
 import { useConfigurationLoader } from "@/components/global_configuration/ConfigurationLoader";
 import { Features } from "@/types/Features";
 import RbelLogDetailsPane from "@/components/testsuite/RbelLogDetailsPane.vue";
-import QuitReason from "@/types/QuitReason";
+import type QuitReason from "@/types/QuitReason";
 
 const { loadSubsetOfProperties } = useConfigurationLoader();
 const features = ref(new Features());

@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
 import Sidebar from "./components/Sidebar.vue";
-import { onBeforeUnmount, onMounted, provide, ref, type Ref } from "vue";
+import { onBeforeUnmount, onMounted, provide, ref, type Ref, watchEffect } from "vue";
 import MessageList from "./components/MessageList.vue";
 import { messageQueueSymbol, useMessageQueue } from "@/api/MessageQueue.ts";
 import { useProxyController } from "@/api/ProxyController.ts";
@@ -83,6 +83,15 @@ onBeforeUnmount(() => {
 // Handle Embedding
 const query = new URLSearchParams(window.location.search);
 const isEmbedded = query.has("embedded");
+
+const hash = ref(window.location.hash);
+
+watchEffect(() => {
+  window.addEventListener("hashchange", () => {
+    hash.value = window.location.hash;
+    messageQueue.scrollToMessage(hash.value.slice(1));
+  });
+});
 </script>
 
 <template>
@@ -133,14 +142,15 @@ const isEmbedded = query.has("embedded");
         <div class="d-flex flex-row">
           <SettingsHeader
             v-if="isEmbedded"
-            class="pe-5"
+            :no-logo="true"
+            :class="[isEmbedded ? 'pe-3' : 'pe-5']"
             :message-queue="messageQueue"
             :on-click-reset-messages="proxyController.resetMessageQueue"
             :on-click-quit-proxy="proxyController.quitProxy"
           />
           <StatusHeader class="flex-grow-1" />
         </div>
-        <MessageList class="flex-grow-1 flex-shrink-1" :message-queue="messageQueue" />
+        <MessageList class="flex-grow-1 flex-shrink-1" :is-embedded="isEmbedded" />
       </div>
     </div>
   </div>

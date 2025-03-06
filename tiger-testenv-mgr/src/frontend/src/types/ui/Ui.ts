@@ -81,11 +81,7 @@ export default class Ui {
     }
   }
 
-  public showRbelLogDetails(
-    rbelMessageUuid: string,
-    rbelMessageSequenceNumber: string,
-    event: MouseEvent,
-  ) {
+  public showRbelLogDetails(rbelMessageUuid: string, event: MouseEvent) {
     this.init();
     event.preventDefault();
 
@@ -95,15 +91,14 @@ export default class Ui {
       this.resizeBasedOn(this.mainContentElement!.clientWidth / 2, true);
       this.mouseUpHandler();
     }
-    // firefox does not navigate to the uuid if the iframe is hidden :(
-    (
-      window?.document?.getElementById(
-        "rbellog-details-iframe",
-      ) as HTMLIFrameElement
-    ).contentWindow?.postMessage(
-      rbelMessageUuid + "," + rbelMessageSequenceNumber,
-      "*",
-    );
+    const embeddedLog = document.querySelector("#rbellog-details-iframe") as
+      | HTMLIFrameElement
+      | undefined;
+    if (embeddedLog) {
+      const basePath = embeddedLog.src.split("#").at(0) ?? embeddedLog.src;
+      embeddedLog.src = `${basePath}#${rbelMessageUuid}`;
+    }
+
     return false;
   }
 

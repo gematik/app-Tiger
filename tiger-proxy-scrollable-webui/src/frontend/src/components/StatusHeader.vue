@@ -26,8 +26,8 @@ const rbelFilter = inject(rbelFilterSymbol)!;
 </script>
 
 <template>
-  <div class="p-2 border-bottom d-flex gap-2 bg-white">
-    <div class="filter input-group w-auto" v-if="__IS_ONLINE_MODE__">
+  <div class="p-2 border-bottom d-flex gap-2 text-nowrap">
+    <div class="filter input-group" v-if="__IS_ONLINE_MODE__">
       <span class="input-group-text">
         <FontAwesomeIcon :icon="faFilter" />
       </span>
@@ -88,7 +88,9 @@ const rbelFilter = inject(rbelFilterSymbol)!;
 }
 
 .filter {
-  min-width: 500px;
+  min-width: 300px;
+  width: 100%;
+  max-width: 500px;
   text-overflow: ellipsis;
 }
 

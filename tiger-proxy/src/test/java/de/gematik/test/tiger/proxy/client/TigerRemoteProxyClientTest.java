@@ -474,8 +474,7 @@ class TigerRemoteProxyClientTest {
           newlyConnectedRemoteClient, 2, 10);
       tigerProxy.waitForAllCurrentMessagesToBeParsed();
 
-      Mockito.verify(tigerWebUiController)
-          .downloadTraffic(Mockito.isNull(), Mockito.any(), Mockito.any(), Mockito.any());
+      Mockito.verify(tigerWebUiController).downloadTrafficLog(Mockito.isNull(), Mockito.any());
 
       assertThat(
               newlyConnectedRemoteClient
@@ -508,8 +507,7 @@ class TigerRemoteProxyClientTest {
                 newlyConnectedRemoteClient, 4, 10);
         tigerProxy.waitForAllCurrentMessagesToBeParsed();
 
-        Mockito.verify(tigerWebUiController)
-            .downloadTraffic(Mockito.isNull(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(tigerWebUiController).downloadTrafficLog(Mockito.isNull(), Mockito.any());
         assertThat(
                 ((AtomicReference<?>)
                         ReflectionTestUtils.getField(newlyConnectedRemoteClient, "lastMessageUuid"))
@@ -517,39 +515,6 @@ class TigerRemoteProxyClientTest {
             .isNotNull();
       }
     }
-  }
-
-  @Test
-  void longBuffer_shouldDownloadTrafficPaged() {
-    final int numberOfInteractions = 200;
-    final int expectedMessages = numberOfInteractions * 2;
-    final int pageSize = 10;
-    for (int i = 0; i < numberOfInteractions; i++) {
-      unirestInstance.get("http://myserv.er/foo").asString();
-    }
-    try (TigerRemoteProxyClient newlyConnectedRemoteClient =
-        new TigerRemoteProxyClient(
-            "http://localhost:" + springServerPort,
-            TigerProxyConfiguration.builder()
-                .trafficDownloadPageSize(pageSize)
-                .downloadInitialTrafficFromEndpoints(true)
-                .build())) {
-      newlyConnectedRemoteClient.connect();
-
-      log.info("after generation we now have {} messages", tigerProxy.getRbelMessagesList().size());
-
-      await()
-          .atMost(numberOfInteractions * 20, TimeUnit.MILLISECONDS)
-          .pollDelay(20, TimeUnit.MILLISECONDS)
-          .until(() -> newlyConnectedRemoteClient.getRbelMessagesList().size() == expectedMessages);
-    }
-
-    Mockito.verify(tigerWebUiController, Mockito.times(1))
-        .downloadTraffic(
-            Mockito.isNull(), Mockito.any(), Mockito.eq(Optional.of(pageSize)), Mockito.any());
-    Mockito.verify(tigerWebUiController, Mockito.times(expectedMessages / pageSize - 1))
-        .downloadTraffic(
-            Mockito.matches(".*"), Mockito.any(), Mockito.eq(Optional.of(pageSize)), Mockito.any());
   }
 
   @Test

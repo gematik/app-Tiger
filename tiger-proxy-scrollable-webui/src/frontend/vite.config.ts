@@ -36,15 +36,10 @@ export default defineConfig(({mode}) => {
     },
     server: {
       proxy: {
-        "/api/route": {
+        "/webui": {
           target: "http://localhost:8080",
           changeOrigin: true,
-          rewrite: (path: string) => path.replace(/^\/api/, "/"),
-        },
-        "/api": {
-          target: "http://localhost:8080",
-          changeOrigin: true,
-          rewrite: (path: string) => path.replace(/^\/api/, "/nextwebui"),
+          rewrite: (path: string) => path.replace(/^\/webui/, "/webui"),
         },
       },
     },

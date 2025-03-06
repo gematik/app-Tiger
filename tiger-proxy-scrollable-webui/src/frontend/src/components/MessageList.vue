@@ -29,6 +29,8 @@ import "vue-virtual-scroller/dist/vue-virtual-scroller.css";
 import { settingsSymbol } from "../Settings.ts";
 import { faCloudUploadAlt } from "@fortawesome/free-solid-svg-icons";
 
+defineProps<{ isEmbedded: boolean }>();
+
 const messageQueue = inject(messageQueueSymbol)!;
 const settings = inject(settingsSymbol)!;
 
@@ -89,7 +91,7 @@ watch(files, async (newFiles) => {
     :min-item-size="200"
     :emit-update="true"
     keyField="uuid"
-    class="h-100 overflow-y-scroll"
+    class="h-100 overflow-y-scroll scroll-container"
     @update="messageQueue.internal.update"
   >
     <template #default="{ item, index, active }">
@@ -115,7 +117,11 @@ watch(files, async (newFiles) => {
     </template>
   </DynamicScroller>
   <div v-else class="h-auto">
-    <div :class="['container', 'mt-5', isUploadInProgress ? 'disabled' : '']" ref="dropZoneRef">
+    <div
+      v-if="!isEmbedded"
+      :class="['container', 'mt-5', isUploadInProgress ? 'disabled' : '']"
+      ref="dropZoneRef"
+    >
       <div class="drop-zone border rounded p-4 text-center" :class="{ 'bg-light': isOverDropZone }">
         <div class="d-flex flex-column gap-2 align-items-center">
           <h3 class="mb-3">Feed the Tiger</h3>
@@ -136,12 +142,19 @@ watch(files, async (newFiles) => {
         </div>
       </div>
     </div>
+    <div v-else class="mt-5 text-center">Loading...</div>
   </div>
 </template>
 
 <style scoped lang="scss">
 .container {
   height: 100%;
+}
+
+// hack for embedded mode; otherwise the container is not scrollable by mouse
+.scroll-container {
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 .disabled {

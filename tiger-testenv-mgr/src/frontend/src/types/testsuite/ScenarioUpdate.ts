@@ -16,7 +16,7 @@
 ///
 
 import TestResult from "./TestResult";
-import StepUpdate, { IJsonSteps } from "./StepUpdate";
+import StepUpdate, { type IJsonSteps } from "./StepUpdate";
 import FeatureUpdate from "./FeatureUpdate";
 import ScenarioIdentifier from "./ScenarioIdentifier";
 

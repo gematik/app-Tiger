@@ -173,7 +173,7 @@ const ProxyRepositoryRemote: ProxyRepository = {
   }): Promise<GetAllMessagesDto> => {
     const params = new URLSearchParams();
     if (filterRbelPath) params.set("filterRbelPath", filterRbelPath);
-    return createFetchRequest<GetAllMessagesDto>(`/api/getMessagesWithMeta?${params.toString()}`);
+    return createFetchRequest<GetAllMessagesDto>(`/webui/getMessagesWithMeta?${params.toString()}`);
   },
 
   fetchMessagesWithHtml: async ({
@@ -191,17 +191,17 @@ const ProxyRepositoryRemote: ProxyRepository = {
     params.set("fromOffset", fromOffset.toString());
     params.set("toOffsetExcluding", toOffsetExcluding.toString());
     if (filterRbelPath) params.set("filterRbelPath", filterRbelPath);
-    return createFetchRequest<GetMessagesDto>(`/api/getMessagesWithHtml?${params.toString()}`, {
+    return createFetchRequest<GetMessagesDto>(`/webui/getMessagesWithHtml?${params.toString()}`, {
       signal,
     });
   },
 
   fetchResetMessages: async (): Promise<void> => {
-    await createFetchRequest<void>(`/api/resetMessages`);
+    await createFetchRequest<void>(`/webui/resetMessages`);
   },
 
   fetchQuitProxy: async (): Promise<void> => {
-    await createFetchRequest<void>(`/api/quit`);
+    await createFetchRequest<void>(`/webui/quit`);
   },
 
   fetchTestFilter: async ({
@@ -214,7 +214,7 @@ const ProxyRepositoryRemote: ProxyRepository = {
     const params = new URLSearchParams();
     params.set("filterRbelPath", rbelPath);
     return createFetchRequest<TestFilterMessagesDto>(
-      `/api/testFilterMessages?${params.toString()}`,
+      `/webui/testFilterMessages?${params.toString()}`,
       { signal },
     );
   },
@@ -231,7 +231,7 @@ const ProxyRepositoryRemote: ProxyRepository = {
     const params = new URLSearchParams();
     params.set("filterRbelPath", filterRbelPath);
     params.set("searchRbelPath", searchRbelPath);
-    return createFetchRequest<SearchMessagesDto>(`/api/searchMessages?${params.toString()}`, {
+    return createFetchRequest<SearchMessagesDto>(`/webui/searchMessages?${params.toString()}`, {
       signal,
     });
   },
@@ -246,7 +246,7 @@ const ProxyRepositoryRemote: ProxyRepository = {
     const params = new URLSearchParams();
     params.set("messageUuid", messageUuid);
     params.set("query", query);
-    return createFetchRequest<JexlQueryResponseDto>(`/api/testJexlQuery?${params.toString()}`);
+    return createFetchRequest<JexlQueryResponseDto>(`/webui/testJexlQuery?${params.toString()}`);
   },
 
   fetchTestRbelTreeQuery: async ({
@@ -259,11 +259,13 @@ const ProxyRepositoryRemote: ProxyRepository = {
     const params = new URLSearchParams();
     params.set("messageUuid", messageUuid);
     params.set("query", query);
-    return createFetchRequest<RbelTreeResponseDto>(`/api/testRbelExpression?${params.toString()}`);
+    return createFetchRequest<RbelTreeResponseDto>(
+      `/webui/testRbelExpression?${params.toString()}`,
+    );
   },
 
   fetchImportTraffic: async ({ rbelFileContent }: { rbelFileContent: string }): Promise<void> => {
-    await createFetchRequest<void>(`/api/importTraffic`, {
+    await createFetchRequest<void>(`/webui/importTraffic`, {
       method: "POST",
       body: rbelFileContent,
     });
@@ -278,17 +280,17 @@ const ProxyRepositoryRemote: ProxyRepository = {
   }): Promise<string> => {
     const params = new URLSearchParams();
     if (filterRbelPath) params.set("filterRbelPath", filterRbelPath);
-    return createFetchRequest<string>(`/api/trafficLog_${suffix}.tgr?${params}`, {
+    return createFetchRequest<string>(`/webui/trafficLog_${suffix}.tgr?${params}`, {
       method: "GET",
     });
   },
 
   fetchAllProxyRoutes: async (): Promise<RouteDto[]> => {
-    return createFetchRequest<RouteDto[]>(`/api/route`);
+    return createFetchRequest<RouteDto[]>(`/route`);
   },
 
   fetchAddProxyRoute: async ({ route }: { route: RouteDto }): Promise<RouteDto> => {
-    return createFetchRequest<RouteDto>(`/api/route`, {
+    return createFetchRequest<RouteDto>(`/route`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -298,7 +300,7 @@ const ProxyRepositoryRemote: ProxyRepository = {
   },
 
   fetchDeleteProxyRoute: async ({ id }: { id: string }): Promise<void> => {
-    await createFetchRequest<void>(`/api/route/${id}`, {
+    await createFetchRequest<void>(`/route/${id}`, {
       method: "DELETE",
     });
   },

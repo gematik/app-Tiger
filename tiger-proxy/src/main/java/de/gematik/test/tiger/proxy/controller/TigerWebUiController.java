@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 gematik GmbH
+ * Copyright 2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 
 package de.gematik.test.tiger.proxy.controller;
 
-import static j2html.TagCreator.*;
-
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
@@ -30,39 +28,50 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfigurati
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.proxy.TigerProxy;
-import de.gematik.test.tiger.proxy.data.*;
-import de.gematik.test.tiger.proxy.exceptions.TigerProxyConfigurationException;
-import de.gematik.test.tiger.proxy.exceptions.TigerProxyWebUiException;
+import de.gematik.test.tiger.proxy.data.GetMessagesFilterScrollableDto;
+import de.gematik.test.tiger.proxy.data.GetMessagesWithHtmlScrollableDto;
+import de.gematik.test.tiger.proxy.data.GetMessagesWithMetaScrollableDto;
+import de.gematik.test.tiger.proxy.data.HtmlMessageScrollableDto;
+import de.gematik.test.tiger.proxy.data.JexlQueryResponseScrollableDto;
+import de.gematik.test.tiger.proxy.data.MetaMessageScrollableDto;
+import de.gematik.test.tiger.proxy.data.RbelTreeResponseScrollableDto;
+import de.gematik.test.tiger.proxy.data.ResetMessagesDto;
+import de.gematik.test.tiger.proxy.data.SearchMessagesScrollableDto;
 import de.gematik.test.tiger.server.TigerBuildPropertiesService;
-import jakarta.annotation.PostConstruct;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+
+import java.util.AbstractMap;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
+import java.util.UUID;
+import java.util.function.ObjLongConsumer;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.jexl3.JexlException;
-import org.apache.commons.lang3.StringUtils;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.DataNode;
-import org.jsoup.nodes.Element;
 import org.springframework.beans.BeansException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.util.StringUtils;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 @Data
@@ -72,24 +81,9 @@ import org.springframework.web.server.ResponseStatusException;
 @Validated
 @Slf4j
 public class TigerWebUiController implements ApplicationContextAware {
-
-  private static final String ATTR_DATA_BS_TARGET = "data-bs-target";
-  private static final String ATTR_DATA_BS_TOGGLE = "data-bs-toggle";
-  private static final String ATTR_ARIA_HASPOPUP = "aria-haspopup";
-  private static final String ATTR_ARIA_CONTROLS = "aria-controls";
-  private static final String ATTR_ON_CLICK = "onClick";
-  private static final String CSS_BTN_DARK = "btn btn-dark";
-  private static final String CSS_BTN_OUTLINE_SUCCESS = "btn btn-outline-success";
-  private static final String CSS_COLOR_INHERIT = "color:inherit;";
-  private static final String CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK = CSS_BTN_DARK + " dropdown-toggle";
-  private static final String CSS_DROPDOWN_ITEM = "dropdown-item";
-  private static final String CSS_NAVBAR_ITEM = "navbar-item test-navbar-item";
-  private static final String CSS_NAVBAR_ITEM_NOT4EMBEDDED =
-      CSS_NAVBAR_ITEM + " not4embedded test-webui-navbar-item-notembedded";
-  private static final String DROPDOWN_MENU = "dropdown-menu";
-  private static final String VALUE_MODAL = "modal";
-  private static final String HIDE_QUIT = "display:none;";
-  private static final String BUTTON_GROUP_DROPUP = "btn-group dropup";
+  private static final int MAX_MESSAGES_PER_FILTER_REQUEST = 100;
+  private static final int MAX_MESSAGES_PER_SEARCH_REQUEST = 10;
+  private static final String RBEL_KEY_CONTENT = ".content";
 
   /**
    * in error responses on http requests, this token causes problems so remove it for better
@@ -97,7 +91,6 @@ public class TigerWebUiController implements ApplicationContextAware {
    */
   public static final String REGEX_STATUSCODE_TOKEN = ".*:\\d* ";
 
-  public static final String DROPDOWN = "dropdown";
   private TigerProxy tigerProxy;
   private final RbelHtmlRenderer renderer;
 
@@ -107,36 +100,344 @@ public class TigerWebUiController implements ApplicationContextAware {
   public final SimpMessagingTemplate template;
   private final TigerBuildPropertiesService buildProperties;
 
-  private static final String WS_NEWMESSAGES = "/topic/ws";
-
-  @PostConstruct
-  public void addWebSocketListener() {
-    renderer.setSubTitle(getVersionStringAsRawHtml() + renderer.getSubTitle());
-  }
-
-  public void informClientOfNewMessageArrival(RbelElement element) {
-    log.trace(
-        "Pushing new message (uUID: {}) from proxy {} to webUI-clients",
-        element.getUuid(),
-        tigerProxy.proxyName());
-    template.convertAndSend(WS_NEWMESSAGES, element.getUuid());
-  }
-
   @Override
   public void setApplicationContext(final ApplicationContext appContext) throws BeansException {
     this.applicationContext = appContext;
   }
 
+  @GetMapping(value = "")
+  public ResponseEntity<Resource> getIndex() {
+    final var resource = new ClassPathResource("/static/webui/index.html");
+    return ResponseEntity.ok().contentType(MediaType.parseMediaType("text/html")).body(resource);
+  }
+
+  @GetMapping(value = "/assets/{asset}")
+  public ResponseEntity<Resource> getAsset(@PathVariable("asset") String assetFile) {
+    final var resource = new ClassPathResource("/static/webui/assets/" + assetFile);
+    if (!resource.exists()) {
+      return ResponseEntity.notFound().build();
+    }
+    final var fileExt = StringUtils.getFilenameExtension(assetFile);
+    if (fileExt == null) {
+      return ResponseEntity.notFound().build();
+    }
+    String contentType =
+        switch (fileExt) {
+          case "css" -> "text/css";
+          case "js" -> "application/javascript";
+          case "html", "htm" -> "text/html";
+          case "png" -> "image/png";
+          case "jpg", "jpeg" -> "image/jpeg";
+          case "gif" -> "image/gif";
+          case "svg" -> "image/svg+xml";
+          case "woff" -> "font/woff";
+          case "woff2" -> "font/woff2";
+          case "ttf" -> "font/ttf";
+          default -> "application/octet-stream";
+        };
+    return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType)).body(resource);
+  }
+
+  @GetMapping(value = "/testJexlQuery", produces = MediaType.APPLICATION_JSON_VALUE)
+  public JexlQueryResponseScrollableDto testJexlQuery(
+      @RequestParam(name = "messageUuid") final String messageUuid,
+      @RequestParam(name = "query") final String query) {
+    var response = JexlQueryResponseScrollableDto.builder().messageUuid(messageUuid).query(query);
+
+    final var targetMessage =
+        getTigerProxy().getRbelLogger().getMessageHistory().stream()
+            .filter(msg -> msg.getUuid().equals(messageUuid))
+            .findFirst()
+            .orElseThrow();
+
+    final var messageContext =
+        TigerJexlExecutor.buildJexlMapContext(targetMessage, Optional.empty());
+
+    response = response.messageContext(messageContext);
+
+    try {
+      return response
+          .matchSuccessful(TigerJexlExecutor.matchesAsJexlExpression(targetMessage, query))
+          .build();
+    } catch (JexlException | TigerJexlException jexlException) {
+      log.warn("Failed to perform JEXL query '" + query + "'", jexlException);
+      String msg = jexlException.getMessage();
+      msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
+      return response.errorMessage(msg).build();
+
+    } catch (RuntimeException rte) {
+      log.warn("Runtime failure while performing JEXL query '" + query + "'", rte);
+      String msg = rte.getMessage();
+      msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
+      return response.errorMessage(msg).build();
+    }
+  }
+
+  @GetMapping(value = "/testRbelExpression", produces = MediaType.APPLICATION_JSON_VALUE)
+  public RbelTreeResponseScrollableDto testRbelExpression(
+      @RequestParam(name = "messageUuid") final String msgUuid,
+      @RequestParam(name = "query") final String query) {
+    final var response = RbelTreeResponseScrollableDto.builder().messageUuid(msgUuid).query(query);
+
+    List<RbelElement> targetElements;
+    try {
+      targetElements =
+          getTigerProxy().getRbelLogger().getMessageHistory().stream()
+              .filter(msg -> msg.getUuid().equals(msgUuid))
+              .map(msg -> msg.findRbelPathMembers(query))
+              .flatMap(List::stream)
+              .toList();
+      if (targetElements.isEmpty()) {
+        return response.build();
+      }
+    } catch (RbelPathException rbelPathException) {
+      log.warn("Failed to perform RBelPath query '{}'", query, rbelPathException);
+      String msg = rbelPathException.getMessage();
+      msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
+      return response.errorMessage(msg).build();
+    }
+    try {
+      return response
+          .elementsWithTree(
+              targetElements.stream()
+                  .map(
+                      rbelElement -> {
+                        final var html = createRbelTreeForElement(rbelElement, query);
+                        final var key = rbelElement.findNodePath();
+                        final var el =
+                            key.endsWith(RBEL_KEY_CONTENT) && !query.endsWith(RBEL_KEY_CONTENT)
+                                ? "$." + key.substring(0, key.length() - RBEL_KEY_CONTENT.length())
+                                : "$." + key;
+                        return new AbstractMap.SimpleEntry<>(el, html);
+                      })
+                  .collect(Collectors.toList()))
+          .build();
+    } catch (JexlException | TigerJexlException jexlException) {
+      log.warn("Failed to perform RBelPath query '{}'", query, jexlException);
+      String msg = jexlException.getMessage();
+      msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
+      return response.errorMessage(msg).build();
+
+    } catch (RuntimeException rte) {
+      log.warn("Runtime failure while performing RbelPath query '{}'", query, rte);
+      String msg = rte.getMessage();
+      msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
+      return response.errorMessage(msg).build();
+    }
+  }
+
+  private String createRbelTreeForElement(RbelElement targetElement, String rbelPath) {
+
+    RbelElement rootElement =
+        targetElement
+            .getKey()
+            .filter(key -> key.endsWith("content") && !rbelPath.endsWith("content"))
+            .map(key -> targetElement.getParentNode())
+            .orElse(targetElement);
+
+    return RbelElementTreePrinter.builder()
+        .rootElement(rootElement)
+        .printFacets(true)
+        .htmlEscaping(true)
+        .addJexlResponseLinkCssClass(true)
+        .build()
+        .execute();
+  }
+
+  /** Returns a stable hash, even if the message queue is empty. */
+  private String messageHash() {
+    var messages = getTigerProxy().getRbelMessages();
+    return messages.isEmpty()
+        ? (new UUID(getTigerProxy().hashCode(), 1234)).toString()
+        : messages.getFirst().getUuid();
+  }
+
+  private <T> void addOffsetToMessages(
+      long startOffset, List<T> messages, ObjLongConsumer<T> offsetSetter) {
+    for (int i = 0; i < messages.size(); i++) {
+      offsetSetter.accept(messages.get(i), i + startOffset); // Apply the setter with the index
+    }
+  }
+
+  @GetMapping(value = "/getMessagesWithHtml", produces = MediaType.APPLICATION_JSON_VALUE)
+  public GetMessagesWithHtmlScrollableDto getMessagesWithHtml(
+      @RequestParam(name = "fromOffset") int fromOffset,
+      @RequestParam(name = "toOffsetExcluding") int toOffsetExcluding,
+      @RequestParam(name = "filterRbelPath", required = false) String filterRbelPath) {
+
+    if (toOffsetExcluding < fromOffset)
+      throw new ResponseStatusException(
+          HttpStatus.BAD_REQUEST, "`toOffsetExcluding` must be greater or equal than `fromOffset`");
+
+    final var messages = new LinkedList<>(getTigerProxy().getRbelLogger().getMessageHistory());
+    var total = messages.size();
+
+    var result = new GetMessagesWithHtmlScrollableDto();
+    result.setFromOffset(fromOffset);
+    result.setToOffsetExcluding(toOffsetExcluding);
+    result.setFilter(GetMessagesFilterScrollableDto.builder().rbelPath(filterRbelPath).build());
+
+    result.setTotal(total);
+
+    result.setHash(messageHash());
+
+    var messageStream = messages.stream();
+    messageStream = filterMessages(messageStream, filterRbelPath);
+
+    result.setMessages(
+        messageStream
+            .skip(fromOffset)
+            .limit((long) toOffsetExcluding - fromOffset)
+            .map(
+                msg ->
+                    HtmlMessageScrollableDto.builder()
+                        .content(
+                            new RbelHtmlRenderingToolkit(renderer).convertMessage(msg).render())
+                        .uuid(msg.getUuid())
+                        .sequenceNumber(MessageMetaDataDto.getElementSequenceNumber(msg))
+                        .build())
+            .toList());
+
+    addOffsetToMessages(fromOffset, result.getMessages(), HtmlMessageScrollableDto::setOffset);
+
+    result.setTotalFiltered(result.getMessages().size());
+
+    return result;
+  }
+
+  @GetMapping(value = "/getMessagesWithMeta", produces = MediaType.APPLICATION_JSON_VALUE)
+  public GetMessagesWithMetaScrollableDto getMessagesWithMeta(
+      @RequestParam(name = "filterRbelPath", required = false) String filterRbelPath) {
+    final var messages = new LinkedList<>(getTigerProxy().getRbelLogger().getMessageHistory());
+    var total = messages.size();
+
+    var result = new GetMessagesWithMetaScrollableDto();
+
+    result.setTotal(total);
+    result.setHash(messageHash());
+    result.setFilter(GetMessagesFilterScrollableDto.builder().rbelPath(filterRbelPath).build());
+
+    var messageStream = messages.stream();
+    messageStream = filterMessages(messageStream, filterRbelPath);
+
+    result.setMessages(messageStream.map(MetaMessageScrollableDto::createFrom).toList());
+
+    addOffsetToMessages(0, result.getMessages(), MetaMessageScrollableDto::setOffset);
+
+    result.setTotalFiltered(result.getMessages().size());
+
+    return result;
+  }
+
+  @GetMapping(value = "/testFilterMessages", produces = MediaType.APPLICATION_JSON_VALUE)
+  public SearchMessagesScrollableDto testFilterMessages(
+      @RequestParam(name = "filterRbelPath", required = false) String filterRbelPath) {
+    final var messages = new LinkedList<>(getTigerProxy().getRbelLogger().getMessageHistory());
+    var total = messages.size();
+
+    var result = new SearchMessagesScrollableDto();
+
+    result.setTotal(total);
+    result.setHash(messageHash());
+    result.setFilter(GetMessagesFilterScrollableDto.builder().rbelPath(filterRbelPath).build());
+
+    var messageStream = messages.stream();
+    try {
+      // Retrieve one more message to check for additional data; trim the extra later.
+      messageStream =
+          filterMessages(messageStream, filterRbelPath).limit(MAX_MESSAGES_PER_FILTER_REQUEST + 1);
+
+      final var totalFilteredMessages = messageStream.count();
+      if (totalFilteredMessages > MAX_MESSAGES_PER_FILTER_REQUEST) {
+        result.setTotalFiltered(MAX_MESSAGES_PER_FILTER_REQUEST + "+");
+      } else {
+        result.setTotalFiltered(String.valueOf(totalFilteredMessages));
+      }
+    } catch (JexlException | TigerJexlException e) {
+      log.info(e.getMessage(), e);
+      result.setErrorMessage(e.getMessage());
+    }
+
+    return result;
+  }
+
+  @GetMapping(value = "/searchMessages", produces = MediaType.APPLICATION_JSON_VALUE)
+  public SearchMessagesScrollableDto searchMessages(
+      @RequestParam(name = "filterRbelPath") String filterRbelPath,
+      @RequestParam(name = "searchRbelPath") String searchRbelPath) {
+
+    var rbelLogger = tigerProxy.getRbelLogger();
+    var total = rbelLogger.getMessageHistory().size();
+
+    var messages = getTigerProxy().getRbelLogger().getMessageHistory();
+
+    var result = new SearchMessagesScrollableDto();
+
+    result.setTotal(total);
+    result.setHash(messageHash());
+    result.setFilter(GetMessagesFilterScrollableDto.builder().rbelPath(filterRbelPath).build());
+    result.setSearchFilter(
+        GetMessagesFilterScrollableDto.builder().rbelPath(searchRbelPath).build());
+
+    var messageStream = messages.stream();
+    try {
+      messageStream = filterMessages(messageStream, filterRbelPath);
+      messageStream = filterMessages(messageStream, searchRbelPath);
+
+      result.setMessages(
+          messageStream
+              .limit(MAX_MESSAGES_PER_SEARCH_REQUEST + 1)
+              .map(MetaMessageScrollableDto::createFrom)
+              .toList());
+
+      final var totalFilteredMessages = result.getMessages().size();
+      if (totalFilteredMessages > MAX_MESSAGES_PER_SEARCH_REQUEST) {
+        result.setMessages(result.getMessages().subList(0, MAX_MESSAGES_PER_SEARCH_REQUEST));
+        result.setTotalFiltered(MAX_MESSAGES_PER_SEARCH_REQUEST + "+");
+      } else {
+        result.setTotalFiltered(String.valueOf(totalFilteredMessages));
+      }
+    } catch (JexlException | TigerJexlException e) {
+      log.info(e.getMessage(), e);
+      result.setErrorMessage(e.getMessage());
+    }
+
+    return result;
+  }
+
+  private Stream<RbelElement> filterMessages(Stream<RbelElement> stream, String filterRbelPath) {
+    var actualFilterRbelPath =
+        filterRbelPath != null && filterRbelPath.isBlank() ? null : filterRbelPath;
+
+    return actualFilterRbelPath != null
+        ? stream.filter(
+            msg ->
+                TigerJexlExecutor.matchesAsJexlExpression(
+                        msg, actualFilterRbelPath, Optional.empty())
+                    || TigerJexlExecutor.matchesAsJexlExpression(
+                        findPartner(msg), actualFilterRbelPath, Optional.empty()))
+        : stream;
+  }
+
+  private RbelElement findPartner(RbelElement msg) {
+    return msg.getFacet(TracingMessagePairFacet.class)
+        .map(
+            pairFacet -> {
+              if (pairFacet.getRequest() == msg) {
+                return pairFacet.getResponse();
+              } else {
+                return pairFacet.getRequest();
+              }
+            })
+        .orElse(null);
+  }
+
   @GetMapping(value = "/trafficLog*.tgr", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-  public String downloadTraffic(
-      @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid,
-      @RequestParam(name = "filterCriterion", required = false) final String filterCriterion,
-      @RequestParam(name = "pageSize", required = false) final Optional<Integer> pageSize,
+  public String downloadTrafficLog(
+      @RequestParam(name = "filterRbelPath", required = false) String filterRbelPath,
       HttpServletResponse response) {
-    int actualPageSize =
-        pageSize.orElse(getProxyConfiguration().getMaximumTrafficDownloadPageSize());
-    final List<RbelElement> filteredMessages =
-        loadMessagesMatchingFilter(lastMsgUuid, filterCriterion);
+    int actualPageSize = getProxyConfiguration().getMaximumTrafficDownloadPageSize();
+    final List<RbelElement> filteredMessages = loadMessagesMatchingFilter(filterRbelPath);
     final int returnedMessages = Math.min(filteredMessages.size(), actualPageSize);
     response.addHeader("available-messages", String.valueOf(filteredMessages.size()));
     response.addHeader("returned-messages", String.valueOf(returnedMessages));
@@ -153,509 +454,11 @@ public class TigerWebUiController implements ApplicationContextAware {
     return result;
   }
 
-  @GetMapping(value = "/tiger-report*.html", produces = MediaType.TEXT_HTML_VALUE)
-  public String downloadHtml(
-      @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid,
-      @RequestParam(name = "filterCriterion", required = false) final String filterCriterion) {
-    var rbelRenderer = new RbelHtmlRenderer();
-    rbelRenderer.setVersionInfo(buildProperties.tigerVersionAsString());
-    rbelRenderer.setTitle(
-        "RbelLog für "
-            + tigerProxy.getName().orElse("Tiger Proxy - Port")
-            + ":"
-            + tigerProxy.getProxyPort());
-
-    final List<RbelElement> rbelMessages = loadMessagesMatchingFilter(lastMsgUuid, filterCriterion);
-    return rbelRenderer.doRender(rbelMessages);
-  }
-
-  @GetMapping(value = "", produces = MediaType.TEXT_HTML_VALUE)
-  public String getUI(@RequestParam(name = "embedded", defaultValue = "false") boolean embedded) {
-    String html = renderer.getEmptyPage(proxyConfiguration.isLocalResources());
-    // hide sidebar
-    String targetDiv;
-    if (embedded) {
-      targetDiv = "<div class=\"col msglist embeddedlist\" id=\"rbelembeddedlist\">";
-    } else {
-      targetDiv = "<div class=\"col ms-6 msglist\" id=\"rbelmsglist\">";
-    }
-    html = addTigerProxyJsAndCss(html.replace("<div class=\"col ms-6\">", targetDiv));
-
-    String navbar;
-
-    String showQuit = tigerProxy.getTigerProxyConfiguration().isStandalone() ? "" : HIDE_QUIT;
-
-    if (embedded) {
-      navbar = createNavbar(tigerProxy, "margin-bottom: 3.5em;", "margin-inline: auto;", showQuit);
-    } else {
-      navbar = createNavbar(tigerProxy, "", "", showQuit);
-    }
-
-    return html.replace(
-        "<div id=\"navbardiv\"></div>",
-        navbar
-            + loadResourceToString("/routeModal.html")
-            + loadResourceToString("/filterModal.html")
-            + loadResourceToString("/jexlModal.html")
-            + loadResourceToString("/saveModal.html")
-            + loadResourceToString("/errorMessagesModal.html"));
-  }
-
-  private String getVersionStringAsRawHtml() {
-    return "<div class=\"is-size-6\" style=\"text-align: right;margin-bottom:"
-        + " 1rem!important;margin-right: 1.5em;\">"
-        + buildProperties.tigerVersionAsString()
-        + " - "
-        + buildProperties.tigerBuildDateAsString()
-        + "</div>";
-  }
-
-  private String createNavbar(
-      TigerProxy tigerProxy, String styleNavbar, String styleNavbarStart, String styleQuit) {
-    return nav()
-        .withClass("navbar bg-dark fixed-bottom")
-        .withId("webui-navbar")
-        .withStyle(styleNavbar)
-        .with(
-            div()
-                .withClass("container-fluid")
-                .with(
-                    div()
-                        .withStyle(styleNavbarStart)
-                        .with(
-                            div()
-                                .withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED)
-                                .with(
-                                    button()
-                                        .withId("routeModalBtn")
-                                        .withClass(CSS_BTN_OUTLINE_SUCCESS)
-                                        .attr(ATTR_DATA_BS_TARGET, "#routeModalDialog")
-                                        .attr(ATTR_DATA_BS_TOGGLE, VALUE_MODAL)
-                                        .with(
-                                            i().withClass("fas fa-exchange-alt"),
-                                            span("Routes")
-                                                .withClass("ms-2")
-                                                .withStyle(CSS_COLOR_INHERIT))),
-                            div()
-                                .withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED)
-                                .with(
-                                    button()
-                                        .withId("scrollLockBtn")
-                                        .withClass(CSS_BTN_DARK)
-                                        .with(
-                                            div().withId("scrollLockLed").withClass("led"),
-                                            span("Scroll Lock"))),
-                            div()
-                                .withClass(CSS_NAVBAR_ITEM)
-                                .with(
-                                    div()
-                                        .withId("dropdown-hide-button")
-                                        .withClass(BUTTON_GROUP_DROPUP)
-                                        .with(
-                                            button()
-                                                .withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
-                                                .attr(ATTR_DATA_BS_TOGGLE, DROPDOWN)
-                                                .attr(ATTR_ARIA_HASPOPUP, "true")
-                                                .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
-                                                .attr("type", "button")
-                                                .with(
-                                                    span()
-                                                        .withClass("icon is-small")
-                                                        .with(
-                                                            i().withClass(
-                                                                    "fa-solid fa-toggle-on"))),
-                                            div()
-                                                .withClass(DROPDOWN_MENU + " bg-dark")
-                                                .attr("type", "menu")
-                                                .with(
-                                                    div()
-                                                        .withClass(CSS_DROPDOWN_ITEM)
-                                                        .with(
-                                                            button()
-                                                                .withId(
-                                                                    "collapsibleMessageHeaderBtn")
-                                                                .withClass(CSS_BTN_DARK)
-                                                                .with(
-                                                                    div()
-                                                                        .withId(
-                                                                            "collapsibleMessageHeader")
-                                                                        .withClass("led"),
-                                                                    span("Hide Headers"))),
-                                                    div()
-                                                        .withClass(CSS_DROPDOWN_ITEM)
-                                                        .with(
-                                                            button()
-                                                                .withId(
-                                                                    "collapsibleMessageDetailsBtn")
-                                                                .withClass(CSS_BTN_DARK)
-                                                                .with(
-                                                                    div()
-                                                                        .withId(
-                                                                            "collapsibleMessageDetails")
-                                                                        .withClass("led"),
-                                                                    span("Hide Details")))))),
-                            div()
-                                .withClass(CSS_NAVBAR_ITEM)
-                                .with(
-                                    button()
-                                        .withId("filterModalBtn")
-                                        .withClass(CSS_BTN_OUTLINE_SUCCESS)
-                                        .attr(ATTR_DATA_BS_TARGET, "#filterModalDialog")
-                                        .attr(ATTR_DATA_BS_TOGGLE, VALUE_MODAL)
-                                        .with(
-                                            i().withClass("fas fa-filter"),
-                                            span("Filter")
-                                                .withClass("ms-2")
-                                                .withStyle(CSS_COLOR_INHERIT))),
-                            div()
-                                .withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED)
-                                .with(
-                                    button()
-                                        .withId("resetMsgs")
-                                        .withClass("btn btn-outline-danger")
-                                        .with(
-                                            i().withClass("far fa-trash-alt"),
-                                            span("Reset")
-                                                .withClass("ms-2")
-                                                .withStyle(CSS_COLOR_INHERIT))),
-                            div()
-                                .withClass(CSS_NAVBAR_ITEM)
-                                .with(
-                                    div()
-                                        .withId("dropdown-page-selection")
-                                        .withClass(BUTTON_GROUP_DROPUP)
-                                        .with(
-                                            button()
-                                                .withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
-                                                .attr(ATTR_DATA_BS_TOGGLE, DROPDOWN)
-                                                .attr(ATTR_ARIA_HASPOPUP, "true")
-                                                .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
-                                                .attr("type", "button")
-                                                .with(
-                                                    span()
-                                                        .withText("Page 1")
-                                                        .withId("pageNumberDisplay")),
-                                            div()
-                                                .withClass(DROPDOWN_MENU)
-                                                .attr("type", "menu")
-                                                .with(
-                                                    div()
-                                                        .withClass("dropdown-content")
-                                                        .withId("pageSelector")
-                                                        .with(
-                                                            a().withClass(CSS_DROPDOWN_ITEM)
-                                                                .attr(
-                                                                    ATTR_ON_CLICK,
-                                                                    "setPageNumber(0)")
-                                                                .withText("1"))))),
-                            div()
-                                .withClass(CSS_NAVBAR_ITEM)
-                                .with(
-                                    div()
-                                        .withId("dropdown-page-size")
-                                        .withClass(BUTTON_GROUP_DROPUP)
-                                        .with(
-                                            button()
-                                                .withClass(CSS_DROPDOWN_TOGGLE_BTN_BTN_DARK)
-                                                .attr(ATTR_DATA_BS_TOGGLE, DROPDOWN)
-                                                .attr(ATTR_ARIA_HASPOPUP, "true")
-                                                .attr(ATTR_ARIA_CONTROLS, DROPDOWN_MENU)
-                                                .with(
-                                                    span()
-                                                        .withId("pageSizeDisplay")
-                                                        .withText("Size")),
-                                            div()
-                                                .withClass(DROPDOWN_MENU)
-                                                .attr("role", "menu")
-                                                .with(
-                                                    div()
-                                                        .withClass("dropdown-content")
-                                                        .withId("sizeSelector")
-                                                        .with(
-                                                            a().withClass(CSS_DROPDOWN_ITEM)
-                                                                .attr(
-                                                                    ATTR_ON_CLICK,
-                                                                    "setPageSize(10);")
-                                                                .withText("10"),
-                                                            a().withClass(CSS_DROPDOWN_ITEM)
-                                                                .attr(
-                                                                    ATTR_ON_CLICK,
-                                                                    "setPageSize(20);")
-                                                                .withText("20"),
-                                                            a().withClass(CSS_DROPDOWN_ITEM)
-                                                                .attr(
-                                                                    ATTR_ON_CLICK,
-                                                                    "setPageSize(50);")
-                                                                .withText("50"),
-                                                            a().withClass(CSS_DROPDOWN_ITEM)
-                                                                .attr(
-                                                                    ATTR_ON_CLICK,
-                                                                    "setPageSize(100);")
-                                                                .withText("100"))))),
-                            div()
-                                .withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED)
-                                .with(
-                                    button()
-                                        .withId("importMsgs")
-                                        .withClass(CSS_BTN_OUTLINE_SUCCESS)
-                                        .with(
-                                            i().withClass("fa-solid fa-file-import"),
-                                            span("Import")
-                                                .withClass("ms-2")
-                                                .withStyle(CSS_COLOR_INHERIT))),
-                            div()
-                                .withClass(CSS_NAVBAR_ITEM)
-                                .with(
-                                    button()
-                                        .withId("exportMsgs")
-                                        .withClass(CSS_BTN_OUTLINE_SUCCESS)
-                                        .with(
-                                            i().withClass("fa-solid fa-file-export"),
-                                            span("Export")
-                                                .withClass("ms-2")
-                                                .withStyle(CSS_COLOR_INHERIT))),
-                            div()
-                                .withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED)
-                                .with(
-                                    span("Proxy port "),
-                                    b(String.valueOf(tigerProxy.getProxyPort())).withClass("ms-3")),
-                            div()
-                                .withClass(CSS_NAVBAR_ITEM_NOT4EMBEDDED)
-                                .withStyle(styleQuit)
-                                .with(
-                                    button()
-                                        .withId("quitProxy")
-                                        .withClass("btn btn-outline-danger")
-                                        .with(
-                                            i().withClass("fas fa-power-off"),
-                                            span("Quit")
-                                                .withClass("ms-2")
-                                                .withStyle(CSS_COLOR_INHERIT))))))
-        .render();
-  }
-
-  private String addTigerProxyJsAndCss(String html) {
-    var jsoup = Jsoup.parse(html);
-    final Element mainWebUiScript = jsoup.getElementById("mainWebUiScript");
-
-    if (mainWebUiScript == null) {
-      throw new TigerProxyWebUiException("Unable to embed proxy scripts into webui!");
-    }
-    var addScript = new Element("script");
-    addScript.attr("type", "module");
-    addScript.attr("id", "tigerProxyScript");
-    addScript.appendChild(new DataNode(loadResourceToString("/tigerProxy.js")));
-    mainWebUiScript.after(addScript);
-
-    final Element rbelCss = jsoup.getElementById("rbel_css");
-    if (rbelCss == null) {
-      throw new TigerProxyWebUiException("Unable to embed proxy css into webui!");
-    }
-
-    var addCss = new Element("style");
-    addCss.attr("id", "tigerProxy_css");
-    addCss.appendChild(new DataNode(loadResourceToString("/proxy.css")));
-    rbelCss.after(addCss);
-    return jsoup.html();
-  }
-
-  private String loadResourceToString(String resourceName) {
-    final InputStream resource = getClass().getResourceAsStream(resourceName);
-    if (resource == null) {
-      throw new TigerProxyConfigurationException(
-          "Unable to load resource '" + resourceName + "' !");
-    }
-    try {
-      return IOUtils.toString(resource, StandardCharsets.UTF_8);
-    } catch (IOException e) {
-      throw new TigerProxyWebUiException(
-          "Exception while loading resource '" + resourceName + "'", e);
-    }
-  }
-
-  @GetMapping(value = "/css/{cssfile}", produces = "text/css")
-  public String getCSS(@PathVariable("cssfile") String cssFile) throws IOException {
-    try (InputStream is = getClass().getResourceAsStream("/css/" + cssFile)) {
-      if (is == null) {
-        throw new ResponseStatusException(
-            HttpStatus.NOT_FOUND, "css file " + cssFile + " not found");
-      }
-      return IOUtils.toString(is, StandardCharsets.UTF_8);
-    }
-  }
-
-  @GetMapping(value = "/testJexlQuery", produces = MediaType.APPLICATION_JSON_VALUE)
-  public JexlQueryResponseDto testJexlQuery(
-      @RequestParam(name = "msgUuid") final String msgUuid,
-      @RequestParam(name = "query") final String query) {
-    final RbelElement targetMessage =
-        getTigerProxy().getRbelLogger().getMessageHistory().stream()
-            .filter(msg -> msg.getUuid().equals(msgUuid))
-            .findFirst()
-            .orElseThrow();
-    final Map<String, Object> messageContext =
-        TigerJexlExecutor.buildJexlMapContext(targetMessage, Optional.empty());
-    try {
-      return JexlQueryResponseDto.builder()
-          .rbelTreeHtml(createRbelTreeForElement(targetMessage, false))
-          .matchSuccessful(TigerJexlExecutor.matchesAsJexlExpression(targetMessage, query))
-          .messageContext(messageContext)
-          .build();
-    } catch (JexlException | TigerJexlException jexlException) {
-      log.warn("Failed to perform JEXL query '" + query + "'", jexlException);
-      String msg = jexlException.getMessage();
-      msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
-      return JexlQueryResponseDto.builder()
-          .rbelTreeHtml(createRbelTreeForElement(targetMessage, false))
-          .errorMessage(msg)
-          .build();
-
-    } catch (RuntimeException rte) {
-      log.warn("Runtime failure while performing JEXL query '" + query + "'", rte);
-      String msg = rte.getMessage();
-      msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
-      return JexlQueryResponseDto.builder()
-          .rbelTreeHtml(createRbelTreeForElement(targetMessage, false))
-          .errorMessage(msg)
-          .build();
-    }
-  }
-
-  @GetMapping(value = "/testRbelExpression", produces = MediaType.APPLICATION_JSON_VALUE)
-  @SuppressWarnings("java:S5852")
-  public JexlQueryResponseDto testRbelExpression(
-      @RequestParam(name = "msgUuid") final String msgUuid,
-      @RequestParam(name = "rbelPath") final String rbelPath) {
-    List<RbelElement> targetElements = null;
-    try {
-      targetElements =
-          getTigerProxy().getRbelLogger().getMessageHistory().stream()
-              .filter(msg -> msg.getUuid().equals(msgUuid))
-              .map(msg -> msg.findRbelPathMembers(rbelPath))
-              .flatMap(List::stream)
-              .toList();
-      if (targetElements.isEmpty()) {
-        return JexlQueryResponseDto.builder().build();
-      }
-    } catch (RbelPathException rbelPathException) {
-      log.warn("Failed to perform RBelPath query '" + rbelPath + "'", rbelPathException);
-      String msg = rbelPathException.getMessage();
-      msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
-      return JexlQueryResponseDto.builder()
-          .rbelTreeHtml("<span>Error while parsing RbelPath '" + msg + "'</span>")
-          .errorMessage(msg)
-          .build();
-    }
-    try {
-      return JexlQueryResponseDto.builder()
-          .rbelTreeHtml(createRbelTreeForElement(targetElements.get(0), true, rbelPath))
-          .elements(
-              targetElements.stream()
-                  .map(RbelElement::findNodePath)
-                  .map(
-                      key ->
-                          key.endsWith(".content") && !rbelPath.endsWith(".content")
-                              ? "$." + key.substring(0, key.length() - 8)
-                              : "$." + key)
-                  .toList())
-          .build();
-    } catch (JexlException | TigerJexlException jexlException) {
-      log.warn("Failed to perform RBelPath query '" + rbelPath + "'", jexlException);
-      String msg = jexlException.getMessage();
-      msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
-      return JexlQueryResponseDto.builder()
-          .rbelTreeHtml("<span>RbelPath is invalid '" + msg + "'</span>")
-          .errorMessage(msg)
-          .build();
-
-    } catch (RuntimeException rte) {
-      log.warn("Runtime failure while performing RbelPath query '" + rbelPath + "'", rte);
-      String msg = rte.getMessage();
-      msg = msg.replaceAll(REGEX_STATUSCODE_TOKEN, "");
-      return JexlQueryResponseDto.builder()
-          .rbelTreeHtml("<span>Error while parsing RbelPath '" + msg + "'</span>")
-          .errorMessage(msg)
-          .build();
-    }
-  }
-
-  private String createRbelTreeForElement(
-      RbelElement targetElement, boolean addJexlResponseLinkCssClass) {
-    return createRbelTreeForElement(targetElement, addJexlResponseLinkCssClass, "");
-  }
-
-  private String createRbelTreeForElement(
-      RbelElement targetElement, boolean addJexlResponseLinkCssClass, String rbelPath) {
-
-    RbelElement rootElement =
-        targetElement
-            .getKey()
-            .filter(key -> key.endsWith("content") && !rbelPath.endsWith("content"))
-            .map(key -> targetElement.getParentNode())
-            .orElse(targetElement);
-
-    return RbelElementTreePrinter.builder()
-        .rootElement(rootElement)
-        .printFacets(true)
-        .htmlEscaping(true)
-        .addJexlResponseLinkCssClass(addJexlResponseLinkCssClass)
-        .build()
-        .execute();
-  }
-
-  @GetMapping(value = "/webfonts/{fontfile}", produces = "text/css")
-  public ResponseEntity<byte[]> getWebFont(@PathVariable("fontfile") String fontFile)
-      throws IOException {
-    try (InputStream is = getClass().getResourceAsStream("/webfonts/" + fontFile)) {
-      if (is == null) {
-        throw new ResponseStatusException(
-            HttpStatus.NOT_FOUND, "webfont file " + fontFile + " not found");
-      }
-      return new ResponseEntity<>(IOUtils.toByteArray(is), HttpStatus.OK);
-    }
-  }
-
-  @GetMapping(value = "/getMsgAfter", produces = MediaType.APPLICATION_JSON_VALUE)
-  public GetMessagesAfterDto getMessagesAfter(
-      @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid,
-      @RequestParam(name = "filterCriterion", required = false) final String filterCriterion,
-      @RequestParam(name = "pageSize", defaultValue = "1000000") final int pageSize,
-      @RequestParam(name = "pageNumber", defaultValue = "0") final int pageNumber) {
-    log.debug(
-        "requesting messages since " + lastMsgUuid + " (filtered by . " + filterCriterion + ")");
-
-    List<RbelElement> msgs = loadMessagesMatchingFilter(lastMsgUuid, filterCriterion);
-
-    var result = new GetMessagesAfterDto();
-    result.setLastMsgUuid(lastMsgUuid);
-    result.setHtmlMsgList(
-        msgs.stream()
-            .skip((long) pageNumber * pageSize)
-            .limit(pageSize)
-            .map(
-                msg ->
-                    HtmlMessage.builder()
-                        .html(new RbelHtmlRenderingToolkit(renderer).convertMessage(msg).render())
-                        .uuid(msg.getUuid())
-                        .sequenceNumber(MessageMetaDataDto.getElementSequenceNumber(msg))
-                        .build())
-            .toList());
-    result.setMetaMsgList(msgs.stream().map(MessageMetaDataDto::createFrom).toList());
-    result.setTotalMsgCount(tigerProxy.getRbelLogger().getMessageHistory().size());
-    log.info(
-        "Returning {} messages ({} in menu, {} filtered) of total {}",
-        result.getHtmlMsgList().size(),
-        result.getMetaMsgList().size(),
-        msgs.size(),
-        tigerProxy.getRbelLogger().getMessageHistory().size());
-    return result;
-  }
-
-  private List<RbelElement> loadMessagesMatchingFilter(String lastMsgUuid, String filterCriterion) {
+  private List<RbelElement> loadMessagesMatchingFilter(String filterCriterion) {
     return getTigerProxy().getRbelLogger().getMessageHistory().stream()
         .filter(
             msg -> {
-              if (StringUtils.isEmpty(filterCriterion)) {
+              if (!StringUtils.hasText(filterCriterion)) {
                 return true;
               }
               if (filterCriterion.startsWith("\"") && filterCriterion.endsWith("\"")) {
@@ -670,35 +473,10 @@ public class TigerWebUiController implements ApplicationContextAware {
                         findPartner(msg), filterCriterion, Optional.empty());
               }
             })
-        .dropWhile(messageIsBefore(lastMsgUuid))
-        .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
         .toList();
   }
 
-  private static Predicate<RbelElement> messageIsBefore(String lastMsgUuid) {
-    return msg -> {
-      if (StringUtils.isEmpty(lastMsgUuid)) {
-        return false;
-      } else {
-        return !msg.getUuid().equals(lastMsgUuid);
-      }
-    };
-  }
-
-  private RbelElement findPartner(RbelElement msg) {
-    return msg.getFacet(TracingMessagePairFacet.class)
-        .map(
-            pairFacet -> {
-              if (pairFacet.getRequest() == msg) {
-                return pairFacet.getResponse();
-              } else {
-                return pairFacet.getRequest();
-              }
-            })
-        .orElse(null);
-  }
-
-  @GetMapping(value = "/resetMsgs", produces = MediaType.APPLICATION_JSON_VALUE)
+  @GetMapping(value = "/resetMessages", produces = MediaType.APPLICATION_JSON_VALUE)
   public ResetMessagesDto resetMessages() {
     log.info("Resetting currently recorded messages on rbel logger..");
     int size = getTigerProxy().getRbelLogger().getMessageHistory().size();
@@ -718,13 +496,13 @@ public class TigerWebUiController implements ApplicationContextAware {
     if (exitCode != 0) {
       log.warn("Exit of tiger proxy ui not successful - exit code: " + exitCode);
     }
-    if (StringUtils.isEmpty(noSystemExit)) {
+    if (!StringUtils.hasText(noSystemExit)) {
       System.exit(0);
     }
   }
 
   @PostMapping(value = "/importTraffic")
-  public void importTrafficFromFile(@RequestBody String rawTraffic) {
+  public void importTraffic(@RequestBody String rawTraffic) {
     tigerProxy.readTrafficFromString(rawTraffic);
   }
 }
