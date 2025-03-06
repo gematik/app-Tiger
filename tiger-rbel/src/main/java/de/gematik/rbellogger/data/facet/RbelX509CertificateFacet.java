@@ -26,9 +26,13 @@ import de.gematik.rbellogger.data.util.AbstractX509FacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
+import j2html.tags.DomContent;
+import java.math.BigInteger;
 import java.security.cert.X509Certificate;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Data;
 
@@ -59,6 +63,13 @@ public class RbelX509CertificateFacet implements RbelFacet {
                     retrieveAndPrintValueNullSafe("Valid Until: ", x509Facet.getValidUntil()),
                     br())
                 .with(
+                    x509Facet
+                        .getSubjectPublicKeyInfo()
+                        .getFacet(RbelMapFacet.class)
+                        .map(RbelMapFacet::getChildNodes)
+                        .map(this::printPublicKeyInfo)
+                        .orElse(List.of()))
+                .with(
                     x509Facet.getExtensions().getChildNodes().stream()
                         .map(ext -> renderX509Extension(ext, renderingToolkit))
                         .toList())
@@ -66,44 +77,63 @@ public class RbelX509CertificateFacet implements RbelFacet {
                     ancestorTitle()
                         .with(vertParentTitle().with(renderingToolkit.convertNested(element))));
           }
+
+          private List<DomContent> printPublicKeyInfo(RbelMultiMap<RbelElement> infoMap) {
+            return infoMap.stream()
+                .filter(pair -> pair.getValue().hasFacet(RbelValueFacet.class))
+                .map(pair -> retrieveAndPrintValueNullSafe(pair.getKey() + ": ", pair.getValue()))
+                .toList();
+          }
         });
   }
 
+  private final RbelElement version;
   private final RbelElement serialnumber;
   private final RbelElement issuer;
   private final RbelElement validFrom;
   private final RbelElement validUntil;
   private final RbelElement subject;
+  private final RbelElement subjectPublicKeyInfo;
   private final RbelElement extensions;
+  private final RbelElement signature;
   private final X509Certificate certificate;
 
-  @Builder
-  public RbelX509CertificateFacet(
+  @Builder(access = AccessLevel.PUBLIC)
+  private RbelX509CertificateFacet(
       final RbelElement parent,
-      final String serialnumber,
+      final BigInteger serialnumber,
       final RbelElement issuer,
       final ZonedDateTime validFrom,
       final ZonedDateTime validUntil,
       final RbelElement subject,
+      final RbelElement subjectPublicKeyInfo,
       final RbelElement extensions,
-      final X509Certificate certificate) {
+      final RbelElement signature,
+      final X509Certificate certificate,
+      final int version) {
+    this.version = RbelElement.wrap(parent, version);
     this.serialnumber = RbelElement.wrap(parent, serialnumber);
     this.issuer = issuer;
     this.validFrom = RbelElement.wrap(parent, validFrom);
     this.validUntil = RbelElement.wrap(parent, validUntil);
     this.subject = subject;
-    this.certificate = certificate;
+    this.subjectPublicKeyInfo = subjectPublicKeyInfo;
     this.extensions = extensions;
+    this.signature = signature;
+    this.certificate = certificate;
   }
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
     return new RbelMultiMap<RbelElement>()
+        .with("version", version)
         .with("serialnumber", serialnumber)
         .with("issuer", issuer)
         .with("validFrom", validFrom)
         .with("validUntil", validUntil)
         .with("subject", subject)
-        .with("extensions", extensions);
+        .with("subjectPublicKeyInfo", subjectPublicKeyInfo)
+        .with("extensions", extensions)
+        .with("signature", signature);
   }
 }

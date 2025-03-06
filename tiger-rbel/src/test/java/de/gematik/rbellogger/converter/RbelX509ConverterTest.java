@@ -26,6 +26,8 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import java.io.IOException;
+import java.math.BigInteger;
+import java.time.ZonedDateTime;
 import java.util.List;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -57,8 +59,7 @@ class RbelX509ConverterTest {
 
     rawX509Certificate =
         converter.convertElement(
-            new TigerPkiIdentity("src/test/resources/idpEnc.p12").getCertificate().getEncoded(),
-            null);
+            new TigerPkiIdentity("src/test/resources/rsa.p12").getCertificate().getEncoded(), null);
   }
 
   @SneakyThrows
@@ -66,6 +67,7 @@ class RbelX509ConverterTest {
   void shouldRenderCleanHtml() {
     log.info("About to render html...");
     final String render = RbelHtmlRenderer.render(List.of(xmlMessage, rawX509Certificate));
+    System.out.println(rawX509Certificate.printTreeStructure());
     log.info("Done rendering html! (length is {}k)", render.length() / 1000);
     FileUtils.writeStringToFile(
         FileUtils.getFile("target", "rbelX509ConverterTest.html"), render, "UTF-8");
@@ -84,6 +86,56 @@ class RbelX509ConverterTest {
                 .findElement(
                     "$.body.RegistryResponse.RegistryErrorList.RegistryError.jwtTag.text.header.x5c.0.content")
                 .get());
+  }
+
+  @SneakyThrows
+  @Test
+  void shouldParseRelevantParts() {
+    assertThat(xmlMessage)
+        .extractChildWithPath("$..x5c.0.content")
+        .andPrintTree()
+        // Check Version
+        .hasGivenValueAtPosition("$.version", 3)
+        // Check Serial Number
+        .hasGivenValueAtPosition("$.serialnumber", BigInteger.valueOf(487275465566779L))
+        // Check Issuer
+        .hasGivenValueAtPosition(
+            "$.issuer",
+            "C=DE,O=gematik GmbH NOT-VALID,OU=Komponenten-CA der Telematikinfrastruktur,CN=GEM.KOMP-CA10 TEST-ONLY")
+        .hasStringContentEqualToAtPosition("$.issuer.C", "DE")
+        .hasStringContentEqualToAtPosition("$.issuer.O", "gematik GmbH NOT-VALID")
+        .hasStringContentEqualToAtPosition(
+            "$.issuer.OU", "Komponenten-CA der Telematikinfrastruktur")
+        .hasStringContentEqualToAtPosition("$.issuer.CN", "GEM.KOMP-CA10 TEST-ONLY")
+        // Check Validity
+        .hasGivenValueAtPosition("$.validFrom", ZonedDateTime.parse("2021-01-15T00:00Z[UTC]"))
+        .hasGivenValueAtPosition("$.validUntil", ZonedDateTime.parse("2026-01-15T23:59:59Z[UTC]"))
+        // Check Subject
+        .hasGivenValueAtPosition("$.subject", "C=DE,O=gematik TEST-ONLY - NOT-VALID,CN=IDP Sig 3")
+        .hasStringContentEqualToAtPosition("$.subject.C", "DE")
+        .hasStringContentEqualToAtPosition("$.subject.O", "gematik TEST-ONLY - NOT-VALID")
+        .hasStringContentEqualToAtPosition("$.subject.CN", "IDP Sig 3")
+        // Check Subject Public Key
+        .hasGivenValueAtPosition("$.subjectPublicKeyInfo.algorithm", "EC")
+        .hasGivenValueAtPosition("$.subjectPublicKeyInfo.format", "X.509")
+        .hasGivenValueAtPosition("$.subjectPublicKeyInfo.curve", "brainpoolP256r1")
+        // Signature
+        .hasGivenValueAtPosition("$.signature.algorithm", "1.2.840.10045.4.3.2")
+        .hasGivenValueAtPosition("$.signature.algorithm.name", "ecdsaWithSHA256");
+  }
+
+  @SneakyThrows
+  @Test
+  void verifySignatureAndKeyAlgorithmsForRsa() {
+    assertThat(rawX509Certificate)
+        .andPrintTree()
+        // Check Subject Public Key
+        .hasGivenValueAtPosition("$.subjectPublicKeyInfo.algorithm", "RSA")
+        .hasGivenValueAtPosition("$.subjectPublicKeyInfo.format", "X.509")
+        .hasGivenValueAtPosition("$.subjectPublicKeyInfo.modulusLength", 2048)
+        // Check Signature
+        .hasGivenValueAtPosition("$.signature.algorithm", "1.2.840.113549.1.1.11")
+        .hasGivenValueAtPosition("$.signature.algorithm.name", "sha256WithRSAEncryption");
   }
 
   @SneakyThrows

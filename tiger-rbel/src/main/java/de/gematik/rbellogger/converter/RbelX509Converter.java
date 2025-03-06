@@ -19,13 +19,16 @@ package de.gematik.rbellogger.converter;
 import static de.gematik.rbellogger.util.CryptoLoader.getCertificateFromPem;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelListFacet;
-import de.gematik.rbellogger.data.facet.RbelRootFacet;
-import de.gematik.rbellogger.data.facet.RbelX509CertificateFacet;
+import de.gematik.rbellogger.data.RbelMultiMap;
+import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.util.OidDictionary;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Base64;
@@ -36,6 +39,7 @@ import lombok.val;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 
 @Slf4j
 @ConverterInfo(onlyActivateFor = "X509")
@@ -63,7 +67,8 @@ public class RbelX509Converter extends AbstractX509Converter {
 
       val x509Facet =
           RbelX509CertificateFacet.builder()
-              .serialnumber(certificate.getSerialNumber().toString())
+              .version(certificate.getVersion())
+              .serialnumber(certificate.getSerialNumber())
               .issuer(
                   context.convertElement(
                       certificate.getIssuerX500Principal().getEncoded(), element))
@@ -72,9 +77,30 @@ public class RbelX509Converter extends AbstractX509Converter {
               .subject(
                   context.convertElement(
                       certificate.getSubjectX500Principal().getEncoded(), element))
+              .subjectPublicKeyInfo(
+                  RbelMapFacet.wrap(
+                      element,
+                      el -> {
+                        final RbelMultiMap<RbelElement> elementMap =
+                            new RbelMultiMap<RbelElement>()
+                                .with(
+                                    "algorithm",
+                                    RbelElement.wrap(el, certificate.getPublicKey().getAlgorithm()))
+                                .with(
+                                    "format",
+                                    RbelElement.wrap(el, certificate.getPublicKey().getFormat()))
+                                .with(
+                                    "encoded",
+                                    new RbelElement(certificate.getPublicKey().getEncoded(), el)
+                                        .addFacet(new RbelBinaryFacet()));
+                        addKeyParameters(certificate.getPublicKey(), elementMap, el);
+                        return elementMap;
+                      },
+                      null))
+              .extensions(parseCertificateExtensions(element, context, certificate))
+              .signature(buildSignatureInfo(element, certificate))
               .parent(element)
               .certificate(certificate)
-              .extensions(parseCertificateExtensions(element, context, certificate))
               .build();
       element.addFacet(x509Facet);
       element.addFacet(new RbelRootFacet<>(x509Facet));
@@ -83,6 +109,36 @@ public class RbelX509Converter extends AbstractX509Converter {
       // swallow
       return false;
     }
+  }
+
+  private void addKeyParameters(
+      PublicKey publicKey, RbelMultiMap<RbelElement> rbelElementMap, RbelElement parentNode) {
+    if (publicKey instanceof ECPublicKey ecPublicKey) {
+      if (ecPublicKey.getParams() instanceof ECNamedCurveSpec ecNamedCurveSpec) {
+        rbelElementMap.with("curve", RbelElement.wrap(parentNode, ecNamedCurveSpec.getName()));
+      } else {
+        rbelElementMap.with("curve", RbelElement.wrap(parentNode, "<unknown>"));
+      }
+    }
+    if (publicKey instanceof RSAPublicKey rsaPublicKey) {
+      rbelElementMap.with(
+          "modulusLength", RbelElement.wrap(parentNode, rsaPublicKey.getModulus().bitLength()));
+    }
+  }
+
+  private RbelElement buildSignatureInfo(RbelElement element, X509Certificate certificate) {
+    return RbelMapFacet.wrap(
+        element,
+        el -> {
+          final RbelElement oid = RbelElement.wrap(el, certificate.getSigAlgOID());
+          OidDictionary.buildAndAddAsn1OidFacet(oid, certificate.getSigAlgOID());
+          return new RbelMultiMap<RbelElement>()
+              .with("algorithm", oid)
+              .with(
+                  "encoded",
+                  new RbelElement(certificate.getSignature(), el).addFacet(new RbelBinaryFacet()));
+        },
+        certificate.getSignature());
   }
 
   public RbelElement parseCertificateExtensions(

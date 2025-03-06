@@ -55,6 +55,13 @@ public class RbelOcspResponseFacet implements RbelFacet {
                         "Responder ID: ", ocspResponseFacet.getResponderId()),
                     retrieveAndPrintValueNullSafe(
                         "Produced at: ", ocspResponseFacet.getProducedAt()),
+                    retrieveAndPrintValueNullSafe(
+                        "Signature algorithm: ",
+                        ocspResponseFacet
+                            .getSignatureAlgorithm()
+                            .getFacet(RbelAsn1OidFacet.class)
+                            .map(RbelAsn1OidFacet::getName)
+                            .orElse(null)),
                     br())
                 .with(
                     ocspResponseFacet.getResponses().getChildNodes().stream()

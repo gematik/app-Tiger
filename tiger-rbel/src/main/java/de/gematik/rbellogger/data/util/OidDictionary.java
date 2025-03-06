@@ -53,4 +53,13 @@ public class OidDictionary {
       parentNode.addFacet(new RbelAsn1OidFacet(RbelElement.wrap(parentNode, humanReadableName)));
     }
   }
+
+  public static RbelElement buildAndAddAsn1OidFacet(RbelElement parentNode) {
+    parentNode
+        .printValue()
+        .map(OID_DICTIONARY::get)
+        .ifPresent(
+            name -> parentNode.addFacet(new RbelAsn1OidFacet(RbelElement.wrap(parentNode, name))));
+    return parentNode;
+  }
 }

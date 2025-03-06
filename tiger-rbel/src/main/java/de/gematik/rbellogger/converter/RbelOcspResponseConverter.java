@@ -21,6 +21,7 @@ import de.gematik.rbellogger.data.facet.RbelListFacet;
 import de.gematik.rbellogger.data.facet.RbelOcspResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelRootFacet;
 import de.gematik.rbellogger.data.facet.RbelSingleOcspResponseFacet;
+import de.gematik.rbellogger.data.util.OidDictionary;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Base64;
@@ -69,6 +70,9 @@ public class RbelOcspResponseConverter extends AbstractX509Converter {
                   RbelElement.wrap(
                       element,
                       basicResponse.getResponderId().toASN1Primitive().getName().toString())));
+      ocspResponseFacet.setSignatureAlgorithm(
+          OidDictionary.buildAndAddAsn1OidFacet(
+              RbelElement.wrap(element, basicResponse.getSignatureAlgOID().getId())));
 
       executeSafe(
           () ->

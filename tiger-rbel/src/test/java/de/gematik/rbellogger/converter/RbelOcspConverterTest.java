@@ -69,6 +69,7 @@ class RbelOcspConverterTest {
         .hasFacet(RbelOcspResponseFacet.class)
         .hasGivenValueAtPosition("$.responseStatus", 0)
         .hasGivenValueAtPosition("$.version", 1)
+        .hasGivenValueAtPosition("$.signatureAlgorithm.name", "ecdsaWithSHA256")
         .hasGivenValueAtPosition(
             "$.responderId", "C=DE,O=gematik NOT-VALID,CN=ehca OCSP Signer 61 nist TEST-ONLY")
         .hasGivenValueAtPosition("$.responses.0.hashAlgorithm", "1.3.14.3.2.26")
