@@ -1,4 +1,4 @@
-d# Changelog Tiger Test platform
+# Changelog Tiger Test platform
 
 # Release 3.7.0
 
@@ -42,6 +42,7 @@ d# Changelog Tiger Test platform
   ASN.1 structure. This helps make longer structures, for example X.509-certificates, more readable.
 * TGR-1753: Shorten rbel-log file names in serenity report further to avoid too long file names when extracting report
   on Windows
+* TGR-1774: TigerGlobalConfiguration now efficiently deals with large byte-arrays
 * TGR-1766: Rbel: Fixed parent-elements in POP3 Headers and XML Processing Instructions
 * TGR-1760: Tiger Global Configuration: reading a boolean out of the configuration will now resolve placeholders before
   parsing the resulting string into a boolean.
@@ -468,8 +469,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+  key = PLUGIN_PROPERTY_NAME,
+  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

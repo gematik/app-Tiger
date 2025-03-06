@@ -134,7 +134,7 @@ class RbelHtmlRendererTest {
                 .addSimpleShadingCriterion("exp", "<Nested Shading>")
                 .addSimpleShadingCriterion("nbf", "\"foobar\"")
                 .addSimpleShadingCriterion("iat", "&some&more\"stuff\""));
-    FileUtils.writeStringToFile(new File("target/out.html"), convertedHtml);
+    FileUtils.writeStringToFile(new File("target/shaded.html"), convertedHtml);
 
     assertThat(convertedHtml)
         .contains("&lt;halt ein date&gt;")

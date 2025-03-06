@@ -34,6 +34,7 @@ import java.net.ServerSocket;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;
@@ -802,14 +803,19 @@ public class TigerConfigurationTest { // NOSONAR
   }
 
   @Test
-  void test() {
+  void writeByteArraysAndReadThem_shouldWork() {
     byte[] b1 = new byte[] {0x1};
-    byte[] b2 = new byte[] {0x2};
     TigerGlobalConfiguration.putValue("testkey", b1);
     assertThat(TigerGlobalConfiguration.readByteArray("testkey")).get().isEqualTo(b1);
 
+    byte[] b2 = new byte[] {0x2};
     TigerGlobalConfiguration.putValue("testkey", b2);
     assertThat(TigerGlobalConfiguration.readByteArray("testkey")).get().isEqualTo(b2);
+
+    byte[] b3 = new byte[50_000_000];
+    new Random().nextBytes(b3);
+    TigerGlobalConfiguration.putValue("testkey", b3);
+    assertThat(TigerGlobalConfiguration.readByteArray("testkey")).get().isEqualTo(b3);
   }
 
   @ParameterizedTest

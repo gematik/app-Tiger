@@ -494,6 +494,8 @@ public class TigerConfigurationLoader {
 
     if (value instanceof String asString) {
       configurationSource.putValue(key, asString);
+    } else if (value instanceof byte[] arrayValue) {
+      configurationSource.putValue(key, Base64.getEncoder().encodeToString(arrayValue));
     } else {
       try {
         Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
