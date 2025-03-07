@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 3.6.1 - 2025-02-11</span>
+<span id="revdate">Version 3.7.0 - 2025-03-07</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -225,11 +225,12 @@ video {
 </li>
 <li><a href="#tiger-test-environment-manager-2">3. Tiger test environment manager</a>
 <ul class="sectlevel2">
-<li><a href="#supported-server-nodes-and-their-configuration">3.1. Supported server nodes and their configuration</a></li>
-<li><a href="#provided-node-templates">3.2. Provided node templates</a></li>
-<li><a href="#_configuring_the_local_test_suite_tiger_proxy">3.3. Configuring the local test suite Tiger Proxy</a></li>
-<li><a href="#standalone-mode-vs-implicit-startup-with-test-suite">3.4. Standalone mode vs. implicit startup with test suite</a></li>
-<li><a href="#using-environment-variables-and-system-properties">3.5. Using Environment variables and system properties</a></li>
+<li><a href="#tiger-yaml-files-and-how-they-are-chosen-and-loaded">3.1. Tiger.yaml files and how they are chosen and loaded</a></li>
+<li><a href="#supported-server-nodes-and-their-configuration">3.2. Supported server nodes and their configuration</a></li>
+<li><a href="#provided-node-templates">3.3. Provided node templates</a></li>
+<li><a href="#_configuring_the_local_test_suite_tiger_proxy">3.4. Configuring the local test suite Tiger Proxy</a></li>
+<li><a href="#standalone-mode-vs-implicit-startup-with-test-suite">3.5. Standalone mode vs. implicit startup with test suite</a></li>
+<li><a href="#using-environment-variables-and-system-properties">3.6. Using Environment variables and system properties</a></li>
 </ul>
 </li>
 <li><a href="#tiger-proxy-2">4. Tiger Proxy</a>
@@ -777,7 +778,6 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
                             --&gt;
                             &lt;!-- optional --&gt;
                             &lt;skip&gt;false&lt;/skip&gt;
-                            &lt;junit5Driver&gt;true&lt;/junit5Driver&gt;
                         &lt;/configuration&gt;
                         &lt;phase&gt;generate-test-sources&lt;/phase&gt;
                         &lt;id&gt;generate-tiger-drivers&lt;/id&gt;
@@ -797,6 +797,16 @@ The second dependency is needed so that the IntelliJ Cucumber plugin detects the
                                 generate-serenity-reports
                             &lt;/goal&gt;
                         &lt;/goals&gt;
+                        &lt;configuration&gt;
+                            &lt;!-- optional - directory where serenity reports are created --&gt;
+                            &lt;reportDirectory&gt;${project.build.directory}/site/serenity&lt;/reportDirectory&gt;
+                            &lt;!-- optional - directory with the .feature files being executed --&gt;
+                            &lt;requirementsBaseDir&gt;src/test/resources/features&lt;/requirementsBaseDir&gt;
+                            &lt;!--optional - when set to true, the serenity report is automatically open in the default browser --&gt;
+                            &lt;openSerenityReportInBrowser&gt;false&lt;/openSerenityReportInBrowser&gt;
+                            &lt;!-- optional - A comma separated list of report types to be generated. --&gt;
+                            &lt;reports&gt;html,single-page-html,json-summary&lt;/reports&gt;
+                        &lt;/configuration&gt;
                     &lt;/execution&gt;
                 &lt;/executions&gt;
             &lt;/plugin&gt;
@@ -942,7 +952,6 @@ You may decide to manually write your own JUnit driver classes in which case you
                             --&gt;
                             &lt;!-- optional --&gt;
                             &lt;skip&gt;false&lt;/skip&gt;
-                            &lt;junit5Driver&gt;true&lt;/junit5Driver&gt;
                         &lt;/configuration&gt;
                         &lt;phase&gt;generate-test-sources&lt;/phase&gt;
                         &lt;id&gt;generate-tiger-drivers&lt;/id&gt;
@@ -962,6 +971,16 @@ You may decide to manually write your own JUnit driver classes in which case you
                                 generate-serenity-reports
                             &lt;/goal&gt;
                         &lt;/goals&gt;
+                        &lt;configuration&gt;
+                            &lt;!-- optional - directory where serenity reports are created --&gt;
+                            &lt;reportDirectory&gt;${project.build.directory}/site/serenity&lt;/reportDirectory&gt;
+                            &lt;!-- optional - directory with the .feature files being executed --&gt;
+                            &lt;requirementsBaseDir&gt;src/test/resources/features&lt;/requirementsBaseDir&gt;
+                            &lt;!--optional - when set to true, the serenity report is automatically open in the default browser --&gt;
+                            &lt;openSerenityReportInBrowser&gt;false&lt;/openSerenityReportInBrowser&gt;
+                            &lt;!-- optional - A comma separated list of report types to be generated. --&gt;
+                            &lt;reports&gt;html,single-page-html,json-summary&lt;/reports&gt;
+                        &lt;/configuration&gt;
                     &lt;/execution&gt;
                 &lt;/executions&gt;
             &lt;/plugin&gt;</code></pre>
@@ -1093,18 +1112,24 @@ public class Driver1IT {}</code></pre>
 <h5 id="generate-reports-goal"><a class="anchor" href="#generate-reports-goal"></a>Generate Reports goal</h5>
 <div class="paragraph">
 <p>The second execution block in the example XML section above will trigger the report creation.<br>
-There are no properties for configuration at the moment.<br>
-Two reports will be generated under target/site/serenity:</p>
+With the parameter <code>reports</code> you can configure which reports get generated.<br>
+The following reports types are available</p>
 </div>
 <div class="ulist">
 <ul>
 <li>
-<p>A simple HTML single page report for emailing (serenity-summary.html)</p>
+<p><code>html</code> - A fancy detailed overall report (index.html)</p>
 </li>
 <li>
-<p>A fancy detailed overall report (index.html)</p>
+<p><code>single-page-html</code> - A simple HTML single page report for emailing (serenity-summary.html)</p>
+</li>
+<li>
+<p><code>json-summary</code> - A summary report in json format, useful for displaying in CI tools (e.g.: Jenkins)</p>
 </li>
 </ul>
+</div>
+<div class="paragraph">
+<p>By setting the parameter <code>openSerenityReportInBrowser</code> to true, the <code>html</code> report will automatically open in the default browser.</p>
 </div>
 </div>
 <div class="sect4">
@@ -1344,13 +1369,15 @@ BOTH settings (environment variables and system properties) are required as Mave
 <div class="sectionbody">
 <div class="paragraph">
 <p>As outlined in <a href="#_overview">the overview section</a> the test environment manager is one of the three core components of the Tiger test framework.<br>
-Its main task is to start various test server nodes configured in the <code>tiger.yaml</code> configuration file and initialize the local Tiger Proxy for the test suite.<br>
-To choose a different test environmental configuration file you may set the environment variable <code>TIGER_TESTENV_CFGFILE</code>.</p>
+Its main task is to start various test server nodes configured in the <code>tiger.yaml</code> configuration file and initialize the local Tiger Proxy for the test suite.</p>
 </div>
+<div class="sect2">
+<h3 id="tiger-yaml-files-and-how-they-are-chosen-and-loaded"><a class="anchor" href="#tiger-yaml-files-and-how-they-are-chosen-and-loaded"></a>3.1. Tiger.yaml files and how they are chosen and loaded</h3>
 <div class="paragraph">
 <p>The test environment manager first checks if the env variable is set and tries to load the configuration file from this value.<br>
 If this file does not exist the test environment manager tries to load the configuration from <code>tiger.yaml</code>.<br>
-If none of these files exist it will fail the start-up.</p>
+If none of these files exist it will fail the start-up.<br>
+To choose a different test environment configuration file you may set the environment variable <code>TIGER_TESTENV_CFGFILE</code>.</p>
 </div>
 <div class="paragraph">
 <p>If the environment variable is not set it searches for files named <code>tiger.yaml</code> or <code>tiger.yml</code>.<br>
@@ -1392,8 +1419,9 @@ Keep in mind that placeholders can be used in the filename!</p>
 <div class="paragraph">
 <p>The nodes configured in the yaml file will be started asynchronously unless the dependsUpon property is set.</p>
 </div>
+</div>
 <div class="sect2">
-<h3 id="supported-server-nodes-and-their-configuration"><a class="anchor" href="#supported-server-nodes-and-their-configuration"></a>3.1. Supported server nodes and their configuration</h3>
+<h3 id="supported-server-nodes-and-their-configuration"><a class="anchor" href="#supported-server-nodes-and-their-configuration"></a>3.2. Supported server nodes and their configuration</h3>
 <div class="paragraph">
 <p>The Tiger testenvironment manager currently supports the following list of server nodes.</p>
 </div>
@@ -1430,14 +1458,14 @@ It starts a <a href="https://github.com/gaul/java-httpbin">httpbin</a> server wh
 </ul>
 </div>
 <div class="sect3">
-<h4 id="yaml-configuration-files-in-a-nutshell"><a class="anchor" href="#yaml-configuration-files-in-a-nutshell"></a>3.1.1. YAML configuration files in a nutshell</h4>
+<h4 id="yaml-configuration-files-in-a-nutshell"><a class="anchor" href="#yaml-configuration-files-in-a-nutshell"></a>3.2.1. YAML configuration files in a nutshell</h4>
 <div class="paragraph">
 <p>Before you start writing your own <code>tiger.yaml</code> configuration files, make sure you have worked with yaml files before and know its syntax and structure.<br>
 If unsure take a <a href="https://dev.to/techworld_with_nana/yaml-tutorial-for-beginners-a06">20 minutes primer</a>, although not everything in the video is relevant, it gives a good introduction to indenting properties and structures and specifying values in a yaml file.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="general-properties"><a class="anchor" href="#general-properties"></a>3.1.2. General properties</h4>
+<h4 id="general-properties"><a class="anchor" href="#general-properties"></a>3.2.2. General properties</h4>
 <div class="paragraph">
 <p>The general properties apply to each node type.</p>
 </div>
@@ -1628,7 +1656,7 @@ Their meaning and format are explained in the related section.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="_configuring_pki_identities_in_tiger_proxys_tls_section"><a class="anchor" href="#_configuring_pki_identities_in_tiger_proxys_tls_section"></a>3.1.3. Configuring PKI identities in Tiger Proxy&#8217;s tls section</h4>
+<h4 id="_configuring_pki_identities_in_tiger_proxys_tls_section"><a class="anchor" href="#_configuring_pki_identities_in_tiger_proxys_tls_section"></a>3.2.3. Configuring PKI identities in Tiger Proxy&#8217;s tls section</h4>
 <div class="paragraph">
 <p>PKI identities can be supplied in a number of ways (JKS, BKS, PKCS1, PKCS8).<br>
 In every place a string can be given.<br>
@@ -1735,7 +1763,7 @@ Invalid pathname strings will also produce an exception.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="docker-container-node"><a class="anchor" href="#docker-container-node"></a>3.1.4. Docker Container node</h4>
+<h4 id="docker-container-node"><a class="anchor" href="#docker-container-node"></a>3.2.4. Docker Container node</h4>
 <div class="paragraph">
 <p>The docker container node allows to instantiate a local docker container from the configured image.<br>
 The exposed port of the docker container is available as a special token in the substitution process of the exports entries (<code>${PORT:xxxx}</code> where xxxx is the port being exposed inside the container).</p>
@@ -1835,7 +1863,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </div>
 </div>
 <div class="sect3">
-<h4 id="docker-compose-node"><a class="anchor" href="#docker-compose-node"></a>3.1.5. Docker Compose node</h4>
+<h4 id="docker-compose-node"><a class="anchor" href="#docker-compose-node"></a>3.2.5. Docker Compose node</h4>
 <div class="paragraph">
 <p>The docker compose node is a very tricky type of node because we use testcontainer library, which is not exactly up to date in terms of docker compose support.<br>
 So many of the yaml compose files will need to be modified to work with the testcontainer library.</p>
@@ -1893,7 +1921,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </div>
 </div>
 <div class="sect3">
-<h4 id="external-jar-node"><a class="anchor" href="#external-jar-node"></a>3.1.6. External Jar node</h4>
+<h4 id="external-jar-node"><a class="anchor" href="#external-jar-node"></a>3.2.6. External Jar node</h4>
 <div class="paragraph">
 <p>The External Jar node is along with the Docker container node the most important/used node for test environments.<br>
 Any Jar archive executable which can be started with the <code>java -jar</code> command can be configured as an external Jar node.</p>
@@ -1988,7 +2016,7 @@ To change the JVM used you can set the property <code>tiger.lib.javaHome</code> 
 </div>
 </div>
 <div class="sect3">
-<h4 id="external-url-node"><a class="anchor" href="#external-url-node"></a>3.1.7. External URL node</h4>
+<h4 id="external-url-node"><a class="anchor" href="#external-url-node"></a>3.2.7. External URL node</h4>
 <div class="paragraph">
 <p>The symbolic node type that will not start a server instance, but simply allows external services to be used via the configured hostname.<br>
 This is achieved by the test environment manager instructing the local Tiger Proxy to provide a route for the symbolic hostname to the external URL of the service.</p>
@@ -2036,7 +2064,7 @@ If it is ever necessary to change the external URL, the test suite does not have
 </div>
 </div>
 <div class="sect3">
-<h4 id="helm-chart-node"><a class="anchor" href="#helm-chart-node"></a>3.1.8. Helm Chart node</h4>
+<h4 id="helm-chart-node"><a class="anchor" href="#helm-chart-node"></a>3.2.8. Helm Chart node</h4>
 <div class="paragraph">
 <p>The helm chart node allows to start a helm chart from the configured source (local helm chart file / folder or remote helm chart).<br>
 The helm chart is started and the server is ready when all pods are up and running, if port-forward is used (if exposedPorts are set), then port-forwarding is also done and the startup is finished and the service can be used for testing.</p>
@@ -2099,7 +2127,7 @@ To use this server type you must include the tiger-cloud-extension dependency!
 </div>
 </div>
 <div class="sect3">
-<h4 id="tiger-proxy-node"><a class="anchor" href="#tiger-proxy-node"></a>3.1.9. Tiger Proxy node</h4>
+<h4 id="tiger-proxy-node"><a class="anchor" href="#tiger-proxy-node"></a>3.2.9. Tiger Proxy node</h4>
 <div class="paragraph">
 <p>The most complex and versatile node type.<br>
 The Tiger Proxy will be started as an embedded spring boot application.<br>
@@ -2152,7 +2180,7 @@ This way the start-up time can be minimized, and it is always guaranteed to star
 </div>
 </div>
 <div class="sect3">
-<h4 id="httpbin-node"><a class="anchor" href="#httpbin-node"></a>3.1.10. httpbin node</h4>
+<h4 id="httpbin-node"><a class="anchor" href="#httpbin-node"></a>3.2.10. httpbin node</h4>
 <div class="paragraph">
 <p>The httpbin simply starts a <a href="https://github.com/gaul/java-httpbin">httpbin</a> server.<br>
 This provides several endpoints against which you can perform all kinds of http requests.<br>
@@ -2170,7 +2198,7 @@ The server port on which the server starts can be configured.</p>
 </div>
 </div>
 <div class="sect2">
-<h3 id="provided-node-templates"><a class="anchor" href="#provided-node-templates"></a>3.2. Provided node templates</h3>
+<h3 id="provided-node-templates"><a class="anchor" href="#provided-node-templates"></a>3.3. Provided node templates</h3>
 <div class="paragraph">
 <p>Besides these basic nodes we also support tailored templates for nodes like IDP, ePA, ERp and DEMIS.<br>
 This should allow you to bring up project specific test environments very fast.</p>
@@ -2202,7 +2230,7 @@ myLocalTestERp:
 </div>
 </div>
 <div class="sect3">
-<h4 id="local-idp-reference-nodes"><a class="anchor" href="#local-idp-reference-nodes"></a>3.2.1. Local IDP reference nodes</h4>
+<h4 id="local-idp-reference-nodes"><a class="anchor" href="#local-idp-reference-nodes"></a>3.3.1. Local IDP reference nodes</h4>
 <div class="paragraph">
 <p>This template provides the reference implementation of the IDP server as a local docker container.<br>
 The docker image is loaded from a gematik internal docker registry server.</p>
@@ -2212,7 +2240,7 @@ The docker image is loaded from a gematik internal docker registry server.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="external-idp-rise-instance-nodes"><a class="anchor" href="#external-idp-rise-instance-nodes"></a>3.2.2. External IDP RISE instance nodes</h4>
+<h4 id="external-idp-rise-instance-nodes"><a class="anchor" href="#external-idp-rise-instance-nodes"></a>3.3.2. External IDP RISE instance nodes</h4>
 <div class="paragraph">
 <p>The idp-rise-ru template provides the RU instance of RISE&#8217;s IDP server as an "external URL".<br>
 The system properties IDP_SERVER and GEMATIK_TESTCONFIG are set to the URL of the Discovery Document end point and a config-file for the IDP test suite respectively.<br>
@@ -2223,7 +2251,7 @@ They are available for all subsequently initiated test environment nodes.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="local-erp-reference-nodes"><a class="anchor" href="#local-erp-reference-nodes"></a>3.2.3. Local ERp reference nodes</h4>
+<h4 id="local-erp-reference-nodes"><a class="anchor" href="#local-erp-reference-nodes"></a>3.3.3. Local ERp reference nodes</h4>
 <div class="paragraph">
 <p>This template provides the reference implementation of the eRezept server as a local docker container.<br>
 The docker image is loaded from a gematik internal docker registry server.<br>
@@ -2235,40 +2263,40 @@ But don&#8217;t worry, it is just the server that uses them.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="local-epa2-reference-nodes"><a class="anchor" href="#local-epa2-reference-nodes"></a>3.2.4. Local ePA2 reference nodes</h4>
+<h4 id="local-epa2-reference-nodes"><a class="anchor" href="#local-epa2-reference-nodes"></a>3.3.4. Local ePA2 reference nodes</h4>
 <div class="paragraph">
 <p>This template provides the gematik reference Aktensystem simulation as docker compose.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="local-pssim-node"><a class="anchor" href="#local-pssim-node"></a>3.2.5. Local PSSim node</h4>
+<h4 id="local-pssim-node"><a class="anchor" href="#local-pssim-node"></a>3.3.5. Local PSSim node</h4>
 <div class="paragraph">
 <p>This template provides a Primärsystem simulation (as a jar), usable for ePA.<br>
 See <a href="https://wiki.gematik.de/display/PTP/epa-ps" class="bare">https://wiki.gematik.de/display/PTP/epa-ps</a> for more information.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="local-konsim-node"><a class="anchor" href="#local-konsim-node"></a>3.2.6. Local KonSim node</h4>
+<h4 id="local-konsim-node"><a class="anchor" href="#local-konsim-node"></a>3.3.6. Local KonSim node</h4>
 <div class="paragraph">
 <p>This template provides a Konnektor simulation (as external jar).<br>
 See <a href="https://wiki.gematik.de/display/PTP/KonSim" class="bare">https://wiki.gematik.de/display/PTP/KonSim</a> for more information.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="local-epa-fdv-sim"><a class="anchor" href="#local-epa-fdv-sim"></a>3.2.7. Local ePA FdV Sim</h4>
+<h4 id="local-epa-fdv-sim"><a class="anchor" href="#local-epa-fdv-sim"></a>3.3.7. Local ePA FdV Sim</h4>
 <div class="paragraph">
 <p>This template provides FdV simulation, usable for ePA.</p>
 </div>
 </div>
 <div class="sect3">
-<h4 id="local-demis-reference-nodes"><a class="anchor" href="#local-demis-reference-nodes"></a>3.2.8. Local DEMIS reference nodes</h4>
+<h4 id="local-demis-reference-nodes"><a class="anchor" href="#local-demis-reference-nodes"></a>3.3.8. Local DEMIS reference nodes</h4>
 <div class="paragraph">
 <p>This template provides the DEMIS Meldeportal as local docker compose.</p>
 </div>
 </div>
 </div>
 <div class="sect2">
-<h3 id="_configuring_the_local_test_suite_tiger_proxy"><a class="anchor" href="#_configuring_the_local_test_suite_tiger_proxy"></a>3.3. Configuring the local test suite Tiger Proxy</h3>
+<h3 id="_configuring_the_local_test_suite_tiger_proxy"><a class="anchor" href="#_configuring_the_local_test_suite_tiger_proxy"></a>3.4. Configuring the local test suite Tiger Proxy</h3>
 <div class="paragraph">
 <p>The local Tiger Proxy for the test suite can be configured by using the following section(s) in the <code>tiger.yaml</code> file.<br>
 For more information about what the Tiger Proxy is and how it works see the chapter <a href="#_tiger_proxy_basics">Tiger Proxy basics</a></p>
@@ -2337,6 +2365,7 @@ tigerProxy:
     targetElement: "$.body"
     # The name of this modification.
     # This can be used to identify, alter or remove this modification.
+    # The name is optional, but if it is used, it has to be unique.
     name: "body replacement modification"
     # This will replace the body of every 200 response completely with the given json-string
     # (This ignores the existing body. For example this could be an XML-body.
@@ -2466,7 +2495,7 @@ tigerProxy:
 </div>
 </div>
 <div class="sect2">
-<h3 id="standalone-mode-vs-implicit-startup-with-test-suite"><a class="anchor" href="#standalone-mode-vs-implicit-startup-with-test-suite"></a>3.4. Standalone mode vs. implicit startup with test suite</h3>
+<h3 id="standalone-mode-vs-implicit-startup-with-test-suite"><a class="anchor" href="#standalone-mode-vs-implicit-startup-with-test-suite"></a>3.5. Standalone mode vs. implicit startup with test suite</h3>
 <div class="paragraph">
 <p>If your test environment is very "expensive" to start or if you are developing your test suite scenarios thus starting many test runs in a short time, you might want to keep your test environment running and not shut it down after each run.<br>
 To do so, you can simply use the tiger maven plugin to start your test environment in standalone mode.</p>
@@ -2540,9 +2569,9 @@ So you may skip the first and just use it with two different values being set.</
 </div>
 </div>
 <div class="sect2">
-<h3 id="using-environment-variables-and-system-properties"><a class="anchor" href="#using-environment-variables-and-system-properties"></a>3.5. Using Environment variables and system properties</h3>
+<h3 id="using-environment-variables-and-system-properties"><a class="anchor" href="#using-environment-variables-and-system-properties"></a>3.6. Using Environment variables and system properties</h3>
 <div class="sect3">
-<h4 id="tokenvariable-substitution"><a class="anchor" href="#tokenvariable-substitution"></a>3.5.1. Token/variable substitution</h4>
+<h4 id="tokenvariable-substitution"><a class="anchor" href="#tokenvariable-substitution"></a>3.6.1. Token/variable substitution</h4>
 <div class="paragraph">
 <p>Entries in the exports list of a node will be parsed and specific tokens will be substituted:</p>
 </div>
@@ -4146,8 +4175,8 @@ In order to use these steps you must ensure that the relevant traffic is routed 
     And TGR filter requests based on host "testnode.example.org"
     And TGR filter requests based on method "POST"
     And TGR set request wait timeout to 20 seconds
-    When TGR find request to path "/path/path/blabla" with "$..tag.value.text" matching "abc.*"
-    And TGR find request to path "/path/path/blabla" containing node "$..tag"
+    When TGR find first request to path "/path/path/blabla" with "$..tag.value.text" matching "abc.*"
+    And TGR find first request to path "/path/path/blabla" containing node "$..tag"
     Then TGR current response with attribute "$..answer.result.text" matches "OK.*"
     But TGR current response with attribute "$..answer.reason.text" does not match "REQUEST.*"
     And TGR current response body matches:
@@ -4340,7 +4369,7 @@ find next steps are not altered by this step.</p>
 
 </div>
 <div class="sect4">
-<h5 id="tgr-find-request-to-path-string"><a class="anchor" href="#tgr-find-request-to-path-string"></a>TGR find request to path {string}</h5>
+<h5 id="tgr-find-first-request-to-path-string"><a class="anchor" href="#tgr-find-first-request-to-path-string"></a>TGR find first request to path {string}</h5>
 <div class="paragraph indent">
 <p>find the first request where the path equals or matches as regex and memorize it in the {<strong>link</strong><br>
 #rbelValidator} instance</p>
@@ -4350,14 +4379,31 @@ find next steps are not altered by this step.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="tgr-finde-die-erste-anfrage-mit-pfad-string-und-knoten-string-der-mit-string-übereinstimmt"><a class="anchor" href="#tgr-finde-die-erste-anfrage-mit-pfad-string-und-knoten-string-der-mit-string-übereinstimmt"></a>TGR finde die erste Anfrage mit Pfad {string} und Knoten {string} der mit {string}" + " übereinstimmt</h5>
-
+<h5 id="tgr-find-request-to-path-string"><a class="anchor" href="#tgr-find-request-to-path-string"></a>TGR find request to path {string}</h5>
+<div class="paragraph indent">
+<p>DEPRECATED please use "TGR find first request to path {string}" instead.</p>
+</div>
 </div>
 <div class="sect4">
 <h5 id="tgr-find-request-to-path-string-with-string-matching-string"><a class="anchor" href="#tgr-find-request-to-path-string-with-string-matching-string"></a>TGR find request to path {string} with {string} matching {string}</h5>
 <div class="paragraph indent">
+<p>DEPRECATED please use "TGR find first request to path {string} with {string} matching {string}"<br>
+instead. Please use "TGR find first request to path {string} with {string} matching {string}"<br>
+instead.</p>
+</div>
+<div class="paragraph indent">
+<p><strong>deprecated</strong></p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="tgr-finde-die-erste-anfrage-mit-pfad-string-und-knoten-string-der-mit-string-übereinstimmt"><a class="anchor" href="#tgr-finde-die-erste-anfrage-mit-pfad-string-und-knoten-string-der-mit-string-übereinstimmt"></a>TGR finde die erste Anfrage mit Pfad {string} und Knoten {string} der mit {string}" + " übereinstimmt</h5>
+
+</div>
+<div class="sect4">
+<h5 id="tgr-find-first-request-to-path-string-with-string-matching-string"><a class="anchor" href="#tgr-find-first-request-to-path-string-with-string-matching-string"></a>TGR find first request to path {string} with {string} matching {string}</h5>
+<div class="paragraph indent">
 <p>find the first request where path and node value equal or match as regex and memorize it in the<br>
-{<strong>link</strong> #rbelValidator} instance.</p>
+{<strong>link</strong> #rbelMessageRetriever} instance.</p>
 </div>
 <div class="paragraph indent">
 <p><strong>param</strong> path path to match<br>
@@ -4373,7 +4419,7 @@ find next steps are not altered by this step.</p>
 <h5 id="tgr-find-next-request-to-path-string"><a class="anchor" href="#tgr-find-next-request-to-path-string"></a>TGR find next request to path {string}</h5>
 <div class="paragraph indent">
 <p>find the NEXT request where the path equals or matches as regex and memorize it in the {<strong>link</strong><br>
-#rbelValidator} instance.</p>
+#rbelMessageRetriever} instance.</p>
 </div>
 <div class="paragraph indent">
 <p><strong>param</strong> path path to match</p>
@@ -4387,7 +4433,7 @@ find next steps are not altered by this step.</p>
 <h5 id="tgr-find-next-request-to-path-string-with-string-matching-string"><a class="anchor" href="#tgr-find-next-request-to-path-string-with-string-matching-string"></a>TGR find next request to path {string} with {string} matching {string}</h5>
 <div class="paragraph indent">
 <p>find the NEXT request where path and node value equal or match as regex and memorize it in the<br>
-{<strong>link</strong> #rbelValidator} instance.</p>
+{<strong>link</strong> #rbelMessageRetriever} instance.</p>
 </div>
 <div class="paragraph indent">
 <p><strong>param</strong> path path to match<br>
@@ -4400,14 +4446,21 @@ find next steps are not altered by this step.</p>
 
 </div>
 <div class="sect4">
-<h5 id="tgr-find-request-to-path-string-containing-node-string"><a class="anchor" href="#tgr-find-request-to-path-string-containing-node-string"></a>TGR find request to path {string} containing node {string}</h5>
+<h5 id="tgr-find-first-request-to-path-string-containing-node-string"><a class="anchor" href="#tgr-find-first-request-to-path-string-containing-node-string"></a>TGR find first request to path {string} containing node {string}</h5>
 <div class="paragraph indent">
 <p>find the first request where path matches and request contains node with given rbel path and<br>
-memorize it in the {<strong>link</strong> #rbelValidator} instance.</p>
+memorize it in the {<strong>link</strong> #rbelMessageRetriever} instance.</p>
 </div>
 <div class="paragraph indent">
 <p><strong>param</strong> path path to match<br>
 <strong>param</strong> rbelPath rbel path to node/attribute</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="tgr-find-request-to-path-string-containing-node-string"><a class="anchor" href="#tgr-find-request-to-path-string-containing-node-string"></a>TGR find request to path {string} containing node {string}</h5>
+<div class="paragraph indent">
+<p>DEPRECATED please use "TGR find first request to path {string} with {string} containing node<br>
+{string}" instead.</p>
 </div>
 </div>
 <div class="sect4">
@@ -4418,7 +4471,7 @@ memorize it in the {<strong>link</strong> #rbelValidator} instance.</p>
 <h5 id="tgr-find-next-request-to-path-string-containing-node-string"><a class="anchor" href="#tgr-find-next-request-to-path-string-containing-node-string"></a>TGR find next request to path {string} containing node {string}</h5>
 <div class="paragraph indent">
 <p>find the NEXT request where path matches and request contains node with given rbel path and<br>
-memorize it in the {<strong>link</strong> #rbelValidator} instance.</p>
+memorize it in the {<strong>link</strong> #rbelMessageRetriever} instance.</p>
 </div>
 <div class="paragraph indent">
 <p><strong>param</strong> path path to match<br>
@@ -4433,7 +4486,7 @@ memorize it in the {<strong>link</strong> #rbelValidator} instance.</p>
 <h5 id="tgr-find-last-request-to-path-string"><a class="anchor" href="#tgr-find-last-request-to-path-string"></a>TGR find last request to path {string}</h5>
 <div class="paragraph indent">
 <p>find the LAST request where the path equals or matches as regex and memorize it in the {<strong>link</strong><br>
-#rbelValidator} instance.</p>
+#rbelMessageRetriever} instance.</p>
 </div>
 <div class="paragraph indent">
 <p><strong>param</strong> path path to match</p>
@@ -4447,7 +4500,7 @@ memorize it in the {<strong>link</strong> #rbelValidator} instance.</p>
 <h5 id="tgr-find-last-request-to-path-string-with-string-matching-string"><a class="anchor" href="#tgr-find-last-request-to-path-string-with-string-matching-string"></a>TGR find last request to path {string} with {string} matching {string}</h5>
 <div class="paragraph indent">
 <p>find the LAST request where path and node value equal or match as regex and memorize it in the<br>
-{<strong>link</strong> #rbelValidator} instance.</p>
+{<strong>link</strong> #rbelMessageRetriever} instance.</p>
 </div>
 <div class="paragraph indent">
 <p><strong>param</strong> path path to match<br>
@@ -4463,7 +4516,7 @@ memorize it in the {<strong>link</strong> #rbelValidator} instance.</p>
 <h5 id="tgr-find-last-request-with-string-matching-string"><a class="anchor" href="#tgr-find-last-request-with-string-matching-string"></a>TGR find last request with {string} matching {string}</h5>
 <div class="paragraph indent">
 <p>find the LAST request where the node value equal or match as regex and memorize it in the<br>
-{<strong>link</strong> #rbelValidator} instance.</p>
+{<strong>link</strong> #rbelMessageRetriever} instance.</p>
 </div>
 <div class="paragraph indent">
 <p><strong>param</strong> rbelPath rbel path to node/attribute<br>
@@ -4489,8 +4542,8 @@ memorize it in the {<strong>link</strong> #rbelValidator} instance.</p>
 <div class="paragraph indent">
 <p>assert that there is any message with given rbel path node/attribute matching given value. The<br>
 matching will NOT perform regular expression matching but only checks for identical string<br>
-content The result (request or response) will not be stored in the {<strong>link</strong> #rbelValidator}<br>
-instance.</p>
+content The result (request or response) will not be stored in the {<strong>link</strong><br>
+#rbelMessageRetriever} instance.</p>
 </div>
 <div class="paragraph indent">
 <p><strong>param</strong> rbelPath rbel path to node/attribute<br>
@@ -4506,7 +4559,7 @@ instance.</p>
 <h5 id="tgr-find-message-with-string-matching-string"><a class="anchor" href="#tgr-find-message-with-string-matching-string"></a>TGR find message with {string} matching {string}</h5>
 <div class="paragraph indent">
 <p>find the first message where node value equal or match as regex and memorize it in the {<strong>link</strong><br>
-#rbelValidator} instance.</p>
+#rbelMessageRetriever} instance.</p>
 </div>
 <div class="paragraph indent">
 <p><strong>param</strong> rbelPath rbel path to node/attribute<br>
@@ -4520,8 +4573,8 @@ instance.</p>
 <div class="sect4">
 <h5 id="tgr-find-message-with-string"><a class="anchor" href="#tgr-find-message-with-string"></a>TGR find message with {string}</h5>
 <div class="paragraph indent">
-<p>find the first message containing given node and memorize it in the {<strong>link</strong> #rbelValidator}<br>
-instance.</p>
+<p>find the first message containing given node and memorize it in the {<strong>link</strong><br>
+#rbelMessageRetriever} instance.</p>
 </div>
 <div class="paragraph indent">
 <p><strong>param</strong> rbelPath rbel path to node/attribute</p>
@@ -4535,7 +4588,7 @@ instance.</p>
 <h5 id="tgr-find-next-message-with-string-matching-string"><a class="anchor" href="#tgr-find-next-message-with-string-matching-string"></a>TGR find next message with {string} matching {string}</h5>
 <div class="paragraph indent">
 <p>find the next message where node value equal or match as regex and memorize it in the {<strong>link</strong><br>
-#rbelValidator} instance. If the previous search using the 'find*message' steps found a<br>
+#rbelMessageRetriever} instance. If the previous search using the 'find*message' steps found a<br>
 response message, then this search starts after that response, otherwise, it starts after the<br>
 current request message.</p>
 </div>
@@ -4551,10 +4604,10 @@ current request message.</p>
 <div class="sect4">
 <h5 id="tgr-find-next-message-with-string"><a class="anchor" href="#tgr-find-next-message-with-string"></a>TGR find next message with {string}</h5>
 <div class="paragraph indent">
-<p>find the next message containing given node and memorize it in the {<strong>link</strong> #rbelValidator}<br>
-instance. If the previous search using any of the 'find*message' steps found a response<br>
-message, then this search starts after that response, otherwise, it starts after the current<br>
-request message.</p>
+<p>find the next message containing given node and memorize it in the {<strong>link</strong><br>
+#rbelMessageRetriever} instance. If the previous search using any of the 'find*message' steps<br>
+found a response message, then this search starts after that response, otherwise, it starts<br>
+after the current request message.</p>
 </div>
 <div class="paragraph indent">
 <p><strong>param</strong> rbelPath rbel path to node/attribute</p>
@@ -4568,7 +4621,7 @@ request message.</p>
 <h5 id="tgr-find-last-message-with-string-matching-string"><a class="anchor" href="#tgr-find-last-message-with-string-matching-string"></a>TGR find last message with {string} matching {string}</h5>
 <div class="paragraph indent">
 <p>find the last message where node value equal or match as regex and memorize it in the {<strong>link</strong><br>
-#rbelValidator} instance.</p>
+#rbelMessageRetriever} instance.</p>
 </div>
 <div class="paragraph indent">
 <p><strong>param</strong> rbelPath rbel path to node/attribute<br>
@@ -4582,8 +4635,8 @@ request message.</p>
 <div class="sect4">
 <h5 id="tgr-find-last-message-with-string"><a class="anchor" href="#tgr-find-last-message-with-string"></a>TGR find last message with {string}</h5>
 <div class="paragraph indent">
-<p>find the last message containing given node and memorize it in the {<strong>link</strong> * #rbelValidator}<br>
-instance.</p>
+<p>find the last message containing given node and memorize it in the {<strong>link</strong> *<br>
+#rbelMessageRetriever} instance.</p>
 </div>
 <div class="paragraph indent">
 <p><strong>param</strong> rbelPath rbel path to node/attribute</p>
@@ -5191,7 +5244,7 @@ certain value</p>
 
   Scenario Outline: JEXL Rbel Namespace Test
     Given TGR send empty GET request to "http://httpbin/html"
-    Then TGR find request to path "/html"
+    Then TGR find first request to path "/html"
     Then TGR current response with attribute "$.body.html.body.h1.text" matches "!{rbel:currentResponseAsString('$.body.html.body.h1.text')}"
 
     Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
@@ -5201,7 +5254,7 @@ certain value</p>
 
   Scenario: Simple first test
     Given TGR send empty GET request to "http://httpbin/html"
-    Then TGR find request to path "/html"
+    Then TGR find first request to path "/html"
     Then TGR current response with attribute "$.body.html.body.h1.text" matches "Herman Melville - Moby-Dick"
 
   Scenario: Test Find Last Request
@@ -9336,7 +9389,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-02-11 13:47:05 +0100
+Last updated 2025-03-07 08:58:10 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
