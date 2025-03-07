@@ -14,10 +14,22 @@
  * limitations under the License.
  */
 
-package de.gematik.test.tiger.lib.enums;
+package de.gematik.test.tiger.lib.rbel;
 
+import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.test.tiger.lib.json.JsonChecker;
+import de.gematik.test.tiger.lib.json.JsonSchemaChecker;
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
 public enum ModeType {
-  XML,
-  JSON,
-  JSON_SCHEMA
+  XML(new RbelXmlContentValidator()),
+  JSON(new JsonChecker()),
+  JSON_SCHEMA(new JsonSchemaChecker());
+
+  private final RbelContentValidator verifier;
+
+  public void verify(String oracle, RbelElement element, String diffOptionCSV) {
+    verifier.verify(oracle, element, diffOptionCSV);
+  }
 }

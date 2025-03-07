@@ -24,7 +24,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibConfig;
-import de.gematik.test.tiger.lib.enums.ModeType;
+import de.gematik.test.tiger.lib.rbel.ModeType;
 import io.cucumber.java.ParameterType;
 import io.restassured.http.Method;
 import java.net.URI;

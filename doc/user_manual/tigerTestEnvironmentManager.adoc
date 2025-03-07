@@ -793,6 +793,7 @@ tigerProxy:
     targetElement: "$.body"
     # The name of this modification.
     # This can be used to identify, alter or remove this modification.
+    # The name is optional, but if it is used, it has to be unique.
     name: "body replacement modification"
     # This will replace the body of every 200 response completely with the given json-string
     # (This ignores the existing body. For example this could be an XML-body.

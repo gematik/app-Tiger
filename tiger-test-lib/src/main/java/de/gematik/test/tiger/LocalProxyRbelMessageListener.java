@@ -70,7 +70,7 @@ public class LocalProxyRbelMessageListener implements IRbelMessageListener {
 
   private static LocalProxyRbelMessageListener instance;
 
-  public static LocalProxyRbelMessageListener getInstance() {
+  public static synchronized LocalProxyRbelMessageListener getInstance() {
     initialize();
     return instance;
   }

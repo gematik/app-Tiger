@@ -27,6 +27,7 @@
 * TGR-1742: New Tiger Proxy Web UI: features endless scrolling and a search for rbel messages.
 * TGR-1727: Tiger Maven Plugin: the tiger plugin can now create a serenity json summary report. This is active by
   default. You can configure which reports get generated in the maven configuration. E.g.:
+* TGR-1536: Refactoring RbelValidator
 * TGR-1625: RBel: OIDs in ASN.1 now feature the dot-notation as well as a human-readable name (if existing in an
   internal database)
 * TGR-1625: Tiger-Proxy: The "activateConversionFor" list is now case-insensitive.

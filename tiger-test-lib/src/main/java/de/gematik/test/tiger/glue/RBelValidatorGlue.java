@@ -25,10 +25,10 @@ import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
-import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.lib.json.JsonChecker;
-import de.gematik.test.tiger.lib.rbel.RbelMessageValidator;
-import de.gematik.test.tiger.lib.rbel.RequestParameter;
+import de.gematik.test.tiger.lib.rbel.*;
+import de.gematik.test.tiger.lib.rbel.ModeType;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import io.cucumber.java.BeforeAll;
 import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Gegebensei;
@@ -36,6 +36,7 @@ import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -47,14 +48,16 @@ import org.xmlunit.builder.DiffBuilder;
 @Getter
 public class RBelValidatorGlue {
 
-  private final RbelMessageValidator rbelValidator;
+  private final RbelMessageRetriever rbelMessageRetriever;
+  private final RbelValidator rbelValidator;
 
-  public RBelValidatorGlue(RbelMessageValidator rbelValidator) {
-    this.rbelValidator = rbelValidator;
+  public RBelValidatorGlue(RbelMessageRetriever rbelMessageRetriever) {
+    this.rbelMessageRetriever = rbelMessageRetriever;
+    this.rbelValidator = new RbelValidator();
   }
 
   public RBelValidatorGlue() {
-    this(RbelMessageValidator.getInstance());
+    this(RbelMessageRetriever.getInstance());
   }
 
   @BeforeAll
@@ -86,7 +89,7 @@ public class RBelValidatorGlue {
   @Wenn("TGR lösche aufgezeichnete Nachrichten")
   @When("TGR clear recorded messages")
   public void tgrClearRecordedMessages() {
-    rbelValidator.clearRbelMessages();
+    rbelMessageRetriever.clearRbelMessages();
   }
 
   /**
@@ -134,7 +137,7 @@ public class RBelValidatorGlue {
           + " übereinstimmt")
   @When("TGR wait for message with node {tigerResolvedString} matching {tigerResolvedString}")
   public void waitForMessageWithValue(final String rbelPath, final String value) {
-    rbelValidator.waitForMessageToBePresent(
+    rbelMessageRetriever.waitForMessageToBePresent(
         RequestParameter.builder()
             .rbelPath(rbelPath)
             .value(value)
@@ -157,7 +160,7 @@ public class RBelValidatorGlue {
           + " {tigerResolvedString} übereinstimmt")
   @When("TGR wait for new message with node {tigerResolvedString} matching {tigerResolvedString}")
   public void waitForNewMessageWithValue(final String rbelPath, final String value) {
-    rbelValidator.waitForMessageToBePresent(
+    rbelMessageRetriever.waitForMessageToBePresent(
         RequestParameter.builder()
             .rbelPath(rbelPath)
             .value(value)
@@ -175,32 +178,30 @@ public class RBelValidatorGlue {
   @Wenn("TGR finde die erste Anfrage mit Pfad {string}")
   @When("TGR find first request to path {string}")
   public void findRequestToPath(final String path) {
-    rbelValidator.filterRequestsAndStoreInContext(
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(path).build().resolvePlaceholders());
   }
 
-  /**
-   * Please use "TGR find first request to path {string}" instead.
-   *
-   * @deprecated
-   */
+  /** DEPRECATED please use "TGR find first request to path {string}" instead. */
   @Deprecated(since = "3.7.0", forRemoval = true)
   @When("TGR find request to path {string}")
   public void findRequestToPathDeprecated(final String path) {
-    rbelValidator.filterRequestsAndStoreInContext(
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(path).build().resolvePlaceholders());
   }
 
   /**
-   * Please use "TGR find first request to path {string} with {string} matching {string}" instead.
+   * DEPRECATED please use "TGR find first request to path {string} with {string} matching {string}"
+   * instead. Please use "TGR find first request to path {string} with {string} matching {string}"
+   * instead.
    *
    * @deprecated
    */
   @Deprecated(since = "3.7.0", forRemoval = true)
   @When("TGR find request to path {string} with {string} matching {string}")
-  public void findRequestToPathWithCommandDeprecated(
+  public void findRequestToPathWithCommand_Deprecated(
       final String path, final String rbelPath, final String value) {
-    rbelValidator.filterRequestsAndStoreInContext(
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder()
             .path(path)
             .rbelPath(rbelPath)
@@ -211,7 +212,7 @@ public class RBelValidatorGlue {
 
   /**
    * find the first request where path and node value equal or match as regex and memorize it in the
-   * {@link #rbelValidator} instance.
+   * {@link #rbelMessageRetriever} instance.
    *
    * @param path path to match
    * @param rbelPath rbel path to node/attribute
@@ -223,7 +224,7 @@ public class RBelValidatorGlue {
   @When("TGR find first request to path {string} with {string} matching {string}")
   public void findRequestToPathWithCommand(
       final String path, final String rbelPath, final String value) {
-    rbelValidator.filterRequestsAndStoreInContext(
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder()
             .path(path)
             .rbelPath(rbelPath)
@@ -234,14 +235,14 @@ public class RBelValidatorGlue {
 
   /**
    * find the NEXT request where the path equals or matches as regex and memorize it in the {@link
-   * #rbelValidator} instance.
+   * #rbelMessageRetriever} instance.
    *
    * @param path path to match
    */
   @Wenn("TGR finde die nächste Anfrage mit dem Pfad {string}")
   @When("TGR find next request to path {string}")
   public void findNextRequestToPath(final String path) {
-    rbelValidator.filterRequestsAndStoreInContext(
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder()
             .path(path)
             .startFromLastMessage(true)
@@ -251,7 +252,7 @@ public class RBelValidatorGlue {
 
   /**
    * find the NEXT request where path and node value equal or match as regex and memorize it in the
-   * {@link #rbelValidator} instance.
+   * {@link #rbelMessageRetriever} instance.
    *
    * @param path path to match
    * @param rbelPath rbel path to node/attribute
@@ -263,7 +264,7 @@ public class RBelValidatorGlue {
   @When("TGR find next request to path {string} with {string} matching {string}")
   public void findNextRequestToPathWithCommand(
       final String path, final String rbelPath, final String value) {
-    rbelValidator.filterRequestsAndStoreInContext(
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder()
             .path(path)
             .rbelPath(rbelPath)
@@ -275,7 +276,7 @@ public class RBelValidatorGlue {
 
   /**
    * find the first request where path matches and request contains node with given rbel path and
-   * memorize it in the {@link #rbelValidator} instance.
+   * memorize it in the {@link #rbelMessageRetriever} instance.
    *
    * @param path path to match
    * @param rbelPath rbel path to node/attribute
@@ -283,27 +284,25 @@ public class RBelValidatorGlue {
   @Wenn("TGR finde die erste Anfrage mit Pfad {string} die den Knoten {string} enthält")
   @When("TGR find first request to path {string} containing node {string}")
   public void findFirstRequestToPathContainingNode(final String path, final String rbelPath) {
-    rbelValidator.filterRequestsAndStoreInContext(
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(path).rbelPath(rbelPath).build().resolvePlaceholders());
   }
 
   /**
    * DEPRECATED please use "TGR find first request to path {string} with {string} containing node
    * {string}" instead.
-   *
-   * @deprecated
    */
   @Deprecated(since = "3.7.0", forRemoval = true)
   @When("TGR find request to path {string} containing node {string}")
   public void findFirstRequestToPathContainingNodeDeprecated(
       final String path, final String rbelPath) {
-    rbelValidator.filterRequestsAndStoreInContext(
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder().path(path).rbelPath(rbelPath).build().resolvePlaceholders());
   }
 
   /**
    * find the NEXT request where path matches and request contains node with given rbel path and
-   * memorize it in the {@link #rbelValidator} instance.
+   * memorize it in the {@link #rbelMessageRetriever} instance.
    *
    * @param path path to match
    * @param rbelPath rbel path to node/attribute
@@ -311,7 +310,7 @@ public class RBelValidatorGlue {
   @Wenn("TGR finde die nächste Anfrage mit Pfad {string} die den Knoten {string} enthält")
   @When("TGR find next request to path {string} containing node {string}")
   public void findNextRequestToPathContainingNode(final String path, final String rbelPath) {
-    rbelValidator.filterRequestsAndStoreInContext(
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder()
             .startFromLastMessage(true)
             .path(path)
@@ -322,14 +321,14 @@ public class RBelValidatorGlue {
 
   /**
    * find the LAST request where the path equals or matches as regex and memorize it in the {@link
-   * #rbelValidator} instance.
+   * #rbelMessageRetriever} instance.
    *
    * @param path path to match
    */
   @Wenn("TGR finde die letzte Anfrage mit dem Pfad {string}")
   @When("TGR find last request to path {string}")
   public void findLastRequestToPath(final String path) {
-    rbelValidator.filterRequestsAndStoreInContext(
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder()
             .path(path)
             .filterPreviousRequest(true)
@@ -339,7 +338,7 @@ public class RBelValidatorGlue {
 
   /**
    * find the LAST request where path and node value equal or match as regex and memorize it in the
-   * {@link #rbelValidator} instance.
+   * {@link #rbelMessageRetriever} instance.
    *
    * @param path path to match
    * @param rbelPath rbel path to node/attribute
@@ -351,7 +350,7 @@ public class RBelValidatorGlue {
   @When("TGR find last request to path {string} with {string} matching {string}")
   public void findLastRequestToPathWithCommand(
       final String path, final String rbelPath, final String value) {
-    rbelValidator.filterRequestsAndStoreInContext(
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder()
             .path(path)
             .rbelPath(rbelPath)
@@ -363,7 +362,7 @@ public class RBelValidatorGlue {
 
   /**
    * find the LAST request where the node value equal or match as regex and memorize it in the
-   * {@link #rbelValidator} instance.
+   * {@link #rbelMessageRetriever} instance.
    *
    * @param rbelPath rbel path to node/attribute
    * @param value value to match at given node/attribute
@@ -371,7 +370,7 @@ public class RBelValidatorGlue {
   @Wenn("TGR finde die letzte Anfrage mit Knoten {string} der mit {string}" + " übereinstimmt")
   @When("TGR find last request with {string} matching {string}")
   public void findLastRequestWithNodeMatching(final String rbelPath, final String value) {
-    rbelValidator.filterRequestsAndStoreInContext(
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder()
             .rbelPath(rbelPath)
             .path(".*")
@@ -385,14 +384,14 @@ public class RBelValidatorGlue {
   @Wenn("TGR finde die letzte Anfrage")
   @When("TGR find the last request")
   public void findLastRequest() {
-    rbelValidator.findLastRequest();
+    rbelMessageRetriever.findLastRequest();
   }
 
   /**
    * assert that there is any message with given rbel path node/attribute matching given value. The
    * matching will NOT perform regular expression matching but only checks for identical string
-   * content The result (request or response) will not be stored in the {@link #rbelValidator}
-   * instance.
+   * content The result (request or response) will not be stored in the {@link
+   * #rbelMessageRetriever} instance.
    *
    * @param rbelPath rbel path to node/attribute
    * @param value value to match at given node/attribute
@@ -404,12 +403,12 @@ public class RBelValidatorGlue {
   @When("TGR any message with attribute {tigerResolvedString} matches {tigerResolvedString}")
   @Deprecated(forRemoval = true)
   public void findAnyMessageAttributeMatches(final String rbelPath, final String value) {
-    rbelValidator.findAnyMessageMatchingAtNode(rbelPath, value);
+    rbelMessageRetriever.findAnyMessageMatchingAtNode(rbelPath, value);
   }
 
   /**
    * find the first message where node value equal or match as regex and memorize it in the {@link
-   * #rbelValidator} instance.
+   * #rbelMessageRetriever} instance.
    *
    * @param rbelPath rbel path to node/attribute
    * @param value value to match at given node/attribute
@@ -418,7 +417,7 @@ public class RBelValidatorGlue {
   @When("TGR find message with {string} matching {string}")
   public void findMessageWithNodeMatching(final String rbelPath, final String value)
       throws AssertionError {
-    rbelValidator.filterRequestsAndStoreInContext(
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder()
             .rbelPath(rbelPath)
             .value(value)
@@ -428,8 +427,8 @@ public class RBelValidatorGlue {
   }
 
   /**
-   * find the first message containing given node and memorize it in the {@link #rbelValidator}
-   * instance.
+   * find the first message containing given node and memorize it in the {@link
+   * #rbelMessageRetriever} instance.
    *
    * @param rbelPath rbel path to node/attribute
    */
@@ -441,7 +440,7 @@ public class RBelValidatorGlue {
 
   /**
    * find the next message where node value equal or match as regex and memorize it in the {@link
-   * #rbelValidator} instance. If the previous search using the 'find*message' steps found a
+   * #rbelMessageRetriever} instance. If the previous search using the 'find*message' steps found a
    * response message, then this search starts after that response, otherwise, it starts after the
    * current request message.
    *
@@ -452,7 +451,7 @@ public class RBelValidatorGlue {
   @When("TGR find next message with {string} matching {string}")
   public void findNextMessageWithNodeMatching(final String rbelPath, final String value)
       throws AssertionError {
-    rbelValidator.filterRequestsAndStoreInContext(
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder()
             .rbelPath(rbelPath)
             .value(value)
@@ -463,10 +462,10 @@ public class RBelValidatorGlue {
   }
 
   /**
-   * find the next message containing given node and memorize it in the {@link #rbelValidator}
-   * instance. If the previous search using any of the 'find*message' steps found a response
-   * message, then this search starts after that response, otherwise, it starts after the current
-   * request message.
+   * find the next message containing given node and memorize it in the {@link
+   * #rbelMessageRetriever} instance. If the previous search using any of the 'find*message' steps
+   * found a response message, then this search starts after that response, otherwise, it starts
+   * after the current request message.
    *
    * @param rbelPath rbel path to node/attribute
    */
@@ -478,7 +477,7 @@ public class RBelValidatorGlue {
 
   /**
    * find the last message where node value equal or match as regex and memorize it in the {@link
-   * #rbelValidator} instance.
+   * #rbelMessageRetriever} instance.
    *
    * @param rbelPath rbel path to node/attribute
    * @param value value to match at given node/attribute
@@ -487,7 +486,7 @@ public class RBelValidatorGlue {
   @When("TGR find last message with {string} matching {string}")
   public void findLastMessageWithNodeMatching(final String rbelPath, final String value)
       throws AssertionError {
-    rbelValidator.filterRequestsAndStoreInContext(
+    rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder()
             .rbelPath(rbelPath)
             .value(value)
@@ -498,8 +497,8 @@ public class RBelValidatorGlue {
   }
 
   /**
-   * find the last message containing given node and memorize it in the {@link * #rbelValidator}
-   * instance.
+   * find the last message containing given node and memorize it in the {@link *
+   * #rbelMessageRetriever} instance.
    *
    * @param rbelPath rbel path to node/attribute
    */
@@ -541,7 +540,8 @@ public class RBelValidatorGlue {
           + " {tigerResolvedString}")
   @Then("TGR current request with attribute {tigerResolvedString} matches {tigerResolvedString}")
   public void currentRequestMessageAttributeMatches(final String rbelPath, final String value) {
-    rbelValidator.assertAttributeOfCurrentRequestMatches(rbelPath, value, true);
+    rbelValidator.assertAttributeOfCurrentRequestMatches(
+        rbelPath, value, true, rbelMessageRetriever);
   }
 
   /**
@@ -552,7 +552,7 @@ public class RBelValidatorGlue {
   @Dann("TGR prüfe aktueller Request enthält Knoten {tigerResolvedString}")
   @Then("TGR current request contains node {tigerResolvedString}")
   public void currentRequestMessageContainsNode(final String rbelPath) {
-    assertThat(rbelValidator.findElementsInCurrentRequest(rbelPath)).isNotEmpty();
+    assertThat(rbelMessageRetriever.findElementsInCurrentRequest(rbelPath)).isNotEmpty();
   }
 
   /**
@@ -589,7 +589,10 @@ public class RBelValidatorGlue {
   public void currentRequestAtMatchesAsJsonOrXml(
       final String rbelPath, final ModeType mode, final String oracleDocStr) {
     rbelValidator.assertAttributeOfCurrentRequestMatchesAs(
-        rbelPath, mode, TigerGlobalConfiguration.resolvePlaceholders(oracleDocStr));
+        rbelPath,
+        mode,
+        TigerGlobalConfiguration.resolvePlaceholders(oracleDocStr),
+        rbelMessageRetriever);
   }
 
   /**
@@ -608,7 +611,8 @@ public class RBelValidatorGlue {
           + " {tigerResolvedString}")
   public void currentRequestMessageAttributeDoesNotMatch(
       final String rbelPath, final String value) {
-    rbelValidator.assertAttributeOfCurrentRequestMatches(rbelPath, value, false);
+    rbelValidator.assertAttributeOfCurrentRequestMatches(
+        rbelPath, value, false, rbelMessageRetriever);
   }
 
   // =================================================================================================================
@@ -632,7 +636,7 @@ public class RBelValidatorGlue {
   public void storeCurrentRequestNodeTextValueInVariable(
       final String rbelPath, final String varName) {
     final String text =
-        rbelValidator.findElementsInCurrentRequest(rbelPath).stream()
+        rbelMessageRetriever.findElementsInCurrentRequest(rbelPath).stream()
             .map(RbelElement::getRawStringContent)
             .filter(Objects::nonNull)
             .map(String::trim)
@@ -656,7 +660,7 @@ public class RBelValidatorGlue {
   public void storeCurrentResponseNodeTextValueInVariable(
       final String rbelPath, final String varName) {
     final String text =
-        rbelValidator.findElementsInCurrentResponse(rbelPath).stream()
+        rbelMessageRetriever.findElementsInCurrentResponse(rbelPath).stream()
             .map(RbelElement::getRawStringContent)
             .filter(Objects::nonNull)
             .map(String::trim)
@@ -725,7 +729,7 @@ public class RBelValidatorGlue {
   @Dann("TGR prüfe aktuelle Antwort enthält Knoten {tigerResolvedString}")
   @Then("TGR current response contains node {tigerResolvedString}")
   public void currentResponseMessageContainsNode(final String rbelPath) {
-    assertThat(rbelValidator.findElementsInCurrentResponse(rbelPath)).isNotEmpty();
+    assertThat(rbelMessageRetriever.findElementsInCurrentResponse(rbelPath)).isNotEmpty();
   }
 
   /**
@@ -741,7 +745,8 @@ public class RBelValidatorGlue {
           + " {tigerResolvedString}")
   @Then("TGR current response with attribute {tigerResolvedString} matches {tigerResolvedString}")
   public void currentResponseMessageAttributeMatches(final String rbelPath, final String value) {
-    rbelValidator.assertAttributeOfCurrentResponseMatches(rbelPath, value, true);
+    rbelValidator.assertAttributeOfCurrentResponseMatches(
+        rbelPath, value, true, rbelMessageRetriever);
   }
 
   /**
@@ -760,7 +765,8 @@ public class RBelValidatorGlue {
           + " {tigerResolvedString}")
   public void currentResponseMessageAttributeDoesNotMatch(
       final String rbelPath, final String value) {
-    rbelValidator.assertAttributeOfCurrentResponseMatches(rbelPath, value, false);
+    rbelValidator.assertAttributeOfCurrentResponseMatches(
+        rbelPath, value, false, rbelMessageRetriever);
   }
 
   /**
@@ -794,7 +800,10 @@ public class RBelValidatorGlue {
   public void currentResponseMessageAtDoesNotMatchDocString(
       final String rbelPath, final String docString) {
     rbelValidator.assertAttributeOfCurrentResponseMatches(
-        rbelPath, TigerGlobalConfiguration.resolvePlaceholders(docString), false);
+        rbelPath,
+        TigerGlobalConfiguration.resolvePlaceholders(docString),
+        false,
+        rbelMessageRetriever);
   }
 
   /**
@@ -814,7 +823,11 @@ public class RBelValidatorGlue {
   public void currentResponseAtMatchesAsJsonOrXml(
       final String rbelPath, final ModeType mode, final String oracleDocStr) {
     rbelValidator.assertAttributeOfCurrentResponseMatchesAs(
-        rbelPath, mode, TigerGlobalConfiguration.resolvePlaceholders(oracleDocStr), "");
+        rbelPath,
+        mode,
+        TigerGlobalConfiguration.resolvePlaceholders(oracleDocStr),
+        "",
+        rbelMessageRetriever);
   }
 
   /**
@@ -849,7 +862,8 @@ public class RBelValidatorGlue {
         rbelPath,
         ModeType.XML,
         TigerGlobalConfiguration.resolvePlaceholders(xmlDocStr),
-        diffOptionsCSV);
+        diffOptionsCSV,
+        rbelMessageRetriever);
   }
 
   /** Prints the rbel-tree of all requests and responses to the System-out */
@@ -857,7 +871,7 @@ public class RBelValidatorGlue {
   @Then("TGR print all messages as rbel-tree")
   @SuppressWarnings("java:S106")
   public void printAllMessages() {
-    getRbelValidator()
+    getRbelMessageRetriever()
         .getRbelMessages()
         .forEach(
             message ->
@@ -870,7 +884,7 @@ public class RBelValidatorGlue {
   @Then("TGR print current response as rbel-tree")
   @SuppressWarnings("java:S106")
   public void printCurrentResponse() {
-    System.out.println(rbelValidator.getCurrentResponse().printTreeStructure());
+    System.out.println(rbelMessageRetriever.getCurrentResponse().printTreeStructure());
   }
 
   /** Prints the rbel-tree of the current request to the System-out */
@@ -878,14 +892,17 @@ public class RBelValidatorGlue {
   @Then("TGR print current request as rbel-tree")
   @SuppressWarnings("java:S106")
   public void printCurrentRequest() {
-    System.out.println(rbelValidator.getCurrentRequest().printTreeStructure());
+    System.out.println(rbelMessageRetriever.getCurrentRequest().printTreeStructure());
   }
 
   /** Reads a Tiger traffic file and sends messages to local Tiger proxy */
   @Dann("TGR liest folgende .tgr Datei {tigerResolvedString}")
   @Then("TGR reads the following .tgr file {tigerResolvedString}")
   public void readTgrFile(String filePath) {
-    rbelValidator.readTgrFile(filePath);
+    TigerProxy tigerProxy = rbelMessageRetriever.getTigerTestEnvMgr().getLocalTigerProxyOrFail();
+    List<RbelElement> readElements = tigerProxy.readTrafficFromTgrFile(filePath);
+    readElements.forEach(
+        rbelMessageRetriever.getLocalProxyRbelMessageListener()::triggerNewReceivedMessage);
   }
 
   /**

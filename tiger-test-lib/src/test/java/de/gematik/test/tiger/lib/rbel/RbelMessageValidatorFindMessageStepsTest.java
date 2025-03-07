@@ -16,7 +16,7 @@
 
 package de.gematik.test.tiger.lib.rbel;
 
-import static de.gematik.test.tiger.lib.rbel.RbelMessageValidator.RBEL_REQUEST_TIMEOUT;
+import static de.gematik.test.tiger.lib.rbel.RbelMessageRetriever.RBEL_REQUEST_TIMEOUT;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.gematik.rbellogger.data.pop3.RbelPop3Command;
@@ -29,16 +29,16 @@ public class RbelMessageValidatorFindMessageStepsTest extends AbstractRbelMessag
 
   @BeforeEach
   public void setUp() {
-    if (rbelMessageValidator == null) {
+    if (rbelMessageRetriever == null) {
       super.setUp();
       readPop3Messages();
     } else {
-      rbelMessageValidator.clearCurrentMessages();
+      rbelMessageRetriever.clearCurrentMessages();
     }
   }
 
   private void readPop3Messages() {
-    readTgrFileAndStoreForRbelMessageValidator(
+    readTgrFileAndStoreForrbelMessageRetriever(
         "src/test/resources/testdata/pop3.tgr", List.of("pop3", "mime"));
   }
 

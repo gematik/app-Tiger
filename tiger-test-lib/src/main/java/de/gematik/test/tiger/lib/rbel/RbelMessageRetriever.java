@@ -1,4 +1,5 @@
 /*
+ *
  * Copyright 2024 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,15 +13,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
-
 package de.gematik.test.tiger.lib.rbel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import de.gematik.rbellogger.data.RbelElement;
@@ -35,9 +33,6 @@ import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
-import de.gematik.test.tiger.lib.enums.ModeType;
-import de.gematik.test.tiger.lib.json.JsonChecker;
-import de.gematik.test.tiger.lib.json.JsonSchemaChecker;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.net.URI;
@@ -48,32 +43,19 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
-import javax.xml.transform.Source;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.SneakyThrows;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
-import lombok.val;
 import org.apache.commons.collections4.iterators.ReverseListIterator;
 import org.apache.commons.lang3.StringUtils;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
-import org.xmlunit.builder.DiffBuilder;
-import org.xmlunit.builder.Input;
-import org.xmlunit.diff.ComparisonResult;
-import org.xmlunit.diff.ComparisonType;
-import org.xmlunit.diff.Diff;
-import org.xmlunit.diff.Difference;
 
-@SuppressWarnings("unused")
 @Slf4j
-public class RbelMessageValidator {
+public class RbelMessageRetriever {
 
   public static final String RBEL_NAMESPACE = "rbel";
   public static final String FOUND_IN_MESSAGES = "' found in messages";
@@ -82,29 +64,20 @@ public class RbelMessageValidator {
   public static final TigerTypedConfigurationKey<Integer> RBEL_REQUEST_TIMEOUT =
       new TigerTypedConfigurationKey<>("tiger.rbel.request.timeout", Integer.class, 5);
 
-  private static final Map<String, UnaryOperator<DiffBuilder>> DIFF_OPTIONS = new HashMap<>();
+  private static RbelMessageRetriever instance;
 
-  static {
-    DIFF_OPTIONS.put("nocomment", DiffBuilder::ignoreComments);
-    DIFF_OPTIONS.put("txtignoreempty", DiffBuilder::ignoreElementContentWhitespace);
-    DIFF_OPTIONS.put("txttrim", DiffBuilder::ignoreWhitespace);
-    DIFF_OPTIONS.put("txtnormalize", DiffBuilder::normalizeWhitespace);
-  }
-
-  private static RbelMessageValidator instance;
-
-  public static RbelMessageValidator getInstance() {
+  public static RbelMessageRetriever getInstance() {
     // In unit tests when we reset the tiger test environment ( see
     // de.gematik.test.tiger.lib.TigerDirector.testUninitialize )
-    // we set the instance to null, to force the recreation of the RbelMessageValidator. Otherwise
+    // we set the instance to null, to force the recreation of the RbelMessageRetriever. Otherwise
     // the instance will keep references
     // to a discarded tigerTestEnvMgr and tigerProxy and not see the messages of the current
     // environment.
-    synchronized (RbelMessageValidator.class) {
+    synchronized (RbelMessageRetriever.class) {
       if (instance == null) { // some other thread might be
-        instance = new RbelMessageValidator();
+        instance = new RbelMessageRetriever();
       }
-      // in case some other entity instantiated a RbelMessageValidator
+      // in case some other entity instantiated a RbelMessageRetriever
       instance.registerJexlToolbox();
     }
     return instance;
@@ -116,11 +89,10 @@ public class RbelMessageValidator {
     TigerJexlExecutor.deregisterNamespace(RBEL_NAMESPACE);
   }
 
-  private final TigerTestEnvMgr tigerTestEnvMgr;
+  @Getter private final TigerTestEnvMgr tigerTestEnvMgr;
   private final TigerProxy tigerProxy;
 
-  @Getter(AccessLevel.PRIVATE)
-  private final LocalProxyRbelMessageListener localProxyRbelMessageListener;
+  @Getter private final LocalProxyRbelMessageListener localProxyRbelMessageListener;
 
   @Setter @Getter protected RbelElement currentRequest;
 
@@ -131,7 +103,7 @@ public class RbelMessageValidator {
   @Getter
   protected RbelElement currentResponse;
 
-  private RbelMessageValidator() {
+  private RbelMessageRetriever() {
     this(
         TigerDirector.getTigerTestEnvMgr(),
         TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail());
@@ -143,11 +115,11 @@ public class RbelMessageValidator {
    */
   @SuppressWarnings("java:S1133")
   @Deprecated(forRemoval = true)
-  public RbelMessageValidator(TigerTestEnvMgr tigerTestEnvMgr, TigerProxy tigerProxy) {
+  public RbelMessageRetriever(TigerTestEnvMgr tigerTestEnvMgr, TigerProxy tigerProxy) {
     this(tigerTestEnvMgr, tigerProxy, LocalProxyRbelMessageListener.getInstance());
   }
 
-  public RbelMessageValidator(
+  public RbelMessageRetriever(
       TigerTestEnvMgr tigerTestEnvMgr,
       TigerProxy tigerProxy,
       LocalProxyRbelMessageListener localProxyRbelMessageListener) {
@@ -158,7 +130,8 @@ public class RbelMessageValidator {
   }
 
   private void registerJexlToolbox() {
-    TigerJexlExecutor.registerAdditionalNamespace(RBEL_NAMESPACE, new JexlToolbox());
+    TigerJexlExecutor.registerAdditionalNamespace(
+        RBEL_NAMESPACE, new RbelMessageRetriever.JexlToolbox());
   }
 
   public List<RbelElement> getRbelMessages() {
@@ -432,7 +405,7 @@ public class RbelMessageValidator {
       } else {
         final String content =
             pathExecutionResult.stream()
-                .map(RbelMessageValidator::getValueOrContentString)
+                .map(RbelMessageRetriever::getValueOrContentString)
                 .map(String::trim)
                 .collect(Collectors.joining());
         try {
@@ -468,7 +441,7 @@ public class RbelMessageValidator {
           new URI(
               req.getFacet(RbelHttpRequestFacet.class)
                   .map(RbelHttpRequestFacet::getPath)
-                  .map(RbelMessageValidator::getValueOrContentString)
+                  .map(RbelMessageRetriever::getValueOrContentString)
                   .orElse(""));
       boolean match = doesItMatch(uri.getPath(), path);
       if (!match && EMPTY_PATH.contains(path) && EMPTY_PATH.contains(uri.getPath())) {
@@ -508,91 +481,6 @@ public class RbelMessageValidator {
     }
   }
 
-  public void assertAttributeOfCurrentResponseMatches(
-      final String rbelPath, final String value, boolean shouldMatch) {
-    RbelMessageNodeElementMatchExecutor.builder()
-        .rbelPath(rbelPath)
-        .shouldMatch(shouldMatch)
-        .oracle(value)
-        .elements(findElementsInCurrentResponse(rbelPath))
-        .build()
-        .execute();
-  }
-
-  public void assertAttributeOfCurrentRequestMatches(
-      final String rbelPath, final String value, boolean shouldMatch) {
-    RbelMessageNodeElementMatchExecutor.builder()
-        .rbelPath(rbelPath)
-        .shouldMatch(shouldMatch)
-        .oracle(value)
-        .elements(findElementsInCurrentRequest(rbelPath))
-        .build()
-        .execute();
-  }
-
-  public void assertAttributeOfCurrentResponseMatchesAs(
-      String rbelPath, ModeType mode, String oracle, String diffOptionCsv) {
-    assertAttributeForMessagesMatchAs(
-        mode, oracle, findElementsInCurrentResponse(rbelPath), diffOptionCsv);
-  }
-
-  public void assertAttributeOfCurrentRequestMatchesAs(
-      String rbelPath, ModeType mode, String oracle) {
-    assertAttributeForMessagesMatchAs(mode, oracle, findElementsInCurrentRequest(rbelPath), "");
-  }
-
-  public void assertAttributeForMessagesMatchAs(
-      ModeType mode, String oracle, List<RbelElement> elements, String diffOptionCSV) {
-    HashMap<String, Throwable> exceptions = new HashMap<>();
-    for (RbelElement element : elements) {
-      try {
-        switch (mode) {
-          case JSON -> new JsonChecker()
-              .compareJsonStrings(getAsJsonString(element), oracle, false);
-          case XML -> compareXMLStructureOfRbelElement(element, oracle, diffOptionCSV);
-          case JSON_SCHEMA -> new JsonSchemaChecker()
-              .compareJsonToSchema(getAsJsonString(element), oracle);
-        }
-        log.debug("Found matching element: \n{}", element.printTreeStructure());
-        return;
-      } catch (JsonChecker.JsonCheckerMismatchException | AssertionError e) {
-        exceptions.put(element.getUuid(), e);
-      }
-    }
-    if (elements.size() == 1) {
-      RbelElement element = elements.get(0);
-      throw new AssertionError(
-          String.format(
-              """
-                      Element value:
-                      %s
-                      Expected:
-                      %s
-                      Validation message:
-                      %s""",
-              element.getRawStringContent(), oracle, exceptions.get(element.getUuid())));
-    } else {
-      throw new AssertionError(
-          String.format(
-              "No matching element for value %s found in list of %d elements! ",
-              oracle, elements.size()));
-    }
-  }
-
-  private String getAsJsonString(RbelElement target) {
-    if (target.hasFacet(RbelJsonFacet.class)) {
-      return target.getRawStringContent();
-    } else if (target.hasFacet(RbelCborFacet.class)) {
-      return target
-          .getFacet(RbelCborFacet.class)
-          .map(RbelCborFacet::getNode)
-          .map(JsonNode::toString)
-          .orElse("");
-    } else {
-      throw new AssertionError("Node is neither JSON nor CBOR, can not match with JSON");
-    }
-  }
-
   private void printAllPathsOfMessages(final List<RbelElement> msgs) {
     long requests =
         msgs.stream().filter(msg -> msg.getFacet(RbelHttpRequestFacet.class).isPresent()).count();
@@ -605,57 +493,6 @@ public class RbelMessageValidator {
             .map(Optional::get)
             .map(req -> "=>\t" + req.getPathAsString() + " : " + req.getChildElements())
             .collect(Collectors.joining("\n")));
-  }
-
-  public void compareXMLStructure(
-      final String test, final String oracle, final List<UnaryOperator<DiffBuilder>> diffOptions) {
-    final ArrayList<Difference> diffs = new ArrayList<>();
-    final Source srcTest = Input.from(test).build();
-    final Source srcOracle = Input.from(oracle).build();
-    DiffBuilder db = DiffBuilder.compare(srcOracle).withTest(srcTest);
-    for (final UnaryOperator<DiffBuilder> src : diffOptions) {
-      db = src.apply(db);
-    }
-
-    db = db.checkForSimilar();
-    db.withDifferenceEvaluator(
-        (comparison, outcome) -> {
-          if (outcome != ComparisonResult.EQUAL
-              && (comparison.getType() == ComparisonType.NAMESPACE_URI
-                  || comparison.getType() == ComparisonType.NAMESPACE_PREFIX)) {
-            return ComparisonResult.SIMILAR;
-          }
-          return outcome;
-        });
-
-    final Diff diff = db.build();
-    assertThat(diff.hasDifferences()).withFailMessage("XML tree mismatch!\n" + diff).isFalse();
-  }
-
-  public void compareXMLStructure(final String test, final String oracle) {
-    compareXMLStructure(test, oracle, Collections.emptyList());
-  }
-
-  @SneakyThrows
-  public void compareXMLStructure(
-      final String test, final String oracle, final String diffOptionCSV) {
-    final List<UnaryOperator<DiffBuilder>> diffOptions = new ArrayList<>();
-    Arrays.stream(diffOptionCSV.split(","))
-        .map(String::trim)
-        .forEach(
-            srcClassId -> {
-              assertThat(DIFF_OPTIONS).containsKey(srcClassId);
-              diffOptions.add(DIFF_OPTIONS.get(srcClassId));
-            });
-    compareXMLStructure(test, oracle, diffOptions);
-  }
-
-  public void compareXMLStructureOfRbelElement(
-      final RbelElement el, final String oracle, final String diffOptionCSV) {
-    assertThat(el.hasFacet(RbelXmlFacet.class))
-        .withFailMessage("Node " + el.getKey() + " is not XML")
-        .isTrue();
-    compareXMLStructure(el.getRawStringContent(), oracle, diffOptionCSV);
   }
 
   public RbelElement findElementInCurrentResponse(final String rbelPath) {
@@ -773,11 +610,6 @@ public class RbelMessageValidator {
             .getFacet(TracingMessagePairFacet.class)
             .map(TracingMessagePairFacet::getResponse)
             .orElse(null));
-  }
-
-  public void readTgrFile(String filePath) {
-    List<RbelElement> readElements = tigerProxy.readTrafficFromTgrFile(filePath);
-    readElements.forEach(localProxyRbelMessageListener::triggerNewReceivedMessage);
   }
 
   public class JexlToolbox {

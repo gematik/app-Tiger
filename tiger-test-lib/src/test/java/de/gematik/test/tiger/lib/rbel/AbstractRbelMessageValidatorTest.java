@@ -30,16 +30,17 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import java.util.List;
 
 abstract class AbstractRbelMessageValidatorTest {
-  protected RbelMessageValidator rbelMessageValidator;
+  protected RbelMessageRetriever rbelMessageRetriever;
+  protected RbelValidator rbelValidator = new RbelValidator();
   protected RBelValidatorGlue glue;
   protected LocalProxyRbelMessageListenerTestAdapter localProxyRbelMessageListenerTestAdapter;
   protected TigerProxy tigerProxy;
 
-  protected void readTgrFileAndStoreForRbelMessageValidator(String rbelFile) {
-    readTgrFileAndStoreForRbelMessageValidator(rbelFile, List.of());
+  protected void readTgrFileAndStoreForrbelMessageRetriever(String rbelFile) {
+    readTgrFileAndStoreForrbelMessageRetriever(rbelFile, List.of());
   }
 
-  protected void readTgrFileAndStoreForRbelMessageValidator(
+  protected void readTgrFileAndStoreForrbelMessageRetriever(
       String rbelFile, List<String> activateRbelParsingFor) {
     var rbelLogger =
         RbelLogger.build(
@@ -60,13 +61,13 @@ abstract class AbstractRbelMessageValidatorTest {
     when(tigerProxy.getRbelMessages())
         .thenReturn(localProxyRbelMessageListenerTestAdapter.getValidatableMessagesMock());
 
-    rbelMessageValidator =
-        new RbelMessageValidator(
+    rbelMessageRetriever =
+        new RbelMessageRetriever(
             mock(TigerTestEnvMgr.class),
             tigerProxy,
             localProxyRbelMessageListenerTestAdapter.getLocalProxyRbelMessageListener());
 
-    rbelMessageValidator.clearCurrentMessages();
-    glue = new RBelValidatorGlue(rbelMessageValidator);
+    rbelMessageRetriever.clearCurrentMessages();
+    glue = new RBelValidatorGlue(rbelMessageRetriever);
   }
 }

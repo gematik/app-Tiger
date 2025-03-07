@@ -24,14 +24,20 @@ import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /** Validates a given json string against a given json schema */
-public class JsonSchemaChecker {
+public class JsonSchemaChecker extends AbstractRbelJsonChecker {
 
   private final ObjectMapper objectMapper = new ObjectMapper();
+
+  @Override
+  public void verify(String oracle, RbelElement element, String diffOptionCSV) {
+    compareJsonToSchema(getAsJsonString(element), oracle);
+  }
 
   /**
    * Checks that the json conforms to the given schema

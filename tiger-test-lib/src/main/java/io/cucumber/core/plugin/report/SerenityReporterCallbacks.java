@@ -36,7 +36,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import de.gematik.test.tiger.lib.TigerDirector;
-import de.gematik.test.tiger.lib.rbel.RbelMessageValidator;
+import de.gematik.test.tiger.lib.rbel.RbelMessageRetriever;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.env.FeatureUpdate;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
@@ -635,7 +635,7 @@ public class SerenityReporterCallbacks {
     if (isDryRun || stepState != StepState.FINISHED) {
       return Collections.emptyList();
     }
-    val waitTime = RbelMessageValidator.RBEL_REQUEST_TIMEOUT.getValueOrDefault();
+    val waitTime = RbelMessageRetriever.RBEL_REQUEST_TIMEOUT.getValueOrDefault();
     try {
       Awaitility.await()
           .atMost(waitTime, TimeUnit.SECONDS)

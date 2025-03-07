@@ -17,7 +17,7 @@
 
 package de.gematik.test.tiger.lib.rbel;
 
-import static de.gematik.test.tiger.lib.rbel.RbelMessageValidator.getValueOrContentString;
+import static de.gematik.test.tiger.lib.rbel.RbelMessageRetriever.getValueOrContentString;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
