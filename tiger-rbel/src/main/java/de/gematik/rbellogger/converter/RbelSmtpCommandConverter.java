@@ -41,6 +41,11 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
   private static final byte[] DATA_PREFIX_BYTES = "DATA\r\n".getBytes();
 
   @Override
+  public boolean ignoreOversize() {
+    return true;
+  }
+
+  @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
     buildSmtpCommandFacet(element)
         .ifPresent(

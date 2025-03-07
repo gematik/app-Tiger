@@ -18,6 +18,7 @@ package de.gematik.rbellogger.data.facet;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
+import java.util.function.Function;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -34,5 +35,14 @@ public class RbelMapFacet implements RbelFacet {
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
     return childNodes;
+  }
+
+  public static RbelElement wrap(
+      final RbelElement parent,
+      final Function<RbelElement, RbelMultiMap<RbelElement>> childNodeFactory,
+      final byte[] content) {
+    final RbelElement result = new RbelElement(content, parent);
+    result.addFacet(new RbelMapFacet(childNodeFactory.apply(result)));
+    return result;
   }
 }

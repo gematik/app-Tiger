@@ -38,14 +38,14 @@ public class RbelTigerProxyExceptionConverter implements RbelConverterPlugin {
     rbelElement.getFacetOrFail(TigerRoutingErrorFacet.class).setErrorElement(childElement);
     val childNodes = new RbelMultiMap<RbelElement>();
     childElement.addFacet(new RbelMapFacet(childNodes));
-    childNodes.put("message", RbelElement.wrap(rbelElement, routingException.getMessage()));
-    childNodes.put("timestamp", RbelElement.wrap(rbelElement, routingException.getTimestamp()));
+    childNodes.put("message", RbelElement.wrap(childElement, routingException.getMessage()));
+    childNodes.put("timestamp", RbelElement.wrap(childElement, routingException.getTimestamp()));
     if (routingException.getSenderAddress() != null) {
-      childNodes.put("sender", RbelElement.wrap(rbelElement, routingException.getSenderAddress()));
+      childNodes.put("sender", RbelElement.wrap(childElement, routingException.getSenderAddress()));
     }
     if (routingException.getReceiverAddress() != null) {
       childNodes.put(
-          "receiver", RbelElement.wrap(rbelElement, routingException.getReceiverAddress()));
+          "receiver", RbelElement.wrap(childElement, routingException.getReceiverAddress()));
     }
 
     final String errorMessage =

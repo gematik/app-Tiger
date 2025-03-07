@@ -104,10 +104,7 @@ class TestTigerProxyConnections extends AbstractFastTigerProxyTest {
   private void withOpenTcpConnection(ThrowingRunnable runnable) {
     try (SocketChannel socketChannel = SocketChannel.open()) {
       socketChannel.connect(new InetSocketAddress("localhost", tigerProxy.getProxyPort()));
-      await()
-          .catchUncaughtExceptions()
-          .atMost(500, TimeUnit.MILLISECONDS)
-          .untilAsserted(runnable::run);
+      await().catchUncaughtExceptions().atMost(5, TimeUnit.SECONDS).untilAsserted(runnable::run);
     }
   }
 
@@ -137,10 +134,7 @@ class TestTigerProxyConnections extends AbstractFastTigerProxyTest {
             sslContext.getSocketFactory().createSocket("localhost", tigerProxy.getProxyPort())) {
       socket.startHandshake();
 
-      await()
-          .catchUncaughtExceptions()
-          .atMost(500, TimeUnit.MILLISECONDS)
-          .untilAsserted(runnable::run);
+      await().catchUncaughtExceptions().atMost(5, TimeUnit.SECONDS).untilAsserted(runnable::run);
     }
   }
 }

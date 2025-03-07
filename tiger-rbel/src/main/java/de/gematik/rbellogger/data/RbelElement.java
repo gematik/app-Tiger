@@ -24,6 +24,7 @@ import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -31,8 +32,8 @@ import javax.annotation.Nullable;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.util.encoders.Hex;
 
-@SuppressWarnings("unchecked")
 @Getter
 @Slf4j
 public class RbelElement extends RbelPathAble {
@@ -49,6 +50,7 @@ public class RbelElement extends RbelPathAble {
   @Setter private Optional<Charset> charset;
 
   private final long size;
+  @Setter private long conversionTimeInNanos = 0;
 
   public byte[] getRawContent() {
     return content.isNull() ? null : content.toByteArray();
@@ -166,14 +168,25 @@ public class RbelElement extends RbelPathAble {
   }
 
   public <T> Optional<T> getFacet(@NonNull Class<T> clazz) {
-    return getFacetStream()
-        .filter(facet -> clazz.isAssignableFrom(facet.getClass()))
-        .map(clazz::cast)
-        .findFirst();
+    for (val facet : facets) {
+      if (clazz.isAssignableFrom(facet.getClass())) {
+        return Optional.of(clazz.cast(facet));
+      }
+    }
+    return Optional.empty();
   }
 
   public boolean hasFacet(Class<? extends RbelFacet> clazz) {
-    return getFacet(clazz).isPresent();
+    // please do not convert into for-each: highly performance critical method both for rendering
+    // and conversion.
+    // for-each is not massively slower, BUT IT IS! leave as is without performance verification.
+    for (Iterator<RbelFacet> iter = facets.iterator(); iter.hasNext(); ) {
+      var entry = iter.next();
+      if (entry != null && clazz.isAssignableFrom(entry.getClass())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public RbelElement addFacet(RbelFacet facet) {
@@ -183,27 +196,44 @@ public class RbelElement extends RbelPathAble {
 
   @Override
   public List<RbelElement> getChildNodes() {
-    return getFacetStream()
-        .map(RbelFacet::getChildElements)
-        .map(RbelMultiMap::getValues)
-        .flatMap(Collection::stream)
-        .map(Map.Entry::getValue)
-        .filter(Objects::nonNull)
-        .toList();
-  }
-
-  private Stream<RbelFacet> getFacetStream() {
-    return new ArrayList<>(facets).stream();
+    // please do not convert into for-each: highly performance critical method both for rendering
+    // and conversion.
+    // for-each is not massively slower, BUT IT IS! leave as is without performance verification.
+    val result = new LinkedList<RbelElement>();
+    for (Iterator<RbelFacet> facetIterator = facets.iterator();
+        facetIterator.hasNext(); ) { // NOSONAR
+      var facet = facetIterator.next();
+      for (Iterator<Entry<String, RbelElement>> childElementIterator =
+              facet.getChildElements().iterator();
+          childElementIterator.hasNext(); ) {
+        final RbelElement child = childElementIterator.next().getValue();
+        if (child != null) {
+          result.add(child);
+        }
+      }
+    }
+    return result;
   }
 
   @Override
   public RbelMultiMap<RbelElement> getChildNodesWithKey() {
-    return getFacetStream()
-        .map(RbelFacet::getChildElements)
-        .map(RbelMultiMap::getValues)
-        .flatMap(Collection::stream)
-        .filter(el -> el.getValue() != null)
-        .collect(RbelMultiMap.COLLECTOR);
+    // please do not convert into for-each: highly performance critical method both for rendering
+    // and conversion.
+    // for-each is not massively slower, BUT IT IS! leave as is without performance verification.
+    val result = new RbelMultiMap<RbelElement>();
+    for (Iterator<RbelFacet> facetIterator = facets.iterator();
+        facetIterator.hasNext(); ) { // NOSONAR
+      val facet = facetIterator.next();
+      for (Iterator<Entry<String, RbelElement>> childElementIterator =
+              facet.getChildElements().iterator();
+          childElementIterator.hasNext(); ) {
+        final Entry<String, RbelElement> childElement = childElementIterator.next();
+        if (childElement.getValue() != null) {
+          result.put(childElement);
+        }
+      }
+    }
+    return result;
   }
 
   public void triggerPostConversionListener(final RbelConverter context) {
@@ -214,23 +244,32 @@ public class RbelElement extends RbelPathAble {
   }
 
   public List<RbelElement> traverseAndReturnNestedMembers() {
-    return getChildNodes().stream()
-        .map(RbelElement::traverseAndReturnNestedMembersInternal)
-        .flatMap(List::stream)
-        .toList();
+    val result = new ArrayList<RbelElement>();
+    traverseAndReturnNestedMembers(result);
+    return result;
   }
 
-  private List<RbelElement> traverseAndReturnNestedMembersInternal() {
-    if (log.isTraceEnabled()) {
-      log.trace(
-          "Traversing into {}: facets are {}",
-          findNodePath(),
-          getFacets().stream().map(Object::getClass).map(Class::getSimpleName).toList());
+  public void traverseAndReturnNestedMembers(List<RbelElement> result) {
+    // please do not convert into for-each: highly performance critical method both for rendering
+    // and conversion.
+    // for-each is not massively slower, BUT IT IS! leave as is without performance verification.
+    for (Iterator<RbelElement> iterator = getChildNodes().iterator(); iterator.hasNext(); ) {
+      RbelElement element = iterator.next();
+      if (element != null) {
+        element.traverseAndReturnNestedMembersInternal(result);
+      }
     }
+  }
+
+  private void traverseAndReturnNestedMembersInternal(List<RbelElement> result) {
+    log.atTrace()
+        .addArgument(this::findNodePath)
+        .addArgument(() -> facets.stream().map(Object::getClass).map(Class::getSimpleName).toList())
+        .log("Traversing into {}: facets are {}");
     if (hasFacet(RbelRootFacet.class)) {
-      return List.of(this);
+      result.add(this);
     } else {
-      return traverseAndReturnNestedMembers();
+      traverseAndReturnNestedMembers(result);
     }
   }
 
@@ -306,7 +345,9 @@ public class RbelElement extends RbelPathAble {
   }
 
   public Optional<String> printValue() {
-    return getFacet(RbelValueFacet.class).map(RbelValueFacet::getValue).map(Object::toString);
+    return getFacet(RbelValueFacet.class)
+        .map(RbelValueFacet::getValue)
+        .map(value -> value instanceof byte[] ar ? Hex.toHexString(ar) : value.toString());
   }
 
   public <T> Optional<T> seekValue(Class<T> clazz) {
@@ -375,7 +416,7 @@ public class RbelElement extends RbelPathAble {
   }
 
   public List<RbelNoteFacet> getNotes() {
-    return getFacetStream()
+    return facets.stream()
         .flatMap(
             facet -> {
               if (facet instanceof RbelNestedFacet asRbelNestedFacet) {
@@ -458,7 +499,8 @@ public class RbelElement extends RbelPathAble {
     return getChildNodes().stream()
         .map(child -> findAllNestedElementsWithFacet(child, rbelFacetClass))
         .flatMap(List::stream)
-        .flatMap(RbelElement::getFacetStream)
+        .map(RbelElement::getFacets)
+        .flatMap(Queue::stream)
         .filter(rbelFacetClass::isInstance)
         .map(rbelFacetClass::cast)
         .toList();

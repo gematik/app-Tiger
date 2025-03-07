@@ -16,7 +16,6 @@
 
 package de.gematik.rbellogger.converter;
 
-import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.elements.RbelJwtSignature;
 import de.gematik.rbellogger.data.facet.RbelJwtFacet;
@@ -39,10 +38,6 @@ import org.jose4j.lang.JoseException;
 public class RbelJwtConverter implements RbelConverterPlugin {
 
   public static final int JWT_DOT_SEPARATOR_COUNT = 2;
-
-  static {
-    BrainpoolCurves.init();
-  }
 
   @Override
   @SuppressWarnings({"java:S1135", "java:S108"})

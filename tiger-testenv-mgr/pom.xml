@@ -24,7 +24,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.6.1</version>
+        <version>3.7.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -123,6 +123,12 @@
             <artifactId>httpbin</artifactId>
             <version>${version.httpbin}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>5.4.1</version>
+        </dependency>
+
         <!-- for TigerExtension and TigerTest annotation which are in src so scope is not only test -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -360,10 +366,35 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>target/classes/static</outputDirectory>
+                            <outputDirectory>${project.build.directory}/classes/static</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>src/frontend/dist</directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>Copy Vue Proxy Web UI frontend into Spring Boot target static folder</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/classes/static/webui</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>
+                                        ${project.parent.basedir}/tiger-proxy-scrollable-webui/src/frontend/dist
+                                    </directory>
                                     <filtering>false</filtering>
                                 </resource>
                             </resources>

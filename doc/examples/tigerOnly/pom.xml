@@ -114,7 +114,6 @@
                             -->
                             <!-- optional -->
                             <skip>false</skip>
-                            <junit5Driver>true</junit5Driver>
                         </configuration>
                         <phase>generate-test-sources</phase>
                         <id>generate-tiger-drivers</id>
@@ -134,6 +133,16 @@
                                 generate-serenity-reports
                             </goal>
                         </goals>
+                        <configuration>
+                            <!-- optional - directory where serenity reports are created -->
+                            <reportDirectory>${project.build.directory}/site/serenity</reportDirectory>
+                            <!-- optional - directory with the .feature files being executed -->
+                            <requirementsBaseDir>src/test/resources/features</requirementsBaseDir>
+                            <!--optional - when set to true, the serenity report is automatically open in the default browser -->
+                            <openSerenityReportInBrowser>false</openSerenityReportInBrowser>
+                            <!-- optional - A comma separated list of report types to be generated. -->
+                            <reports>html,single-page-html,json-summary</reports>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

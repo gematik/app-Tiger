@@ -81,11 +81,14 @@ public class Driver1IT {}
 == Generate Reports goal
 
 The second execution block in the example XML section above will trigger the report creation.
-There are no properties for configuration at the moment.
-Two reports will be generated under target/site/serenity:
+With the parameter `reports` you can configure which reports get generated.
+The following reports types are available
 
-* A simple HTML single page report for emailing (serenity-summary.html)
-* A fancy detailed overall report (index.html)
+* `html` - A fancy detailed overall report (index.html)
+* `single-page-html` - A simple HTML single page report for emailing (serenity-summary.html)
+* `json-summary` - A summary report in json format, useful for displaying in CI tools (e.g.: Jenkins)
+
+By setting the parameter `openSerenityReportInBrowser` to true, the `html` report will automatically open in the default browser.
 
 == Start Tiger test environment in standalone mode
 

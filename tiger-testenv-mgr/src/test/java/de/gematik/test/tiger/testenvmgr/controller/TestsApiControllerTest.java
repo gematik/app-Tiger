@@ -153,14 +153,14 @@ class TestsApiControllerTest {
             .get(BASE_URL + port + "/tests/runs/" + somethingNotUuid)
             .asObject(ErrorDto.class);
     assertThat(response.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST.value());
-    assertThat(response.getBody())
+    var result = response.getBody();
+
+    assertThat(result.getErrorCode()).isEqualTo(String.valueOf(HttpStatus.BAD_REQUEST.value()));
+    assertThat(result.getErrorMessage())
         .isEqualTo(
-            new ErrorDto()
-                .errorCode("400")
-                .errorMessage(
-                    "Failed to convert value of type 'java.lang.String' to required type"
-                        + " 'java.util.UUID'; Invalid UUID string: "
-                        + somethingNotUuid));
+            "Method parameter 'testRunId': Failed to convert value of type 'java.lang.String' to"
+                + " required type 'java.util.UUID'; Invalid UUID string: "
+                + somethingNotUuid);
   }
 
   @Test

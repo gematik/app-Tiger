@@ -36,7 +36,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import de.gematik.test.tiger.lib.TigerDirector;
-import de.gematik.test.tiger.lib.rbel.RbelMessageValidator;
+import de.gematik.test.tiger.lib.rbel.RbelMessageRetriever;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.env.FeatureUpdate;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
@@ -635,7 +635,7 @@ public class SerenityReporterCallbacks {
     if (isDryRun || stepState != StepState.FINISHED) {
       return Collections.emptyList();
     }
-    val waitTime = RbelMessageValidator.RBEL_REQUEST_TIMEOUT.getValueOrDefault();
+    val waitTime = RbelMessageRetriever.RBEL_REQUEST_TIMEOUT.getValueOrDefault();
     try {
       Awaitility.await()
           .atMost(waitTime, TimeUnit.SECONDS)
@@ -839,22 +839,16 @@ public class SerenityReporterCallbacks {
   }
 
   public String getFileNameFor(String type, String scenarioName, int dataVariantIndex) {
-    if (scenarioName.length() > 80) { // Serenity can not deal with longer filenames
+    scenarioName = replaceSpecialCharacters(scenarioName);
+    if (scenarioName.length() > 30) { // Windows files-system can not deal with longer filenames
       scenarioName =
-          scenarioName.substring(0, 60)
+          scenarioName.substring(0, 30)
               + UUID.nameUUIDFromBytes(scenarioName.getBytes(StandardCharsets.UTF_8));
     }
     if (dataVariantIndex != -1) {
-      scenarioName = scenarioName + "_" + (dataVariantIndex + 1);
+      scenarioName += "_" + (dataVariantIndex + 1);
     }
-    scenarioName =
-        type
-            + "_"
-            + replaceSpecialCharacters(scenarioName)
-            + "_"
-            + sdf.format(new Date())
-            + ".html";
-    return scenarioName;
+    return type + "_" + scenarioName + "_" + sdf.format(new Date()) + ".html";
   }
 
   public String replaceSpecialCharacters(String name) {

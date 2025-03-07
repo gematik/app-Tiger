@@ -44,8 +44,8 @@ public class RbelX5cKeyReader implements RbelConverterPlugin {
               CryptoLoader.getCertificateFromPem(certificateData.get());
           converter
               .getRbelKeyManager()
-              .addKey(keyId.get(), certificate.getPublicKey(), RbelKey.PRECEDENCE_X5C_HEADER_VALUE);
-          log.info("Added new key from JKS ({})", keyId.get());
+              .addKey(keyId.get(), certificate.getPublicKey(), RbelKey.PRECEDENCE_X5C_HEADER_VALUE)
+              .ifPresent(newKey -> log.info("Added new key from JKS ({})", newKey.getKeyName()));
         } catch (Exception e) {
           log.trace("Exception while extracting X5C", e);
         }

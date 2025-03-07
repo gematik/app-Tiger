@@ -17,6 +17,10 @@
 package de.gematik.test.tiger.maven.adapter.mojos;
 
 import de.gematik.test.tiger.common.web.TigerBrowserUtil;
+import de.gematik.test.tiger.maven.reporter.TigerHtmlReporter;
+import de.gematik.test.tiger.maven.reporter.TigerJsonReporter;
+import de.gematik.test.tiger.maven.reporter.TigerReporter;
+import de.gematik.test.tiger.maven.reporter.TigerSinglePageReporter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -25,17 +29,13 @@ import java.util.List;
 import java.util.Optional;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import net.serenitybdd.reports.email.SinglePageHtmlReporter;
-import net.thucydides.core.reports.html.HtmlAggregateStoryReporter;
 import net.thucydides.model.domain.ReportData;
 import net.thucydides.model.domain.TestOutcome;
 import net.thucydides.model.domain.TestStep;
 import net.thucydides.model.reports.OutcomeFormat;
-import net.thucydides.model.reports.ResultChecker;
 import net.thucydides.model.reports.TestOutcomeLoader;
 import net.thucydides.model.reports.TestOutcomes;
 import net.thucydides.model.reports.json.JSONTestOutcomeReporter;
-import net.thucydides.model.requirements.FileSystemRequirements;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -53,6 +53,13 @@ public class TigerSerenityReportMojo extends AbstractMojo {
   @Parameter(defaultValue = "${project.build.directory}/site/serenity", required = true)
   public File reportDirectory;
 
+  /**
+   * A comma separated list of report types to be generated. Per default all report types: html,
+   * single-page-html and json-summary are generated.
+   */
+  @Parameter(defaultValue = "html,single-page-html,json-summary", required = true)
+  public List<String> reports = new ArrayList<>();
+
   /** Base directory for requirements. */
   @Parameter(defaultValue = "src/test/resources/features", required = true)
   public String requirementsBaseDir;
@@ -64,17 +71,47 @@ public class TigerSerenityReportMojo extends AbstractMojo {
   @Override
   public void execute() throws MojoExecutionException {
     try {
-      generateHtmlStoryReports();
+      generateReports();
     } catch (final Exception e) {
       throw new MojoExecutionException("Error generating serenity reports", e);
     }
   }
 
-  private void generateHtmlStoryReports() throws IOException {
+  private void generateReports() throws IOException {
     if (!reportDirectory.exists()) {
       getLog().warn("Report directory does not exist yet: " + reportDirectory);
       return;
     }
+    modifyStepDescriptionsWithTigerResolvedValues();
+
+    createReporters()
+        .forEach(
+            r -> {
+              r.generateReport();
+              r.logReportUri(getLog());
+            });
+
+    if (openSerenityReportInBrowser) {
+      TigerBrowserUtil.openUrlInBrowser(
+          reportDirectory.toPath() + "\\index.html", "browser for serenity report");
+    }
+  }
+
+  private List<TigerReporter> createReporters() {
+    List<TigerReporter> reporters = new ArrayList<>();
+    if (reports.contains("html")) {
+      reporters.add(new TigerHtmlReporter(reportDirectory.toPath(), Path.of(requirementsBaseDir)));
+    }
+    if (reports.contains("single-page-html")) {
+      reporters.add(new TigerSinglePageReporter(reportDirectory.toPath()));
+    }
+    if (reports.contains("json-summary")) {
+      reporters.add(new TigerJsonReporter(reportDirectory.toPath()));
+    }
+    return reporters;
+  }
+
+  private void modifyStepDescriptionsWithTigerResolvedValues() throws IOException {
     TestOutcomes testOutcomesToManipulate =
         TestOutcomeLoader.loadTestOutcomes()
             .inFormat(OutcomeFormat.JSON)
@@ -89,25 +126,6 @@ public class TigerSerenityReportMojo extends AbstractMojo {
       replaceTigerResolvedStepDescriptions(allSteps);
       outcomesReporter.generateReportFor(outcome);
     }
-
-    HtmlAggregateStoryReporter reporter =
-        new HtmlAggregateStoryReporter("default", new FileSystemRequirements(requirementsBaseDir));
-    reporter.setSourceDirectory(reportDirectory);
-    reporter.setOutputDirectory(reportDirectory);
-    reporter.setGenerateTestOutcomeReports();
-    TestOutcomes outcomes = reporter.generateReportsForTestResultsFrom(reportDirectory);
-    new ResultChecker(reportDirectory).checkTestResults(outcomes);
-
-    SinglePageHtmlReporter singlePageReporter = new SinglePageHtmlReporter();
-    singlePageReporter.setSourceDirectory(reportDirectory.toPath());
-    singlePageReporter.setOutputDirectory(reportDirectory.toPath());
-    Path generatedReport = singlePageReporter.generateReport();
-    if (openSerenityReportInBrowser) {
-      TigerBrowserUtil.openUrlInBrowser(
-          reportDirectory.toPath() + "\\index.html", "browser for serenity report");
-    }
-    logFullHtmlReportUri();
-    getLog().info("  - " + singlePageReporter.getDescription() + ": " + generatedReport.toUri());
   }
 
   private List<TestStep> collectSteps(TestOutcome outcome) {
@@ -143,10 +161,5 @@ public class TigerSerenityReportMojo extends AbstractMojo {
     return reportDataWithDescription
         .map(ReportData::getContents)
         .map(StringEscapeUtils::unescapeJava);
-  }
-
-  public void logFullHtmlReportUri() {
-    Path index = getReportDirectory().toPath().resolve("index.html");
-    getLog().info("  - Full Report: %s".formatted(index.toUri()));
   }
 }

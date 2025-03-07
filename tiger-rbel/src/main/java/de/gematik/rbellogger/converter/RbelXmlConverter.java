@@ -163,7 +163,7 @@ public class RbelXmlConverter implements RbelConverterPlugin {
     instructionElement.addFacet(instructionFacet);
     instructionElement.addFacet(new RbelMapFacet(childElements));
     for (Entry<String, String> attribute : instruction.getValues().entrySet()) {
-      final RbelElement value = converter.convertElement(attribute.getValue(), parentElement);
+      final RbelElement value = converter.convertElement(attribute.getValue(), instructionElement);
       childElements.put(attribute.getKey(), value);
     }
     return instructionElement;

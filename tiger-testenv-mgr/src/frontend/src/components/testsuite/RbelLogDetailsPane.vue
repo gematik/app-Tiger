@@ -51,14 +51,18 @@
         <i class="fa-solid fa-up-right-from-square" title="pop out pane"></i>
       </a>
     </h2>
-    <iframe
+    <div
       v-if="localProxyWebUiUrl"
-      id="rbellog-details-iframe"
-      allow="clipboard-write"
-      class="h-100 w-100"
-      :src="`${localProxyWebUiUrl}?embedded=true`"
-      title="Rbel log view"
-    />
+      class="overflow-y-hidden overflow-x-auto h-100 w-100"
+    >
+      <iframe
+        id="rbellog-details-iframe"
+        allow="clipboard-write"
+        class="h-100 w-100"
+        :src="`${localProxyWebUiUrl}?embedded`"
+        title="Rbel log view"
+      />
+    </div>
     <div v-else class="w-100 no-connection-local-proxy serverstatus-stopped">
       <i class="fas fa-project-diagram left"></i>
       No connection to local proxy.
@@ -116,10 +120,16 @@ const createTooltip = () => {
 }
 
 #rbellog_details_pane {
+  display: flex;
+  flex-direction: column;
   background: var(--gem-primary-100);
   color: var(--gem-primary-400);
   top: 0;
   bottom: 0;
+}
+
+#rbellog-details-iframe > iframe {
+  overflow: hidden;
 }
 
 .rbel-logo {

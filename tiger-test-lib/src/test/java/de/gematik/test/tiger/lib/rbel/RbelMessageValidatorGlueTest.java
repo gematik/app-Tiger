@@ -17,7 +17,11 @@
 
 package de.gematik.test.tiger.lib.rbel;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.glue.RBelValidatorGlue;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -54,8 +58,35 @@ class RbelMessageValidatorGlueTest {
   void testSharedValidatorInstance() {
     RBelValidatorGlue glue1 = new RBelValidatorGlue();
     RBelValidatorGlue glue2 = new RBelValidatorGlue();
-    Assertions.assertThat(glue1.getRbelValidator()).isSameAs(glue2.getRbelValidator());
-    Assertions.assertThat(glue1.getRbelValidator()).isSameAs(RbelMessageValidator.getInstance());
-    Assertions.assertThat(RbelMessageValidator.getInstance()).isNotNull();
+    Assertions.assertThat(glue1.getRbelMessageRetriever())
+        .isSameAs(glue2.getRbelMessageRetriever());
+    Assertions.assertThat(glue1.getRbelMessageRetriever())
+        .isSameAs(RbelMessageRetriever.getInstance());
+    Assertions.assertThat(RbelMessageRetriever.getInstance()).isNotNull();
+  }
+
+  @Test
+  void testReadTrafficFile() {
+    TigerGlobalConfiguration.putValue(
+        "TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersActive.yaml");
+    executeWithSecureShutdown(
+        () -> {
+          TigerDirector.start();
+
+          LocalProxyRbelMessageListener.getInstance().clearValidatableRbelMessages();
+          RBelValidatorGlue glue = new RBelValidatorGlue();
+          glue.readTgrFile("src/test/resources/testdata/rezepsFiltered.tgr");
+
+          assertThat(LocalProxyRbelMessageListener.getInstance().getValidatableRbelMessages())
+              .hasSize(96);
+        });
+  }
+
+  private void executeWithSecureShutdown(Runnable test) {
+    try {
+      test.run();
+    } finally {
+      TigerDirector.getTigerTestEnvMgr().shutDown();
+    }
   }
 }

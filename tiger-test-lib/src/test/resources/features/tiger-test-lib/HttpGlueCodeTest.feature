@@ -104,7 +104,7 @@ Feature: HTTP/HTTPS GlueCode Test feature
 
   Scenario Outline: JEXL Rbel Namespace Test
     Given TGR send empty GET request to "http://httpbin/html"
-    Then TGR find request to path "/html"
+    Then TGR find first request to path "/html"
     Then TGR current response with attribute "$.body.html.body.h1.text" matches "!{rbel:currentResponseAsString('$.body.html.body.h1.text')}"
 
     Examples: We use this data only for testing data variant display in workflow ui, there is no deeper sense in it
@@ -114,7 +114,7 @@ Feature: HTTP/HTTPS GlueCode Test feature
 
   Scenario: Simple first test
     Given TGR send empty GET request to "http://httpbin/html"
-    Then TGR find request to path "/html"
+    Then TGR find first request to path "/html"
     Then TGR current response with attribute "$.body.html.body.h1.text" matches "Herman Melville - Moby-Dick"
 
   Scenario: Test Find Last Request

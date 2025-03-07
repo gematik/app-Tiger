@@ -27,7 +27,7 @@
     <parent>
         <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
-        <version>3.6.1</version>
+        <version>3.7.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -314,6 +314,31 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>Copy Vue frontend into Spring Boot target static folder</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/classes/static/webui</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>
+                                        ${project.parent.basedir}/tiger-proxy-scrollable-webui/src/frontend/dist
+                                    </directory>
+                                    <filtering>false</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok-maven-plugin</artifactId>

@@ -24,7 +24,10 @@ import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.GreenMailUtil;
 import com.icegreen.greenmail.util.ServerSetup;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.facet.RbelPop3CommandFacet;
+import de.gematik.rbellogger.data.facet.RbelPop3ResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelSmtpCommandFacet;
+import de.gematik.rbellogger.data.facet.RbelSmtpResponseFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
@@ -197,6 +200,10 @@ class EmailParsingTest {
      trafficEndpoints:
         - http://localhost:${tiger.config_ports.pop3s.admin}
         - http://localhost:${tiger.config_ports.smtps.admin}
+     activateRbelParsingFor:
+        - pop3
+        - smtp
+        - mime
    servers:
      smtpsProxy:
       type: tigerProxy
@@ -208,7 +215,6 @@ class EmailParsingTest {
            port: ${tiger.config_ports.smtps.greenmailServerPort}
         activateRbelParsingFor:
           - smtp
-          - mime
      pop3sProxy:
       type: tigerProxy
       tigerProxyConfiguration:
@@ -219,7 +225,6 @@ class EmailParsingTest {
            port: ${tiger.config_ports.pop3s.greenmailServerPort}
         activateRbelParsingFor:
           - pop3
-          - mime
    """)
   @Test
   void testSendAndReceiveEmailOverMeshTigerProxy(TigerTestEnvMgr tigerTestEnvMgr) {
@@ -269,8 +274,9 @@ class EmailParsingTest {
                 directReverseProxy:
                    hostname: 127.0.0.1
                    port: ${tiger.config_ports.smtps.greenmailServerPort}
-                rbelBufferSizeInMb: 0
-                activateRbelParsing: false
+                activateRbelParsingFor:
+                  - smtp
+                skipParsingWhenMessageLargerThanKb: 1
              pop3sProxy:
               type: tigerProxy
               tigerProxyConfiguration:
@@ -279,8 +285,9 @@ class EmailParsingTest {
                 directReverseProxy:
                    hostname: 127.0.0.1
                    port: ${tiger.config_ports.pop3s.greenmailServerPort}
-                activateRbelParsing: false
-                rbelBufferSizeInMb: 0
+                activateRbelParsingFor:
+                  - pop3
+                skipParsingWhenMessageLargerThanKb: 1
            """)
   @Test
   void testSendAndReceiveEmailOverMeshTigerProxy_bigAttachment(TigerTestEnvMgr tigerTestEnvMgr) {
@@ -347,7 +354,14 @@ class EmailParsingTest {
                       .getLocalTigerProxyOrFail()
                       .getRbelLogger()
                       .getMessageHistory()
-                      .size();
+                      .stream()
+                      .filter(
+                          msg ->
+                              msg.hasFacet(RbelPop3CommandFacet.class)
+                                  || msg.hasFacet(RbelSmtpCommandFacet.class)
+                                  || msg.hasFacet(RbelPop3ResponseFacet.class)
+                                  || msg.hasFacet(RbelSmtpResponseFacet.class))
+                      .count();
               log.debug("currently so many messages: " + size);
               return size == expectedMessages;
             });

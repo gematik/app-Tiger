@@ -30,15 +30,22 @@ import static org.mockito.Mockito.verify;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.List;
 import lombok.SneakyThrows;
+import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.logging.Log;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -57,6 +64,7 @@ class TigerSerenityReportMojoTest {
     underTest.setLog(log);
     underTest.setReportDirectory(reportDir.toFile());
     underTest.setRequirementsBaseDir("src/test/resources");
+    underTest.setReports(List.of("html", "single-page-html", "json-summary"));
   }
 
   @Test
@@ -84,6 +92,7 @@ class TigerSerenityReportMojoTest {
     underTest.execute();
 
     // Assertion
+    var serenitySummaryHtmlContent = readString(reportDir.resolve("serenity-summary.html"));
     assertAll(
         () ->
             assertThat(
@@ -93,21 +102,43 @@ class TigerSerenityReportMojoTest {
                     startsWith("\"Test Tiger BDD\",\"Simple first test\",\"SUCCESS\","),
                     startsWith("\"Test Tiger BDD\",\"Simple second test\",\"FAILURE\","),
                     startsWith("\"Test Tiger BDD\",\"Simple third test\",\"SUCCESS\","))),
+        () -> assertThat(serenitySummaryHtmlContent, containsString("2 passing tests")),
+        () -> assertThat(serenitySummaryHtmlContent, containsString("1 failing test")),
         () ->
             assertThat(
-                readString(reportDir.resolve("serenity-summary.html")),
-                containsString("2 passing tests")),
-        () ->
-            assertThat(
-                readString(reportDir.resolve("serenity-summary.html")),
-                containsString("1 failing test")),
-        () ->
-            assertThat(
-                readString(reportDir.resolve("serenity-summary.html")),
+                serenitySummaryHtmlContent,
                 containsString(
                     "Assertion error: Expecting actual:  &quot;jetty-dir.css&quot;to match pattern:"
                         + "  &quot;mööööp&quot;")),
         () -> assertTrue(Files.exists(reportDir.resolve("index.html")), "index.html exists"));
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideReportTypes")
+  @SneakyThrows
+  void testShouldOnlyCreateConfiguredReports(
+      String reportType, String expectedFile, List<String> shouldNotExistFiles) {
+    prepareReportDir();
+    underTest.setReports(List.of(reportType));
+    underTest.execute();
+    val filesInReportDir = reportDir.toFile().list();
+    Assertions.assertThat(filesInReportDir)
+        .contains(expectedFile)
+        .doesNotContainAnyElementsOf(shouldNotExistFiles);
+  }
+
+  private static Collection<Arguments> provideReportTypes() {
+    return List.of(
+        Arguments.of(
+            "html", "index.html", List.of("serenity-summary.html", "serenity-summary.json")),
+        Arguments.of(
+            "single-page-html",
+            "serenity-summary.html",
+            List.of("index.html", "serenity-summary.json")),
+        Arguments.of(
+            "json-summary",
+            "serenity-summary.json",
+            List.of("index.html", "serenity-summary.html")));
   }
 
   @Tag("de.gematik.test.tiger.common.LongRunnerTest")

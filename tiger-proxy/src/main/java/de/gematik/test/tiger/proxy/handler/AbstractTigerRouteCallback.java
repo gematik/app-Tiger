@@ -418,7 +418,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
             .childNodes(
                 httpRequest.getClientCertificateChain().stream()
                     .map(MockserverX509CertificateWrapper::certificate)
-                    .map(cert -> mapToRbelElement(cert, message))
+                    .map(cert -> mapToRbelElement(cert, certificateChainElement))
                     .toList())
             .build());
 

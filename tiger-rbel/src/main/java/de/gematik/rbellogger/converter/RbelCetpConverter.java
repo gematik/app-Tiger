@@ -25,6 +25,11 @@ public class RbelCetpConverter implements RbelConverterPlugin {
   public static final int MIN_CETP_MESSAGE_LENGTH = CETP_INTRO_MARKER.length + 4;
 
   @Override
+  public boolean ignoreOversize() {
+    return true;
+  }
+
+  @Override
   public void consumeElement(final RbelElement targetElement, final RbelConverter converter) {
     var content = targetElement.getContent();
     var contentSize = targetElement.getSize();

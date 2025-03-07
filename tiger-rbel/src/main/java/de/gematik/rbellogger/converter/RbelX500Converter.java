@@ -18,6 +18,7 @@ package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
+import de.gematik.rbellogger.data.facet.RbelAsn1Facet;
 import de.gematik.rbellogger.data.facet.RbelMapFacet;
 import de.gematik.rbellogger.data.facet.RbelValueFacet;
 import java.io.IOException;
@@ -29,25 +30,45 @@ import org.bouncycastle.asn1.x509.X509Name;
 
 @Slf4j
 @SuppressWarnings("java:S1874")
+@ConverterInfo(onlyActivateFor = {"X500", "ASN1", "X509"})
 public class RbelX500Converter implements RbelConverterPlugin {
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
-    if (element.getFacets().isEmpty()) {
-      var rdnMap = new RbelMultiMap<RbelElement>();
+    if (element.hasFacet(RbelAsn1Facet.class)) {
+      element
+          .getFacet(RbelAsn1Facet.class)
+          .map(RbelAsn1Facet::getAsn1Content)
+          .filter(ASN1Sequence.class::isInstance)
+          .map(ASN1Sequence.class::cast)
+          .ifPresent(sequence -> convertAsn1Sequence(sequence, element, context));
+    } else {
+      if (!element.getFacets().isEmpty()) {
+        return;
+      }
       try (var asnInput = new ASN1InputStream(element.getContent().toInputStream())) {
-        String principal = new X509Name(ASN1Sequence.getInstance(asnInput.readObject())).toString();
-        final X500NameTokenizer nameTokenizer = new X500NameTokenizer(principal);
-        while (nameTokenizer.hasMoreTokens()) {
-          var token = nameTokenizer.nextToken().split("=");
-          rdnMap.put(token[0], context.convertElement(token[1], element));
-        }
-        if (!rdnMap.isEmpty()) {
-          element.addFacet(new RbelMapFacet(rdnMap));
-          element.addFacet(new RbelValueFacet<>(principal));
-        }
+        convertAsn1Sequence(ASN1Sequence.getInstance(asnInput.readObject()), element, context);
       } catch (RuntimeException | IOException e) {
         // swallow
       }
+    }
+  }
+
+  private void convertAsn1Sequence(
+      ASN1Sequence sequence, RbelElement element, RbelConverter context) {
+    try {
+      String principal = new X509Name(sequence).toString();
+      final X500NameTokenizer nameTokenizer = new X500NameTokenizer(principal);
+      var rdnMap = new RbelMultiMap<RbelElement>();
+      while (nameTokenizer.hasMoreTokens()) {
+        var token = nameTokenizer.nextToken().split("=");
+        rdnMap.put(token[0], context.convertElement(token[1], element));
+      }
+      if (!rdnMap.isEmpty()) {
+        element.addFacet(new RbelMapFacet(rdnMap));
+        element.addFacet(new RbelValueFacet<>(principal));
+      }
+    } catch (RuntimeException e) {
+      // swallow
     }
   }
 }

@@ -31,7 +31,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.web.TigerBrowserUtil;
 import de.gematik.test.tiger.lib.exception.TigerStartupException;
-import de.gematik.test.tiger.lib.rbel.RbelMessageValidator;
+import de.gematik.test.tiger.lib.rbel.RbelMessageRetriever;
 import de.gematik.test.tiger.lib.reports.TigerRestAssuredCurlLoggingFilter;
 import de.gematik.test.tiger.lib.serenityrest.SerenityRestUtils;
 import de.gematik.test.tiger.lib.shutdown.ShutdownReason;
@@ -456,7 +456,7 @@ public class TigerDirector {
     tigerTestEnvMgr = null;
     curlLoggingFilter = null;
 
-    RbelMessageValidator.clearInstance(); // NOSONAR - this is only called from test code
+    RbelMessageRetriever.clearInstance(); // NOSONAR - this is only called from test code
 
     LocalProxyRbelMessageListener
         .clearTestingInstance(); // NOSONAR - the method testUninitialize should also only be used

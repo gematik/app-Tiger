@@ -260,11 +260,13 @@ public abstract class AbstractTigerProxyTest {
     await()
         .atMost(5, TimeUnit.SECONDS)
         .until(
-            () ->
-                tigerProxy.getRbelLogger().getMessageHistory().stream()
-                        .filter(el -> !el.hasFacet(RbelParsingNotCompleteFacet.class))
-                        .count()
-                    >= numberOfMessagesExpected);
+            () -> {
+              tigerProxy.waitForAllCurrentMessagesToBeParsed();
+              return tigerProxy.getRbelLogger().getMessageHistory().stream()
+                      .filter(el -> !el.hasFacet(RbelParsingNotCompleteFacet.class))
+                      .count()
+                  >= numberOfMessagesExpected;
+            });
   }
 
   public LoggedRequest getLastRequest(WireMock wireMock) {

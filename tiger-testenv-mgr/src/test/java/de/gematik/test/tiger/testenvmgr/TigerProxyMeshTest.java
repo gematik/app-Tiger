@@ -244,6 +244,29 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
       tigerYaml =
           """
             tigerProxy:
+              trafficEndpoints:
+                - http://localhost:${free.port.14}
+            servers:
+              reverseProxy1:
+                type: tigerProxy
+                tigerProxyConfiguration:
+                  adminPort: ${free.port.14}
+                  proxyPort: ${free.port.15}
+                  proxyRoutes:
+                    - from: http://myServer
+                      to: http://123.123.123.123:5678
+            """)
+  void unreachableRouteInUpstreamProxy_downstreamShouldStart(TigerTestEnvMgr envMgr) {
+    waitShortTime();
+    assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory()).isEmpty();
+  }
+
+  @SneakyThrows
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+            tigerProxy:
               skipTrafficEndpointsSubscription: true
               trafficEndpoints:
                 - http://localhost:${free.port.22}

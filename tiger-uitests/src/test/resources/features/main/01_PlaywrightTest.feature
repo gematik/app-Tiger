@@ -138,7 +138,7 @@ Feature: Playwright Test feature
 
   Scenario Outline: JEXL Rbel Namespace Test
     Given TGR send empty GET request to "http://httpbin"
-    Then TGR find request to path "/"
+    Then TGR find first request to path "/"
     And TGR print current request as rbel-tree
     Then TGR current response with attribute "$.body.html.head.title.text" matches "!{rbel:currentResponseAsString('$.body.html.head.title.text')}"
     Examples:

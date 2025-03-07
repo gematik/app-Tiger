@@ -88,7 +88,8 @@ public class BinaryChunksBuffer {
                 f ->
                     f instanceof RbelRootFacet
                         || f instanceof RbelResponseFacet
-                        || f instanceof RbelRequestFacet)) {
+                        || f instanceof RbelRequestFacet
+                        || f instanceof UnparsedChunkFacet)) {
       rbelConverter.removeMessage(result);
       RbelConverter.setMessageFullyProcessed(result);
       return Optional.empty();
@@ -96,7 +97,7 @@ public class BinaryChunksBuffer {
 
     bundledServerNamesAdder.addBundledServerNameToHostnameFacet(result);
     if (!proxyConfiguration.isActivateRbelParsing()) {
-      result.addFacet(new UnparsedChunkFacet());
+      result.addOrReplaceFacet(new UnparsedChunkFacet());
     }
     return Optional.of(result);
   }
