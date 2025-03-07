@@ -93,7 +93,7 @@ class RbelPathExecutorLoggingTest {
     assertThat(
             listAppender.list.stream()
                 .map(ILoggingEvent::getFormattedMessage)
-                .map(str -> str.split("http://localhost:8080/idpEnc/jwks.json").length - 1)
+                .map(str -> str.split("http://localhost:8080/idpEnc/jwks").length - 1)
                 .max(Comparator.naturalOrder()))
         .get()
         .isEqualTo(3);

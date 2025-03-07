@@ -23,7 +23,6 @@ import static org.mockito.Mockito.mock;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.glue.TigerParameterTypeDefinitions;
-import de.gematik.test.tiger.lib.enums.ModeType;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import io.restassured.http.Method;
@@ -46,7 +45,7 @@ public class InlineJexlTest {
     TigerGlobalConfiguration.reset();
     localProxyRbelMessageListenerTestAdapter = new LocalProxyRbelMessageListenerTestAdapter();
     // Calling the constructor will register the JexlToolbox
-    new RbelMessageValidator(
+    new RbelMessageRetriever(
         mock(TigerTestEnvMgr.class),
         mock(TigerProxy.class),
         localProxyRbelMessageListenerTestAdapter.getLocalProxyRbelMessageListener());

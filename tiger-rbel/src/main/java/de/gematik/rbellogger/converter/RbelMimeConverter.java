@@ -45,9 +45,10 @@ import org.apache.james.mime4j.stream.Field;
 @Slf4j
 public class RbelMimeConverter implements RbelConverterPlugin {
 
-  private static final Pattern AUTHENTICATED_ENVELOPED_DATA =
+  private static final Pattern AUTHENTICATED_ENVELOPED_OR_SIGNED_DATA =
       Pattern.compile(
-          "application/pkcs7-mime\\s*;.*smime-type=authenticated-enveloped-data.*", Pattern.DOTALL);
+          "application/pkcs7-mime\\s*;.*smime-type=(authenticated-enveloped|signed)-data.*",
+          Pattern.DOTALL);
 
   private static final String TRANSFER_ENCODING_7_BIT = "7bit";
   public static final String CONTENT_TRANSFER_ENCODING = "content-transfer-encoding";
@@ -59,7 +60,8 @@ public class RbelMimeConverter implements RbelConverterPlugin {
             parent ->
                 parent.hasFacet(RbelPop3ResponseFacet.class)
                     || parent.hasFacet(RbelDecryptedEmailFacet.class)
-                    || parent.hasFacet(RbelSmtpCommandFacet.class))
+                    || parent.hasFacet(RbelSmtpCommandFacet.class)
+                    || parent.hasFacet(RbelMimeBodyFacet.class))
         .map(facet -> element.getContent().toInputStream())
         .ifPresent(content -> new Parser(context).parseEntity(element, parseMimeMessage(content)));
   }
@@ -75,7 +77,7 @@ public class RbelMimeConverter implements RbelConverterPlugin {
           .getFacet(RbelMimeHeaderFacet.class)
           .map(header -> header.get("content-type"))
           .map(RbelElement::getRawStringContent)
-          .map(AUTHENTICATED_ENVELOPED_DATA::matcher)
+          .map(AUTHENTICATED_ENVELOPED_OR_SIGNED_DATA::matcher)
           .filter(Matcher::matches)
           .ifPresent(m -> context.convertElement(messageFacet.body()));
       return element;

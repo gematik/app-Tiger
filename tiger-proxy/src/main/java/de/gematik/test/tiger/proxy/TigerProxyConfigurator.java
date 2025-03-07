@@ -52,7 +52,6 @@ public class TigerProxyConfigurator
     tracingPushService = new TracingPushService(template, tigerProxy);
     tracingPushService.addWebSocketListener();
     tigerWebUiController.setTigerProxy(tigerProxy);
-    tigerProxy.addRbelMessageListener(tigerWebUiController::informClientOfNewMessageArrival);
     if (shouldSubscribeAfterStart) {
       tigerProxy.subscribeToTrafficEndpoints();
     } else {

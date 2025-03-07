@@ -40,6 +40,7 @@ import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /**
@@ -77,6 +78,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 @WireMockTest
 @RequiredArgsConstructor
 @ResetTigerConfiguration
+@DirtiesContext
 class TigerProxyHealthEndpointTest {
 
   private UnirestInstance unirestInstance;
@@ -137,18 +139,7 @@ class TigerProxyHealthEndpointTest {
     await()
         .pollInterval(200, TimeUnit.MILLISECONDS)
         .atMost(2, TimeUnit.SECONDS)
-        .until(
-            () ->
-                healthUnirestInstance
-                        .get(getHealthEndpointUrl())
-                        .asJson()
-                        .getBody()
-                        .getObject()
-                        .getJSONObject("components")
-                        .getJSONObject("messageQueue")
-                        .getJSONObject("details")
-                        .getInt("rbelMessages")
-                    == 4);
+        .until(() -> tigerProxy.getRbelMessagesList().size() == 4);
     // check that the health endpoint get requests do NOT end up in the rbel messages
     JSONObject response =
         healthUnirestInstance.get(getHealthEndpointUrl()).asJson().getBody().getObject();
@@ -183,30 +174,21 @@ class TigerProxyHealthEndpointTest {
     await()
         .pollInterval(200, TimeUnit.MILLISECONDS)
         .atMost(2, TimeUnit.SECONDS)
-        .until(
-            () ->
-                healthUnirestInstance
-                        .get(getHealthEndpointUrl())
-                        .asJson()
-                        .getBody()
-                        .getObject()
-                        .getJSONObject("components")
-                        .getJSONObject("messageQueue")
-                        .getJSONObject("details")
-                        .getInt("rbelMessages")
-                    == 0);
-    MockServer client = ((MockServer) ReflectionTestUtils.getField(tigerProxy, "mockServer"));
-    if (client == null) {
-      fail("No Mockserver client set! Can't simulate unresponsive tiger proxy");
+        .until(() -> tigerProxy.getRbelMessagesList().isEmpty());
+
+    MockServer tigerProxyInternalMockServer =
+        ((MockServer) ReflectionTestUtils.getField(tigerProxy, "mockServer"));
+    if (tigerProxyInternalMockServer == null) {
+      fail("No Mockserver found! Can't simulate unresponsive tiger proxy");
     }
-    client.stop();
+    tigerProxyInternalMockServer.stop();
 
     JSONObject response =
         healthUnirestInstance.get(getHealthEndpointUrl()).asJson().getBody().getObject();
     validateHealthRecord(response, "DOWN", "DOWN", false, 0, 5, false, false);
   }
 
-  private static void validateHealthRecord(
+  private void validateHealthRecord(
       JSONObject response,
       String overallStatus,
       String componentStatus,
@@ -215,6 +197,7 @@ class TigerProxyHealthEndpointTest {
       int rbelMessageMaximalBufferSizeMb,
       boolean lastSuccessRequestIsNull,
       boolean firstFailedRequestIsNull) {
+    tigerProxy.waitForAllCurrentMessagesToBeParsed();
     SoftAssertions softly = new SoftAssertions();
     softly.assertThat(response.getString("status")).as("Overall status").isEqualTo(overallStatus);
     JSONObject msgQueue = response.getJSONObject("components").getJSONObject("messageQueue");

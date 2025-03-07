@@ -218,7 +218,7 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
                         + "/webui")
                 .asString();
         if (response.isSuccess()) {
-          assertThat(response.getBody()).contains("Tiger Proxy Log").contains("Proxy port");
+          assertThat(response.getBody()).contains("Tiger Proxy Log");
           return true;
         } else {
           log.warn("Proxy port returns status {}", response.getStatus());

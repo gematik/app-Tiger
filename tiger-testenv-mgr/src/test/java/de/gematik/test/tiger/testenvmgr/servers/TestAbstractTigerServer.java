@@ -17,8 +17,12 @@
 package de.gematik.test.tiger.testenvmgr.servers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 
+import de.gematik.test.tiger.common.config.TigerConfigurationException;
+import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
@@ -31,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class TestAbstractTigerServer {
 
@@ -86,12 +91,44 @@ class TestAbstractTigerServer {
         .hasMessageContaining(
             "has no " + TigerServerType.class.getCanonicalName() + " Annotation!");
   }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "test_name",
+        "-testName",
+        "testName-",
+        ".test.name",
+        "test.name",
+        "test..name",
+        "test.name.",
+        "test:name",
+        "test/name"
+      })
+  void invalidServerNames(String serverName) {
+    TestServer server = new TestServer(serverName);
+    assertThatThrownBy(server::assertThatConfigurationIsCorrect)
+        .isInstanceOf(TigerConfigurationException.class)
+        .hasMessageContaining("Hostname '" + serverName + "' not valid (used for server 'id')");
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"test-name", "testName"})
+  void validServerNames(String serverName) {
+    TestServer server = new TestServer(serverName);
+    ReflectionTestUtils.setField(server, "tigerTestEnvMgr", mock(TigerTestEnvMgr.class));
+    assertThatNoException().isThrownBy(server::assertThatConfigurationIsCorrect);
+  }
 }
 
 class TestServer extends AbstractTigerServer {
 
   public TestServer() {
     super("test", "id", null, new CfgServer());
+  }
+
+  public TestServer(String serverName) {
+    super(serverName, "id", null, new CfgServer().setType("testServer"));
   }
 
   @Override

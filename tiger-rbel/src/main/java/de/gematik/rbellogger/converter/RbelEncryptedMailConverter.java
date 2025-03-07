@@ -18,69 +18,49 @@ package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelDecryptedEmailFacet;
+import de.gematik.rbellogger.data.facet.RbelMimeHeaderFacet;
 import de.gematik.rbellogger.data.facet.RbelMimeMessageFacet;
+import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.util.email_crypto.EmailDecryption;
-import de.gematik.rbellogger.util.email_crypto.RbelDecryptionException;
-import eu.europa.esig.dss.spi.DSSUtils;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.util.Optional;
 import lombok.SneakyThrows;
-import org.apache.james.mime4j.dom.SingleBody;
 import org.bouncycastle.cms.CMSException;
 
 @ConverterInfo(onlyActivateFor = "mime")
 public class RbelEncryptedMailConverter implements RbelConverterPlugin {
 
-  private static class EmailDecryptionFailedException extends Exception {}
-
   @Override
   @SneakyThrows
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
     if (Optional.ofNullable(rbelElement.getParentNode())
-        .filter(node -> node.hasFacet(RbelMimeMessageFacet.class))
+        .flatMap(node -> node.getFacet(RbelMimeMessageFacet.class))
+        .map(RbelMimeMessageFacet::header)
+        .flatMap(header -> header.getFacet(RbelMimeHeaderFacet.class))
+        .map(header -> header.get("content-type"))
+        .map(RbelElement::getRawStringContent)
+        .filter(contentType -> contentType.contains("smime-type=authenticated-enveloped-data"))
         .isPresent()) {
       try {
         RbelDecryptedEmailFacet facet = parseEncryptedMessage(rbelElement, converter);
         rbelElement.addFacet(facet);
-        converter.convertElement(facet.getDecrypted());
-      } catch (CMSException | EmailDecryptionFailedException e) {
-        // ignore
+      } catch (CMSException e) {
+        throw new RbelConversionException(e, rbelElement, this);
       }
     }
   }
 
-  private RbelDecryptedEmailFacet parseEncryptedMessage(RbelElement body, RbelConverter context)
-      throws CMSException, IOException, EmailDecryptionFailedException {
+  private RbelDecryptedEmailFacet parseEncryptedMessage(RbelElement element, RbelConverter context)
+      throws CMSException {
     var keyManager = context.getRbelKeyManager();
 
-    final byte[] decryptedMessage =
-        EmailDecryption.decrypt(body.getContent(), keyManager)
-            .orElseThrow(EmailDecryptionFailedException::new);
+    var decryptedMessage =
+        EmailDecryption.decrypt(element.getContent(), keyManager)
+            .orElseThrow(
+                () -> new RbelConversionException("Could not decrypt content", element, this));
 
-    final byte[] signedMessageContent = extractContentFromMessage(decryptedMessage);
+    var decryptedMessageElement = new RbelElement(decryptedMessage, element);
+    context.convertElement(decryptedMessageElement);
 
-    final byte[] rfc822Message = extractRfc822Message(signedMessageContent);
-
-    RbelElement decrypted = new RbelElement(rfc822Message, body);
-    return RbelDecryptedEmailFacet.builder().decrypted(decrypted).build();
-  }
-
-  private static byte[] extractRfc822Message(byte[] signedMessageContent)
-      throws IOException, CMSException {
-    try (var out = new ByteArrayOutputStream()) {
-      DSSUtils.toCMSSignedData(signedMessageContent).getSignedContent().write(out);
-      return out.toByteArray();
-    }
-  }
-
-  private static byte[] extractContentFromMessage(final byte[] data) throws IOException {
-    var message = RbelMimeConverter.parseMimeMessage(new ByteArrayInputStream(data));
-    var body = message.getBody();
-    if (body instanceof SingleBody singleBody) {
-      return singleBody.getInputStream().readAllBytes();
-    }
-    throw new RbelDecryptionException("multipart body handling not implemented"); // NOSONAR
+    return RbelDecryptedEmailFacet.builder().decrypted(decryptedMessageElement).build();
   }
 }

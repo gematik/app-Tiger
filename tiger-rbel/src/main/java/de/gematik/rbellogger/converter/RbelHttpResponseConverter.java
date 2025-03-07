@@ -315,7 +315,7 @@ public class RbelHttpResponseConverter implements RbelConverterPlugin {
                     throw new RbelConversionException(
                         "Unsupported encoding found in HTTP header: " + encoding);
                   }
-                  log.info("Adding decoder for encoding: {}", encoding);
+                  log.atTrace().addArgument(() -> encoding).log("Adding decoder for encoding: {}");
                   return HTTP_CODINGS_MAP.get(encoding);
                 })
             .toList();

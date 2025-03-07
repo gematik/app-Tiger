@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 gematik GmbH
+ * Copyright 2024 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,9 @@ public class StepDescription {
       new TigerTypedConfigurationKey<>(
           "tiger.lib.maxStepDescriptionDisplayLengthOnWebUi", Integer.class, 300);
   private final PickleStepTestStep step;
+
+  private static final String GENERICS_REGEX = "<[^<>]*>";
+  private static final Pattern genericsPattern = Pattern.compile(GENERICS_REGEX);
 
   @Getter(value = AccessLevel.PRIVATE, lazy = true)
   private final Boolean shouldResolveStepArgument = shouldResolveStepArgument();
@@ -225,22 +228,34 @@ public class StepDescription {
     return result.toString();
   }
 
-  private boolean isMethodResolvable(String methodSignature) {
+  /**
+   * @param methodSignature of the form package.class.method(params). This signature string maybe
+   *     INCLUDES generics information! The return type is not part of the method signature!
+   * @return flag whether this method can be found in the class path and has resolvable arguments
+   */
+  boolean isMethodResolvable(String methodSignature) {
 
     int parenIndex = methodSignature.indexOf("(");
     int lastDotInMethodPath = methodSignature.lastIndexOf('.', parenIndex - 1);
     String className = methodSignature.substring(0, lastDotInMethodPath);
     String methodName = methodSignature.substring(lastDotInMethodPath + 1);
 
-    try {
+    // Map<B, List<A>>, List<B>
+    // regex can not do this recursively so we do it in loop till there is no more match
+    Matcher matcher = genericsPattern.matcher(methodName);
+    while (matcher.find()) {
+      methodName = methodName.replaceAll(GENERICS_REGEX, "");
+      matcher = genericsPattern.matcher(methodName);
+    }
 
+    try {
       Method method = BeanUtils.resolveSignature(methodName, Class.forName(className));
       if (method == null) {
         return false;
       }
       return Arrays.stream(method.getAnnotations())
           .anyMatch(a -> a.annotationType().equals(ResolvableArgument.class));
-    } catch (ClassNotFoundException e) {
+    } catch (ClassNotFoundException | IllegalArgumentException e) {
       return false;
     }
   }

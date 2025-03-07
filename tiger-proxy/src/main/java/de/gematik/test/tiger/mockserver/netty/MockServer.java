@@ -18,7 +18,6 @@ package de.gematik.test.tiger.mockserver.netty;
 
 import static de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration.configuration;
 import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.REMOTE_SOCKET;
-import static de.gematik.test.tiger.mockserver.netty.HttpRequestHandler.PROXYING;
 import static java.util.Collections.singletonList;
 
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
@@ -113,8 +112,7 @@ public class MockServer extends LifeCycle {
                 new WriteBufferWaterMark(8 * 1024, 32 * 1024))
             .childHandler(
                 new MockServerChannelInitializer(configuration, this, httpState, actionHandler))
-            .childAttr(REMOTE_SOCKET, remoteSocket)
-            .childAttr(PROXYING, remoteSocket != null);
+            .childAttr(REMOTE_SOCKET, remoteSocket);
 
     try {
       bindServerPorts(portBindings);

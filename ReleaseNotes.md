@@ -1,5 +1,53 @@
 # Changelog Tiger Test platform
 
+# Release 3.7.0
+
+## Breaking Changes
+
+* TGR-1742: New Tiger Proxy Web UI change in behavior: delete messages before importing new ones.
+* TGR-1623: "TGR find request to path ..." changed to "TGR find first request to path" to match the German translation
+* TGR-1748: Every server now has to have a valid hostname (either the given server-name or, if present, the
+  hostname-property). This check is now done explicitly at startup.
+* TGR-1755: Add additional (formerly hidden) mime message levels in encrypted MIME messages, one
+  for the binary
+  signed content structure and one for the rfc822 message structure.
+
+```xml
+
+<configuration>
+    <reports>html,single-page-html,json-summary</reports>
+</configuration>
+```
+
+* TGR-1625: Tiger-Proxy: The X500-Parser is no longer added by default. Please use "X500", "X509" or "ASN1" to activate
+  it.
+
+## Features
+
+* TGR-1742: New Tiger Proxy Web UI: features endless scrolling and a search for rbel messages.
+* TGR-1727: Tiger Maven Plugin: the tiger plugin can now create a serenity json summary report. This is active by
+  default. You can configure which reports get generated in the maven configuration. E.g.:
+* TGR-1536: Refactoring RbelValidator
+* TGR-1625: RBel: OIDs in ASN.1 now feature the dot-notation as well as a human-readable name (if existing in an
+  internal database)
+* TGR-1625: Tiger-Proxy: The "activateConversionFor" list is now case-insensitive.
+* TGR-1625: OCSP-Responses can now be converted. To activate, add "OCSP" to the `activateConversionFor` list.
+* TGR-1740: adding package.json to the dependabot checks
+* TGR-1623: "TGR find request to path ..." changed to "TGR find first request to path" to match the German translation,
+  old english step is now deprecated
+* TGR-1761: RbelParser: Added support for b64 encoded, gzipped messages.
+
+## Bugfixes
+
+* TGR-1625: Nested ASN.1-objects are no longer displayed as seperate entities when they reside immediately in another
+  ASN.1 structure. This helps make longer structures, for example X.509-certificates, more readable.
+* TGR-1753: Shorten rbel-log file names in serenity report further to avoid too long file names when extracting report
+  on Windows
+* TGR-1774: TigerGlobalConfiguration now efficiently deals with large byte-arrays
+* TGR-1766: Rbel: Fixed parent-elements in POP3 Headers and XML Processing Instructions
+* TGR-1760: Tiger Global Configuration: reading a boolean out of the configuration will now resolve placeholders before
+  parsing the resulting string into a boolean.
+
 # Release 3.6.1
 
 * Serenity BDD 4.2.16
@@ -33,6 +81,7 @@ tigerProxy:
 ## Bugfixes
 
 * TGR-1427: Use non parallel serenity reporter to circumvent wrong logging behavior of parallel reporter.
+* TGR-1607: Propagate oversized messages as unparsed chunks to downstream proxy.
 * TGR-1609: report actual error cause for exceptions produced by serenity rest.
 * TGR-1653: When a modification condition references parts of request (e.g. "isResponse && request.url =$ 'foobar'"),
   modification will be applied instead of ignored.
@@ -421,8 +470,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+  key = PLUGIN_PROPERTY_NAME,
+  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

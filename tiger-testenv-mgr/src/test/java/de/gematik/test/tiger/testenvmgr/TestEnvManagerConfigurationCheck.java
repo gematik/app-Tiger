@@ -105,10 +105,41 @@ class TestEnvManagerConfigurationCheck {
                             adminPort: 9999""",
       skipEnvironmentSetup = true)
   void testCheckCfgPropertiesMissingParamMandatoryServerPortProp_NOK(TigerTestEnvMgr envMgr) {
-    CfgServer srv = envMgr.getConfiguration().getServers().get("testTigerProxy");
-    AbstractTigerServer server = envMgr.createServer("testTigerProxy", srv);
+    final AbstractTigerServer server = envMgr.getServers().get("testTigerProxy");
     assertThatThrownBy(server::assertThatConfigurationIsCorrect)
         .isInstanceOf(TigerTestEnvException.class);
+  }
+
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+                  servers:
+                    tigerServer1:
+                      hostname: similiarName
+                      type: tigerProxy
+                      exports:
+                        - SOME_HOSTNAME=similiarname
+                      tigerProxyConfiguration:
+                        adminPort: ${FREE_PORT_201}
+                        proxyPort: ${FREE_PORT_202}
+                    tigerServer2:
+                      hostname: ${some.hostname}
+                      type: tigerProxy
+                      dependsUpon: tigerServer1
+                      tigerProxyConfiguration:
+                        adminPort: ${free.port.203}
+                        proxyPort: ${free.port.204}
+                  localProxyActive: false""",
+      skipEnvironmentSetup = true)
+  void enforceCaseInsensitiveUniqueHostname(TigerTestEnvMgr envMgr) {
+    assertThatThrownBy(envMgr::setUpEnvironment)
+        .isInstanceOf(TigerEnvironmentStartupException.class)
+        .rootCause()
+        .isInstanceOf(TigerConfigurationException.class)
+        .hasMessageContaining(
+            "Non-unique hostname detected: 'similiarName' of server 'tigerServer1' is"
+                + " (case-insensitive) equal to 'similiarname' of server 'tigerServer2'");
   }
 
   @Test
@@ -199,7 +230,7 @@ additionalYamls:
                             proxyPort: ${free.port.204}
                       localProxyActive: false""",
       additionalProperties = {"custom.value = ftp"})
-  /**
+  /*
    * we test here that (1) exports are working as expected (other.port is exported by server 1). (2)
    * exports can be used in subsequent server configs (foo.bar is used by server 2). (3) exports can
    * contain references to other properties which are resolved appropriately (custom.value is
@@ -296,7 +327,7 @@ additionalYamls:
     TigerGlobalConfiguration.readFromYaml(
         """
                     servers:
-                      testInvalidUrlMappings_noArrow:
+                      testInvalidUrlMappings-noArrow:
                         type: externalUrl
                         source:
                           - https://idp-test.zentral.idp.splitdns.ti-dienste.de/
@@ -321,7 +352,7 @@ additionalYamls:
     TigerGlobalConfiguration.readFromYaml(
         """
                     servers:
-                      testInvalidUrlMappings_noDestinationRoute:
+                      testInvalidUrlMappings-noDestinationRoute:
                         type: externalUrl
                         source:
                           - https://idp-test.zentral.idp.splitdns.ti-dienste.de/

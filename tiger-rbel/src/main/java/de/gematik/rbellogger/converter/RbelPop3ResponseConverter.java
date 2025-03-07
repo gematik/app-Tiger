@@ -45,6 +45,11 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
   private static final byte[] CRLF_DOT_CRLF_BYTES = EmailConversionUtils.CRLF_DOT_CRLF.getBytes();
 
   @Override
+  public boolean ignoreOversize() {
+    return true;
+  }
+
+  @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
     buildPop3ResponseFacet(element, context)
         .ifPresentOrElse(
@@ -166,16 +171,16 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
     if (matcher.matches()) {
       var size = Optional.ofNullable(matcher.group("size")).orElse(matcher.group("size2"));
       var count = matcher.group("count");
+      final RbelElement headerElement = RbelElement.wrap(element, header);
       return Optional.of(
-          RbelElement.wrap(element, header)
-              .addFacet(
-                  RbelPop3StatOrListHeaderFacet.builder()
-                      .count(RbelElement.wrap(element, count))
-                      .size(
-                          Optional.ofNullable(size)
-                              .map(s -> RbelElement.wrap(element, s))
-                              .orElse(null))
-                      .build()));
+          headerElement.addFacet(
+              RbelPop3StatOrListHeaderFacet.builder()
+                  .count(RbelElement.wrap(headerElement, count))
+                  .size(
+                      Optional.ofNullable(size)
+                          .map(s -> RbelElement.wrap(headerElement, s))
+                          .orElse(null))
+                  .build()));
     }
     return Optional.empty();
   }

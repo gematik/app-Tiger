@@ -98,11 +98,7 @@ function handleClickOnSequenceNumber(sequenceNumber: number) {
     (m) => m.sequenceNumber === sequenceNumber,
   );
   if (metadata) {
-    prop.ui.showRbelLogDetails(
-      metadata?.uuid,
-      sequenceNumber.toString(),
-      new MouseEvent("ignore"),
-    );
+    prop.ui.showRbelLogDetails(metadata?.uuid, new MouseEvent("ignore"));
   }
 }
 </script>

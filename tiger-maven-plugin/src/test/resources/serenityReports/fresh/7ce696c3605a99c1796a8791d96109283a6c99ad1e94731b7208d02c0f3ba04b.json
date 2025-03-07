@@ -22,7 +22,7 @@
     },
     {
       "number": 3,
-      "description": "Then TGR find request to path \"/\"",
+      "description": "Then TGR find first request to path \"/\"",
       "duration": 1036,
       "startTime": "2022-03-21T15:59:26.817536300+01:00[Europe/Berlin]",
       "result": "SUCCESS",

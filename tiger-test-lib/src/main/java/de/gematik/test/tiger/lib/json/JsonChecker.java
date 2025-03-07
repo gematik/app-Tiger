@@ -19,6 +19,7 @@ package de.gematik.test.tiger.lib.json;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
 import groovy.util.logging.Slf4j;
 import java.util.Iterator;
@@ -44,11 +45,16 @@ import org.skyscreamer.jsonassert.comparator.CustomComparator;
  * string to contain attributes to be checked for value ONLY if it exists in the test JSON
  */
 @Slf4j
-public class JsonChecker {
+public class JsonChecker extends AbstractRbelJsonChecker {
 
   public static final String IGNORE_JSON_VALUE = "${json-unit.ignore}";
   private static final String OPTIONAL_MARKER = "____";
   private static final String NULL_MARKER = "$NULL";
+
+  @Override
+  public void verify(String oracle, RbelElement element, String diffOptionCSV) {
+    compareJsonStrings(getAsJsonString(element), oracle, false);
+  }
 
   @Step
   public void compareJsonStrings(

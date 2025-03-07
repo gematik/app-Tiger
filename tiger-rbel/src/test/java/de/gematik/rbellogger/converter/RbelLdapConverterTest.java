@@ -16,6 +16,7 @@
  */
 package de.gematik.rbellogger.converter;
 
+import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -29,7 +30,6 @@ import de.gematik.rbellogger.data.facet.RbelLdapFacet;
 import de.gematik.rbellogger.data.facet.RbelRequestFacet;
 import de.gematik.rbellogger.data.facet.RbelResponseFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import java.io.File;
 import java.util.HexFormat;
 import java.util.List;
@@ -94,8 +94,7 @@ class RbelLdapConverterTest {
         "LDAPMessage(msgID=5, protocolOp=DeleteRequestProtocolOp(dn='dc=example,dc=com'),"
             + " controls={Control(oid=1.2.840.113556.1.4.805, isCritical=true, value={null})})";
 
-    RbelElementAssertion.assertThat(convertedElement)
-        .hasCorrectParentKeysSetInAllElements()
+    assertThat(convertedElement)
         .hasFacet(RbelLdapFacet.class)
         .hasFacet(RbelRequestFacet.class)
         .doesNotHaveChildWithPath("$.attributes")
@@ -118,8 +117,7 @@ class RbelLdapConverterTest {
             + "attrs={Attribute(name=objectClass, values={'top', 'domain'}),"
             + "Attribute(name=dc, values={'example'})}))";
 
-    RbelElementAssertion.assertThat(convertedElement)
-        .hasCorrectParentKeysSetInAllElements()
+    assertThat(convertedElement)
         .hasFacet(RbelLdapFacet.class)
         .hasFacet(RbelResponseFacet.class)
         .extractChildWithPath("$.textRepresentation")
@@ -160,8 +158,7 @@ class RbelLdapConverterTest {
 
     final RbelElement convertedElement = rbelConverter.convertElement(messageWithSuffix, null);
 
-    RbelElementAssertion.assertThat(convertedElement)
-        .hasCorrectParentKeysSetInAllElements()
+    assertThat(convertedElement)
         .hasFacet(RbelLdapFacet.class)
         .hasFacet(RbelResponseFacet.class)
         .extractChildWithPath("$.textRepresentation")
@@ -202,8 +199,7 @@ class RbelLdapConverterTest {
       final byte[] message = HexFormat.of().parseHex(entry.getKey());
       final RbelElement convertedElement = rbelConverter.convertElement(message, null);
 
-      RbelElementAssertion.assertThat(convertedElement)
-          .hasCorrectParentKeysSetInAllElements()
+      assertThat(convertedElement)
           .hasFacet(RbelLdapFacet.class)
           .extractChildWithPath("$.textRepresentation")
           .hasStringContentEqualTo(entry.getValue());

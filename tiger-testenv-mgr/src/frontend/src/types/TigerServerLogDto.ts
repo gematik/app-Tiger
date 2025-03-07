@@ -29,7 +29,6 @@ export default class TigerServerLogDto {
     if (json.logMessage) {
       // remove ansi color control codes
       receivedLogMessage.logMessage = json.logMessage.replace(
-        // eslint-disable-next-line no-control-regex
         /\u001b\[.*?m/g,
         "",
       ); // NOSONAR
