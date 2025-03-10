@@ -1,5 +1,12 @@
 # Changelog Tiger Test platform
 
+# Release 3.7.1
+
+## Bugfixes
+
+* TGR-1749: Tiger-Proxy: Fixed an issue where the Tiger-Proxy would lose any custom-added routes after a
+  mockserver-restart.
+
 # Release 3.7.0
 
 ## Breaking Changes
