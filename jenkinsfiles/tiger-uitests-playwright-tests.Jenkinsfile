@@ -27,6 +27,11 @@ pipeline {
                 useJdk('OPENJDK17')
             }
         }
+        stage('Activate Cache') {
+            steps {
+                activateOptionalBuildCache()
+            }
+        }
 
         stage('gitCreateBranch') {
             when { branch BRANCH }

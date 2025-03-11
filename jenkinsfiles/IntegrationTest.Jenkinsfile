@@ -56,6 +56,12 @@ pipeline {
 
 
     stages {
+      stage('Activate Cache') {
+          steps {
+              activateOptionalBuildCache()
+          }
+      }
+
       stage ('Parallel Tests') {
         parallel {
           stage('Apollo') {
