@@ -121,7 +121,16 @@ class TigerConfigurationRbelObject extends RbelPathAble {
 
   @Override
   public Optional<String> getKey() {
-    return Optional.of(key.downsampleKey());
+    if (key.isEmpty()) {
+      return Optional.empty();
+    } else {
+      return Optional.of(key.get(key.size() - 1).asString());
+    }
+  }
+
+  @Override
+  public String findNodePath() {
+    return key.downsampleKeyCaseSensitive();
   }
 
   @Override

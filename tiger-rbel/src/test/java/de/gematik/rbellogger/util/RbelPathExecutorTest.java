@@ -20,9 +20,11 @@ import static de.gematik.rbellogger.TestUtils.readAndConvertCurlMessage;
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.RbelOptions;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.RbelConverter;
@@ -332,5 +334,16 @@ class RbelPathExecutorTest {
   void fuzzyMatching_shouldWork(String rbelPath, String expectedResult) {
     assertThat(xmlMessage.findRbelPathMembers(rbelPath))
         .isEqualTo(xmlMessage.findRbelPathMembers(expectedResult));
+  }
+
+  @Test
+  void shouldBeAbleToPrintDebugInfoForConfigurationValues() {
+    RbelOptions.activateRbelPathDebugging();
+    try {
+      assertThatNoException()
+          .isThrownBy(() -> TigerGlobalConfiguration.resolvePlaceholders("${..nonExistingKey}"));
+    } finally {
+      RbelOptions.deactivateRbelPathDebugging();
+    }
   }
 }

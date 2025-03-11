@@ -59,6 +59,7 @@ public class ZionRequestMatchDefinition {
   // since in de.gematik.test.tiger.ZionServerType.performStartup it gets serialized into json
   // before being passed into the ZionApplication.
   @Builder.Default
+  @TigerSkipEvaluation
   private List<String> additionalCriterions = new ArrayList<>();
 
   @SneakyThrows
