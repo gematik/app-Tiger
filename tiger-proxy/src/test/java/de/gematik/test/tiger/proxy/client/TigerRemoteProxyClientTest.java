@@ -474,7 +474,8 @@ class TigerRemoteProxyClientTest {
           newlyConnectedRemoteClient, 2, 10);
       tigerProxy.waitForAllCurrentMessagesToBeParsed();
 
-      Mockito.verify(tigerWebUiController).downloadTrafficLog(Mockito.isNull(), Mockito.any());
+      Mockito.verify(tigerWebUiController)
+          .downloadTraffic(Mockito.isNull(), Mockito.any(), Mockito.any(), Mockito.any());
 
       assertThat(
               newlyConnectedRemoteClient
@@ -488,7 +489,32 @@ class TigerRemoteProxyClientTest {
   }
 
   @Test
-  void multipleTrafficSources_shouldOnlySkipKnownUuidsForGivenRemote() throws Exception {
+  void initialTrafficDownloadWithMultiplePages() {
+    final int numberOfGeneratedMessages = 153;
+    for (int i = 0; i < numberOfGeneratedMessages; i++) {
+      unirestInstance.get("http://myserv.er/foobarString").asString();
+    }
+
+    try (TigerRemoteProxyClient newlyConnectedRemoteClient =
+        new TigerRemoteProxyClient(
+            "http://localhost:" + springServerPort,
+            TigerProxyConfiguration.builder()
+                .downloadInitialTrafficFromEndpoints(true)
+                .trafficDownloadPageSize(20)
+                .build())) {
+      newlyConnectedRemoteClient.connect();
+
+      TigerProxyTestHelper.waitUntilMessageListInRemoteProxyClientContainsCountMessagesWithTimeout(
+          newlyConnectedRemoteClient, numberOfGeneratedMessages * 2, 10);
+      tigerProxy.waitForAllCurrentMessagesToBeParsed();
+
+      assertThat(newlyConnectedRemoteClient.getRbelMessagesList())
+          .hasSize(numberOfGeneratedMessages * 2);
+    }
+  }
+
+  @Test
+  void multipleTrafficSources_shouldOnlySkipKnownUuidsForGivenRemote() {
     unirestInstance.get("http://myserv.er/foobarString").asString();
 
     try (TigerProxy masterTigerProxy = new TigerProxy(TigerProxyConfiguration.builder().build())) {
@@ -507,7 +533,9 @@ class TigerRemoteProxyClientTest {
                 newlyConnectedRemoteClient, 4, 10);
         tigerProxy.waitForAllCurrentMessagesToBeParsed();
 
-        Mockito.verify(tigerWebUiController).downloadTrafficLog(Mockito.isNull(), Mockito.any());
+        Mockito.verify(tigerWebUiController)
+            .downloadTraffic(Mockito.isNull(), Mockito.any(), Mockito.any(), Mockito.any());
+
         assertThat(
                 ((AtomicReference<?>)
                         ReflectionTestUtils.getField(newlyConnectedRemoteClient, "lastMessageUuid"))

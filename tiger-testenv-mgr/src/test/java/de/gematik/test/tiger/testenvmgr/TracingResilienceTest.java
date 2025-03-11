@@ -100,10 +100,7 @@ class TracingResilienceTest {
       // in WHILE aggregating and receiving proxy are trying to catch up.
       giveAggregatingProxyTimeToCatchUpIfRunning(testEnvMgr, i);
       for (int j = 0; j < MESSAGES_PER_ROUND; j++) {
-        var randomMarker =
-            "messageNumber"
-                + (i * MESSAGES_PER_ROUND
-                    + j); // RandomStringUtils.insecure().nextAlphanumeric(20);
+        var randomMarker = "messageNumber" + (i * MESSAGES_PER_ROUND + j);
         log.info("Sending message {}", randomMarker);
         instance
             .get(
