@@ -116,7 +116,7 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
 
   @Test
   @SuppressWarnings("java:S2925")
-  void reverseProxy_parsingShouldBlockCommunicationIfConfigured() throws InterruptedException {
+  void reverseProxy_parsingShouldBlockCommunicationIfConfigured() {
     spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
             .proxyRoutes(

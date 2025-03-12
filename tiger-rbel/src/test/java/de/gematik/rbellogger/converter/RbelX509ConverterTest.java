@@ -101,7 +101,8 @@ class RbelX509ConverterTest {
         // Check Issuer
         .hasGivenValueAtPosition(
             "$.issuer",
-            "C=DE,O=gematik GmbH NOT-VALID,OU=Komponenten-CA der Telematikinfrastruktur,CN=GEM.KOMP-CA10 TEST-ONLY")
+            "C=DE,O=gematik GmbH NOT-VALID,OU=Komponenten-CA der"
+                + " Telematikinfrastruktur,CN=GEM.KOMP-CA10 TEST-ONLY")
         .hasStringContentEqualToAtPosition("$.issuer.C", "DE")
         .hasStringContentEqualToAtPosition("$.issuer.O", "gematik GmbH NOT-VALID")
         .hasStringContentEqualToAtPosition(

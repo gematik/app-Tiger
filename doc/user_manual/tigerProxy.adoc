@@ -62,7 +62,9 @@ You can add multiple routes that match the same URL.
 If multiple matches are found the most specific route is select.
 For example if you have two routes `/` and `/foo` then for a request to `/foo/bar` the route `/foo` will be selected.
 
-A route will only match when the proxy-mode is met. A reverse-proxy-route will thus not match when a forward-proxy request is received. To disable this proxy-mode matching you can set the flag `matchForProxyType` to false (default is true).
+A route will only match when the proxy-mode is met.
+A reverse-proxy-route will thus not match when a forward-proxy request is received.
+To disable this proxy-mode matching you can set the flag `matchForProxyType` to false (default is true).
 
 ==== to
 
@@ -224,7 +226,8 @@ Please do not add it yourself!
 
 ==== matchForProxyType
 
-By default, a proxy route will only match when the proxy-mode defined by the `from` attribute is met. For example, a route with `from: /foo` will not match with a forward-proxy request like so:
+By default, a proxy route will only match when the proxy-mode defined by the `from` attribute is met.
+For example, a route with `from: /foo` will not match with a forward-proxy request like so:
 
 `curl -x localhost:59163 http://backend.domain/`
 
@@ -558,8 +561,7 @@ This JSON encoded message consists of:
 
 === Adding notes to messages
 
-To add notes to certain messages, you can add a list of criteria with messages
-that shall be added to any message in the rbel log matching the specific criterion.
+To add notes to certain messages, you can add a list of criteria with messages that shall be added to any message in the rbel log matching the specific criterion.
 
 [source,yaml]
 ----
@@ -571,7 +573,6 @@ tigerProxy:
         - message: "Hackers were here..."
           jexlCriterion: "element.decryptedUsingKeyWithId == 'mySuperSecretKey'"
 ----
-
 
 [#_rbel_path_details]
 === Understanding RBelPath
@@ -857,6 +858,11 @@ Currently supported are:
 * `erp-vau` for RbelErpVauDecryptionConverter
 * `epa3-vau` for RbelVauEpa3Converter
 * `sicct` for RbelSicctCommandConverter and RbelSicctEnvelopeConverter
+* `X500` for RbelX500Converter
+* `X509` for RbelX509Converter and RbelX500Converter
+* `ldap` for RbelLdapConverter
+* `b64gzip` for RbelBase64GzipConverter
+* `OCSP` for RbelOcspResponseConverter
 
 ===== parsingShouldBlockCommunication
 
@@ -909,7 +915,10 @@ Default is true.
 
 ==== maxLoopCounter
 
-By default, the Tiger Proxy will keep count of the number of requests it executes on itself (e.g. when a request is forwarded to the Tiger Proxy itself). If this counter exceeds the value of `maxLoopCounter` the request will be aborted. The default value is 10 (Meaning after 10 loops the request will end in an error). Note: This behavior can only be customized for all Tiger Proxies.
+By default, the Tiger Proxy will keep count of the number of requests it executes on itself (e.g. when a request is forwarded to the Tiger Proxy itself).
+If this counter exceeds the value of `maxLoopCounter` the request will be aborted.
+The default value is 10 (Meaning after 10 loops the request will end in an error).
+Note: This behavior can only be customized for all Tiger Proxies.
 
 === Understanding filtering
 

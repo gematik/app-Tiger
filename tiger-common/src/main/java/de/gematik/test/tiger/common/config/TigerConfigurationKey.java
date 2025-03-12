@@ -139,10 +139,15 @@ public class TigerConfigurationKey extends ArrayList<TigerConfigurationKeyString
   }
 
   public Optional<TigerConfigurationKey> getParentNode() {
-    if (size() > 1) {
+    if (!isEmpty()) {
       return Optional.of(new TigerConfigurationKey(subList(0, size() - 1)));
     } else {
       return Optional.empty();
     }
+  }
+
+  @Override
+  public String toString() {
+    return downsampleKeyCaseSensitive();
   }
 }

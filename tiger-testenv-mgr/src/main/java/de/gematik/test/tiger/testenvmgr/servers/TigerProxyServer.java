@@ -49,7 +49,7 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
 
   public TigerProxyServer(
       TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
-    super(determineHostname(configuration, serverId), serverId, configuration, tigerTestEnvMgr);
+    super(serverId, configuration, tigerTestEnvMgr);
   }
 
   @Override

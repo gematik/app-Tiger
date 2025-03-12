@@ -120,6 +120,10 @@ public final class DeprecatedKeysUsageChecker {
 
   private DeprecatedKeysUsageChecker() {}
 
+  public static void checkForDeprecatedKeys(TigerConfigurationSource configurationSource) {
+    checkForDeprecatedKeys(configurationSource.getValues());
+  }
+
   public static void checkForDeprecatedKeys(Map<TigerConfigurationKey, String> valueMap)
       throws TigerConfigurationException {
     if (valueMap == null) {

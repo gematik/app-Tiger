@@ -16,11 +16,8 @@
 
 package de.gematik.test.tiger.common.config;
 
-import static de.gematik.test.tiger.common.config.TigerConfigurationKeyString.wrapAsKey;
-
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
@@ -38,7 +35,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.yaml.snakeyaml.Yaml;
 
 @Slf4j
 public class TigerConfigurationLoader {
@@ -65,32 +61,6 @@ public class TigerConfigurationLoader {
               + e2
               + "'. Resolve this conflict manually!");
     }
-  }
-
-  public static Map<TigerConfigurationKey, String> addConfigurationFileToMap(
-      final Object value,
-      final TigerConfigurationKey baseKeys,
-      final Map<TigerConfigurationKey, String> valueMap) {
-    if (value instanceof Map<?, ?> asMap) {
-      asMap.forEach(
-          (key, value1) -> {
-            var newList = new TigerConfigurationKey(baseKeys);
-            newList.add((String) key);
-            addConfigurationFileToMap(value1, newList, valueMap);
-          });
-    } else if (value instanceof List<?> asList) {
-      int counter = 0;
-      for (Object entry : asList) {
-        TigerConfigurationKey newList = new TigerConfigurationKey(baseKeys);
-        newList.add(wrapAsKey(Integer.toString(counter++)));
-        addConfigurationFileToMap(entry, newList, valueMap);
-      }
-    } else {
-      if (value != null) {
-        valueMap.put(baseKeys, value.toString());
-      }
-    }
-    return valueMap;
   }
 
   public void reset() {
@@ -232,12 +202,12 @@ public class TigerConfigurationLoader {
     initialize();
 
     val values = configurationFileType.loadFromString(yamlSource);
-    final HashMap<TigerConfigurationKey, String> valueMap = new HashMap<>();
-    addConfigurationFileToMap(values, new TigerConfigurationKey(baseKeys), valueMap);
-    DeprecatedKeysUsageChecker.checkForDeprecatedKeys(valueMap);
 
-    sourcesManager.addNewSource(
-        BasicTigerConfigurationSource.builder().values(valueMap).precedence(precedence).build());
+    final TigerConfigurationSource configurationSource =
+        TigerConfigurationSource.builder().configurationLoader(this).precedence(precedence).build();
+    configurationSource.putValue(new TigerConfigurationKey(baseKeys), values);
+    DeprecatedKeysUsageChecker.checkForDeprecatedKeys(configurationSource);
+    sourcesManager.addNewSource(configurationSource);
   }
 
   public boolean readBoolean(String key) {
@@ -259,7 +229,8 @@ public class TigerConfigurationLoader {
         .forEach(sourcesManager::removeSource);
 
     sourcesManager.addNewSource(
-        BasicTigerConfigurationSource.builder()
+        TigerConfigurationSource.builder()
+            .configurationLoader(this)
             .values(
                 System.getenv().entrySet().stream()
                     .collect(
@@ -278,7 +249,8 @@ public class TigerConfigurationLoader {
         .forEach(sourcesManager::removeSource);
 
     sourcesManager.addNewSource(
-        BasicTigerConfigurationSource.builder()
+        TigerConfigurationSource.builder()
+            .configurationLoader(this)
             .values(
                 System.getProperties().entrySet().stream()
                     .collect(
@@ -306,8 +278,7 @@ public class TigerConfigurationLoader {
   public Map<TigerConfigurationKey, String> retrieveMapUnresolved() {
     Map<TigerConfigurationKey, String> loadedAndSortedProperties = new HashMap<>();
 
-    for (AbstractTigerConfigurationSource configurationSource :
-        sourcesManager.getSortedListReversed()) {
+    for (TigerConfigurationSource configurationSource : sourcesManager.getSortedListReversed()) {
       loadedAndSortedProperties = configurationSource.addValuesToMap(loadedAndSortedProperties);
     }
 
@@ -466,7 +437,7 @@ public class TigerConfigurationLoader {
                 Entry::getValue));
   }
 
-  public List<AbstractTigerConfigurationSource> listSources() {
+  public List<TigerConfigurationSource> listSources() {
     return sourcesManager.getSortedListReversed();
   }
 
@@ -485,43 +456,27 @@ public class TigerConfigurationLoader {
           "Trying to store null-value. Only non-values are allowed!");
     }
 
-    final AbstractTigerConfigurationSource configurationSource =
+    final TigerConfigurationSource configurationSource =
         sourcesManager
             .getSortedStream()
             .filter(source -> source.getPrecedence() == precedence)
             .findAny()
             .orElseGet(() -> generateNewConfigurationSource(precedence));
-
-    if (value instanceof String asString) {
-      configurationSource.putValue(key, asString);
-    } else if (value instanceof byte[] arrayValue) {
-      configurationSource.putValue(key, Base64.getEncoder().encodeToString(arrayValue));
-    } else {
-      try {
-        Yaml yaml = new Yaml(new DuplicateMapKeysForbiddenConstructor());
-        final HashMap<TigerConfigurationKey, String> valueMap = new HashMap<>();
-        addConfigurationFileToMap(yaml.load(objectMapper.writeValueAsString(value)), key, valueMap);
-
-        valueMap.forEach(configurationSource::putValue);
-      } catch (JsonProcessingException e) {
-        throw new TigerConfigurationException("Error during serialization", e);
-      }
-    }
+    configurationSource.putValue(key, value);
   }
 
-  private AbstractTigerConfigurationSource generateNewConfigurationSource(
+  private TigerConfigurationSource generateNewConfigurationSource(
       ConfigurationValuePrecedence precedence) {
-    final AbstractTigerConfigurationSource newSource =
-        new BasicTigerConfigurationSource(precedence);
+    final TigerConfigurationSource newSource = new TigerConfigurationSource(precedence, this);
     sourcesManager.addNewSource(newSource);
     return newSource;
   }
 
-  public void addConfigurationSource(AbstractTigerConfigurationSource configurationSource) {
+  public void addConfigurationSource(TigerConfigurationSource configurationSource) {
     sourcesManager.addNewSource(configurationSource);
   }
 
-  public boolean removeConfigurationSource(AbstractTigerConfigurationSource configurationSource) {
+  public boolean removeConfigurationSource(TigerConfigurationSource configurationSource) {
     return sourcesManager.removeSource(configurationSource);
   }
 }

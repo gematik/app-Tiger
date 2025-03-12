@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -274,20 +275,21 @@ public class TigerConfigurationTest { // NOSONAR
   @Test
   void arrayMixedFromSources() throws Exception {
     new EnvironmentVariables("string", "wrongValue")
-        .and("nestedBean.array.1.foo", "foo1")
+        .and("nestedBean.list.1.foo", "foo1")
         .execute(
             () -> {
               TigerGlobalConfiguration.reset();
               TigerGlobalConfiguration.readFromYaml(
                   """
-                              array:
+                              list:
                                 - foo: nonFoo0
                                 - foo: nonFoo1
                                 - foo: nonFoo2""",
                   "nestedBean");
               var dummyBean =
                   TigerGlobalConfiguration.instantiateConfigurationBean(DummyBean.class).get();
-              assertThat(dummyBean.getNestedBean().getArray())
+              System.out.println(new ObjectMapper().writeValueAsString(dummyBean));
+              assertThat(dummyBean.getNestedBean().getList())
                   .extracting("foo")
                   .containsExactly("nonFoo0", "foo1", "nonFoo2");
             });
@@ -485,8 +487,14 @@ public class TigerConfigurationTest { // NOSONAR
   void placeNewStructuredValue_shouldFindNestedValueAgain() {
     TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.putValue(
-        "foo.value", TigerConfigurationTest.NestedBean.builder().bar(42).build());
+        "foo.value",
+        NestedBean.builder()
+            .bar(42)
+            .list(List.of(NestedBean.builder().foo("someValueInAList").build()))
+            .build());
     assertThat(TigerGlobalConfiguration.readString("foo.value.bar")).isEqualTo("42");
+    assertThat(TigerGlobalConfiguration.readString("foo.value.list.0.foo"))
+        .isEqualTo("someValueInAList");
   }
 
   @SneakyThrows
@@ -679,6 +687,17 @@ public class TigerConfigurationTest { // NOSONAR
 
   @SneakyThrows
   @Test
+  void testMergeMaps() {
+    TigerGlobalConfiguration.reset();
+    TigerGlobalConfiguration.readFromYaml("{aKey: foo, cKey: baz}");
+    TigerGlobalConfiguration.readFromYaml("{bKey: bar, cKey: notBaz}");
+    assertThat(TigerGlobalConfiguration.readString("aKey")).isEqualTo("foo");
+    assertThat(TigerGlobalConfiguration.readString("bKey")).isEqualTo("bar");
+    assertThat(TigerGlobalConfiguration.readString("cKey")).isEqualTo("notBaz");
+  }
+
+  @SneakyThrows
+  @Test
   void testReadMapWithoutSubKey() {
     TigerGlobalConfiguration.reset();
     TigerGlobalConfiguration.readFromYaml(
@@ -816,6 +835,12 @@ public class TigerConfigurationTest { // NOSONAR
     new Random().nextBytes(b3);
     TigerGlobalConfiguration.putValue("testkey", b3);
     assertThat(TigerGlobalConfiguration.readByteArray("testkey")).get().isEqualTo(b3);
+
+    TigerGlobalConfiguration.putValue("foo", Map.of("bar", b3));
+    assertThat(TigerGlobalConfiguration.readByteArray("foo.bar")).get().isEqualTo(b3);
+
+    TigerGlobalConfiguration.putValue("foo", NestedBean.builder().bytes(b3).build());
+    assertThat(TigerGlobalConfiguration.readByteArray("foo.bytes")).get().isEqualTo(b3);
   }
 
   @ParameterizedTest
@@ -896,7 +921,8 @@ public class TigerConfigurationTest { // NOSONAR
     private final int bar;
     private final NestedBean inner;
     private final String template;
-    @JsonProperty private List<NestedBean> array;
+    private final byte[] bytes;
+    @JsonProperty private List<NestedBean> list;
   }
 
   @Data

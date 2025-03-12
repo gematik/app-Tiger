@@ -38,17 +38,16 @@ import de.gematik.test.tiger.proxy.data.RbelTreeResponseScrollableDto;
 import de.gematik.test.tiger.proxy.data.ResetMessagesDto;
 import de.gematik.test.tiger.proxy.data.SearchMessagesScrollableDto;
 import de.gematik.test.tiger.server.TigerBuildPropertiesService;
-
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.AbstractMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.ObjLongConsumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -433,11 +432,15 @@ public class TigerWebUiController implements ApplicationContextAware {
   }
 
   @GetMapping(value = "/trafficLog*.tgr", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-  public String downloadTrafficLog(
-      @RequestParam(name = "filterRbelPath", required = false) String filterRbelPath,
+  public String downloadTraffic(
+      @RequestParam(name = "lastMsgUuid", required = false) final String lastMsgUuid,
+      @RequestParam(name = "filterRbelPath", required = false) final String filterCriterion,
+      @RequestParam(name = "pageSize", required = false) final Optional<Integer> pageSize,
       HttpServletResponse response) {
-    int actualPageSize = getProxyConfiguration().getMaximumTrafficDownloadPageSize();
-    final List<RbelElement> filteredMessages = loadMessagesMatchingFilter(filterRbelPath);
+    int actualPageSize =
+        pageSize.orElse(getProxyConfiguration().getMaximumTrafficDownloadPageSize());
+    final List<RbelElement> filteredMessages =
+        loadMessagesMatchingFilter(lastMsgUuid, filterCriterion);
     final int returnedMessages = Math.min(filteredMessages.size(), actualPageSize);
     response.addHeader("available-messages", String.valueOf(filteredMessages.size()));
     response.addHeader("returned-messages", String.valueOf(returnedMessages));
@@ -454,7 +457,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     return result;
   }
 
-  private List<RbelElement> loadMessagesMatchingFilter(String filterCriterion) {
+  private List<RbelElement> loadMessagesMatchingFilter(String lastMsgUuid, String filterCriterion) {
     return getTigerProxy().getRbelLogger().getMessageHistory().stream()
         .filter(
             msg -> {
@@ -473,7 +476,19 @@ public class TigerWebUiController implements ApplicationContextAware {
                         findPartner(msg), filterCriterion, Optional.empty());
               }
             })
+        .dropWhile(messageIsBefore(lastMsgUuid))
+        .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
         .toList();
+  }
+
+  private static Predicate<RbelElement> messageIsBefore(String lastMsgUuid) {
+    return msg -> {
+      if (StringUtils.hasText(lastMsgUuid)) {
+        return !msg.getUuid().equals(lastMsgUuid);
+      } else {
+        return false;
+      }
+    };
   }
 
   @GetMapping(value = "/resetMessages", produces = MediaType.APPLICATION_JSON_VALUE)
