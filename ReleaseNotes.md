@@ -7,6 +7,7 @@
 * TGR-1640: TigerGlobalConfiguration: Some minor bugfixes in handling the TigerConfigurationRbelObject. Fixes issues
   with complicated RbelPathes when applied to configuration values
 * TGR-1640: Zion: The field additionalCriterions in request is now only evaluated at runtime.
+* TGR-1784: TigerGlobalConfiguration. Substantial performance-boost when dealing with nested Byte-Arrays
 * TGR-1749: Tiger-Proxy: Fixed an issue where the Tiger-Proxy would lose any custom-added routes after a
   mockserver-restart.
 

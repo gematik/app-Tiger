@@ -145,4 +145,9 @@ public class TigerConfigurationKey extends ArrayList<TigerConfigurationKeyString
       return Optional.empty();
     }
   }
+
+  @Override
+  public String toString() {
+    return downsampleKeyCaseSensitive();
+  }
 }
