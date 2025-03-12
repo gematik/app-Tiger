@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 3.7.0 - 2025-03-07</span>
+<span id="revdate">Version 3.7.1 - 2025-03-12</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -2718,7 +2718,9 @@ If multiple matches are found the most specific route is select.<br>
 For example if you have two routes <code>/</code> and <code>/foo</code> then for a request to <code>/foo/bar</code> the route <code>/foo</code> will be selected.</p>
 </div>
 <div class="paragraph">
-<p>A route will only match when the proxy-mode is met. A reverse-proxy-route will thus not match when a forward-proxy request is received. To disable this proxy-mode matching you can set the flag <code>matchForProxyType</code> to false (default is true).</p>
+<p>A route will only match when the proxy-mode is met.<br>
+A reverse-proxy-route will thus not match when a forward-proxy request is received.<br>
+To disable this proxy-mode matching you can set the flag <code>matchForProxyType</code> to false (default is true).</p>
 </div>
 </div>
 <div class="sect3">
@@ -2979,7 +2981,8 @@ Please do not add it yourself!</p>
 <div class="sect3">
 <h4 id="matchforproxytype"><a class="anchor" href="#matchforproxytype"></a>4.3.9. matchForProxyType</h4>
 <div class="paragraph">
-<p>By default, a proxy route will only match when the proxy-mode defined by the <code>from</code> attribute is met. For example, a route with <code>from: /foo</code> will not match with a forward-proxy request like so:</p>
+<p>By default, a proxy route will only match when the proxy-mode defined by the <code>from</code> attribute is met.<br>
+For example, a route with <code>from: /foo</code> will not match with a forward-proxy request like so:</p>
 </div>
 <div class="paragraph">
 <p><code>curl -x localhost:59163 <a href="http://backend.domain/" class="bare">http://backend.domain/</a></code></p>
@@ -3384,8 +3387,7 @@ For each received traffic data pair (request/response) the Tiger Proxy will push
 <div class="sect2">
 <h3 id="adding-notes-to-messages"><a class="anchor" href="#adding-notes-to-messages"></a>4.7. Adding notes to messages</h3>
 <div class="paragraph">
-<p>To add notes to certain messages, you can add a list of criteria with messages<br>
-that shall be added to any message in the rbel log matching the specific criterion.</p>
+<p>To add notes to certain messages, you can add a list of criteria with messages that shall be added to any message in the rbel log matching the specific criterion.</p>
 </div>
 <div class="listingblock">
 <div class="content">
@@ -3846,6 +3848,21 @@ Currently supported are:</p>
 <li>
 <p><code>sicct</code> for RbelSicctCommandConverter and RbelSicctEnvelopeConverter</p>
 </li>
+<li>
+<p><code>X500</code> for RbelX500Converter</p>
+</li>
+<li>
+<p><code>X509</code> for RbelX509Converter and RbelX500Converter</p>
+</li>
+<li>
+<p><code>ldap</code> for RbelLdapConverter</p>
+</li>
+<li>
+<p><code>b64gzip</code> for RbelBase64GzipConverter</p>
+</li>
+<li>
+<p><code>OCSP</code> for RbelOcspResponseConverter</p>
+</li>
 </ul>
 </div>
 </div>
@@ -3913,7 +3930,10 @@ Default is true.</p>
 <div class="sect3">
 <h4 id="maxloopcounter"><a class="anchor" href="#maxloopcounter"></a>4.10.5. maxLoopCounter</h4>
 <div class="paragraph">
-<p>By default, the Tiger Proxy will keep count of the number of requests it executes on itself (e.g. when a request is forwarded to the Tiger Proxy itself). If this counter exceeds the value of <code>maxLoopCounter</code> the request will be aborted. The default value is 10 (Meaning after 10 loops the request will end in an error). Note: This behavior can only be customized for all Tiger Proxies.</p>
+<p>By default, the Tiger Proxy will keep count of the number of requests it executes on itself (e.g. when a request is forwarded to the Tiger Proxy itself).<br>
+If this counter exceeds the value of <code>maxLoopCounter</code> the request will be aborted.<br>
+The default value is 10 (Meaning after 10 loops the request will end in an error).<br>
+Note: This behavior can only be customized for all Tiger Proxies.</p>
 </div>
 </div>
 </div>
@@ -9389,7 +9409,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-03-07 08:58:10 +0100
+Last updated 2025-03-12 11:58:14 +0100
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
