@@ -20,6 +20,8 @@ package de.gematik.test.tiger.testenvmgr;
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCALPROXY_ADMIN_RESERVED_PORT;
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_ADMIN_PORT;
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_PROXY_PORT;
+import static de.gematik.test.tiger.testenvmgr.util.TigerReflectionHelper.createInstanceUnchecked;
+import static de.gematik.test.tiger.testenvmgr.util.TigerReflectionHelper.findConstructor;
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -48,7 +50,6 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerServerType;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
-import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.Map.Entry;
@@ -63,6 +64,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -411,23 +413,36 @@ public class TigerTestEnvMgr
           "Unable to instantiate server of null type! Please check your config");
     }
     try {
-      String serverType = config.getType();
-      if (!serverClasses.containsKey(serverType)) {
+      String serverTypeName = config.getType();
+      if (!serverClasses.containsKey(serverTypeName)) {
         throw new TigerTestEnvException(
             MessageFormat.format(
                 "No server class registered for type {0} used in server {1}. "
                     + "Did you add appropriate dependencies for {0}?",
-                serverType, serverId));
+                serverTypeName, serverId));
       }
-      return serverClasses
-          .get(serverType)
-          .getDeclaredConstructor(TigerTestEnvMgr.class, String.class, CfgServer.class)
-          .newInstance(this, serverId, config);
-    } catch (RuntimeException
-        | NoSuchMethodException
-        | InstantiationException
-        | IllegalAccessException
-        | InvocationTargetException e) {
+      val serverClass = serverClasses.get(serverTypeName);
+      return findConstructor(serverClass, String.class, CfgServer.class, TigerTestEnvMgr.class)
+          .map(c -> createInstanceUnchecked(c, serverId, config, this))
+          .or(
+              () ->
+                  findConstructor(serverClass, TigerTestEnvMgr.class, String.class, CfgServer.class)
+                      .map(
+                          constructor -> {
+                            log.warn(
+                                "Using DEPRECATED constructor for server {}! "
+                                  + "Using (TigerTestenvMg, String, CfgServer), "
+                                  + "plase change constructor to match param order:"
+                                  + " (String, CfgServer, TigerTestenvMgr)!",
+                                serverId);
+                            return createInstanceUnchecked(constructor, this, serverId, config);
+                          }))
+          .orElseThrow(
+              () ->
+                  new TigerTestEnvException(
+                      "No suitable constructor found for server. Expected constructor"
+                        + "(String serverName, CfgServer config, TigerTestenvMgr envMgr)"));
+    } catch (RuntimeException e) {
       throw handleExceptionMinimizingStackTrace(config, e);
     }
   }
@@ -446,8 +461,8 @@ public class TigerTestEnvMgr
     }
     return new TigerTestEnvException(
         e,
-        "Unable to instantiate server of type %s, does it have a constructor(TigerTestenvMgr,"
-            + " String, CfgServer)?",
+        "Unable to instantiate server of type %s, does it have a constructor"
+          + "(String serverName, CfgServer config, TigerTestenvMgr envMgr)?",
         config.getType());
   }
 

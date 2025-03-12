@@ -11,6 +11,10 @@
 * TGR-1749: Tiger-Proxy: Fixed an issue where the Tiger-Proxy would lose any custom-added routes after a
   mockserver-restart.
 
+## Features
+
+* TGR-1779: Tiger-Testenv-Mgr: Cleanup in the constructor calls for TigerServer
+
 # Release 3.7.0
 
 ## Breaking Changes
