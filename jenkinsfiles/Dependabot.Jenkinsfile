@@ -26,12 +26,6 @@ pipeline {
     agent { label 'k8-backend-small' }
 
     stages {
-        stage('Activate Cache') {
-            steps {
-                activateOptionalBuildCache()
-            }
-        }
-
         stage('Run Dependabots') {
             parallel {
                 stage('maven') {

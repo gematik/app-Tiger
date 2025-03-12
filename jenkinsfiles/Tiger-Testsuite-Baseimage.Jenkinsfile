@@ -41,11 +41,6 @@ pipeline {
                 gitSetIdentity()
             }
         }
-        stage('Activate Cache') {
-            steps {
-                activateOptionalBuildCache()
-            }
-        }
 
         stage('Get Jira Version') {
             steps {

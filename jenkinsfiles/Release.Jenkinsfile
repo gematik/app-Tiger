@@ -50,11 +50,6 @@ pipeline {
                 useJdk('OPENJDK17')
             }
         }
-        stage('Activate Cache') {
-            steps {
-                activateOptionalBuildCache()
-            }
-        }
 
         stage('Internal-Release') {
             when {

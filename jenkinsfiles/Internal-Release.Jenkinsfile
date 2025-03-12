@@ -57,11 +57,6 @@ pipeline {
                 useJdk('OPENJDK17')
             }
         }
-        stage('Activate Cache') {
-            steps {
-                activateOptionalBuildCache()
-            }
-        }
 
         stage('Checkout') {
             steps {

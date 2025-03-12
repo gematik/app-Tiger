@@ -36,11 +36,6 @@ pipeline {
                 gitSetIdentity()
             }
         }
-        stage('Activate Cache') {
-            steps {
-                activateOptionalBuildCache()
-            }
-        }
 
         stage('Code format check') {
             steps {
