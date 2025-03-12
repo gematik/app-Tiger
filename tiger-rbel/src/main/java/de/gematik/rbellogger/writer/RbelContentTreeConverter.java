@@ -59,14 +59,14 @@ public class RbelContentTreeConverter {
   private static TigerConfigurationLoader initializeConversionContext() {
     TigerConfigurationLoader conversionContext = new TigerConfigurationLoader();
     TigerGlobalConfiguration.listSources().stream()
-        .map(AbstractTigerConfigurationSource::copy)
+        .map(TigerConfigurationSource::copy)
         .forEach(conversionContext::addConfigurationSource);
     return conversionContext;
   }
 
   public List<RbelContentTreeNode> convertNode(
       RbelElement input, String key, TigerConfigurationLoader conversionContext) {
-    Optional<AbstractTigerConfigurationSource> encodingConfigurationSource = Optional.empty();
+    Optional<TigerConfigurationSource> encodingConfigurationSource;
     if (isReservedKey(key)) {
       return List.of();
     }
@@ -84,8 +84,10 @@ public class RbelContentTreeConverter {
             .map(
                 s -> {
                   var source =
-                      new BasicTigerConfigurationSource(
-                          ConfigurationValuePrecedence.RUNTIME_EXPORT, Map.of(ENCODE_AS, s));
+                      new TigerConfigurationSource(
+                          ConfigurationValuePrecedence.RUNTIME_EXPORT,
+                          Map.of(ENCODE_AS, s),
+                          conversionContext);
                   conversionContext.addConfigurationSource(source);
                   return source;
                 });
@@ -146,13 +148,10 @@ public class RbelContentTreeConverter {
     rbelJexlExecutor.buildScript("t = " + resolvedLoopStatement.split(":")[1]).execute(context);
     final List<RbelContentTreeNode> resultList = new ArrayList<>();
     for (Object iterate : ((Collection) context.get("t"))) {
-      BasicTigerConfigurationSource localSource =
-          new BasicTigerConfigurationSource(
-              ConfigurationValuePrecedence.RUNTIME_EXPORT,
-              TigerConfigurationLoader.addConfigurationFileToMap(
-                  iterate,
-                  new TigerConfigurationKey(loopStatement.split(":")[0].trim()),
-                  new HashMap<>()));
+      TigerConfigurationSource localSource =
+          new TigerConfigurationSource(
+              ConfigurationValuePrecedence.RUNTIME_EXPORT, conversionContext);
+      localSource.putValue(new TigerConfigurationKey(loopStatement.split(":")[0].trim()), iterate);
       conversionContext.addConfigurationSource(localSource);
 
       resultList.addAll(convertRbelElement(input, key, conversionContext));

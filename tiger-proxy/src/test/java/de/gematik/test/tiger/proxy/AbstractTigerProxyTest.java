@@ -42,7 +42,6 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
@@ -198,35 +197,23 @@ public abstract class AbstractTigerProxyTest {
   }
 
   public void spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration configuration) {
-    if (configuration.getProxyRoutes() == null) {
-      configuration.setProxyRoutes(new ArrayList<>());
-    } else {
-      configuration.setProxyRoutes(new ArrayList<>(configuration.getProxyRoutes()));
-    }
-
-    configuration
-        .getProxyRoutes()
-        .add(
-            TigerConfigurationRoute.builder()
-                .from("https://backend")
-                .to("http://localhost:" + fakeBackendServerPort)
-                .build());
-    configuration
-        .getProxyRoutes()
-        .add(
-            TigerConfigurationRoute.builder()
-                .from("http://backend")
-                .to("http://localhost:" + fakeBackendServerPort)
-                .build());
-    configuration
-        .getProxyRoutes()
-        .add(
-            TigerConfigurationRoute.builder()
-                .from("/")
-                .to("http://localhost:" + fakeBackendServerPort)
-                .build());
-
     spawnTigerProxyWith(configuration);
+
+    tigerProxy.addRoute(
+        TigerConfigurationRoute.builder()
+            .from("https://backend")
+            .to("http://localhost:" + fakeBackendServerPort)
+            .build());
+    tigerProxy.addRoute(
+        TigerConfigurationRoute.builder()
+            .from("http://backend")
+            .to("http://localhost:" + fakeBackendServerPort)
+            .build());
+    tigerProxy.addRoute(
+        TigerConfigurationRoute.builder()
+            .from("/")
+            .to("http://localhost:" + fakeBackendServerPort)
+            .build());
   }
 
   public void spawnTigerProxyWith(TigerProxyConfiguration configuration) {

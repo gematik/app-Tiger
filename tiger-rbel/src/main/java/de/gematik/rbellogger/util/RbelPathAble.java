@@ -66,7 +66,7 @@ public abstract class RbelPathAble {
     while (ptr.get().getParentNode() != null) {
       keyList.addFirst(
           ptr.get().getParentNode().getChildNodesWithKey().stream()
-              .filter(entry -> entry.getValue() == ptr.get())
+              .filter(entry -> entry.getValue().equals(ptr.get()))
               .map(Map.Entry::getKey)
               .findFirst());
       ptr.set(ptr.get().getParentNode());

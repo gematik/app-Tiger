@@ -37,7 +37,7 @@ public class HttpBinServer extends AbstractExternalTigerServer {
   private HttpBin httpbin;
 
   public HttpBinServer(TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
-    super(serverId, serverId, configuration, tigerTestEnvMgr);
+    super(serverId, configuration, tigerTestEnvMgr);
   }
 
   @SneakyThrows

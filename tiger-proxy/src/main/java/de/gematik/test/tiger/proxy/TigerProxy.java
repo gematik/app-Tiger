@@ -108,8 +108,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     if (getTigerProxyConfiguration().getProxyPort() == null) {
       getTigerProxyConfiguration().setProxyPort(mockServer.getLocalPort());
     }
+    var originalRoutes = new HashMap<>(tigerRouteMap);
     mockServer.stop();
-    var originalRoutes = Collections.unmodifiableMap(tigerRouteMap);
     tigerRouteMap.clear();
     bootMockServer();
     originalRoutes.values().stream()
@@ -117,12 +117,17 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
         .forEach(
             r -> {
               try {
+                log.atDebug()
+                    .addArgument(r::getFrom)
+                    .addArgument(r::getTo)
+                    .log("Adding route from {} to {}");
                 addRoute(r);
               } catch (RuntimeException e) {
                 // swallow
                 log.trace("Ignored exception during re-adding of routes", e);
               }
             });
+    log.info("Restarted and added all routes");
   }
 
   private void bootMockServer() {

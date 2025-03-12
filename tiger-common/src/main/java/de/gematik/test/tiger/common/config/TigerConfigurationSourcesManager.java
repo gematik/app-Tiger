@@ -28,7 +28,7 @@ import java.util.stream.Stream;
  */
 public class TigerConfigurationSourcesManager {
 
-  private ConcurrentSkipListSet<AbstractTigerConfigurationSource> loadedSources =
+  private ConcurrentSkipListSet<TigerConfigurationSource> loadedSources =
       new ConcurrentSkipListSet<>();
 
   public void reset() {
@@ -36,21 +36,21 @@ public class TigerConfigurationSourcesManager {
   }
 
   /** Get a list that has the most important value at the first position (for findFirst() calls) */
-  public Stream<AbstractTigerConfigurationSource> getSortedStream() {
+  public Stream<TigerConfigurationSource> getSortedStream() {
     return loadedSources.stream();
   }
 
   /**
    * Get a list that has the most important value at the last position (for looping and replacing)
    */
-  public List<AbstractTigerConfigurationSource> getSortedListReversed() {
+  public List<TigerConfigurationSource> getSortedListReversed() {
     return loadedSources.stream().sorted(reverseOrder()).toList();
   }
 
-  public void addNewSource(AbstractTigerConfigurationSource source) {
+  public void addNewSource(TigerConfigurationSource source) {
     boolean success = loadedSources.add(source);
     if (!success) {
-      final AbstractTigerConfigurationSource exisitingSource =
+      final TigerConfigurationSource exisitingSource =
           loadedSources.stream()
               .filter(src -> src.getPrecedence() == source.getPrecedence())
               .findFirst()
@@ -59,7 +59,7 @@ public class TigerConfigurationSourcesManager {
     }
   }
 
-  public boolean removeSource(AbstractTigerConfigurationSource source) {
+  public boolean removeSource(TigerConfigurationSource source) {
     return loadedSources.remove(source);
   }
 }

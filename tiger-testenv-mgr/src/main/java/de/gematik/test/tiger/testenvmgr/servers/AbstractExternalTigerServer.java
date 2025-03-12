@@ -59,8 +59,8 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
   protected final AtomicReference<Throwable> startupException = new AtomicReference<>();
 
   protected AbstractExternalTigerServer(
-      String hostname, String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
-    super(hostname, serverId, tigerTestEnvMgr, configuration);
+      String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
+    super(serverId, configuration, tigerTestEnvMgr);
   }
 
   protected void waitForServerUp() {

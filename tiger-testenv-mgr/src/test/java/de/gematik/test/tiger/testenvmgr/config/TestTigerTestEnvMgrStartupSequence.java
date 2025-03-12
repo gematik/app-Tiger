@@ -273,13 +273,13 @@ class TestTigerTestEnvMgrStartupSequence {
         CfgServer configuration,
         TigerTestEnvMgr envMgr,
         String delayStartupUntilThisServerIsRunning) {
-      super(name, name, envMgr, configuration);
+      super(name, configuration, envMgr);
       this.delayStartupUntilThisServerIsRunning =
           Optional.ofNullable(delayStartupUntilThisServerIsRunning);
     }
 
     public MockTigerServer(String name, CfgServer configuration, TigerTestEnvMgr envMgr) {
-      super(name, name, envMgr, configuration);
+      super(name, configuration, envMgr);
       this.delayStartupUntilThisServerIsRunning = Optional.empty();
     }
 

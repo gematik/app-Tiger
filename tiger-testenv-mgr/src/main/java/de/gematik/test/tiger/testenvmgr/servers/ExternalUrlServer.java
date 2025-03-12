@@ -31,7 +31,7 @@ public class ExternalUrlServer extends AbstractExternalTigerServer {
   @Builder
   public ExternalUrlServer(
       TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
-    super(determineHostname(configuration, serverId), serverId, configuration, tigerTestEnvMgr);
+    super(serverId, configuration, tigerTestEnvMgr);
     if (StringUtils.isEmpty(getConfiguration().getHealthcheckUrl())) {
       getConfiguration().setHealthcheckUrl(getConfiguration().getSource().get(0));
     }

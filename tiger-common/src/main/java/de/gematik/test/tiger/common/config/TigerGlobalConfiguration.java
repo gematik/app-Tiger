@@ -248,7 +248,7 @@ public class TigerGlobalConfiguration {
     return globalConfigurationLoader.readMapWithCaseSensitiveKeys(baseKeys);
   }
 
-  public static List<AbstractTigerConfigurationSource> listSources() {
+  public static List<TigerConfigurationSource> listSources() {
     assertGlobalConfigurationIsInitialized();
     return globalConfigurationLoader.listSources();
   }
@@ -475,7 +475,7 @@ public class TigerGlobalConfiguration {
         globalConfigurationLoader.listSources().stream()
             .sorted(
                 Comparator.comparing(
-                        AbstractTigerConfigurationSource::getPrecedence,
+                        TigerConfigurationSource::getPrecedence,
                         Comparator.comparing(ConfigurationValuePrecedence::getValue))
                     .reversed());
 

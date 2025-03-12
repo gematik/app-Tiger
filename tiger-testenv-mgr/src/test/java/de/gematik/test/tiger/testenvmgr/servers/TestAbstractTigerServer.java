@@ -16,7 +16,6 @@
 
 package de.gematik.test.tiger.testenvmgr.servers;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -24,13 +23,10 @@ import static org.mockito.Mockito.mock;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
-import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
-import org.apache.commons.lang3.SystemUtils;
-import org.assertj.core.api.ThrowableAssert;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -38,30 +34,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class TestAbstractTigerServer {
-
-  @Test
-  void testFindCommandInPath_OK() {
-    TestServer server = new TestServer();
-    if (SystemUtils.IS_OS_WINDOWS) {
-      assertThat(server.findCommandInPath("cmd.exe")).isNotBlank();
-    } else {
-      assertThat(server.findCommandInPath("bash")).isNotBlank();
-    }
-  }
-
-  @Test
-  void testFindCommandInPath_NOK() {
-    TestServer server = new TestServer();
-    ThrowableAssert.ThrowingCallable lambda =
-        () -> {
-          if (SystemUtils.IS_OS_WINDOWS) {
-            server.findCommandInPath("cmdNOTFOUND.exe");
-          } else {
-            server.findCommandInPath("bashNOTFOUND");
-          }
-        };
-    assertThatThrownBy(lambda).isInstanceOf(TigerEnvironmentStartupException.class);
-  }
 
   @ParameterizedTest
   @ValueSource(strings = {"emptyList", "emptyList2", "emptyList3"})
@@ -119,35 +91,35 @@ class TestAbstractTigerServer {
     ReflectionTestUtils.setField(server, "tigerTestEnvMgr", mock(TigerTestEnvMgr.class));
     assertThatNoException().isThrownBy(server::assertThatConfigurationIsCorrect);
   }
-}
 
-class TestServer extends AbstractTigerServer {
+  @Getter
+  static class TestConfigClass {
+    List<String> emptyList = List.of();
+    List<String> emptyList2 = List.of("", "");
+    List<String> emptyList3 = new ArrayList<>();
 
-  public TestServer() {
-    super("test", "id", null, new CfgServer());
+    String emptyStr = "";
+    String nullStr = null;
+
+    TestConfigClass() {
+      emptyList3.add(null);
+    }
   }
 
-  public TestServer(String serverName) {
-    super(serverName, "id", null, new CfgServer().setType("testServer"));
-  }
+  static class TestServer extends AbstractTigerServer {
 
-  @Override
-  public void performStartup() {}
+    public TestServer() {
+      super("id", new CfgServer(), null);
+    }
 
-  @Override
-  public void shutdown() {}
-}
+    public TestServer(String serverName) {
+      super("id", new CfgServer().setType("testServer").setHostname(serverName), null);
+    }
 
-@Getter
-class TestConfigClass {
-  List<String> emptyList = List.of();
-  List<String> emptyList2 = List.of("", "");
-  List<String> emptyList3 = new ArrayList<>();
+    @Override
+    public void performStartup() {}
 
-  String emptyStr = "";
-  String nullStr = null;
-
-  TestConfigClass() {
-    emptyList3.add(null);
+    @Override
+    public void shutdown() {}
   }
 }

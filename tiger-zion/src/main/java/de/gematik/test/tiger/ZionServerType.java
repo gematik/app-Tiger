@@ -43,8 +43,8 @@ public class ZionServerType extends AbstractExternalTigerServer {
 
   @Getter private ConfigurableApplicationContext applicationContext;
 
-  public ZionServerType(TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
-    super(determineHostname(configuration, serverId), serverId, configuration, tigerTestEnvMgr);
+  public ZionServerType(String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
+    super(serverId, configuration, tigerTestEnvMgr);
   }
 
   @Override

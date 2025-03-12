@@ -33,7 +33,6 @@ import de.gematik.test.tiger.testenvmgr.env.TigerUpdateListener;
 import de.gematik.test.tiger.testenvmgr.servers.log.TigerServerLogManager;
 import de.gematik.test.tiger.testenvmgr.util.TigerEnvironmentStartupException;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
-import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -70,8 +69,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
   private TigerServerStatus status = TigerServerStatus.NEW;
 
   protected AbstractTigerServer(
-      String hostname, String serverId, TigerTestEnvMgr tigerTestEnvMgr, CfgServer configuration) {
-    this.hostname = hostname;
+      String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
     this.serverId = serverId;
     this.tigerTestEnvMgr = tigerTestEnvMgr;
     this.configuration = configuration;
@@ -82,9 +80,10 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
       log.warn(
           "Unable to detect logback library! Log appender for server {} not activated", serverId);
     }
+    this.hostname = determineHostname();
   }
 
-  protected static String determineHostname(CfgServer configuration, String serverId) {
+  private String determineHostname() {
     if (StringUtils.isNotBlank(configuration.getHostname())) {
       return configuration.getHostname();
     } else {
@@ -214,7 +213,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
                       new TigerEnvironmentStartupException(
                           "Could not reload configuration for server with id %s", getServerId()));
       tigerTestEnvMgr.getConfiguration().getServers().put(getServerId(), configuration);
-      hostname = determineHostname(configuration, serverId);
+      hostname = determineHostname();
     } catch (TigerConfigurationException e) {
       throw new TigerEnvironmentStartupException(
           "Could not reload configuration for server " + getServerId(), e);
@@ -248,7 +247,7 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     }
     assertThatServerNameIsCorrect();
     assertCfgPropertySet(getConfiguration(), "type");
-    assertThatServerNameIsUnique();
+    assertThatHostnameIsUnique();
 
     // set default values for all types
     if (getConfiguration().getStartupTimeoutSec() == null) {
@@ -257,10 +256,10 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
     }
   }
 
-  private void assertThatServerNameIsUnique() {
+  private void assertThatHostnameIsUnique() {
     tigerTestEnvMgr.getServers().values().stream()
         .filter(other -> other != this)
-        .filter(other -> other.getHostname().equalsIgnoreCase(hostname))
+        .filter(other -> StringUtils.equalsIgnoreCase(other.getHostname(), hostname))
         .findAny()
         .ifPresent(
             other -> {
@@ -433,19 +432,5 @@ public abstract class AbstractTigerServer implements TigerEnvUpdateSender {
             .serverUpdate(new LinkedHashMap<>(Map.of(serverId, update)))
             .build(),
         listeners);
-  }
-
-  @SuppressWarnings("unused")
-  protected String findCommandInPath(String command) {
-    if (System.getenv("PATH") == null) {
-      throw new TigerEnvironmentStartupException(
-          "No PATH variable set, unable to find helm and kubectl commands!");
-    }
-    return Arrays.stream(System.getenv("PATH").split(File.pathSeparator))
-        .map(folder -> folder + File.separator + command)
-        .filter(file -> new File(file).canExecute())
-        .findFirst()
-        .orElseThrow(
-            () -> new TigerEnvironmentStartupException("Unable to locate script '%s'", command));
   }
 }
