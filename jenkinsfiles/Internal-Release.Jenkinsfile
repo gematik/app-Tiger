@@ -27,6 +27,7 @@ def GROUP_ID = "de.gematik.test"
 def ARTIFACT_ID = 'tiger-testenv-mgr'
 def ARTIFACT_IDs = 'tiger,tiger-rbel,tiger-maven-plugin,tiger-proxy,tiger-testenv-mgr,tiger-test-lib,tiger-integration-example'
 def POM_PATH = 'pom.xml'
+def POM_PATH_SET_VERSION = 'tiger-bom/pom.xml'
 def PACKAGING = "jar"
 
 pipeline {
@@ -101,7 +102,7 @@ pipeline {
                 }
                 stage('create user manual and store in gh_pages branch') {
                     steps {
-                        mavenSetVersion("${RELEASE_VERSION}")
+                        mavenSetVersion("${RELEASE_VERSION}", POM_PATH_SET_VERSION)
                         gitCommitAndTag("TIGER: RELEASE R${RELEASE_VERSION}", "R${RELEASE_VERSION}", "", "", true, false)
 
                         sh 'git stash'
@@ -128,7 +129,7 @@ pipeline {
                 }
                 stage('UpdateProject with new Version') {
                     steps {
-                        mavenSetVersion("${NEW_VERSION}-SNAPSHOT")
+                        mavenSetVersion("${NEW_VERSION}-SNAPSHOT", POM_PATH_SET_VERSION)
                         gitPushVersionUpdate(JIRA_PROJECT_ID, "${NEW_VERSION}-SNAPSHOT", BRANCH)
                     }
                 }

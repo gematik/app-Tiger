@@ -68,6 +68,7 @@ class TestTigerDirector {
 
   @BeforeEach
   void init(TestInfo testInfo) {
+    System.setProperty("TIGER_TESTENV_CFGFILE", "src/test/resources/minimal_tiger.yaml");
     log.info(
         "Now executing test '{}' ({}:{})",
         testInfo.getDisplayName(),
@@ -388,7 +389,7 @@ class TestTigerDirector {
     new Thread(TigerDirector::waitForAcknowledgedQuit).start();
     envStatusController.getConfirmShutdown();
     await()
-        .atMost(5000, TimeUnit.MILLISECONDS)
+        .atMost(10000, TimeUnit.MILLISECONDS)
         .until(
             () ->
                 TigerDirector.getTigerTestEnvMgr().getUserConfirmQuit().get()

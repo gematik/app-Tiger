@@ -1,0 +1,83 @@
+/*
+ *
+ * Copyright 2025 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package de.gematik.test.tiger
+
+import io.ktor.server.application.*
+import io.ktor.server.plugins.*
+import io.ktor.server.request.*
+import io.ktor.util.*
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class RequestInfoWithData(
+    val url: String,
+    val args: Map<String, List<String>>,
+    val headers: Map<String, List<String>>,
+    val origin: String,
+    val method: String,
+    val data: String,
+)
+
+@Serializable
+data class RequestInfo(
+    val url: String,
+    val args: Map<String, List<String>>,
+    val headers: Map<String, List<String>>,
+    val origin: String,
+    val method: String,
+)
+
+@Serializable
+data class ResponseWithId(
+    val id: Int,
+    val url: String,
+    val args: Map<String, List<String>>,
+    val headers: Map<String, List<String>>,
+    val origin: String,
+    val method: String,
+)
+
+fun createResponseWithId(
+    id: Int,
+    requestInfo: RequestInfo,
+) = ResponseWithId(
+    id = id,
+    url = requestInfo.url,
+    args = requestInfo.args,
+    headers = requestInfo.headers,
+    origin = requestInfo.origin,
+    method = requestInfo.method,
+)
+
+suspend fun createRequestInfoWithData(call: ApplicationCall) =
+    RequestInfoWithData(
+        url = call.request.uri,
+        args = call.request.queryParameters.toMap(),
+        headers = call.request.headers.toMap(),
+        origin = call.request.origin.remoteHost,
+        method = call.request.httpMethod.value,
+        data = call.receiveStream().readAllBytes().decodeToString(),
+    )
+
+fun createRequestInfo(call: ApplicationCall) =
+    RequestInfo(
+        url = call.request.uri,
+        args = call.request.queryParameters.toMap(),
+        headers = call.request.headers.toMap(),
+        origin = call.request.origin.remoteHost,
+        method = call.request.httpMethod.value,
+    )

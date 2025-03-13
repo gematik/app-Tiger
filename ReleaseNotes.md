@@ -14,6 +14,26 @@
 ## Features
 
 * TGR-1779: Tiger-Testenv-Mgr: Cleanup in the constructor calls for TigerServer
+* TGR-716: Tiger BOM: a tiger bill-of-materials submodule is introduced to ensure consistency in the dependency
+  versions.
+  To make use of it in your project, add the following the dependency management section of your pom.xml and you don't
+  need
+  to specify a version for the tiger artefacts that are referenced in the regular dependencies section.
+
+```xml
+
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-bom</artifactId>
+            <version>${tiger.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+```
 
 # Release 3.7.0
 

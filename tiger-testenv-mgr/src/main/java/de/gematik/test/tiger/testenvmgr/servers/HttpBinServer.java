@@ -18,6 +18,7 @@ package de.gematik.test.tiger.testenvmgr.servers;
 
 import static de.gematik.rbellogger.util.GlobalServerMap.addServerNameForPort;
 
+import de.gematik.test.tiger.EmbeddedHttpbin;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -26,7 +27,6 @@ import java.net.URI;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.SneakyThrows;
-import org.gaul.httpbin.HttpBin;
 
 /**
  * A server type that starts a <a href="https://github.com/gaul/java-httpbin">httpbin server</a>.
@@ -34,7 +34,7 @@ import org.gaul.httpbin.HttpBin;
 @TigerServerType("httpbin")
 public class HttpBinServer extends AbstractExternalTigerServer {
 
-  private HttpBin httpbin;
+  private EmbeddedHttpbin httpbin;
 
   public HttpBinServer(TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
     super(serverId, configuration, tigerTestEnvMgr);
@@ -60,13 +60,15 @@ public class HttpBinServer extends AbstractExternalTigerServer {
 
     log.info("Actually performing startup of HttpBin-Server {}", getServerId());
 
-    var httpBinEndpoint = new URI("http://localhost:" + getServerport());
-    httpbin = new HttpBin(httpBinEndpoint);
+    var serverPort = getServerPort();
+
+    httpbin = new EmbeddedHttpbin(serverPort, true);
     httpbin.start();
 
     waitForServerUp();
+    var httpBinEndpoint = new URI("http://localhost:" + serverPort);
     addServerToLocalProxyRouteMap(httpBinEndpoint.toURL());
-    addServerNameForPort(getServerport(), this.getServerId());
+    addServerNameForPort(serverPort, this.getServerId());
   }
 
   private HttpBinConfiguration getHttbBinConfiguration() {
@@ -80,7 +82,7 @@ public class HttpBinServer extends AbstractExternalTigerServer {
     }
   }
 
-  private int getServerport() {
+  private int getServerPort() {
     return getHttbBinConfiguration().getServerPort();
   }
 

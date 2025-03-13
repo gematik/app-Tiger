@@ -3,6 +3,7 @@
 def CREDENTIAL_ID_GEMATIK_GIT = 'svc_gitlab_prod_credentials'
 def JIRA_PROJECT_ID = 'TGR'
 def POM_PATH = 'pom.xml'
+def POM_PATH_SET_VERSION = 'tiger-bom/pom.xml'
 def REPO_URL = createGitUrl('git/Testtools/tiger/tiger')
 
 pipeline {
@@ -31,14 +32,14 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: BRANCH,
-                    credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
-                    url: REPO_URL
+                        credentialsId: CREDENTIAL_ID_GEMATIK_GIT,
+                        url: REPO_URL
             }
         }
 
         stage('set Version') {
             steps {
-                mavenSetVersionFromJiraProject(JIRA_PROJECT_ID, POM_PATH, true, "", false)
+                mavenSetVersionFromJiraProject(JIRA_PROJECT_ID, POM_PATH_SET_VERSION, true, "", false)
             }
         }
 
@@ -63,10 +64,10 @@ pipeline {
         }
 
         stage('Sonar') {
-             environment {
+            environment {
                 BRANCH_NAME = "${BRANCH}"
             }
-             steps {
+            steps {
                 mavenCheckWithSonarQube(POM_PATH, "", false)
             }
         }

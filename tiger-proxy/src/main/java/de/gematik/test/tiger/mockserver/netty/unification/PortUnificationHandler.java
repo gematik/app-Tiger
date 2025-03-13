@@ -211,7 +211,13 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
 
   private boolean isTls(ByteBuf buf) {
     try {
-      return SslHandler.isEncrypted(buf);
+      // Since netty 4.1.118Final, the isEncrypted returns true when "NOT_ENOUGH_DATA"
+      // which breaks here if we are handling small amounts of data.
+      int remaining = buf.writerIndex() - buf.readerIndex();
+      if (remaining < 5) {
+        return false;
+      }
+      return SslHandler.isEncrypted(buf, false);
     } catch (Signal signal) {
       return false;
     }

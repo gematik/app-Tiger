@@ -8,6 +8,7 @@ def JIRA_PROJECT_ID = 'TGR'
 def GITLAB_PROJECT_ID = '644'
 def TAG_NAME = "ci/build"
 def POM_PATH = 'pom.xml'
+def POM_PATH_SET_VERSION = 'tiger-bom/pom.xml'
 def POM_PATH_PRODUCT = 'tiger-testenv-mgr/pom.xml'
 def REPO_URL = createGitUrl('git/Testtools/tiger/tiger')
 
@@ -45,7 +46,7 @@ pipeline {
 
         stage('set Version') {
             steps {
-                mavenSetVersionFromJiraProject(JIRA_PROJECT_ID, POM_PATH, true, "", false)
+                mavenSetVersionFromJiraProject(JIRA_PROJECT_ID, POM_PATH_SET_VERSION, true, "", false)
             }
         }
 

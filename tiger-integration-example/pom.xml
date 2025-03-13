@@ -16,34 +16,31 @@
     limitations under the License.
 
 -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tiger-integration-example</artifactId>
-
     <parent>
-        <artifactId>tiger</artifactId>
         <groupId>de.gematik.test</groupId>
+        <artifactId>tiger</artifactId>
         <version>3.7.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+
+    <artifactId>tiger-integration-example</artifactId>
 
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
-            <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-test-lib</artifactId>
-            <version>${project.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-test-lib</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -62,6 +59,16 @@
                 <version>${project.version}</version>
                 <executions>
                     <execution>
+                        <id>prepare-and-verify-tiger-tests-and-results</id>
+                        <!--
+                                                                            You MUST define the two goals in two different executions
+                                                                            to avoid the report being generated before the test run
+                                                                        -->
+                        <goals>
+                            <goal>generate-drivers</goal>
+                            <goal>attach-tiger-agent</goal>
+                        </goals>
+                        <phase>generate-test-sources</phase>
                         <configuration>
 
                             <!-- mandatory -->
@@ -76,18 +83,16 @@
                                 <include>**/*.feature</include>
                             </includes>
                             <!-- optional -->
-                            <driverPackage>
-                                de.gematik.test.tiger.examples.bdd.drivers
-                            </driverPackage>
+                            <driverPackage>de.gematik.test.tiger.examples.bdd.drivers</driverPackage>
                             <!-- optional -->
                             <!--suppress UnresolvedMavenProperty -->
                             <driverClassName>Driver${ctr}IT</driverClassName>
                             <!-- optional, defaults to the templated located at
-                            /src/main/resources/driverClassTemplate.jtmpl
-                            in the tiger-maven-plugin module.
-                            Use separate template file if you have spring boot apps to test
-                            or need to do some more fancy set up stuff.
-                            -->
+                                                                                    /src/main/resources/driverClassTemplate.jtmpl
+                                                                                    in the tiger-maven-plugin module.
+                                                                                    Use separate template file if you have spring boot apps to test
+                                                                                    or need to do some more fancy set up stuff.
+                                                                                    -->
                             <!-- optional -->
                             <skip>false</skip>
 
@@ -107,16 +112,6 @@
                             <!--       <driverClassName>Driver${ctr}IT</driverClassName>-->
                             <!--       <targetFolder>${project.build.directory}</targetFolder>-->
                         </configuration>
-                        <phase>generate-test-sources</phase>
-                        <id>prepare-and-verify-tiger-tests-and-results</id>
-                        <!--
-                            You MUST define the two goals in two different executions
-                            to avoid the report being generated before the test run
-                        -->
-                        <goals>
-                            <goal>generate-drivers</goal>
-                            <goal>attach-tiger-agent</goal>
-                        </goals>
                     </execution>
                     <execution>
                         <goals>
@@ -132,10 +127,10 @@
                 <executions>
                     <execution>
                         <id>copy</id>
-                        <phase>generate-test-resources</phase>
                         <goals>
                             <goal>copy</goal>
                         </goals>
+                        <phase>generate-test-resources</phase>
                         <configuration>
                             <artifactItems>
                                 <artifactItem>
@@ -166,9 +161,9 @@
                 <version>${version.maven.failsafe}</version>
                 <configuration>
                     <!--
-                        Workflow UI needs this to allow it to block execution of maven,
-                        else maven will try to kill and destroy the tiger spring boot apps
-                     -->
+                                                                Workflow UI needs this to allow it to block execution of maven,
+                                                                else maven will try to kill and destroy the tiger spring boot apps
+                                                             -->
                     <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
                 </configuration>
                 <executions>
@@ -187,10 +182,10 @@
                 <executions>
                     <execution>
                         <id>empty-javadoc-jar</id>
-                        <phase>package</phase>
                         <goals>
                             <goal>jar</goal>
                         </goals>
+                        <phase>package</phase>
                         <configuration>
                             <classifier>javadoc</classifier>
                             <classesDirectory>${project.basedir}/src/test/java/</classesDirectory>
@@ -199,8 +194,8 @@
                 </executions>
             </plugin>
             <plugin>
-                <artifactId>sonar-maven-plugin</artifactId>
                 <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

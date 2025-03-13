@@ -1,0 +1,67 @@
+== ADR 014: Tiger Bill Of Materials
+
+== Context
+
+Tiger has a LOT of dependencies.
+And many of its dependencies bring transitive dependencies that conflict with each other.
+
+When there are conflicts, maven resolves the version to be used using "https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#:~:text=dependencies%20are%20included%3A-,Dependency%20mediation,--%20this%20determines%20what[dependency mediation]".
+This is not always intuitive.
+
+Additionally, when developing in the tiger project, a certain combination of dependencies may be resolved.
+But a customer project that only imports, e.g. the `tiger-proxy` or the `tiger-testenv-mgr` will end up with a different resolution which may not work.
+
+We want to enforce specific dependency versions which are compatible with the tiger framework and want to make it easy for the customer projects to also reference the same versions.
+
+== Decision
+
+To ensure that the customer projects use the same versions that we define, we provide a `tiger-bom` module.
+The customer projects can import this in their dependency management configuration.
+Additionally, they import the needed tiger submodules without needed to reference the version (this is set by the tiger-bom).
+
+The pom.xml of the customer project would have something like this:
+
+[source,xml]
+----
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-bom</artifactId>
+            <version>${tiger.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+<dependencies>
+    <dependency>
+        <groupId>de.gematik.test</groupId>
+        <artifactId>tiger-testenv-mgr</artifactId>
+    </dependency>
+</dependencies>
+
+----
+
+The specification of `<type>pom</type><scope>import</scope>` ensures that the importing projects gets the same versions of dependencies as defined in tiger.
+They still need to import the dependencies that they actually use.
+
+The `tiger-bom` module is the parent module of the `tiger` module, and all other tiger submodules inherit from `tiger`.
+
+All dependencies shall specify their version in the `tiger-bom` dependency management section.
+In the regular dependencies of the submodules there shall be no reference to version numbers.
+
+The `maven-enforcer-plugin` is configured with the https://maven.apache.org/enforcer/enforcer-rules/dependencyConvergence.html[dependencyConvergence rule] which ensure that there are no conflicts in the dependency tree at compile time.
+
+== Consequences
+
+We recommend that customer projects import the tiger-bom in their projects.
+
+Making dependency updates is not necessarily less complex.
+E.g.: a dependency updates a transitive dependency, but since we have a pinned version of the transitive dependency, we don't immediately see a problem.
+The enforcer plugin will not complain, because the pinned version resolves the conflict.
+However, the previous solution also did not solve such problems, it just kept them hidden and relied on the maven dependency mediation.
+
+
+
+

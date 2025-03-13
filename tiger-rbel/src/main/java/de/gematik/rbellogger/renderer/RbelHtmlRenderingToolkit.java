@@ -358,7 +358,7 @@ public class RbelHtmlRenderingToolkit {
                         .withSrc(
                             localRessources
                                 ? "../webjars/jquery/jquery.min.js"
-                                : "https://code.jquery.com/jquery-1.12.4.js"),
+                                : "https://code.jquery.com/jquery-3.7.1.js"),
                     script()
                         .withSrc(
                             localRessources
