@@ -77,10 +77,12 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
   }
 
   private boolean isCompleteCommand(RbelContent content) {
-    if (content.startsWith(DATA_PREFIX_BYTES)) {
+    if (content.startsTrimmedWithIgnoreCase(DATA_PREFIX_BYTES, StandardCharsets.US_ASCII)) {
       return content.endsWith(CRLF_DOT_CRLF_BYTES);
-    } else if (content.startsWith(AUTH_COMMAND_PREFIX_BYTES)
-        && !content.startsWith(AUTH_PLAIN_PREFIX_BYTES)) {
+    } else if (content.startsTrimmedWithIgnoreCase(
+            AUTH_COMMAND_PREFIX_BYTES, StandardCharsets.US_ASCII)
+        && !content.startsTrimmedWithIgnoreCase(
+            AUTH_PLAIN_PREFIX_BYTES, StandardCharsets.US_ASCII)) {
       // AUTH (without PLAIN) needs another 2 lines with the credentials
       return EmailConversionUtils.hasCompleteLines(content, 3);
     } else {
@@ -93,7 +95,7 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
         new String(content.subArray(0, MIN_SMTP_COMMAND_LINE_LENGTH), StandardCharsets.UTF_8);
     var command = new StringTokenizer(shortPrefix).nextToken();
     try {
-      return Optional.of(RbelSmtpCommand.valueOf(command));
+      return Optional.of(RbelSmtpCommand.fromStringIgnoringCase(command));
     } catch (IllegalArgumentException e) {
       // fall through
     }
@@ -114,14 +116,15 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
 
   private RbelElement buildSmtpBody(RbelSmtpCommand command, RbelElement element, String[] lines) {
     return switch (command) {
-      case AUTH -> lines.length > 2
-          ? EmailConversionUtils.createChildElement(
-              element,
-              Arrays.stream(lines)
-                  .skip(1)
-                  .limit(lines.length - 2L)
-                  .collect(Collectors.joining(EmailConversionUtils.CRLF)))
-          : null;
+      case AUTH ->
+          lines.length > 2
+              ? EmailConversionUtils.createChildElement(
+                  element,
+                  Arrays.stream(lines)
+                      .skip(1)
+                      .limit(lines.length - 2L)
+                      .collect(Collectors.joining(EmailConversionUtils.CRLF)))
+              : null;
       case DATA -> EmailConversionUtils.parseMailBody(element, lines);
       default -> null;
     };

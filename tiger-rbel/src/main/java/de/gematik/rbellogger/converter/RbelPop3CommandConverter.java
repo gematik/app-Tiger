@@ -63,7 +63,7 @@ public class RbelPop3CommandConverter implements RbelConverterPlugin {
         new String(c.subArray(0, RbelPop3Command.MAX_LENGTH + 1), StandardCharsets.UTF_8);
     var command = new StringTokenizer(shortPrefix).nextToken();
     try {
-      return Optional.of(RbelPop3Command.valueOf(command));
+      return Optional.of(RbelPop3Command.fromStringIgnoringCase(command));
     } catch (IllegalArgumentException e) {
       // fall through
     }

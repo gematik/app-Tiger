@@ -1,19 +1,9 @@
 # Changelog Tiger Test platform
 
-# Release 3.7.1
-
-## Bugfixes
-
-* TGR-1640: TigerGlobalConfiguration: Some minor bugfixes in handling the TigerConfigurationRbelObject. Fixes issues
-  with complicated RbelPathes when applied to configuration values
-* TGR-1640: Zion: The field additionalCriterions in request is now only evaluated at runtime.
-* TGR-1784: TigerGlobalConfiguration. Substantial performance-boost when dealing with nested Byte-Arrays
-* TGR-1749: Tiger-Proxy: Fixed an issue where the Tiger-Proxy would lose any custom-added routes after a
-  mockserver-restart.
+# Release 3.7.2
 
 ## Features
 
-* TGR-1779: Tiger-Testenv-Mgr: Cleanup in the constructor calls for TigerServer
 * TGR-716: Tiger BOM: a tiger bill-of-materials submodule is introduced to ensure consistency in the dependency
   versions.
   To make use of it in your project, add the following the dependency management section of your pom.xml and you don't
@@ -34,6 +24,25 @@
     </dependencies>
 </dependencyManagement>
 ```
+
+## Bugfixes
+
+* TGR-1781: Rbel: parsing of SMTP and POP3 Commands is now correctly done case insensitively.
+
+# Release 3.7.1
+
+## Bugfixes
+
+* TGR-1640: TigerGlobalConfiguration: Some minor bugfixes in handling the TigerConfigurationRbelObject. Fixes issues
+  with complicated RbelPathes when applied to configuration values
+* TGR-1640: Zion: The field additionalCriterions in request is now only evaluated at runtime.
+* TGR-1784: TigerGlobalConfiguration. Substantial performance-boost when dealing with nested Byte-Arrays
+* TGR-1749: Tiger-Proxy: Fixed an issue where the Tiger-Proxy would lose any custom-added routes after a
+  mockserver-restart.
+
+## Features
+
+* TGR-1779: Tiger-Testenv-Mgr: Cleanup in the constructor calls for TigerServer
 
 # Release 3.7.0
 
@@ -505,8 +514,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-  key = PLUGIN_PROPERTY_NAME,
-  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+        key = PLUGIN_PROPERTY_NAME,
+        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

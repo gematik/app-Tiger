@@ -22,6 +22,7 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.smtp.RbelSmtpCommand;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import de.gematik.rbellogger.util.EmailConversionUtils;
@@ -60,13 +61,21 @@ class RbelSmtpCommandConverterTest {
   @ValueSource(
       strings = {
         "EHLO x.y",
+        "ehlo x.y",
         "HELO y.x",
+        "helo y.x",
         "MAIL FROM:<@a,@b:user@d>",
+        "mail FROM:<@a,@b:user@d>",
         "RCPT TO:<user@d>",
+        "rcpt TO:<user@d>",
         "VRFY <@a,@b:user@d>",
+        "vrfy <@a,@b:user@d>",
         "EXPN <@a,@b:user@d>",
+        "expn <@a,@b:user@d>",
         "HELP HELP",
-        "NOOP no op"
+        "help HELP",
+        "NOOP no op",
+        "noop no op"
       })
   void shouldConvertSingleLineSmtpCommand(String commandLine) {
     String[] parts = commandLine.split(" ", 2);
@@ -77,7 +86,7 @@ class RbelSmtpCommandConverterTest {
 
     RbelElementAssertion.assertThat(element)
         .extractChildWithPath("$.smtpCommand")
-        .hasStringContentEqualTo(command)
+        .hasValueEqualTo(RbelSmtpCommand.fromStringIgnoringCase(command))
         .andTheInitialElement()
         .extractChildWithPath("$.smtpArguments")
         .hasStringContentEqualTo(arguments)
@@ -93,7 +102,7 @@ class RbelSmtpCommandConverterTest {
 
     RbelElementAssertion.assertThat(element)
         .extractChildWithPath("$.smtpCommand")
-        .hasStringContentEqualTo(command)
+        .hasValueEqualTo(RbelSmtpCommand.fromStringIgnoringCase(command))
         .andTheInitialElement()
         .doesNotHaveChildWithPath("$.smtpArguments")
         .andTheInitialElement()
@@ -104,10 +113,15 @@ class RbelSmtpCommandConverterTest {
   @ValueSource(
       strings = {
         "RSET",
+        "rset",
         "RSET\r\nxyz\r\n.\r\n",
+        "reset\r\nxyz\r\n.\r\n",
         "DATA\r\n",
+        "data\r\n",
         "AUTH PLAIN dGVzdAB0ZXN0ADEyMzQ=",
-        "AUTH PLAIN dGVzdAB0ZXN0ADEyMzQ=\r\nfoo\r\nbar\r\n"
+        "auth plain dGVzdAB0ZXN0ADEyMzQ=",
+        "AUTH PLAIN dGVzdAB0ZXN0ADEyMzQ=\r\nfoo\r\nbar\r\n",
+        "auth plain dGVzdAB0ZXN0ADEyMzQ=\r\nfoo\r\nbar\r\n"
       })
   void shouldRejectMalformedCommand(String input) {
     RbelElement element = convertToRbelElement(input);
@@ -132,7 +146,7 @@ class RbelSmtpCommandConverterTest {
     RbelElement element = convertToRbelElement(input);
     RbelElementAssertion.assertThat(element)
         .extractChildWithPath("$.smtpCommand")
-        .hasStringContentEqualTo(command)
+        .hasValueEqualTo(RbelSmtpCommand.fromStringIgnoringCase(command))
         .andTheInitialElement()
         .doesNotHaveChildWithPath("$.smtpArguments")
         .andTheInitialElement()
@@ -150,7 +164,7 @@ class RbelSmtpCommandConverterTest {
     RbelElement element = convertToRbelElement(input);
     RbelElementAssertion.assertThat(element)
         .extractChildWithPath("$.smtpCommand")
-        .hasStringContentEqualTo(command)
+        .hasValueEqualTo(RbelSmtpCommand.fromStringIgnoringCase(command))
         .andTheInitialElement()
         .extractChildWithPath("$.smtpArguments")
         .hasStringContentEqualTo(arguments)
@@ -168,7 +182,7 @@ class RbelSmtpCommandConverterTest {
     RbelElement element = convertToRbelElement(input);
     RbelElementAssertion.assertThat(element)
         .extractChildWithPath("$.smtpCommand")
-        .hasStringContentEqualTo(command)
+        .hasValueEqualTo(RbelSmtpCommand.fromStringIgnoringCase(command))
         .andTheInitialElement()
         .extractChildWithPath("$.smtpArguments")
         .hasStringContentEqualTo(arguments)

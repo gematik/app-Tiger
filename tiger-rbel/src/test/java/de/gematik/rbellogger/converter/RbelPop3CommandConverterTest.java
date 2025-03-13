@@ -24,48 +24,78 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelPop3ResponseFacet;
 import de.gematik.rbellogger.data.pop3.RbelPop3Command;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Random;
+import java.util.stream.Collectors;
+import lombok.val;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class RbelPop3CommandConverterTest {
 
+  private static String randomizeCase(String input) {
+    Random random = new Random();
+    return input
+        .chars()
+        .mapToObj(
+            ch -> random.nextBoolean() ? Character.toLowerCase(ch) : Character.toUpperCase(ch))
+        .map(ch -> String.valueOf((char) ch.intValue()))
+        .collect(Collectors.joining());
+  }
+
+  static Collection<Arguments> providePop3Commands() {
+    val enumValuesAsString = Arrays.stream(RbelPop3Command.values()).map(Enum::toString).toList();
+    val enumValuesLowerCase = enumValuesAsString.stream().map(String::toLowerCase).toList();
+    val enumValuesMixedCase =
+        enumValuesAsString.stream().map(RbelPop3CommandConverterTest::randomizeCase).toList();
+
+    val result = new ArrayList<>(enumValuesAsString);
+    result.addAll(enumValuesLowerCase);
+    result.addAll(enumValuesMixedCase);
+
+    return result.stream().map(Arguments::of).collect(Collectors.toList());
+  }
+
   @ParameterizedTest
-  @EnumSource(value = RbelPop3Command.class)
-  void shouldConvertPop3Command(RbelPop3Command command) {
+  @MethodSource("providePop3Commands")
+  void shouldConvertPop3Command(String commandAsString) {
     String arguments = "foobar foobar";
-    String input = command.name() + " " + arguments + "\r\n";
+    String input = commandAsString + " " + arguments + "\r\n";
     RbelElement element = convertToRbelElement(input);
     RbelElementAssertion.assertThat(element)
         .extractChildWithPath("$.pop3Command")
-        .hasValueEqualTo(command)
+        .hasValueEqualTo(RbelPop3Command.fromStringIgnoringCase(commandAsString))
         .andTheInitialElement()
         .extractChildWithPath("$.pop3Arguments")
         .hasStringContentEqualTo(arguments);
   }
 
   @ParameterizedTest
-  @EnumSource(value = RbelPop3Command.class)
-  void shouldConvertPop3CommandWithoutArguments(RbelPop3Command command) {
-    String input = command.name() + "\r\n";
+  @MethodSource("providePop3Commands")
+  void shouldConvertPop3CommandWithoutArguments(String commandAsString) {
+    String input = commandAsString + "\r\n";
     RbelElement element = convertToRbelElement(input);
     RbelElementAssertion.assertThat(element)
         .extractChildWithPath("$.pop3Command")
-        .hasValueEqualTo(command)
+        .hasValueEqualTo(RbelPop3Command.fromStringIgnoringCase(commandAsString))
         .andTheInitialElement()
         .doesNotHaveChildWithPath("$.pop3Arguments");
   }
 
   @ParameterizedTest
-  @EnumSource(value = RbelPop3Command.class)
-  void shouldRejectPop3CommandNotEndingWithCrLf(RbelPop3Command command) {
-    RbelElement element = convertToRbelElement(command + " foobar foobar");
+  @MethodSource("providePop3Commands")
+  void shouldRejectPop3CommandNotEndingWithCrLf(String commandAsString) {
+    RbelElement element = convertToRbelElement(commandAsString + " foobar foobar");
     assertThat(element.hasFacet(RbelPop3ResponseFacet.class)).isFalse();
   }
 
   @ParameterizedTest
-  @EnumSource(value = RbelPop3Command.class)
-  void shouldRejectSimplePop3CommandNotEndingWithCrLf(RbelPop3Command command) {
-    RbelElement element = convertToRbelElement(command.name());
+  @MethodSource("providePop3Commands")
+  void shouldRejectSimplePop3CommandNotEndingWithCrLf(String commandAsString) {
+    RbelElement element = convertToRbelElement(commandAsString);
     assertThat(element.hasFacet(RbelPop3ResponseFacet.class)).isFalse();
   }
 

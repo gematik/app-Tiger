@@ -16,6 +16,7 @@
 
 package de.gematik.rbellogger.data.smtp;
 
+
 public enum RbelSmtpCommand {
   HELO,
   EHLO,
@@ -28,5 +29,9 @@ public enum RbelSmtpCommand {
   RSET,
   NOOP,
   AUTH,
-  QUIT
+  QUIT;
+
+  public static RbelSmtpCommand fromStringIgnoringCase(String s) {
+    return RbelSmtpCommand.valueOf(s.toUpperCase());
+  }
 }
