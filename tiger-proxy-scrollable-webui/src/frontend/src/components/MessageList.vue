@@ -94,7 +94,7 @@ watch(files, async (newFiles) => {
     class="h-100 overflow-y-scroll scroll-container"
     @update="messageQueue.internal.update"
   >
-    <template #default="{ item, index, active }">
+    <template #default="{ item, active }">
       <DynamicScrollerItem
         :item="item"
         :active="active"
@@ -104,8 +104,6 @@ watch(files, async (newFiles) => {
           settings.hideMessageHeaders,
           settings.hideMessageDetails,
         ]"
-        :data-index="index"
-        :data-active="active"
         class="message"
       >
         <Message
