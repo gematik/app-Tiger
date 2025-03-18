@@ -128,7 +128,7 @@ pipeline {
             sendEMailNotification(getTigerEMailList())
         }
         success {
-            teamsSendNotificationToChannel(CHANNEL_ID, GROUP_ID)
+            teamsSendNotificationToChannel(CHANNEL_ID, GROUP_ID, ["facts": ["Release Version": "${RELEASE_VERSION}"]])
         }
     }
 }
