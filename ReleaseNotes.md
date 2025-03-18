@@ -2,8 +2,17 @@
 
 # Release 3.7.2
 
+* Serenity BDD 4.2.16
+* Cucumber 7.21.1
+* RestAssured 5.5.1
+* Selenium 4.19.1
+* Appium 9.3.0
+* Spring Boot 3.4.3
+* Logback 1.5.17
+
 ## Features
 
+* TGR-1772: Dependency update
 * TGR-716: Tiger BOM: a tiger bill-of-materials submodule is introduced to ensure consistency in the dependency
   versions.
   To make use of it in your project, add the following the dependency management section of your pom.xml and you don't
