@@ -37,6 +37,8 @@
 ## Bugfixes
 
 * TGR-1781: Rbel: parsing of SMTP and POP3 Commands is now correctly done case insensitively.
+* TGR-1785: Rbel: parsing the POP3 response to a CAPA command, groups correctly the multiline response in one
+  RbelElement.
 
 # Release 3.7.1
 

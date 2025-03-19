@@ -36,11 +36,11 @@ abstract class AbstractRbelMessageValidatorTest {
   protected LocalProxyRbelMessageListenerTestAdapter localProxyRbelMessageListenerTestAdapter;
   protected TigerProxy tigerProxy;
 
-  protected void readTgrFileAndStoreForrbelMessageRetriever(String rbelFile) {
-    readTgrFileAndStoreForrbelMessageRetriever(rbelFile, List.of());
+  protected void readTgrFileAndStoreForRbelMessageRetriever(String rbelFile) {
+    readTgrFileAndStoreForRbelMessageRetriever(rbelFile, List.of());
   }
 
-  protected void readTgrFileAndStoreForrbelMessageRetriever(
+  protected void readTgrFileAndStoreForRbelMessageRetriever(
       String rbelFile, List<String> activateRbelParsingFor) {
     var rbelLogger =
         RbelLogger.build(
