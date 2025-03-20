@@ -5,6 +5,9 @@ def JIRA_PROJECT_ID = 'TGR'
 def POM_PATH = 'pom.xml'
 def POM_PATH_SET_VERSION = 'tiger-bom/pom.xml'
 def REPO_URL = createGitUrl('git/Testtools/tiger/tiger')
+def TEST_RESULTS = "❌ FAILED"
+def CHANNEL_ID = "19:5e4a353b87974bfca7ac6ac55ad7358b@thread.tacv2"
+def GROUP_ID = "9c4c4366-476c-465d-8188-940f661574c3"
 
 pipeline {
     options {
@@ -73,6 +76,11 @@ pipeline {
         }
     }
     post {
+        success {
+             script {
+                TEST_RESULTS = "✅ SUCCESS"
+             }
+        }
         always {
             sendEMailNotification(getTigerEMailList())
             sh """
@@ -80,6 +88,7 @@ pipeline {
                 rm -rf target/junit-reports-nightly
             """
             showJUnitAsXUnitResult("**/target/*-reports*/TEST-*.xml")
+            teamsSendNotificationToChannel(CHANNEL_ID, GROUP_ID, ["facts": ["Result": "${TEST_RESULTS}"]] )
         }
     }
 }
