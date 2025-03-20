@@ -45,7 +45,7 @@
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-bom</artifactId>
-                <version>${tiger.version}</version>
+                <version>${version.tiger}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
