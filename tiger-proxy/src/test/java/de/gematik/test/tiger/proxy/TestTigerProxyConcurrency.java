@@ -89,15 +89,16 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
     AtomicBoolean allowMessageParsingToComplete = new AtomicBoolean(false);
 
     final RbelConverterPlugin blockConversionUntilCommunicationIsComplete =
-        (el, conv) -> {
-          log.info("Entering wait");
-          await()
-              .pollInterval(1, TimeUnit.MILLISECONDS)
-              .atMost(2, TimeUnit.SECONDS)
-              .until(messageWasReceivedInTheClient::get);
-          allowMessageParsingToComplete.set(true);
-          log.info("Exiting wait");
-        };
+        RbelConverterPlugin.createPlugin(
+            (el, conv) -> {
+              log.info("Entering wait");
+              await()
+                  .pollInterval(1, TimeUnit.MILLISECONDS)
+                  .atMost(2, TimeUnit.SECONDS)
+                  .until(messageWasReceivedInTheClient::get);
+              allowMessageParsingToComplete.set(true);
+              log.info("Exiting wait");
+            });
     tigerProxy
         .getRbelLogger()
         .getRbelConverter()
@@ -131,12 +132,15 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
     AtomicBoolean messageParsingHasStarted = new AtomicBoolean(false);
 
     final RbelConverterPlugin blockConversionUntilCommunicationIsComplete =
-        (el, conv) -> {
-          log.info("Entering wait with " + el.getRawStringContent());
-          messageParsingHasStarted.set(true);
-          await().atMost(20, TimeUnit.SECONDS).until(clientHasWaitedAndNotReceivedMessageYet::get);
-          log.info("Exiting wait");
-        };
+        RbelConverterPlugin.createPlugin(
+            (el, conv) -> {
+              log.info("Entering wait with " + el.getRawStringContent());
+              messageParsingHasStarted.set(true);
+              await()
+                  .atMost(20, TimeUnit.SECONDS)
+                  .until(clientHasWaitedAndNotReceivedMessageYet::get);
+              log.info("Exiting wait");
+            });
     tigerProxy
         .getRbelLogger()
         .getRbelConverter()
@@ -164,19 +168,20 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
     AtomicReference<ZonedDateTime> requestLatestTimestamp = new AtomicReference<>();
 
     final RbelConverterPlugin blockConversionUntilCommunicationIsComplete =
-        (el, conv) -> {
-          if (el.getRawStringContent().contains("HTTP/1.1 666 EVIL")) {
-            responseLatestTimestamp.set(ZonedDateTime.now());
-          } else {
-            requestLatestTimestamp.set(ZonedDateTime.now());
-          }
-          log.info("Entering wait");
-          await()
-              .pollInterval(1, TimeUnit.MILLISECONDS)
-              .atMost(2, TimeUnit.SECONDS)
-              .until(messageWasReceivedInTheClient::get);
-          log.info("Exiting wait");
-        };
+        RbelConverterPlugin.createPlugin(
+            (el, conv) -> {
+              if (el.getRawStringContent().contains("HTTP/1.1 666 EVIL")) {
+                responseLatestTimestamp.set(ZonedDateTime.now());
+              } else {
+                requestLatestTimestamp.set(ZonedDateTime.now());
+              }
+              log.info("Entering wait");
+              await()
+                  .pollInterval(1, TimeUnit.MILLISECONDS)
+                  .atMost(2, TimeUnit.SECONDS)
+                  .until(messageWasReceivedInTheClient::get);
+              log.info("Exiting wait");
+            });
     tigerProxy
         .getRbelLogger()
         .getRbelConverter()

@@ -12,10 +12,22 @@
 
 ## Features
 
+* TGR-1770: Tiger Test Lib: it is now possible to disable a specific RbelConverter during a test run. It only possible
+  to deactivate a parser that is specifically activated via the configuration.
+  See https://gematik.github.io/app-Tiger/Tiger-User-Manual.html#activaterbelparsing for the configurable parsers. The
+  following glue
+  code methods are available:
+
+```gherkin
+Given TGR the rbel parsing is deactivated for {string}
+
+Given TGR the rbel parsing is reactivated for all configured parsers
+```
+
 * TGR-1772: Dependency update
 * TGR-716: Tiger BOM: a tiger bill-of-materials submodule is introduced to ensure consistency in the dependency
   versions.
-  To make use of it in your project, add the following the dependency management section of your pom.xml and you don't
+  To use it in your project, add the following the dependency management section of your pom.xml, and you don't
   need
   to specify a version for the tiger artefacts that are referenced in the regular dependencies section.
 
@@ -45,7 +57,7 @@
 ## Bugfixes
 
 * TGR-1640: TigerGlobalConfiguration: Some minor bugfixes in handling the TigerConfigurationRbelObject. Fixes issues
-  with complicated RbelPathes when applied to configuration values
+  with complicated RbelPaths when applied to configuration values
 * TGR-1640: Zion: The field additionalCriterions in request is now only evaluated at runtime.
 * TGR-1784: TigerGlobalConfiguration. Substantial performance-boost when dealing with nested Byte-Arrays
 * TGR-1749: Tiger-Proxy: Fixed an issue where the Tiger-Proxy would lose any custom-added routes after a

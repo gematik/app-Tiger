@@ -39,7 +39,7 @@ import org.bouncycastle.util.encoders.Hex;
     onlyActivateFor = "epa-vau",
     dependsOn = {RbelVauEpaKeyDeriver.class})
 @Slf4j
-public class RbelVauEpaConverter implements RbelConverterPlugin {
+public class RbelVauEpaConverter extends RbelConverterPlugin {
 
   @Override
   public void consumeElement(RbelElement element, RbelConverter context) {

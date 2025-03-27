@@ -20,6 +20,7 @@ import static org.awaitility.Awaitility.await;
 
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
@@ -62,7 +63,7 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
         upstreamTigerProxy.getRbelLogger().getRbelConverter();
 
     upstreamRbelConverter.addLastPostConversionListener(
-        (el, conv) -> upstreamTigerProxy.triggerListener(el));
+        RbelConverterPlugin.createPlugin((el, conv) -> upstreamTigerProxy.triggerListener(el)));
     RbelFileReaderCapturer.builder()
         .rbelFile("src/test/resources/vauEpa2Flow.tgr")
         .rbelConverter(upstreamRbelConverter)

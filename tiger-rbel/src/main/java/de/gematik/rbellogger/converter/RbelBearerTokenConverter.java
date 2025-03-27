@@ -20,7 +20,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelBearerTokenFacet;
 import java.nio.charset.StandardCharsets;
 
-public class RbelBearerTokenConverter implements RbelConverterPlugin {
+public class RbelBearerTokenConverter extends RbelConverterPlugin {
   private static final byte[] BEARER_TOKEN_PREFIX = "Bearer ".getBytes(StandardCharsets.UTF_8);
 
   @Override

@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @ConverterInfo(onlyActivateFor = "pop3")
 @Slf4j
-public class RbelPop3ResponseConverter implements RbelConverterPlugin {
+public class RbelPop3ResponseConverter extends RbelConverterPlugin {
 
   private static final Pattern STAT_OR_LIST_HEADER =
       Pattern.compile("(?<count>\\d+) ((?<size>\\d+)|messages(:| \\((?<size2>\\d+) octets\\)))");

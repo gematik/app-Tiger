@@ -43,7 +43,7 @@ import org.apache.james.mime4j.stream.Field;
 
 @ConverterInfo(onlyActivateFor = "mime")
 @Slf4j
-public class RbelMimeConverter implements RbelConverterPlugin {
+public class RbelMimeConverter extends RbelConverterPlugin {
 
   private static final Pattern AUTHENTICATED_ENVELOPED_OR_SIGNED_DATA =
       Pattern.compile(

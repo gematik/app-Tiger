@@ -42,7 +42,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 @ConverterInfo(onlyActivateFor = "epa-vau")
 @Slf4j
-public class RbelVauEpaKeyDeriver implements RbelConverterPlugin {
+public class RbelVauEpaKeyDeriver extends RbelConverterPlugin {
 
   private static final String KEY_ID = "KeyID";
   private static final String AES_256_GCM_KEY = "AES-256-GCM-Key";

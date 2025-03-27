@@ -27,9 +27,10 @@ import org.junit.jupiter.api.Test;
 class TestRbelExceptionHandling {
 
   private static final RbelConverterPlugin EXCEPTION_PRODUCING_CONVERTER =
-      (rbelElement, converter) -> {
-        throw new RuntimeException("Test exception");
-      };
+      RbelConverterPlugin.createPlugin(
+          (rbelElement, converter) -> {
+            throw new RuntimeException("Test exception");
+          });
 
   @Test
   void throwExceptionDuringParsing_expectCorrectData() {
@@ -41,7 +42,9 @@ class TestRbelExceptionHandling {
         .extractFacet(RbelNoteFacet.class)
         .extracting("value")
         .asString()
-        .startsWith("Exception during conversion with plugin 'TestRbelExceptionHandling")
+        .startsWith(
+            "Exception during conversion with plugin"
+                + " 'de.gematik.rbellogger.converter.RbelConverterPlugin$1")
         .containsAnyOf("(java.lang.RuntimeException: Test exception)");
   }
 }

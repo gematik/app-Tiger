@@ -33,7 +33,7 @@ import org.bouncycastle.asn1.x509.Extension;
  */
 @Slf4j
 @ConverterInfo(onlyActivateFor = "OCSP")
-public abstract class AbstractX509Converter implements RbelConverterPlugin {
+public abstract class AbstractX509Converter extends RbelConverterPlugin {
 
   @SneakyThrows
   public RbelElement parseExtension(

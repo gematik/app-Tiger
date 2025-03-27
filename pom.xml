@@ -16,7 +16,7 @@
   ~
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -30,8 +30,7 @@
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
     <description>Tiger is a test platform. For more info check our project at GitHub
-        https://github.com/gematik/app-Tiger
-    </description>
+        https://github.com/gematik/app-Tiger</description>
 
     <url>https://github.com/gematik/app-Tiger</url>
 
@@ -56,21 +55,6 @@
             <organizationUrl>https://www.gematik.de/</organizationUrl>
         </developer>
     </developers>
-
-    <properties>
-        <asciidoctor.skip>true</asciidoctor.skip>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <sonar.coverage.jacoco.xmlReportPaths>
-            ${project.basedir}/../tiger-coverage/target/site/jacoco-aggregate/jacoco.xml
-        </sonar.coverage.jacoco.xmlReportPaths>
-        <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
-        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-        <sonar.language>java</sonar.language>
-        <yarnAuditAnalyzerEnabled>false</yarnAuditAnalyzerEnabled>
-        <skipSurefire>false</skipSurefire>
-        <mycila.license-maven-plugin.version>4.6</mycila.license-maven-plugin.version>
-    </properties>
 
     <modules>
         <!-- tiger-bom has explicitly no parent defined. It must stay here as the first entry of the modules list -->
@@ -100,6 +84,19 @@
         <system>GitHub</system>
         <url>https://github.com/gematik/app-Tiger/issues</url>
     </issueManagement>
+
+    <properties>
+        <asciidoctor.skip>true</asciidoctor.skip>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <mycila.license-maven-plugin.version>4.6</mycila.license-maven-plugin.version>
+        <skipSurefire>false</skipSurefire>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../tiger-coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.dynamicAnalysis>reuseReports</sonar.dynamicAnalysis>
+        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+        <sonar.language>java</sonar.language>
+        <yarnAuditAnalyzerEnabled>false</yarnAuditAnalyzerEnabled>
+    </properties>
 
     <dependencyManagement>
         <dependencies>
@@ -244,8 +241,7 @@
                         --add-opens java.base/java.lang=ALL-UNNAMED
                         --add-opens java.base/java.io=ALL-UNNAMED
                         --add-opens java.base/java.util=ALL-UNNAMED
-                        -Dfile.encoding=${project.build.sourceEncoding}
-                    </argLine>
+                        -Dfile.encoding=${project.build.sourceEncoding}</argLine>
                     <properties>
                         <property>
                             <name>listener</name>

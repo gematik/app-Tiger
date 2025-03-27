@@ -29,7 +29,7 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class RbelX5cKeyReader implements RbelConverterPlugin {
+public class RbelX5cKeyReader extends RbelConverterPlugin {
 
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {

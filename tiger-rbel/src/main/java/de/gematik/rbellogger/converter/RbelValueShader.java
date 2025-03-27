@@ -107,7 +107,7 @@ public class RbelValueShader {
   }
 
   public RbelConverterPlugin getPostConversionListener() {
-    return (element, converter) -> addNote(element);
+    return RbelConverterPlugin.createPlugin((element, converter) -> addNote(element));
   }
 
   @Builder

@@ -31,7 +31,7 @@ import org.bouncycastle.asn1.x509.X509Name;
 @Slf4j
 @SuppressWarnings("java:S1874")
 @ConverterInfo(onlyActivateFor = {"X500", "ASN1", "X509"})
-public class RbelX500Converter implements RbelConverterPlugin {
+public class RbelX500Converter extends RbelConverterPlugin {
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
     if (element.hasFacet(RbelAsn1Facet.class)) {

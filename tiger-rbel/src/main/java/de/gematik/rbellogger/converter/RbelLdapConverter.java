@@ -35,7 +35,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 
 @ConverterInfo(onlyActivateFor = "ldap")
 @Slf4j
-public class RbelLdapConverter implements RbelConverterPlugin {
+public class RbelLdapConverter extends RbelConverterPlugin {
 
   private final byte[] ldapMessagePrefix = {0x30};
 

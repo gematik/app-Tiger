@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.ProxyTransmissionHistory;
 import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
@@ -405,9 +406,10 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         .getRbelLogger()
         .getRbelConverter()
         .addConverter(
-            (e, c) -> {
-              reverseProxy2FinishedProcessing.join();
-            });
+            RbelConverterPlugin.createPlugin(
+                (e, c) -> {
+                  reverseProxy2FinishedProcessing.join();
+                }));
     ((TigerProxyServer) envMgr.getServers().get("reverseProxy2"))
         .getTigerProxy()
         .addRbelMessageListener(
@@ -595,15 +597,16 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         .getRbelLogger()
         .getRbelConverter()
         .addConverter(
-            (e, c) -> {
-              try {
-                if (e.hasFacet(RbelTcpIpMessageFacet.class)) {
-                  Thread.sleep(random.nextInt(0, maxDelay));
-                }
-              } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-              }
-            });
+            RbelConverterPlugin.createPlugin(
+                (e, c) -> {
+                  try {
+                    if (e.hasFacet(RbelTcpIpMessageFacet.class)) {
+                      Thread.sleep(random.nextInt(0, maxDelay));
+                    }
+                  } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                  }
+                }));
     final String path = "/anything/";
     @Cleanup final UnirestInstance unirestInstance = Unirest.spawnInstance();
 
@@ -685,17 +688,18 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         .getRbelLogger()
         .getRbelConverter()
         .addConverter(
-            (e, c) -> {
-              if (e.hasFacet(RbelHttpRequestFacet.class)) {
-                try {
-                  final int millis = random.nextInt(0, maxDelay);
-                  log.info("Delaying for {} ms", millis);
-                  Thread.sleep(millis);
-                } catch (InterruptedException ex) {
-                  throw new RuntimeException(ex);
-                }
-              }
-            });
+            RbelConverterPlugin.createPlugin(
+                (e, c) -> {
+                  if (e.hasFacet(RbelHttpRequestFacet.class)) {
+                    try {
+                      final int millis = random.nextInt(0, maxDelay);
+                      log.info("Delaying for {} ms", millis);
+                      Thread.sleep(millis);
+                    } catch (InterruptedException ex) {
+                      throw new RuntimeException(ex);
+                    }
+                  }
+                }));
     final String path = "/anything/";
     @Cleanup final UnirestInstance unirestInstance = Unirest.spawnInstance();
     unirestInstance

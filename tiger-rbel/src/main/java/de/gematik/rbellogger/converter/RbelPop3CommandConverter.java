@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @ConverterInfo(onlyActivateFor = "pop3")
 @Slf4j
-public class RbelPop3CommandConverter implements RbelConverterPlugin {
+public class RbelPop3CommandConverter extends RbelConverterPlugin {
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {

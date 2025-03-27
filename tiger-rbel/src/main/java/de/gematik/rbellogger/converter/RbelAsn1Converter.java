@@ -61,7 +61,7 @@ import org.bouncycastle.asn1.DERPrintableString;
 
 @ConverterInfo(onlyActivateFor = "asn1")
 @Slf4j
-public class RbelAsn1Converter implements RbelConverterPlugin {
+public class RbelAsn1Converter extends RbelConverterPlugin {
 
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter context) {

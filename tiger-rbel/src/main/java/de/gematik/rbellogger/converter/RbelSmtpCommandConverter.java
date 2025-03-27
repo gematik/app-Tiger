@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @ConverterInfo(onlyActivateFor = "smtp")
-public class RbelSmtpCommandConverter implements RbelConverterPlugin {
+public class RbelSmtpCommandConverter extends RbelConverterPlugin {
 
   public static final int MIN_SMTP_COMMAND_LINE_LENGTH = 6;
   private static final byte[] CRLF_DOT_CRLF_BYTES = EmailConversionUtils.CRLF_DOT_CRLF.getBytes();
@@ -116,15 +116,14 @@ public class RbelSmtpCommandConverter implements RbelConverterPlugin {
 
   private RbelElement buildSmtpBody(RbelSmtpCommand command, RbelElement element, String[] lines) {
     return switch (command) {
-      case AUTH ->
-          lines.length > 2
-              ? EmailConversionUtils.createChildElement(
-                  element,
-                  Arrays.stream(lines)
-                      .skip(1)
-                      .limit(lines.length - 2L)
-                      .collect(Collectors.joining(EmailConversionUtils.CRLF)))
-              : null;
+      case AUTH -> lines.length > 2
+          ? EmailConversionUtils.createChildElement(
+              element,
+              Arrays.stream(lines)
+                  .skip(1)
+                  .limit(lines.length - 2L)
+                  .collect(Collectors.joining(EmailConversionUtils.CRLF)))
+          : null;
       case DATA -> EmailConversionUtils.parseMailBody(element, lines);
       default -> null;
     };

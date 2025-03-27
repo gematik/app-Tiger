@@ -25,7 +25,7 @@ import java.util.Objects;
 import lombok.val;
 
 @ConverterInfo(addAutomatically = false)
-public class HttpPairingInBinaryChannelConverter implements RbelConverterPlugin {
+public class HttpPairingInBinaryChannelConverter extends RbelConverterPlugin {
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
     if (rbelElement.getParentNode() != null) {

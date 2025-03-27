@@ -79,11 +79,12 @@ public class VauEpaConverterTest {
             new RbelConfiguration()
                 .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
                 .addPostConversionListener(
-                    (rbelElement, converter) -> {
-                      if (rbelElement.hasFacet(RbelVauEpaFacet.class)) {
-                        rbelElement.addFacet(new TestFacet());
-                      }
-                    })
+                    RbelConverterPlugin.createPlugin(
+                        (rbelElement, converter) -> {
+                          if (rbelElement.hasFacet(RbelVauEpaFacet.class)) {
+                            rbelElement.addFacet(new TestFacet());
+                          }
+                        }))
                 .activateConversionFor("epa-vau")
                 .addCapturer(
                     RbelFileReaderCapturer.builder()

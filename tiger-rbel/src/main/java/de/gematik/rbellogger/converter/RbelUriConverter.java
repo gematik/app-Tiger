@@ -31,7 +31,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
-public class RbelUriConverter implements RbelConverterPlugin {
+public class RbelUriConverter extends RbelConverterPlugin {
 
   public List<RbelElement> extractParameterMap(
       final URI uri, final RbelConverter context, String originalContent, RbelElement parentNode) {

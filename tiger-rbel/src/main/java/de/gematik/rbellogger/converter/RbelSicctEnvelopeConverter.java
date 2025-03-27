@@ -25,7 +25,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 @ConverterInfo(onlyActivateFor = "sicct")
 @Slf4j
-public class RbelSicctEnvelopeConverter implements RbelConverterPlugin {
+public class RbelSicctEnvelopeConverter extends RbelConverterPlugin {
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {

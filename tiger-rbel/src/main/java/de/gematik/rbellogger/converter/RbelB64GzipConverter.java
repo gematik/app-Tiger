@@ -26,7 +26,7 @@ import lombok.val;
 
 @ConverterInfo(onlyActivateFor = "b64gzip")
 @Slf4j
-public class RbelB64GzipConverter implements RbelConverterPlugin {
+public class RbelB64GzipConverter extends RbelConverterPlugin {
 
   // base 64 encoded gzip prefix
   private final byte[] b64GzipPrefix = "H4s".getBytes();

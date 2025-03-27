@@ -16,7 +16,6 @@
 
 package de.gematik.rbellogger.data.smtp;
 
-
 public enum RbelSmtpCommand {
   HELO,
   EHLO,

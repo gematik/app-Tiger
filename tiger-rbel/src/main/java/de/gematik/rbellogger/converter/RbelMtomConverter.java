@@ -35,7 +35,7 @@ import org.dom4j.*;
 
 @ConverterInfo(dependsOn = {RbelXmlConverter.class})
 @Slf4j
-public class RbelMtomConverter implements RbelConverterPlugin {
+public class RbelMtomConverter extends RbelConverterPlugin {
 
   public static final String CONTENT_ID = "Content-ID";
   private static final byte[] DOUBLE_DASH = "--".getBytes();

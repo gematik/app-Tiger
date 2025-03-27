@@ -26,7 +26,7 @@ import lombok.val;
 
 @ConverterInfo()
 @Slf4j
-public class RbelTigerProxyExceptionConverter implements RbelConverterPlugin {
+public class RbelTigerProxyExceptionConverter extends RbelConverterPlugin {
 
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {

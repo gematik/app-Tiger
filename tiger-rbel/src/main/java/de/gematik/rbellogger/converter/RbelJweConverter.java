@@ -31,7 +31,7 @@ import org.jose4j.lang.JoseException;
 
 @Slf4j
 @ConverterInfo(dependsOn = {RbelBase64JsonConverter.class})
-public class RbelJweConverter implements RbelConverterPlugin {
+public class RbelJweConverter extends RbelConverterPlugin {
 
   public static final int MAX_JWE_DOT_SEPARATOR_COUNT = 4;
 

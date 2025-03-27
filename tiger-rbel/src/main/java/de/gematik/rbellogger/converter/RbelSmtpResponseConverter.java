@@ -34,7 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
 @ConverterInfo(onlyActivateFor = "smtp")
-public class RbelSmtpResponseConverter implements RbelConverterPlugin {
+public class RbelSmtpResponseConverter extends RbelConverterPlugin {
 
   public static final Pattern SMTP_RESPONSE =
       Pattern.compile("\\d{3}([ -].*|\r\n)", Pattern.DOTALL);

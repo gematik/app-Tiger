@@ -89,6 +89,7 @@ public class RbelConverterInitializer {
           .newInstance(rbelConfiguration);
     } catch (NoSuchMethodException e) {
       try {
+
         return converterClass.getDeclaredConstructor().newInstance();
       } catch (Exception innerException) {
         throw new RbelInitializationException(
@@ -154,6 +155,7 @@ public class RbelConverterInitializer {
     Reflections reflections = new Reflections("de.gematik");
     reflections.getSubTypesOf(RbelConverterPlugin.class).stream()
         .filter(c -> !initialList.contains(c))
+        .filter(c -> !c.isAnonymousClass())
         .forEach(initialList::add);
     return initialList;
   }

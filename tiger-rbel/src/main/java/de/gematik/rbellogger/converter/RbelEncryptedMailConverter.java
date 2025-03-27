@@ -27,7 +27,7 @@ import lombok.SneakyThrows;
 import org.bouncycastle.cms.CMSException;
 
 @ConverterInfo(onlyActivateFor = "mime")
-public class RbelEncryptedMailConverter implements RbelConverterPlugin {
+public class RbelEncryptedMailConverter extends RbelConverterPlugin {
 
   @Override
   @SneakyThrows
