@@ -114,6 +114,7 @@ Given TGR the rbel parsing is reactivated for all configured parsers
 * TGR-1766: Rbel: Fixed parent-elements in POP3 Headers and XML Processing Instructions
 * TGR-1760: Tiger Global Configuration: reading a boolean out of the configuration will now resolve placeholders before
   parsing the resulting string into a boolean.
+* TGR-1764: Assure message pairing for HTTP requests and responses so that waiting for pairing does not block test steps
 
 # Release 3.6.1
 
