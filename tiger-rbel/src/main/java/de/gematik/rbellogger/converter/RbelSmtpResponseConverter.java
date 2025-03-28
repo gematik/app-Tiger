@@ -26,6 +26,7 @@ import de.gematik.rbellogger.data.facet.RbelSmtpCommandFacet;
 import de.gematik.rbellogger.data.facet.RbelSmtpResponseFacet;
 import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
 import de.gematik.rbellogger.util.EmailConversionUtils;
+import de.gematik.rbellogger.util.RbelContent;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -67,22 +68,23 @@ public class RbelSmtpResponseConverter extends RbelConverterPlugin {
   }
 
   private Optional<RbelSmtpResponseFacet> buildSmtpResponseFacet(RbelElement element) {
-    return Optional.ofNullable(element.getRawContent())
-        .filter(c -> c.length > MIN_SMTP_RESPONSE_LENGTH)
+    return Optional.ofNullable(element.getContent())
+        .filter(c -> c.size() > MIN_SMTP_RESPONSE_LENGTH)
         .filter(EmailConversionUtils::endsWithCrLf)
         .filter(this::startsWithResponseCode)
+        .map(RbelContent::toByteArray)
         .map(c -> new String(c, StandardCharsets.UTF_8))
         .filter(s -> SMTP_RESPONSE.matcher(s).matches())
         .flatMap(s -> parseSmtpResponse(element, s));
   }
 
-  private boolean startsWithResponseCode(byte[] content) {
-    if (!(Character.isDigit(content[0])
-        && Character.isDigit(content[1])
-        && Character.isDigit(content[2]))) {
+  private boolean startsWithResponseCode(RbelContent content) {
+    if (!(Character.isDigit(content.get(0))
+        && Character.isDigit(content.get(1))
+        && Character.isDigit(content.get(2)))) {
       return false;
     }
-    int c = content[3];
+    int c = content.get(3);
     return c == ' ' || c == '\r' || c == '-';
   }
 
