@@ -49,9 +49,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.*;
-import kong.unirest.Config;
-import kong.unirest.Unirest;
-import kong.unirest.UnirestInstance;
+import kong.unirest.core.Config;
+import kong.unirest.core.Unirest;
+import kong.unirest.core.UnirestInstance;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
@@ -69,13 +69,13 @@ public abstract class AbstractTigerProxyTest {
   public static boolean unirestInitialized = false;
   public static final UnirestInstance unirestInstance =
       new UnirestInstance(
-          new Config().connectTimeout(5 * 1000).socketTimeout(5 * 1000).automaticRetries(false));
+          new Config().connectTimeout(5 * 1000).requestTimeout(5 * 1000).retryAfter(false));
 
   static {
     synchronized (AbstractTigerProxyTest.class) {
-      if (!unirestInitialized && !Unirest.isRunning()) {
+      if (!unirestInitialized && !Unirest.config().isRunning()) {
         Unirest.config().reset();
-        Unirest.config().connectTimeout(1000).socketTimeout(1000).automaticRetries(false);
+        Unirest.config().connectTimeout(5 * 1000).requestTimeout(5 * 1000).retryAfter(false);
         unirestInitialized = true;
       }
     }
@@ -233,8 +233,8 @@ public abstract class AbstractTigerProxyTest {
                 .proxy("localhost", tigerProxy.getProxyPort())
                 .sslContext(tigerProxy.buildSslContext())
                 .connectTimeout(5 * 1000)
-                .socketTimeout(5 * 1000)
-                .automaticRetries(false));
+                .requestTimeout(5 * 1000)
+                .retryAfter(false));
 
     log.info(
         "WIRESHARK filter | | (http or tls) && (tcp.port in { {} {} {} })",
@@ -244,12 +244,16 @@ public abstract class AbstractTigerProxyTest {
   }
 
   public void awaitMessagesInTiger(int numberOfMessagesExpected) {
+    awaitMessagesInTigerProxy(tigerProxy, numberOfMessagesExpected);
+  }
+
+  public void awaitMessagesInTigerProxy(TigerProxy proxyToCheck, int numberOfMessagesExpected) {
     await()
         .atMost(5, TimeUnit.SECONDS)
         .until(
             () -> {
-              tigerProxy.waitForAllCurrentMessagesToBeParsed();
-              return tigerProxy.getRbelLogger().getMessageHistory().stream()
+              proxyToCheck.waitForAllCurrentMessagesToBeParsed();
+              return proxyToCheck.getRbelLogger().getMessageHistory().stream()
                       .filter(el -> !el.hasFacet(RbelParsingNotCompleteFacet.class))
                       .count()
                   >= numberOfMessagesExpected;

@@ -33,12 +33,20 @@
     <dependencies>
         <dependency>
             <groupId>com.konghq</groupId>
-            <artifactId>unirest-java</artifactId>
+            <artifactId>unirest-java-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.konghq</groupId>
+            <artifactId>unirest-modules-jackson</artifactId>
         </dependency>
         <!-- tiger -->
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-testenv-mgr</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
         </dependency>
         <!-- spring -->
         <dependency>

@@ -25,10 +25,9 @@ import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.zion.config.ZionConfiguration;
 import java.nio.charset.Charset;
-import kong.unirest.HttpResponse;
-import kong.unirest.JsonNode;
-import kong.unirest.Unirest;
-import kong.unirest.UnirestInstance;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.JsonNode;
+import kong.unirest.core.UnirestInstance;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -645,17 +644,19 @@ servers:
                   externalJarOptions:
                     arguments:
                       - --server.port=${free.port.20}
-                      - --spring.profiles.active=backendServer
+                      - --spring.profiles.active=backendserver
                     workingDir: src/test/resources
                   source:
                     - local:../../../target/tiger-zion-*-executable.jar
                       """)
   @Test
-  void testMultipleZionServerWithProfiles() {
+  void testMultipleZionServerWithProfiles(UnirestInstance unirestInstance) {
     final HttpResponse<JsonNode> response =
-        Unirest.get(
+        unirestInstance
+            .get(
                 TigerGlobalConfiguration.resolvePlaceholders(
                     "http://localhost:${free.port.30}/helloWorld"))
+            .header("password", "secret")
             .asJson();
 
     assertThat(response.getStatus()).isEqualTo(200);

@@ -31,7 +31,7 @@
     <dependencies>
         <dependency>
             <groupId>com.konghq</groupId>
-            <artifactId>unirest-java</artifactId>
+            <artifactId>unirest-java-core</artifactId>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
@@ -126,7 +126,7 @@
         </dependency>
         <dependency>
             <groupId>com.konghq</groupId>
-            <artifactId>unirest-objectmapper-jackson</artifactId>
+            <artifactId>unirest-modules-jackson</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

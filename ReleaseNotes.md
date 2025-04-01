@@ -12,6 +12,7 @@
 
 ## Features
 
+* TGR-1790: update unirest to version 4.4.5.
 * TGR-1799: Serenity report JSON files are now copied to a backup folder "unresolvedReports" before
   replacing tiger resolvable parameters, to allow the tiger testsuite validator to still check for
   equalness of steps in Titus.

@@ -59,7 +59,7 @@ pipeline {
             }
             steps {
                 withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                    mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -P=NoLongrunner,dev")
+                    mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -P=NoLongrunner,dev -Djdk.httpclient.allowRestrictedHeaders=host")
                 }
             }
         }

@@ -31,7 +31,7 @@ import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
-import kong.unirest.UnirestInstance;
+import kong.unirest.core.UnirestInstance;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;

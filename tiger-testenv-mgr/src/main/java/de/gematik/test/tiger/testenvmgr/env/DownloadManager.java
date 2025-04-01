@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import kong.unirest.Unirest;
+import kong.unirest.core.Unirest;
 import lombok.Builder;
 import lombok.Data;
 import lombok.SneakyThrows;

@@ -38,6 +38,7 @@ import io.restassured.RestAssured;
 import io.restassured.config.SSLConfig;
 import io.restassured.response.Response;
 import java.io.*;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Proxy.Type;
@@ -54,29 +55,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.net.ssl.*;
-import kong.unirest.*;
-import kong.unirest.apache.ApacheClient;
+import kong.unirest.core.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpHost;
+import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.TrustAllStrategy;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.ssl.SSLContexts;
-import org.assertj.core.api.InstanceOfAssertFactories;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.DefaultTlsClient;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsCredentials;
+import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -98,7 +96,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             .tls(TigerTlsConfiguration.builder().domainName("muahaha").build())
             .build());
 
-    AtomicBoolean verifyWasCalledSuccesfully = new AtomicBoolean(false);
+    AtomicBoolean verifyWasCalledSuccessfully = new AtomicBoolean(false);
     SSLContext ctx = SSLContext.getInstance("TLSv1.2");
     ctx.init(
         null,
@@ -107,8 +105,8 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             public void checkClientTrusted(X509Certificate[] chain, String authType) {}
 
             public void checkServerTrusted(X509Certificate[] chain, String authType) {
-              assertThat(chain[0].getSubjectDN().getName()).contains("muahaha");
-              verifyWasCalledSuccesfully.set(true);
+              assertThat(chain[0].getSubjectX500Principal().getName()).contains("muahaha");
+              verifyWasCalledSuccessfully.set(true);
             }
 
             public X509Certificate[] getAcceptedIssuers() {
@@ -120,7 +118,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     try (final UnirestInstance unirestInstance =
         new UnirestInstance(new Config().sslContext(ctx))) {
       unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
-      assertThat(verifyWasCalledSuccesfully).isTrue();
+      assertThat(verifyWasCalledSuccessfully).isTrue();
     }
   }
 
@@ -163,32 +161,33 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
     AtomicInteger callCounter = new AtomicInteger(0);
 
-    final UnirestInstance unirestInstance = Unirest.spawnInstance();
-    unirestInstance.config().verifySsl(true);
-    unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
-    SSLContext ctx = SSLContext.getInstance("TLSv1.2");
-    ctx.init(
-        null,
-        new TrustManager[] {
-          new X509TrustManager() {
-            public void checkClientTrusted(X509Certificate[] chain, String authType) {}
+    try (final UnirestInstance unirestInstance = Unirest.spawnInstance()) {
+      unirestInstance.config().verifySsl(true);
+      unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
+      SSLContext ctx = SSLContext.getInstance("TLSv1.2");
+      ctx.init(
+          null,
+          new TrustManager[] {
+            new X509TrustManager() {
+              public void checkClientTrusted(X509Certificate[] chain, String authType) {}
 
-            public void checkServerTrusted(X509Certificate[] chain, String authType) {
-              assertThat(chain).hasSize(3);
-              callCounter.incrementAndGet();
+              public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                assertThat(chain).hasSize(3);
+                callCounter.incrementAndGet();
+              }
+
+              public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[0];
+              }
             }
+          },
+          new SecureRandom());
+      unirestInstance.config().sslContext(ctx);
 
-            public X509Certificate[] getAcceptedIssuers() {
-              return new X509Certificate[0];
-            }
-          }
-        },
-        new SecureRandom());
-    unirestInstance.config().sslContext(ctx);
+      unirestInstance.get("https://authn.aktor.epa.telematik-test/foobar").asString();
 
-    unirestInstance.get("https://authn.aktor.epa.telematik-test/foobar").asString();
-
-    await().atMost(2, TimeUnit.SECONDS).until(() -> callCounter.get() > 0);
+      await().atMost(2, TimeUnit.SECONDS).until(() -> callCounter.get() > 0);
+    }
   }
 
   @SneakyThrows
@@ -311,7 +310,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     final TigerConfigurationPkiIdentity clientIdentity =
         new TigerConfigurationPkiIdentity("src/test/resources/rsa.p12;00");
 
-    TigerProxy secondProxy =
+    try (TigerProxy secondProxy =
         new TigerProxy(
             TigerProxyConfiguration.builder()
                 .activateRbelParsingFor(List.of("X509"))
@@ -322,30 +321,31 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                             .to("http://localhost:" + fakeBackendServerPort)
                             .build()))
                 .name("secondProxy")
-                .build());
+                .build())) {
 
-    spawnTigerProxyWith(
-        TigerProxyConfiguration.builder()
-            .proxyRoutes(
-                List.of(
-                    TigerConfigurationRoute.builder()
-                        .from("http://backend")
-                        .to("https://localhost:" + secondProxy.getProxyPort())
-                        .build()))
-            .tls(TigerTlsConfiguration.builder().forwardMutualTlsIdentity(clientIdentity).build())
-            .build());
+      spawnTigerProxyWith(
+          TigerProxyConfiguration.builder()
+              .proxyRoutes(
+                  List.of(
+                      TigerConfigurationRoute.builder()
+                          .from("http://backend")
+                          .to("https://localhost:" + secondProxy.getProxyPort())
+                          .build()))
+              .tls(TigerTlsConfiguration.builder().forwardMutualTlsIdentity(clientIdentity).build())
+              .build());
 
-    final HttpResponse<String> response = proxyRest.get("http://backend/foobar").asString();
-    awaitMessagesInTiger(2);
+      final HttpResponse<String> response = proxyRest.get("http://backend/foobar").asString();
+      awaitMessagesInTigerProxy(secondProxy, 2);
 
-    assertThat(response.getStatus()).isEqualTo(666);
+      assertThat(response.getStatus()).isEqualTo(666);
 
-    RbelElementAssertion.assertThat(secondProxy.getRbelMessagesList().get(0))
-        .extractChildWithPath("$.clientTlsCertificateChain.0.subject")
-        .valueAsString()
-        .get()
-        .usingComparator((s1, s2) -> splitDn(s1).containsAll(splitDn(s2)) ? 0 : 1)
-        .isEqualTo(clientIdentity.getCertificate().getSubjectDN().getName());
+      RbelElementAssertion.assertThat(secondProxy.getRbelMessagesList().get(0))
+          .extractChildWithPath("$.clientTlsCertificateChain.0.subject")
+          .valueAsString()
+          .get()
+          .usingComparator((s1, s2) -> splitDn(s1).containsAll(splitDn(s2)) ? 0 : 1)
+          .isEqualTo(clientIdentity.getCertificate().getSubjectX500Principal().getName());
+    }
   }
 
   @NotNull
@@ -360,6 +360,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     "'TLSv1', 'TLSv1.2', false, TLSv1",
     "'TLSv1.3', 'TLSv1.3', true, TLSv1.3"
   })
+  @SneakyThrows
   void serverSslVersion_shouldBeHonored(
       String clientTlsVersion,
       String serverTlsVersion,
@@ -373,22 +374,20 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                     .build())
             .build());
 
-    try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
-      SSLConnectionSocketFactory sslSocketFactory =
-          new SSLConnectionSocketFactory(
-              tigerProxy.getConfiguredTigerProxySslContext(),
-              clientTlsVersion.split(","),
-              null,
-              (hostname, session) -> {
-                assertThat(session.getProtocol()).isEqualTo(assertVersionUsed);
-                return true;
-              });
-      var httpClient = HttpClients.custom().setSSLSocketFactory(sslSocketFactory).build();
-      unirestInstance.config().httpClient(ApacheClient.builder(httpClient));
-      final GetRequest request =
-          unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar");
+    SSLConnectionSocketFactory sslSocketFactory =
+        new SSLConnectionSocketFactory(
+            tigerProxy.getConfiguredTigerProxySslContext(),
+            clientTlsVersion.split(","),
+            null,
+            (hostname, session) -> {
+              assertThat(session.getProtocol()).isEqualTo(assertVersionUsed);
+              return true;
+            });
+    try (var httpClient = HttpClients.custom().setSSLSocketFactory(sslSocketFactory).build()) {
+      var request =
+          RequestBuilder.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").build();
       if (shouldConnect) {
-        request.asString();
+        httpClient.execute(request);
         tigerProxy.waitForAllCurrentMessagesToBeParsed();
         assertThat(tigerProxy.getRbelMessagesList().get(0))
             .hasFacet(TlsFacet.class)
@@ -399,44 +398,46 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             .extractChildWithPath("$.tlsVersion")
             .hasStringContentEqualTo(assertVersionUsed);
       } else {
-        assertThatThrownBy(request::asString).hasCauseInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> httpClient.execute(request))
+            .isInstanceOf(IllegalStateException.class);
       }
     }
   }
 
-  @Test
-  @Disabled("Waiting for the next mockserver release (>5.15.0)")
-  void extractSubjectDnFromClientCertificate_saveInTigerProxy() throws Exception {
-    spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration.builder().build());
+  // @Test
+  // @Disabled("Waiting for the next mockserver release (>5.15.0)")
+  // void extractSubjectDnFromClientCertificate_saveInTigerProxy() throws Exception {
+  //  spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration.builder().build());
 
-    try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
-      unirestInstance.config().httpClient(loadSslContextForClientCert());
-      unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
-    }
-    awaitMessagesInTiger(2);
+  //  try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
+  //    unirestInstance.config().httpClient(loadSslContextForClientCert());
+  //    unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() +
+  // "/foobar").asString();
+  //  }
+  //  awaitMessagesInTiger(2);
 
-    assertThat(tigerProxy.getRbelMessagesList().get(0))
-        .extractChildWithPath("$.clientTlsCertificateChain.0.subject")
-        .valueAsString()
-        .get(InstanceOfAssertFactories.STRING)
-        .contains("CN=mailuser-rsa1");
-  }
+  //  assertThat(tigerProxy.getRbelMessagesList().get(0))
+  //      .extractChildWithPath("$.clientTlsCertificateChain.0.subject")
+  //      .valueAsString()
+  //      .get(InstanceOfAssertFactories.STRING)
+  //      .contains("CN=mailuser-rsa1");
+  // }
 
-  private CloseableHttpClient loadSslContextForClientCert() throws Exception {
-    KeyStore trustStore = KeyStore.getInstance("PKCS12");
+  // private CloseableHttpClient loadSslContextForClientCert() throws Exception {
+  //  KeyStore trustStore = KeyStore.getInstance("PKCS12");
 
-    try (FileInputStream instream = new FileInputStream("src/test/resources/mailuser-rsa1.p12")) {
-      trustStore.load(instream, "00".toCharArray());
-    }
+  //  try (FileInputStream instream = new FileInputStream("src/test/resources/mailuser-rsa1.p12")) {
+  //    trustStore.load(instream, "00".toCharArray());
+  //  }
 
-    final SSLContext sslContext =
-        SSLContexts.custom()
-            .loadTrustMaterial(trustStore, new TrustAllStrategy())
-            .loadKeyMaterial(trustStore, "00".toCharArray(), (aliases, socket) -> "alias")
-            .build();
+  //  final SSLContext sslContext =
+  //      SSLContexts.custom()
+  //          .loadTrustMaterial(trustStore, new TrustAllStrategy())
+  //          .loadKeyMaterial(trustStore, "00".toCharArray(), (aliases, socket) -> "alias")
+  //          .build();
 
-    return HttpClients.custom().setSSLContext(sslContext).build();
-  }
+  //  return HttpClients.custom().setSSLContext(sslContext).build();
+  // }
 
   @Test
   void perRouteCertificate_shouldBePresentedOnlyForThisRoute() throws UnirestException {
@@ -459,25 +460,26 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                         .build()))
             .build());
 
-    final UnirestInstance unirestInstance =
+    try (final UnirestInstance unirestInstance =
         new UnirestInstance(
             new Config()
                 .proxy("localhost", tigerProxy.getProxyPort())
                 .verifySsl(true)
-                .sslContext(buildSslContextTrustingOnly(serverIdentity)));
+                .sslContext(buildSslContextTrustingOnly(serverIdentity)))) {
 
-    assertThat(
-            unirestInstance
-                .get("https://authn.aktor.epa.telematik-test/foobar")
-                .asString()
-                .getStatus())
-        .isEqualTo(666);
+      assertThat(
+              unirestInstance
+                  .get("https://authn.aktor.epa.telematik-test/foobar")
+                  .asString()
+                  .getStatus())
+          .isEqualTo(666);
 
-    assertThatThrownBy(() -> unirestInstance.get("https://falsche-url/foobar").asString())
-        .hasCauseInstanceOf(SSLPeerUnverifiedException.class)
-        .hasMessageContaining(
-            "Certificate for <falsche-url> doesn't match any of the subject alternative names:"
-                + " [authn.aktor.epa.telematik-test]");
+      assertThatThrownBy(() -> unirestInstance.get("https://falsche-url/foobar").asString())
+          .rootCause()
+          .isInstanceOf(CertificateException.class)
+          .hasMessageContaining(
+              "No subject alternative name found matching domain name falsche-url");
+    }
   }
 
   @ParameterizedTest
@@ -493,24 +495,24 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             .build());
 
     SSLContext ctx = tigerProxy.buildSslContext();
-    new UnirestInstance(new Config().sslContext(ctx))
-        .get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar")
-        .asString();
+    try (var unirestInstance = new UnirestInstance(new Config().sslContext(ctx))) {
+      unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
-    tigerProxy.waitForAllCurrentMessagesToBeParsed();
-    assertThat(tigerProxy.getRbelMessagesList().get(0))
-        .hasFacet(TlsFacet.class)
-        .extractChildWithPath("$.cipherSuite")
-        .hasStringContentEqualTo(configuredSslSuite);
-    assertThat(tigerProxy.getRbelMessagesList().get(1))
-        .hasFacet(TlsFacet.class)
-        .extractChildWithPath("$.cipherSuite")
-        .hasStringContentEqualTo(configuredSslSuite);
-    assertThat(
-            ctx.getClientSessionContext()
-                .getSession(ctx.getClientSessionContext().getIds().nextElement())
-                .getCipherSuite())
-        .isEqualTo(configuredSslSuite);
+      tigerProxy.waitForAllCurrentMessagesToBeParsed();
+      assertThat(tigerProxy.getRbelMessagesList().get(0))
+          .hasFacet(TlsFacet.class)
+          .extractChildWithPath("$.cipherSuite")
+          .hasStringContentEqualTo(configuredSslSuite);
+      assertThat(tigerProxy.getRbelMessagesList().get(1))
+          .hasFacet(TlsFacet.class)
+          .extractChildWithPath("$.cipherSuite")
+          .hasStringContentEqualTo(configuredSslSuite);
+      assertThat(
+              ctx.getClientSessionContext()
+                  .getSession(ctx.getClientSessionContext().getIds().nextElement())
+                  .getCipherSuite())
+          .isEqualTo(configuredSslSuite);
+    }
   }
 
   @Test
@@ -548,15 +550,16 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   void autoconfigureSslContextUnirest_shouldTrustTigerProxy() {
     spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration.builder().build());
 
-    var restInstanceWithSslContextConfigured = Unirest.spawnInstance();
-    restInstanceWithSslContextConfigured.config().proxy("localhost", tigerProxy.getProxyPort());
-    restInstanceWithSslContextConfigured.config().sslContext(tigerProxy.buildSslContext());
+    try (var restInstanceWithSslContextConfigured = Unirest.spawnInstance()) {
+      restInstanceWithSslContextConfigured.config().proxy("localhost", tigerProxy.getProxyPort());
+      restInstanceWithSslContextConfigured.config().sslContext(tigerProxy.buildSslContext());
 
-    final HttpResponse<JsonNode> response =
-        restInstanceWithSslContextConfigured.get("https://backend/foobar").asJson();
+      final HttpResponse<JsonNode> response =
+          restInstanceWithSslContextConfigured.get("https://backend/foobar").asJson();
 
-    assertThat(response.getStatus()).isEqualTo(666);
-    assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
+      assertThat(response.getStatus()).isEqualTo(666);
+      assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
+    }
   }
 
   @Test
@@ -565,15 +568,16 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
             () -> {
               spawnTigerProxyWithDefaultRoutesAndWith(TigerProxyConfiguration.builder().build());
 
-              var restInstanceWithoutSslContextConfigured = Unirest.spawnInstance();
-              final SSLContext instance =
-                  SSLContext.getInstance("TLSv1.2", new BouncyCastleJsseProvider());
-              instance.init(null, null, null);
-              restInstanceWithoutSslContextConfigured
-                  .config()
-                  .sslContext(instance)
-                  .proxy("localhost", tigerProxy.getProxyPort());
-              restInstanceWithoutSslContextConfigured.get("https://backend/foobar").asJson();
+              try (var restInstanceWithoutSslContextConfigured = Unirest.spawnInstance()) {
+                final SSLContext instance =
+                    SSLContext.getInstance("TLSv1.2", new BouncyCastleJsseProvider());
+                instance.init(null, null, null);
+                restInstanceWithoutSslContextConfigured
+                    .config()
+                    .sslContext(instance)
+                    .proxy("localhost", tigerProxy.getProxyPort());
+                restInstanceWithoutSslContextConfigured.get("https://backend/foobar").asJson();
+              }
             })
         .hasRootCauseInstanceOf(CertPathBuilderException.class);
   }
@@ -593,9 +597,11 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
     Request request = new Request.Builder().url("http://backend/foobar").build();
 
-    okhttp3.Response response = client.newCall(request).execute();
+    try (okhttp3.Response response = client.newCall(request).execute()) {
 
-    assertThat(response.code()).isEqualTo(666);
+      assertThat(response.code()).isEqualTo(666);
+    }
+    ;
   }
 
   @Test
@@ -617,39 +623,41 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     AtomicInteger checkCounter = new AtomicInteger(0);
-    final UnirestInstance unirestInstance = Unirest.spawnInstance();
-    unirestInstance.config().verifySsl(true);
-    SSLContext ctx = SSLContext.getInstance("TLSv1.2");
-    ctx.init(
-        null,
-        new TrustManager[] {
-          new X509TrustManager() {
-            public void checkClientTrusted(X509Certificate[] chain, String authType) {}
+    try (final UnirestInstance unirestInstance = Unirest.spawnInstance()) {
+      unirestInstance.config().verifySsl(true);
+      SSLContext ctx = SSLContext.getInstance("TLSv1.2");
+      ctx.init(
+          null,
+          new TrustManager[] {
+            new X509TrustManager() {
+              public void checkClientTrusted(X509Certificate[] chain, String authType) {}
 
-            public void checkServerTrusted(X509Certificate[] chain, String authType) {
-              Arrays.stream(chain)
-                  .forEach(
-                      cert -> {
-                        try {
-                          cert.checkValidity(
-                              Date.from(ZonedDateTime.now().plusYears(1).toInstant()));
-                          checkCounter.incrementAndGet();
-                        } catch (CertificateExpiredException | CertificateNotYetValidException e) {
-                          throw new RuntimeException(e);
-                        }
-                      });
+              public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                Arrays.stream(chain)
+                    .forEach(
+                        cert -> {
+                          try {
+                            cert.checkValidity(
+                                Date.from(ZonedDateTime.now().plusYears(1).toInstant()));
+                            checkCounter.incrementAndGet();
+                          } catch (CertificateExpiredException
+                              | CertificateNotYetValidException e) {
+                            throw new RuntimeException(e);
+                          }
+                        });
+              }
+
+              public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[0];
+              }
             }
+          },
+          new SecureRandom());
+      unirestInstance.config().sslContext(ctx);
+      unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
-            public X509Certificate[] getAcceptedIssuers() {
-              return new X509Certificate[0];
-            }
-          }
-        },
-        new SecureRandom());
-    unirestInstance.config().sslContext(ctx);
-    unirestInstance.get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
-
-    assertThat(checkCounter).hasValueGreaterThanOrEqualTo(1);
+      assertThat(checkCounter).hasValueGreaterThanOrEqualTo(1);
+    }
   }
 
   @Test
@@ -669,16 +677,17 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
     var request = proxyRest.get("https://backend/foobar");
     // should use new certificate
     assertThatThrownBy(request::asJson).isInstanceOf(RuntimeException.class);
-    var newRestClient = Unirest.spawnInstance();
-    newRestClient
-        .config()
-        .proxy("localhost", tigerProxy.getProxyPort())
-        .sslContext(tigerProxy.buildSslContext());
+    try (var newRestClient = Unirest.spawnInstance()) {
+      newRestClient
+          .config()
+          .proxy("localhost", tigerProxy.getProxyPort())
+          .sslContext(tigerProxy.buildSslContext());
 
-    final HttpResponse<JsonNode> response = newRestClient.get("https://backend/foobar").asJson();
+      final HttpResponse<JsonNode> response = newRestClient.get("https://backend/foobar").asJson();
 
-    assertThat(response.getStatus()).isEqualTo(666);
-    assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
+      assertThat(response.getStatus()).isEqualTo(666);
+      assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
+    }
   }
 
   @Test
@@ -695,11 +704,12 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         .getTigerProxyConfiguration()
         .setTls(TigerTlsConfiguration.builder().forwardMutualTlsIdentity(clientIdentity).build());
     tigerProxy.restartMockserver();
-    var ownRestClient = Unirest.spawnInstance();
-    ownRestClient.config().proxy("localhost", tigerProxy.getProxyPort()).sslContext(sslContext);
+    try (var ownRestClient = Unirest.spawnInstance()) {
+      ownRestClient.config().proxy("localhost", tigerProxy.getProxyPort()).sslContext(sslContext);
 
-    final HttpResponse<JsonNode> response = ownRestClient.get("http://backend/foobar").asJson();
-    assertThat(response.getStatus()).isEqualTo(666);
+      final HttpResponse<JsonNode> response = ownRestClient.get("http://backend/foobar").asJson();
+      assertThat(response.getStatus()).isEqualTo(666);
+    }
   }
 
   @Test
@@ -825,15 +835,16 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
         clientIdentity.toKeyStoreWithPassword("gematik"), "gematik".toCharArray());
 
     sslContext.init(keyManagerFactory.getKeyManagers(), trustManagers, null);
-    final UnirestInstance mutualTlsInstance = Unirest.spawnInstance();
-    mutualTlsInstance.config().sslContext(sslContext);
+    try (final UnirestInstance mutualTlsInstance = Unirest.spawnInstance()) {
+      mutualTlsInstance.config().sslContext(sslContext);
 
-    assertThatNoException()
-        .isThrownBy(
-            () ->
-                mutualTlsInstance
-                    .get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar")
-                    .asString());
+      assertThatNoException()
+          .isThrownBy(
+              () ->
+                  mutualTlsInstance
+                      .get("https://localhost:" + tigerProxy.getProxyPort() + "/foobar")
+                      .asString());
+    }
   }
 
   @Test
@@ -887,7 +898,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                 executeRequestToPathWhileOnlyTrusting(
                     "CGMAG-IM-FDSIM.ts-ttcn3.sig-test.telematik-test",
                     "src/test/resources/rsa.p12;00"))
-        .isInstanceOf(UnirestException.class)
+        .isInstanceOf(TlsFatalAlert.class)
         .hasRootCauseInstanceOf(CertPathBuilderException.class);
   }
 
@@ -935,18 +946,20 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                     "www.schmoobar.com", "src/test/resources/selfSignedCa/rootCa.p12;00"));
   }
 
+  @SneakyThrows
   private void executeRequestToPathWhileOnlyTrusting(String host, String fileLoadingInformation) {
-    try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
-      unirestInstance
-          .config()
-          .hostnameVerifier((hostname, session) -> true)
-          .sslContext(
-              buildSslContextTrustingOnly(
-                  new TigerConfigurationPkiIdentity(fileLoadingInformation)));
-      unirestInstance
-          .get("https://127.0.0.1:" + tigerProxy.getProxyPort() + "/")
-          .header("host", host)
-          .asJson();
+    SSLContext sslContext =
+        buildSslContextTrustingOnly(new TigerConfigurationPkiIdentity(fileLoadingInformation));
+
+    try (var apacheClient =
+        HttpClients.custom()
+            .setSSLHostnameVerifier((hostname, session) -> true)
+            .setSSLContext(sslContext)
+            .build()) {
+      apacheClient.execute(
+          new HttpHost(
+              InetAddress.getByName("127.0.0.1"), host, tigerProxy.getProxyPort(), "https"),
+          RequestBuilder.get().addHeader("host", host).build());
     }
   }
 

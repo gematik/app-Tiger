@@ -31,7 +31,7 @@ import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
-import kong.unirest.Unirest;
+import kong.unirest.core.Unirest;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import net.jcip.annotations.NotThreadSafe;

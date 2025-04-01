@@ -108,7 +108,7 @@
         <version.stomp-websocket>2.3.4</version.stomp-websocket>
         <version.swagger-parser>2.1.25</version.swagger-parser>
         <version.system-stubs>2.1.7</version.system-stubs>
-        <version.unirest>3.14.5</version.unirest>
+        <version.unirest>4.4.5</version.unirest>
         <version.velocity>2.3</version.velocity>
         <version.webjars-locator-core>0.59</version.webjars-locator-core>
         <version.winstone>6.21</version.winstone>
@@ -123,6 +123,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.konghq</groupId>
+                <artifactId>unirest-java-bom</artifactId>
+                <version>${version.unirest}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>io.cucumber</groupId>
                 <artifactId>cucumber-bom</artifactId>
@@ -236,16 +243,6 @@
                 <groupId>com.j2html</groupId>
                 <artifactId>j2html</artifactId>
                 <version>1.6.0</version>
-            </dependency>
-            <dependency>
-                <groupId>com.konghq</groupId>
-                <artifactId>unirest-java</artifactId>
-                <version>${version.unirest}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.konghq</groupId>
-                <artifactId>unirest-objectmapper-jackson</artifactId>
-                <version>${version.unirest}</version>
             </dependency>
             <dependency>
                 <groupId>com.microsoft.playwright</groupId>

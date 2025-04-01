@@ -39,7 +39,11 @@
         <!-- needed to set proxy config of unirest instances -->
         <dependency>
             <groupId>com.konghq</groupId>
-            <artifactId>unirest-java</artifactId>
+            <artifactId>unirest-java-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.konghq</groupId>
+            <artifactId>unirest-modules-jackson</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
