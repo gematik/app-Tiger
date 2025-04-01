@@ -36,8 +36,7 @@
           or from gematik internal Nexus
           https://nexus.prod.ccs.gematik.solutions/#browse/search=keyword%3Dtiger-test-lib
         -->
-        <version.tiger>3.5.0</version.tiger>
-        <version.logback>1.5.17</version.logback>
+        <version.tiger>3.7.2</version.tiger>
     </properties>
 
     <dependencyManagement>
@@ -57,7 +56,6 @@
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-test-lib</artifactId>
-            <version>${version.tiger}</version>
         </dependency>
         <dependency>
             <groupId>io.cucumber</groupId>

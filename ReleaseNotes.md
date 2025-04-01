@@ -17,7 +17,7 @@
   replacing tiger resolvable parameters, to allow the tiger testsuite validator to still check for
   equalness of steps in Titus.
 * TGR-1770: Tiger Test Lib: it is now possible to disable a specific RbelConverter during a test
-  run. It only possible
+  run. It is only possible
   to deactivate a parser that is specifically activated via the configuration.
   See https://gematik.github.io/app-Tiger/Tiger-User-Manual.html#activaterbelparsing for the
   configurable parsers. The
