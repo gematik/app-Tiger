@@ -31,12 +31,12 @@ pipeline {
             }
         }
 
-        stage('Build') {
-            steps {
-                mavenBuild(POM_PATH)
-                archiveArtifacts allowEmptyArchive: true, artifacts: '**/target/*.jar,**/target/*.war', fingerprint: true
-            }
-        }
+//        stage('Build') {
+//            steps {
+//                mavenBuild(POM_PATH)
+//                archiveArtifacts allowEmptyArchive: true, artifacts: '**/target/*.jar,**/target/*.war', fingerprint: true
+//            }
+//        }
 
         stage('Publish to MavenCentral') {
             steps {
