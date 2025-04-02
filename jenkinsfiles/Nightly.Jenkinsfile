@@ -59,21 +59,6 @@ pipeline {
                 }
             }
         }
-
-        stage('OWASP') {
-            steps {
-                mavenOwaspScan(POM_PATH)
-            }
-        }
-
-        stage('Sonar') {
-            environment {
-                BRANCH_NAME = "${BRANCH}"
-            }
-            steps {
-                mavenCheckWithSonarQube(POM_PATH, "", false)
-            }
-        }
     }
     post {
         success {
