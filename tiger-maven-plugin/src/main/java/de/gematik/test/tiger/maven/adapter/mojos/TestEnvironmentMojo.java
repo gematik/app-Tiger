@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.maven.adapter.mojos;
@@ -39,6 +40,9 @@ import org.awaitility.core.ConditionTimeoutException;
 @Mojo(name = "setup-testenv", defaultPhase = LifecyclePhase.INITIALIZE)
 public class TestEnvironmentMojo extends AbstractMojo {
 
+  public static final String ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM =
+      "org.springframework.boot.logging.LoggingSystem";
+
   /** Skip running this plugin. Default is false. */
   @Parameter private boolean skip = false;
 
@@ -59,6 +63,18 @@ public class TestEnvironmentMojo extends AbstractMojo {
       return;
     }
     isRunning = true;
+    if (System.getProperty(ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM) == null) {
+      System.setProperty(ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM, "none");
+    } else {
+      if (!System.getProperty(ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM).equals("none")) {
+        getLog()
+          .warn(
+            "Spring Boot Logging System property '"
+              + ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM
+              + "' is set so we will not overwrite it to 'none', this may cause startup failure"
+              + " with the maven logging system!");
+      }
+    }
     TigerDirector.startStandaloneTestEnvironment();
     getLog().info("Tiger standalone test environment is setup!");
     try {

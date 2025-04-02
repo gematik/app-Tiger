@@ -30,7 +30,7 @@
     <packaging>pom</packaging>
     <name>Tiger-Testframework</name>
     <description>Tiger is a test platform. For more info check our project at GitHub
-        https://github.com/gematik/app-Tiger</description>
+    https://github.com/gematik/app-Tiger</description>
 
     <url>https://github.com/gematik/app-Tiger</url>
 
@@ -226,10 +226,10 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <argLine>${surefireJacocoAgent}
-                        --add-opens java.base/java.lang=ALL-UNNAMED
-                        --add-opens java.base/java.io=ALL-UNNAMED
-                        --add-opens java.base/java.util=ALL-UNNAMED
-                        -Dfile.encoding=${project.build.sourceEncoding}</argLine>
+            --add-opens java.base/java.lang=ALL-UNNAMED
+            --add-opens java.base/java.io=ALL-UNNAMED
+            --add-opens java.base/java.util=ALL-UNNAMED
+            -Dfile.encoding=${project.build.sourceEncoding}</argLine>
                     <properties>
                         <property>
                             <name>listener</name>
