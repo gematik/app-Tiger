@@ -387,17 +387,17 @@
                         </goals>
                         <phase>generate-resources</phase>
                         <configuration>
-                            <outputDirectory>${parent.basedir}/doc/user_manual</outputDirectory>
+                            <outputDirectory>${project.parent.basedir}/doc/user_manual</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>${parent.basedir}/doc/user_manual/tobefiltered</directory>
+                                    <directory>${project.parent.basedir}/doc/user_manual/tobefiltered</directory>
                                     <includes>
                                         <include>**</include>
                                     </includes>
                                     <filtering>true</filtering>
                                 </resource>
                                 <resource>
-                                    <directory>${parent.basedir}/tiger-test-lib/src/test/resources/features/tiger-test-lib</directory>
+                                    <directory>${project.parent.basedir}/tiger-test-lib/src/test/resources/features/tiger-test-lib</directory>
                                     <includes>
                                         <include>HttpGlueCodeTest.feature</include>
                                     </includes>
