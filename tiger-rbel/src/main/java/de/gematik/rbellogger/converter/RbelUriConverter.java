@@ -27,11 +27,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
 @Slf4j
-public class RbelUriConverter implements RbelConverterPlugin {
+public class RbelUriConverter extends RbelConverterPlugin {
 
   public List<RbelElement> extractParameterMap(
       final URI uri, final RbelConverter context, String originalContent, RbelElement parentNode) {
@@ -88,7 +87,7 @@ public class RbelUriConverter implements RbelConverterPlugin {
 
   @Override
   public void consumeElement(final RbelElement rbel, final RbelConverter context) {
-    if (ArrayUtils.indexOf(rbel.getRawContent(), (byte) '\n') >= 0) {
+    if (rbel.getContent().indexOf((byte) '\n') >= 0) {
       return;
     }
     var content = rbel.getRawStringContent();

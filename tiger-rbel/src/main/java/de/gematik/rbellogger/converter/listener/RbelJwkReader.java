@@ -30,7 +30,7 @@ import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.JsonWebKey.Factory;
 import org.jose4j.lang.JoseException;
 
-public class RbelJwkReader implements RbelConverterPlugin {
+public class RbelJwkReader extends RbelConverterPlugin {
 
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {

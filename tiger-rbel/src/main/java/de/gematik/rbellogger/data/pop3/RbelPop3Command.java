@@ -39,4 +39,8 @@ public enum RbelPop3Command {
   public static final int MAX_LENGTH =
       Collections.max(
           Arrays.stream(values()).map(RbelPop3Command::name).map(String::length).toList());
+
+  public static RbelPop3Command fromStringIgnoringCase(String s) {
+    return RbelPop3Command.valueOf(s.toUpperCase());
+  }
 }

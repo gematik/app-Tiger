@@ -431,9 +431,9 @@ public class TigerTestEnvMgr
                           constructor -> {
                             log.warn(
                                 "Using DEPRECATED constructor for server {}! "
-                                  + "Using (TigerTestenvMg, String, CfgServer), "
-                                  + "plase change constructor to match param order:"
-                                  + " (String, CfgServer, TigerTestenvMgr)!",
+                                    + "Using (TigerTestenvMg, String, CfgServer), "
+                                    + "plase change constructor to match param order:"
+                                    + " (String, CfgServer, TigerTestenvMgr)!",
                                 serverId);
                             return createInstanceUnchecked(constructor, this, serverId, config);
                           }))
@@ -441,7 +441,7 @@ public class TigerTestEnvMgr
               () ->
                   new TigerTestEnvException(
                       "No suitable constructor found for server. Expected constructor"
-                        + "(String serverName, CfgServer config, TigerTestenvMgr envMgr)"));
+                          + "(String serverName, CfgServer config, TigerTestenvMgr envMgr)"));
     } catch (RuntimeException e) {
       throw handleExceptionMinimizingStackTrace(config, e);
     }
@@ -462,7 +462,7 @@ public class TigerTestEnvMgr
     return new TigerTestEnvException(
         e,
         "Unable to instantiate server of type %s, does it have a constructor"
-          + "(String serverName, CfgServer config, TigerTestenvMgr envMgr)?",
+            + "(String serverName, CfgServer config, TigerTestenvMgr envMgr)?",
         config.getType());
   }
 

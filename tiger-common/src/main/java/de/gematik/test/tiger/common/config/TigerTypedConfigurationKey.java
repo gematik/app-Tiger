@@ -128,4 +128,12 @@ public class TigerTypedConfigurationKey<T> {
   public void clearValue() {
     TigerGlobalConfiguration.deleteFromAllSources(this.key);
   }
+
+  public void setAsSystemProperty(T value) {
+    System.setProperty(key.downsampleKey(), value.toString());
+  }
+
+  public void clearSystemProperty() {
+    System.clearProperty(key.downsampleKey());
+  }
 }

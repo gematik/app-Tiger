@@ -23,11 +23,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.exceptions.TigerRoutingErrorFacet;
-import kong.unirest.*;
+import java.io.IOException;
+import java.net.http.HttpClient;
+import kong.unirest.core.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.apache.http.NoHttpResponseException;
 import org.junit.jupiter.api.Test;
 
 @Slf4j
@@ -39,11 +40,11 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
   void testRoutingExceptionHtmlRendering() {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
-    proxyRest.config().automaticRetries(false);
+    proxyRest.config().retryAfter(false);
     proxyRest.get("http://backend/foobar").asString();
     assertThatThrownBy(() -> proxyRest.get("http://backend/error").asString())
         .isInstanceOf(UnirestException.class)
-        .hasCauseInstanceOf(NoHttpResponseException.class);
+        .hasCauseInstanceOf(IOException.class);
 
     awaitMessagesInTiger(2);
   }
@@ -53,10 +54,10 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
   void forwardProxyConnectionError_shouldKeepRequestInLog() {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
-    proxyRest.config().automaticRetries(false);
+    proxyRest.config().retryAfter(false);
     assertThatThrownBy(() -> proxyRest.get("http://backend/error").asString())
         .isInstanceOf(UnirestException.class)
-        .hasCauseInstanceOf(NoHttpResponseException.class);
+        .hasCauseInstanceOf(IOException.class);
 
     awaitMessagesInTiger(2);
 
@@ -76,14 +77,14 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     val noProxyInstance = Unirest.spawnInstance();
-    noProxyInstance.config().automaticRetries(false);
+    noProxyInstance.config().retryAfter(false);
     assertThatThrownBy(
             () ->
                 noProxyInstance
                     .get("http://localhost:" + tigerProxy.getProxyPort() + "/error")
                     .asString())
         .isInstanceOf(UnirestException.class)
-        .hasCauseInstanceOf(NoHttpResponseException.class);
+        .hasCauseInstanceOf(IOException.class);
 
     awaitMessagesInTiger(2);
 
@@ -111,26 +112,28 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
                     .build())
             .build());
 
-    val noProxyInstance = Unirest.spawnInstance();
-    noProxyInstance.config().automaticRetries(false);
-    noProxyInstance.config().socketTimeout(1000);
-    noProxyInstance.config().connectTimeout(1000);
-    assertThatThrownBy(
-            () ->
-                noProxyInstance
-                    .get("http://localhost:" + tigerProxy.getProxyPort() + "/error")
-                    .asString())
-        .isInstanceOf(UnirestException.class);
+    try (val noProxyInstance = Unirest.spawnInstance()) {
+      noProxyInstance.config().retryAfter(false);
+      noProxyInstance.config().version(HttpClient.Version.HTTP_1_1);
+      noProxyInstance.config().connectTimeout(1000);
+      noProxyInstance.config().requestTimeout(1000);
+      assertThatThrownBy(
+              () ->
+                  noProxyInstance
+                      .get("http://localhost:" + tigerProxy.getProxyPort() + "/error")
+                      .asString())
+          .isInstanceOf(UnirestException.class);
 
-    awaitMessagesInTiger(2);
+      awaitMessagesInTiger(2);
 
-    assertThat(tigerProxy.getRbelMessagesList().get(1))
-        .extractChildWithPath("$.sender")
-        .hasStringContentEqualTo("localhost:" + fakeBackendServerPort)
-        .andTheInitialElement()
-        .hasFacet(TigerRoutingErrorFacet.class)
-        .extractChildWithPath("$.error.message")
-        .asString()
-        .contains("Exception during handling of HTTP request: Connection reset");
+      assertThat(tigerProxy.getRbelMessagesList().get(1))
+          .extractChildWithPath("$.sender")
+          .hasStringContentEqualTo("localhost:" + fakeBackendServerPort)
+          .andTheInitialElement()
+          .hasFacet(TigerRoutingErrorFacet.class)
+          .extractChildWithPath("$.error.message")
+          .asString()
+          .contains("Exception during handling of HTTP request: Connection reset");
+    }
   }
 }

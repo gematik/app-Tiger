@@ -17,12 +17,68 @@
 package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.data.RbelElement;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import lombok.Getter;
+import lombok.val;
+import org.apache.commons.lang3.ArrayUtils;
 
-public interface RbelConverterPlugin {
+public abstract class RbelConverterPlugin {
 
-  void consumeElement(RbelElement rbelElement, RbelConverter converter);
+  @Getter(lazy = true)
+  private final Set<String> parserIdentifiers = initializeParserIdentifiers();
 
-  default boolean ignoreOversize() {
+  private boolean isActive = true;
+
+  public abstract void consumeElement(RbelElement rbelElement, RbelConverter converter);
+
+  public boolean ignoreOversize() {
     return false;
+  }
+
+  public boolean isParserFor(String parserIdentifier) {
+    return getParserIdentifiers().contains(parserIdentifier);
+  }
+
+  public boolean isParserForAny(List<String> pluginIds) {
+    for (String pluginId : pluginIds) {
+      if (isParserFor(pluginId)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public boolean isActive() {
+    return isActive;
+  }
+
+  public void activate() {
+    isActive = true;
+  }
+
+  public void deactivate() {
+    isActive = false;
+  }
+
+  private Set<String> initializeParserIdentifiers() {
+    val parserIds = new HashSet<String>();
+    if (this.getClass().isAnnotationPresent(ConverterInfo.class)) {
+      val converterInfo = this.getClass().getAnnotation(ConverterInfo.class);
+      parserIds.addAll(List.of(ArrayUtils.nullToEmpty(converterInfo.onlyActivateFor())));
+    }
+    return parserIds;
+  }
+
+  public static RbelConverterPlugin createPlugin(BiConsumer<RbelElement, RbelConverter> consumer) {
+    return new RbelConverterPlugin() {
+
+      @Override
+      public void consumeElement(RbelElement rbelElement, RbelConverter converter) {
+        consumer.accept(rbelElement, converter);
+      }
+    };
   }
 }

@@ -94,7 +94,8 @@ class AsynchronousNonHttpCommunicationTest extends AbstractNonHttpTest {
           assertThat(responseCalls).hasValue(0);
           assertThat(requestCalls).hasValue(2);
         },
-        (element, converter) -> element.addFacet(new RbelFacetExpectingReplyMessage()));
+        RbelConverterPlugin.createPlugin(
+            (element, converter) -> element.addFacet(new RbelFacetExpectingReplyMessage())));
   }
 
   @Test
@@ -117,7 +118,8 @@ class AsynchronousNonHttpCommunicationTest extends AbstractNonHttpTest {
           assertThat(responseCalls).hasValue(2);
           assertThat(serverConnectionsOpened).hasValue(1);
         },
-        (element, converter) -> element.addFacet(new RbelFacetExpectingReplyMessage()));
+        RbelConverterPlugin.createPlugin(
+            (element, converter) -> element.addFacet(new RbelFacetExpectingReplyMessage())));
   }
 
   @Test

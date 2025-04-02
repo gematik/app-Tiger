@@ -105,6 +105,7 @@ watch(messageElement, async () => {
       }
     }
 
+    // The raw content of the message (e.g. the http message)
     const rawContentModalButtons = messageElement.value.querySelectorAll(
       "div [data-bs-target^='#dialog']",
     );
@@ -128,6 +129,7 @@ watch(messageElement, async () => {
       }
     }
 
+    // Message details (e.g. including the body)
     const messageContent = messageElement.value.querySelector(".card-content.msg-content");
     const messageContentToggle = messageHeader?.querySelector(".toggle-icon.msg-toggle");
     if (messageContent && messageContentToggle) {
@@ -139,12 +141,11 @@ watch(messageElement, async () => {
         const toggledOn = elementHasToggledOnIcon(messageContentToggle);
         toggleMessageDetails.value?.(toggledOn);
       });
-      // toggleMessageDetails.value?.(settings.hideMessageDetails.value);
     }
 
-    const messageRequestHeader = messageContent?.firstElementChild?.querySelector(".card-content");
-    const messageRequestHeaderToggle =
-      messageContent?.firstElementChild?.querySelector(".toggle-icon");
+    // Message header
+    const messageRequestHeader = messageContent?.querySelector(".msg-header-content");
+    const messageRequestHeaderToggle = messageContent?.querySelector(".header-toggle");
     if (messageRequestHeader && messageRequestHeaderToggle) {
       toggleMessageHeaders.value = (isHidden: boolean) => {
         toggle(messageRequestHeaderToggle, messageRequestHeader, isHidden);
@@ -154,26 +155,23 @@ watch(messageElement, async () => {
         const toggledOn = elementHasToggledOnIcon(messageRequestHeaderToggle);
         toggleMessageHeaders.value?.(toggledOn);
       });
-      // toggleMessageHeaders.value?.(settings.hideMessageHeaders.value);
     }
 
-    if (messageContent?.firstElementChild !== messageContent?.lastElementChild) {
-      const messageRequestBody = messageContent?.lastElementChild?.querySelector(".card-content");
-      const messageRequestBodyToggle =
-        messageContent?.lastElementChild?.querySelector(".toggle-icon");
-      if (messageRequestBody && messageRequestBodyToggle) {
-        toggleMessageBody.value = (isHidden: boolean) => {
-          toggle(messageRequestBodyToggle, messageRequestBody, isHidden);
-          props.onToggleDetailsOrHeader();
-        };
-        messageRequestBodyToggle.addEventListener("click", () => {
-          const toggledOn = elementHasToggledOnIcon(messageRequestBodyToggle);
-          toggleMessageBody.value?.(toggledOn);
-        });
-        // toggleMessageBody.value?.(settings.hideMessageHeaders.value);
-      }
+    // Message body
+    const messageRequestBody = messageContent?.querySelector(".msg-body-content");
+    const messageRequestBodyToggle = messageContent?.querySelector(".body-toggle");
+    if (messageRequestBody && messageRequestBodyToggle) {
+      toggleMessageBody.value = (isHidden: boolean) => {
+        toggle(messageRequestBodyToggle, messageRequestBody, isHidden);
+        props.onToggleDetailsOrHeader();
+      };
+      messageRequestBodyToggle.addEventListener("click", () => {
+        const toggledOn = elementHasToggledOnIcon(messageRequestBodyToggle);
+        toggleMessageBody.value?.(toggledOn);
+      });
     }
 
+    // Code highlighting
     messageElement.value.querySelectorAll("pre.json").forEach((el) => {
       if (el.getAttribute("data-hljs-highlighted") !== "true") {
         hljs.highlightElement(el as HTMLElement);

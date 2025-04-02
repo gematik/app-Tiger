@@ -28,5 +28,9 @@ public enum RbelSmtpCommand {
   RSET,
   NOOP,
   AUTH,
-  QUIT
+  QUIT;
+
+  public static RbelSmtpCommand fromStringIgnoringCase(String s) {
+    return RbelSmtpCommand.valueOf(s.toUpperCase());
+  }
 }

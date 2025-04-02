@@ -23,9 +23,9 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.AbstractTestTigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
-import kong.unirest.HttpResponse;
-import kong.unirest.HttpStatus;
-import kong.unirest.Unirest;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.HttpStatus;
+import kong.unirest.core.Unirest;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 

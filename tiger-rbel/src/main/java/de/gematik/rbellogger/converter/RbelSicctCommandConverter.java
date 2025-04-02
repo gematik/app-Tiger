@@ -26,7 +26,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 @ConverterInfo(onlyActivateFor = "sicct")
 @Slf4j
-public class RbelSicctCommandConverter implements RbelConverterPlugin {
+public class RbelSicctCommandConverter extends RbelConverterPlugin {
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {

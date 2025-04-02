@@ -48,7 +48,7 @@ import org.bouncycastle.pqc.jcajce.provider.kyber.BCKyberPublicKey;
 
 @ConverterInfo(onlyActivateFor = "epa3-vau")
 @Slf4j
-public class RbelVauEpa3Converter implements RbelConverterPlugin {
+public class RbelVauEpa3Converter extends RbelConverterPlugin {
 
   // Constants for complete VAU cipher message: (see A_24628 to A_24633 in gemSpec_Krypt V2.30.0)
   private static final int HEADER_VERSION_INDEX = 0;

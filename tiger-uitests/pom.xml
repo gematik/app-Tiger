@@ -15,40 +15,35 @@
   ~ limitations under the License.
   ~
   -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>tiger</artifactId>
-        <groupId>de.gematik.test</groupId>
-        <relativePath>../pom.xml</relativePath>
-        <version>3.7.1</version>
-    </parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>de.gematik.test</groupId>
+        <artifactId>tiger</artifactId>
+        <version>3.7.3</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
 
     <artifactId>tiger-uitests</artifactId>
 
     <dependencies>
         <dependency>
+            <groupId>com.microsoft.playwright</groupId>
+            <artifactId>playwright</artifactId>
+        </dependency>
+        <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-test-lib</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-zion</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.microsoft.playwright</groupId>
-            <artifactId>playwright</artifactId>
-            <version>1.50.0</version>
         </dependency>
     </dependencies>
 
@@ -161,29 +156,27 @@
                         <version>${version.maven.failsafe}</version>
                         <configuration>
                             <includes>
-                                <include>
-                                    **/workflowui/main/*.java
-                                </include>
+                                <include>**/workflowui/main/*.java</include>
                             </includes>
                             <summaryFile>target/failsafe-reports/failsafe-summary.xml</summaryFile>
                         </configuration>
                         <executions>
                             <execution>
-                                <phase>verify</phase>
                                 <goals>
                                     <goal>integration-test</goal>
                                     <goal>verify</goal>
                                 </goals>
+                                <phase>verify</phase>
                             </execution>
                         </executions>
                     </plugin>
                     <plugin>
-                        <artifactId>jacoco-maven-plugin</artifactId>
                         <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
-                        <artifactId>sonar-maven-plugin</artifactId>
                         <groupId>org.sonarsource.scanner.maven</groupId>
+                        <artifactId>sonar-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
                         <groupId>de.gematik.test</groupId>
@@ -278,29 +271,27 @@
                         <version>${version.maven.failsafe}</version>
                         <configuration>
                             <includes>
-                                <include>
-                                    **/workflowui/replay/*.java
-                                </include>
+                                <include>**/workflowui/replay/*.java</include>
                             </includes>
                             <summaryFile>target/failsafe-reports/failsafe-summary.xml</summaryFile>
                         </configuration>
                         <executions>
                             <execution>
-                                <phase>verify</phase>
                                 <goals>
                                     <goal>integration-test</goal>
                                     <goal>verify</goal>
                                 </goals>
+                                <phase>verify</phase>
                             </execution>
                         </executions>
                     </plugin>
                     <plugin>
-                        <artifactId>jacoco-maven-plugin</artifactId>
                         <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
-                        <artifactId>sonar-maven-plugin</artifactId>
                         <groupId>org.sonarsource.scanner.maven</groupId>
+                        <artifactId>sonar-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
                         <groupId>de.gematik.test</groupId>
@@ -342,8 +333,7 @@
                                     </glues>
                                     <driverClassName>Driver${ctr}ITSequencediagram</driverClassName>
                                     <!-- optional -->
-                                    <featuresDir>${project.basedir}/src/test/resources/features/sequencediagram
-                                    </featuresDir>
+                                    <featuresDir>${project.basedir}/src/test/resources/features/sequencediagram</featuresDir>
                                 </configuration>
                             </execution>
                         </executions>
@@ -361,8 +351,7 @@
                             </includes>
                             <testFailureIgnore>true</testFailureIgnore>
                             <environmentVariables>
-                                <TIGER_TESTENV_CFGFILE>src/test/resources/playwright-sequencediagram.yaml
-                                </TIGER_TESTENV_CFGFILE>
+                                <TIGER_TESTENV_CFGFILE>src/test/resources/playwright-sequencediagram.yaml</TIGER_TESTENV_CFGFILE>
                             </environmentVariables>
                             <summaryFile>target/failsafe-reports/failsafe-dummy-summary-sequence.xml</summaryFile>
                             <runOrder>alphabetical</runOrder>
@@ -403,21 +392,21 @@
                         </configuration>
                         <executions>
                             <execution>
-                                <phase>verify</phase>
                                 <goals>
                                     <goal>integration-test</goal>
                                     <goal>verify</goal>
                                 </goals>
+                                <phase>verify</phase>
                             </execution>
                         </executions>
                     </plugin>
                     <plugin>
-                        <artifactId>jacoco-maven-plugin</artifactId>
                         <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
-                        <artifactId>sonar-maven-plugin</artifactId>
                         <groupId>org.sonarsource.scanner.maven</groupId>
+                        <artifactId>sonar-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
                         <groupId>de.gematik.test</groupId>

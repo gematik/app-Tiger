@@ -36,6 +36,7 @@ import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -922,5 +923,36 @@ public class RBelValidatorGlue {
   @Dann("TGR lösche die benutzerdefinierte Fehlermeldung")
   public void resetCustomFailureMessage() {
     TigerConfigurationKeys.CUSTOM_FAILURE_MESSAGE.clearValue();
+  }
+
+  /**
+   * Deactivate the rbel parsing for the given parsers.
+   *
+   * @param parsersToDeactivate a comma separated list of parser identifiers to deactivate.
+   */
+  @Given("TGR the rbel parsing is deactivated for {string}")
+  @Gegebensei("TGR das rbel parsing ist inaktiv für {string}")
+  public void deactivateParsingFor(String parsersToDeactivate) {
+    List<String> idsToDeactivate =
+        Arrays.stream(parsersToDeactivate.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .toList();
+    TigerDirector.getTigerTestEnvMgr()
+        .getLocalTigerProxyOrFail()
+        .getRbelLogger()
+        .getRbelConverter()
+        .deactivatePlugins(idsToDeactivate);
+  }
+
+  /** Reactivate all parsers that were configured at startup */
+  @Given("TGR the rbel parsing is reactivated for all configured parsers")
+  @Gegebensei("TGR das rbel parsing ist wieder aktiv für alle konfigurierten Parser")
+  public void reactivateParsingForAll() {
+    TigerDirector.getTigerTestEnvMgr()
+        .getLocalTigerProxyOrFail()
+        .getRbelLogger()
+        .getRbelConverter()
+        .reactivateAllConfiguredPlugins();
   }
 }

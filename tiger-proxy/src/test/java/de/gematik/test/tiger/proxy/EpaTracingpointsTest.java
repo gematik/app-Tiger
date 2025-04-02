@@ -19,8 +19,8 @@ package de.gematik.test.tiger.proxy;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
-import kong.unirest.JsonNode;
-import kong.unirest.Unirest;
+import kong.unirest.core.JsonNode;
+import kong.unirest.core.Unirest;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

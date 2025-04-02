@@ -44,7 +44,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 @ConverterInfo(onlyActivateFor = "erp-vau")
 @Slf4j
-public class RbelErpVauDecrpytionConverter implements RbelConverterPlugin {
+public class RbelErpVauDecrpytionConverter extends RbelConverterPlugin {
 
   @Override
   public void consumeElement(RbelElement element, RbelConverter context) {

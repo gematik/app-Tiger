@@ -21,6 +21,7 @@ import {
   type ComputedRef,
   type DeepReadonly,
   type InjectionKey,
+  nextTick,
   onMounted,
   onUnmounted,
   readonly,
@@ -234,6 +235,12 @@ export function useMessageQueue(
       // get the actual index from the entire list
       const index = messages.value.findIndex((msg) => msg.uuid === uuid);
       dynamicScrollerRef.value?.scrollToItem(index);
+      nextTick(async () => {
+        // FIXME: Sometimes the endless scroller won't scroll to the correct position,
+        //  so we try here again. This is a workaround and should be fixed in the future.
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        dynamicScrollerRef.value?.scrollToItem(index);
+      });
     },
     150,
     { rejectOnCancel: true },

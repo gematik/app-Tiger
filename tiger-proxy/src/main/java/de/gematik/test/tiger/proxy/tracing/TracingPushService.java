@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.proxy.tracing;
 
 import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.facet.PreviousMessageFacet;
@@ -60,7 +61,8 @@ public class TracingPushService {
     tigerProxy
         .getRbelLogger()
         .getRbelConverter()
-        .addLastPostConversionListener(this::markUnsuccessfulMessageAsProcessed);
+        .addLastPostConversionListener(
+            RbelConverterPlugin.createPlugin(this::markUnsuccessfulMessageAsProcessed));
 
     log =
         LoggerFactory.getLogger(

@@ -30,14 +30,17 @@ import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.http.HttpClient;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import javax.net.ssl.SSLContext;
-import kong.unirest.Unirest;
+import kong.unirest.core.Unirest;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.HttpClients;
@@ -166,38 +169,43 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
                     .build())
             .build());
 
-    // no proxyRest, direct connection (assume reverseProxy behavior)
-    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
-    Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+    try (var unirestInstance = Unirest.spawnInstance()) {
+      unirestInstance.config().version(HttpClient.Version.HTTP_1_1);
 
-    awaitMessagesInTiger(4);
+      // no proxyRest, direct connection (assume reverseProxy behavior)
+      unirestInstance.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
+      unirestInstance.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
-    val messages = tigerProxy.getRbelMessagesList();
+      awaitMessagesInTiger(4);
 
-    val request = messages.get(0);
-    val response = messages.get(1);
-    val request2 = messages.get(2);
-    val response2 = messages.get(3);
+      val messages = tigerProxy.getRbelMessagesList();
 
-    RbelElementAssertion.assertThat(request)
-        .extractChildWithPath("$.path")
-        .hasStringContentEqualTo("/foobar");
-    RbelElementAssertion.assertThat(response)
-        .extractChildWithPath("$.responseCode")
-        .hasStringContentEqualTo("666");
+      val request = messages.get(0);
+      val response = messages.get(1);
+      val request2 = messages.get(2);
+      val response2 = messages.get(3);
 
-    RbelElementAssertion.assertThat(request2)
-        .extractChildWithPath("$.path")
-        .hasStringContentEqualTo("/foobar");
-    RbelElementAssertion.assertThat(response2)
-        .extractChildWithPath("$.responseCode")
-        .hasStringContentEqualTo("666");
+      RbelElementAssertion.assertThat(request)
+          .extractChildWithPath("$.path")
+          .hasStringContentEqualTo("/foobar");
+      RbelElementAssertion.assertThat(response)
+          .extractChildWithPath("$.responseCode")
+          .hasStringContentEqualTo("666");
 
-    val responseInRequestFacet = request.getFacet(RbelHttpRequestFacet.class).get().getResponse();
-    assertThat(responseInRequestFacet).isEqualTo(response);
+      RbelElementAssertion.assertThat(request2)
+          .extractChildWithPath("$.path")
+          .hasStringContentEqualTo("/foobar");
+      RbelElementAssertion.assertThat(response2)
+          .extractChildWithPath("$.responseCode")
+          .hasStringContentEqualTo("666");
 
-    val responseInRequest2Facet = request2.getFacet(RbelHttpRequestFacet.class).get().getResponse();
-    assertThat(responseInRequest2Facet).isEqualTo(response2);
+      val responseInRequestFacet = request.getFacet(RbelHttpRequestFacet.class).get().getResponse();
+      assertThat(responseInRequestFacet).isEqualTo(response);
+
+      val responseInRequest2Facet =
+          request2.getFacet(RbelHttpRequestFacet.class).get().getResponse();
+      assertThat(responseInRequest2Facet).isEqualTo(response2);
+    }
   }
 
   @Test
@@ -227,28 +235,25 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
             .activateTlsTermination(false)
             .build());
 
-    try (val noProxyInstance = Unirest.spawnInstance()) {
-      final TigerConfigurationPkiIdentity serverCert =
-          new TigerConfigurationPkiIdentity("src/test/resources/eccStoreWithChain.jks;gematik");
+    final TigerConfigurationPkiIdentity serverCert =
+        new TigerConfigurationPkiIdentity("src/test/resources/eccStoreWithChain.jks;gematik");
 
-      SSLContext sslContext =
-          SSLContextBuilder.create()
-              .loadTrustMaterial(
-                  serverCert.toKeyStoreWithPassword("00"), new TrustSelfSignedStrategy())
-              .build();
+    SSLContext sslContext =
+        SSLContextBuilder.create()
+            .loadTrustMaterial(
+                serverCert.toKeyStoreWithPassword("00"), new TrustSelfSignedStrategy())
+            .build();
 
-      noProxyInstance
-          .config()
-          .httpClient(
-              HttpClients.custom()
-                  .setSSLSocketFactory(
-                      new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE))
-                  .build());
+    try (var apacheClient =
+        HttpClients.custom()
+            .setSSLSocketFactory(
+                new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE))
+            .build()) {
+      CloseableHttpResponse response =
+          apacheClient.execute(
+              RequestBuilder.get("https://localhost:" + tigerProxy.getProxyPort()).build());
 
-      val response =
-          noProxyInstance.get("https://localhost:" + tigerProxy.getProxyPort()).asString();
-
-      assertThat(response.getStatus()).isEqualTo(555);
+      assertThat(response.getStatusLine().getStatusCode()).isEqualTo(555);
     }
   }
 }

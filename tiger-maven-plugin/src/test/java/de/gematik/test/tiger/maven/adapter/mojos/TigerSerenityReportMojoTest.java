@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package de.gematik.test.tiger.maven.adapter.mojos;
@@ -27,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,6 +39,7 @@ import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.logging.Log;
 import org.assertj.core.api.Assertions;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -113,6 +116,23 @@ class TigerSerenityReportMojoTest {
         () -> assertTrue(Files.exists(reportDir.resolve("index.html")), "index.html exists"));
   }
 
+  @Test
+  @SneakyThrows
+  void testShouldContainUnresolvedFolderWIthJsonFiles() {
+    // Preparation
+    prepareReportDir();
+
+    // Execution
+    underTest.execute();
+
+    // Assertion
+    File[] jsonFiles = reportDir.resolve("unresolvedReports").toFile().listFiles();
+    AssertionsForClassTypes.assertThat(jsonFiles)
+      .hasSize(3)
+      .allMatch(jsonFile -> jsonFile.getName().endsWith(".json"));
+  }
+
+
   @ParameterizedTest
   @MethodSource("provideReportTypes")
   @SneakyThrows
@@ -160,6 +180,8 @@ class TigerSerenityReportMojoTest {
   private void prepareReportDir() {
     final var repoRessourceDir =
         Paths.get(getClass().getResource("/serenityReports/fresh").toURI());
+    FileUtils.deleteDirectory(reportDir.toFile());
+    Files.createDirectories(reportDir);
     FileUtils.copyDirectory(repoRessourceDir.toFile(), reportDir.toFile());
   }
 }

@@ -26,11 +26,15 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRou
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.util.List;
-import kong.unirest.HttpResponse;
-import kong.unirest.JsonNode;
-import kong.unirest.Unirest;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.JsonNode;
+import kong.unirest.core.Unirest;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.RequestBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -56,7 +60,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
                 List.of(
                     RbelModificationDescription.builder()
                         .condition("isRequest")
-                        .targetElement("$.header.user-agent")
+                        .targetElement("$.header.User-Agent")
                         .replaceWith("modified user-agent")
                         .build(),
                     RbelModificationDescription.builder()
@@ -85,7 +89,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
     awaitMessagesInTiger(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0))
-        .extractChildWithPath("$.header.user-agent")
+        .extractChildWithPath("$.header.User-Agent")
         .hasStringContentEqualTo("modified user-agent");
     assertThat(tigerProxy.getRbelMessagesList().get(0))
         .extractChildWithPath("$.path")
@@ -125,12 +129,12 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
                         .build(),
                     RbelModificationDescription.builder()
                         .condition("isRequest")
-                        .targetElement("$.header.user-agent")
+                        .targetElement("$.header.User-Agent")
                         .replaceWith("modified user-agent")
                         .build(),
                     RbelModificationDescription.builder()
                         .condition("isRequest")
-                        .targetElement("$.header.user-agent")
+                        .targetElement("$.header.User-Agent")
                         .replaceWith("modified user-agent 2")
                         .build(),
                     RbelModificationDescription.builder()
@@ -149,7 +153,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
     awaitMessagesInTiger(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0))
-        .extractChildWithPath("$.header.user-agent")
+        .extractChildWithPath("$.header.User-Agent")
         .hasStringContentEqualTo("modified user-agent 2");
     assertThat(tigerProxy.getRbelMessagesList().get(1))
         .extractChildWithPath("$.header.Some-Header-Field")
@@ -170,7 +174,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
                 List.of(
                     RbelModificationDescription.builder()
                         .condition("isRequest")
-                        .targetElement("$.header.user-agent")
+                        .targetElement("$.header.User-Agent")
                         .replaceWith("modified user-agent")
                         .build(),
                     RbelModificationDescription.builder()
@@ -188,7 +192,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
     awaitMessagesInTiger(2);
 
-    assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.header.user-agent"))
+    assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.header.User-Agent"))
         .get()
         .extracting(RbelElement::getRawStringContent)
         .isEqualTo("modified user-agent");
@@ -363,6 +367,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
     assertThat(response.getStatus()).isEqualTo(200);
   }
 
+  @SneakyThrows
   @Test
   void modifyReasonPhrase_shouldWork() {
     spawnTigerProxyWithDefaultRoutesAndWith(
@@ -382,10 +387,14 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
                         .build()))
             .build());
 
-    HttpResponse<JsonNode> response =
-        Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
+    try (var apacheClient = HttpClients.createDefault()) {
+      CloseableHttpResponse response =
+          apacheClient.execute(
+              RequestBuilder.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
+                  .build());
 
-    assertThat(response.getStatusText()).isEqualTo("Foo bar Bar Foobar");
+      assertThat(response.getStatusLine().getReasonPhrase()).isEqualTo("Foo bar Bar Foobar");
+    }
   }
 
   @Test

@@ -249,6 +249,35 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
     assertThat(element.hasFacet(RbelPop3ResponseFacet.class)).isFalse();
   }
 
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "+OK Capability list follows\r\nUSER\r\nUIDL\r\nTOP\r\n.\r\n",
+        "+OK\r\nUSER\r\nUIDL\r\nTOP\r\n.\r\n",
+      })
+  void afterCapaCommand_ResponseWithCrLfDotCrLf_isPop3Response(String capaResponse) {
+
+    var request = "CAPA\r\n";
+    var capaResponseElement = convertMessagePair(request, capaResponse);
+
+    RbelElementAssertion.assertThat(capaResponseElement).hasFacet(RbelPop3ResponseFacet.class);
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "+OK Capability list follows\r\n",
+        "+OK\r\n",
+      })
+  void afterCapaCommand_ResponseWithoutCrLfCrLfIsRejected(String capaResponse) {
+
+    var request = "CAPA\r\n";
+    var capaResponseElement = convertMessagePair(request, capaResponse);
+
+    RbelElementAssertion.assertThat(capaResponseElement)
+        .doesNotHaveFacet(RbelPop3ResponseFacet.class);
+  }
+
   private static String duplicateDotsAtLineBegins(String input) {
     return Stream.of(input.split("\r\n", -1))
         .map(line -> line.startsWith(".") ? "." + line : line)

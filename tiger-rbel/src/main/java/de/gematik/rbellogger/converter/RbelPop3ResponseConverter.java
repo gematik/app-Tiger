@@ -17,13 +17,7 @@
 package de.gematik.rbellogger.converter;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelPop3CommandFacet;
-import de.gematik.rbellogger.data.facet.RbelPop3ResponseFacet;
-import de.gematik.rbellogger.data.facet.RbelPop3StatOrListHeaderFacet;
-import de.gematik.rbellogger.data.facet.RbelResponseFacet;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
-import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
-import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
+import de.gematik.rbellogger.data.facet.*;
 import de.gematik.rbellogger.data.pop3.RbelPop3Command;
 import de.gematik.rbellogger.util.EmailConversionUtils;
 import de.gematik.rbellogger.util.RbelContent;
@@ -35,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @ConverterInfo(onlyActivateFor = "pop3")
 @Slf4j
-public class RbelPop3ResponseConverter implements RbelConverterPlugin {
+public class RbelPop3ResponseConverter extends RbelConverterPlugin {
 
   private static final Pattern STAT_OR_LIST_HEADER =
       Pattern.compile("(?<count>\\d+) ((?<size>\\d+)|messages(:| \\((?<size2>\\d+) octets\\)))");
@@ -124,9 +118,28 @@ public class RbelPop3ResponseConverter implements RbelConverterPlugin {
                         : Optional.of(buildResponseFacet(element, status, null, lines));
                     default -> Optional.empty();
                   });
+    } else if (previousMessageWasACapa(element)
+        && !element.getContent().endsWith(CRLF_DOT_CRLF_BYTES)) {
+      // after a capa command, the server may respond with a '+OK capabilities list follows'
+      // we don't want this to already be considered a full message, therefore we
+      // return empty here, so that more lines come in before we parse the message
+      return Optional.empty();
+    } else {
+      return buildHeaderElement(element, header, context)
+          .map(headerElement -> buildResponseFacet(element, status, headerElement, lines));
     }
-    return buildHeaderElement(element, header, context)
-        .map(headerElement -> buildResponseFacet(element, status, headerElement, lines));
+  }
+
+  private boolean previousMessageWasACapa(RbelElement element) {
+    return element
+        .getFacet(PreviousMessageFacet.class)
+        .map(PreviousMessageFacet::getMessage)
+        .flatMap(m -> m.getFacet(RbelPop3CommandFacet.class))
+        .map(RbelPop3CommandFacet::getCommand)
+        .map(RbelElement::getRawStringContent)
+        .map(RbelPop3Command::fromStringIgnoringCase)
+        .filter(RbelPop3Command.CAPA::equals)
+        .isPresent();
   }
 
   private RbelPop3ResponseFacet buildResponseFacet(

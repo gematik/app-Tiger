@@ -27,7 +27,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRou
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.data.TigerRouteDto;
 import java.util.List;
-import kong.unirest.*;
+import kong.unirest.core.*;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;

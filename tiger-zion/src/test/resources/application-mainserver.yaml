@@ -1,19 +1,28 @@
 zion:
   mockResponses:
     passwordCheckResponse:
+      backendRequests:
+        tokenCheck:
+          url: "http://localhost:${backendServer.port}/checkPassword"
+          body: '?{$.header.password}'
+          assignments:
+            correctPassword: "!{$.responseCode == '200'}"
       requestCriterions:
         - message.method == 'GET'
         - message.path == '/helloWorld'
-      backendRequests:
-        tokenCheck:
-          method: POST
-          url: "http://localhost:${backendServer.port}/checkPassword"
-          body: $.header.password
-          assignments:
-            correctPassword: "$.responseCode == '200'"
-      response:
-        statusCode: 200
-        body: '{"Hello":"World"}'
+      nestedResponses:
+        correctPassword:
+          importance: 10
+          requestCriterions:
+            - "${correctPassword} == 'true'"
+          response:
+            statusCode: 200
+            body: '{"Hello":"World"}'
+        wrongPassword:
+          importance: 0
+          response:
+            statusCode: 405
+            body: '{"Wrong":"Password"}'
     healthCheckResponse:
       importance: 20 # more important so others don't get evaluated.
       requestCriterions:

@@ -100,7 +100,9 @@ public class RbelConversionException extends GenericTigerException {
 
   private String generateGenericConversionErrorMessage() {
     return "Exception during conversion with plugin '"
-        + converter.getClass().getSimpleName()
+        + (converter.getClass().isAnonymousClass()
+            ? converter.getClass().getName()
+            : converter.getClass().getSimpleName())
         + "' ("
         + getMessage()
         + ")";

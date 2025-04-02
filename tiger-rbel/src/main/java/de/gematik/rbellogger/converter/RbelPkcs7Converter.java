@@ -29,7 +29,7 @@ import lombok.SneakyThrows;
 import org.bouncycastle.cms.CMSException;
 
 @ConverterInfo(onlyActivateFor = "mime")
-public class RbelPkcs7Converter implements RbelConverterPlugin {
+public class RbelPkcs7Converter extends RbelConverterPlugin {
 
   @Override
   @SneakyThrows

@@ -169,7 +169,7 @@ Feature: HTTP/HTTPS GlueCode Test feature
     And TGR send POST request to "http://httpbin/post" with body "{'foobar': '4'}"
     And TGR filter requests based on method "GET"
     Then TGR find last request to path ".*"
-    Then TGR current response with attribute "$.body.args.foobar" matches "22"
+    Then TGR current response with attribute "$.body.args.foobar.0" matches "22"
 
   Scenario: Test check filter method reset
     Given TGR reset request method filter
@@ -184,5 +184,5 @@ Feature: HTTP/HTTPS GlueCode Test feature
   Scenario: Test check filter POST request
     Given TGR send empty GET request to "http://httpbin/anything?foobar=66"
     When TGR find last request with "$.path.foobar.value" matching "66"
-    Then TGR current response with attribute "$.body.args.foobar.content" matches "66"
+    Then TGR current response with attribute "$.body.args.foobar.0" matches "66"
 

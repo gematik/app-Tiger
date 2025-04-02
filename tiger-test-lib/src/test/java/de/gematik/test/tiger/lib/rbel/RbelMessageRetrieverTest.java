@@ -556,7 +556,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
 
   @Test
   void testCurrentMessagesNotFound() {
-    readTgrFileAndStoreForrbelMessageRetriever(
+    readTgrFileAndStoreForRbelMessageRetriever(
         "src/test/resources/testdata/interleavedRequests.tgr");
     RbelMessageRetriever validator = rbelMessageRetriever;
 
@@ -581,7 +581,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
 
   @Test
   void testUnpairedRequest() {
-    readTgrFileAndStoreForrbelMessageRetriever("src/test/resources/testdata/cetpExampleFlow.tgr");
+    readTgrFileAndStoreForRbelMessageRetriever("src/test/resources/testdata/cetpExampleFlow.tgr");
 
     rbelMessageRetriever.filterRequestsAndStoreInContext(
         RequestParameter.builder().rbelPath("$.body.Event.Topic.text").build());
@@ -652,7 +652,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
         CompletableFuture.supplyAsync(
             () -> rbelMessageRetriever.waitForMessageToBePresent(messageParameters));
 
-    readTgrFileAndStoreForrbelMessageRetriever("src/test/resources/testdata/cetpExampleFlow.tgr");
+    readTgrFileAndStoreForRbelMessageRetriever("src/test/resources/testdata/cetpExampleFlow.tgr");
 
     waitForMessageFuture.get();
     assertThat(rbelMessageRetriever.findMessageByDescription(messageParameters))
@@ -680,7 +680,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
       assertThatThrownBy(() -> waitForMessageFuture.get(500, TimeUnit.MILLISECONDS))
           .isInstanceOf(TimeoutException.class);
 
-      readTgrFileAndStoreForrbelMessageRetriever("src/test/resources/testdata/cetpExampleFlow.tgr");
+      readTgrFileAndStoreForRbelMessageRetriever("src/test/resources/testdata/cetpExampleFlow.tgr");
 
       assertThat(waitForMessageFuture.get())
           .hasFacet(RbelCetpFacet.class)
@@ -728,7 +728,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
 
   @Test
   void interleavedRequests_nextMessageShouldFindCorrectMessage() {
-    readTgrFileAndStoreForrbelMessageRetriever(
+    readTgrFileAndStoreForRbelMessageRetriever(
         "src/test/resources/testdata/interleavedRequests.tgr");
 
     localProxyRbelMessageListenerTestAdapter.getValidatableMessagesMock().stream()
@@ -887,7 +887,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
 
   @Test
   void testSchemaValidationFailureMessagePropagated() {
-    readTgrFileAndStoreForrbelMessageRetriever("src/test/resources/testdata/jsonSchemaCheck.tgr");
+    readTgrFileAndStoreForRbelMessageRetriever("src/test/resources/testdata/jsonSchemaCheck.tgr");
 
     RequestParameter rootElementRequest =
         RequestParameter.builder()

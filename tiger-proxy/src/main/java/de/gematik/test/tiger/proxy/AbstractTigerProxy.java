@@ -51,7 +51,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nullable;
-import kong.unirest.Unirest;
+import kong.unirest.core.Unirest;
 import lombok.Data;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -324,7 +324,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
       log.debug("Waiting for tiger-proxy at '{}' to be online...", url);
       final int status =
           Unirest.get(url + "/actuator/health")
-              .connectTimeout(getTigerProxyConfiguration().getConnectionTimeoutInSeconds() * 1000)
+              .requestTimeout(getTigerProxyConfiguration().getConnectionTimeoutInSeconds() * 1000)
               .asEmpty()
               .getStatus();
       log.trace("Tiger-proxy at '{}' is online! (status is {})", url, status);

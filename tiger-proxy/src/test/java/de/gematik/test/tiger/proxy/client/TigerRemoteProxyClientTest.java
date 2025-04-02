@@ -51,10 +51,10 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import kong.unirest.Config;
-import kong.unirest.Unirest;
-import kong.unirest.UnirestException;
-import kong.unirest.UnirestInstance;
+import kong.unirest.core.Config;
+import kong.unirest.core.Unirest;
+import kong.unirest.core.UnirestException;
+import kong.unirest.core.UnirestInstance;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -62,6 +62,7 @@ import lombok.val;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -144,7 +145,8 @@ class TigerRemoteProxyClientTest {
       tigerRemoteProxyClient.connect();
 
       unirestInstance =
-          new UnirestInstance(new Config().proxy("localhost", tigerProxy.getProxyPort()));
+          new UnirestInstance(
+              new Config().requestTimeout(5000).proxy("localhost", tigerProxy.getProxyPort()));
     }
 
     runtimeInfo.getWireMock().register(get("/foo").willReturn(ok().withBody("bar")));
@@ -168,6 +170,11 @@ class TigerRemoteProxyClientTest {
             .from("http://myserv.er")
             .to("http://localhost:" + runtimeInfo.getHttpPort())
             .build());
+  }
+
+  @AfterAll
+  void tearDown() {
+    unirestInstance.close();
   }
 
   @Test
@@ -660,7 +667,7 @@ class TigerRemoteProxyClientTest {
     AtomicInteger listenerCallCounter = new AtomicInteger(0);
     tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
 
-    unirestInstance.config().automaticRetries(false);
+    unirestInstance.config().retryAfter(false);
     assertThatThrownBy(() -> unirestInstance.get("http://myserv.er/error").asString()).isNotNull();
 
     await().atMost(8, TimeUnit.SECONDS).until(() -> listenerCallCounter.get() > 0);

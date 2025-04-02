@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import java.text.MessageFormat;
-import kong.unirest.Unirest;
+import kong.unirest.core.Unirest;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -53,7 +53,7 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
               proxyPort: ${free.port.3}
        """)
   void testReverseProxy() {
-    final kong.unirest.HttpResponse<String> httpResponse =
+    final kong.unirest.core.HttpResponse<String> httpResponse =
         Unirest.get(
                 "http://127.0.0.1:"
                     + TigerGlobalConfiguration.readStringOptional("free.port.3").get())
@@ -75,7 +75,7 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
           "src/test/resources/de/gematik/test/tiger/testenvmgr/testReverseProxyManual.yaml")
   void testReverseProxyManual() {
     log.info("Entering test");
-    final kong.unirest.HttpResponse<String> httpResponse =
+    final kong.unirest.core.HttpResponse<String> httpResponse =
         Unirest.get(
                 "http://127.0.0.1:"
                     + TigerGlobalConfiguration.readStringOptional("free.port.2").get())
@@ -116,7 +116,7 @@ class TestEnvManagerReverseProxy extends AbstractTestTigerTestEnvMgr {
               proxyPort: ${free.port.3}
         """)
   void deepPathHealthcheckUrl_routeShouldTargetBaseUrl() {
-    final kong.unirest.HttpResponse<String> httpResponse =
+    final kong.unirest.core.HttpResponse<String> httpResponse =
         Unirest.get(
                 "http://127.0.0.1:"
                     + TigerGlobalConfiguration.readStringOptional("free.port.3").get())

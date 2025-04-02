@@ -21,13 +21,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
-import groovy.util.logging.Slf4j;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import net.serenitybdd.annotations.Step;
-import org.apache.commons.collections.IteratorUtils;
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.json.JSONArray;

@@ -24,11 +24,15 @@ import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.GreenMailUtil;
 import com.icegreen.greenmail.util.ServerSetup;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.data.facet.RbelPop3CommandFacet;
 import de.gematik.rbellogger.data.facet.RbelPop3ResponseFacet;
 import de.gematik.rbellogger.data.facet.RbelSmtpCommandFacet;
 import de.gematik.rbellogger.data.facet.RbelSmtpResponseFacet;
+import de.gematik.rbellogger.data.pop3.RbelPop3Command;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import jakarta.mail.Folder;
@@ -39,8 +43,15 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeBodyPart;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
+import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -131,6 +142,104 @@ class EmailParsingTest {
     assertEqual(message, ExpectedMail.smallMessage());
 
     expectReceivedMessages(tigerTestEnvMgr, 15);
+  }
+
+  @SneakyThrows
+  @TigerTest(
+      tigerYaml =
+          """
+      tigerProxy:
+        proxyPort: ${free.port.0}
+        directReverseProxy:
+          hostname: 127.0.0.1
+          port: ${free.port.1}
+          ignoreConnectionErrors: true
+        activateRbelParsingFor:
+          - pop3""")
+  @Test
+  void testSendCAPACommand_ServerRespondsWithLongOkLine(TigerTestEnvMgr tigerTestEnvMgr) {
+
+    var fakeMailServerPort =
+        Integer.parseInt(TigerGlobalConfiguration.resolvePlaceholders("${free.port.1}"));
+
+    try (var mailClientSocket =
+            newClientSocketTo(tigerTestEnvMgr.getLocalTigerProxyOrFail(), true);
+        var fakeMailServer = new FakeMailServer(fakeMailServerPort, true);
+        var clientInputStream = mailClientSocket.getInputStream();
+        var clientOutputStream = mailClientSocket.getOutputStream();
+        var reader =
+            new BufferedReader(
+                new InputStreamReader(clientInputStream, StandardCharsets.US_ASCII))) {
+      // Read welcome message
+      assertThat(reader.readLine()).isEqualTo("+OK POP3 server ready");
+
+      // Test CAPA command
+      clientOutputStream.write("CAPA\r\n".getBytes(StandardCharsets.US_ASCII));
+      clientOutputStream.flush();
+
+      assertThat(reader.readLine()).isEqualTo("+OK Capability list follows");
+      assertThat(reader.readLine()).isEqualTo("USER");
+      assertThat(reader.readLine()).isEqualTo("PASS");
+      assertThat(reader.readLine()).isEqualTo("UIDL");
+      assertThat(reader.readLine()).isEqualTo(".");
+
+      await()
+          .atMost(5, TimeUnit.SECONDS)
+          .until(() -> tigerTestEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().size() == 3);
+      tigerTestEnvMgr.getLocalTigerProxyOrFail().waitForAllCurrentMessagesToBeParsed();
+      List<RbelElement> messages =
+          tigerTestEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().stream().toList();
+      assertThat(messages).hasSize(3); // server ready + capa command + response from capa
+      RbelElementAssertion.assertThat(messages.get(1))
+          .extractChildWithPath("$.pop3Command")
+          .hasValueEqualTo(RbelPop3Command.CAPA);
+      RbelElementAssertion.assertThat(messages.get(2))
+          .extractChildWithPath("$.pop3Body")
+          .hasStringContentEqualTo("USER\r\nPASS\r\nUIDL");
+    }
+  }
+
+  /** A fake mail server that only responds to the CAPA command* */
+  @SneakyThrows
+  private static void createFakeMailServer(int port, boolean okWithHeader) throws IOException {}
+
+  @NotNull
+  public static Socket newClientSocketTo(TigerProxy tigerProxy, boolean secure) throws IOException {
+    if (secure) {
+      return tigerProxy
+          .buildSslContext()
+          .getSocketFactory()
+          .createSocket("localhost", tigerProxy.getProxyPort());
+    } else {
+      return new Socket("localhost", tigerProxy.getProxyPort());
+    }
+  }
+
+  @NotNull
+  @SneakyThrows
+  public static ServerSocket newServerSocket(boolean secure, int port) {
+    if (secure) {
+      final KeyStore ks = buildTruststore();
+      final TrustManagerFactory tmf =
+          TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      tmf.init(ks);
+      KeyManagerFactory keyManagerFactory =
+          KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+      keyManagerFactory.init(ks, "gematik".toCharArray());
+      SSLContext sslContext = SSLContext.getInstance("TLS");
+      sslContext.init(keyManagerFactory.getKeyManagers(), null, null);
+
+      return sslContext.getServerSocketFactory().createServerSocket(port);
+    } else {
+      return new ServerSocket(port);
+    }
+  }
+
+  @SneakyThrows
+  private static KeyStore buildTruststore() {
+    final TigerPkiIdentity serverIdentity =
+        new TigerPkiIdentity("src/test/resources/rsaStoreWithChain.jks;gematik");
+    return serverIdentity.toKeyStoreWithPassword("gematik");
   }
 
   @SneakyThrows
@@ -430,6 +539,75 @@ class EmailParsingTest {
     static ExpectedMail smallMessage() {
       return new ExpectedMail(
           "from@localhost", "to@localhost", "test subject", "here the body of the email\r\n");
+    }
+  }
+
+  class FakeMailServer implements AutoCloseable {
+
+    private final ServerSocket serverSocket;
+    private final Thread serverThread;
+
+    public FakeMailServer(int port, boolean okWithHeader) {
+      this.serverSocket = newServerSocket(true, port);
+      this.serverThread = startServer(okWithHeader);
+    }
+
+    private Thread startServer(boolean okWithHeader) {
+      var serverThread =
+          new Thread(
+              () -> {
+                try (Socket clientSocket = serverSocket.accept();
+                    BufferedWriter out =
+                        new BufferedWriter(
+                            new OutputStreamWriter(
+                                clientSocket.getOutputStream(), StandardCharsets.US_ASCII));
+                    BufferedReader in =
+                        new BufferedReader(
+                            new InputStreamReader(
+                                clientSocket.getInputStream(), StandardCharsets.US_ASCII))) {
+
+                  // Send welcome message
+                  out.write("+OK POP3 server ready\r\n");
+                  out.flush();
+
+                  // Handle commands
+                  String line;
+                  while ((line = in.readLine()) != null) {
+                    if (line.equalsIgnoreCase("CAPA")) {
+                      if (okWithHeader) {
+                        out.write("+OK Capability list follows\r\n");
+                      } else {
+                        out.write("+OK\r\n");
+                      }
+                      out.flush();
+                      out.write("USER\r\n");
+                      out.flush();
+                      out.write("PASS\r\n");
+                      out.flush();
+                      out.write("UIDL\r\n");
+                      out.flush();
+                      out.write(".\r\n");
+                    } else {
+                      out.write("-ERR Unknown command\r\n");
+                    }
+                    out.flush();
+                  }
+                } catch (IOException e) {
+                  e.printStackTrace();
+                }
+              });
+      serverThread.start();
+      return serverThread;
+    }
+
+    @Override
+    public void close() throws Exception {
+      if (serverThread != null) {
+        serverThread.join(5000);
+      }
+      if (serverSocket != null && !serverSocket.isClosed()) {
+        serverSocket.close();
+      }
     }
   }
 }
