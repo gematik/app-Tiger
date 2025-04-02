@@ -128,10 +128,9 @@ class TigerSerenityReportMojoTest {
     // Assertion
     File[] jsonFiles = reportDir.resolve("unresolvedReports").toFile().listFiles();
     AssertionsForClassTypes.assertThat(jsonFiles)
-      .hasSize(3)
-      .allMatch(jsonFile -> jsonFile.getName().endsWith(".json"));
+        .hasSize(3)
+        .allMatch(jsonFile -> jsonFile.getName().endsWith(".json"));
   }
-
 
   @ParameterizedTest
   @MethodSource("provideReportTypes")

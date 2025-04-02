@@ -22,6 +22,8 @@ doc/user_manual/HttpGlueCodeTest.feature
 /doc/user_manual/TigerProxyGlueCommentsOnly.adoc
 /doc/user_manual/rest_api
 tiger-uitests/mvn-playwright-log.txt
+*.xml.versionsBackup
+**/*.xml.versionsBackup
 
 /.idea/
 /.vscode/
