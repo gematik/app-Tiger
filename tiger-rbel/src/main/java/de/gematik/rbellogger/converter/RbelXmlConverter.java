@@ -37,7 +37,7 @@ import org.xml.sax.InputSource;
 
 @ConverterInfo(dependsOn = {RbelHttpRequestConverter.class, RbelHttpResponseConverter.class})
 @Slf4j
-public class RbelXmlConverter implements RbelConverterPlugin {
+public class RbelXmlConverter extends RbelConverterPlugin {
 
   private static final String XML_TEXT_KEY = "text";
   private static final RbelHtmlConverter HTML_CONVERTER = new RbelHtmlConverter();

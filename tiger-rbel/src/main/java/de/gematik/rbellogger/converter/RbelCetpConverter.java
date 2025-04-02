@@ -19,7 +19,7 @@ package de.gematik.rbellogger.converter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.facet.RbelCetpFacet;
 
-public class RbelCetpConverter implements RbelConverterPlugin {
+public class RbelCetpConverter extends RbelConverterPlugin {
 
   private static final byte[] CETP_INTRO_MARKER = "CETP".getBytes();
   public static final int MIN_CETP_MESSAGE_LENGTH = CETP_INTRO_MARKER.length + 4;

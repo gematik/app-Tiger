@@ -24,7 +24,7 @@ import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import kong.unirest.HttpRequest;
+import kong.unirest.core.HttpRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.AbstractStringAssert;
 import org.junit.jupiter.api.Test;

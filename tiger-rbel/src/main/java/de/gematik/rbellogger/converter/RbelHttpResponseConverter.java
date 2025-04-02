@@ -45,7 +45,7 @@ import lombok.val;
 import org.bouncycastle.util.encoders.Hex;
 
 @Slf4j
-public class RbelHttpResponseConverter implements RbelConverterPlugin {
+public class RbelHttpResponseConverter extends RbelConverterPlugin {
 
   static final String CRLF = "\r\n";
   private static final byte[] CRLF_BYTES = CRLF.getBytes(UTF_8);

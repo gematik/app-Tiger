@@ -38,7 +38,7 @@ public class RbelMessageValidatorFindMessageStepsTest extends AbstractRbelMessag
   }
 
   private void readPop3Messages() {
-    readTgrFileAndStoreForrbelMessageRetriever(
+    readTgrFileAndStoreForRbelMessageRetriever(
         "src/test/resources/testdata/pop3.tgr", List.of("pop3", "mime"));
   }
 

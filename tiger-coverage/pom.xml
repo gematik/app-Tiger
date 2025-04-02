@@ -16,17 +16,15 @@
     limitations under the License.
 
 -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>tiger</artifactId>
-        <groupId>de.gematik.test</groupId>
-        <version>3.7.1</version>
-    </parent>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>de.gematik.test</groupId>
+        <artifactId>tiger</artifactId>
+        <version>3.7.3</version>
+    </parent>
 
     <artifactId>tiger-coverage</artifactId>
     <description>Compute aggregated test code coverage</description>
@@ -39,42 +37,34 @@
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-maven-plugin</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-proxy</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-rbel</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-test-lib</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-test-utils</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-testenv-mgr</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-zion</artifactId>
-            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
@@ -87,10 +77,10 @@
                 <executions>
                     <execution>
                         <id>report-aggregate</id>
-                        <phase>verify</phase>
                         <goals>
                             <goal>report-aggregate</goal>
                         </goals>
+                        <phase>verify</phase>
                         <configuration>
                             <dataFileIncludes>
                                 <dataFileInclude>**/jacoco.exec</dataFileInclude>

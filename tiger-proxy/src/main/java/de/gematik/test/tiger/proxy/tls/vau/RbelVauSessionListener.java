@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
     onlyActivateFor = {"epa-vau"},
     addAsPostConversionListener = true)
 @Slf4j
-public class RbelVauSessionListener implements RbelConverterPlugin {
+public class RbelVauSessionListener extends RbelConverterPlugin {
 
   private static final String RECORD_ID_KVNR_RBEL_PATH =
       "$.Data.content.decoded.AuthorizationAssertion.content.decoded."

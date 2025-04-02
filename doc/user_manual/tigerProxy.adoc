@@ -864,6 +864,10 @@ Currently supported are:
 * `b64gzip` for RbelBase64GzipConverter
 * `OCSP` for RbelOcspResponseConverter
 
+These optional converters can also be deactivated at runtime via glue code.
+You can deactivate parser during a specific test case.
+See the xref:tigerTestLibrary.adoc#_complete_set_of_steps_in_validation_glue_code[Complete set of steps in validation glue code].
+
 ===== parsingShouldBlockCommunication
 
 If blocking is enabled the Tiger Proxy will only return the response when message parsing is completed.

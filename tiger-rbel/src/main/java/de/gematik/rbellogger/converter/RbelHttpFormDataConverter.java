@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 
-public class RbelHttpFormDataConverter implements RbelConverterPlugin {
+public class RbelHttpFormDataConverter extends RbelConverterPlugin {
 
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConverter converter) {

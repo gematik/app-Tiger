@@ -35,6 +35,7 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -52,12 +53,11 @@ import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import kong.unirest.*;
+import kong.unirest.core.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.http.NoHttpResponseException;
 import org.assertj.core.data.TemporalUnitWithinOffset;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -193,7 +193,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   }
 
   @Test
-  void reverseProxy_headersShouldBeUntouched() {
+  void reverseProxy_headersShouldBeUntouched() throws Exception {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
@@ -1048,7 +1048,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     spawnTigerProxyWith(new TigerProxyConfiguration());
 
     val request = proxyRest.get("http://foobar/");
-    assertThatThrownBy(request::asEmpty).hasRootCauseInstanceOf(NoHttpResponseException.class);
+    assertThatThrownBy(request::asEmpty).hasRootCauseInstanceOf(IOException.class);
   }
 
   @SneakyThrows
@@ -1057,6 +1057,6 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     spawnTigerProxyWith(new TigerProxyConfiguration());
 
     val request = Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/");
-    assertThatThrownBy(request::asEmpty).hasRootCauseInstanceOf(NoHttpResponseException.class);
+    assertThatThrownBy(request::asEmpty).hasRootCauseInstanceOf(IOException.class);
   }
 }

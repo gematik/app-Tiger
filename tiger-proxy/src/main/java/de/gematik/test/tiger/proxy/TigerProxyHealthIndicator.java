@@ -18,9 +18,9 @@ package de.gematik.test.tiger.proxy;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-import kong.unirest.Unirest;
-import kong.unirest.UnirestException;
-import kong.unirest.UnirestInstance;
+import kong.unirest.core.Unirest;
+import kong.unirest.core.UnirestException;
+import kong.unirest.core.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
@@ -68,8 +68,8 @@ public class TigerProxyHealthIndicator implements HealthIndicator {
     try (UnirestInstance unirestInstance = Unirest.spawnInstance()) {
       unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
       unirestInstance.config().connectTimeout(2000);
-      unirestInstance.config().socketTimeout(2000);
-      unirestInstance.config().automaticRetries(false);
+      unirestInstance.config().requestTimeout(2000);
+      unirestInstance.config().retryAfter(false);
       unirestInstance
           .get(
               "http://tiger.proxy/?healthEndPointUuid=" + tigerProxy.getHealthEndpointRequestUuid())

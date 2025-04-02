@@ -6,11 +6,13 @@ zion:
         path: "/checkPassword"
       nestedResponses:
         correctPassword:
+          importance: 10
           requestCriterions:
-            - $.body == 'secret'
+            - "$.body == 'secret'"
           response:
             statusCode: 200
         wrongPassword:
+          importance: 0
           response:
             statusCode: 400
     healthCheck:

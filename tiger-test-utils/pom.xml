@@ -16,45 +16,39 @@
     limitations under the License.
 
 -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>3.7.1</version>
+        <version>3.7.3</version>
     </parent>
 
     <artifactId>tiger-test-utils</artifactId>
 
     <dependencies>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-common</artifactId>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-rbel</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-common</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
         </dependency>
         <dependency>
             <groupId>org.skyscreamer</groupId>
             <artifactId>jsonassert</artifactId>
-            <version>1.5.3</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.xmlunit</groupId>
             <artifactId>xmlunit-assertj</artifactId>
-            <version>2.10.0</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -72,16 +66,14 @@
                 <version>1.18.20.0</version>
                 <executions>
                     <execution>
-                        <phase>generate-sources</phase>
                         <goals>
                             <goal>delombok</goal>
                         </goals>
+                        <phase>generate-sources</phase>
                         <configuration>
                             <addOutputDirectory>false</addOutputDirectory>
                             <sourceDirectory>src/main/java</sourceDirectory>
-                            <outputDirectory>
-                                ${project.build.directory}/delombok
-                            </outputDirectory>
+                            <outputDirectory>${project.build.directory}/delombok</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
@@ -117,16 +109,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${version.maven.failsafe}</version>
-                <executions>
-                    <execution>
-                        <id>run-tests</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
                 <configuration>
                     <argLine>${failsafe.jacoco.args}</argLine>
                     <includes>
@@ -139,36 +121,46 @@
                     <threadCount>16</threadCount>
                     <forkCount>2</forkCount>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>run-tests</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                        <phase>integration-test</phase>
+                    </execution>
+                </executions>
             </plugin>
             <!-- TGR-979           <plugin>
-                            <groupId>net.serenity-bdd.maven.plugins</groupId>
-                            <artifactId>serenity-maven-plugin</artifactId>
-                            <version>${version.serenity.maven.plugin}</version>
-                            <dependencies>
-                                <dependency>
-                                    <groupId>net.serenity-bdd</groupId>
-                                    <artifactId>serenity-core</artifactId>
-                                    <version>${version.serenity.core}</version>
-                                </dependency>
-                            </dependencies>
-                            <executions>
-                                <execution>
-                                    <phase>post-integration-test</phase>
-                                    <goals>
-                                        <goal>aggregate</goal>
-                                        <goal>check</goal>
-                                    </goals>
-                                </execution>
-                            </executions>
-                        </plugin>
-            -->
+                                                    <groupId>net.serenity-bdd.maven.plugins</groupId>
+                                                    <artifactId>serenity-maven-plugin</artifactId>
+                                                    <version>${version.serenity.maven.plugin}</version>
+                                                    <dependencies>
+                                                        <dependency>
+                                                            <groupId>net.serenity-bdd</groupId>
+                                                            <artifactId>serenity-core</artifactId>
+                                                            <version>${version.serenity.core}</version>
+                                                        </dependency>
+                                                    </dependencies>
+                                                    <executions>
+                                                        <execution>
+                                                            <phase>post-integration-test</phase>
+                                                            <goals>
+                                                                <goal>aggregate</goal>
+                                                                <goal>check</goal>
+                                                            </goals>
+                                                        </execution>
+                                                    </executions>
+                                                </plugin>
+                                    -->
             <plugin>
-                <artifactId>jacoco-maven-plugin</artifactId>
                 <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
             </plugin>
             <plugin>
-                <artifactId>sonar-maven-plugin</artifactId>
                 <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

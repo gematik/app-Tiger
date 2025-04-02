@@ -94,6 +94,23 @@ public class RbelConverter {
     return convertElement(RbelElement.builder().parentNode(parentNode).rawContent(input).build());
   }
 
+  public void deactivatePlugins(List<String> pluginIds) {
+    synchronized (converterPlugins) {
+      converterPlugins.forEach(
+          c -> {
+            if (c.isParserForAny(pluginIds)) {
+              c.deactivate();
+            }
+          });
+    }
+  }
+
+  public void reactivateAllConfiguredPlugins() {
+    synchronized (converterPlugins) {
+      converterPlugins.forEach(RbelConverterPlugin::activate);
+    }
+  }
+
   public RbelElement convertElement(final String input, RbelElement parentNode) {
     return convertElement(
         RbelElement.builder()
@@ -119,7 +136,10 @@ public class RbelConverter {
         continue;
       }
       try {
-        plugin.consumeElement(convertedInput, this);
+        if (plugin.isActive()) {
+
+          plugin.consumeElement(convertedInput, this);
+        }
       } catch (RuntimeException e) {
         val conversionException =
             RbelConversionException.wrapIfNotAConversionException(e, plugin, convertedInput);
@@ -148,7 +168,9 @@ public class RbelConverter {
 
   public void triggerPostConversionListenerFor(RbelElement element) {
     for (RbelConverterPlugin postConversionListener : postConversionListeners) {
-      postConversionListener.consumeElement(element, this);
+      if (postConversionListener.isActive()) {
+        postConversionListener.consumeElement(element, this);
+      }
     }
   }
 
@@ -224,20 +246,6 @@ public class RbelConverter {
             .build());
 
     messageElement.addFacet(new RbelParsingNotCompleteFacet(this));
-    messagePair
-        .getPairedRequest()
-        .ifPresent(
-            requestFuture ->
-                requestFuture.thenAccept(
-                    request -> {
-                      final var pairFacet =
-                          TracingMessagePairFacet.builder()
-                              .response(messageElement)
-                              .request(request)
-                              .build();
-                      request.addOrReplaceFacet(pairFacet);
-                      messageElement.addOrReplaceFacet(pairFacet);
-                    }));
 
     return CompletableFuture.supplyAsync(
         () -> {
@@ -269,6 +277,18 @@ public class RbelConverter {
       RbelHttpResponseFacet.updateRequestOfResponseFacet(message, request.orElse(null));
       request.ifPresent(req -> RbelHttpRequestFacet.updateResponseOfRequestFacet(req, message));
     }
+
+    messagePair
+        .getPairedRequest()
+        .ifPresent(
+            requestFuture -> {
+              var request = requestFuture.join();
+
+              final var pairFacet =
+                  TracingMessagePairFacet.builder().response(message).request(request).build();
+              request.addOrReplaceFacet(pairFacet);
+              message.addOrReplaceFacet(pairFacet);
+            });
 
     message.triggerPostConversionListener(this);
     return message;

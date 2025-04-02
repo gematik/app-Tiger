@@ -50,7 +50,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
 
   @Builder
   public ExternalJarServer(
-      TigerTestEnvMgr tigerTestEnvMgr, String serverId, CfgServer configuration) {
+      String serverId, CfgServer configuration, TigerTestEnvMgr tigerTestEnvMgr) {
     super(serverId, configuration, tigerTestEnvMgr);
   }
 

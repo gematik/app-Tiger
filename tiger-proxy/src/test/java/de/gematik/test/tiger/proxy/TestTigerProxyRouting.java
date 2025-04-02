@@ -26,7 +26,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.util.List;
 import java.util.stream.Stream;
-import kong.unirest.*;
+import kong.unirest.core.*;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.junit.jupiter.api.Test;
@@ -80,7 +80,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
   }
 
   @ParameterizedTest
-  @MethodSource("nestedAndShallowPathTestCases")
+  @MethodSource("nestedAndShallowPathTestCasesForwardRoute")
   void forwardProxyToNestedTarget_ShouldAdressCorrectly(
       String fromPath, String requestPath, String actualPath, int expectedReturnCode) {
     spawnTigerProxyWith(new TigerProxyConfiguration());
@@ -95,18 +95,16 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
     awaitMessagesInTiger(2);
     final RbelElement request = tigerProxy.getRbelMessagesList().get(0);
 
-    // the extractChildWithPath will return an element inside the original to asserted element,
-    // consecutive calls in an assertion chain would fail as they wouldn't start from the root
-    // element but from
-    // the child extracted by the first assertion
-    assertThat(request) // NOSONAR
+    assertThat(request)
         .extractChildWithPath("$.header.Host")
-        .hasStringContentEqualTo("localhost:" + fakeBackendServerPort);
-    assertThat(request).extractChildWithPath("$.path").hasStringContentEqualTo(actualPath);
+        .hasStringContentEqualTo("localhost:" + fakeBackendServerPort)
+        .andTheInitialElement()
+        .extractChildWithPath("$.path")
+        .hasStringContentEqualTo(actualPath);
   }
 
   @ParameterizedTest
-  @MethodSource("nestedAndShallowPathTestCases")
+  @MethodSource("nestedAndShallowPathTestCasesReverseRoute")
   void reverseProxyToNestedTarget_ShouldAddressCorrectly(
       String toPath, String requestPath, String actualPath, int expectedReturnCode) {
     spawnTigerProxyWith(new TigerProxyConfiguration());
@@ -132,6 +130,24 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
         .hasStringContentEqualTo(actualPath);
   }
 
+  public static Stream<Arguments> nestedAndShallowPathTestCasesForwardRoute() {
+    // In a forward route the request is made to http://backend and the configured route sends it to
+    // http://backend/foobar
+    // We expect no trailing slash in the actual path.
+    // With unirest 3, the http client would silently change the original request to http://backend/
+    // and therefore the actual path would be http://backend/foobar/
+
+    return Stream.concat(
+        Stream.of(Arguments.of("/foobar", "", "/foobar", 666)), nestedAndShallowPathTestCases());
+  }
+
+  public static Stream<Arguments> nestedAndShallowPathTestCasesReverseRoute() {
+    // In a reverse route route is configured to redirect from "/" to "/foobar" . Because the
+    // from is the single slash "/", the actual path also ends with a trailing slash.
+    return Stream.concat(
+        Stream.of(Arguments.of("/foobar", "", "/foobar/", 666)), nestedAndShallowPathTestCases());
+  }
+
   public static Stream<Arguments> nestedAndShallowPathTestCases() {
     return Stream.of(
         /*
@@ -145,7 +161,8 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
         Arguments.of("/deep", "/foobar/", "/deep/foobar/", 777),
         Arguments.of("/deep/", "/foobar", "/deep/foobar", 777),
         Arguments.of("/deep/", "/foobar/", "/deep/foobar/", 777),
-        Arguments.of("/foobar", "", "/foobar/", 666), // 5
+        // Arguments.of("/foobar", "", "/foobar/", 666), // 5 - special case with different handling
+        // by reverse and forward routes
         Arguments.of("/foobar", "/", "/foobar/", 666),
         Arguments.of("/foobar/", "", "/foobar/", 666),
         Arguments.of("/foobar/", "/", "/foobar/", 666),
@@ -423,7 +440,8 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
             .build());
 
     assertThat(
-            Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/")
+            unirestInstance
+                .get("http://localhost:" + tigerProxy.getProxyPort() + "/")
                 .header("host", hostHeader)
                 .asJson()
                 .getStatus())

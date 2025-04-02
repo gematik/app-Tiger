@@ -377,8 +377,8 @@ The Tiger test library configuration also provides a flag to add curl command de
 
 For more information about REST testing in Tiger/SerenityBDD please check these two documents:
 
-* https://serenity-bdd.github.io/theserenitybook/latest/serenity-rest.html[Serenity REST]
-* https://serenity-bdd.github.io/theserenitybook/latest/serenity-screenplay-rest.html[Serenity Screenplay REST]
+* https://serenity-bdd.github.io/docs/guide/user_guide_intro[Serenity]
+* https://serenity-bdd.github.io/docs/screenplay/screenplay_rest[Serenity Screenplay REST]
 
 === Synchronizing BDD scenarios with Polarion test cases (Gematik only)
 

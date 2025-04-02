@@ -22,7 +22,7 @@ import de.gematik.rbellogger.util.RbelContent;
 import java.util.Base64;
 import java.util.Optional;
 
-public class RbelBase64JsonConverter implements RbelConverterPlugin {
+public class RbelBase64JsonConverter extends RbelConverterPlugin {
 
   @Override
   public void consumeElement(RbelElement rbel, RbelConverter context) {

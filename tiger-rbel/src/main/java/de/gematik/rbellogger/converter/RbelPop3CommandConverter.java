@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @ConverterInfo(onlyActivateFor = "pop3")
 @Slf4j
-public class RbelPop3CommandConverter implements RbelConverterPlugin {
+public class RbelPop3CommandConverter extends RbelConverterPlugin {
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConverter context) {
@@ -63,7 +63,7 @@ public class RbelPop3CommandConverter implements RbelConverterPlugin {
         new String(c.subArray(0, RbelPop3Command.MAX_LENGTH + 1), StandardCharsets.UTF_8);
     var command = new StringTokenizer(shortPrefix).nextToken();
     try {
-      return Optional.of(RbelPop3Command.valueOf(command));
+      return Optional.of(RbelPop3Command.fromStringIgnoringCase(command));
     } catch (IllegalArgumentException e) {
       // fall through
     }

@@ -47,11 +47,12 @@ class RbelConverterTest {
     rbelLogger
         .getRbelConverter()
         .addConverter(
-            (el, c) -> {
-              if (el.hasFacet(RbelJwtFacet.class)) {
-                throw new RuntimeException("this exception should be ignored");
-              }
-            });
+            RbelConverterPlugin.createPlugin(
+                (el, c) -> {
+                  if (el.hasFacet(RbelJwtFacet.class)) {
+                    throw new RuntimeException("this exception should be ignored");
+                  }
+                }));
 
     var convertedMessage =
         rbelLogger

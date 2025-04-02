@@ -34,7 +34,7 @@ import lombok.SneakyThrows;
 
 /** Abstract converter for structured formats that are parsed via Jackson. */
 @RequiredArgsConstructor
-public abstract class AbstractJacksonConverter<F extends RbelFacet> implements RbelConverterPlugin {
+public abstract class AbstractJacksonConverter<F extends RbelFacet> extends RbelConverterPlugin {
 
   @Getter(AccessLevel.PACKAGE)
   private final ObjectMapper mapper;

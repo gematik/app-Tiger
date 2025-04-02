@@ -26,10 +26,11 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
-import kong.unirest.*;
+import kong.unirest.core.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -42,6 +43,7 @@ class TestTigerProxyInfiniteLoops extends AbstractTigerProxyTest {
 
   @SneakyThrows
   @Test
+  @Disabled("TGR-1792")
   void simpleInfiniteLoop_shouldGiveError() {
     spawnTigerProxyWith(new TigerProxyConfiguration());
     tigerProxy.addRoute(

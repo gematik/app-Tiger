@@ -27,27 +27,24 @@ import de.gematik.test.tiger.zion.config.ZionBackendRequestDescription;
 import de.gematik.test.tiger.zion.config.ZionConfiguration;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import kong.unirest.Client;
-import kong.unirest.Config;
-import kong.unirest.Headers;
-import kong.unirest.HttpRequestWithBody;
-import kong.unirest.HttpResponse;
-import kong.unirest.Unirest;
-import kong.unirest.UnirestInstance;
-import kong.unirest.apache.ApacheClient;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpClientConnection;
-import org.apache.http.HttpHost;
+import org.apache.http.*;
+import org.apache.http.Header;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.RequestBuilder;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.ManagedHttpClientConnection;
 import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
@@ -70,13 +67,10 @@ public class BackendRequestExecutor {
 
     for (ZionBackendRequestDescription requestDescription : backendRequests) {
       try {
-        var unirestResponse =
-            prepareAndExecuteBackendRequest(requestDescription, requestRbelMessage);
+        var response = prepareAndExecuteBackendRequest(requestDescription, requestRbelMessage);
 
         final RbelElement rbelResponse =
-            rbelLogger
-                .getRbelConverter()
-                .convertElement(responseToRawMessage(unirestResponse), null);
+            rbelLogger.getRbelConverter().convertElement(responseToRawMessage(response), null);
         VariableAssigner.doAssignments(
             requestDescription.getAssignments(), rbelResponse, jexlContext);
       } catch (RuntimeException e) {
@@ -92,60 +86,60 @@ public class BackendRequestExecutor {
     }
   }
 
-  private HttpResponse<byte[]> prepareAndExecuteBackendRequest(
+  @SneakyThrows
+  private CloseableHttpResponse prepareAndExecuteBackendRequest(
       ZionBackendRequestDescription requestDescription, RbelElement requestRbelMessage) {
     final String method = getMethod(requestDescription);
-    try (UnirestInstance unirestInstance = createUnirestInstance()) {
-      final HttpRequestWithBody unirestRequest =
-          unirestInstance.request(
-              method,
-              TigerGlobalConfiguration.resolvePlaceholdersWithContext(
-                  requestDescription.getUrl(),
-                  new TigerJexlContext().withRootElement(requestRbelMessage)));
+    try (CloseableHttpClient apacheHttpClient = buildHttpClient()) {
+
+      var httpRequest =
+          RequestBuilder.create(method)
+              .setUri(
+                  TigerGlobalConfiguration.resolvePlaceholdersWithContext(
+                      requestDescription.getUrl(),
+                      new TigerJexlContext().withRootElement(requestRbelMessage)));
 
       if (requestDescription.getHeaders() != null) {
-        requestDescription.getHeaders().forEach(unirestRequest::header);
+        requestDescription.getHeaders().forEach(httpRequest::addHeader);
       }
-      final HttpResponse<byte[]> unirestResponse;
+      CloseableHttpResponse response;
       if (StringUtils.isNotEmpty(requestDescription.getBody())) {
         final RbelSerializationResult body = getBody(requestDescription, requestRbelMessage);
         if (log.isTraceEnabled()) {
           log.trace(
               "About to sent {} with body {} to {}",
-              unirestRequest.getHttpMethod().name(),
+              httpRequest.getMethod(),
               body.getContentAsString(),
-              unirestRequest.getUrl());
+              httpRequest.getUri());
         }
-        unirestResponse = unirestRequest.body(body.getContent()).asBytes();
+        httpRequest.setEntity(new ByteArrayEntity(body.getContent()));
+        response = apacheHttpClient.execute(httpRequest.build());
       } else {
         if (log.isTraceEnabled()) {
           log.trace(
-              "About to sent {} without body to {}",
-              unirestRequest.getHttpMethod().name(),
-              unirestRequest.getUrl());
+              "About to sent {} without body to {}", httpRequest.getMethod(), httpRequest.getUri());
         }
-        unirestResponse = unirestRequest.asBytes();
+        response = apacheHttpClient.execute(httpRequest.build());
       }
-      return unirestResponse;
+      return response;
     }
   }
 
-  private byte[] responseToRawMessage(HttpResponse<byte[]> response) {
+  @SneakyThrows
+  private byte[] responseToRawMessage(CloseableHttpResponse response) {
     byte[] httpResponseHeader =
-        ("HTTP/1.1 "
-                + response.getStatus()
-                + " "
-                + (response.getStatusText() != null ? response.getStatusText() : "")
+        (response.getStatusLine()
                 + "\r\n"
-                + formatHeaderList(response.getHeaders())
+                + formatHeaderList(response.getAllHeaders())
                 + "\r\n\r\n")
             .getBytes(StandardCharsets.US_ASCII);
 
-    return ArrayUtils.addAll(httpResponseHeader, response.getBody());
+    return ArrayUtils.addAll(httpResponseHeader, response.getEntity().getContent().readAllBytes());
   }
 
-  private String formatHeaderList(Headers headerList) {
-    return headerList.all().stream()
+  private String formatHeaderList(Header[] headerList) {
+    return Arrays.stream(ArrayUtils.nullToEmpty(headerList))
+        .map(Header.class::cast)
         .filter(
             h ->
                 !h.getName()
@@ -174,25 +168,17 @@ public class BackendRequestExecutor {
     return TigerGlobalConfiguration.resolvePlaceholders(requestDescription.getMethod());
   }
 
-  private UnirestInstance createUnirestInstance() {
-    UnirestInstance unirestInstance = Unirest.spawnInstance();
-
-    unirestInstance.config().httpClient(buildHttpClient());
-    return unirestInstance;
-  }
-
-  private Function<Config, Client> buildHttpClient() {
+  private CloseableHttpClient buildHttpClient() {
     var httpClientBuilder =
         HttpClients.custom()
             .setConnectionManager(
                 new SpyOnSocketPortConnectionManager(zionConfiguration.getServerName()));
     if (zionConfiguration.getLocalTigerProxy() == null) {
-      return ApacheClient.builder(httpClientBuilder.useSystemProperties().build());
+      return httpClientBuilder.useSystemProperties().build();
     } else {
-      return ApacheClient.builder(
-          httpClientBuilder
-              .setProxy(HttpHost.create(zionConfiguration.getLocalTigerProxy()))
-              .build());
+      return httpClientBuilder
+          .setProxy(HttpHost.create(zionConfiguration.getLocalTigerProxy()))
+          .build();
     }
   }
 

@@ -75,7 +75,8 @@ public class TigerProxyTestHelper {
       await()
           .atMost(timeoutSec, TimeUnit.SECONDS)
           .pollDelay(200, TimeUnit.MILLISECONDS)
-          .until(() -> tigerRemoteProxyClient.getRbelMessages().size() == expectedMessagesCount);
+          .until(
+              () -> tigerRemoteProxyClient.getRbelMessagesList().size() == expectedMessagesCount);
     } catch (ConditionTimeoutException cte) {
       log.error(
           "Expected {} message(s) in rbel message list but found {}",

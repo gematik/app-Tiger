@@ -27,8 +27,9 @@ TIP: On Windows you can use Git Bash or Powershell
 
 In order to use Tiger with your BDD/Cucumber/Serenity based test suite you need to add a few dependencies to integrate with Tiger
 
-* Current version of Tiger test library
-* Current version of Tiger test library as test-jar artefact
+* Current version of Tiger-bom in your dependencyManagement section
+* Tiger test library in your dependencies section
+* or the current version of Tiger test library as test-jar artefact
 
 NOTE: The second dependency is needed so that the IntelliJ Cucumber plugin detects the Steps/Glue code provided by the Tiger test library.
 
