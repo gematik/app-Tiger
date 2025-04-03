@@ -21,7 +21,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-bom</artifactId>
-    <version>3.7.5</version>
+    <version>3.7.6-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Tiger Bill of Materials</name>
@@ -313,57 +313,57 @@
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-common</artifactId>
-                <version>3.7.5</version>
+                <version>3.7.6-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-httpbin</artifactId>
-                <version>3.7.5</version>
+                <version>3.7.6-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-java-agent</artifactId>
-                <version>3.7.5</version>
+                <version>3.7.6-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-maven-plugin</artifactId>
-                <version>3.7.5</version>
+                <version>3.7.6-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-proxy</artifactId>
-                <version>3.7.5</version>
+                <version>3.7.6-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-proxy-scrollable-webui</artifactId>
-                <version>3.7.5</version>
+                <version>3.7.6-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-rbel</artifactId>
-                <version>3.7.5</version>
+                <version>3.7.6-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-test-lib</artifactId>
-                <version>3.7.5</version>
+                <version>3.7.6-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-test-utils</artifactId>
-                <version>3.7.5</version>
+                <version>3.7.6-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-testenv-mgr</artifactId>
-                <version>3.7.5</version>
+                <version>3.7.6-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-zion</artifactId>
-                <version>3.7.5</version>
+                <version>3.7.6-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>eu.europa.ec.joinup.sd-dss</groupId>
