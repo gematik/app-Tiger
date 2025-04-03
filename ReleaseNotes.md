@@ -1,6 +1,12 @@
 # Changelog Tiger Test platform
 
-# Release 3.7.2
+# Release 3.7.5
+
+## Bugfixes
+
+* TGR-1800: setup-testenv goal of tiger maven plugin works again
+
+# Release 3.7.4
 
 * Serenity BDD 4.2.16
 * Cucumber 7.21.1
@@ -43,15 +49,15 @@ Given TGR the rbel parsing is reactivated for all configured parsers
 ```xml
 
 <dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-bom</artifactId>
-            <version>${tiger.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-    </dependencies>
+  <dependencies>
+    <dependency>
+      <groupId>de.gematik.test</groupId>
+      <artifactId>tiger-bom</artifactId>
+      <version>${tiger.version}</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+  </dependencies>
 </dependencyManagement>
 ```
 

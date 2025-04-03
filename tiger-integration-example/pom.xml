@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-
-    Copyright 2024 gematik GmbH
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-        http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
--->
+  ~ Copyright 2024 gematik GmbH
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  ~
+  -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
@@ -23,7 +22,7 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>3.7.4</version>
+        <version>3.7.5</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -61,9 +60,9 @@
                     <execution>
                         <id>prepare-and-verify-tiger-tests-and-results</id>
                         <!--
-                                                                            You MUST define the two goals in two different executions
-                                                                            to avoid the report being generated before the test run
-                                                                        -->
+                                                                You MUST define the two goals in two different executions
+                                                                to avoid the report being generated before the test run
+                                                            -->
                         <goals>
                             <goal>generate-drivers</goal>
                             <goal>attach-tiger-agent</goal>
@@ -88,11 +87,11 @@
                             <!--suppress UnresolvedMavenProperty -->
                             <driverClassName>Driver${ctr}IT</driverClassName>
                             <!-- optional, defaults to the templated located at
-                                                                                    /src/main/resources/driverClassTemplate.jtmpl
-                                                                                    in the tiger-maven-plugin module.
-                                                                                    Use separate template file if you have spring boot apps to test
-                                                                                    or need to do some more fancy set up stuff.
-                                                                                    -->
+                                                                      /src/main/resources/driverClassTemplate.jtmpl
+                                                                      in the tiger-maven-plugin module.
+                                                                      Use separate template file if you have spring boot apps to test
+                                                                      or need to do some more fancy set up stuff.
+                                                                      -->
                             <!-- optional -->
                             <skip>false</skip>
 
@@ -114,6 +113,7 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>tiger-report</id>
                         <goals>
                             <goal>generate-serenity-reports</goal>
                         </goals>
@@ -161,9 +161,9 @@
                 <version>${version.maven.failsafe}</version>
                 <configuration>
                     <!--
-                                                                Workflow UI needs this to allow it to block execution of maven,
-                                                                else maven will try to kill and destroy the tiger spring boot apps
-                                                             -->
+                                                      Workflow UI needs this to allow it to block execution of maven,
+                                                      else maven will try to kill and destroy the tiger spring boot apps
+                                                   -->
                     <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
                 </configuration>
                 <executions>
