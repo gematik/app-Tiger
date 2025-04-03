@@ -65,7 +65,10 @@ licenses:
 
 - To contribute, [clone](https://gitlab.prod.ccs.gematik.solutions/git/Testtools/tiger/tiger.git) the project.
 - Find the corresponding stories and bugs in the [Jira project](https://service.gematik.de/projects/TGR/summary)
-- The built artifacts can be found on [Nexus](https://nexus.prod.ccs.gematik.solutions/#browse/search/maven=attributes.maven2.artifactId%3Dtiger)
+- The built artifacts can be found
+  on [Nexus](https://nexus.prod.ccs.gematik.solutions/#browse/search/maven=attributes.maven2.artifactId%3Dtiger)
+- To format the project, we use [spotless](https://github.com/diffplug/spotless/tree/main/plugin-maven).
+  Please copy the pre-push hook from the project root to the .git/hooks folder.
 
 ### Jenkins Jobs
 
@@ -73,11 +76,13 @@ The Jenkins jobs for this project include:
 
 - [Continues Integration](https://jenkins.prod.ccs.gematik.solutions/view/Tiger/job/Tiger-TIGER-pipeline/)
 - [Internal Release](https://jenkins.prod.ccs.gematik.solutions/view/Tiger/job/Tiger-TIGER-Internal-Release/)
-    - This job performs GitLab release and builds Docker images for tiger-proxy and tiger-zion modules with release tags, pushing them to a GCR.
+    - This job performs GitLab release and builds Docker images for tiger-proxy and tiger-zion modules with release
+      tags, pushing them to a GCR.
 - [Publish to GitHub](https://jenkins.prod.ccs.gematik.solutions/view/Tiger/job/Tiger-TIGER-GitHub-Release/)
 - [Release to Maven Central](https://jenkins.prod.ccs.gematik.solutions/view/Tiger/job/Tiger-TIGER-Maven-Central-Release/)
 - [Release Chain](https://jenkins.prod.ccs.gematik.solutions/view/Tiger/job/Tiger-TIGER-Release/)
-    - This job encompasses internal release, GitHub publishing, Maven Central release, and publishing tiger-proxy-image and tiger-zion-image to Docker Hub.
+    - This job encompasses internal release, GitHub publishing, Maven Central release, and publishing tiger-proxy-image
+      and tiger-zion-image to Docker Hub.
 - Docker Hub image publishing jobs:
     - [Publish tiger-proxy-image to DockerHub](https://jenkins.prod.ccs.gematik.solutions/job/Tiger-TIGER-tiger-proxy-image-DockerHub-Release/)
     - [Publish tiger-zion-image to DockerHub](https://jenkins.prod.ccs.gematik.solutions/job/Tiger-TIGER-tiger-zion-image-DockerHub-Release/)
@@ -93,8 +98,10 @@ Use the provided [Dockerfile](Dockerfile) to create Docker images for tiger-prox
 
 #### Publish Docker Images to DockerHub using Jenkinsfiles:
 
-- [tiger-proxy DockerHub Jenkinsfile](tiger-proxy/DockerHub-Release.Jenkinsfile) for publishing tiger-proxy Docker image from GCR to DockerHub
-- [tiger-zion DockerHub Jenkinsfile](tiger-zion/DockerHub-Release.Jenkinsfile) for publishing tiger-zion Docker image from GCR to DockerHub
+- [tiger-proxy DockerHub Jenkinsfile](tiger-proxy/DockerHub-Release.Jenkinsfile) for publishing tiger-proxy Docker image
+  from GCR to DockerHub
+- [tiger-zion DockerHub Jenkinsfile](tiger-zion/DockerHub-Release.Jenkinsfile) for publishing tiger-zion Docker image
+  from GCR to DockerHub
 
 #### Docker Images on DockerHub:
 
