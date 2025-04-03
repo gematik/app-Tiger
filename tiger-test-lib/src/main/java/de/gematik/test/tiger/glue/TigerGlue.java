@@ -61,13 +61,14 @@ public class TigerGlue {
 
   /**
    * NoOp step to allow marking test suites as being from a specific version, this step is shown in
-   * the workflow ui, the serenity report and can be validated by the Titus validator.
+   * the workflow ui, the serenity report and can be validated by the Titus validator. Tiger does
+   * not resolve the test suite name and version string!
    *
    * @param testsuite name of the test suite
    * @param version version of the test suite
    */
-  @Given("TGR testsuite {string} version [string}")
-  @Gegebensei("TGR Testsuite {string} Version [string}")
+  @Given("TGR testsuite {string} version {string}")
+  @Gegebensei("TGR Testsuite {string} Version {string}")
   public void testsuiteAndVersion(String testsuite, String version) {
     log.info("Running testsuite {} version {}", testsuite, version);
   }

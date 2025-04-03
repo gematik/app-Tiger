@@ -68,11 +68,11 @@ public class TestEnvironmentMojo extends AbstractMojo {
     } else {
       if (!System.getProperty(ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM).equals("none")) {
         getLog()
-          .warn(
-            "Spring Boot Logging System property '"
-              + ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM
-              + "' is set so we will not overwrite it to 'none', this may cause startup failure"
-              + " with the maven logging system!");
+            .warn(
+                "Spring Boot Logging System property '"
+                    + ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM
+                    + "' is set so we will not overwrite it to 'none', this may cause startup"
+                    + " failure with the maven logging system!");
       }
     }
     TigerDirector.startStandaloneTestEnvironment();

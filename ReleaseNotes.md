@@ -1,12 +1,12 @@
 # Changelog Tiger Test platform
 
-# Release 3.7.5
+# Release 3.7.6
 
 ## Bugfixes
 
-* TGR-1800: setup-testenv goal of tiger maven plugin works again
+* TGR-1808 Fix TGR Test suite BDD step
 
-# Release 3.7.4
+# Release 3.7.5
 
 * Serenity BDD 4.2.16
 * Cucumber 7.21.1
@@ -67,6 +67,7 @@ Given TGR the rbel parsing is reactivated for all configured parsers
 * TGR-1785: Rbel: parsing the POP3 response to a CAPA command, groups correctly the multiline
   response in one
   RbelElement.
+* TGR-1800: setup-testenv goal of tiger maven plugin works again
 
 # Release 3.7.1
 
