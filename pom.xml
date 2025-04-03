@@ -22,7 +22,7 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-bom</artifactId>
-        <version>3.7.5-SNAPSHOT</version>
+        <version>3.7.5</version>
         <relativePath>./tiger-bom/pom.xml</relativePath>
     </parent>
     <artifactId>tiger</artifactId>
