@@ -4,6 +4,7 @@
 
 ## Bugfixes
 
+* TGR-1810: Rbel: Fixed a rare condition did lead to certain VAU-ERP messages to being parsed correctly
 * TGR-1808 Fix TGR Test suite BDD step
 
 # Release 3.7.5
@@ -49,15 +50,15 @@ Given TGR the rbel parsing is reactivated for all configured parsers
 ```xml
 
 <dependencyManagement>
-  <dependencies>
-    <dependency>
-      <groupId>de.gematik.test</groupId>
-      <artifactId>tiger-bom</artifactId>
-      <version>${tiger.version}</version>
-      <type>pom</type>
-      <scope>import</scope>
-    </dependency>
-  </dependencies>
+    <dependencies>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-bom</artifactId>
+            <version>${tiger.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
 </dependencyManagement>
 ```
 
@@ -649,8 +650,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+  key = PLUGIN_PROPERTY_NAME,
+  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }
