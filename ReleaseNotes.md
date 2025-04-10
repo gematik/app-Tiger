@@ -6,6 +6,15 @@
 
 * TGR-1810: Rbel: Fixed a rare condition did lead to certain VAU-ERP messages to being parsed correctly
 * TGR-1808 Fix TGR Test suite BDD step
+* TGR-1806 Dependency update
+
+* Serenity BDD 4.2.16
+* Cucumber 7.21.1
+* RestAssured 5.5.1
+* Selenium 4.19.1
+* Appium 9.3.0
+* Spring Boot 3.4.4
+* Logback 1.5.17
 
 # Release 3.7.5
 
@@ -14,7 +23,7 @@
 * RestAssured 5.5.1
 * Selenium 4.19.1
 * Appium 9.3.0
-* Spring Boot 3.4.3
+* Spring Boot 3.4.4
 * Logback 1.5.17
 
 ## Features

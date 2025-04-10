@@ -186,7 +186,7 @@
             <plugin>
                 <groupId>com.github.victools</groupId>
                 <artifactId>jsonschema-maven-plugin</artifactId>
-                <version>4.37.0</version>
+                <version>4.38.0</version>
                 <configuration>
                     <classNames>
                         <className>de.gematik.test.tiger.testenvmgr.config.Configuration</className>
