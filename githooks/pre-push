@@ -1,0 +1,44 @@
+#!/bin/bash -e
+
+echo "Running formatter..."
+
+# Create a patch file
+GIT_STASH_FILE="stash.patch"
+
+# Stash unstaged changes
+git diff > "$GIT_STASH_FILE"
+
+# add the patch so it is not stashed
+git add "$GIT_STASH_FILE"
+
+# stash untracked files
+git stash -k
+
+# apply spotless
+mvn spotless:apply
+
+# re-add any changes that spotless created
+git add -u
+
+# store the last exit code
+RESULT=$?
+
+if test -f "$GIT_STASH_FILE";
+then
+  echo "$GIT_STASH_FILE has been found"
+
+    # apply the patch
+    git apply stash.patch --allow-empty
+
+    # delete the patch and re-add that to the index
+    rm -f stash.patch
+    git add stash.patch
+else
+    echo "$GIT_STASH_FILE has not been found"
+fi
+
+# delete the WIP stash
+git stash drop
+
+# return the exit code
+exit $RESULT

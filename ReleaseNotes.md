@@ -1,19 +1,29 @@
 # Changelog Tiger Test platform
 
-# Release 3.7.5
+# Release 3.7.6
 
 ## Bugfixes
 
-* TGR-1800: setup-testenv goal of tiger maven plugin works again
-
-# Release 3.7.4
+* TGR-1810: Rbel: Fixed a rare condition did lead to certain VAU-ERP messages to being parsed correctly
+* TGR-1808 Fix TGR Test suite BDD step
+* TGR-1806 Dependency update
 
 * Serenity BDD 4.2.16
 * Cucumber 7.21.1
 * RestAssured 5.5.1
 * Selenium 4.19.1
 * Appium 9.3.0
-* Spring Boot 3.4.3
+* Spring Boot 3.4.4
+* Logback 1.5.17
+
+# Release 3.7.5
+
+* Serenity BDD 4.2.16
+* Cucumber 7.21.1
+* RestAssured 5.5.1
+* Selenium 4.19.1
+* Appium 9.3.0
+* Spring Boot 3.4.4
 * Logback 1.5.17
 
 ## Features
@@ -49,15 +59,15 @@ Given TGR the rbel parsing is reactivated for all configured parsers
 ```xml
 
 <dependencyManagement>
-  <dependencies>
-    <dependency>
-      <groupId>de.gematik.test</groupId>
-      <artifactId>tiger-bom</artifactId>
-      <version>${tiger.version}</version>
-      <type>pom</type>
-      <scope>import</scope>
-    </dependency>
-  </dependencies>
+    <dependencies>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-bom</artifactId>
+            <version>${tiger.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
 </dependencyManagement>
 ```
 
@@ -67,6 +77,7 @@ Given TGR the rbel parsing is reactivated for all configured parsers
 * TGR-1785: Rbel: parsing the POP3 response to a CAPA command, groups correctly the multiline
   response in one
   RbelElement.
+* TGR-1800: setup-testenv goal of tiger maven plugin works again
 
 # Release 3.7.1
 
@@ -648,8 +659,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+  key = PLUGIN_PROPERTY_NAME,
+  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }
