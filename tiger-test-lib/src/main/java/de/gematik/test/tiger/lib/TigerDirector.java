@@ -90,6 +90,10 @@ public class TigerDirector {
   @Getter private static TigerLibConfig libConfig;
   private static ConfigurableApplicationContext envMgrApplicationContext;
 
+  public static void main(String[] args) {
+    start();
+  }
+
   public static synchronized void start() {
     if (initialized) {
       log.info("Tiger Director already started, skipping");

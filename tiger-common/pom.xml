@@ -21,7 +21,7 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>3.7.5</version>
+        <version>3.7.6</version>
     </parent>
 
     <artifactId>tiger-common</artifactId>
@@ -186,7 +186,7 @@
             <plugin>
                 <groupId>com.github.victools</groupId>
                 <artifactId>jsonschema-maven-plugin</artifactId>
-                <version>4.37.0</version>
+                <version>4.38.0</version>
                 <configuration>
                     <classNames>
                         <className>de.gematik.test.tiger.testenvmgr.config.Configuration</className>

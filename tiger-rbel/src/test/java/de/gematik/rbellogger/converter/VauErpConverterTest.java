@@ -24,6 +24,7 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import java.util.Base64;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.SneakyThrows;
@@ -56,6 +57,23 @@ public class VauErpConverterTest {
   @Test
   void shouldRenderCleanHtml() {
     assertThat(RbelHtmlRenderer.render(rbelLogger.getMessageHistory())).isNotBlank();
+  }
+
+  @Test
+  void keyIdEndingInOneInRequest_shouldStillParseCorrectly() {
+    final RbelFileReaderCapturer fileReaderCapturer =
+        RbelFileReaderCapturer.builder().rbelFile("src/test/resources/tgr1810VauErp.tgr").build();
+    rbelLogger =
+        RbelLogger.build(
+            new RbelConfiguration()
+                .activateConversionFor("erp-vau")
+                .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
+                .addCapturer(fileReaderCapturer));
+    fileReaderCapturer.initialize();
+
+    RbelElementAssertion.assertThat(rbelLogger.getMessageList().get(12))
+        .hasStringContentEqualToAtPosition(
+            "$.body.message.body.Parameters.xmlns", "http://hl7.org/fhir");
   }
 
   @Test

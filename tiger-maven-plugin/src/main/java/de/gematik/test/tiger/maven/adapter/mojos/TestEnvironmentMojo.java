@@ -17,18 +17,24 @@
 
 package de.gematik.test.tiger.maven.adapter.mojos;
 
-import static org.awaitility.Awaitility.await;
-
 import de.gematik.test.tiger.lib.TigerDirector;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.SneakyThrows;
+import lombok.val;
+import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugins.annotations.LifecyclePhase;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.awaitility.core.ConditionTimeoutException;
+import org.apache.maven.plugins.annotations.*;
+import org.apache.maven.project.MavenProject;
 
 /**
  * This plugin allows to start up the Tiger test environment configured in a specific tiger yaml
@@ -37,7 +43,11 @@ import org.awaitility.core.ConditionTimeoutException;
  */
 @EqualsAndHashCode(callSuper = false)
 @Data
-@Mojo(name = "setup-testenv", defaultPhase = LifecyclePhase.INITIALIZE)
+@Mojo(
+    name = "setup-testenv",
+    defaultPhase = LifecyclePhase.INITIALIZE,
+    requiresDependencyResolution = ResolutionScope.RUNTIME)
+@Execute(phase = LifecyclePhase.PROCESS_CLASSES)
 public class TestEnvironmentMojo extends AbstractMojo {
 
   public static final String ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM =
@@ -50,7 +60,8 @@ public class TestEnvironmentMojo extends AbstractMojo {
   @Parameter(defaultValue = "86400")
   private long autoShutdownAfterSeconds = Duration.ofDays(1).getSeconds();
 
-  private boolean isRunning = false;
+  @Parameter(defaultValue = "${project}", readonly = true, required = true)
+  private MavenProject project;
 
   public TestEnvironmentMojo() {
     super();
@@ -62,44 +73,81 @@ public class TestEnvironmentMojo extends AbstractMojo {
       getLog().info("Skipping");
       return;
     }
-    isRunning = true;
-    if (System.getProperty(ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM) == null) {
-      System.setProperty(ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM, "none");
-    } else {
-      if (!System.getProperty(ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM).equals("none")) {
-        getLog()
-          .warn(
-            "Spring Boot Logging System property '"
-              + ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM
-              + "' is set so we will not overwrite it to 'none', this may cause startup failure"
-              + " with the maven logging system!");
-      }
-    }
-    TigerDirector.startStandaloneTestEnvironment();
-    getLog().info("Tiger standalone test environment is setup!");
+
+    val classLoader = buildUpClassLoader();
+    Future testEnvFuture = buildTestEnvFutureAndRun(classLoader);
+
     try {
-      await()
-          .atMost(autoShutdownAfterSeconds, TimeUnit.SECONDS)
-          .pollInterval(200, TimeUnit.MILLISECONDS)
-          .until(
-              () ->
-                  !isRunning()
-                      || TigerDirector.getTigerTestEnvMgr() == null
-                      || TigerDirector.getTigerTestEnvMgr().isShutDown());
+      testEnvFuture.get();
       if (TigerDirector.getTigerTestEnvMgr() != null) {
         TigerDirector.getTigerTestEnvMgr().shutDown();
       }
-    } catch (ConditionTimeoutException cte) {
+    } catch (InterruptedException | ExecutionException cte) {
       getLog().info("Tiger Testenvironment TIMEOUT reached, shutting down...");
       if (TigerDirector.getTigerTestEnvMgr() != null) {
         TigerDirector.getTigerTestEnvMgr().shutDown();
       }
     }
     getLog().info("Tiger standalone test environment is shut down!");
-    isRunning = false;
   }
 
-  void abort() {
-    isRunning = false;
+  private Future<Void> buildTestEnvFutureAndRun(ClassLoader classLoader) {
+    Callable<Void> task =
+        () -> {
+          Thread.currentThread().setContextClassLoader(classLoader);
+          try {
+            if (System.getProperty(ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM) == null) {
+              System.setProperty(ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM, "none");
+            } else {
+              if (!System.getProperty(ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM)
+                  .equals("none")) {
+                getLog()
+                    .warn(
+                        "Spring Boot Logging System property '"
+                            + ORG_SPRINGFRAMEWORK_BOOT_LOGGING_LOGGING_SYSTEM
+                            + "' is set so we will not overwrite it to 'none', this may cause"
+                            + " startup failure with the maven logging system!");
+              }
+            }
+            TigerDirector.startStandaloneTestEnvironment();
+            getLog().info("Tiger standalone test environment is setup!");
+          } catch (Exception e) {
+            getLog().error("Failed to start application", e);
+            throw e;
+          }
+          return null;
+        };
+
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    return executor.submit(task);
+  }
+
+  @SneakyThrows
+  private ClassLoader buildUpClassLoader() {
+    List<String> runtimeClasspathElements = project.getRuntimeClasspathElements();
+
+    List<URL> urls =
+        runtimeClasspathElements.stream()
+            .map(
+                path -> {
+                  try {
+                    return new File(path).toURI().toURL();
+                  } catch (MalformedURLException e) {
+                    throw new RuntimeException(e);
+                  }
+                })
+            .toList();
+
+    project.getArtifacts().stream()
+        .filter(
+            artifact -> {
+              String scope = artifact.getScope();
+              return "compile".equals(scope) || "runtime".equals(scope);
+            })
+        .map(Artifact::getFile)
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
+
+    return new URLClassLoader(urls.toArray(new URL[urls.size()]));
   }
 }

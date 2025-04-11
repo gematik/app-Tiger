@@ -128,7 +128,7 @@ public class RbelErpVauDecrpytionConverter extends RbelConverterPlugin {
   private boolean isVauResponse(Optional<byte[]> decryptedBytes) {
     return decryptedBytes
         .map(bytes -> new String(bytes, UTF_8))
-        .map(s -> s.split("1 [\\da-f]{32} ").length)
+        .map(s -> s.split("^1 [\\da-f]{32} ").length)
         .map(length -> length > 1)
         .orElse(false);
   }
