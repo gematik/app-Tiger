@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 gematik GmbH
+ * Copyright 2024 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.microsoft.playwright.FrameLocator;
 import com.microsoft.playwright.Page;
 import de.gematik.test.tiger.playwright.workflowui.AbstractBase;
 import java.util.concurrent.TimeUnit;
@@ -41,82 +42,55 @@ class XLaterTests extends AbstractBase {
   void testENavbarWithButtonsExists() {
     page.querySelector("#test-execution-pane-tab").click();
     page.locator("#test-webui-slider").click();
-    assertAll(
-        () -> assertThat(page.locator("#rbellog_details_pane")).isVisible(),
-        () ->
-            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#webui-navbar"))
-                .isVisible(),
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe").locator("#dropdown-hide-button"))
-                .isVisible(),
-        () ->
-            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filterModalBtn"))
-                .isVisible(),
-        () ->
-            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#exportMsgs"))
-                .isVisible(),
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#dropdown-page-selection"))
-                .isVisible(),
-        () ->
-            Assertions.assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#pageNumberDisplay")
-                        .textContent())
-                .endsWith("1"),
-        () ->
-            Assertions.assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#pageSizeDisplay")
-                        .textContent())
-                .endsWith("20"),
-        () ->
-            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-size"))
-                .isVisible(),
-        () ->
-            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#routeModalBtn"))
-                .not()
-                .isVisible(),
-        () ->
-            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#scrollLockBtn"))
-                .not()
-                .isVisible(),
-        () ->
-            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#resetMsgs"))
-                .not()
-                .isVisible(),
-        () ->
-            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#importMsgs"))
-                .not()
-                .isVisible());
+    assertThat(page.locator("#rbellog_details_pane")).isVisible();
+    XYDynamicRbelLogTests.checkTopNavbarWebUiInFrame(page).locator(".test-btn-settings").click();
   }
 
   @Test
   void testARbelMessagesExists() {
     page.querySelector("#test-execution-pane-tab").click();
     page.locator("#test-webui-slider").click();
+    FrameLocator rbelFrame = page.frameLocator("#rbellog-details-iframe");
     assertAll(
         () ->
-            Assertions.assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#test-rbel-section .test-card")
-                        .count())
+            Assertions.assertThat(rbelFrame.locator("#test-rbel-section .test-card").count())
+                .withFailMessage("No rbel message at all found")
+                .isPositive(),
+        () ->
+            Assertions.assertThat(rbelFrame.locator("#test-rbel-section .test-card-header").count())
+                .withFailMessage("No rbel message header found")
                 .isPositive(),
         () ->
             Assertions.assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#test-rbel-section .test-card-header")
-                        .count())
-                .isPositive(),
-        () ->
-            Assertions.assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#test-rbel-section .test-card-content")
-                        .count())
+                    rbelFrame.locator("#test-rbel-section .test-card-content").count())
+                .withFailMessage("No rbel message content found")
                 .isPositive());
+  }
+
+  private Page checkTopNavbarWebUi() {
+    Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
+    checkNavBar(externalPage);
+    return externalPage;
+  }
+
+  public static void checkNavBar(Page externalPage) {
+    await()
+        .atMost(10, TimeUnit.SECONDS)
+        .untilAsserted(() -> assertNotNull(externalPage.locator(".test-btn-sort")));
+    assertAll(
+        () -> assertThat(externalPage.locator(".test-btn-settings")).isVisible(),
+        () -> assertThat(externalPage.locator(".test-input-filter")).isVisible(),
+        () -> assertThat(externalPage.locator(".test-btn-reset-filter")).isVisible(),
+        () -> assertThat(externalPage.locator(".test-btn-search")).isVisible());
+
+    externalPage.locator(".test-btn-settings").click();
+    assertAll(
+        () -> assertThat(externalPage.locator(".test-check-hide-header")).isVisible(),
+        () -> assertThat(externalPage.locator(".test-check-hide-details")).isVisible(),
+        () -> assertThat(externalPage.locator(".test-btn-export")).isVisible(),
+        () -> assertThat(externalPage.locator(".test-btn-config-routes")).isVisible(),
+        () -> assertThat(externalPage.locator(".test-btn-clear-messages")).isVisible(),
+        () -> assertThat(externalPage.locator(".test-btn-quit-proxy")).isVisible());
   }
 
   @Test
@@ -124,21 +98,18 @@ class XLaterTests extends AbstractBase {
     page.querySelector("#test-execution-pane-tab").click();
     page.locator("#test-webui-slider").click();
 
-    Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
-    externalPage.locator("#routeModalBtn").click();
+    Page externalPage = checkTopNavbarWebUi();
     assertAll(
-        () -> assertThat(externalPage.locator("#routeModalDialog")).isVisible(),
-        () -> assertThat(externalPage.locator("#routingModalButtonClose")).isVisible(),
-        () -> assertThat(externalPage.locator("#addNewRouteBtn")).isVisible(),
-        () -> assertThat(externalPage.locator("#addNewRouteFromField")).isVisible(),
-        () -> assertThat(externalPage.locator("#addNewRouteFromField")).isEmpty(),
-        () -> assertThat(externalPage.locator("#addNewRouteToField")).isVisible(),
-        () -> assertThat(externalPage.locator("#addNewRouteToField")).isEmpty());
-    externalPage.locator("#routingModalButtonClose").click();
-    assertThat(externalPage.locator("#routeModalDialog")).not().isVisible();
+        () -> assertThat(externalPage.locator(".test-check-hide-header")).isVisible(),
+        () -> assertThat(externalPage.locator(".test-check-hide-details")).isVisible(),
+        () -> assertThat(externalPage.locator(".test-btn-export")).isVisible(),
+        () -> assertThat(externalPage.locator(".test-btn-config-routes")).isVisible(),
+        () -> assertThat(externalPage.locator(".test-btn-clear-messages")).isVisible(),
+        () -> assertThat(externalPage.locator(".test-btn-quit-proxy")).isVisible());
+    externalPage.locator(".test-btn-config-routes").click();
+    assertThat(externalPage.locator("#routeModal")).isVisible();
+    externalPage.locator("#routeModal").locator(".btn-close").click();
+    assertThat(externalPage.locator("#routeModal")).not().isVisible();
     externalPage.close();
   }
 
@@ -147,21 +118,10 @@ class XLaterTests extends AbstractBase {
     page.querySelector("#test-execution-pane-tab").click();
     page.locator("#test-webui-slider").click();
 
-    Page externalPage = page.waitForPopup(() -> page.locator("#test-rbel-webui-url").click());
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> assertNotNull(externalPage.locator("#routeModalBtn")));
-    assertAll(
-        () -> assertThat(externalPage.locator("#test-tiger-logo")).isVisible(),
-        () -> assertThat(externalPage.locator("#routeModalBtn")).isVisible(),
-        () -> assertThat(externalPage.locator("#scrollLockBtn")).isVisible(),
-        () -> assertThat(externalPage.locator("#dropdown-hide-button")).isVisible(),
-        () -> assertThat(externalPage.locator("#filterModalBtn")).isVisible(),
-        () -> assertThat(externalPage.locator("#resetMsgs")).isVisible(),
-        () -> assertThat(externalPage.locator("#exportMsgs")).isVisible(),
-        () -> assertThat(externalPage.locator("#dropdown-page-selection")).isVisible(),
-        () -> assertThat(externalPage.locator("#dropdown-page-size")).isVisible(),
-        () -> assertThat(externalPage.locator("#importMsgs")).isVisible());
+    Page externalPage = checkTopNavbarWebUi();
+    if (externalPage.locator(".test-btn-export").isVisible()) {
+      externalPage.locator(".test-btn-settings").click();
+    }
     externalPage.close();
   }
 

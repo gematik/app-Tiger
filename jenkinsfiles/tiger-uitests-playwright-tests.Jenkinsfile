@@ -3,7 +3,6 @@
 // tiger-maven-plugin/src/test/java/de/gematik/test/tiger/maven/adapter/mojos/EnvironmentMojoIT.java
 
 def CREDENTIAL_ID_GEMATIK_GIT = 'svc_gitlab_prod_credentials'
-def BRANCH = 'master'
 def JIRA_PROJECT_ID = 'TGR'
 def GITLAB_PROJECT_ID = '644'
 def TAG_NAME = "ci/build"
@@ -11,6 +10,8 @@ def POM_PATH = 'pom.xml'
 def POM_PATH_SET_VERSION = 'tiger-bom/pom.xml'
 def POM_PATH_PRODUCT = 'tiger-testenv-mgr/pom.xml'
 def REPO_URL = createGitUrl('git/Testtools/tiger/tiger')
+def CHANNEL_ID = "19:5e4a353b87974bfca7ac6ac55ad7358b@thread.tacv2"
+def GROUP_ID = "9c4c4366-476c-465d-8188-940f661574c3"
 
 pipeline {
     options {
@@ -20,6 +21,10 @@ pipeline {
 
     tools {
         maven 'Default'
+    }
+
+    parameters {
+        string(name: 'BRANCH', defaultValue: "master", description: 'Branch gegen den die UI-Tests ausgeführt werden sollen. Default: master')
     }
 
     stages {
@@ -227,8 +232,9 @@ pipeline {
     post {
         always {
             archiveArtifacts artifacts: 'tiger-uitests/target/playwright-artifacts/*', fingerprint: true
-            sendEMailNotification(getTigerEMailList())
             showJUnitAsXUnitResult("**/target/*-reports/TEST-*.xml")
+            sendEMailNotification(getTigerEMailList())
+            teamsSendNotificationToChannel(CHANNEL_ID, GROUP_ID, ["facts": ["Branch": "${BRANCH}"] )
         }
     }
 }

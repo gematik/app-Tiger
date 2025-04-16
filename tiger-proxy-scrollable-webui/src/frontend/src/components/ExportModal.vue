@@ -73,6 +73,7 @@ onMounted(() => {
           <button
             type="button"
             class="btn-close"
+            id="saveModalButtonClose"
             data-bs-dismiss="modal"
             aria-label="Close"
           ></button>
@@ -97,6 +98,7 @@ onMounted(() => {
               type="button"
               class="btn btn-outline-primary"
               title="Download as Tiger Rbel Log"
+              id="saveTrafficBtn"
               @click="onDownload('tgr')"
               :disabled="isLoading"
             >
@@ -111,6 +113,7 @@ onMounted(() => {
             <button
               type="button"
               class="btn btn-outline-primary"
+              id="saveHtmlBtn"
               title="Download as HTML"
               @click="onDownload('html')"
               :disabled="isLoading"
