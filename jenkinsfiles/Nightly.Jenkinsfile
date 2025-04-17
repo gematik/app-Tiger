@@ -67,7 +67,7 @@ pipeline {
                 rm -rf target/junit-reports-nightly
             """
             showJUnitAsXUnitResult("**/target/*-reports*/TEST-*.xml")
-            teamsSendNotificationToChannel(CHANNEL_ID, GROUP_ID, ["facts": ["Branch": "${BRANCH}"] )
+            teamsSendNotificationToChannel(CHANNEL_ID, GROUP_ID, [ "facts": [ "Branch": "${BRANCH}"  )
         }
     }
 }

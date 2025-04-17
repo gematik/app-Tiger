@@ -234,7 +234,7 @@ pipeline {
             archiveArtifacts artifacts: 'tiger-uitests/target/playwright-artifacts/*', fingerprint: true
             showJUnitAsXUnitResult("**/target/*-reports/TEST-*.xml")
             sendEMailNotification(getTigerEMailList())
-            teamsSendNotificationToChannel(CHANNEL_ID, GROUP_ID, ["facts": ["Branch": "${BRANCH}"] )
+            teamsSendNotificationToChannel(CHANNEL_ID, GROUP_ID, [ "facts": [ "Branch": "${BRANCH}" ] ] )
         }
     }
 }
