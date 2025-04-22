@@ -1,5 +1,11 @@
 # Changelog Tiger Test platform
 
+# Release 3.7.7
+
+## Bugfixes
+
+* TGR-1817: downgrade maven surefire and failsafe plugin due to bug in reporting of cucumber tests.
+
 # Release 3.7.6
 
 ## Bugfixes

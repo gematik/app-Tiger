@@ -44,7 +44,7 @@ pipeline {
             steps {
                 script {
                     sh """
-                    mvn -B verify -pl tiger-test-lib -Dtest=de.gematik.test.tiger.lib.integrationtest.TestCustomFailMessage 2>&1 | tee mvn.log
+                    mvn -B verify -pl tiger-test-lib -Dit.test=de.gematik.test.tiger.lib.integrationtest.TestCustomFailMessage -DskipSurefire -DfailIfNoTests=true 2>&1 | tee mvn.log
                     """
 
                     def expectedInLog1 = 'de.gematik.test.tiger.exceptions.CustomAssertionError: Hello, this is a custom message\nCaused by: java.lang.AssertionError: '
@@ -65,6 +65,5 @@ pipeline {
                 }
             }
         }
-
     }
 }
