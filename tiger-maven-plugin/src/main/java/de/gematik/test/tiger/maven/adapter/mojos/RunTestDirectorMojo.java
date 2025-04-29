@@ -28,6 +28,4 @@ import org.springframework.boot.maven.RunMojo;
     defaultPhase = LifecyclePhase.VALIDATE,
     requiresDependencyResolution = ResolutionScope.TEST)
 @Execute(phase = LifecyclePhase.TEST_COMPILE)
-public class RunTestDirectorMojo extends RunMojo {
-
-}
+public class RunTestDirectorMojo extends RunMojo {}

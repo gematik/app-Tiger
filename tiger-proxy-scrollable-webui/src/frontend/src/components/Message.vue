@@ -186,7 +186,7 @@ watch(messageElement, async () => {
 </script>
 
 <template>
-  <div class="rbel-message pb-3">
+  <div class="rbel-message pb-3" id="test-rbel-section">
     <div v-if="props.message.type === 'loaded'" ref="messageElement" />
     <div v-else class="loading">
       <div>Loading...</div>

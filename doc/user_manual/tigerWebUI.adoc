@@ -23,28 +23,6 @@ image::screenshots/webui.png[title="Tiger Proxy Log"]
 On the top right the tiger version and the build date are displayed.
 In the middle the full request and response messages are shown with detailed header and body.
 
-==== Bottom menu bar
-
-image::media/TigerProxyBottomNavBar.png[title="Tiger Proxy UI bottom menu bar "]
-
-The displayed buttons can trigger the following actions:
-
-* *Routes* … allows you to modify and add the routes configured on this Tiger Proxy
-* *Scroll Lock* … allows you to lock the scroll position.
-Incoming messages will still be added to the list at the bottom of the page.
-* *Toggle Button*  … has two possibilities (hide headers and hide details) which collapses either all headers (request headers as well as response headers) or all the detailed information of the requests and responses.
-* *Filter*  … allows you to filter the received messages with a RbelPath or a JEXL expression.
-You can also search for text or a regex in this input field, but then you need to place the search text inside quotation marks (").
-* *Reset* … allows you to delete all recorded messages so far.
-This will delete all messages on the Tiger Proxy!
-* *Export* … allows you to export all or the currently filtered received messages as an HTML page or as a machine-readable tgr file.
-* *Page* … allows pagination of the messages.
-* *Size* … changes the size of the messages.
-* *Import* … allows you to import the previously stored traffic file.
-* *Quit* … allows you to quit the Tiger Proxy instance
-
-Some modals are explained in more detail in the following sections.
-
 ===== Filter Modal
 
 When a lot of messages are recorded, it is sometimes hard to find the message you are looking for.
@@ -74,6 +52,18 @@ image::screenshots/webui_inspect_jexl_highlight.png[title="JEXL Debugging"]
 [#_jexl_filter]
 When the user wants to filter the messages with a JEXL expression, the user can click on the "Use as filter" button in the modal.
 
+Behind the settings icon are some modals that are explained in more detail in the following sections.
+
+===== Settings
+
+Behind the settings icon several actions can be triggered:
+
+* *Message Options* … has two possibilities (hide headers and hide details) which collapses either all headers (request headers as well as response headers) or all the detailed information of the requests and responses
+* *Export* … allows you to export all or the currently filtered received messages as an HTML page or as a machine-readable tgr file.
+* *Configure Routes* … allows you to modify and add the routes configured on this Tiger Proxy
+* *Reset Messages* … allows you to reset all the messages and import a previously stored traffic file.
+* *Quit Proxy* … quits the Tiger Proxy.
+
 ===== Routing Modal
 
 The user can add/delete routes in the routing modal which is shown in the following screenshot.
@@ -92,6 +82,7 @@ image::screenshots/webui_btn_content.png[title="Example of the content of a resp
 
 ===== Switching between request/response
 
-Since the order in the list is based upon the reception of the corresponding message it can be hard to find the corresponding request or response to a given message. To make this easier the user can switch between the request and the response by clicking on the corresponding button in the top right corner of the request or the response that is highlighted in the following screenshot.
+Since the order in the list is based upon the reception of the corresponding message it can be hard to find the corresponding request or response to a given message.
+To make this easier the user can switch between the request and the response by clicking on the corresponding button in the top right corner of the request or the response that is highlighted in the following screenshot.
 
 image::screenshots/webui_message_partner.png[title="Buttons to switch between request and response"]

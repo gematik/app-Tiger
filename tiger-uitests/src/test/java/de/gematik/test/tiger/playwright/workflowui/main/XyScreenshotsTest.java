@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 gematik GmbH
+ * Copyright 2024 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@ class XyScreenshotsTest extends AbstractBase {
     screenshot(page, "sidebaropen.png");
     page.evaluate(
         "document.getElementById(\"sidebar-left\").style.removeProperty(\"background-color\")");
+    await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
     page.locator("#test-sidebar-quit-icon")
         .locator("..")
         .locator("..")
@@ -66,6 +67,7 @@ class XyScreenshotsTest extends AbstractBase {
     screenshot(page, "sidebar_statusbox_highlight.png");
     page.evaluate(
         "document.getElementById(\"test-sidebar-statusbox\").style.removeProperty(\"background-color\")");
+    await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
     page.locator("#test-sidebar-featurelistbox")
         .screenshot(new Locator.ScreenshotOptions().setPath(getPath("sidebar_featurebox.png")));
     page.locator("#test-sidebar-server-status-box")
@@ -112,6 +114,7 @@ class XyScreenshotsTest extends AbstractBase {
     page.querySelector("#test-execution-pane-tab").click();
     page.evaluate(
         "document.getElementsByClassName(\"replay-button\")[0].style.backgroundColor='yellow'");
+    await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
     page.locator(".test-execution-pane-scenario-title")
         .first()
         .screenshot(
@@ -127,6 +130,7 @@ class XyScreenshotsTest extends AbstractBase {
     openSidebar();
     page.evaluate(
         "document.getElementsByClassName(\"small-play-button\")[0].style.backgroundColor='yellow'");
+    await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
     page.locator("#test-sidebar-featurelistbox")
         .screenshot(new Locator.ScreenshotOptions().setPath(getPath("sidebar_replaybutton.png")));
     page.evaluate(
@@ -159,68 +163,86 @@ class XyScreenshotsTest extends AbstractBase {
     externalPage.locator(".test-message-number").first().click();
     screenshot(externalPage, "webui.png");
     screenshotByClassname(externalPage, "webui_inspect_highlight.png", "test-btn-inspect");
+
     screenshotByClassname(externalPage, "webui_message_partner.png", "partner-message-button");
 
-    externalPage.locator("#dropdown-hide-button").click();
+    externalPage.locator(".test-btn-settings").click();
+    await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
     externalPage
-        .locator("#dropdown-hide-button")
+        .locator("div.sticky-header div.dropdown")
         .locator("div")
         .nth(0)
         .screenshot(new Locator.ScreenshotOptions().setPath(getPath("webui_dropup.png")));
-    externalPage.locator("#collapsibleMessageHeaderBtn").click();
-    screenshot(externalPage, "webui_hide_header.png");
-    externalPage.locator("#dropdown-hide-button").click();
-    externalPage.locator("#collapsibleMessageHeaderBtn").click();
-
-    externalPage.locator("#dropdown-hide-button").click();
-    externalPage.locator("#collapsibleMessageDetailsBtn").click();
-    screenshot(externalPage, "webui_hide_header.png");
-    externalPage.locator("#dropdown-hide-button").click();
-    externalPage.locator("#collapsibleMessageDetailsBtn").click();
+    // replaces screenshot(externalPage, "webui_hide_header.png");
+    externalPage.locator(".test-btn-settings").click();
 
     externalPage.locator(".test-btn-inspect").first().click();
+    com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat(
+            externalPage.locator("#jexlQueryModal #rbelTreeExpressionTextArea"))
+        .isEditable();
     screenshot(externalPage, "webui_inspect_open.png");
-    externalPage.evaluate(
-        "document.getElementById(\"rbelTab-name\").style.backgroundColor='yellow'");
+
+    var jsElemLookupStr = "document.getElementById(\"btnradioRbelTree\").nextElementSibling.style";
+    externalPage.evaluate(jsElemLookupStr + ".backgroundColor='yellow'");
+    await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
     externalPage
         .locator("#jexlQueryModal")
         .screenshot(
             new Locator.ScreenshotOptions()
                 .setPath(getPath("webui_inspect_rbelpath_highlight.png")));
-    externalPage.evaluate(
-        "document.getElementById(\"rbelTab-name\").style.removeProperty(\"background-color\")");
+    externalPage.evaluate(jsElemLookupStr + ".removeProperty(\"background-color\")");
     await()
         .atMost(2, TimeUnit.SECONDS)
-        .pollInterval(Duration.ofMillis(200))
+        .pollInterval(Duration.ofMillis(100))
         .untilAsserted(
             () ->
-                assertThat(externalPage.locator("#rbelTab-name").getAttribute("style")).isEmpty());
-    externalPage.evaluate(
-        "document.getElementById(\"jexlTab-name\").style.backgroundColor='yellow'");
-    externalPage.locator("#jexlTab-name").click();
+                assertThat(
+                        externalPage.locator("#jexlQueryModal label").first().getAttribute("style"))
+                    .isEmpty());
+    jsElemLookupStr =
+        "document.getElementById(\"btnradioJexlExpression\").nextElementSibling.style";
+    externalPage.evaluate(jsElemLookupStr + ".backgroundColor='yellow'");
+    externalPage
+        .locator("#jexlQueryModal .modal-header .btn-group")
+        .locator("label")
+        .all()
+        .get(1)
+        .click();
+    await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
     externalPage
         .locator("#jexlQueryModal")
         .screenshot(
             new Locator.ScreenshotOptions().setPath(getPath("webui_inspect_jexl_highlight.png")));
-    externalPage.evaluate(
-        "document.getElementById(\"jexlTab-name\").style.removeProperty(\"background-color\")");
+    externalPage.evaluate(jsElemLookupStr + ".removeProperty(\"background-color\")");
 
-    externalPage.locator("#jexlModalButtonClose").click();
+    externalPage.locator("#jexlQueryModal .btn-close").click();
+
     await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(() -> assertNotNull(externalPage.locator("#filterModalBtn")));
 
-    externalPage.locator("#filterModalBtn").click();
+    externalPage.locator("#test-rbel-path-input").click();
+    com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat(
+            externalPage.locator("#rbelFilterExpressionTextArea"))
+        .isVisible();
     screenshot(externalPage, "webui_filter_open.png");
-    externalPage.locator("#filterModalButtonClose").click();
+    externalPage.locator("#filterBackdrop .btn-close").click();
 
-    externalPage.locator("#exportMsgs").click();
+    externalPage.locator(".test-btn-settings").click();
+    externalPage.locator("#exportModalButton").click();
+    com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat(
+            externalPage.locator("#switchExportWithFilter"))
+        .isVisible();
     screenshot(externalPage, "webui_save_open.png");
     externalPage.locator("#saveModalButtonClose").click();
 
-    externalPage.locator("#routeModalBtn").click();
+    externalPage.locator(".test-btn-settings").click();
+    externalPage.locator("#routeModalButton").click();
+    com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat(
+            externalPage.locator("#routeModal .btn-primary"))
+        .isVisible();
     screenshot(externalPage, "webui_routing_open.png");
-    externalPage.locator("#routingModalButtonClose").click();
+    externalPage.locator("#routeModal .btn-close").click();
 
     externalPage.evaluate(
         "document.getElementsByClassName(\"test-modal-content\")[0].style.backgroundColor='yellow'");
@@ -230,9 +252,17 @@ class XyScreenshotsTest extends AbstractBase {
     externalPage.evaluate(
         "document.getElementsByClassName(\"test-modal-content\")[0].style.removeProperty(\"background-color\")");
     externalPage.evaluate(
-        "document.getElementsByClassName(\"test-modal-content\")[0].style.removeProperty(\"background-color\")");
+        "document.getElementsByClassName(\"test-modal-content\")[1].style.removeProperty(\"background-color\")");
+
     externalPage.locator(".test-modal-content").nth(2).click();
+    externalPage.evaluate(
+        "document.getElementById(\"rawContentModal\").children.item(0).children.item(0).style.backgroundColor='yellow'");
+    com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat(
+            externalPage.locator("#rawContentModal"))
+        .isVisible();
     screenshot(externalPage, "webui_btn_content.png");
+    externalPage.evaluate(
+        "document.getElementById(\"rawContentModal\").children.item(0).children.item(0).style.removeProperty(\"background-color\")");
     externalPage.close();
   }
 }

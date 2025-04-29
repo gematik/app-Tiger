@@ -1,5 +1,12 @@
 # Changelog Tiger Test platform
 
+# Release 3.7.7
+
+## Bugfixes
+
+* TGR-1834: fixes wrong certificate when alternative subject matched
+* TGR-1817: downgrade maven surefire and failsafe plugin due to bug in reporting of cucumber tests.
+
 # Release 3.7.6
 
 ## Bugfixes

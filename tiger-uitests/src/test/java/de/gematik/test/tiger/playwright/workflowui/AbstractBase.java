@@ -189,7 +189,7 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
                   return UnknownError.class;
                 })
             .getName();
-    if (tracingEnabled) {
+    if (tracingEnabled && context.tracing() != null) {
       log.info("Saving playwright trace archive for {}...", clzName);
       context
           .tracing()
@@ -231,14 +231,36 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
   protected void screenshotByClassname(Page page, String fileName, String classname) {
     page.evaluate(
         "document.getElementsByClassName(\"" + classname + "\")[0].style.backgroundColor='yellow'");
+    await()
+        .atMost(2, TimeUnit.SECONDS)
+        .pollInterval(100, TimeUnit.MILLISECONDS)
+        .until(
+            () ->
+                page.evaluate(
+                        "document.getElementsByClassName(\""
+                            + classname
+                            + "\")[0].style.backgroundColor")
+                    .equals("yellow"));
+
     screenshot(page, fileName);
     page.evaluate(
         "document.getElementsByClassName(\""
             + classname
             + "\")[0].style.removeProperty(\"background-color\")");
+    await()
+        .atMost(2, TimeUnit.SECONDS)
+        .pollInterval(100, TimeUnit.MILLISECONDS)
+        .until(
+            () ->
+                page.evaluate(
+                        "document.getElementsByClassName(\""
+                            + classname
+                            + "\")[0].style.backgroundColor")
+                    .equals(""));
   }
 
   protected void screenshot(Page page, String fileName) {
+    await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
     page.screenshot(new Page.ScreenshotOptions().setFullPage(false).setPath(getPath(fileName)));
   }
 
