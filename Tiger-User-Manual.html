@@ -202,7 +202,7 @@ video {
 <h1>Tiger User Manual</h1>
 <div class="details">
 <span id="author" class="author">TIGER@gematik.de</span><br>
-<span id="revdate">Version 3.7.6 - 2025-04-11</span>
+<span id="revdate">Version 3.7.7 - 2025-04-29</span>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Contents</div>
@@ -5774,58 +5774,6 @@ The user can see the request type and the error code of the response as well as 
 <p>On the top right the tiger version and the build date are displayed.<br>
 In the middle the full request and response messages are shown with detailed header and body.</p>
 </div>
-</div>
-<div class="sect3">
-<h4 id="bottom-menu-bar"><a class="anchor" href="#bottom-menu-bar"></a>7.3.2. Bottom menu bar</h4>
-<div class="imageblock">
-<div class="content">
-<img src="media/TigerProxyBottomNavBar.png" alt="TigerProxyBottomNavBar">
-</div>
-<div class="title">Figure 40. Tiger Proxy UI bottom menu bar </div>
-</div>
-<div class="paragraph">
-<p>The displayed buttons can trigger the following actions:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p><strong>Routes</strong> … allows you to modify and add the routes configured on this Tiger Proxy</p>
-</li>
-<li>
-<p><strong>Scroll Lock</strong> … allows you to lock the scroll position.<br>
-Incoming messages will still be added to the list at the bottom of the page.</p>
-</li>
-<li>
-<p><strong>Toggle Button</strong>  … has two possibilities (hide headers and hide details) which collapses either all headers (request headers as well as response headers) or all the detailed information of the requests and responses.</p>
-</li>
-<li>
-<p><strong>Filter</strong>  … allows you to filter the received messages with a RbelPath or a JEXL expression.<br>
-You can also search for text or a regex in this input field, but then you need to place the search text inside quotation marks (").</p>
-</li>
-<li>
-<p><strong>Reset</strong> … allows you to delete all recorded messages so far.<br>
-This will delete all messages on the Tiger Proxy!</p>
-</li>
-<li>
-<p><strong>Export</strong> … allows you to export all or the currently filtered received messages as an HTML page or as a machine-readable tgr file.</p>
-</li>
-<li>
-<p><strong>Page</strong> … allows pagination of the messages.</p>
-</li>
-<li>
-<p><strong>Size</strong> … changes the size of the messages.</p>
-</li>
-<li>
-<p><strong>Import</strong> … allows you to import the previously stored traffic file.</p>
-</li>
-<li>
-<p><strong>Quit</strong> … allows you to quit the Tiger Proxy instance</p>
-</li>
-</ul>
-</div>
-<div class="paragraph">
-<p>Some modals are explained in more detail in the following sections.</p>
-</div>
 <div class="sect4">
 <h5 id="filter-modal"><a class="anchor" href="#filter-modal"></a>Filter Modal</h5>
 <div class="paragraph">
@@ -5836,7 +5784,7 @@ Therefore, the user can filter the messages with a Rbel-Path or a regex using ei
 <div class="content">
 <img src="screenshots/webui_filter_open.png" alt="webui filter open">
 </div>
-<div class="title">Figure 41. Filter Managment</div>
+<div class="title">Figure 40. Filter Managment</div>
 </div>
 </div>
 <div class="sect4">
@@ -5848,7 +5796,7 @@ Therefore, the user can filter the messages with a Rbel-Path or a regex using ei
 <div class="content">
 <img src="screenshots/webui_inspect_highlight.png" alt="webui inspect highlight">
 </div>
-<div class="title">Figure 42. Access RBel-Path/JEXL Debugging</div>
+<div class="title">Figure 41. Access RBel-Path/JEXL Debugging</div>
 </div>
 <div class="paragraph">
 <p>The picture below shows the RBel-Path tab.<br>
@@ -5858,7 +5806,7 @@ The user can execute the RBel-Path on the request or the response and the result
 <div class="content">
 <img src="screenshots/webui_inspect_rbelpath_highlight.png" alt="webui inspect rbelpath highlight">
 </div>
-<div class="title">Figure 43. RBel-Path</div>
+<div class="title">Figure 42. RBel-Path</div>
 </div>
 <div class="paragraph">
 <p>For more information in the Rbel-Path check out <a href="#_rbel_path_details">this</a> section.</p>
@@ -5872,10 +5820,38 @@ Further information on JEXL expressions can be found in <a href="#_jexl_expressi
 <div class="content">
 <img src="screenshots/webui_inspect_jexl_highlight.png" alt="webui inspect jexl highlight">
 </div>
-<div class="title">Figure 44. JEXL Debugging</div>
+<div class="title">Figure 43. JEXL Debugging</div>
 </div>
 <div id="_jexl_filter" class="paragraph">
 <p>When the user wants to filter the messages with a JEXL expression, the user can click on the "Use as filter" button in the modal.</p>
+</div>
+<div class="paragraph">
+<p>Behind the settings icon are some modals that are explained in more detail in the following sections.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="settings"><a class="anchor" href="#settings"></a>Settings</h5>
+<div class="paragraph">
+<p>Behind the settings icon several actions can be triggered:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><strong>Message Options</strong> … has two possibilities (hide headers and hide details) which collapses either all headers (request headers as well as response headers) or all the detailed information of the requests and responses</p>
+</li>
+<li>
+<p><strong>Export</strong> … allows you to export all or the currently filtered received messages as an HTML page or as a machine-readable tgr file.</p>
+</li>
+<li>
+<p><strong>Configure Routes</strong> … allows you to modify and add the routes configured on this Tiger Proxy</p>
+</li>
+<li>
+<p><strong>Reset Messages</strong> … allows you to reset all the messages and import a previously stored traffic file.</p>
+</li>
+<li>
+<p><strong>Quit Proxy</strong> … quits the Tiger Proxy.</p>
+</li>
+</ul>
 </div>
 </div>
 <div class="sect4">
@@ -5887,7 +5863,7 @@ Further information on JEXL expressions can be found in <a href="#_jexl_expressi
 <div class="content">
 <img src="screenshots/webui_routing_open.png" alt="webui routing open">
 </div>
-<div class="title">Figure 45. Route Managment</div>
+<div class="title">Figure 44. Route Managment</div>
 </div>
 </div>
 <div class="sect4">
@@ -5899,7 +5875,7 @@ Further information on JEXL expressions can be found in <a href="#_jexl_expressi
 <div class="content">
 <img src="screenshots/webui_btn_content_highlight.png" alt="webui btn content highlight">
 </div>
-<div class="title">Figure 46. Buttons to show message content</div>
+<div class="title">Figure 45. Buttons to show message content</div>
 </div>
 <div class="paragraph">
 <p>The picture below shows the content of the whole response.</p>
@@ -5908,19 +5884,20 @@ Further information on JEXL expressions can be found in <a href="#_jexl_expressi
 <div class="content">
 <img src="screenshots/webui_btn_content.png" alt="webui btn content">
 </div>
-<div class="title">Figure 47. Example of the content of a response</div>
+<div class="title">Figure 46. Example of the content of a response</div>
 </div>
 </div>
 <div class="sect4">
 <h5 id="switching-between-requestresponse"><a class="anchor" href="#switching-between-requestresponse"></a>Switching between request/response</h5>
 <div class="paragraph">
-<p>Since the order in the list is based upon the reception of the corresponding message it can be hard to find the corresponding request or response to a given message. To make this easier the user can switch between the request and the response by clicking on the corresponding button in the top right corner of the request or the response that is highlighted in the following screenshot.</p>
+<p>Since the order in the list is based upon the reception of the corresponding message it can be hard to find the corresponding request or response to a given message.<br>
+To make this easier the user can switch between the request and the response by clicking on the corresponding button in the top right corner of the request or the response that is highlighted in the following screenshot.</p>
 </div>
 <div class="imageblock">
 <div class="content">
 <img src="screenshots/webui_message_partner.png" alt="webui message partner">
 </div>
-<div class="title">Figure 48. Buttons to switch between request and response</div>
+<div class="title">Figure 47. Buttons to switch between request and response</div>
 </div>
 </div>
 </div>
@@ -6029,7 +6006,7 @@ Therefor the following operators could be used.</p>
 <div class="content">
 <img src="media/jexlspacesright.png" alt="jexlspacesright" width="50%">
 </div>
-<div class="title">Figure 49. Rbel Path Expression</div>
+<div class="title">Figure 48. Rbel Path Expression</div>
 </div>
 </div>
 <div class="sect3">
@@ -6041,7 +6018,7 @@ Therefor the following operators could be used.</p>
 <div class="content">
 <img src="media/accessarray.png" alt="accessarray" width="50%">
 </div>
-<div class="title">Figure 50. The access of the elements of a list is done with the number, starting with 0. For maps the point notation is used. </div>
+<div class="title">Figure 49. The access of the elements of a list is done with the number, starting with 0. For maps the point notation is used. </div>
 </div>
 </div>
 <div class="sect3">
@@ -6055,7 +6032,7 @@ For more details check the InlineJexlToolbox</p>
 <div class="content">
 <img src="media/accessjexlcontext.png" alt="accessjexlcontext" width="50%">
 </div>
-<div class="title">Figure 51. Use single quotes when using JEXL contexts with a hyphen. </div>
+<div class="title">Figure 50. Use single quotes when using JEXL contexts with a hyphen. </div>
 </div>
 </div>
 <div class="sect3">
@@ -8077,7 +8054,7 @@ proxy.restartMockserver();</code></pre>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2025-04-11 11:31:19 +0200
+Last updated 2025-04-29 11:00:08 +0200
 </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
