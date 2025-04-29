@@ -69,7 +69,10 @@ public class StaticKeyAndCertificateFactory implements KeyAndCertificateFactory 
       }
       var alternativeNames = certificate.getSubjectAlternativeNames();
       return alternativeNames != null
-          && alternativeNames.stream().map(Object::toString).anyMatch(hostname::equalsIgnoreCase);
+          && alternativeNames.stream()
+              .flatMap(List::stream)
+              .map(Object::toString)
+              .anyMatch(hostname::equalsIgnoreCase);
     } catch (CertificateParsingException e) {
       return false;
     }

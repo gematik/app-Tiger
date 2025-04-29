@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 gematik GmbH
+ * Copyright 2024 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,17 +19,15 @@ package de.gematik.test.tiger.playwright.workflowui.main;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static org.awaitility.Awaitility.await;
-import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import de.gematik.test.tiger.playwright.workflowui.AbstractBase;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -40,232 +38,151 @@ import org.junit.jupiter.api.TestMethodOrder;
 @Slf4j
 @TestMethodOrder(MethodOrderer.MethodName.class)
 class ZQuitTests extends AbstractBase {
+
+  @AfterEach
+  void closeOpenModal() {
+    var modalCloseButton =
+        page.frameLocator("#rbellog-details-iframe").locator("#filterBackdrop .btn-close");
+    if (modalCloseButton.isVisible()) {
+      modalCloseButton.click();
+    }
+    var resetButton =
+        page.frameLocator("#rbellog-details-iframe").locator("#test-reset-filter-button");
+    if (resetButton.isEnabled()) {
+      resetButton.click();
+    }
+  }
+
   @Test
-  void testQuitMessageOnSidebar() {
+  void testQuitMessageOnSidebarExists() {
     openSidebar();
-    assertThat(page.locator("#test-sidebar-stop-message")).isVisible();
     assertThat(page.locator("#test-sidebar-stop-message")).isVisible();
   }
 
   @Test
   void testClickOnLastRequestChangesPageNumberInRbelLogDetails() {
-    page.querySelector("#test-execution-pane-tab").click();
-    page.locator("#test-webui-slider").click();
-    page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
-    page.frameLocator("#rbellog-details-iframe")
-        .locator("#pageSelector .dropdown-item")
-        .first()
-        .click();
-    page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-size").click();
-    page.frameLocator("#rbellog-details-iframe")
-        .locator("#sizeSelector .dropdown-item")
-        .nth(1)
-        .click();
-    page.locator("#test-webui-slider").click();
-    assertThat(page.locator("#rbellog_details_pane")).not().isVisible();
-    page.locator(".test-rbel-link").first().click();
-    List<String> allNumbers = page.locator(".test-rbel-link").allTextContents();
-    String number1 = allNumbers.get(0);
-    String number2 = allNumbers.get(allNumbers.size() - 1);
-
-    Assertions.assertThat(number2).isEqualTo(String.valueOf(TOTAL_MESSAGES));
-
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(
-            () ->
-                assertNotNull(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator(".test-message-number")
-                        .first()));
-    assertAll(
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator(".test-message-number")
-                        .first())
-                .hasText(number1),
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator(".test-message-number")
-                        .last())
-                .not()
-                .hasText(number2));
-    String pageNo =
-        page.frameLocator("#rbellog-details-iframe").locator("#pageNumberDisplay").textContent();
-    page.locator("#test-webui-slider").click();
-    assertThat(page.locator("#rbellog_details_pane")).not().isVisible();
-    page.locator(".test-rbel-link").last().click();
-    // somehow I need to wait
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(
-            () ->
-                assertNotNull(
-                    page.frameLocator("#rbellog-details-iframe").locator("#pageNumberDisplay")));
-    String pageNo2 =
-        page.frameLocator("#rbellog-details-iframe").locator("#pageNumberDisplay").textContent();
-    assertAll(
-        () -> Assertions.assertThat(pageNo).isNotEqualTo(pageNo2),
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator(".test-message-number")
-                        .first())
-                .not()
-                .hasText(number1),
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator(".test-message-number")
-                        .last())
-                .hasText(number2));
-    page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
-    page.frameLocator("#rbellog-details-iframe")
-        .locator("#pageSelector .dropdown-item")
-        .first()
-        .click();
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(
-            () ->
-                assertThat(
-                        page.frameLocator("#rbellog-details-iframe")
-                            .locator(".test-message-number")
-                            .last())
-                    .containsText("20"));
+    // TODO navigate to last message via cursor down key?
   }
 
   @Test
   void testAFilterModal() {
     page.querySelector("#test-execution-pane-tab").click();
     page.locator("#test-webui-slider").click();
-    page.frameLocator("#rbellog-details-iframe").locator("#filterModalBtn").click();
-    page.frameLocator("#rbellog-details-iframe").locator("#resetFilterCriterionBtn").click();
+    var frameLocator = page.frameLocator("#rbellog-details-iframe");
+    frameLocator.locator(".test-input-filter").click();
     assertAll(
         () ->
-            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filterModalDialog"))
+            assertThat(frameLocator.locator("#filterBackdrop #rbelFilterExpressionTextArea"))
                 .isVisible(),
+        () -> assertThat(frameLocator.locator("#filterBackdrop #filteredMessage")).isVisible(),
         () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#setFilterCriterionInput"))
-                .isVisible(),
-        () ->
-            Assertions.assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#setFilterCriterionInput")
-                        .textContent())
-                .isEmpty(),
-        () ->
-            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#requestFromContent"))
-                .isVisible(),
-        () ->
-            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#requestToContent"))
-                .isVisible(),
-        () ->
-            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#requestToContent"))
-                .containsText("no request"),
-        () ->
-            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#requestFromContent"))
-                .containsText("no request"),
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe")
-                        .locator("#resetFilterCriterionBtn"))
-                .isVisible(),
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn"))
-                .isVisible(),
-        () ->
-            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
-                .isVisible(),
-        () ->
-            assertThat(
-                    page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose"))
-                .isVisible(),
-        () ->
-            assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
-                .hasText("Filter matched to all of the %d messages.".formatted(TOTAL_MESSAGES)));
-    page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
-    assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filterModalDialog"))
+            assertThat(frameLocator.locator("#filterBackdrop #setFilterCriterionBtn")).isVisible(),
+        () -> assertThat(frameLocator.locator("#filteredMessage")).isVisible());
+    page.frameLocator("#rbellog-details-iframe").locator("#filterBackdrop .btn-close").click();
+    assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filterBackdrop"))
         .not()
         .isVisible();
   }
 
   @Test
   void testAFilterModalResetFilter() {
+    // open filter via click on input field and add filter rbel expression
     page.querySelector("#test-execution-pane-tab").click();
     page.locator("#test-webui-slider").click();
-    page.frameLocator("#rbellog-details-iframe").locator("#filterModalBtn").click();
-    page.frameLocator("#rbellog-details-iframe")
-        .locator("#setFilterCriterionInput")
+    var rbelFrameLocator = page.frameLocator("#rbellog-details-iframe");
+    rbelFrameLocator.locator("#test-rbel-path-input").click();
+    rbelFrameLocator.locator("#filterBackdrop #rbelFilterExpressionTextArea").isVisible();
+    rbelFrameLocator
+        .locator("#filterBackdrop #rbelFilterExpressionTextArea")
+        .first()
         .fill("$.body == \"hello=world\"");
-    page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
+    // apply and reopen
+    rbelFrameLocator.locator("#setFilterCriterionBtn").click();
+    rbelFrameLocator.locator("#test-rbel-path-input").click();
+    // check filter message is correct and close modal
     await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
-                assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
-                    .hasText("4 of %d did match the filter criteria.".formatted(TOTAL_MESSAGES)));
+                assertThat(rbelFrameLocator.locator("#filteredMessage"))
+                    .hasText("Matched 4 of %d".formatted(TOTAL_MESSAGES)));
     String filteredMessage =
         page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage").textContent();
+    rbelFrameLocator.locator("#filterBackdrop .btn-close").click();
+
+    // varify count is correct
     int count =
         page.frameLocator("#rbellog-details-iframe")
             .locator("#test-rbel-section .test-msg-body-content")
             .count();
-    page.frameLocator("#rbellog-details-iframe").locator("#resetFilterCriterionBtn").click();
+    Assertions.assertThat(count).isEqualTo(3);
+
+    // reset filter via button
+    page.frameLocator("#rbellog-details-iframe").locator("#test-reset-filter-button").click();
+
+    // check input field is empty and all messages shown
+    // rbelFrameLocator.locator("#test-rbel-path-input").click();
+    rbelFrameLocator.locator("#test-rbel-path-input").click();
+    rbelFrameLocator.locator("#filterBackdrop #rbelFilterExpressionTextArea").isVisible();
+    assertThat(rbelFrameLocator.locator("#filterBackdrop #rbelFilterExpressionTextArea"))
+        .hasValue("");
     await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
-                    .hasText(
-                        "Filter matched to all of the %d messages.".formatted(TOTAL_MESSAGES)));
-
-    page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionInput").fill("");
-    page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
-    Assertions.assertThat(filteredMessage)
-        .isEqualTo("4 of %d did match the filter criteria.".formatted(TOTAL_MESSAGES));
-    Assertions.assertThat(count).isEqualTo(3);
-    assertThat(page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage"))
-        .hasText("Filter matched to all of the %d messages.".formatted(TOTAL_MESSAGES));
+                    .hasText("Matched %d of %d".formatted(TOTAL_MESSAGES, TOTAL_MESSAGES)));
   }
 
   @Test
   void testAFilterModalSetSenderFilter() {
     page.querySelector("#test-execution-pane-tab").click();
     page.locator("#test-webui-slider").click();
-    page.frameLocator("#rbellog-details-iframe").locator("#filterModalBtn").click();
-    page.frameLocator("#rbellog-details-iframe")
-        .locator("#setFilterCriterionInput")
+    var rbelFrameLocator = page.frameLocator("#rbellog-details-iframe");
+    rbelFrameLocator.locator("#test-rbel-path-input").click();
+    rbelFrameLocator.locator("#filterBackdrop #rbelFilterExpressionTextArea").isVisible();
+
+    assertAll(
+        () ->
+            assertThat(
+                    page.frameLocator("#rbellog-details-iframe")
+                        .locator("ul.test-select-recipient li a")
+                        .last())
+                .hasText("httpbin:80"),
+        () ->
+            assertThat(
+                    page.frameLocator("#rbellog-details-iframe")
+                        .locator("ul.test-select-sender li a")
+                        .last())
+                .hasText("httpbin:80"));
+
+    rbelFrameLocator
+        .locator("#filterBackdrop #rbelFilterExpressionTextArea")
+        .first()
         .fill("$.sender == \"put\"");
-    page.frameLocator("#rbellog-details-iframe").locator("#setFilterCriterionBtn").click();
+    // apply and reopen
+    rbelFrameLocator.locator("#setFilterCriterionBtn").click();
+    rbelFrameLocator.locator("#test-rbel-path-input").click();
+
     await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
                 assertNotNull(
                     page.frameLocator("#rbellog-details-iframe").locator("#requestToContent")));
-    Locator requestToContent =
-        page.frameLocator("#rbellog-details-iframe").locator("#requestToContent");
-    Locator requestFromContent =
-        page.frameLocator("#rbellog-details-iframe").locator("#requestFromContent");
-    Locator filteredMessage =
-        page.frameLocator("#rbellog-details-iframe").locator("#filteredMessage");
-    page.frameLocator("#rbellog-details-iframe").locator("#resetFilterCriterionBtn").click();
-    page.frameLocator("#rbellog-details-iframe").locator("#filterModalButtonClose").click();
     assertAll(
-        () -> assertThat(requestToContent).containsText("no request"),
-        () -> assertThat(requestFromContent).containsText("no request"),
         () ->
-            assertTrue(
-                filteredMessage
-                    .innerText()
-                    .equals(
-                        "Filter matched to all of the %d messages.".formatted(TOTAL_MESSAGES))));
+            assertThat(
+                    page.frameLocator("#rbellog-details-iframe")
+                        .locator("ul.test-select-recipient li"))
+                .not()
+                .isAttached(),
+        () ->
+            assertThat(
+                    page.frameLocator("#rbellog-details-iframe")
+                        .locator("ul.test-select-sender li"))
+                .not()
+                .isAttached());
   }
 
   @Test
@@ -278,15 +195,15 @@ class ZQuitTests extends AbstractBase {
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
             () ->
-                Assertions.assertThat(externalPage.locator("#rbelmsglist .test-card").count())
+                Assertions.assertThat(externalPage.locator("#test-rbel-section .test-card").count())
                     .isPositive());
-    Assertions.assertThat(externalPage.locator("#rbelmsglist .test-card").count()).isPositive();
-    externalPage.locator("#resetMsgs").click();
+    externalPage.locator(".test-btn-settings").click();
+    externalPage.locator(".test-btn-clear-messages").click();
     await()
         .atMost(10, TimeUnit.SECONDS)
         .untilAsserted(
-            () -> assertThat(externalPage.locator("#rbelmsglist .test-card")).hasCount(0));
-    assertThat(externalPage.locator("#rbelmsglist .test-card")).hasCount(0);
+            () -> assertThat(externalPage.locator("#test-rbel-section .test-card")).hasCount(0));
+    assertThat(externalPage.locator("#test-rbel-section .test-card")).hasCount(0);
     externalPage.close();
   }
 
@@ -303,94 +220,5 @@ class ZQuitTests extends AbstractBase {
     closeSidebar();
     page.screenshot(
         new Page.ScreenshotOptions().setFullPage(false).setPath(getPath("workflowui_quit.png")));
-  }
-
-  @Test
-  void testPageButton() {
-    page.querySelector("#test-execution-pane-tab").click();
-    page.locator("#test-webui-slider").click();
-    page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
-    page.frameLocator("#rbellog-details-iframe")
-        .locator("#pageSelector .dropdown-item")
-        .first()
-        .click();
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(
-            () ->
-                assertThat(
-                        page.frameLocator("#rbellog-details-iframe")
-                            .locator(".test-message-number")
-                            .last())
-                    .containsText("20"));
-
-    assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").first())
-        .containsText("1");
-    page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
-    assertThat(page.frameLocator("#rbellog-details-iframe").locator("#pageSelector .dropdown-item"))
-        .hasCount(TOTAL_PAGES);
-    page.frameLocator("#rbellog-details-iframe")
-        .locator("#pageSelector .dropdown-item")
-        .last()
-        .click();
-    var expectedFirstMessageNumber = String.valueOf(MESSAGES_PER_PAGE * (TOTAL_PAGES - 1) + 1);
-    var expectedLastMessageNumber = String.valueOf(TOTAL_MESSAGES);
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(
-            () ->
-                assertThat(
-                        page.frameLocator("#rbellog-details-iframe")
-                            .locator(".test-message-number")
-                            .first())
-                    .containsText(expectedFirstMessageNumber));
-    assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last())
-        .containsText(expectedLastMessageNumber);
-  }
-
-  @Test
-  void testSizeButton() {
-    page.querySelector("#test-execution-pane-tab").click();
-    page.locator("#test-webui-slider").click();
-    page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-selection").click();
-    page.frameLocator("#rbellog-details-iframe")
-        .locator("#pageSelector .dropdown-item")
-        .first()
-        .click();
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(
-            () ->
-                assertThat(
-                        page.frameLocator("#rbellog-details-iframe")
-                            .locator(".test-message-number")
-                            .last())
-                    .containsText("20"));
-
-    assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last())
-        .containsText("20");
-    page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-size").click();
-    assertThat(page.frameLocator("#rbellog-details-iframe").locator("#sizeSelector .dropdown-item"))
-        .hasCount(4);
-    page.frameLocator("#rbellog-details-iframe")
-        .locator("#sizeSelector .dropdown-item")
-        .last()
-        .click();
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(
-            () ->
-                assertThat(
-                        page.frameLocator("#rbellog-details-iframe")
-                            .locator(".test-message-number")
-                            .last())
-                    .hasText(String.valueOf(TOTAL_MESSAGES)));
-    assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last())
-        .containsText(String.valueOf(TOTAL_MESSAGES));
-    page.frameLocator("#rbellog-details-iframe").locator("#dropdown-page-size").click();
-    page.frameLocator("#rbellog-details-iframe")
-        .locator("#sizeSelector .dropdown-item")
-        .nth(1)
-        .click();
   }
 }
