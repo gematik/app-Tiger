@@ -101,4 +101,7 @@ public class TigerConfigurationKeys {
 
   public static final TigerConfigurationKey CUCUMBER_ENGINE_RUNTIME_CONFIGURATION = // NOSONAR
       new TigerConfigurationKey("tiger.cucumber.runtime-configuration");
+  public static final TigerTypedConfigurationKey<Boolean> TIGER_CUSTOM_FAILSAFE_PROVIDER_ACTIVE =
+      new TigerTypedConfigurationKey<>(
+          "tiger.experimental.customFailsafeProvider", Boolean.class, false);
 }

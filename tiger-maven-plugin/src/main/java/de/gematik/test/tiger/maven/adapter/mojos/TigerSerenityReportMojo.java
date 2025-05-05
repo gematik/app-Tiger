@@ -19,10 +19,7 @@ package de.gematik.test.tiger.maven.adapter.mojos;
 
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import de.gematik.test.tiger.common.web.TigerBrowserUtil;
-import de.gematik.test.tiger.maven.reporter.TigerHtmlReporter;
-import de.gematik.test.tiger.maven.reporter.TigerJsonReporter;
-import de.gematik.test.tiger.maven.reporter.TigerReporter;
-import de.gematik.test.tiger.maven.reporter.TigerSinglePageReporter;
+import de.gematik.test.tiger.maven.reporter.ReporterGenerator;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -44,6 +41,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -74,15 +72,18 @@ public class TigerSerenityReportMojo extends AbstractMojo {
   public boolean openSerenityReportInBrowser;
 
   @Override
-  public void execute() throws MojoExecutionException {
+  public void execute() throws MojoExecutionException, MojoFailureException {
     try {
       generateReports();
+
+    } catch (MojoFailureException e) {
+      throw e;
     } catch (final Exception e) {
       throw new MojoExecutionException("Error generating serenity reports", e);
     }
   }
 
-  private void generateReports() throws IOException {
+  private void generateReports() throws IOException, MojoFailureException {
     if (!reportDirectory.exists()) {
       getLog().warn("Report directory does not exist yet: " + reportDirectory);
       return;
@@ -91,31 +92,17 @@ public class TigerSerenityReportMojo extends AbstractMojo {
     backupJsonReportFiles();
     modifyStepDescriptionsWithTigerResolvedValues();
 
-    createReporters()
-        .forEach(
-            r -> {
-              r.generateReport();
-              r.logReportUri(getLog());
-            });
+    var reportGenerator =
+        new ReporterGenerator(
+            reports, reportDirectory.toPath(), Path.of(requirementsBaseDir), getLog());
+    reportGenerator.generateReports();
 
     if (openSerenityReportInBrowser) {
       TigerBrowserUtil.openUrlInBrowser(
           reportDirectory.toPath() + "\\index.html", "browser for serenity report");
     }
-  }
 
-  private List<TigerReporter> createReporters() {
-    List<TigerReporter> reporters = new ArrayList<>();
-    if (reports.contains("html")) {
-      reporters.add(new TigerHtmlReporter(reportDirectory.toPath(), Path.of(requirementsBaseDir)));
-    }
-    if (reports.contains("single-page-html")) {
-      reporters.add(new TigerSinglePageReporter(reportDirectory.toPath()));
-    }
-    if (reports.contains("json-summary")) {
-      reporters.add(new TigerJsonReporter(reportDirectory.toPath()));
-    }
-    return reporters;
+    reportGenerator.checkResults();
   }
 
   private void backupJsonReportFiles() throws IOException {

@@ -72,6 +72,7 @@
         <module>tiger-test-lib</module>
         <module>tiger-maven-plugin</module>
         <module>tiger-uitests</module>
+        <module>tiger-failsafe-provider</module>
     </modules>
 
     <scm>

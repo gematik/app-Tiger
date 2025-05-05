@@ -16,14 +16,38 @@
  */
 package de.gematik.test.tiger.testenvmgr.api.model.mapper;
 
-import lombok.Builder;
+import de.gematik.test.tiger.testenvmgr.util.ScenarioCollector;
+import java.util.Arrays;
 import lombok.Data;
 import org.junit.platform.launcher.TestIdentifier;
 
 @Data
-@Builder
 public class TigerTestIdentifier {
 
   private final TestIdentifier testIdentifier;
-  private final String displayName;
+  private final ScenarioCollector.TestDescription testDescription;
+
+  public TigerTestIdentifier(
+      TestIdentifier testIdentifier, ScenarioCollector.TestDescription testDescription) {
+    this.testIdentifier = testIdentifier;
+    this.testDescription = testDescription;
+  }
+
+  public TigerTestIdentifier(TestIdentifier testIdentifier, String descriptionAsString) {
+    this.testIdentifier = testIdentifier;
+    this.testDescription =
+        new ScenarioCollector.TestDescription(Arrays.asList(descriptionAsString.split(":")));
+  }
+
+  public String getDisplayName() {
+    return testDescription.fullDescription();
+  }
+
+  public String getFeatureName() {
+    return testDescription.getFeatureName();
+  }
+
+  public String getScenarioName() {
+    return testDescription.getScenarioName();
+  }
 }

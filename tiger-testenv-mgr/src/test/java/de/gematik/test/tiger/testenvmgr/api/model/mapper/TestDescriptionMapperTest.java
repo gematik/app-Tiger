@@ -47,10 +47,7 @@ class TestDescriptionMapperTest {
 
     TestIdentifier identifier = TestIdentifier.from(new DummyTestDescriptor());
     TigerTestIdentifier tigerTestIdentifier =
-        TigerTestIdentifier.builder()
-            .testIdentifier(identifier)
-            .displayName(identifier.getDisplayName())
-            .build();
+        new TigerTestIdentifier(identifier, identifier.getDisplayName());
     TestDescriptionDto testDescription =
         testDescriptionMapper.tigerTestIdentifierToTestDescription(tigerTestIdentifier);
     assertThat(testDescription.getDisplayName()).isEqualTo(identifier.getDisplayName());

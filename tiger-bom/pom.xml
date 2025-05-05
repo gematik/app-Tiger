@@ -319,6 +319,11 @@
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
+                <artifactId>tiger-failsafe-provider</artifactId>
+                <version>3.7.7-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-httpbin</artifactId>
                 <version>3.7.8-SNAPSHOT</version>
             </dependency>
@@ -576,6 +581,21 @@
                 <version>${version.maven-plugin-tools}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>common-java5</artifactId>
+                <version>${version.maven.failsafe}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>maven-surefire-common</artifactId>
+                <version>${version.maven.failsafe}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven.surefire</groupId>
+                <artifactId>surefire-junit-platform</artifactId>
+                <version>${version.maven.failsafe}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
                 <version>${version.assertj}</version>
@@ -730,6 +750,12 @@
                 <groupId>org.openapitools</groupId>
                 <artifactId>jackson-databind-nullable</artifactId>
                 <version>${version.jackson-databind-nullable}</version>
+            </dependency>
+            <dependency>
+                <!-- conflict between json-unit-spring and maven-surefire-common -->
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>9.7.1</version>
             </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>

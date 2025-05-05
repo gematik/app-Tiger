@@ -57,11 +57,7 @@ public class ScenarioCollector {
     var result = new LinkedHashSet<TigerTestIdentifier>();
     if (root.isTest()) {
 
-      result.add(
-          TigerTestIdentifier.builder()
-              .testIdentifier(root)
-              .displayName(root.getDisplayName())
-              .build());
+      result.add(new TigerTestIdentifier(root, root.getDisplayName()));
       return result;
     }
     testplan
@@ -71,12 +67,8 @@ public class ScenarioCollector {
               if (child.isContainer()) {
                 result.addAll(collectTigerScenarios(testplan, child));
               } else {
-                String displayName = describeTest(testplan, child);
-                result.add(
-                    TigerTestIdentifier.builder()
-                        .testIdentifier(child)
-                        .displayName(displayName)
-                        .build());
+                TestDescription description = describeTest(testplan, child);
+                result.add(new TigerTestIdentifier(child, description));
               }
             });
     return result;
@@ -84,10 +76,11 @@ public class ScenarioCollector {
 
   // method copied from
   // org.junit.platform.launcher.listeners.MutableTestExecutionSummary.describeTest
-  private static String describeTest(TestPlan testPlan, TestIdentifier testIdentifier) {
+  private static TestDescription describeTest(TestPlan testPlan, TestIdentifier testIdentifier) {
     List<String> descriptionParts = new ArrayList<>();
     collectTestDescription(testPlan, testIdentifier, descriptionParts);
-    return join(":", descriptionParts);
+
+    return new TestDescription(descriptionParts);
   }
 
   private static void collectTestDescription(
@@ -96,5 +89,24 @@ public class ScenarioCollector {
     testPlan
         .getParent(identifier)
         .ifPresent(parent -> collectTestDescription(testPlan, parent, descriptionParts));
+  }
+
+  public record TestDescription(List<String> descriptionParts) {
+
+    public String getEngine() {
+      return descriptionParts.get(0);
+    }
+
+    public String getFeatureName() {
+      return descriptionParts.get(1);
+    }
+
+    public String getScenarioName() {
+      return descriptionParts.get(descriptionParts.size() - 1);
+    }
+
+    public String fullDescription() {
+      return join(":", descriptionParts);
+    }
   }
 }
