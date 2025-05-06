@@ -44,6 +44,7 @@ import net.serenitybdd.core.Serenity;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeanUtils;
 
 @Slf4j
@@ -54,8 +55,8 @@ public class StepDescription {
           "tiger.lib.maxStepDescriptionDisplayLengthOnWebUi", Integer.class, 300);
   private final PickleStepTestStep step;
 
-  private static final String GENERICS_REGEX = "<[^<>]*>";
-  private static final Pattern genericsPattern = Pattern.compile(GENERICS_REGEX);
+  private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\{[^}]*+}");
+  private static final Pattern GENERICS_PATTERN = Pattern.compile("<[^<>]*>");
 
   @Getter(value = AccessLevel.PRIVATE, lazy = true)
   private final Boolean shouldResolveStepArgument = shouldResolveStepArgument();
@@ -213,16 +214,12 @@ public class StepDescription {
   }
 
   private static String replacePlaceHoldersInOrder(String input, List<String> replacements) {
-    Pattern placeholderPattern = Pattern.compile("\\{[^}]*+}");
-    Matcher matcher = placeholderPattern.matcher(input);
+    Matcher matcher = PLACEHOLDER_PATTERN.matcher(input);
 
     StringBuilder result = new StringBuilder();
-    int replacementIndex = 0;
-
-    while (matcher.find()) {
-      var replacement = Matcher.quoteReplacement(replacements.get(replacementIndex));
+    for (var replacementIterator = replacements.iterator(); matcher.find(); ) {
+      var replacement = Matcher.quoteReplacement(replacementIterator.next());
       matcher.appendReplacement(result, replacement);
-      replacementIndex++;
     }
     matcher.appendTail(result);
     return result.toString();
@@ -240,13 +237,7 @@ public class StepDescription {
     String className = methodSignature.substring(0, lastDotInMethodPath);
     String methodName = methodSignature.substring(lastDotInMethodPath + 1);
 
-    // Map<B, List<A>>, List<B>
-    // regex can not do this recursively so we do it in loop till there is no more match
-    Matcher matcher = genericsPattern.matcher(methodName);
-    while (matcher.find()) {
-      methodName = methodName.replaceAll(GENERICS_REGEX, "");
-      matcher = genericsPattern.matcher(methodName);
-    }
+    methodName = removeGenericsArguments(methodName);
 
     try {
       Method method = BeanUtils.resolveSignature(methodName, Class.forName(className));
@@ -258,6 +249,18 @@ public class StepDescription {
     } catch (ClassNotFoundException | IllegalArgumentException e) {
       return false;
     }
+  }
+
+  private static @NotNull String removeGenericsArguments(String methodName) {
+    // For argument lists like (Map<B, List<A>>, List<B>)
+    // regex can not do this recursively so we do it in loop till there is no more match
+    // e.g. (Map<B, List<A>>, List<B>) -> (Map<B, List>, List) -> (Map, List)
+    int formerMethodNameLength;
+    do {
+      formerMethodNameLength = methodName.length();
+      methodName = GENERICS_PATTERN.matcher(methodName).replaceAll("");
+    } while (formerMethodNameLength > methodName.length());
+    return methodName;
   }
 
   // The return value is cached in the shouldResolveStepArgument field. The @Getter(lazy = true)

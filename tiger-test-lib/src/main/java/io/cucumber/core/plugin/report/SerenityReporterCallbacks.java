@@ -627,18 +627,27 @@ public class SerenityReporterCallbacks {
   private boolean allRequestsPaired(List<RbelElement> stepMessages) {
     var messages = new HashSet<>(stepMessages);
 
-    return stepMessages.stream()
-        .filter(
-            message ->
-                message.hasFacet(RbelRequestFacet.class)
-                    && !message.hasFacet(TigerNonPairedMessageFacet.class))
-        .allMatch(
-            message ->
-                message
-                    .getFacet(TracingMessagePairFacet.class)
-                    .map(TracingMessagePairFacet::getResponse)
-                    .stream()
-                    .anyMatch(messages::contains));
+    var requestsWaitingForResponses =
+        stepMessages.stream()
+            .filter(
+                message ->
+                    message.hasFacet(RbelRequestFacet.class)
+                        && !message.hasFacet(TigerNonPairedMessageFacet.class))
+            .filter(
+                message ->
+                    message
+                        .getFacet(TracingMessagePairFacet.class)
+                        .map(TracingMessagePairFacet::getResponse)
+                        .stream()
+                        .noneMatch(messages::contains))
+            .toList();
+    if (!requestsWaitingForResponses.isEmpty()) {
+      log.atDebug()
+          .addArgument(
+              () -> requestsWaitingForResponses.stream().map(RbelElement::getUuid).toList())
+          .log("Non-paired requests: {}");
+    }
+    return requestsWaitingForResponses.isEmpty();
   }
 
   private static int findStepIndex(TestStep step, List<TestStep> steps) {

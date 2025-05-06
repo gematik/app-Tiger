@@ -22,17 +22,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.request;
 import static org.mockito.Mockito.mock;
 
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
 import de.gematik.test.tiger.testenvmgr.data.TigerEnvStatusDto;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioUpdate;
+import de.gematik.test.tiger.testenvmgr.env.StepUpdate;
 import de.gematik.test.tiger.testenvmgr.env.TestResult;
 import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
+import io.cucumber.core.gherkin.DataTableArgument;
+import io.cucumber.core.gherkin.DocStringArgument;
+import io.cucumber.core.internal.com.fasterxml.jackson.core.TreeNode;
+import io.cucumber.core.internal.com.fasterxml.jackson.databind.ObjectMapper;
+import io.cucumber.core.internal.com.fasterxml.jackson.databind.node.ArrayNode;
 import io.cucumber.core.plugin.report.LocationConverter;
 import io.cucumber.core.plugin.report.SerenityReporterCallbacks;
 import io.cucumber.plugin.event.Argument;
+import io.cucumber.plugin.event.Group;
 import io.cucumber.plugin.event.Location;
 import io.cucumber.plugin.event.PickleStepTestStep;
 import io.cucumber.plugin.event.Result;
@@ -42,6 +50,7 @@ import io.cucumber.plugin.event.StepArgument;
 import io.cucumber.plugin.event.TestCase;
 import io.cucumber.plugin.event.TestCaseFinished;
 import io.cucumber.plugin.event.TestCaseStarted;
+import io.cucumber.plugin.event.TestRunFinished;
 import io.cucumber.plugin.event.TestSourceRead;
 import io.cucumber.plugin.event.TestStep;
 import io.cucumber.plugin.event.TestStepFinished;
@@ -53,11 +62,15 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import junit.framework.AssertionFailedError;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -69,6 +82,57 @@ import org.junit.platform.launcher.TestPlan;
 import org.junit.platform.launcher.core.LauncherFactory;
 
 public class TestTigerSerenityReporterPlugin {
+
+  public static final String GENERATED_JSON_REPORT =
+      "target/site/serenity/d11408aff740706845d0a023dbe62d62f228d65c01a235474885c0879ce920e1.json";
+
+  public static final String TEST_GLUE_CLASS = "de.gematik.test.tiger.lib.integrationtest.TestGlue";
+  public static final String TEST_GLUE_STEP_LOCATION =
+      TEST_GLUE_CLASS + ".testGlueMethod(java.lang.String,java.lang.String)";
+  public static final String RESOLVABLE_DOCSTRING_STEP_LOCATION =
+      TEST_GLUE_CLASS + ".testDocString(java.lang.String)";
+  public static final String NON_RESOLVABLE_DOCSTRING_STEP_LOCATION =
+      TEST_GLUE_CLASS + ".testUnresolvableDocString(java.lang.String)";
+  public static final String RESOLVABLE_TABLE_STEP_LOCATION =
+      TEST_GLUE_CLASS + ".testDatatable(io.cucumber.datatable.DataTable)";
+  public static final String NON_RESOLVABLE_TABLE_STEP_LOCATION =
+      TEST_GLUE_CLASS + ".testUnresolvableDatatable(io.cucumber.datatable.DataTable)";
+  public static final String NOT_REPLACED_STRING_REF = "${not.replaced.string}";
+  public static final String REPLACED_STRING_REF = "${replaced.string}";
+  public static final DocStringArgument DOC_STRING_ARGUMENT =
+      new DocStringArgument() {
+        @Override
+        public String getContent() {
+          return "{\"key\": \"" + REPLACED_STRING_REF + "\"}";
+        }
+
+        @Override
+        public String getContentType() {
+          return "json";
+        }
+
+        @Override
+        public String getMediaType() {
+          return "application/json";
+        }
+
+        @Override
+        public int getLine() {
+          return 74;
+        }
+      };
+  public static final DataTableArgument TABLE_ARGUMENT =
+      new DataTableArgument() {
+        @Override
+        public List<List<String>> cells() {
+          return List.of(List.of("Replaced"), List.of(REPLACED_STRING_REF));
+        }
+
+        @Override
+        public int getLine() {
+          return 74;
+        }
+      };
 
   private TigerSerenityReporterPlugin listener;
 
@@ -209,8 +273,8 @@ public class TestTigerSerenityReporterPlugin {
         new TestSourceRead(
             Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
     listener.handleTestSourceRead(event);
-    TestStep testStep1 = new TestStepAdapter(71, 5);
-    TestStep testStep2 = new TestStepAdapter(73, 5);
+    TestStep testStep1 = TestStepAdapter.builder().line(71).column(5).build();
+    TestStep testStep2 = TestStepAdapter.builder().line(73).column(5).build();
     TestCase testCase =
         new TestcaseAdapter() {
           @Override
@@ -249,8 +313,195 @@ public class TestTigerSerenityReporterPlugin {
     String scenarioUniqueId = findScenarioUniqueId(testCase);
     ScenarioUpdate scenario =
         status.getFeatureMap().get(featureName).getScenarios().get(scenarioUniqueId);
-    assertThat(scenario.getSteps().get("0").getStatus()).isEqualTo(TestResult.PASSED);
+    StepUpdate step0 = scenario.getSteps().get("0");
+    assertThat(step0.getStatus()).isEqualTo(TestResult.PASSED);
     assertThat(scenario.getSteps().get("1").getStatus()).isEqualTo(TestResult.FAILED);
+  }
+
+  @AfterEach
+  void deleteJsonReport() {
+    File jsonReport = new File(GENERATED_JSON_REPORT);
+    if (jsonReport.exists()) {
+      jsonReport.delete();
+    }
+  }
+
+  @Test
+  void testStepsResolutionHandling() throws IOException {
+    TigerGlobalConfiguration.putValue("replaced.string", "replacement");
+    TigerGlobalConfiguration.putValue("not.replaced.string", "not.replaced");
+
+    TestSourceRead event =
+        new TestSourceRead(
+            Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
+    listener.handleTestSourceRead(event);
+    TestStep testStepFail = TestStepAdapter.builder().line(71).column(5).build();
+    TestStep testStep1 =
+        TestStepAdapter.builder()
+            .line(71)
+            .column(5)
+            .definitionArgument(
+                List.of(
+                    new ArgumentAdapter("tigerResolvedString", REPLACED_STRING_REF),
+                    new ArgumentAdapter("string", "\"" + NOT_REPLACED_STRING_REF + "\"")))
+            .build();
+    TestStep testStep2 =
+        TestStepAdapter.builder()
+            .line(73)
+            .column(5)
+            .pattern("step has a resolvable docstring:")
+            .stepText("step has a resolvable docstring:")
+            .codeLocation(RESOLVABLE_DOCSTRING_STEP_LOCATION)
+            .stepArgument(DOC_STRING_ARGUMENT)
+            .build();
+    TestStep testStep3 =
+        TestStepAdapter.builder()
+            .line(73)
+            .column(5)
+            .pattern("step has a non resolvable docstring:")
+            .stepText("step has a non resolvable docstring:")
+            .codeLocation(NON_RESOLVABLE_DOCSTRING_STEP_LOCATION)
+            .stepArgument(DOC_STRING_ARGUMENT)
+            .build();
+    TestStep testStep4 =
+        TestStepAdapter.builder()
+            .line(73)
+            .column(5)
+            .pattern("step has a resolvable datatable:")
+            .stepText("step has a resolvable datatable:")
+            .codeLocation(RESOLVABLE_TABLE_STEP_LOCATION)
+            .stepArgument(TABLE_ARGUMENT)
+            .build();
+    TestStep testStep5 =
+        TestStepAdapter.builder()
+            .line(73)
+            .column(5)
+            .pattern("step has a non resolvable docstring:")
+            .stepText("step has a non resolvable docstring:")
+            .codeLocation(NON_RESOLVABLE_TABLE_STEP_LOCATION)
+            .stepArgument(TABLE_ARGUMENT)
+            .build();
+
+    List<TestStep> steps = List.of(testStep1, testStep2, testStep3, testStep4, testStep5);
+
+    var allSteps = new LinkedList<>(steps);
+    allSteps.add(testStepFail);
+    allSteps.addAll(steps);
+
+    TestCase testCase =
+        new TestcaseAdapter() {
+          @Override
+          public List<TestStep> getTestSteps() {
+            return allSteps;
+          }
+        };
+    TestCaseStarted startedEvent = new TestCaseStarted(Instant.now(), testCase);
+    listener.handleTestCaseStarted(startedEvent);
+
+    steps.forEach(step -> handleStep(testCase, step, Status.PASSED, null));
+    handleStep(testCase, testStepFail, Status.FAILED, new AssertionFailedError("Failed"));
+    steps.forEach(step -> handleStep(testCase, step, Status.SKIPPED, null));
+
+    TigerEnvStatusDto status = envStatusController.getStatus();
+    assertThat(status.getFeatureMap()).containsOnlyKeys(featureName);
+    String scenarioUniqueId = findScenarioUniqueId(testCase);
+    ScenarioUpdate scenario =
+        status.getFeatureMap().get(featureName).getScenarios().get(scenarioUniqueId);
+
+    Map<String, StepUpdate> stepUpdates = scenario.getSteps();
+    checkReplacement(stepUpdates.get("0"), true);
+    checkReplacement(stepUpdates.get("1"), false);
+    StepUpdate step2 = stepUpdates.get("2");
+    assertThat(step2.getDescription()).contains(REPLACED_STRING_REF);
+    assertThat(step2.getTooltip()).contains(REPLACED_STRING_REF);
+    checkReplacement(stepUpdates.get("3"), false);
+    StepUpdate step4 = stepUpdates.get("4");
+    assertThat(step4.getDescription()).contains(REPLACED_STRING_REF);
+    assertThat(step4.getTooltip()).contains(REPLACED_STRING_REF);
+
+    listener.handleTestCaseFinished(
+        new TestCaseFinished(
+            Instant.now(), testCase, new Result(Status.PASSED, Duration.ofMillis(500), null)));
+
+    listener.handleTestRunFinished(
+        new TestRunFinished(
+            Instant.now(), new Result(Status.PASSED, Duration.ofMillis(500), null)));
+
+    try (var reader = new ObjectMapper().createParser(new File(GENERATED_JSON_REPORT))) {
+      TreeNode testSteps = reader.readValueAsTree().get("testSteps");
+
+      assertThat(testSteps.size()).isEqualTo(11);
+
+      testStepResolutionPassedSteps(testSteps);
+
+      // skipped steps --> no replacements
+
+      testStepsREsolutionSkippedSteps(testSteps);
+
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private static void testStepsREsolutionSkippedSteps(TreeNode testSteps) {
+    var description6 = testSteps.get(6).get("description").toString();
+    assertThat(description6).contains(NOT_REPLACED_STRING_REF);
+    assertThat(description6).contains(REPLACED_STRING_REF);
+    assertThat(testSteps.get(6).get("reportData")).isNull();
+    assertThat(testSteps.get(7).get("reportData")).isNull();
+    assertThat(testSteps.get(8).get("reportData")).isNull();
+    assertThat(testSteps.get(9).get("reportData")).isNull();
+    for (TreeNode node : (ArrayNode) testSteps.get(10).get("reportData")) {
+      assertThat(node.get("title").toString()).isNotEqualTo("Tiger Resolved Step Description");
+    }
+
+    var description9 = testSteps.get(9).get("description").toString();
+    assertThat(description9).contains(REPLACED_STRING_REF);
+    assertThat(description9).doesNotContain("replacement");
+
+    var description10 = testSteps.get(10).get("description").toString();
+    assertThat(description10).contains(REPLACED_STRING_REF);
+    assertThat(description10).doesNotContain("replacement");
+  }
+
+  private static void testStepResolutionPassedSteps(TreeNode testSteps) {
+    var description = testSteps.get(0).get("description").toString();
+    assertThat(description).contains(NOT_REPLACED_STRING_REF);
+    assertThat(description).contains(REPLACED_STRING_REF);
+
+    var reportDataContents0 = testSteps.get(0).get("reportData").get(0).get("contents").toString();
+    assertThat(reportDataContents0).contains(NOT_REPLACED_STRING_REF);
+    assertThat(reportDataContents0).doesNotContain(REPLACED_STRING_REF);
+
+    var reportDataContents1 = testSteps.get(1).get("reportData").get(0).get("contents").toString();
+    assertThat(reportDataContents1).doesNotContain(REPLACED_STRING_REF);
+    assertThat(reportDataContents1).contains("replacement");
+
+    var reportDataContents2 = testSteps.get(2).get("reportData").get(0).get("contents").toString();
+    assertThat(reportDataContents2).contains(REPLACED_STRING_REF);
+
+    var reportDataContents3 = testSteps.get(3).get("reportData").get(0).get("contents").toString();
+    assertThat(reportDataContents3).doesNotContain(REPLACED_STRING_REF);
+    assertThat(reportDataContents3).contains("replacement");
+
+    var reportDataContents4 = testSteps.get(4).get("reportData").get(0).get("contents").toString();
+    assertThat(reportDataContents4).contains(REPLACED_STRING_REF);
+  }
+
+  private void checkReplacement(StepUpdate step, boolean checkNotReplaced) {
+    assertThat(step.getDescription()).doesNotContain(REPLACED_STRING_REF);
+    assertThat(step.getTooltip()).contains(REPLACED_STRING_REF);
+    if (checkNotReplaced) {
+      assertThat(step.getDescription()).contains(NOT_REPLACED_STRING_REF);
+      assertThat(step.getTooltip()).contains(NOT_REPLACED_STRING_REF);
+    }
+  }
+
+  private void handleStep(TestCase testCase, TestStep testStep, Status status, Throwable error) {
+    listener.handleTestStepStarted(new TestStepStarted(Instant.now(), testCase, testStep));
+    listener.handleTestStepFinished(
+        new TestStepFinished(
+            Instant.now(), testCase, testStep, new Result(status, Duration.ofMillis(500), error)));
   }
 
   @Test
@@ -260,7 +511,7 @@ public class TestTigerSerenityReporterPlugin {
         new TestSourceRead(
             Instant.now(), featureUri, IOUtils.toString(featureUri, StandardCharsets.UTF_8));
     listener.handleTestSourceRead(event);
-    TestStep testStep = new TestStepAdapter(71, 5);
+    TestStep testStep = TestStepAdapter.builder().line(71).column(5).build();
     TestCase testCase =
         new TestcaseAdapter() {
           @Override
@@ -330,18 +581,46 @@ public class TestTigerSerenityReporterPlugin {
         .toString();
   }
 
-  @Data
+  @Getter
   @AllArgsConstructor
+  private static class ArgumentAdapter implements Argument {
+    private final String parameterTypeName;
+    private final String value;
+
+    @Override
+    public int getStart() {
+      return 0;
+    }
+
+    @Override
+    public int getEnd() {
+      return 0;
+    }
+
+    @Override
+    public Group getGroup() {
+      return null;
+    }
+  }
+
+  @Data
+  @Builder
   private static class TestStepAdapter implements PickleStepTestStep {
     private int line;
     private int column;
+    private StepArgument stepArgument;
+    private @Builder.Default String codeLocation = TEST_GLUE_STEP_LOCATION;
+    private @Builder.Default String pattern =
+        "test step resolves {tigerResolvedString} and does not resolve {string}";
+    private @Builder.Default String stepText =
+        "test step resolves "
+            + REPLACED_STRING_REF
+            + " and does not resolve \""
+            + NOT_REPLACED_STRING_REF
+            + "\"";
+    private @Builder.Default List<Argument> definitionArgument = List.of();
 
     private final UUID stepUuid = UUID.randomUUID();
-
-    @Override
-    public String getCodeLocation() {
-      return "de.gematik.test.tiger.glue.TestGlue.testGlueMethod()";
-    }
 
     @Override
     public UUID getId() {
@@ -349,26 +628,21 @@ public class TestTigerSerenityReporterPlugin {
     }
 
     @Override
-    public String getPattern() {
-      return null;
-    }
-
-    @Override
     public Step getStep() {
       return new Step() {
         @Override
         public StepArgument getArgument() {
-          return null;
+          return stepArgument;
         }
 
         @Override
         public String getKeyword() {
-          return "When";
+          return "When ";
         }
 
         @Override
         public String getText() {
-          return "Tiger test step";
+          return stepText;
         }
 
         @Override
@@ -384,16 +658,6 @@ public class TestTigerSerenityReporterPlugin {
     }
 
     @Override
-    public List<Argument> getDefinitionArgument() {
-      return List.of();
-    }
-
-    @Override
-    public StepArgument getStepArgument() {
-      return null;
-    }
-
-    @Override
     public int getStepLine() {
       return line;
     }
@@ -401,11 +665,6 @@ public class TestTigerSerenityReporterPlugin {
     @Override
     public URI getUri() {
       return null;
-    }
-
-    @Override
-    public String getStepText() {
-      return "a step text";
     }
   }
 
@@ -445,7 +704,7 @@ public class TestTigerSerenityReporterPlugin {
 
     @Override
     public List<TestStep> getTestSteps() {
-      return List.of(new TestStepAdapter(71, 5));
+      return List.of(TestStepAdapter.builder().line(71).column(5).build());
     }
 
     @Override
