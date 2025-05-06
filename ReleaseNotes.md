@@ -14,7 +14,7 @@
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-failsafe-plugin</artifactId>
-    <version>3.5.3</version>
+    <version>3.5.2</version>
     <configuration>
         <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
         <!-- OPTIONAL - these properties are already set to these default values. You only need to include them if you 
