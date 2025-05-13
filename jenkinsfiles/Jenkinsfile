@@ -91,6 +91,13 @@ pipeline {
             }
             steps {
                 mavenCheckWithSonarQube(POM_PATH, "", false)
+
+                sh """
+                    cd tiger-testenv-mgr/src/frontend
+                    npm run lint
+                    cd ../../../tiger-proxy-scrollable-webui/src/frontend
+                    npm run lint
+                """
             }
         }
 
