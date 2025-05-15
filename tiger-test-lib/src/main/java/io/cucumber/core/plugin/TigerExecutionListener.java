@@ -17,7 +17,7 @@
 
 package io.cucumber.core.plugin;
 
-import static io.cucumber.core.options.Constants.EXECUTION_DRY_RUN_PROPERTY_NAME;
+import static io.cucumber.junit.platform.engine.Constants.EXECUTION_DRY_RUN_PROPERTY_NAME;
 import static org.awaitility.Awaitility.await;
 
 import de.gematik.test.tiger.lib.TigerDirector;
@@ -48,7 +48,6 @@ public class TigerExecutionListener implements TestExecutionListener {
 
   @Override
   public void testPlanExecutionFinished(TestPlan testPlan) {
-    TestExecutionListener.super.testPlanExecutionFinished(testPlan);
     testPlan
         .getConfigurationParameters()
         .getBoolean(EXECUTION_DRY_RUN_PROPERTY_NAME)
@@ -71,11 +70,7 @@ public class TigerExecutionListener implements TestExecutionListener {
   public void dynamicTestRegistered(TestIdentifier testIdentifier) {
     if (testIdentifier.isTest()) {
       ScenarioRunner.addTigerScenarios(
-          List.of(
-              TigerTestIdentifier.builder()
-                  .testIdentifier(testIdentifier)
-                  .displayName(testIdentifier.getDisplayName())
-                  .build()));
+          List.of(new TigerTestIdentifier(testIdentifier, testIdentifier.getDisplayName())));
     }
   }
 }

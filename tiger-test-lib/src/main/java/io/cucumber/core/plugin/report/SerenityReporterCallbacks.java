@@ -30,12 +30,12 @@ import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
-import de.gematik.test.tiger.common.Ansi;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
 import de.gematik.test.tiger.lib.TigerDirector;
+import de.gematik.test.tiger.lib.TigerInitializer;
 import de.gematik.test.tiger.lib.rbel.RbelMessageRetriever;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.env.FeatureUpdate;
@@ -103,9 +103,7 @@ import org.json.JSONObject;
 public class SerenityReporterCallbacks {
 
   public static final String TARGET_DIR = "target";
-
-  private static final Object startupMutex = new Object();
-  private static RuntimeException tigerStartupFailedException;
+  public final TigerInitializer tigerInitializer = new TigerInitializer();
   @Getter @Setter private static boolean pauseMode;
   private final ThreadLocal<Boolean> scenarioAlreadyFailed =
       ThreadLocal.withInitial(() -> Boolean.FALSE);
@@ -152,16 +150,11 @@ public class SerenityReporterCallbacks {
   //
   @SuppressWarnings("java:S1172")
   public void handleTestRunStarted(Event ignoredEvent) {
-    synchronized (startupMutex) {
-      if (TigerDirector.isInitialized()) {
-        return;
-      }
-      showTigerVersion();
-      initializeTiger();
-      TigerDirector.assertThatTigerIsInitialized();
-      shouldAbortTestExecution();
-      featureExecutionMonitor.startTestRun();
-    }
+    tigerInitializer.runWithSafelyInitialized(
+        () -> {
+          shouldAbortTestExecution();
+          featureExecutionMonitor.startTestRun();
+        });
   }
 
   @SuppressWarnings("java:S1172")
@@ -170,37 +163,8 @@ public class SerenityReporterCallbacks {
     featureExecutionMonitor.stopTestRun();
   }
 
-  private void showTigerVersion() {
-    log.info(
-        Ansi.colorize(
-            "Starting Tiger version " + getTigerVersionString(), RbelAnsiColors.GREEN_BRIGHT));
-  }
-
   private String getTigerVersionString() {
-    try {
-      Properties p = new Properties();
-      p.load(SerenityReporterCallbacks.class.getResourceAsStream("/build.properties"));
-      String version = p.getProperty("tiger.version");
-      if (version.equals("${project.version}")) {
-        version = "UNKNOWN";
-      }
-      return version + "-" + p.getProperty("tiger.build.timestamp");
-    } catch (RuntimeException | IOException ignored) {
-      return "UNKNOWN";
-    }
-  }
-
-  private synchronized void initializeTiger() {
-    if (tigerStartupFailedException != null) {
-      return;
-    }
-    try {
-      TigerDirector.registerShutdownHook();
-      TigerDirector.start();
-    } catch (RuntimeException rte) {
-      tigerStartupFailedException = rte;
-      throw tigerStartupFailedException;
-    }
+    return tigerInitializer.getTigerVersionString();
   }
 
   // -------------------------------------------------------------------------------------------------------------------------------------
@@ -535,6 +499,7 @@ public class SerenityReporterCallbacks {
             .build();
 
     if (TestResult.EXECUTING.equals(status)) {
+      stepDescription.recordMultilineDocstringArgument();
       stepDescription.recordResolvedDescription();
     }
     val featureUpdate =
@@ -663,18 +628,27 @@ public class SerenityReporterCallbacks {
   private boolean allRequestsPaired(List<RbelElement> stepMessages) {
     var messages = new HashSet<>(stepMessages);
 
-    return stepMessages.stream()
-        .filter(
-            message ->
-                message.hasFacet(RbelRequestFacet.class)
-                    && !message.hasFacet(TigerNonPairedMessageFacet.class))
-        .allMatch(
-            message ->
-                message
-                    .getFacet(TracingMessagePairFacet.class)
-                    .map(TracingMessagePairFacet::getResponse)
-                    .stream()
-                    .anyMatch(messages::contains));
+    var requestsWaitingForResponses =
+        stepMessages.stream()
+            .filter(
+                message ->
+                    message.hasFacet(RbelRequestFacet.class)
+                        && !message.hasFacet(TigerNonPairedMessageFacet.class))
+            .filter(
+                message ->
+                    message
+                        .getFacet(TracingMessagePairFacet.class)
+                        .map(TracingMessagePairFacet::getResponse)
+                        .stream()
+                        .noneMatch(messages::contains))
+            .toList();
+    if (!requestsWaitingForResponses.isEmpty()) {
+      log.atDebug()
+          .addArgument(
+              () -> requestsWaitingForResponses.stream().map(RbelElement::getUuid).toList())
+          .log("Non-paired requests: {}");
+    }
+    return requestsWaitingForResponses.isEmpty();
   }
 
   private static int findStepIndex(TestStep step, List<TestStep> steps) {

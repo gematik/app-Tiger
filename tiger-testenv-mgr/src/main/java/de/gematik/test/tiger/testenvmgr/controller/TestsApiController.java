@@ -75,7 +75,7 @@ public class TestsApiController implements TestsApi {
           "Required class '"
               + cucumberClassName
               + "' is not present in the classpath. Make sure you have declared the dependency for"
-              + " 'cucumber-junit-platform-engine' or that it is included transitevely (e.g.: with"
+              + " 'cucumber-junit-platform-engine' or that it is included transitively (e.g.: with"
               + " tiger-test-lib)");
     }
   }

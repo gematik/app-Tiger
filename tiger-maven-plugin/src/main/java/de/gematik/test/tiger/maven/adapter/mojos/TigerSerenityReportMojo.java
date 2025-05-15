@@ -18,11 +18,9 @@
 package de.gematik.test.tiger.maven.adapter.mojos;
 
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
+import de.gematik.test.tiger.common.report.ReportDataKeys;
 import de.gematik.test.tiger.common.web.TigerBrowserUtil;
-import de.gematik.test.tiger.maven.reporter.TigerHtmlReporter;
-import de.gematik.test.tiger.maven.reporter.TigerJsonReporter;
-import de.gematik.test.tiger.maven.reporter.TigerReporter;
-import de.gematik.test.tiger.maven.reporter.TigerSinglePageReporter;
+import de.gematik.test.tiger.maven.reporter.ReporterGenerator;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,6 +28,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -44,6 +43,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -74,48 +74,42 @@ public class TigerSerenityReportMojo extends AbstractMojo {
   public boolean openSerenityReportInBrowser;
 
   @Override
-  public void execute() throws MojoExecutionException {
+  public void execute() throws MojoExecutionException, MojoFailureException {
     try {
       generateReports();
+
+    } catch (MojoFailureException e) {
+      throw e;
     } catch (final Exception e) {
       throw new MojoExecutionException("Error generating serenity reports", e);
     }
   }
 
-  private void generateReports() throws IOException {
+  private void generateReports() throws IOException, MojoFailureException {
     if (!reportDirectory.exists()) {
       getLog().warn("Report directory does not exist yet: " + reportDirectory);
       return;
     }
 
+    includeFullUnresolvedDocstringArguments();
     backupJsonReportFiles();
     modifyStepDescriptionsWithTigerResolvedValues();
 
-    createReporters()
-        .forEach(
-            r -> {
-              r.generateReport();
-              r.logReportUri(getLog());
-            });
+    var reportGenerator =
+        new ReporterGenerator(
+            reports, reportDirectory.toPath(), Path.of(requirementsBaseDir), getLog());
+    reportGenerator.generateReports();
 
     if (openSerenityReportInBrowser) {
       TigerBrowserUtil.openUrlInBrowser(
           reportDirectory.toPath() + "\\index.html", "browser for serenity report");
     }
+
+    reportGenerator.checkResults();
   }
 
-  private List<TigerReporter> createReporters() {
-    List<TigerReporter> reporters = new ArrayList<>();
-    if (reports.contains("html")) {
-      reporters.add(new TigerHtmlReporter(reportDirectory.toPath(), Path.of(requirementsBaseDir)));
-    }
-    if (reports.contains("single-page-html")) {
-      reporters.add(new TigerSinglePageReporter(reportDirectory.toPath()));
-    }
-    if (reports.contains("json-summary")) {
-      reporters.add(new TigerJsonReporter(reportDirectory.toPath()));
-    }
-    return reporters;
+  private void includeFullUnresolvedDocstringArguments() throws IOException {
+    modifyExistingReportFiles(this::replaceMultilineDocstringDescription);
   }
 
   private void backupJsonReportFiles() throws IOException {
@@ -143,6 +137,10 @@ public class TigerSerenityReportMojo extends AbstractMojo {
   }
 
   private void modifyStepDescriptionsWithTigerResolvedValues() throws IOException {
+    modifyExistingReportFiles(this::replaceTigerResolvedStepDescriptions);
+  }
+
+  private void modifyExistingReportFiles(Consumer<TestStep> testStepModifier) throws IOException {
     TestOutcomes testOutcomesToManipulate =
         TestOutcomeLoader.loadTestOutcomes()
             .inFormat(OutcomeFormat.JSON)
@@ -154,7 +152,7 @@ public class TigerSerenityReportMojo extends AbstractMojo {
 
     for (TestOutcome outcome : testOutcomesToManipulate.getOutcomes()) {
       List<TestStep> allSteps = collectSteps(outcome);
-      replaceTigerResolvedStepDescriptions(allSteps);
+      allSteps.forEach(testStepModifier);
       outcomesReporter.generateReportFor(outcome);
     }
   }
@@ -179,15 +177,26 @@ public class TigerSerenityReportMojo extends AbstractMojo {
     return result;
   }
 
-  private void replaceTigerResolvedStepDescriptions(List<TestStep> steps) {
-    steps.forEach(step -> getTigerResolvedStepDescription(step).ifPresent(step::setDescription));
+  private void replaceTigerResolvedStepDescriptions(TestStep step) {
+    getTigerResolvedStepDescription(step).ifPresent(step::setDescription);
+  }
+
+  private void replaceMultilineDocstringDescription(TestStep step) {
+    getCompleteUnresolvedMultilineDocstring(step).ifPresent(step::setDescription);
   }
 
   private Optional<String> getTigerResolvedStepDescription(TestStep step) {
+    return extractCustomReportData(step, ReportDataKeys.TIGER_RESOLVED_STEP_DESCRIPTION_KEY);
+  }
+
+  private Optional<String> getCompleteUnresolvedMultilineDocstring(TestStep step) {
+    return extractCustomReportData(step, ReportDataKeys.COMPLETE_UNRESOLVED_MULTILINE_DOCSTRING);
+  }
+
+  /** beware of side effect. It removes the given data from the original object. */
+  private Optional<String> extractCustomReportData(TestStep step, String customKey) {
     var reportDataWithDescription =
-        step.getReportData().stream()
-            .filter(data -> data.getTitle().equals("Tiger Resolved Step Description"))
-            .findAny();
+        step.getReportData().stream().filter(data -> data.getTitle().equals(customKey)).findAny();
     reportDataWithDescription.ifPresent(reportData -> step.getReportData().remove(reportData));
     return reportDataWithDescription
         .map(ReportData::getContents)

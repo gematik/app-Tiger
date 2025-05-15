@@ -16,9 +16,9 @@
 
 <script setup lang="ts">
 import ScenarioIdentifier from "@/types/testsuite/ScenarioIdentifier";
-import { ref } from "vue";
+import {ref} from "vue";
 import ConfirmDialog from "@/components/dialogs/ConfirmDialog.vue";
-import { useConfirmRun } from "@/components/replay/ConfirmRun";
+import {useConfirmRun} from "@/components/replay/ConfirmRun";
 
 const isHovering = ref(false);
 
@@ -27,70 +27,69 @@ const props = defineProps<{
   showPlayButton: boolean;
 }>();
 
-console.log("props ", props);
 
-const { openDialog, onClickConfirm, onClickDismiss, dialogIsOpen } =
-  useConfirmRun();
+const {openDialog, onClickConfirm, onClickDismiss, dialogIsOpen} =
+    useConfirmRun();
 </script>
 
 <template>
   <div>
     <div
-      v-if="props.showPlayButton"
-      role="button"
-      class="btn btn-link p-0 small-play-button test-play-small-button"
-      title="Run Scenario"
-      @click="openDialog"
+        v-if="props.showPlayButton"
+        role="button"
+        class="btn btn-link p-0 small-play-button test-play-small-button"
+        title="Run Scenario"
+        @click="openDialog"
     >
       <span
-        class="fa-stack fa-2xs circle-arrow d-flex"
-        style="flex-shrink: 0"
-        @mouseenter="isHovering = true"
-        @mouseleave="isHovering = false"
+          class="fa-stack fa-2xs circle-arrow d-flex"
+          style="flex-shrink: 0"
+          @mouseenter="isHovering = true"
+          @mouseleave="isHovering = false"
       >
         <i
-          class="fa fa-regular fa-circle fa-stack-2x outer-circle"
-          :class="{ 'fa-solid': isHovering }"
+            class="fa fa-regular fa-circle fa-stack-2x outer-circle"
+            :class="{ 'fa-solid': isHovering }"
         ></i>
         <i
-          class="fas fa-play fa-stack-1x inner-arrow"
-          :class="{ 'fa-inverse': isHovering }"
+            class="fas fa-play fa-stack-1x inner-arrow"
+            :class="{ 'fa-inverse': isHovering }"
         ></i>
       </span>
     </div>
 
     <div
-      v-else
-      role="button"
-      class="btn btn-link p-0 small-play-button"
-      title="Replay Scenario"
-      @click="openDialog"
+        v-else
+        role="button"
+        class="btn btn-link p-0 small-play-button"
+        title="Replay Scenario"
+        @click="openDialog"
     >
       <span
-        class="fa-stack fa-2xs circle-arrow d-flex"
-        style="flex-shrink: 0"
-        @mouseenter="isHovering = true"
-        @mouseleave="isHovering = false"
+          class="fa-stack fa-2xs circle-arrow d-flex"
+          style="flex-shrink: 0"
+          @mouseenter="isHovering = true"
+          @mouseleave="isHovering = false"
       >
         <i
-          class="fa fa-regular fa-circle fa-stack-2x outer-circle"
-          :class="{ 'fa-solid': isHovering }"
+            class="fa fa-regular fa-circle fa-stack-2x outer-circle"
+            :class="{ 'fa-solid': isHovering }"
         ></i>
         <i
-          class="fas fa-rotate-right fa-stack-1x inner-arrow"
-          :class="{ 'fa-inverse': isHovering }"
+            class="fas fa-rotate-right fa-stack-1x inner-arrow"
+            :class="{ 'fa-inverse': isHovering }"
         ></i>
       </span>
     </div>
 
     <confirm-dialog
-      :dialog-is-open="dialogIsOpen"
-      :header="props.showPlayButton ? 'Run Scenario' : 'Replay Scenario'"
-      description=""
-      :label-confirm-button="props.showPlayButton ? 'Yes, run' : 'Yes, replay'"
-      label-dismiss-button="Cancel"
-      @click-confirm="() => onClickConfirm(props.scenario)"
-      @click-dismiss="onClickDismiss"
+        :dialog-is-open="dialogIsOpen"
+        :header="props.showPlayButton ? 'Run Scenario' : 'Replay Scenario'"
+        description=""
+        :label-confirm-button="props.showPlayButton ? 'Yes, run' : 'Yes, replay'"
+        label-dismiss-button="Cancel"
+        @click-confirm="() => onClickConfirm(props.scenario)"
+        @click-dismiss="onClickDismiss"
     >
     </confirm-dialog>
   </div>

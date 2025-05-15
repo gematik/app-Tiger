@@ -40,6 +40,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.apache.groovy.util.Arrays;
 import org.junit.platform.engine.DiscoverySelector;
 import org.junit.platform.engine.TestSource;
 import org.junit.platform.engine.TestTag;
@@ -49,10 +50,12 @@ import org.junit.platform.engine.discovery.UniqueIdSelector;
 import org.junit.platform.engine.support.descriptor.ClasspathResourceSource;
 import org.junit.platform.engine.support.descriptor.FilePosition;
 import org.junit.platform.engine.support.descriptor.FileSource;
+import org.junit.platform.launcher.EngineFilter;
 import org.junit.platform.launcher.Launcher;
-import org.junit.platform.launcher.LauncherDiscoveryRequest;
+import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.TestPlan;
+import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import org.springframework.stereotype.Component;
@@ -63,6 +66,7 @@ public class ScenarioRunner {
 
   private static final LinkedHashSet<TigerTestIdentifier> tigerScenarios =
       new LinkedHashSet<>(); // NOSONAR - important to keep order
+  private static TestExecutionListener[] testExecutionListener = new TestExecutionListener[] {};
 
   // Must be single threaded because we do not want to have multiple tests runs at the same time.
   // Since the Launcher.execute() runs synchronously, we have the guarantee that the runner waits
@@ -78,6 +82,10 @@ public class ScenarioRunner {
 
   public static void addTigerScenarios(TestPlan testPlan) {
     addTigerScenarios(ScenarioCollector.collectTigerScenarios(testPlan));
+  }
+
+  public static void setTestListener(TestExecutionListener... adapter) {
+    testExecutionListener = adapter;
   }
 
   public TestExecutionStatus enqueueExecutionSelectedTests(
@@ -134,8 +142,17 @@ public class ScenarioRunner {
             TigerConfigurationKeys.CUCUMBER_ENGINE_RUNTIME_CONFIGURATION.downsampleKey());
     initialConfiguration.put(EXECUTION_DRY_RUN_PROPERTY_NAME, "false");
     val uuidForThisRun = UUID.randomUUID();
-    LauncherDiscoveryRequest runRequest =
-        request().selectors(selectors).configurationParameters(initialConfiguration).build();
+
+    LauncherDiscoveryRequestBuilder runRequestBuilder =
+        request().selectors(selectors).configurationParameters(initialConfiguration);
+
+    if (TigerConfigurationKeys.TIGER_CUSTOM_FAILSAFE_PROVIDER_ACTIVE
+        .getValueOrDefault()
+        .booleanValue()) {
+      runRequestBuilder.filters(EngineFilter.includeEngines("cucumber"));
+    }
+
+    var runRequest = runRequestBuilder.build();
 
     Launcher launcher = LauncherFactory.create();
     TestPlan testPlan = launcher.discover(runRequest);
@@ -143,7 +160,12 @@ public class ScenarioRunner {
     val summaryListener = new TigerSummaryListener(testPlan);
     val testExecutionStatus = new TestExecutionStatus(uuidForThisRun, testPlan, summaryListener);
     testExecutionResults.put(uuidForThisRun, testExecutionStatus);
-    scenarioExecutionService.execute(() -> launcher.execute(testPlan, summaryListener));
+    scenarioExecutionService.execute(
+        () ->
+            launcher.execute(
+                testPlan,
+                Arrays.concat(
+                    testExecutionListener, new TestExecutionListener[] {summaryListener})));
     return testExecutionStatus;
   }
 
