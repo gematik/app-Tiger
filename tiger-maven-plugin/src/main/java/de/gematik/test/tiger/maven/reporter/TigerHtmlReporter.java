@@ -18,8 +18,10 @@
 package de.gematik.test.tiger.maven.reporter;
 
 import java.nio.file.Path;
+import java.util.Optional;
 import lombok.SneakyThrows;
 import net.thucydides.core.reports.html.HtmlAggregateStoryReporter;
+import net.thucydides.model.domain.TestResult;
 import net.thucydides.model.reports.ResultChecker;
 import net.thucydides.model.reports.TestOutcomes;
 import net.thucydides.model.requirements.FileSystemRequirements;
@@ -28,6 +30,7 @@ import org.apache.maven.plugin.logging.Log;
 public class TigerHtmlReporter implements TigerReporter {
 
   private final HtmlAggregateStoryReporter reporter;
+  private TestResult testResult;
 
   public TigerHtmlReporter(Path reportDirectory, Path requirementsBaseDir) {
     reporter =
@@ -49,6 +52,10 @@ public class TigerHtmlReporter implements TigerReporter {
   public void generateReport() {
     TestOutcomes outcomes =
         reporter.generateReportsForTestResultsFrom(reporter.getSourceDirectory());
-    new ResultChecker(reporter.getOutputDirectory()).checkTestResults(outcomes);
+    testResult = new ResultChecker(reporter.getOutputDirectory()).checkTestResults(outcomes);
+  }
+
+  public Optional<TestResult> getTestResult() {
+    return Optional.ofNullable(testResult);
   }
 }

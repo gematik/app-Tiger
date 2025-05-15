@@ -104,10 +104,7 @@ class TestsApiControllerTest {
         testIdentifiers.stream()
             .map(
                 testIdentifier ->
-                    TigerTestIdentifier.builder()
-                        .testIdentifier(testIdentifier)
-                        .displayName(testIdentifier.getDisplayName())
-                        .build())
+                    new TigerTestIdentifier(testIdentifier, testIdentifier.getDisplayName()))
             .collect(Collectors.toList());
     ScenarioRunner.addTigerScenarios(tigerTestIdentifier);
     List<TestDescriptionDto> responseBody =

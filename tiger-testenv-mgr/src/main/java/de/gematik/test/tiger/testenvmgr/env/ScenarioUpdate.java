@@ -17,6 +17,8 @@
 package de.gematik.test.tiger.testenvmgr.env;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.AllArgsConstructor;
@@ -30,11 +32,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ScenarioUpdate {
 
-  private Map<String, StepUpdate> steps;
+  @Builder.Default private Map<String, StepUpdate> steps = new LinkedHashMap<>();
   private String description;
   private TestResult status;
-  private List<String> exampleKeys;
-  private Map<String, String> exampleList;
+  @Builder.Default private List<String> exampleKeys = new ArrayList<>();
+  @Builder.Default private Map<String, String> exampleList = new LinkedHashMap<>();
   @Builder.Default private int variantIndex = -1;
   private String uniqueId;
 

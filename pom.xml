@@ -22,7 +22,7 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger-bom</artifactId>
-        <version>3.7.7</version>
+        <version>3.7.8</version>
         <relativePath>./tiger-bom/pom.xml</relativePath>
     </parent>
     <artifactId>tiger</artifactId>
@@ -72,6 +72,7 @@
         <module>tiger-test-lib</module>
         <module>tiger-maven-plugin</module>
         <module>tiger-uitests</module>
+        <module>tiger-failsafe-provider</module>
     </modules>
 
     <scm>

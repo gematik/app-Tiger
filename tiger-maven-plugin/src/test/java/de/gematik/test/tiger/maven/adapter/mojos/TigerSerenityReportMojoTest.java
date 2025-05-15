@@ -37,6 +37,7 @@ import java.util.List;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.apache.commons.io.FileUtils;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.AssertionsForClassTypes;
@@ -92,7 +93,7 @@ class TigerSerenityReportMojoTest {
     prepareReportDir();
 
     // Execution
-    underTest.execute();
+    executeIgnoringMojoFailureException();
 
     // Assertion
     var serenitySummaryHtmlContent = readString(reportDir.resolve("serenity-summary.html"));
@@ -123,7 +124,7 @@ class TigerSerenityReportMojoTest {
     prepareReportDir();
 
     // Execution
-    underTest.execute();
+    executeIgnoringMojoFailureException();
 
     // Assertion
     File[] jsonFiles = reportDir.resolve("unresolvedReports").toFile().listFiles();
@@ -139,11 +140,20 @@ class TigerSerenityReportMojoTest {
       String reportType, String expectedFile, List<String> shouldNotExistFiles) {
     prepareReportDir();
     underTest.setReports(List.of(reportType));
-    underTest.execute();
+    executeIgnoringMojoFailureException();
     val filesInReportDir = reportDir.toFile().list();
     Assertions.assertThat(filesInReportDir)
         .contains(expectedFile)
         .doesNotContainAnyElementsOf(shouldNotExistFiles);
+  }
+
+  @SneakyThrows
+  void executeIgnoringMojoFailureException() {
+    try {
+      underTest.execute();
+    } catch (MojoFailureException e) {
+      log.info("Expected exception: " + e);
+    }
   }
 
   private static Collection<Arguments> provideReportTypes() {

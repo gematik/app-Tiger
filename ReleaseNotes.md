@@ -1,5 +1,58 @@
 # Changelog Tiger Test platform
 
+# Release 3.7.8
+
+## Features
+
+* TGR-1704: a custom Tiger provider for the maven-failsafe-plugin, allowing the execution of cucumber tests without
+  driver classes. You can activate this new provider by adding the configuration below to the maven-failsafe-plugin
+  configuration in your project pom.xml. When using this custom provider, you do not need to generate the drivers
+  classes. You should remove the tiger-maven-plugin execution with the goal `generate-drivers` from your pom.xml.
+
+```xml
+
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-failsafe-plugin</artifactId>
+    <version>3.5.2</version>
+    <configuration>
+        <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
+        <!-- OPTIONAL - these properties are already set to these default values. You only need to include them if you 
+        want to change the default value -->
+        <systemPropertyVariables>
+            <tiger.features>src/test/resources/features</tiger.features>
+            <tiger.filter.tags>not @Ignore</tiger.filter.tags>
+            <tiger.glue>de.gematik.test.tiger.glue</tiger.glue>
+            <tiger.plugin>io.cucumber.core.plugin.TigerSerenityReporterPlugin</tiger.plugin>
+        </systemPropertyVariables>
+    </configuration>
+    <dependencies>
+        <dependency>
+            <!-- by adding the failsafe provider as a dependency, it will be used when the failsafe plugin executes -->
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-failsafe-provider</artifactId>
+            <version>3.7.7-SNAPSHOT</version>
+            <!-- OPTIONAL if there is a dependency on your classpath bringing the groovy-xml library transitively, you need to 
+            exclude it, so that there are no conflicts in the loaded versions -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.groovy</groupId>
+                    <artifactId>groovy-xml</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+    <executions>
+        <execution>
+            <goals>
+                <goal>integration-test</goal>
+                <goal>verify</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
+
 # Release 3.7.7
 
 ## Bugfixes
@@ -666,8 +719,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-  key = PLUGIN_PROPERTY_NAME,
-  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+        key = PLUGIN_PROPERTY_NAME,
+        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }
