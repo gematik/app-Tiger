@@ -499,6 +499,7 @@ public class SerenityReporterCallbacks {
             .build();
 
     if (TestResult.EXECUTING.equals(status)) {
+      stepDescription.recordMultilineDocstringArgument();
       stepDescription.recordResolvedDescription();
     }
     val featureUpdate =

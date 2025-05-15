@@ -18,6 +18,7 @@
 package de.gematik.test.tiger.maven.adapter.mojos;
 
 import de.gematik.test.tiger.common.exceptions.TigerOsException;
+import de.gematik.test.tiger.common.report.ReportDataKeys;
 import de.gematik.test.tiger.common.web.TigerBrowserUtil;
 import de.gematik.test.tiger.maven.reporter.ReporterGenerator;
 import java.io.File;
@@ -27,6 +28,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -89,6 +91,7 @@ public class TigerSerenityReportMojo extends AbstractMojo {
       return;
     }
 
+    includeFullUnresolvedDocstringArguments();
     backupJsonReportFiles();
     modifyStepDescriptionsWithTigerResolvedValues();
 
@@ -103,6 +106,10 @@ public class TigerSerenityReportMojo extends AbstractMojo {
     }
 
     reportGenerator.checkResults();
+  }
+
+  private void includeFullUnresolvedDocstringArguments() throws IOException {
+    modifyExistingReportFiles(this::replaceMultilineDocstringDescription);
   }
 
   private void backupJsonReportFiles() throws IOException {
@@ -130,6 +137,10 @@ public class TigerSerenityReportMojo extends AbstractMojo {
   }
 
   private void modifyStepDescriptionsWithTigerResolvedValues() throws IOException {
+    modifyExistingReportFiles(this::replaceTigerResolvedStepDescriptions);
+  }
+
+  private void modifyExistingReportFiles(Consumer<TestStep> testStepModifier) throws IOException {
     TestOutcomes testOutcomesToManipulate =
         TestOutcomeLoader.loadTestOutcomes()
             .inFormat(OutcomeFormat.JSON)
@@ -141,7 +152,7 @@ public class TigerSerenityReportMojo extends AbstractMojo {
 
     for (TestOutcome outcome : testOutcomesToManipulate.getOutcomes()) {
       List<TestStep> allSteps = collectSteps(outcome);
-      replaceTigerResolvedStepDescriptions(allSteps);
+      allSteps.forEach(testStepModifier);
       outcomesReporter.generateReportFor(outcome);
     }
   }
@@ -166,15 +177,26 @@ public class TigerSerenityReportMojo extends AbstractMojo {
     return result;
   }
 
-  private void replaceTigerResolvedStepDescriptions(List<TestStep> steps) {
-    steps.forEach(step -> getTigerResolvedStepDescription(step).ifPresent(step::setDescription));
+  private void replaceTigerResolvedStepDescriptions(TestStep step) {
+    getTigerResolvedStepDescription(step).ifPresent(step::setDescription);
+  }
+
+  private void replaceMultilineDocstringDescription(TestStep step) {
+    getCompleteUnresolvedMultilineDocstring(step).ifPresent(step::setDescription);
   }
 
   private Optional<String> getTigerResolvedStepDescription(TestStep step) {
+    return extractCustomReportData(step, ReportDataKeys.TIGER_RESOLVED_STEP_DESCRIPTION_KEY);
+  }
+
+  private Optional<String> getCompleteUnresolvedMultilineDocstring(TestStep step) {
+    return extractCustomReportData(step, ReportDataKeys.COMPLETE_UNRESOLVED_MULTILINE_DOCSTRING);
+  }
+
+  /** beware of side effect. It removes the given data from the original object. */
+  private Optional<String> extractCustomReportData(TestStep step, String customKey) {
     var reportDataWithDescription =
-        step.getReportData().stream()
-            .filter(data -> data.getTitle().equals("Tiger Resolved Step Description"))
-            .findAny();
+        step.getReportData().stream().filter(data -> data.getTitle().equals(customKey)).findAny();
     reportDataWithDescription.ifPresent(reportData -> step.getReportData().remove(reportData));
     return reportDataWithDescription
         .map(ReportData::getContents)

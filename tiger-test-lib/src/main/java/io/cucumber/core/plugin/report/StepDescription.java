@@ -21,6 +21,7 @@ import de.gematik.test.tiger.common.config.TigerConfigurationException;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
+import de.gematik.test.tiger.common.report.ReportDataKeys;
 import de.gematik.test.tiger.glue.ResolvableArgument;
 import de.gematik.test.tiger.glue.TigerParameterTypeDefinitions;
 import io.cucumber.plugin.event.Argument;
@@ -139,8 +140,17 @@ public class StepDescription {
   public void recordResolvedDescription() {
     var resolvedDescription = resolveStepDescriptionFull(false, true);
     Serenity.recordReportData()
-        .withTitle("Tiger Resolved Step Description")
+        .withTitle(ReportDataKeys.TIGER_RESOLVED_STEP_DESCRIPTION_KEY)
         .andContents(StringEscapeUtils.escapeJava(resolvedDescription));
+  }
+
+  public void recordMultilineDocstringArgument() {
+    extractDocStringUnresolved()
+        .ifPresent(
+            docstring ->
+                Serenity.recordReportData()
+                    .withTitle(ReportDataKeys.COMPLETE_UNRESOLVED_MULTILINE_DOCSTRING)
+                    .andContents(StringEscapeUtils.escapeJava(docstring)));
   }
 
   private Optional<String> extractDocStringOrTable(boolean convertToHtml, boolean resolve) {
@@ -160,6 +170,15 @@ public class StepDescription {
       } else {
         return Optional.of(docStringPlainText(docStringArgument, resolve));
       }
+    } else {
+      return Optional.empty();
+    }
+  }
+
+  private Optional<String> extractDocStringUnresolved() {
+    var argument = step.getStep().getArgument();
+    if (argument instanceof DocStringArgument docStringArgument) {
+      return Optional.of(docStringArgument.getContent());
     } else {
       return Optional.empty();
     }

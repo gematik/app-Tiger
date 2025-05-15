@@ -22,7 +22,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.request;
 import static org.mockito.Mockito.mock;
 
+import com.jayway.jsonpath.JsonPath;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.common.report.ReportDataKeys;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.controller.EnvStatusController;
@@ -71,6 +73,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
+import net.minidev.json.JSONArray;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -452,7 +455,8 @@ public class TestTigerSerenityReporterPlugin {
     assertThat(testSteps.get(8).get("reportData")).isNull();
     assertThat(testSteps.get(9).get("reportData")).isNull();
     for (TreeNode node : (ArrayNode) testSteps.get(10).get("reportData")) {
-      assertThat(node.get("title").toString()).isNotEqualTo("Tiger Resolved Step Description");
+      assertThat(node.get("title").toString())
+          .isNotEqualTo(ReportDataKeys.TIGER_RESOLVED_STEP_DESCRIPTION_KEY);
     }
 
     var description9 = testSteps.get(9).get("description").toString();
@@ -469,23 +473,36 @@ public class TestTigerSerenityReporterPlugin {
     assertThat(description).contains(NOT_REPLACED_STRING_REF);
     assertThat(description).contains(REPLACED_STRING_REF);
 
-    var reportDataContents0 = testSteps.get(0).get("reportData").get(0).get("contents").toString();
+    var reportDataContents0 = getTigerResolvedStepDescriptionContents(testSteps.get(0));
     assertThat(reportDataContents0).contains(NOT_REPLACED_STRING_REF);
     assertThat(reportDataContents0).doesNotContain(REPLACED_STRING_REF);
 
-    var reportDataContents1 = testSteps.get(1).get("reportData").get(0).get("contents").toString();
+    var reportDataContents1 = getTigerResolvedStepDescriptionContents(testSteps.get(1));
     assertThat(reportDataContents1).doesNotContain(REPLACED_STRING_REF);
     assertThat(reportDataContents1).contains("replacement");
 
-    var reportDataContents2 = testSteps.get(2).get("reportData").get(0).get("contents").toString();
+    var reportDataContents2 = getTigerResolvedStepDescriptionContents(testSteps.get(2));
     assertThat(reportDataContents2).contains(REPLACED_STRING_REF);
 
-    var reportDataContents3 = testSteps.get(3).get("reportData").get(0).get("contents").toString();
+    var reportDataContents3 = getTigerResolvedStepDescriptionContents(testSteps.get(3));
     assertThat(reportDataContents3).doesNotContain(REPLACED_STRING_REF);
     assertThat(reportDataContents3).contains("replacement");
 
-    var reportDataContents4 = testSteps.get(4).get("reportData").get(0).get("contents").toString();
+    var reportDataContents4 = getTigerResolvedStepDescriptionContents(testSteps.get(4));
     assertThat(reportDataContents4).contains(REPLACED_STRING_REF);
+  }
+
+  private static String getTigerResolvedStepDescriptionContents(TreeNode testStep) {
+    JSONArray resolvedStepDescriptionContent =
+        JsonPath.read(
+            testStep.toString(),
+            "$.reportData[?(@.title == '%s')].contents"
+                .formatted(ReportDataKeys.TIGER_RESOLVED_STEP_DESCRIPTION_KEY));
+    if (resolvedStepDescriptionContent.isEmpty()) {
+      return null;
+    } else {
+      return resolvedStepDescriptionContent.get(0).toString();
+    }
   }
 
   private void checkReplacement(StepUpdate step, boolean checkNotReplaced) {
