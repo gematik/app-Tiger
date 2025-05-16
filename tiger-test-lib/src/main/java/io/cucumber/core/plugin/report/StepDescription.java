@@ -82,6 +82,10 @@ public class StepDescription {
     return getStepDescription(true, true);
   }
 
+  public String getUnresolvedDescriptionPlain() {
+    return getStepDescription(false, false);
+  }
+
   public String getUnresolvedDescriptionHtml() {
     return getStepDescription(true, false);
   }
@@ -145,12 +149,11 @@ public class StepDescription {
   }
 
   public void recordMultilineDocstringArgument() {
-    extractDocStringUnresolved()
-        .ifPresent(
-            docstring ->
-                Serenity.recordReportData()
-                    .withTitle(ReportDataKeys.COMPLETE_UNRESOLVED_MULTILINE_DOCSTRING)
-                    .andContents(StringEscapeUtils.escapeJava(docstring)));
+    if (hasDocStringArgument()) {
+      Serenity.recordReportData()
+          .withTitle(ReportDataKeys.COMPLETE_UNRESOLVED_MULTILINE_DOCSTRING)
+          .andContents(StringEscapeUtils.escapeJava(getUnresolvedDescriptionPlain()));
+    }
   }
 
   private Optional<String> extractDocStringOrTable(boolean convertToHtml, boolean resolve) {
@@ -175,13 +178,9 @@ public class StepDescription {
     }
   }
 
-  private Optional<String> extractDocStringUnresolved() {
+  private boolean hasDocStringArgument() {
     var argument = step.getStep().getArgument();
-    if (argument instanceof DocStringArgument docStringArgument) {
-      return Optional.of(docStringArgument.getContent());
-    } else {
-      return Optional.empty();
-    }
+    return argument instanceof DocStringArgument docStringArgument;
   }
 
   private String dataTablePlainText(DataTableArgument dataTableArgument, boolean resolve) {
