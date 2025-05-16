@@ -1,5 +1,12 @@
 # Changelog Tiger Test platform
 
+# Release 3.7.9
+
+## Bugfixes
+
+* TGR-1851: multiline docstring arguments are now correctly appended to the step description in the serenity reports,
+  instead of fully replacing the initial value.
+
 # Release 3.7.8
 
 ## Features
