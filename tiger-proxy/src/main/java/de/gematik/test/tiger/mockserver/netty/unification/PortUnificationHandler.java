@@ -88,6 +88,11 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
       log.trace("already connected to remote server or no binary proxy listener");
       return;
     }
+
+    openNewConnection(ctx, incomingChannel);
+  }
+
+  private void openNewConnection(ChannelHandlerContext ctx, Channel incomingChannel) {
     log.trace("enabling connection to remote server");
     var remoteAddress = getRemoteAddress(ctx);
 
@@ -205,7 +210,9 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   private void logStage(ChannelHandlerContext ctx, String message) {
     if (log.isTraceEnabled()) {
       log.trace(
-          message + " for channel:{}pipeline:{}", ctx.channel().toString(), ctx.pipeline().names());
+          message + " for channel: {} pipeline: {}",
+          ctx.channel().toString(),
+          ctx.pipeline().names());
     }
   }
 

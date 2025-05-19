@@ -16,9 +16,15 @@
 
 package de.gematik.rbellogger.key;
 
-import de.gematik.rbellogger.converter.RbelConverterPlugin;
+import de.gematik.rbellogger.RbelConversionExecutor;
+import de.gematik.rbellogger.RbelConverterPlugin;
+import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelJsonFacet;
+import de.gematik.rbellogger.data.core.RbelNestedFacet;
+import de.gematik.rbellogger.facets.jackson.RbelJsonConverter;
+import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
+import de.gematik.rbellogger.facets.jose.RbelJweConverter;
+import de.gematik.rbellogger.facets.jose.RbelJwtConverter;
 import java.security.Key;
 import java.util.*;
 import java.util.stream.Stream;
@@ -28,33 +34,6 @@ import org.bouncycastle.util.encoders.Hex;
 
 @Slf4j
 public class RbelKeyManager {
-
-  public static final RbelConverterPlugin RBEL_IDP_TOKEN_KEY_LISTENER =
-      RbelConverterPlugin.createPlugin(
-          (element, converter) ->
-              Optional.ofNullable(element)
-                  .filter(el -> el.hasFacet(RbelJsonFacet.class))
-                  .filter(el -> el.getKey().filter(key -> key.equals("token_key")).isPresent())
-                  .flatMap(el -> el.getFirst("content"))
-                  .map(RbelElement::getRawStringContent)
-                  .map(
-                      tokenB64 -> {
-                        try {
-                          return Base64.getUrlDecoder().decode(tokenB64);
-                        } catch (Exception e1) {
-                          try {
-                            return Base64.getDecoder().decode(tokenB64);
-                          } catch (Exception e2) {
-                            return null;
-                          }
-                        }
-                      })
-                  .map(tokenKeyBytes -> new SecretKeySpec(tokenKeyBytes, "AES"))
-                  .ifPresent(
-                      aesKey ->
-                          converter
-                              .getRbelKeyManager()
-                              .addKey("token_key", aesKey, RbelKey.PRECEDENCE_KEY_FOLDER)));
 
   private final List<RbelKey> keyList = new ArrayList<>();
   private final Set<RbelKey> keySet = new HashSet<>();
@@ -113,5 +92,37 @@ public class RbelKeyManager {
         .filter(
             candidate -> candidate.getKeyName() != null && candidate.getKeyName().equals(keyName))
         .findFirst();
+  }
+
+  @ConverterInfo(
+      dependsOn = {RbelJwtConverter.class, RbelJsonConverter.class, RbelJweConverter.class})
+  public static class RbelIdpTokenKeyListener extends RbelConverterPlugin {
+    @Override
+    public void consumeElement(RbelElement element, RbelConversionExecutor converter) {
+      Optional.ofNullable(element)
+          .filter(el -> el.hasFacet(RbelJsonFacet.class))
+          .flatMap(el -> el.getFirst("token_key"))
+          .flatMap(el -> el.getFacet(RbelNestedFacet.class))
+          .map(RbelNestedFacet::getNestedElement)
+          .map(RbelElement::getRawStringContent)
+          .map(
+              tokenB64 -> {
+                try {
+                  return Base64.getUrlDecoder().decode(tokenB64);
+                } catch (Exception e1) {
+                  try {
+                    return Base64.getDecoder().decode(tokenB64);
+                  } catch (Exception e2) {
+                    return null;
+                  }
+                }
+              })
+          .map(tokenKeyBytes -> new SecretKeySpec(tokenKeyBytes, "AES"))
+          .ifPresent(
+              aesKey ->
+                  converter
+                      .getRbelKeyManager()
+                      .addKey("token_key", aesKey, RbelKey.PRECEDENCE_KEY_FOLDER));
+    }
   }
 }

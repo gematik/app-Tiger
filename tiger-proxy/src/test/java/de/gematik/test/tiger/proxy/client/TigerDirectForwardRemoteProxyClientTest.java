@@ -16,9 +16,12 @@
 
 package de.gematik.test.tiger.proxy.client;
 
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import com.google.common.primitives.Bytes;
+import com.google.common.primitives.Ints;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -29,11 +32,13 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.Banner.Mode;
 import org.springframework.boot.WebApplicationType;
@@ -61,15 +66,13 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
   // the local client, receiving the traced message via mesh setup
   final AtomicReference<TigerRemoteProxyClient> tigerRemoteProxyClient = new AtomicReference<>();
 
-  private static byte[] request = "{\"this\":\"is a message\"}".getBytes();
-  private static byte[] response = "{\"this\":\"is a response\"}".getBytes();
+  private static byte[] request = sendAsCetpMessage("{\"this\":\"is a message\"}".getBytes());
+  private static byte[] response = sendAsCetpMessage("{\"this\":\"is a response\"}".getBytes());
 
   @Test
-  void sendNonHttpMessageWithoutResponse() throws Exception {
+  void sendCetpMessageWithoutResponse() throws Exception {
     executeRemoteProxyTestWithMessagesAndVerification(
-        socket -> {
-          writeSingleRequestMessage(socket, request);
-        },
+        socket -> writeSingleRequestMessage(socket, request),
         serverSocket -> {
           final BufferedReader reader =
               new BufferedReader(new InputStreamReader(serverSocket.getInputStream()));
@@ -101,6 +104,10 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
         (requestCalls, responseCalls, serverCalled) -> {
           assertThat(serverCalled.get()).isEqualTo(1);
           var messages = new ArrayList<>(tigerRemoteProxyClient.get().getRbelMessages());
+          if (messages.size() > 2) {
+            messages.forEach(
+                message -> System.out.println("content: " + message.getRawStringContent()));
+          }
           assertThat(messages).hasSize(2);
           assertThat(messages.get(0).getRawStringContent()).isEqualTo("USER XYZ\r\n");
           assertThat(messages.get(1).getRawStringContent()).isEqualTo("QUIT\r\n");
@@ -117,10 +124,10 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
           serverSocket.getOutputStream().flush();
         },
         (requestCalls, responseCalls, serverCalled) -> {
-          assertThat(tigerRemoteProxyClient.get().getRbelMessages().getFirst().getRawContent())
-              .containsExactly(request);
-          assertThat(tigerRemoteProxyClient.get().getRbelMessages().getLast().getRawContent())
-              .containsExactly(response);
+          assertThat(tigerRemoteProxyClient.get().getRbelMessages().getFirst())
+              .hasStringContentEqualTo(new String(request));
+          assertThat(tigerRemoteProxyClient.get().getRbelMessages().getLast())
+              .hasStringContentEqualTo(new String(response));
         },
         Object::toString);
   }
@@ -180,6 +187,7 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
                     TigerProxyConfiguration.builder()
                         .name("tigerRemoteProxyClient")
                         .proxyLogLevel("WARN")
+                        .activateRbelParsingFor(List.of("pop3", "smtp", "mime"))
                         .build()));
             tigerRemoteProxyClient.get().connect();
             await().until(tigerRemoteProxyClient.get()::isConnected);
@@ -189,5 +197,9 @@ class TigerDirectForwardRemoteProxyClientTest extends AbstractNonHttpTest {
       Optional.ofNullable(tigerProxyApplication.get())
           .ifPresent(ConfigurableApplicationContext::close);
     }
+  }
+
+  private static byte @NotNull [] sendAsCetpMessage(byte[] message) {
+    return Bytes.concat("CETP".getBytes(), Ints.toByteArray(message.length), message);
   }
 }

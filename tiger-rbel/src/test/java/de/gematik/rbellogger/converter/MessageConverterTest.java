@@ -21,9 +21,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelHttpHeaderFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpHeaderFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
 import java.io.IOException;
 import java.util.Map;
 import org.junit.jupiter.api.Test;

@@ -520,11 +520,17 @@ public class TigerTestEnvMgr
         localTigerProxy.subscribeToTrafficEndpoints();
       }
 
+      ensureLocalTigerProxyReadFilesSuccesfully();
+
       log.info(Ansi.colorize("Finished set up test environment OK", RbelAnsiColors.GREEN_BOLD));
     } catch (GenericTigerException rte) {
       shutDown();
       throw rte;
     }
+  }
+
+  private void ensureLocalTigerProxyReadFilesSuccesfully() {
+    getLocalTigerProxyOptional().ifPresent(TigerProxy::waitForAllCurrentMessagesToBeParsed);
   }
 
   public void setDefaultProxyToLocalTigerProxy() {

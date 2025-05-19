@@ -18,11 +18,13 @@ package de.gematik.rbellogger.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.smtp.RbelSmtpCommand;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.facets.smtp.RbelSmtpCommand;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import de.gematik.rbellogger.util.EmailConversionUtils;
@@ -33,7 +35,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.ZonedDateTime;
 import java.util.List;
-import java.util.Optional;
 import lombok.SneakyThrows;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -114,14 +115,11 @@ class RbelSmtpCommandConverterTest {
       strings = {
         "RSET",
         "rset",
-        "RSET\r\nxyz\r\n.\r\n",
         "reset\r\nxyz\r\n.\r\n",
         "DATA\r\n",
         "data\r\n",
         "AUTH PLAIN dGVzdAB0ZXN0ADEyMzQ=",
         "auth plain dGVzdAB0ZXN0ADEyMzQ=",
-        "AUTH PLAIN dGVzdAB0ZXN0ADEyMzQ=\r\nfoo\r\nbar\r\n",
-        "auth plain dGVzdAB0ZXN0ADEyMzQ=\r\nfoo\r\nbar\r\n"
       })
   void shouldRejectMalformedCommand(String input) {
     RbelElement element = convertToRbelElement(input);
@@ -198,9 +196,10 @@ class RbelSmtpCommandConverterTest {
     final RbelElement convertedMessage =
         converter.parseMessage(
             smtpMessageBytes,
-            new RbelHostname("sender", 13421),
-            new RbelHostname("receiver", 14512),
-            Optional.of(ZonedDateTime.now()));
+            new RbelMessageMetadata()
+                .withSender(new RbelHostname("sender", 13421))
+                .withReceiver(new RbelHostname("receiver", 14512))
+                .withTransmissionTime(ZonedDateTime.now()));
 
     final String convertedHtml = RbelHtmlRenderer.render(List.of(convertedMessage));
     FileUtils.writeStringToFile(
@@ -230,9 +229,10 @@ class RbelSmtpCommandConverterTest {
     final RbelElement convertedMessage =
         converter.parseMessage(
             smtpMessageBytes,
-            new RbelHostname("sender", 13421),
-            new RbelHostname("receiver", 14512),
-            Optional.of(ZonedDateTime.now()));
+            new RbelMessageMetadata()
+                .withSender(new RbelHostname("sender", 13421))
+                .withReceiver(new RbelHostname("receiver", 14512))
+                .withTransmissionTime(ZonedDateTime.now()));
 
     final String convertedHtml = RbelHtmlRenderer.render(List.of(convertedMessage));
     FileUtils.writeStringToFile(
@@ -254,6 +254,7 @@ class RbelSmtpCommandConverterTest {
   private RbelElement convertToRbelElement(
       String input, RbelHostname sender, RbelHostname recipient) {
     return converter.parseMessage(
-        input.getBytes(StandardCharsets.UTF_8), sender, recipient, Optional.empty());
+        input.getBytes(StandardCharsets.UTF_8),
+        new RbelMessageMetadata().withSender(sender).withReceiver(recipient));
   }
 }

@@ -16,20 +16,23 @@
 
 package de.gematik.rbellogger.util;
 
-import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.function.Consumer;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 @SuppressWarnings({"java:S6355", "java:S1133", "java:S1123"})
 public class RbelMessagesDequeFacade implements Deque<RbelElement> {
 
   private final Deque<RbelElement> remoteDeque;
   private final RbelConverter rbelConverter;
+  @Setter private boolean allowUnparsedMessagesToAppearInFacade = false;
 
   @Override
   @Deprecated
@@ -252,7 +255,9 @@ public class RbelMessagesDequeFacade implements Deque<RbelElement> {
     @Override
     public RbelElement next() {
       final RbelElement result = remoteIterator.next();
-      rbelConverter.waitForGivenElementToBeParsed(result);
+      if (!allowUnparsedMessagesToAppearInFacade) {
+        rbelConverter.waitForGivenElementToBeParsed(result);
+      }
       return result;
     }
 
@@ -266,7 +271,9 @@ public class RbelMessagesDequeFacade implements Deque<RbelElement> {
     public void forEachRemaining(Consumer action) {
       remoteIterator.forEachRemaining(
           element -> {
-            rbelConverter.waitForGivenElementToBeParsed(element);
+            if (!allowUnparsedMessagesToAppearInFacade) {
+              rbelConverter.waitForGivenElementToBeParsed(element);
+            }
             action.accept(element);
           });
     }

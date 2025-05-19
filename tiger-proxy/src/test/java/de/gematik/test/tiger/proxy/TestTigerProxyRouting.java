@@ -68,7 +68,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
     assertThat(proxyRest.get(requestProtocol + "://backend/combotest").asString().getStatus())
         .isEqualTo(666);
 
-    awaitMessagesInTiger(4);
+    awaitMessagesInTigerProxy(4);
     if (routeToProtocol.equals("https")) {
       assertThat(tigerProxy.getRbelMessagesList().get(1))
           .extractChildWithPath("$.tlsVersion")
@@ -92,7 +92,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
 
     assertThat(proxyRest.get("http://backend" + requestPath).asString().getStatus())
         .isEqualTo(expectedReturnCode);
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
     final RbelElement request = tigerProxy.getRbelMessagesList().get(0);
 
     assertThat(request)
@@ -119,7 +119,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
                 .asString()
                 .getStatus())
         .isEqualTo(expectedReturnCode);
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
     final RbelElement request = tigerProxy.getRbelMessagesList().get(0);
 
     assertThat(request)
@@ -229,7 +229,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + requestPath)
         .asString()
         .getStatus();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
     final RbelElement request = tigerProxy.getRbelMessagesList().get(0);
 
     assertThat(request)
@@ -260,7 +260,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
     backendServer.getWireMock().getServeEvents().clear();
 
     proxyRest.get("http://mydomain" + requestPath).asString().getStatus();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0))
         .extractChildWithPath("$.path")
@@ -312,7 +312,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
                 .asString()
                 .getStatus())
         .isEqualTo(666);
-    awaitMessagesInTiger(4);
+    awaitMessagesInTigerProxy(4);
   }
 
   @ParameterizedTest
@@ -339,7 +339,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
             .build());
 
     assertThat(proxyRest.get("http://backend" + requestPath).asString().getStatus()).isEqualTo(666);
-    awaitMessagesInTiger(4);
+    awaitMessagesInTigerProxy(4);
   }
 
   @Test

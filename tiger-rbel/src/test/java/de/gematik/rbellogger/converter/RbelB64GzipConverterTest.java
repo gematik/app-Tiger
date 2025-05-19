@@ -21,12 +21,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
+import de.gematik.rbellogger.facets.ldap.RbelLdapFacet;
+import de.gematik.rbellogger.facets.pki.base64.RbelB64GzipFacet;
+import de.gematik.rbellogger.facets.xml.RbelXmlFacet;
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import java.io.File;
@@ -44,7 +49,7 @@ class RbelB64GzipConverterTest {
   @SneakyThrows
   @Test
   void convertMessage_shouldConvertInPlace() {
-    final RbelLogger rbelConverter =
+    final RbelLogger rbelLogger =
         RbelLogger.build(
             new RbelConfiguration()
                 .activateConversionFor("b64gzip")
@@ -53,15 +58,16 @@ class RbelB64GzipConverterTest {
                     RbelFileReaderCapturer.builder()
                         .rbelFile("src/test/resources/nestedGzippedContent.tgr")
                         .build()));
-    rbelConverter.getRbelCapturer().initialize();
+    rbelLogger.getRbelCapturer().initialize();
+    rbelLogger.getRbelConverter().waitForAllCurrentMessagesToBeParsed();
 
     final RbelElement postFmvsdmResponse =
-        rbelConverter.getMessageList().stream()
+        rbelLogger.getMessageList().stream()
             .filter(e -> e.hasFacet(RbelHttpResponseFacet.class))
             .filter(
                 request ->
                     request
-                        .getFacet(RbelHttpResponseFacet.class)
+                        .getFacet(TracingMessagePairFacet.class)
                         .get()
                         .getRequest()
                         .getRawStringContent()

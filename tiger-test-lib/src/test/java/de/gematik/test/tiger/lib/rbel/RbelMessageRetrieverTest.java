@@ -18,24 +18,23 @@
 package de.gematik.test.tiger.lib.rbel;
 
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
+import static de.gematik.test.tiger.util.CurlTestdataUtil.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.doAnswer;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelCetpFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.facets.cetp.RbelCetpFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.glue.RBelValidatorGlue;
-import java.nio.charset.StandardCharsets;
-import java.time.ZonedDateTime;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -414,11 +413,10 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
     // add signed response as current response without sign cert being avail
     RbelMessageRetriever validator = rbelMessageRetriever;
     final String challengeMessage =
-        localProxyRbelMessageListenerTestAdapter.readCurlFromFileWithCorrectedLineBreaks(
-            "getChallenge.curl", StandardCharsets.UTF_8);
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/testdata/sampleCurlMessages/getChallenge.curl");
     final RbelElement convertedMessage =
-        rbelConverter.parseMessage(
-            challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+        rbelConverter.parseMessage(challengeMessage.getBytes(), new RbelMessageMetadata());
     rbelMessageRetriever.currentResponse = convertedMessage;
     localProxyRbelMessageListenerTestAdapter.addMessage(convertedMessage);
 
@@ -456,11 +454,10 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
     final RbelConverter rbelConverter = RbelLogger.build().getRbelConverter();
     RbelMessageRetriever validator = rbelMessageRetriever;
     final String challengeMessage =
-        localProxyRbelMessageListenerTestAdapter.readCurlFromFileWithCorrectedLineBreaks(
-            "getCurrentRequest.curl", StandardCharsets.UTF_8);
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/testdata/sampleCurlMessages/getCurrentRequest.curl");
     final RbelElement convertedMessage =
-        rbelConverter.parseMessage(
-            challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+        rbelConverter.parseMessage(challengeMessage.getBytes(), new RbelMessageMetadata());
     rbelMessageRetriever.currentRequest = convertedMessage;
     localProxyRbelMessageListenerTestAdapter.addMessage(convertedMessage);
     validator.findElementsInCurrentRequest("$.body.foo");
@@ -513,7 +510,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
     rbelMessageRetriever.currentRequest =
         RbelLogger.build()
             .getRbelConverter()
-            .parseMessage(responseToCheck.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+            .parseMessage(responseToCheck.getBytes(), new RbelMessageMetadata());
 
     glue.currentRequestAtMatchesAsJsonOrXml("$.body", ModeType.JSON_SCHEMA, schema);
 
@@ -524,11 +521,10 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   void testCurrentRequestDoesNotMatchAsExpected() {
     final RbelConverter rbelConverter = RbelLogger.build().getRbelConverter();
     final String challengeMessage =
-        localProxyRbelMessageListenerTestAdapter.readCurlFromFileWithCorrectedLineBreaks(
-            "getCurrentRequest.curl", StandardCharsets.UTF_8);
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/testdata/sampleCurlMessages/getCurrentRequest.curl");
     final RbelElement convertedMessage =
-        rbelConverter.parseMessage(
-            challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+        rbelConverter.parseMessage(challengeMessage.getBytes(), new RbelMessageMetadata());
     rbelMessageRetriever.currentRequest = convertedMessage;
     localProxyRbelMessageListenerTestAdapter.addMessage(convertedMessage);
 
@@ -540,11 +536,10 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   void testCurrentRequestMatchesFailure() {
     final RbelConverter rbelConverter = RbelLogger.build().getRbelConverter();
     final String challengeMessage =
-        localProxyRbelMessageListenerTestAdapter.readCurlFromFileWithCorrectedLineBreaks(
-            "getCurrentRequest.curl", StandardCharsets.UTF_8);
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/testdata/sampleCurlMessages/getCurrentRequest.curl");
     final RbelElement convertedMessage =
-        rbelConverter.parseMessage(
-            challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+        rbelConverter.parseMessage(challengeMessage.getBytes(), new RbelMessageMetadata());
     rbelMessageRetriever.currentRequest = convertedMessage;
     localProxyRbelMessageListenerTestAdapter.addMessage(convertedMessage);
     assertThatThrownBy(
@@ -864,21 +859,19 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   private RbelMessageRetriever addMessagePair() {
     // parse in signature cert
     final String keyMessage =
-        localProxyRbelMessageListenerTestAdapter.readCurlFromFileWithCorrectedLineBreaks(
-            "idpSigMessage.curl", StandardCharsets.UTF_8);
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/testdata/sampleCurlMessages/idpSigMessage.curl");
     final RbelConverter rbelConverter = RbelLogger.build().getRbelConverter();
     localProxyRbelMessageListenerTestAdapter.addMessage(
-        rbelConverter.parseMessage(
-            keyMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now())));
+        rbelConverter.parseMessage(keyMessage.getBytes(), new RbelMessageMetadata()));
 
     // now add signed response as current response
     RbelMessageRetriever validator = rbelMessageRetriever;
     final String challengeMessage =
-        localProxyRbelMessageListenerTestAdapter.readCurlFromFileWithCorrectedLineBreaks(
-            "getChallenge.curl", StandardCharsets.UTF_8);
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/testdata/sampleCurlMessages/getChallenge.curl");
     final RbelElement convertedMessage =
-        rbelConverter.parseMessage(
-            challengeMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+        rbelConverter.parseMessage(challengeMessage.getBytes(), new RbelMessageMetadata());
     rbelMessageRetriever.currentResponse = convertedMessage;
     localProxyRbelMessageListenerTestAdapter.addMessage(convertedMessage);
 

@@ -21,7 +21,6 @@ import static uk.org.webcompere.systemstubs.SystemStubs.tapSystemOut;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
-import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import kong.unirest.core.HttpRequest;
@@ -79,7 +78,7 @@ class TestTigerProxyLogging extends AbstractTigerProxyTest {
                   tigerProxy.clearAllMessages();
                   requestSupplier.get().asString();
                   log.info("Awaiting message parsing...");
-                  awaitMessagesInTiger(2);
+                  awaitMessagesInTigerProxy(2);
                 })));
   }
 }

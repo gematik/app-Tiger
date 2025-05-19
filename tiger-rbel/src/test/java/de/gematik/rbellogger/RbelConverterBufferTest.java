@@ -20,12 +20,10 @@ import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineB
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import java.io.IOException;
-import java.time.ZonedDateTime;
 import java.util.LinkedList;
-import java.util.Optional;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +41,7 @@ class RbelConverterBufferTest {
     final RbelElement convertedMessage =
         rbelLogger
             .getRbelConverter()
-            .parseMessage(curlMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+            .parseMessage(curlMessage.getBytes(), new RbelMessageMetadata());
 
     assertThat(convertedMessage.findRbelPathMembers("$..*")).hasSizeGreaterThan(30);
     assertThat(rbelLogger.getMessageHistory()).isEmpty();
@@ -61,8 +59,7 @@ class RbelConverterBufferTest {
     final int maxBufferSizeInBytes = 1024 * 1024;
     for (int i = 0; i < maxBufferSizeInBytes / curlMessage.getBytes().length + 1; i++) {
       allParsedMessages.add(
-          rbelConverter.parseMessage(
-              curlMessage.getBytes(), null, null, Optional.of(ZonedDateTime.now())));
+          rbelConverter.parseMessage(curlMessage.getBytes(), new RbelMessageMetadata()));
     }
 
     var rbelLoggerHistory = rbelLogger.getMessageHistory();

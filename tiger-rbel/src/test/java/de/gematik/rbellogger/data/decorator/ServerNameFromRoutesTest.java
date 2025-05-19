@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelHostnameFacet;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 

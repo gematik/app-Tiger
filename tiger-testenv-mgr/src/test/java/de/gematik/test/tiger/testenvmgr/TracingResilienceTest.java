@@ -159,18 +159,23 @@ class TracingResilienceTest {
   private void giveAggregatingProxyTimeToCatchUpIfRunning(TigerTestEnvMgr testEnvMgr, int round) {
     if (aggregatingProxyContext != null) {
       try {
-        waitAtMost(20, TimeUnit.SECONDS)
+        waitAtMost(2, TimeUnit.SECONDS)
             .until(
                 () ->
-                    testEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().size()
-                        == getReceivingTigerProxyMessages().size());
+                    testEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().stream().count()
+                        == getReceivingTigerProxyMessages().stream().count());
       } catch (ConditionTimeoutException e) {
+        log.error("/////////////////////////////////////////////////////////////////////////////");
+        testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().stream()
+            .map(el -> el.getUuid() + " -> " + el.printHttpDescription())
+            .forEach(log::info);
         log.error(
             "We sent {} message, intercepted {}, aggregating {}, receiving {}",
             round * MESSAGES_PER_ROUND * 2,
-            testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().size(),
-            aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessages().size(),
-            getReceivingTigerProxyMessages().size());
+            testEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().stream().count(),
+            aggregatingProxyContext.getBean(TigerProxy.class).getRbelMessages().stream().count(),
+            getReceivingTigerProxyMessages().stream().count());
+        log.error("/////////////////////////////////////////////////////////////////////////////");
         final int toBeSkippedMessages =
             Math.max(0, testEnvMgr.getLocalTigerProxyOrFail().getRbelMessagesList().size() - 200);
         final List<RbelElement> sendingMsgs =
@@ -182,8 +187,9 @@ class TracingResilienceTest {
                 toBeSkippedMessages);
         final List<RbelElement> receivingMsgs =
             getLastRequestPaths(receivingProxy.getRbelMessagesList(), toBeSkippedMessages);
+        log.error("////sending, aggregating receiving messages: ////");
         for (int i = 0; i < sendingMsgs.size(); i++) {
-          if (makeReadable(sendingMsgs.get(i)).contains("/")) {
+          if (makeReadable(sendingMsgs.get(i)).contains("msg")) {
             log.error(
                 "{}, {}, {}",
                 softQueryList(sendingMsgs, i).map(this::makeReadable).orElse(EMPTY_MESSAGE_STRING),
@@ -195,7 +201,10 @@ class TracingResilienceTest {
                     .orElse(EMPTY_MESSAGE_STRING));
           }
         }
-        fail();
+        log.error("/////////////////////////////////////////////////////////////////////////////");
+        fail(
+            "Proxies did not transmit the messages correctly through the mesh setup. Inspect the"
+                + " lines above to find out what happened!");
       }
     }
   }
@@ -212,7 +221,8 @@ class TracingResilienceTest {
     if (message.hasFacet(TigerDownloadedMessageFacet.class)) {
       downloadedMarker = "DOWN";
     }
-    return Optional.ofNullable(message)
+    final String httpRequestString =
+        Optional.ofNullable(message)
             .map(msg -> msg.getRawStringContent().lines().findFirst())
             .filter(Optional::isPresent)
             .map(Optional::get)
@@ -222,9 +232,10 @@ class TracingResilienceTest {
             .filter(s -> s.startsWith("/"))
             .findFirst()
             .orElse("")
-        + " ("
-        + downloadedMarker
-        + ")";
+            .replace("/messageNumber", "msg");
+    final String shortUuid =
+        Optional.ofNullable(message).map(RbelElement::getUuid).orElse("").split("-")[0];
+    return httpRequestString + " (" + downloadedMarker + ", " + shortUuid + ")";
   }
 
   @NotNull
@@ -263,6 +274,15 @@ class TracingResilienceTest {
                 return false;
               }
             });
+
+    if (receivingProxy != null) {
+      log.info(
+          "About to reboot aggregating proxy, currently known messages in receivingProxy: {}",
+          receivingProxy.getRbelMessagesList().stream()
+              .map(msg -> msg.getUuid() + " (" + msg.printHttpDescription() + ")")
+              .collect(Collectors.joining("\n")));
+    }
+
     log.info("Starting Aggregating Proxy...");
     CfgStandaloneProxy standaloneCfg = new CfgStandaloneProxy();
     standaloneCfg.setTigerProxy(

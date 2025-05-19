@@ -16,10 +16,10 @@
 
 package de.gematik.rbellogger.configuration;
 
+import de.gematik.rbellogger.RbelConverter;
+import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelCapturer;
-import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.key.RbelKey;
 import java.security.Key;
 import java.util.ArrayList;

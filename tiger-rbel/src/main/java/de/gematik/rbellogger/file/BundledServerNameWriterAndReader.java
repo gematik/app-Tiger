@@ -16,77 +16,106 @@
 
 package de.gematik.rbellogger.file;
 
-import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.RbelConversionExecutor;
+import de.gematik.rbellogger.RbelConversionPhase;
+import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
-import de.gematik.rbellogger.util.RbelMessagePostProcessor;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.data.RbelMessageMetadata.RbelMetadataValue;
+import de.gematik.rbellogger.data.core.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import java.util.Optional;
 import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
-import org.json.JSONObject;
 
 @Slf4j
-public class BundledServerNameWriterAndReader
-    implements RbelFilePreSaveListener, RbelMessagePostProcessor {
+public class BundledServerNameWriterAndReader {
 
-  private static final String BUNDLED_HOSTNAME_CLIENT = "bundledHostnameClient";
-  private static final String BUNDLED_HOSTNAME_SERVER = "bundledHostnameServer";
+  private static final RbelMetadataValue<String> BUNDLED_HOSTNAME_SENDER =
+      new RbelMetadataValue<>("bundledHostnameSender", String.class);
+  private static final RbelMetadataValue<String> BUNDLED_HOSTNAME_RECEIVER =
+      new RbelMetadataValue<>("bundledHostnameReceiver", String.class);
 
-  @Override
-  public void preSaveCallback(RbelElement rbelElement, JSONObject messageObject) {
-    messageObject.put(
-        BUNDLED_HOSTNAME_CLIENT,
-        extractBundledHostname(rbelElement, RbelTcpIpMessageFacet::getSender));
-    messageObject.put(
-        BUNDLED_HOSTNAME_SERVER,
-        extractBundledHostname(rbelElement, RbelTcpIpMessageFacet::getReceiver));
-  }
+  public static class BundledServerNameReader extends RbelConverterPlugin {
 
-  @Override
-  public void performMessagePostConversionProcessing(
-      RbelElement message, RbelConverter converter, JSONObject messageObject) {
-    performBundledServerNameExtraction(
-        message, messageObject, BUNDLED_HOSTNAME_CLIENT, RbelTcpIpMessageFacet::getSender);
-    performBundledServerNameExtraction(
-        message, messageObject, BUNDLED_HOSTNAME_SERVER, RbelTcpIpMessageFacet::getReceiver);
-  }
+    @Override
+    public RbelConversionPhase getPhase() {
+      return RbelConversionPhase.PROTOCOL_PARSING;
+    }
 
-  private static void performBundledServerNameExtraction(
-      RbelElement message,
-      JSONObject messageObject,
-      String jsonKey,
-      Function<RbelTcpIpMessageFacet, RbelElement> targetRecipient) {
-    if (messageObject.has(jsonKey)) {
-      final String bundledServername = messageObject.getString(jsonKey);
+    @Override
+    public void consumeElement(RbelElement rbelElement, RbelConversionExecutor converter) {
+      rbelElement
+          .getFacet(RbelMessageMetadata.class)
+          .ifPresent(
+              metadata -> {
+                BUNDLED_HOSTNAME_SENDER
+                    .getValue(metadata)
+                    .ifPresent(
+                        data ->
+                            performBundledServerNameExtraction(
+                                rbelElement, RbelTcpIpMessageFacet::getSender, data));
+                BUNDLED_HOSTNAME_RECEIVER
+                    .getValue(metadata)
+                    .ifPresent(
+                        data ->
+                            performBundledServerNameExtraction(
+                                rbelElement, RbelTcpIpMessageFacet::getReceiver, data));
+              });
+    }
+
+    private static void performBundledServerNameExtraction(
+        RbelElement message,
+        Function<RbelTcpIpMessageFacet, RbelElement> targetExtractor,
+        Object extractedValue) {
       message
           .getFacet(RbelTcpIpMessageFacet.class)
-          .map(targetRecipient)
+          .map(targetExtractor)
           .ifPresent(
-              recipient -> {
-                RbelHostnameFacet oldFacet =
-                    recipient.getFacet(RbelHostnameFacet.class).orElse(null);
+              target -> {
+                RbelHostnameFacet oldFacet = target.getFacet(RbelHostnameFacet.class).orElse(null);
                 if (oldFacet != null) {
-                  recipient.addOrReplaceFacet(
+                  target.addOrReplaceFacet(
                       RbelHostnameFacet.builder()
                           .domain(oldFacet.getDomain())
                           .port(oldFacet.getPort())
-                          .bundledServerName(
-                              Optional.of(RbelElement.wrap(recipient, bundledServername)))
+                          .bundledServerName(Optional.of(RbelElement.wrap(target, extractedValue)))
                           .build());
                 }
               });
     }
   }
 
-  private static String extractBundledHostname(
-      RbelElement rbelElement, Function<RbelTcpIpMessageFacet, RbelElement> targetRecipient) {
-    return rbelElement
-        .getFacet(RbelTcpIpMessageFacet.class)
-        .map(targetRecipient)
-        .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
-        .flatMap(RbelHostnameFacet::getBundledServerName)
-        .map(RbelElement::getRawStringContent)
-        .orElse(null);
+  public static class BundledServerNameWriter extends RbelConverterPlugin {
+
+    @Override
+    public RbelConversionPhase getPhase() {
+      return RbelConversionPhase.CONTENT_ENRICHMENT;
+    }
+
+    public void consumeElement(RbelElement rbelElement, RbelConversionExecutor converter) {
+      rbelElement
+          .getFacet(RbelMessageMetadata.class)
+          .ifPresent(
+              metadata -> {
+                BUNDLED_HOSTNAME_SENDER.putValue(
+                    metadata,
+                    extractBundledHostname(rbelElement, RbelTcpIpMessageFacet::getSender));
+                BUNDLED_HOSTNAME_RECEIVER.putValue(
+                    metadata,
+                    extractBundledHostname(rbelElement, RbelTcpIpMessageFacet::getReceiver));
+              });
+    }
+
+    private static String extractBundledHostname(
+        RbelElement rbelElement, Function<RbelTcpIpMessageFacet, RbelElement> targetExtractor) {
+      return rbelElement
+          .getFacet(RbelTcpIpMessageFacet.class)
+          .map(targetExtractor)
+          .flatMap(el -> el.getFacet(RbelHostnameFacet.class))
+          .flatMap(RbelHostnameFacet::getBundledServerName)
+          .map(RbelElement::getRawStringContent)
+          .orElse(null);
+    }
   }
 }

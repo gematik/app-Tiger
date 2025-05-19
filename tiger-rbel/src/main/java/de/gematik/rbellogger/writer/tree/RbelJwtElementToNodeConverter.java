@@ -20,8 +20,8 @@ import static de.gematik.rbellogger.writer.RbelContentTreeConverter.ENCODE_AS;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.data.elements.RbelJwtSignature;
-import de.gematik.rbellogger.data.facet.RbelJwtFacet;
+import de.gematik.rbellogger.facets.jose.RbelJwtFacet;
+import de.gematik.rbellogger.facets.jose.RbelJwtSignature;
 import de.gematik.rbellogger.writer.RbelContentTreeConverter;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;

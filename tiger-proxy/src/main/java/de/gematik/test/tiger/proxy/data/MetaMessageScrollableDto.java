@@ -17,7 +17,11 @@
 package de.gematik.test.tiger.proxy.data;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.core.RbelMessageInfoFacet;
+import de.gematik.rbellogger.data.core.RbelRequestFacet;
+import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
+import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
 import java.time.ZonedDateTime;
 import java.util.List;
 import lombok.AllArgsConstructor;

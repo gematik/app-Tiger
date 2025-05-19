@@ -20,8 +20,8 @@ import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-import de.gematik.rbellogger.converter.RbelConverterPlugin;
-import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
+import de.gematik.rbellogger.RbelConverterPlugin;
+import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.time.ZonedDateTime;
@@ -66,7 +66,7 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
         proxyRest.get("http://foo.bar/foobar?foo=" + id).asString();
         requests.add(id);
       }
-      awaitMessagesInTiger(iterationCycles * 2);
+      awaitMessagesInTigerProxy(iterationCycles * 2);
 
       for (int j = 0; j < iterationCycles; j++) {
         var id = requests.get(j);
@@ -90,7 +90,7 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
 
     final RbelConverterPlugin blockConversionUntilCommunicationIsComplete =
         RbelConverterPlugin.createPlugin(
-            (el, conv) -> {
+            (rbelElement, converter) -> {
               log.info("Entering wait");
               await()
                   .pollInterval(1, TimeUnit.MILLISECONDS)
@@ -102,7 +102,7 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
     tigerProxy
         .getRbelLogger()
         .getRbelConverter()
-        .addLastPostConversionListener(blockConversionUntilCommunicationIsComplete);
+        .addConverter(blockConversionUntilCommunicationIsComplete);
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
@@ -133,7 +133,7 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
 
     final RbelConverterPlugin blockConversionUntilCommunicationIsComplete =
         RbelConverterPlugin.createPlugin(
-            (el, conv) -> {
+            (el, converter) -> {
               log.info("Entering wait with " + el.getRawStringContent());
               messageParsingHasStarted.set(true);
               await()
@@ -144,7 +144,7 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
     tigerProxy
         .getRbelLogger()
         .getRbelConverter()
-        .addLastPostConversionListener(blockConversionUntilCommunicationIsComplete);
+        .addConverter(blockConversionUntilCommunicationIsComplete);
 
     final CompletableFuture<HttpResponse<String>> asyncMessage =
         Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asStringAsync();
@@ -162,39 +162,36 @@ class TestTigerProxyConcurrency extends AbstractTigerProxyTest {
   @SuppressWarnings("java:S2925")
   void timestampOfTheMessagesShouldBeBeforeParsing() throws InterruptedException {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
-    AtomicBoolean messageWasReceivedInTheClient = new AtomicBoolean(false);
+    CompletableFuture<Void> messageWasReceivedInTheClient = new CompletableFuture<>();
 
     AtomicReference<ZonedDateTime> responseLatestTimestamp = new AtomicReference<>();
     AtomicReference<ZonedDateTime> requestLatestTimestamp = new AtomicReference<>();
 
     final RbelConverterPlugin blockConversionUntilCommunicationIsComplete =
         RbelConverterPlugin.createPlugin(
-            (el, conv) -> {
+            (el, converter) -> {
               if (el.getRawStringContent().contains("HTTP/1.1 666 EVIL")) {
                 responseLatestTimestamp.set(ZonedDateTime.now());
               } else {
                 requestLatestTimestamp.set(ZonedDateTime.now());
               }
               log.info("Entering wait");
-              await()
-                  .pollInterval(1, TimeUnit.MILLISECONDS)
-                  .atMost(2, TimeUnit.SECONDS)
-                  .until(messageWasReceivedInTheClient::get);
+              messageWasReceivedInTheClient.join();
               log.info("Exiting wait");
             });
     tigerProxy
         .getRbelLogger()
         .getRbelConverter()
-        .addLastPostConversionListener(blockConversionUntilCommunicationIsComplete);
+        .addConverter(blockConversionUntilCommunicationIsComplete);
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
     log.info("Message was received in the client...");
     // mess up the timestamps (by delaying the parsing)
     Thread.sleep(100);
-    messageWasReceivedInTheClient.set(true);
+    messageWasReceivedInTheClient.complete(null);
 
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList()).hasSize(2);
     assertThat(

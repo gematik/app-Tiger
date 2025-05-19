@@ -19,7 +19,7 @@ package de.gematik.test.tiger.lib.rbel;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelXmlFacet;
+import de.gematik.rbellogger.facets.xml.RbelXmlFacet;
 import java.util.*;
 import java.util.function.UnaryOperator;
 import javax.xml.transform.Source;

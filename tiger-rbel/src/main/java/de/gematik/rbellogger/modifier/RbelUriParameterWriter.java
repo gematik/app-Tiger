@@ -17,7 +17,7 @@
 package de.gematik.rbellogger.modifier;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
+import de.gematik.rbellogger.facets.uri.RbelUriParameterFacet;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.StringJoiner;

@@ -21,12 +21,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
-import java.util.Optional;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
@@ -44,9 +44,7 @@ class RbelBearerTokenConverterTest {
             .getRbelConverter()
             .parseMessage(
                 curlMessage.getBytes(StandardCharsets.UTF_8),
-                null,
-                null,
-                Optional.of(ZonedDateTime.now()));
+                new RbelMessageMetadata().withTransmissionTime(ZonedDateTime.now()));
 
     assertThat(convertedMessage.findRbelPathMembers("$.header.Authorization.BearerToken"))
         .isNotEmpty();
@@ -63,9 +61,7 @@ class RbelBearerTokenConverterTest {
         .getRbelConverter()
         .parseMessage(
             curlMessage.getBytes(StandardCharsets.UTF_8),
-            null,
-            null,
-            Optional.of(ZonedDateTime.now()));
+            new RbelMessageMetadata().withTransmissionTime(ZonedDateTime.now()));
 
     final String renderingOutput = RbelHtmlRenderer.render(logger.getMessageHistory());
     assertThat(renderingOutput)

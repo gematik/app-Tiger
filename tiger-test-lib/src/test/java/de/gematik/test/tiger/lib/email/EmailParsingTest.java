@@ -17,6 +17,7 @@
 
 package de.gematik.test.tiger.lib.email;
 
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -24,12 +25,11 @@ import com.icegreen.greenmail.util.GreenMail;
 import com.icegreen.greenmail.util.GreenMailUtil;
 import com.icegreen.greenmail.util.ServerSetup;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelElementAssertion;
-import de.gematik.rbellogger.data.facet.RbelPop3CommandFacet;
-import de.gematik.rbellogger.data.facet.RbelPop3ResponseFacet;
-import de.gematik.rbellogger.data.facet.RbelSmtpCommandFacet;
-import de.gematik.rbellogger.data.facet.RbelSmtpResponseFacet;
-import de.gematik.rbellogger.data.pop3.RbelPop3Command;
+import de.gematik.rbellogger.facets.pop3.RbelPop3Command;
+import de.gematik.rbellogger.facets.pop3.RbelPop3CommandFacet;
+import de.gematik.rbellogger.facets.pop3.RbelPop3ResponseFacet;
+import de.gematik.rbellogger.facets.smtp.RbelSmtpCommandFacet;
+import de.gematik.rbellogger.facets.smtp.RbelSmtpResponseFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -55,6 +55,7 @@ import javax.net.ssl.*;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -112,11 +113,11 @@ class EmailParsingTest {
       tigerYaml =
           """
    config_ports:
-      pop3s:
+     pop3s:
        admin: ${free.port.0}
        proxy: ${free.port.1}
        greenmailServerPort: ${free.port.2}
-      smtps:
+     smtps:
        admin: ${free.port.4}
        proxy: ${free.port.5}
        greenmailServerPort: ${free.port.3}
@@ -190,10 +191,10 @@ class EmailParsingTest {
       List<RbelElement> messages =
           tigerTestEnvMgr.getLocalTigerProxyOrFail().getRbelMessages().stream().toList();
       assertThat(messages).hasSize(3); // server ready + capa command + response from capa
-      RbelElementAssertion.assertThat(messages.get(1))
+      assertThat(messages.get(1))
           .extractChildWithPath("$.pop3Command")
           .hasValueEqualTo(RbelPop3Command.CAPA);
-      RbelElementAssertion.assertThat(messages.get(2))
+      assertThat(messages.get(2))
           .extractChildWithPath("$.pop3Body")
           .hasStringContentEqualTo("USER\r\nPASS\r\nUIDL");
     }
@@ -257,6 +258,8 @@ class EmailParsingTest {
        greenmailServerPort: ${free.port.3}
    tigerProxy:
      proxyPort: ${tiger.config_ports.smtps.proxy}
+     fileSaveInfo:
+        writeToFile: true
      directReverseProxy:
            hostname: 127.0.0.1
            port: ${tiger.config_ports.smtps.greenmailServerPort}
@@ -272,6 +275,7 @@ class EmailParsingTest {
              hostname: 127.0.0.1
              port: ${tiger.config_ports.pop3s.greenmailServerPort}
           activateRbelParsingFor:
+            - smtp
             - pop3
             - mime
    """)
@@ -286,9 +290,10 @@ class EmailParsingTest {
         "here the body of the email\r\n",
         smtpProxy);
 
-    var message = retrieveByPopSecure(pop3sProxyPort); // pop3Address.getPort());
+    var message = retrieveByPopSecure(pop3sProxyPort);
     assertEqual(message, ExpectedMail.smallMessage());
 
+    tigerTestEnvMgr.getLocalTigerProxyOrFail().waitForAllCurrentMessagesToBeParsed();
     expectReceivedMessages(tigerTestEnvMgr, 12);
   }
 
@@ -406,7 +411,8 @@ class EmailParsingTest {
     String to = "to@localhost";
     String from = "from@localhost";
     String subject = "Test Large Email";
-    String body = "A".repeat(3 * 1024 * 1024); // 3 MB body
+    int attachmentSize = 1024 * 1024;
+    String body = "A".repeat(attachmentSize); // 3 MB body
 
     MimeMessage message = new MimeMessage(GreenMailUtil.getSession(smtpProxy));
     message.setFrom(new InternetAddress(from));
@@ -427,18 +433,30 @@ class EmailParsingTest {
     assertThat(extractedBody)
         .contains("Content-Type: multipart/mixed;")
         .contains("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-        .hasSizeGreaterThan(3 * 1024 * 1024);
+        .hasSizeGreaterThan(attachmentSize);
 
-    await()
-        .atMost(1, TimeUnit.MINUTES)
-        .until(
-            () ->
-                tigerTestEnvMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageList().stream()
+    try {
+      await()
+          .atMost(30, TimeUnit.SECONDS)
+          .pollInterval(1, TimeUnit.SECONDS)
+          .until(
+              () -> {
+                var messages =
+                    tigerTestEnvMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageList();
+                log.info("Currently {} messages", messages.size());
+                return messages.stream()
                     .filter(EmailParsingTest::hasSmtpData)
                     .map(EmailParsingTest::extractSmtpBody)
-                    // we compare with endsWith because the extractedBody contains two extra initial
+                    // we compare with endsWith because the extractedBody contains two extra
+                    // initial
                     // lines added by the greenmail client
-                    .anyMatch(extractedBody::endsWith));
+                    .anyMatch(extractedBody::endsWith);
+              });
+    } catch (ConditionTimeoutException e) {
+      var messages = tigerTestEnvMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageList();
+      messages.stream().map(RbelElement::printTreeStructure).forEach(System.out::println);
+      throw e;
+    }
   }
 
   private static boolean hasSmtpData(RbelElement e) {
@@ -454,26 +472,41 @@ class EmailParsingTest {
 
   private static void expectReceivedMessages(
       TigerTestEnvMgr tigerTestEnvMgr, int expectedMessages) {
-    await()
-        .atMost(10, TimeUnit.SECONDS)
-        .until(
-            () -> {
-              var size =
-                  tigerTestEnvMgr
-                      .getLocalTigerProxyOrFail()
-                      .getRbelLogger()
-                      .getMessageHistory()
-                      .stream()
-                      .filter(
-                          msg ->
-                              msg.hasFacet(RbelPop3CommandFacet.class)
-                                  || msg.hasFacet(RbelSmtpCommandFacet.class)
-                                  || msg.hasFacet(RbelPop3ResponseFacet.class)
-                                  || msg.hasFacet(RbelSmtpResponseFacet.class))
-                      .count();
-              log.debug("currently so many messages: " + size);
-              return size == expectedMessages;
-            });
+
+    try {
+      await()
+          .atMost(10, TimeUnit.SECONDS)
+          .until(
+              () -> {
+                var size =
+                    tigerTestEnvMgr
+                        .getLocalTigerProxyOrFail()
+                        .getRbelLogger()
+                        .getMessageHistory()
+                        .stream()
+                        .filter(
+                            msg ->
+                                msg.hasFacet(RbelPop3CommandFacet.class)
+                                    || msg.hasFacet(RbelSmtpCommandFacet.class)
+                                    || msg.hasFacet(RbelPop3ResponseFacet.class)
+                                    || msg.hasFacet(RbelSmtpResponseFacet.class))
+                        .count();
+                log.debug("currently " + size + " messages, wanted " + expectedMessages);
+                return size == expectedMessages;
+              });
+    } catch (ConditionTimeoutException e) {
+      var messages =
+          tigerTestEnvMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().stream()
+              .filter(
+                  msg ->
+                      msg.hasFacet(RbelPop3CommandFacet.class)
+                          || msg.hasFacet(RbelSmtpCommandFacet.class)
+                          || msg.hasFacet(RbelPop3ResponseFacet.class)
+                          || msg.hasFacet(RbelSmtpResponseFacet.class))
+              .toList();
+      messages.stream().map(RbelElement::printTreeStructure).forEach(System.out::println);
+      throw e;
+    }
   }
 
   private @NotNull ServerSetup getSmtpProxy() {

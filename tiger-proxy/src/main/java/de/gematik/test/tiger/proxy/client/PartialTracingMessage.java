@@ -18,8 +18,10 @@ package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.util.RbelContent;
+import java.lang.reflect.Array;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -40,11 +42,9 @@ public class PartialTracingMessage {
   private final RbelHostname sender;
   private final RbelHostname receiver;
   @ToString.Exclude private final TracingMessageFrame messageFrame;
-  private final ZonedDateTime transmissionTime;
   private final ZonedDateTime receivedTime = ZonedDateTime.now();
   private final List<TracingMessagePart> messageParts = new ArrayList<>();
-  @Builder.Default private final Map<String, String> additionalInformation = Map.of();
-  @Builder.Default private final boolean unparsedChunk = false;
+  @Builder.Default private final Map<String, Object> additionalInformation = Map.of();
 
   public boolean isComplete() {
     return !messageParts.isEmpty()
@@ -56,9 +56,19 @@ public class PartialTracingMessage {
     if (messageParts.isEmpty()) {
       return RbelContent.builder().build();
     }
-    return RbelContent.builder()
-        .chunkSize(Math.max(messageParts.get(0).getData().length, 1024))
-        .content(messageParts.stream().map(TracingMessagePart::getData).toList())
-        .build();
+
+    byte[] result =
+        new byte
+            [messageParts.stream()
+                .map(TracingMessagePart::getData)
+                .mapToInt(Array::getLength)
+                .sum()];
+    int resultIndex = 0;
+    for (TracingMessagePart messagePart :
+        messageParts.stream().sorted(Comparator.comparing(TracingMessagePart::getIndex)).toList()) {
+      System.arraycopy(messagePart.getData(), 0, result, resultIndex, messagePart.getData().length);
+      resultIndex += messagePart.getData().length;
+    }
+    return RbelContent.of(result);
   }
 }

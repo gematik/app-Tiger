@@ -86,7 +86,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
             .build());
 
     proxyRest.post("http://backend/notFoobar").asJson();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0))
         .extractChildWithPath("$.header.User-Agent")
@@ -150,7 +150,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
             .build());
 
     proxyRest.post("http://backend/notFoobar").asJson();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0))
         .extractChildWithPath("$.header.User-Agent")
@@ -190,7 +190,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
             .build());
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.header.User-Agent"))
         .get()
@@ -226,7 +226,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
             .build());
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asJson();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(1).findElement("$.body.foo"))
         .get()
@@ -240,7 +240,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
 
     final byte[] body =
         proxyRest.post("http://backend/foobar").body(binaryMessageContent).asBytes().getBody();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.body"))
         .get()
@@ -262,7 +262,7 @@ class TestTigerProxyModifications extends AbstractTigerProxyTest {
             .body(binaryMessageContent)
             .asBytes()
             .getBody();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0).findElement("$.body"))
         .get()

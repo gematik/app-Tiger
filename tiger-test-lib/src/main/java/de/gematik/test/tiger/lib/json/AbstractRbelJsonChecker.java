@@ -18,8 +18,8 @@ package de.gematik.test.tiger.lib.json;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelCborFacet;
-import de.gematik.rbellogger.data.facet.RbelJsonFacet;
+import de.gematik.rbellogger.facets.jackson.RbelCborFacet;
+import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
 import de.gematik.test.tiger.lib.rbel.RbelContentValidator;
 
 public abstract class AbstractRbelJsonChecker implements RbelContentValidator {

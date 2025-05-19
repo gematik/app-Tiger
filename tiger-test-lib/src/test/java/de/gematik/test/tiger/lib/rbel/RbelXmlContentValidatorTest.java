@@ -16,15 +16,12 @@
  */
 package de.gematik.test.tiger.lib.rbel;
 
+import static de.gematik.test.tiger.util.CurlTestdataUtil.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +30,7 @@ class RbelXmlContentValidatorTest {
   private RbelXmlContentValidator rbelValidator;
 
   @BeforeEach
-  public void setUp() {
+  void setUp() {
     this.rbelValidator = new RbelXmlContentValidator();
   }
 
@@ -137,7 +134,7 @@ class RbelXmlContentValidatorTest {
   }
 
   @Test
-  public void testCompareXMLStructureOfRbelElement() throws IOException {
+  public void testCompareXMLStructureOfRbelElement() {
     String curlMessage =
         readCurlFromFileWithCorrectedLineBreaks(
             "src/test/resources/testdata/sampleCurlMessages/xmlMessage.curl");
@@ -157,17 +154,5 @@ class RbelXmlContentValidatorTest {
             + "        </ns2:RegistryError>";
     String diffOptionCSV = "nocomment,txttrim";
     rbelValidator.verify(oracle, registryResponseNode, diffOptionCSV);
-  }
-
-  private static String readCurlFromFileWithCorrectedLineBreaks(String fileName)
-      throws IOException {
-    String fromFile =
-        FileUtils.readFileToString(new File(fileName), Charset.defaultCharset())
-            .replaceAll("(?<!\\r)\\n", "\r\n");
-    if (fromFile.endsWith("\r\n")) {
-      return fromFile;
-    } else {
-      return fromFile + "\r\n";
-    }
   }
 }

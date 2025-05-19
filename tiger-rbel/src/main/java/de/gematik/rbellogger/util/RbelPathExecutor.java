@@ -66,7 +66,7 @@ public class RbelPathExecutor<T extends RbelPathAble> {
     }
 
     if (RbelOptions.isActivateRbelPathDebugging()) {
-      log.debug("Split rbelPath {} into the following keys: {}", rbelPath, keys);
+      log.info("Split rbelPath {} into the following keys: {}", rbelPath, keys);
     }
 
     return keys;

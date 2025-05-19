@@ -21,8 +21,8 @@ import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TRAFFIC
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.core.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;

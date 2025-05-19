@@ -21,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.proxy.TigerProxy;

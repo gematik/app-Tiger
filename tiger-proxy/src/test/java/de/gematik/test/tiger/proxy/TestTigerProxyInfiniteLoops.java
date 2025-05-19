@@ -58,7 +58,7 @@ class TestTigerProxyInfiniteLoops extends AbstractTigerProxyTest {
             () -> unirestInstance.get("http://localhost:" + tigerProxy.getProxyPort()).asString())
         .isInstanceOf(UnirestException.class);
 
-    awaitMessagesInTiger(23);
+    awaitMessagesInTigerProxy(23);
 
     final String htmlData = RbelHtmlRenderer.render(tigerProxy.getRbelLogger().getMessageHistory());
     FileUtils.writeStringToFile(new File("target/error.html"), htmlData, StandardCharsets.UTF_8);

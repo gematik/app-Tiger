@@ -16,10 +16,16 @@
 
 package de.gematik.test.tiger.proxy.client;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
 import java.lang.reflect.Type;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import javax.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 
@@ -30,74 +36,59 @@ class TracingStompHandler implements StompFrameHandler {
   private final TigerRemoteProxyClient remoteProxyClient;
 
   @Override
-  public Type getPayloadType(StompHeaders stompHeaders) {
+  public Type getPayloadType(@Nullable StompHeaders stompHeaders) {
     return TigerTracingDto.class;
   }
 
   @Override
-  public void handleFrame(StompHeaders stompHeaders, Object frameContent) {
-    if (log.isTraceEnabled()) {
-      log.trace(
-          "Received new frame of type {} in proxy {}",
-          frameContent.getClass().getSimpleName(),
-          remoteProxyClient.getName().orElse("<>"));
-    }
+  public void handleFrame(@Nullable StompHeaders stompHeaders, Object frameContent) {
+    log.atTrace()
+        .addArgument(
+            () ->
+                Optional.ofNullable(frameContent)
+                    .map(Object::getClass)
+                    .map(Class::getSimpleName)
+                    .orElse("<>"))
+        .addArgument(remoteProxyClient.getName().orElse("<>"))
+        .addArgument(
+            () -> {
+              try {
+                return new ObjectMapper()
+                    .registerModule(new JavaTimeModule())
+                    .writerWithDefaultPrettyPrinter()
+                    .writeValueAsString(frameContent);
+              } catch (JsonProcessingException e) {
+                return "<>";
+              }
+            })
+        .log("Received new frame of type {} in proxy {} with content: {}");
     if (frameContent instanceof TigerTracingDto tigerTracingDto) {
-      if (log.isDebugEnabled()) {
-        log.debug(
-            "Received TigerTracingDto with request-uuid {} and response-uuid {} (proxy {})",
-            tigerTracingDto.getRequestUuid(),
-            tigerTracingDto.getResponseUuid(),
-            remoteProxyClient.getName().orElse("<>"));
-      }
-      if (StringUtils.isEmpty(tigerTracingDto.getResponseUuid())) {
-        registerNewIsolaniMessage(tigerTracingDto);
-      } else {
-        registerNewMessagePair(tigerTracingDto);
-      }
+      CompletableFuture.runAsync(
+              () -> registerNewMessage(tigerTracingDto), remoteProxyClient.getMeshHandlerPool())
+          .exceptionally(
+              e -> {
+                remoteProxyClient.propagateException(
+                    new TigerProxyRoutingException(
+                        "Error while handling message: " + e.getMessage(),
+                        tigerTracingDto.getSender(),
+                        tigerTracingDto.getReceiver(),
+                        e));
+                return null;
+              });
     }
   }
 
-  private void registerNewIsolaniMessage(TigerTracingDto tigerTracingDto) {
-    var isolani = new TracingMessageIsolani(remoteProxyClient);
-    isolani.setMessage(
+  private void registerNewMessage(TigerTracingDto tigerTracingDto) {
+    var messageFrame = new TracingMessageFrame(remoteProxyClient);
+    messageFrame.setMessage(
         PartialTracingMessage.builder()
             .tracingDto(tigerTracingDto)
             .receiver(tigerTracingDto.getReceiver())
             .sender(tigerTracingDto.getSender())
-            .messageFrame(isolani)
-            .unparsedChunk(tigerTracingDto.isUnparsedChunk())
-            .transmissionTime(tigerTracingDto.getRequestTransmissionTime())
-            .additionalInformation(tigerTracingDto.getAdditionalInformationRequest())
+            .messageFrame(messageFrame)
+            .additionalInformation(tigerTracingDto.getAdditionalInformation())
             .build());
     remoteProxyClient.initOrUpdateMessagePart(
-        tigerTracingDto.getRequestUuid(), isolani.getMessage());
-  }
-
-  private void registerNewMessagePair(TigerTracingDto tigerTracingDto) {
-    TracingMessagePair messagePair = new TracingMessagePair(remoteProxyClient);
-    messagePair.setRequest(
-        PartialTracingMessage.builder()
-            .tracingDto(tigerTracingDto)
-            .receiver(tigerTracingDto.getReceiver())
-            .sender(tigerTracingDto.getSender())
-            .messageFrame(messagePair)
-            .transmissionTime(tigerTracingDto.getRequestTransmissionTime())
-            .additionalInformation(tigerTracingDto.getAdditionalInformationRequest())
-            .build());
-    messagePair.setResponse(
-        PartialTracingMessage.builder()
-            .tracingDto(tigerTracingDto)
-            // This is intentional: sender and receiver are swapped for the response.
-            .receiver(tigerTracingDto.getSender())
-            .sender(tigerTracingDto.getReceiver())
-            .messageFrame(messagePair)
-            .transmissionTime(tigerTracingDto.getResponseTransmissionTime())
-            .additionalInformation(tigerTracingDto.getAdditionalInformationResponse())
-            .build());
-    remoteProxyClient.initOrUpdateMessagePart(
-        tigerTracingDto.getRequestUuid(), messagePair.getRequest());
-    remoteProxyClient.initOrUpdateMessagePart(
-        tigerTracingDto.getResponseUuid(), messagePair.getResponse());
+        tigerTracingDto.getMessageUuid(), messageFrame.getMessage());
   }
 }

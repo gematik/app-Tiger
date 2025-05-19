@@ -1,0 +1,67 @@
+== ADR 015: Rbel Protocol Parsing
+
+== Context
+
+== Central assumptions
+
+=== Centralized message lifecycle
+
+The message goes through a central lifecycle as defined by RbelConversionPhase:
+
+* UNPARSED (no conversion done yet)
+* PREPARATION (preparation phase (add metadata))
+* PROTOCOL_PARSING (protocol parsing (http, httpPairing))
+* CONTENT_PARSING (content parsing (json, html))
+* CONTENT_ENRICHMENT (content enrichment (x5cReader, jwkReader, value shader))
+* TRANSMISSION (transmission (mesh setup, rbel validator))
+* COMPLETED (conversion done)
+* DELETED (message was deleted while parsing, disregard)
+
+A message is considered done (for example by `TigerProxy.waitForAllCurrentMessagesToBeParsed()`) only when it has reached either the COMPLETED or the DELETED phase.
+
+The phase is in the root-node of a message tree.
+Setting the phase in a child-node will give a runtime-exception, reading the phase on a child-node will return the phase of the root-node.
+
+The central unit to handle parsing is the `RbelConversionExecutor`.
+It handles phase-management and is also the central interface through which a `RbelConverterPlugin` can access and manipulate messages.
+
+=== Everything is a plugin
+
+Every manipulation of a message is done via a plugin.
+This means that all CompletableFuture.andThen() calls are gone.
+
+Individual manipulations, e.g. for a specific traffic-source, should be done in a plugin.
+A common pattern to achieve this is to introduce marker-facet (A RbelFacet, that is not used for anything else) that is set prior to the conversion and then used by a specific plugin to judge whether to manipulate a certain message.
+
+=== Pairing is optional
+
+Pairing is no longer a concern of the Tiger-Proxy or RbelConverter, it is an addon, provided by plugins specific to the protocol of the message.
+
+This does away with the overly complicated and distributed logic of the CompletableFuture distributed across all possible influxes of traffic.
+
+=== Metadata is a first class citizen
+
+Saving files, distributing them across a mesh-setup and also generating metadata-facets for Mockserver-Messages: All of these are now generalized.
+The common denominator is the metadata.
+Plugins read and write to the metadata, and plugins should not concern themselves with the origin of the message.
+
+Only messages have metadata, child elements do not!
+(When you want to access metadata when parsing a child element, simply search for the parent)
+
+=== Transmitting binary data
+
+An upstream proxy, that acts as a direct-forward-proxy, transmits its received data directly to the downstream proxy.
+Parsing that data into concrete messages comes afterward.
+Since protocols may be added via plugins a coherent view on "what is a message?" is not possible.
+However, by transmitting the data directly the proxies base their views on a coherent data set.
+
+A tgr file is essentially an intermediary proxy by itself.
+So the data is written directly into the file, along with the transmitted metadata, and the parsing comes afterward.
+
+=== UUIDs across the proxies
+
+When we transmit data, not messages, we guarantee consistens UUIDs for the data throughout the system.
+This however complicates things when we want to parse the data into messages.
+The UUIDs are not guaranteed to be unique across the system, so we need to ensure that the UUIDs are unique for each message.
+This is done by using the `DeterministicUuidGenerator`, that generates unique but deterministic UUIDs for each message.
+This is done by initialising an RNG with the UUID of the binary source packet and the position of the message within said packet.

@@ -19,10 +19,10 @@ package de.gematik.test.tiger.proxy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-import de.gematik.rbellogger.converter.RbelConverterPlugin;
+import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.data.facet.RbelFacet;
+import de.gematik.rbellogger.data.core.RbelFacet;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import java.io.BufferedReader;
 import java.io.IOException;

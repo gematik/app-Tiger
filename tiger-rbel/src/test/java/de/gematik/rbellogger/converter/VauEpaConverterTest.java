@@ -21,14 +21,15 @@ import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static j2html.TagCreator.div;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.data.facet.RbelFacet;
-import de.gematik.rbellogger.data.facet.RbelVauEpaFacet;
+import de.gematik.rbellogger.data.core.RbelFacet;
+import de.gematik.rbellogger.facets.vau.vau.RbelVauEpaFacet;
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.key.RbelVauKey;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
@@ -41,12 +42,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-public class VauEpaConverterTest {
+class VauEpaConverterTest {
   private static RbelLogger rbelLogger;
 
   @BeforeAll
   @SneakyThrows
-  public static void setUp() {
+  static void setUp() {
     RbelHtmlRenderer.registerFacetRenderer(
         new RbelHtmlFacetRenderer() {
           @Override

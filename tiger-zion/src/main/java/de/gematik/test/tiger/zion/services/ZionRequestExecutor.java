@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.rbellogger.writer.RbelSerializationResult;
 import de.gematik.rbellogger.writer.RbelWriter;
@@ -386,9 +387,10 @@ public class ZionRequestExecutor {
         .getRbelConverter()
         .parseMessage(
             buildRawMessageApproximate(el),
-            serverHostname,
-            clientHostname,
-            Optional.of(ZonedDateTime.now()));
+            new RbelMessageMetadata()
+                .withSender(serverHostname)
+                .withReceiver(clientHostname)
+                .withTransmissionTime(ZonedDateTime.now()));
   }
 
   private byte[] buildRawMessageApproximate(ResponseEntity<byte[]> response) {

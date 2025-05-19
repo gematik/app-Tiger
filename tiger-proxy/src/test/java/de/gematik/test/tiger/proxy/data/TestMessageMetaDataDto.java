@@ -40,7 +40,7 @@ class TestMessageMetaDataDto extends AbstractTigerProxyTest {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     proxyRest.get("http://backend/foobar").asJson();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     MessageMetaDataDto requestMetaData =
         MessageMetaDataDto.createFrom(tigerProxy.getRbelMessagesList().get(0));
@@ -75,7 +75,7 @@ class TestMessageMetaDataDto extends AbstractTigerProxyTest {
                 .activateRbelParsingFor(List.of("epa3-vau"))
                 .build());
 
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     MessageMetaDataDto requestMetaData =
         MessageMetaDataDto.createFrom(tigerProxy.getRbelMessagesList().get(0));

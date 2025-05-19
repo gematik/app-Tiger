@@ -20,12 +20,9 @@ package io.cucumber.core.plugin.report;
 import static org.awaitility.Awaitility.await;
 
 import com.google.common.collect.Streams;
-import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelRequestFacet;
-import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
-import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
+import de.gematik.rbellogger.data.core.RbelRequestFacet;
+import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.util.RbelAnsiColors;
@@ -602,6 +599,10 @@ public class SerenityReporterCallbacks {
     }
     val waitTime = RbelMessageRetriever.RBEL_REQUEST_TIMEOUT.getValueOrDefault();
     try {
+      // TODO max wait mit timeout UND nur zurück geben auf was wir hier schon gewartet
+      // val myStepMessages = tigerProxy.currentMessages();
+      // tigerProxy.waitFor(myStepMessages);
+      // return myStepMessages;
       Awaitility.await()
           .atMost(waitTime, TimeUnit.SECONDS)
           .pollInterval(200, TimeUnit.MILLISECONDS)
@@ -617,11 +618,7 @@ public class SerenityReporterCallbacks {
   private List<RbelElement> getFullyProcessedStepMessages() {
     TigerDirector.getTigerTestEnvMgr()
         .getLocalTigerProxyOptional()
-        .map(TigerProxy::getRbelLogger)
-        .map(RbelLogger::getMessageHistory)
-        .map(List::copyOf)
-        .orElseGet(Collections::emptyList)
-        .forEach(RbelConverter::waitUntilFullyProcessed);
+        .ifPresent(TigerProxy::waitForAllCurrentMessagesToBeParsed);
     return LocalProxyRbelMessageListener.getInstance().getStepRbelMessages();
   }
 
@@ -630,17 +627,13 @@ public class SerenityReporterCallbacks {
 
     var requestsWaitingForResponses =
         stepMessages.stream()
+            .filter(message -> message.hasFacet(RbelRequestFacet.class))
             .filter(
-                message ->
-                    message.hasFacet(RbelRequestFacet.class)
-                        && !message.hasFacet(TigerNonPairedMessageFacet.class))
-            .filter(
-                message ->
-                    message
-                        .getFacet(TracingMessagePairFacet.class)
+                msg ->
+                    msg.getFacet(TracingMessagePairFacet.class)
                         .map(TracingMessagePairFacet::getResponse)
-                        .stream()
-                        .noneMatch(messages::contains))
+                        .map(messages::contains)
+                        .orElse(false))
             .toList();
     if (!requestsWaitingForResponses.isEmpty()) {
       log.atDebug()

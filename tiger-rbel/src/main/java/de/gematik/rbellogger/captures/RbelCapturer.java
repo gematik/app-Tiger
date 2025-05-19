@@ -16,7 +16,7 @@
 
 package de.gematik.rbellogger.captures;
 
-import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.RbelConverter;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

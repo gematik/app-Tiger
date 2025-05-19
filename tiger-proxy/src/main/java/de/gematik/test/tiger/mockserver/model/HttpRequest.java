@@ -57,7 +57,7 @@ public class HttpRequest extends HttpMessage<HttpRequest> {
   private SocketAddress receiverAddress;
   private String senderAddress;
   private Boolean forwardProxyRequest = false;
-  private RbelElement parsedRbelMessage = null;
+  private RbelElement correspondingRbelMessage = null;
   private String logCorrelationId;
 
   public static HttpRequest request() {

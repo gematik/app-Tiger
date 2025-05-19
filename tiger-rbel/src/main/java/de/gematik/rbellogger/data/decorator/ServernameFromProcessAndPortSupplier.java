@@ -18,7 +18,7 @@ package de.gematik.rbellogger.data.decorator;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelHostnameFacet;
 import de.gematik.rbellogger.util.GlobalServerMap;
 import de.gematik.rbellogger.util.PortToProcessMapper;
 import java.util.Optional;

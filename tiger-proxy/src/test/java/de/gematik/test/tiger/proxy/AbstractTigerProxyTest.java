@@ -28,7 +28,6 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import com.github.tomakehurst.wiremock.stubbing.ServeEvent;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
-import de.gematik.rbellogger.data.facet.RbelParsingNotCompleteFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
@@ -56,6 +55,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.awaitility.core.ConditionTimeoutException;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
 import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.AfterEach;
@@ -237,27 +237,34 @@ public abstract class AbstractTigerProxyTest {
                 .retryAfter(false));
 
     log.info(
-        "WIRESHARK filter | | (http or tls) && (tcp.port in { {} {} {} })",
+        "WIRESHARK filter | | (http or tls) && (tcp.port in { {}, {}, {} })",
         tigerProxy.getProxyPort(),
         fakeBackendServerTlsPort,
         fakeBackendServerPort);
   }
 
-  public void awaitMessagesInTiger(int numberOfMessagesExpected) {
+  public void awaitMessagesInTigerProxy(int numberOfMessagesExpected) {
     awaitMessagesInTigerProxy(tigerProxy, numberOfMessagesExpected);
   }
 
-  public void awaitMessagesInTigerProxy(TigerProxy proxyToCheck, int numberOfMessagesExpected) {
-    await()
-        .atMost(5, TimeUnit.SECONDS)
-        .until(
-            () -> {
-              proxyToCheck.waitForAllCurrentMessagesToBeParsed();
-              return proxyToCheck.getRbelLogger().getMessageHistory().stream()
-                      .filter(el -> !el.hasFacet(RbelParsingNotCompleteFacet.class))
-                      .count()
-                  >= numberOfMessagesExpected;
-            });
+  public static void awaitMessagesInTigerProxy(
+      AbstractTigerProxy proxyToCheck, int numberOfMessagesExpected) {
+    try {
+      await()
+          .atMost(5, TimeUnit.SECONDS)
+          .until(
+              () ->
+                  proxyToCheck.getRbelLogger().getMessageHistory().stream()
+                          .filter(el -> el.getConversionPhase().isFinished())
+                          .count()
+                      >= numberOfMessagesExpected);
+    } catch (ConditionTimeoutException e) {
+      log.error("Timed out waiting for tiger to receive {} messages", numberOfMessagesExpected);
+      proxyToCheck
+          .getRbelLogger()
+          .getMessageHistory()
+          .forEach(el -> log.error("Message {}: {}", el.getUuid(), el.printTreeStructure()));
+    }
   }
 
   public LoggedRequest getLastRequest(WireMock wireMock) {

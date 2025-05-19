@@ -16,42 +16,44 @@
 
 package de.gematik.test.tiger.proxy.client;
 
+import static de.gematik.rbellogger.data.RbelMessageMetadata.PREVIOUS_MESSAGE_UUID;
+
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import de.gematik.rbellogger.RbelConversionPhase;
+import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelElementConvertionPair;
-import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.util.IRbelMessageListener;
-import de.gematik.rbellogger.util.RbelContent;
+import de.gematik.test.tiger.common.BoundedMap;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.proxy.TigerProxyMessageDeletedPlugin;
+import de.gematik.test.tiger.proxy.TigerProxyRemoteTransmissionConversionPlugin;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
-import de.gematik.test.tiger.proxy.handler.BinaryChunksBuffer;
+import de.gematik.test.tiger.proxy.handler.MultipleBinaryConnectionParser;
+import de.gematik.test.tiger.proxy.handler.SingleConnectionParser.SingleConnectionParserMarkerFacet;
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.WebSocketContainer;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import kong.unirest.core.GenericType;
 import kong.unirest.core.Unirest;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.util.Assert;
-import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
@@ -76,9 +78,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   @Getter
   private final Map<String, PartialTracingMessage> partiallyReceivedMessageMap = new HashMap<>();
 
-  @Getter
-  private final BinaryChunksBuffer binaryChunksBuffer =
-      new BinaryChunksBuffer(getRbelLogger().getRbelConverter(), getTigerProxyConfiguration());
+  @Getter private final MultipleBinaryConnectionParser binaryChunksBuffer;
 
   @Getter private final TigerStompSessionHandler tigerStompSessionHandler;
   @Nullable private final TigerProxy masterTigerProxy;
@@ -87,6 +87,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   @Getter private final AtomicReference<String> lastMessageUuid = new AtomicReference<>();
   private final SockJsClient webSocketClient;
   private final int connectionTimeoutInSeconds;
+  @Getter private final ExecutorService meshHandlerPool = Executors.newCachedThreadPool();
 
   public TigerRemoteProxyClient(String remoteProxyUrl) {
     this(remoteProxyUrl, new TigerProxyConfiguration(), null);
@@ -103,6 +104,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     super(configuration, masterTigerProxy == null ? null : masterTigerProxy.getRbelLogger());
     this.remoteProxyUrl = remoteProxyUrl;
     this.masterTigerProxy = masterTigerProxy;
+    this.binaryChunksBuffer =
+        new MultipleBinaryConnectionParser(
+            masterTigerProxy == null ? this : masterTigerProxy, null);
 
     WebSocketContainer container = ContainerProvider.getWebSocketContainer();
     container.setDefaultMaxBinaryMessageBufferSize(
@@ -123,6 +127,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     maximumPartialMessageAge =
         Duration.ofSeconds(configuration.getMaximumPartialMessageAgeInSeconds());
     connectionTimeoutInSeconds = configuration.getConnectionTimeoutInSeconds();
+
+    addRbelMessageListener(this::signalNewCompletedMessage);
+    getRbelLogger().getRbelConverter().addConverter(new TigerProxyMessageDeletedPlugin(this));
   }
 
   public void connect() {
@@ -161,36 +168,35 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
     log.info("remote proxy at {} is online, now connecting...", remoteProxyUrl);
     final String tracingWebSocketUrl = getTracingWebSocketUrl(remoteProxyUrl);
-    final ListenableFuture<StompSession> connectFuture =
-        tigerProxyStompClient.connect(tracingWebSocketUrl, tigerStompSessionHandler);
-
-    connectFuture.addCallback(
-        stompSessionInCallback -> {
-          log.info(
-              "Successfully opened stomp session {} to url {}",
-              stompSessionInCallback.getSessionId(),
-              tracingWebSocketUrl);
-          tigerStompSessionHandler.setOnConnectedCallback(
-              () -> {
-                if (downloadTraffic) {
-                  downloadTrafficFromRemoteProxy();
-                }
-              });
-        },
-        throwable -> {
-          throw new TigerRemoteProxyClientException(
-              "Exception while opening tracing-connection to " + tracingWebSocketUrl, throwable);
-        });
-
-    try {
-      stompSession.set(connectFuture.get(connectionTimeoutInSeconds, TimeUnit.SECONDS));
-    } catch (RuntimeException | ExecutionException | TimeoutException e) {
-      throw new TigerRemoteProxyClientException(
-          "Exception while opening tracing-connection to " + tracingWebSocketUrl, e);
-    } catch (InterruptedException e) {
-      log.error("InterruptedException while opening tracing-connection to {}", tracingWebSocketUrl);
-      Thread.currentThread().interrupt();
-    }
+    tigerProxyStompClient
+        .connectAsync(tracingWebSocketUrl, tigerStompSessionHandler)
+        .orTimeout(connectionTimeoutInSeconds, TimeUnit.SECONDS)
+        .thenApply(
+            stompSessionInCallback -> {
+              log.info(
+                  "Successfully opened stomp session {} to url {}",
+                  stompSessionInCallback.getSessionId(),
+                  tracingWebSocketUrl);
+              tigerStompSessionHandler.setOnConnectedCallback(
+                  () -> {
+                    log.info(
+                        "Connected to remote proxy at {}, now downloading traffic...",
+                        remoteProxyUrl);
+                    if (downloadTraffic) {
+                      downloadTrafficFromRemoteProxy();
+                    }
+                    log.info(
+                        "Successfully downloaded traffic from remote proxy at {}", remoteProxyUrl);
+                  });
+              return stompSessionInCallback;
+            })
+        .thenAccept(stompSession::set)
+        .exceptionally(
+            throwable -> {
+              throw new TigerRemoteProxyClientException(
+                  "Exception while opening tracing-connection to " + tracingWebSocketUrl,
+                  throwable);
+            });
   }
 
   @Override
@@ -320,75 +326,33 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             });
   }
 
-  Optional<CompletableFuture<RbelElement>> buildNewRbelMessage(
-      RbelHostname sender,
-      RbelHostname receiver,
-      RbelContent messageContent,
-      Optional<ZonedDateTime> transmissionTime,
-      String uuid) {
-    return buildNewMessage(
-        sender, receiver, messageContent, Optional.empty(), transmissionTime, uuid);
+  void tryParseMessages(PartialTracingMessage message, Consumer<RbelElement> messagePreProcessor) {
+    getBinaryChunksBuffer()
+        .addToBuffer(
+            message.getTracingDto().getMessageUuid(),
+            message.getSender().asSocketAddress(),
+            message.getReceiver().asSocketAddress(),
+            message.buildCompleteContent().toByteArray(),
+            message.getAdditionalInformation(),
+            messagePreProcessor,
+            Optional.ofNullable(
+                    message.getAdditionalInformation().get(PREVIOUS_MESSAGE_UUID.getKey()))
+                .map(Object::toString)
+                .orElse(null));
   }
 
-  Optional<CompletableFuture<RbelElement>> tryParseMessage(PartialTracingMessage message) {
-    if (message.isUnparsedChunk()) {
-      return getBinaryChunksBuffer()
-          .tryToConvertMessageAndBufferUnusedBytes(
-              message.buildCompleteContent(),
-              message.getSender().asSocketAddress(),
-              message.getReceiver().asSocketAddress())
-          .map(CompletableFuture::completedFuture);
+  @Override
+  protected boolean isTigerProxyMatching(TigerProxyRemoteTransmissionConversionPlugin plugin) {
+    return plugin.getTigerProxy().getRbelLogger() == getRbelLogger();
+  }
 
+  @Override
+  public RbelLogger getRbelLogger() {
+    if (masterTigerProxy != null) {
+      return masterTigerProxy.getRbelLogger();
     } else {
-      return buildNewRbelMessage(
-          message.getSender(),
-          message.getReceiver(),
-          message.buildCompleteContent(),
-          Optional.ofNullable(message.getTransmissionTime()),
-          message.getTracingDto().getRequestUuid());
+      return super.getRbelLogger();
     }
-  }
-
-  Optional<CompletableFuture<RbelElement>> buildNewRbelResponse(
-      RbelHostname sender,
-      RbelHostname receiver,
-      RbelContent messageContent,
-      Optional<CompletableFuture<RbelElement>> parsedRequest,
-      Optional<ZonedDateTime> transmissionTime,
-      String uuid) {
-    return buildNewMessage(sender, receiver, messageContent, parsedRequest, transmissionTime, uuid);
-  }
-
-  private Optional<CompletableFuture<RbelElement>> buildNewMessage(
-      RbelHostname sender,
-      RbelHostname receiver,
-      RbelContent messageContent,
-      Optional<CompletableFuture<RbelElement>> parsedRequest,
-      Optional<ZonedDateTime> transmissionTime,
-      String uuid) {
-    if (!messageContent.isNull()) {
-      if (log.isTraceEnabled()) {
-        log.trace("Received new message with ID '{}'", uuid);
-      }
-
-      return Optional.of(
-          getRbelLogger()
-              .getRbelConverter()
-              .parseMessageAsync(
-                  new RbelElementConvertionPair(
-                      RbelElement.builder().uuid(uuid).content(messageContent).build(),
-                      parsedRequest.orElse(null)),
-                  sender,
-                  receiver,
-                  transmissionTime));
-    } else {
-      log.warn("Received message with content 'null'. Skipping parsing...");
-      return Optional.empty();
-    }
-  }
-
-  void propagateMessage(RbelElement rbelMessage) {
-    super.triggerListener(rbelMessage);
   }
 
   void removeMessage(RbelElement rbelMessage) {
@@ -407,7 +371,6 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
 
   @Override
   public void close() {
-    super.close();
     log.debug("Stopping websocket client with remote URL '{}'", remoteProxyUrl);
     if (stompSession.get() != null && stompSession.get().isConnected()) {
       stompSession.get().disconnect();
@@ -437,12 +400,15 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   }
 
   public void initOrUpdateMessagePart(String uuid, PartialTracingMessage partialTracingMessage) {
+    PartialTracingMessage oldMessage = null;
     synchronized (partiallyReceivedMessageMap) {
       if (partiallyReceivedMessageMap.containsKey(uuid)) {
-        val oldMessage = partiallyReceivedMessageMap.get(uuid);
-        partialTracingMessage.getMessageParts().addAll(oldMessage.getMessageParts());
+        oldMessage = partiallyReceivedMessageMap.get(uuid);
       }
       partiallyReceivedMessageMap.put(uuid, partialTracingMessage);
+    }
+    if (oldMessage != null) {
+      partialTracingMessage.getMessageParts().addAll(oldMessage.getMessageParts());
     }
     checkForCompletion(partialTracingMessage, uuid);
   }
@@ -469,10 +435,6 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
   }
 
-  public boolean messageUuidKnown(final String messageUuid) {
-    return getRbelLogger().getRbelConverter().isMessageUuidAlreadyKnown(messageUuid);
-  }
-
   public boolean isConnected() {
     return Optional.ofNullable(stompSession)
         .map(AtomicReference::get)
@@ -481,20 +443,11 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   }
 
   @Override
-  public void triggerListener(RbelElement element) {
+  public void triggerListener(RbelElement element, RbelMessageMetadata metadata) {
     if (masterTigerProxy != null) {
-      masterTigerProxy.triggerListener(element);
+      masterTigerProxy.triggerListener(element, metadata);
     } else {
-      super.triggerListener(element);
-    }
-  }
-
-  @Override
-  public List<IRbelMessageListener> getRbelMessageListeners() {
-    if (masterTigerProxy != null) {
-      return masterTigerProxy.getRbelMessageListeners();
-    } else {
-      return super.getRbelMessageListeners();
+      super.triggerListener(element, metadata);
     }
   }
 
@@ -507,12 +460,79 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
   }
 
-  @Override
-  public void removeRbelMessageListener(IRbelMessageListener listener) {
+  /**
+   * Map with Futures indicating if a message with the given UUID has been parsed. The map is
+   * bounded to avoid memory leaks. Every connection on every upstream proxy will create a new
+   * entry, so the upper limit needs to be quite high.
+   */
+  private final BoundedMap<String, Map<String, Runnable>> previousMessages =
+      new BoundedMap<>(10_000);
+
+  public void queueParsingTaskBehindMessageWithId(
+      String previousMessageUuid, Runnable runnable, String thisMessageUuid) {
+    synchronized (previousMessages) {
+      final Optional<RbelConversionPhase> conversionPhase =
+          getRbelLogger()
+              .getRbelConverter()
+              .findMessageByUuid(previousMessageUuid)
+              .map(RbelElement::getConversionPhase);
+
+      if (conversionPhase.map(RbelConversionPhase::isFinished).orElse(false)) {
+        log.info(
+            "parsing {} immediately, prev {} has status {}",
+            thisMessageUuid,
+            previousMessageUuid,
+            conversionPhase);
+        getMeshHandlerPool().submit(runnable);
+      } else {
+        log.atTrace()
+            .addArgument(thisMessageUuid)
+            .addArgument(previousMessageUuid)
+            .addArgument(conversionPhase)
+            .addArgument(previousMessages::size)
+            .log("Queueing {} behind {} ({}), currently {} messages waiting");
+        previousMessages
+            .getOrPutDefault(previousMessageUuid, HashMap::new)
+            .put(thisMessageUuid, runnable);
+      }
+    }
+  }
+
+  public void signalNewCompletedMessage(RbelElement msg) {
+    signalNewCompletedMessage(msg.getUuid());
+    msg
+        .getFacet(SingleConnectionParserMarkerFacet.class)
+        .map(SingleConnectionParserMarkerFacet::getSourceUuids)
+        .stream()
+        .flatMap(Collection::stream)
+        .distinct()
+        .forEach(this::signalNewCompletedMessage);
+  }
+
+  private void signalNewCompletedMessage(String uuid) {
+    List<Runnable> runnableList = new ArrayList<>();
+    log.atInfo()
+        .addArgument(uuid)
+        .addArgument(
+            () ->
+                getRbelLogger()
+                    .getRbelConverter()
+                    .findMessageByUuid(uuid)
+                    .map(RbelElement::getConversionPhase))
+        .log("Signal new completed message {} (Status is {})");
+    synchronized (previousMessages) {
+      final Optional<Map<String, Runnable>> entry = previousMessages.get(uuid);
+      entry.map(Map::values).ifPresent(runnableList::addAll);
+      previousMessages.remove(uuid);
+    }
+    runnableList.forEach(getMeshHandlerPool()::submit);
+  }
+
+  public void propagateException(RuntimeException e) {
     if (masterTigerProxy != null) {
-      masterTigerProxy.removeRbelMessageListener(listener);
+      masterTigerProxy.propagateException(e);
     } else {
-      super.removeRbelMessageListener(listener);
+      log.warn("Exception thrown (isolated TigerRemoteProxyClient instance{})", proxyName(), e);
     }
   }
 }

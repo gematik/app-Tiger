@@ -17,7 +17,6 @@
 package de.gematik.test.tiger.proxy;
 
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
@@ -46,7 +45,7 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
         .isInstanceOf(UnirestException.class)
         .hasCauseInstanceOf(IOException.class);
 
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
   }
 
   @SneakyThrows
@@ -59,7 +58,7 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
         .isInstanceOf(UnirestException.class)
         .hasCauseInstanceOf(IOException.class);
 
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(1))
         .extractChildWithPath("$.sender")
@@ -86,7 +85,7 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
         .isInstanceOf(UnirestException.class)
         .hasCauseInstanceOf(IOException.class);
 
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     renderTrafficTo("error.html");
 
@@ -124,7 +123,7 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
                       .asString())
           .isInstanceOf(UnirestException.class);
 
-      awaitMessagesInTiger(2);
+      awaitMessagesInTigerProxy(2);
 
       assertThat(tigerProxy.getRbelMessagesList().get(1))
           .extractChildWithPath("$.sender")

@@ -53,7 +53,6 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
         .writeAndFlush(Unpooled.copiedBuffer(msg.getBytes()));
     binaryProxyListener.onProxy(
         msg,
-        Optional.empty(),
         ctx.channel().attr(INCOMING_CHANNEL).get().remoteAddress(),
         ctx.channel().remoteAddress());
   }

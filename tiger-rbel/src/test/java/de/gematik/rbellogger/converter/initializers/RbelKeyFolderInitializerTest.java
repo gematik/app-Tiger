@@ -18,6 +18,7 @@ package de.gematik.rbellogger.converter.initializers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import org.junit.jupiter.api.Test;
 
 class RbelKeyFolderInitializerTest {

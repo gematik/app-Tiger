@@ -129,7 +129,11 @@ public class ClientBootstrapFactory {
               .attr(SECURE, isSecure)
               .attr(REMOTE_SOCKET, remoteAddress)
               .attr(ERROR_IF_CHANNEL_CLOSED_WITHOUT_RESPONSE, errorIfChannelClosedWithoutResponse)
-              .attr(LOOP_COUNTER, incomingChannel.attr(LOOP_COUNTER).get() + 1)
+              .attr(
+                  LOOP_COUNTER,
+                  incomingChannel.hasAttr(LOOP_COUNTER)
+                      ? incomingChannel.attr(LOOP_COUNTER).get() + 1
+                      : 0)
               .handler(clientInitializer);
       if (responseFuture != null) {
         bootstrap.attr(RESPONSE_FUTURE, responseFuture);

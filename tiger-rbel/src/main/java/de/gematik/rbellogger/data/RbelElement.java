@@ -16,9 +16,14 @@
 
 package de.gematik.rbellogger.data;
 
-import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.RbelConversionPhase;
+import de.gematik.rbellogger.data.core.*;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
+import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
+import de.gematik.rbellogger.facets.jackson.RbelCborFacet;
+import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
 import de.gematik.rbellogger.util.*;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.nio.charset.Charset;
@@ -31,6 +36,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -48,8 +54,9 @@ public class RbelElement extends RbelPathAble {
   private final RbelElement parentNode;
   private final Queue<RbelFacet> facets = new ConcurrentLinkedQueue<>();
   @Setter private Optional<Charset> charset;
+  @Setter private RbelConversionPhase conversionPhase = RbelConversionPhase.UNPARSED;
 
-  private final long size;
+  private long size;
   @Setter private long conversionTimeInNanos = 0;
 
   public byte[] getRawContent() {
@@ -107,6 +114,11 @@ public class RbelElement extends RbelPathAble {
         .content(content)
         .parentNode(parentNode)
         .charset(charset.orElse(null));
+  }
+
+  public void setUsedBytes(int usedBytes) {
+    content.truncate(usedBytes);
+    this.size = usedBytes;
   }
 
   public static class Builder {
@@ -179,7 +191,8 @@ public class RbelElement extends RbelPathAble {
   public boolean hasFacet(Class<? extends RbelFacet> clazz) {
     // please do not convert into for-each: highly performance critical method both for rendering
     // and conversion.
-    // for-each is not massively slower, BUT IT IS! leave as is without performance verification.
+    // for-each is not massively slower, BUT IT IS! leave as is if you don't do performance
+    // verification.
     for (Iterator<RbelFacet> iter = facets.iterator(); iter.hasNext(); ) {
       var entry = iter.next();
       if (entry != null && clazz.isAssignableFrom(entry.getClass())) {
@@ -198,7 +211,8 @@ public class RbelElement extends RbelPathAble {
   public List<RbelElement> getChildNodes() {
     // please do not convert into for-each: highly performance critical method both for rendering
     // and conversion.
-    // for-each is not massively slower, BUT IT IS! leave as is without performance verification.
+    // for-each is not massively slower, BUT IT IS! leave as is if you don't do performance
+    // verification.
     val result = new LinkedList<RbelElement>();
     for (Iterator<RbelFacet> facetIterator = facets.iterator();
         facetIterator.hasNext(); ) { // NOSONAR
@@ -219,7 +233,8 @@ public class RbelElement extends RbelPathAble {
   public RbelMultiMap<RbelElement> getChildNodesWithKey() {
     // please do not convert into for-each: highly performance critical method both for rendering
     // and conversion.
-    // for-each is not massively slower, BUT IT IS! leave as is without performance verification.
+    // for-each is not massively slower, BUT IT IS! leave as is if you don't do performance
+    // verification.
     val result = new RbelMultiMap<RbelElement>();
     for (Iterator<RbelFacet> facetIterator = facets.iterator();
         facetIterator.hasNext(); ) { // NOSONAR
@@ -236,13 +251,6 @@ public class RbelElement extends RbelPathAble {
     return result;
   }
 
-  public void triggerPostConversionListener(final RbelConverter context) {
-    for (RbelElement element : getChildNodes()) {
-      element.triggerPostConversionListener(context);
-    }
-    context.triggerPostConversionListenerFor(this);
-  }
-
   public List<RbelElement> traverseAndReturnNestedMembers() {
     val result = new ArrayList<RbelElement>();
     traverseAndReturnNestedMembers(result);
@@ -252,7 +260,8 @@ public class RbelElement extends RbelPathAble {
   public void traverseAndReturnNestedMembers(List<RbelElement> result) {
     // please do not convert into for-each: highly performance critical method both for rendering
     // and conversion.
-    // for-each is not massively slower, BUT IT IS! leave as is without performance verification.
+    // for-each is not massively slower, BUT IT IS! leave as is if you don't do performance
+    // verification.
     for (Iterator<RbelElement> iterator = getChildNodes().iterator(); iterator.hasNext(); ) {
       RbelElement element = iterator.next();
       if (element != null) {
@@ -325,12 +334,14 @@ public class RbelElement extends RbelPathAble {
 
   @Override
   public String toString() {
-    return "["
-        + getClass().getSimpleName()
-        + "("
+    return "[RbelElement ("
         + uuid
-        + ")"
-        + " at $."
+        + ") with "
+        + Optional.ofNullable(content)
+            .map(RbelContent::size)
+            .map(FileUtils::byteCountToDisplaySize)
+            .orElse("null")
+        + " bytes at $."
         + findNodePath()
         + " with facets "
         + facets.stream()
@@ -517,5 +528,13 @@ public class RbelElement extends RbelPathAble {
         .forEach(child -> result.addAll(findAllNestedElementsWithFacet(child, rbelFacetClass)));
 
     return result;
+  }
+
+  public RbelConversionPhase getConversionPhase() {
+    if (parentNode == null) {
+      return conversionPhase;
+    } else {
+      return parentNode.getConversionPhase();
+    }
   }
 }

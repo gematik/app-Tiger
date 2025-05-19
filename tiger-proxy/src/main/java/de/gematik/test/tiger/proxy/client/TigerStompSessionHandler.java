@@ -45,6 +45,7 @@ class TigerStompSessionHandler extends StompSessionHandlerAdapter {
     errorStompHandler = new ErrorsStompHandler(remoteProxyClient);
     stompSession.subscribe(TigerRemoteProxyClient.WS_ERRORS, errorStompHandler);
 
+    log.info("Connection to {} established!", remoteProxyClient.getRemoteProxyUrl());
     if (onConnectedCallback != null) {
       onConnectedCallback.run();
     }

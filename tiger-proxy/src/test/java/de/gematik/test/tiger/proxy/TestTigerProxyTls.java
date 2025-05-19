@@ -297,10 +297,10 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
                         .build()))
             .build());
 
-    tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
+    tigerProxy.addRbelMessageListener(msg -> callCounter.incrementAndGet());
 
     proxyRest.get("http://backend/foobar").asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(callCounter.get()).isEqualTo(2);
   }
@@ -339,7 +339,7 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
 
       assertThat(response.getStatus()).isEqualTo(666);
 
-      RbelElementAssertion.assertThat(secondProxy.getRbelMessagesList().get(0))
+      RbelElementAssertion.assertThat(secondProxy.getRbelMessagesList().get(1))
           .extractChildWithPath("$.clientTlsCertificateChain.0.subject")
           .valueAsString()
           .get()
@@ -902,48 +902,54 @@ class TestTigerProxyTls extends AbstractTigerProxyTest {
   }
 
   @Test
-  void reverseProxyWithMultipleServersAlternativeNames_shouldSelectCorrectCertificate() throws UnirestException {
+  void reverseProxyWithMultipleServersAlternativeNames_shouldSelectCorrectCertificate()
+      throws UnirestException {
     spawnTigerProxyWith(
-            TigerProxyConfiguration.builder()
-                    .tls(
-                            TigerTlsConfiguration.builder()
-                                    .serverIdentities(
-                                            List.of(
-                                                    new TigerConfigurationPkiIdentity("src/test/resources/epa-as-1.dev.epa4all.de_NIST_X509.p12"),
-                                                    new TigerConfigurationPkiIdentity(
-                                                            "src/test/resources/epa-as-2.dev.epa4all.de_NIST_X509.p12"),
-                                                    new TigerConfigurationPkiIdentity(
-                                                            "src/test/resources/erp-dev.app.ti-dienste.de_NIST_X509.p12"),
-                                                    new TigerConfigurationPkiIdentity(
-                                                            "src/test/resources/erp-ref.app.ti-dienste.de_NIST_X509.p12"),
-                                                    new TigerConfigurationPkiIdentity(
-                                                            "src/test/resources/idp-ref.zentral.idp.splitdns.ti-dienste.de_NIST_X509.p12"),
-                                                    new TigerConfigurationPkiIdentity(
-                                                            "src/test/resources/localhostIdentity.p12")))
-
-                                    .allowGenericFallbackIdentity(true)
-                                    .build())
-                    .proxyRoutes(
+        TigerProxyConfiguration.builder()
+            .tls(
+                TigerTlsConfiguration.builder()
+                    .serverIdentities(
+                        List.of(
+                            new TigerConfigurationPkiIdentity(
+                                "src/test/resources/epa-as-1.dev.epa4all.de_NIST_X509.p12"),
+                            new TigerConfigurationPkiIdentity(
+                                "src/test/resources/epa-as-2.dev.epa4all.de_NIST_X509.p12"),
+                            new TigerConfigurationPkiIdentity(
+                                "src/test/resources/erp-dev.app.ti-dienste.de_NIST_X509.p12"),
+                            new TigerConfigurationPkiIdentity(
+                                "src/test/resources/erp-ref.app.ti-dienste.de_NIST_X509.p12"),
+                            new TigerConfigurationPkiIdentity(
+                                "src/test/resources/idp-ref.zentral.idp.splitdns.ti-dienste.de_NIST_X509.p12"),
+                            new TigerConfigurationPkiIdentity(
+                                "src/test/resources/localhostIdentity.p12")))
+                    .allowGenericFallbackIdentity(true)
+                    .build())
+            .proxyRoutes(
+                List.of(
+                    TigerConfigurationRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort + "/foobar")
+                        .hosts(List.of("epa-as-1.dev.epa4all.de"))
+                        .build(),
+                    TigerConfigurationRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar")
+                        .hosts(List.of("epa-as-2.dev.epa4all.de"))
+                        .build(),
+                    TigerConfigurationRoute.builder()
+                        .from("/")
+                        .to("http://localhost:" + fakeBackendServerPort + "/vauServer")
+                        .hosts(
                             List.of(
-                                    TigerConfigurationRoute.builder()
-                                            .from("/")
-                                            .to("http://localhost:" + fakeBackendServerPort + "/foobar")
-                                            .hosts(List.of("epa-as-1.dev.epa4all.de"))
-                                            .build(),
-                                    TigerConfigurationRoute.builder()
-                                            .from("/")
-                                            .to("http://localhost:" + fakeBackendServerPort + "/deep/foobar")
-                                            .hosts(List.of("epa-as-2.dev.epa4all.de"))
-                                            .build(),
-                                    TigerConfigurationRoute.builder()
-                                            .from("/")
-                                            .to("http://localhost:" + fakeBackendServerPort + "/vauServer")
-                                            .hosts(List.of("erp-ref.zentral.erp.splitdns.ti-dienste.de", "erp-ref.app.ti-dienste.de", "subscription-ref.zentral.erp.splitdns.ti-dienste.de"))
-                                            .build()))
-                    .build());
+                                "erp-ref.zentral.erp.splitdns.ti-dienste.de",
+                                "erp-ref.app.ti-dienste.de",
+                                "subscription-ref.zentral.erp.splitdns.ti-dienste.de"))
+                        .build()))
+            .build());
 
     executeRequestToPathWhileOnlyTrusting(
-            "erp-ref.zentral.erp.splitdns.ti-dienste.de", "src/test/resources/erp-ref.app.ti-dienste.de_NIST_X509.p12;00");
+        "erp-ref.zentral.erp.splitdns.ti-dienste.de",
+        "src/test/resources/erp-ref.app.ti-dienste.de_NIST_X509.p12;00");
   }
 
   @SneakyThrows

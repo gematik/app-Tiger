@@ -19,10 +19,11 @@ package de.gematik.test.tiger.proxy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
+import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
 import java.time.ZonedDateTime;
 import java.util.Optional;
@@ -96,11 +97,12 @@ class TestTigerProxyExceptionCallbacks extends AbstractTigerProxyTest {
 
     @Override
     public CompletableFuture<RbelElement> convertResponse(
+        HttpRequest request,
         HttpResponse response,
         String senderUrl,
         String clientAddress,
-        CompletableFuture<RbelElement> pairedParsedRequest,
-        Optional<ZonedDateTime> timestamp) {
+        Optional<ZonedDateTime> timestamp,
+        AtomicReference<String> previousMessageReference) {
       throw new RuntimeException("foobar");
     }
   }

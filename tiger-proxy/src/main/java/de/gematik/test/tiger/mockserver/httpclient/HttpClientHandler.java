@@ -48,7 +48,7 @@ public class HttpClientHandler extends SimpleChannelInboundHandler<Message> {
   }
 
   @Override
-  public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+  public void channelInactive(ChannelHandlerContext ctx) {
     ctx.close();
   }
 

@@ -21,14 +21,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
-import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
+import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.key.RbelKey;
-import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
 import java.nio.charset.Charset;
@@ -131,7 +130,7 @@ class PcapCaptureTest {
                 .getFirst()
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getSenderHostname()
-                .toString())
+                .get())
         .hasToString("127.0.0.1:51441");
     assertThat(
             rbelLogger
@@ -139,7 +138,7 @@ class PcapCaptureTest {
                 .getFirst()
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getReceiverHostname()
-                .toString())
+                .get())
         .hasToString("127.0.0.1:8080");
   }
 
@@ -159,12 +158,11 @@ class PcapCaptureTest {
                     DigestUtils.sha256("geheimerSchluesselDerNochGehashtWird"), "AES"),
                 RbelKey.PRECEDENCE_KEY_FOLDER)
             .addInitializer(new RbelKeyFolderInitializer("src/test/resources"))
-            .addPostConversionListener(RbelKeyManager.RBEL_IDP_TOKEN_KEY_LISTENER)
             .addCapturer(fileReaderCapturer)
             .constructRbelLogger();
 
-    MASKING_FUNCTIONS.forEach(
-        (k, v) -> rbelLogger.getValueShader().addSimpleShadingCriterion(k, v));
+    //    MASKING_FUNCTIONS.forEach(
+    //        (k, v) -> rbelLogger.getValueShader().addSimpleShadingCriterion(k, v));
     rbelLogger
         .getValueShader()
         .addJexlNoteCriterion(

@@ -21,8 +21,8 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.elements.RbelJweEncryptionInfo;
-import de.gematik.rbellogger.data.facet.RbelJweFacet;
+import de.gematik.rbellogger.facets.jose.RbelJweEncryptionInfo;
+import de.gematik.rbellogger.facets.jose.RbelJweFacet;
 import de.gematik.rbellogger.modifier.RbelJweWriter.InvalidEncryptionInfo;
 import de.gematik.rbellogger.modifier.RbelJweWriter.JweUpdateException;
 import de.gematik.rbellogger.modifier.RbelModifier.RbelModificationException;

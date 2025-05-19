@@ -45,7 +45,7 @@ class RbelPathExecutorLoggingTest {
   }
 
   @AfterAll
-  public static void cleanup() {
+  static void cleanup() {
     RbelOptions.deactivateRbelPathDebugging();
   }
 

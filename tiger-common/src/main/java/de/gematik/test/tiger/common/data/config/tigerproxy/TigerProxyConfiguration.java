@@ -26,12 +26,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 @Data
 @AllArgsConstructor(onConstructor_ = @JsonIgnore)
 @NoArgsConstructor
 @Builder
 @JsonInclude(Include.NON_NULL)
+@Accessors(chain = true)
 public class TigerProxyConfiguration {
 
   @Builder.Default private List<TigerConfigurationRoute> proxyRoutes = new ArrayList<>();

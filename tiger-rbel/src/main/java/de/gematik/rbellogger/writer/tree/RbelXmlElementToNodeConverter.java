@@ -20,9 +20,9 @@ import static de.gematik.rbellogger.writer.RbelContentTreeConverter.ENCODE_AS;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.data.facet.RbelXmlAttributeFacet;
-import de.gematik.rbellogger.data.facet.RbelXmlFacet;
-import de.gematik.rbellogger.data.facet.RbelXmlNamespaceFacet;
+import de.gematik.rbellogger.facets.xml.RbelXmlAttributeFacet;
+import de.gematik.rbellogger.facets.xml.RbelXmlFacet;
+import de.gematik.rbellogger.facets.xml.RbelXmlNamespaceFacet;
 import de.gematik.rbellogger.writer.RbelContentTreeConverter;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;

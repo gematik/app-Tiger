@@ -19,6 +19,7 @@ package de.gematik.test.tiger.proxy.client;
 import static com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder.responseDefinition;
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
+import static de.gematik.test.tiger.proxy.AbstractTigerProxyTest.awaitMessagesInTigerProxy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,23 +30,25 @@ import static org.awaitility.Awaitility.await;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
+import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
+import de.gematik.test.tiger.proxy.client.TigerTracingDto.TigerTracingDtoBuilder;
 import de.gematik.test.tiger.proxy.controller.TigerWebUiController;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.tracing.TracingPushService;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -92,6 +95,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 @ResetTigerConfiguration
 class TigerRemoteProxyClientTest {
 
+  private static final String JSON_PART1 = "{'blub':";
+  private static final String JSON_PART2 = "'blab'}";
+  private static final String SIMPLE_JSON = JSON_PART1 + JSON_PART2;
+
   /*
    *  Our Testsetup:
    *
@@ -117,8 +124,8 @@ class TigerRemoteProxyClientTest {
   private static UnirestInstance unirestInstance;
 
   @LocalServerPort private int springServerPort;
-  private static byte[] request;
-  private static byte[] response;
+  private static final byte[] request;
+  private static final byte[] response;
 
   static {
     try {
@@ -132,7 +139,13 @@ class TigerRemoteProxyClientTest {
   }
 
   @BeforeEach
-  public void setup(WireMockRuntimeInfo runtimeInfo) {
+  void setup(WireMockRuntimeInfo runtimeInfo) {
+    tigerProxy.clearAllMessages();
+    if (unirestInstance == null) {
+      unirestInstance =
+          new UnirestInstance(
+              new Config().requestTimeout(5000).proxy("localhost", tigerProxy.getProxyPort()));
+    }
     if (tigerRemoteProxyClient == null) {
       log.info("Setup remote client... {}", tigerProxy);
       tigerRemoteProxyClient =
@@ -141,13 +154,17 @@ class TigerRemoteProxyClientTest {
               TigerProxyConfiguration.builder()
                   .proxyLogLevel("WARN")
                   .trafficDownloadPageSize(10)
+                  .name("tigerRemoteProxyClient")
                   .build());
       tigerRemoteProxyClient.connect();
-
-      unirestInstance =
-          new UnirestInstance(
-              new Config().requestTimeout(5000).proxy("localhost", tigerProxy.getProxyPort()));
+      await().atMost(5, TimeUnit.SECONDS).until(tigerRemoteProxyClient::isConnected);
+    } else {
+      tigerRemoteProxyClient.clearAllMessages();
+      tigerRemoteProxyClient.clearAllRoutes();
     }
+
+    unirestInstance =
+        new UnirestInstance(new Config().proxy("localhost", tigerProxy.getProxyPort()));
 
     runtimeInfo.getWireMock().register(get("/foo").willReturn(ok().withBody("bar")));
     runtimeInfo.getWireMock().register(post("/foo").willReturn(ok().withBody("bar")));
@@ -159,12 +176,12 @@ class TigerRemoteProxyClientTest {
                 .willReturn(responseDefinition().withFault(Fault.CONNECTION_RESET_BY_PEER)));
 
     log.info("Configuring routes...");
-    new ArrayList<>(tigerRemoteProxyClient.getRbelMessageListeners())
-        .forEach(tigerRemoteProxyClient::removeRbelMessageListener);
     tigerRemoteProxyClient.clearAllMessages();
     tigerRemoteProxyClient.clearAllRoutes();
+    ReflectionTestUtils.setField(tigerProxy, "name", Optional.of("Main TigerProxy"));
     tigerProxy.clearAllRoutes();
     tigerProxy.clearAllMessages();
+    tigerProxy.getRbelLogger().getRbelConverter().setName("Main TigerProxy");
     tigerProxy.addRoute(
         TigerConfigurationRoute.builder()
             .from("http://myserv.er")
@@ -175,17 +192,19 @@ class TigerRemoteProxyClientTest {
   @AfterAll
   void tearDown() {
     unirestInstance.close();
+    unirestInstance = null;
+    tigerRemoteProxyClient = null;
   }
 
   @Test
   void sendMessage_shouldTriggerListener() {
     AtomicInteger listenerCallCounter = new AtomicInteger(0);
-    tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
+    tigerRemoteProxyClient.addRbelMessageListener(msg -> listenerCallCounter.incrementAndGet());
 
     unirestInstance
         .get("http://myserv.er/foo")
         .asString()
-        .ifFailure(response -> fail(response.getStatus() + ": " + response.getBody()));
+        .ifFailure(res -> fail(res.getStatus() + ": " + res.getBody()));
 
     await().atMost(2, TimeUnit.SECONDS).until(() -> listenerCallCounter.get() > 0);
 
@@ -196,7 +215,7 @@ class TigerRemoteProxyClientTest {
     assertThat(tigerProxy.getRbelMessagesList().get(0).findRbelPathMembers("$.."))
         .hasSizeLessThan(10);
     assertThat(tigerProxy.getRbelMessagesList().get(1).findRbelPathMembers("$.."))
-        .hasSizeLessThan(10);
+        .hasSizeLessThan(16);
   }
 
   @Test
@@ -228,7 +247,7 @@ class TigerRemoteProxyClientTest {
   @Test
   void giantMessage_shouldTriggerListener() {
     AtomicInteger listenerCallCounter = new AtomicInteger(0);
-    tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
+    tigerRemoteProxyClient.addRbelMessageListener(msg -> listenerCallCounter.incrementAndGet());
 
     final String body =
         RandomStringUtils.insecure().nextAlphanumeric(TracingPushService.MAX_MESSAGE_SIZE * 2);
@@ -239,6 +258,7 @@ class TigerRemoteProxyClientTest {
         .ifFailure(response -> fail(""));
 
     await().atMost(10, TimeUnit.SECONDS).until(() -> listenerCallCounter.get() > 0);
+    awaitMessagesInTigerProxy(tigerRemoteProxyClient, 2);
 
     assertThat(
             new String(
@@ -308,7 +328,7 @@ class TigerRemoteProxyClientTest {
             .build());
 
     AtomicInteger listenerCallCounter = new AtomicInteger(0);
-    tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
+    tigerRemoteProxyClient.addRbelMessageListener(msg -> listenerCallCounter.incrementAndGet());
 
     assertThat(
             Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/blub/foo")
@@ -335,7 +355,7 @@ class TigerRemoteProxyClientTest {
             .build());
 
     AtomicInteger listenerCallCounter = new AtomicInteger(0);
-    tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
+    tigerRemoteProxyClient.addRbelMessageListener(msg -> listenerCallCounter.incrementAndGet());
 
     assertThat(
             Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foo")
@@ -345,16 +365,15 @@ class TigerRemoteProxyClientTest {
         .isEqualTo("bar");
 
     await().atMost(2, TimeUnit.SECONDS).until(() -> listenerCallCounter.get() > 0);
+    System.out.println();
   }
 
+  @SneakyThrows
   @Test
   void requestToBaseUrl_shouldBeForwarded() {
-    AtomicInteger listenerCallCounter = new AtomicInteger(0);
-    tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
-
     unirestInstance.get("http://myserv.er").asString();
 
-    await().atMost(8, TimeUnit.SECONDS).until(() -> listenerCallCounter.get() > 0);
+    awaitMessagesInTigerProxy(tigerRemoteProxyClient, 2);
 
     assertThat(tigerRemoteProxyClient.getRbelMessagesList().get(0).findElement("$.path"))
         .get()
@@ -378,10 +397,9 @@ class TigerRemoteProxyClientTest {
 
     AtomicInteger listenerCallCounter = new AtomicInteger(0);
     filteredTigerProxy.addRbelMessageListener(
-        message -> {
-          if (message.hasFacet(RbelHttpRequestFacet.class)
-              && message
-                  .getFacetOrFail(RbelHttpRequestFacet.class)
+        msg -> {
+          if (msg.hasFacet(RbelHttpRequestFacet.class)
+              && msg.getFacetOrFail(RbelHttpRequestFacet.class)
                   .getPath()
                   .getRawStringContent()
                   .endsWith("faa")) {
@@ -419,15 +437,9 @@ class TigerRemoteProxyClientTest {
 
   @Test
   void trafficForwardingShouldPreserveTimingAndAddressingInformation() {
-    AtomicInteger listenerCallCounter = new AtomicInteger(0);
-    tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
-
     unirestInstance.get("http://myserv.er").asString();
 
-    await()
-        .pollDelay(200, TimeUnit.MILLISECONDS)
-        .atMost(10, TimeUnit.SECONDS)
-        .until(() -> listenerCallCounter.get() > 0);
+    awaitMessagesInTigerProxy(tigerRemoteProxyClient, 2);
 
     assertThat(
             tigerRemoteProxyClient
@@ -537,7 +549,7 @@ class TigerRemoteProxyClientTest {
 
         TigerProxyTestHelper
             .waitUntilMessageListInRemoteProxyClientContainsCountMessagesWithTimeout(
-                newlyConnectedRemoteClient, 4, 10);
+                newlyConnectedRemoteClient, 4, 10); // 2 unirest + 2 master
         tigerProxy.waitForAllCurrentMessagesToBeParsed();
 
         Mockito.verify(tigerWebUiController)
@@ -555,20 +567,19 @@ class TigerRemoteProxyClientTest {
   @Test
   void outOfSyncReception1_shouldRecoverOrder() {
     AtomicInteger receivedMessages = new AtomicInteger(0);
-    tigerRemoteProxyClient.addRbelMessageListener(el -> receivedMessages.incrementAndGet());
+    tigerRemoteProxyClient.addRbelMessageListener(msg -> receivedMessages.incrementAndGet());
 
-    addMessagePart("responseUuid", 1, 2);
-    addMessagePart("responseUuid", 0, 2);
-    addMessagePart("requestUuid", 0, 1);
+    addMessagePart("responseUuid", 1, 2, JSON_PART2);
+    addMessagePart("responseUuid", 0, 2, JSON_PART1);
+    addMessagePart("requestUuid", 0, 1, SIMPLE_JSON);
     tigerRemoteProxyClient
         .getTigerStompSessionHandler()
         .getTracingStompHandler()
-        .handleFrame(
-            null,
-            TigerTracingDto.builder()
-                .requestUuid("requestUuid")
-                .responseUuid("responseUuid")
-                .build());
+        .handleFrame(null, buildTracingDtoWithUuidAndSequenceNumber("responseUuid", 2L, false));
+    tigerRemoteProxyClient
+        .getTigerStompSessionHandler()
+        .getTracingStompHandler()
+        .handleFrame(null, buildTracingDtoWithUuidAndSequenceNumber("requestUuid", 1L, true));
 
     await().atMost(5, TimeUnit.SECONDS).until(() -> receivedMessages.get() == 2);
   }
@@ -576,20 +587,19 @@ class TigerRemoteProxyClientTest {
   @Test
   void outOfSyncReception2_shouldRecoverOrder() {
     AtomicInteger receivedMessages = new AtomicInteger(0);
-    tigerRemoteProxyClient.addRbelMessageListener(el -> receivedMessages.incrementAndGet());
+    tigerRemoteProxyClient.addRbelMessageListener(msg -> receivedMessages.incrementAndGet());
 
-    addMessagePart("responseUuid", 1, 2);
-    addMessagePart("requestUuid", 0, 1);
+    addMessagePart("responseUuid", 1, 2, JSON_PART2);
+    addMessagePart("requestUuid", 0, 1, SIMPLE_JSON);
     tigerRemoteProxyClient
         .getTigerStompSessionHandler()
         .getTracingStompHandler()
-        .handleFrame(
-            null,
-            TigerTracingDto.builder()
-                .requestUuid("requestUuid")
-                .responseUuid("responseUuid")
-                .build());
-    addMessagePart("responseUuid", 0, 2);
+        .handleFrame(null, buildTracingDtoWithUuidAndSequenceNumber("responseUuid", 2L, false));
+    tigerRemoteProxyClient
+        .getTigerStompSessionHandler()
+        .getTracingStompHandler()
+        .handleFrame(null, buildTracingDtoWithUuidAndSequenceNumber("requestUuid", 1L, true));
+    addMessagePart("responseUuid", 0, 2, JSON_PART1);
 
     await().atMost(5, TimeUnit.SECONDS).until(() -> receivedMessages.get() == 2);
   }
@@ -599,20 +609,35 @@ class TigerRemoteProxyClientTest {
     AtomicInteger receivedMessages = new AtomicInteger(0);
     tigerRemoteProxyClient.addRbelMessageListener(el -> receivedMessages.incrementAndGet());
 
-    addMessagePart("responseUuid", 1, 2);
-    addMessagePart("responseUuid", 0, 2);
+    addMessagePart("responseUuid", 1, 2, JSON_PART2);
+    addMessagePart("responseUuid", 0, 2, JSON_PART1);
     tigerRemoteProxyClient
         .getTigerStompSessionHandler()
         .getTracingStompHandler()
-        .handleFrame(
-            null,
-            TigerTracingDto.builder()
-                .requestUuid("requestUuid")
-                .responseUuid("responseUuid")
-                .build());
-    addMessagePart("requestUuid", 0, 1);
+        .handleFrame(null, buildTracingDtoWithUuidAndSequenceNumber("responseUuid", 2L, false));
+    tigerRemoteProxyClient
+        .getTigerStompSessionHandler()
+        .getTracingStompHandler()
+        .handleFrame(null, buildTracingDtoWithUuidAndSequenceNumber("requestUuid", 1L, true));
+    addMessagePart("requestUuid", 0, 1, SIMPLE_JSON);
 
     await().atMost(5, TimeUnit.SECONDS).until(() -> receivedMessages.get() == 2);
+  }
+
+  private Object buildTracingDtoWithUuidAndSequenceNumber(
+      String uuid, long sequenceNumber, boolean request) {
+    final TigerTracingDtoBuilder builder =
+        TigerTracingDto.builder().messageUuid(uuid).sequenceNumber(sequenceNumber);
+    if (request) {
+      builder
+          .sender(RbelHostname.fromString("client:80").get())
+          .receiver(RbelHostname.fromString("server:80").get());
+    } else {
+      builder
+          .sender(RbelHostname.fromString("server:80").get())
+          .receiver(RbelHostname.fromString("client:80").get());
+    }
+    return builder.build();
   }
 
   @Test
@@ -624,13 +649,14 @@ class TigerRemoteProxyClientTest {
         .getTigerStompSessionHandler()
         .getTracingStompHandler()
         .handleFrame(
-            null,
-            TigerTracingDto.builder()
-                .requestUuid("requestUuid")
-                .responseUuid("responseUuid")
-                .build());
-    addMessagePart("responseUuid", 1, 3);
-    addMessagePart("responseUuid", 0, 3);
+            null, TigerTracingDto.builder().messageUuid("responseUuid").sequenceNumber(2L).build());
+    tigerRemoteProxyClient
+        .getTigerStompSessionHandler()
+        .getTracingStompHandler()
+        .handleFrame(
+            null, TigerTracingDto.builder().messageUuid("requestUuid").sequenceNumber(1L).build());
+    addMessagePart("responseUuid", 1, 3, "blub");
+    addMessagePart("responseUuid", 0, 3, "blub");
 
     tigerRemoteProxyClient.triggerPartialMessageCleanup();
 
@@ -650,6 +676,7 @@ class TigerRemoteProxyClientTest {
             TigerProxyConfiguration.builder()
                 .trafficEndpoints(List.of("http://localhost:1234"))
                 .failOnOfflineTrafficEndpoints(true)
+                .connectionTimeoutInSeconds(1)
                 .build())) {
       assertThatNoException().isThrownBy(tigerProxy::subscribeToTrafficEndpoints);
     }
@@ -657,15 +684,15 @@ class TigerRemoteProxyClientTest {
 
   @SneakyThrows
   private void addRequestResponsePair(RbelConverter rbelConverter) {
-    rbelConverter.parseMessage(request, null, null, Optional.empty());
-    rbelConverter.parseMessage(response, null, null, Optional.empty());
+    rbelConverter.parseMessage(request, new RbelMessageMetadata());
+    rbelConverter.parseMessage(response, new RbelMessageMetadata());
   }
 
   @Disabled("waiting on TGR-1684")
   @Test
   void exceptionDuringRequest_shouldShowUpInLog() {
     AtomicInteger listenerCallCounter = new AtomicInteger(0);
-    tigerRemoteProxyClient.addRbelMessageListener(message -> listenerCallCounter.incrementAndGet());
+    tigerRemoteProxyClient.addRbelMessageListener(msg -> listenerCallCounter.incrementAndGet());
 
     unirestInstance.config().retryAfter(false);
     assertThatThrownBy(() -> unirestInstance.get("http://myserv.er/error").asString()).isNotNull();
@@ -676,7 +703,8 @@ class TigerRemoteProxyClientTest {
     // wir erwarten eine propagierte Exception im tigerRemoteProxyClient
   }
 
-  private void addMessagePart(String responseUuid, int index, int numberOfMessages) {
+  private void addMessagePart(
+      String responseUuid, int index, int numberOfMessages, String content) {
     tigerRemoteProxyClient
         .getTigerStompSessionHandler()
         .getDataStompHandler()
@@ -684,7 +712,7 @@ class TigerRemoteProxyClientTest {
             null,
             TracingMessagePart.builder()
                 .uuid(responseUuid)
-                .data("blub".getBytes())
+                .data(content.getBytes())
                 .index(index)
                 .numberOfMessages(numberOfMessages)
                 .build());

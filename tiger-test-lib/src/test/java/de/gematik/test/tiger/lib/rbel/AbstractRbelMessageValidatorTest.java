@@ -22,7 +22,7 @@ import static org.mockito.Mockito.when;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.glue.RBelValidatorGlue;
 import de.gematik.test.tiger.proxy.TigerProxy;

@@ -18,7 +18,7 @@ package de.gematik.test.tiger.proxy;
 
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 
-import de.gematik.rbellogger.data.facet.RbelNoteFacet;
+import de.gematik.rbellogger.data.core.RbelNoteFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyNoteCommand;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -45,7 +45,7 @@ class TigerProxyJexlNoteTest extends AbstractTigerProxyTest {
     proxyRest.get("http://backend/foobar").asString();
     proxyRest.post("http://backend/foobar").asString();
 
-    awaitMessagesInTiger(4);
+    awaitMessagesInTigerProxy(4);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0))
         .extractChildWithPath("$.method")

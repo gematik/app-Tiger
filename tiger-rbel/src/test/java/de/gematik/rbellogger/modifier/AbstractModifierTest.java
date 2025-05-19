@@ -20,8 +20,8 @@ import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineB
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import java.io.IOException;
 import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;

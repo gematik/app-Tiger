@@ -20,7 +20,7 @@ import static de.gematik.test.tiger.mockserver.mock.Expectation.buildForwardProx
 import static de.gematik.test.tiger.mockserver.mock.Expectation.buildReverseProxyRoute;
 import static de.gematik.test.tiger.mockserver.model.HttpRequest.request;
 
-import de.gematik.rbellogger.converter.HttpPairingInBinaryChannelConverter;
+import de.gematik.rbellogger.facets.http.RbelHttpPairingInBinaryChannelConverter;
 import de.gematik.rbellogger.util.RbelMessagesSupplier;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
@@ -80,10 +80,13 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
 
   private MockServer mockServer;
   private TigerPkiIdentity serverRootCa;
+  @Getter private TigerProxyPairingConverter pairingConverter;
 
   public TigerProxy(final TigerProxyConfiguration configuration) {
     super(configuration);
 
+    pairingConverter = new TigerProxyPairingConverter();
+    getRbelLogger().getRbelConverter().addConverter(pairingConverter);
     mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
     bootMockServer();
 
@@ -169,14 +172,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     outputForwardProxyConfigLogs(proxyConfiguration);
     proxyConfiguration.ifPresent(mockServerConfiguration::proxyConfiguration);
     mockServerConfiguration.exceptionHandlingCallback(
-        (t, c) -> {
-          try {
-            var errorResponse = getMockServerToRbelConverter().convertErrorResponse(null, null, t);
-            triggerListener(errorResponse);
-          } catch (Exception e) {
-            log.error("Error while converting error response", e);
-          }
-        });
+        getMockServerToRbelConverter().exceptionCallback());
 
     if (getTigerProxyConfiguration().getDirectReverseProxy() == null) {
       mockServer =
@@ -213,9 +209,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
         new MockServer(mockServerConfiguration, getTigerProxyConfiguration().getPortAsArray());
     addReverseProxyRouteIfNotPresent();
 
-    getRbelLogger()
-        .getRbelConverter()
-        .addFirstPostConversionListener(new HttpPairingInBinaryChannelConverter());
+    getRbelLogger().getRbelConverter().addConverter(new RbelHttpPairingInBinaryChannelConverter());
 
     return newMockServer;
   }
@@ -514,7 +508,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
             .addArgument(() -> configNotEmpty.getProxyAddress().getAddress())
             .addArgument(() -> configNotEmpty.getProxyAddress().getPort())
             .log("Forward proxy is set to {}://{}:{}");
-      } else if (configNotEmpty.getUsername() != null) {
+      } else {
         log.atInfo()
             .addArgument(() -> configNotEmpty.getType().toString().toLowerCase())
             .addArgument(() -> configNotEmpty.getProxyAddress().getAddress())
@@ -539,7 +533,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   public void close() {
     String tigerProxyName = getName().orElse("");
     log.info("Shutting down Tiger-Proxy {}", tigerProxyName);
-    super.close();
     remoteProxyClients.forEach(TigerRemoteProxyClient::close);
     mockServer.stop();
   }

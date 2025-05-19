@@ -16,7 +16,7 @@
 
 package de.gematik.rbellogger.util;
 
-import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import org.json.JSONObject;
 

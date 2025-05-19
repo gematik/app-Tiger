@@ -21,16 +21,18 @@ import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LENIENT_HTTP_PARSING;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelNoteFacet;
-import de.gematik.rbellogger.data.facet.RbelNoteFacet.NoteStyling;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.data.core.RbelNoteFacet;
+import de.gematik.rbellogger.data.core.RbelNoteFacet.NoteStyling;
+import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestConverter;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import lombok.val;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -119,7 +121,8 @@ class RbelHttpRequestConverterTest {
         new RbelElement(("GET,PUT,POST\"").getBytes(StandardCharsets.UTF_8), null);
 
     new RbelHttpRequestConverter(new RbelConfiguration())
-        .consumeElement(rbelElement, rbelConverter);
+        // TODO the first null here is bullshit. rewrite test
+        .consumeElement(rbelElement, null);
 
     assertThat(rbelElement).doesNotHaveFacet(RbelHttpRequestFacet.class);
   }
@@ -151,12 +154,11 @@ class RbelHttpRequestConverterTest {
   // (https://www.rfc-editor.org/rfc/rfc2616#section-19.3)
   void testDefectLineBreaks(String defunctMessage, String errorMessageContains) {
     assertThat(
-            lenientRbelConverter.parseMessage(
-                defunctMessage.getBytes(), null, null, Optional.empty()))
+            lenientRbelConverter.parseMessage(defunctMessage.getBytes(), new RbelMessageMetadata()))
         .hasFacet(RbelHttpMessageFacet.class);
-    assertThat(rbelConverter.parseMessage(defunctMessage.getBytes(), null, null, Optional.empty()))
+    assertThat(rbelConverter.parseMessage(defunctMessage.getBytes(), new RbelMessageMetadata()))
         .hasFacet(RbelHttpMessageFacet.class);
-    assertThat(rbelConverter.parseMessage(defunctMessage.getBytes(), null, null, Optional.empty()))
+    assertThat(rbelConverter.parseMessage(defunctMessage.getBytes(), new RbelMessageMetadata()))
         .extractFacet(RbelNoteFacet.class)
         .hasFieldOrPropertyWithValue("style", NoteStyling.INFO)
         .extracting("value")
@@ -167,14 +169,15 @@ class RbelHttpRequestConverterTest {
   @ParameterizedTest
   @CsvSource({
     "'GET /foo/bar HTTP/1.0\r\n"
-        + "Some-Header: Value', 'No body found in HTTP message (Does the message contain correct"
-        + " line breaks?)'",
+        + "Some-Header: Value', 'No body found in HTTP message (Does the message terminate with"
+        + " correct line breaks?)'",
     "'HTTP/1.1 402\r\n"
         + "Some-Header: Value', 'Unable to determine end of HTTP header. Does the header end with"
         + " double CRLF?'",
     "'OPTIONS /foo/bar HTTP/1.0\r\n"
         + "Some-Header: Value\r\n"
-        + "', 'No body found in HTTP message (Does the message contain correct line breaks?)'",
+        + "', 'No body found in HTTP message (Does the message terminate with correct line"
+        + " breaks?)'",
     "'HTTP/1.1 404 Not Found\r\n"
         + "Some-Header: Value\r\n"
         + "', 'Unable to determine end of HTTP header. Does the header end with double CRLF?'"
@@ -185,7 +188,7 @@ class RbelHttpRequestConverterTest {
     assertThat(rbelConverter.convertElement(defunctMessage, null))
         .hasFacet(RbelHttpMessageFacet.class);
     val convertedMessage =
-        rbelConverter.parseMessage(defunctMessage.getBytes(), null, null, Optional.empty());
+        rbelConverter.parseMessage(defunctMessage.getBytes(), new RbelMessageMetadata());
     assertThat(convertedMessage.getNotes())
         .extracting("value")
         .asString()
@@ -217,5 +220,54 @@ class RbelHttpRequestConverterTest {
         .extracting("value")
         .asString()
         .contains(errorMessageContains);
+  }
+
+  @Test
+  void testWikiChunkMessage() {
+    final String message =
+        "POST /foo/bar HTTP/1.1\r\n"
+            + "Host: localhost\r\n"
+            + "Transfer-Encoding: chunked\r\n"
+            + "\r\n"
+            + "4\r\n"
+            + "Wiki"
+            + "\r\n"
+            + "7\r\n"
+            + "pedia i"
+            + "\r\n"
+            + "B\r\n"
+            + "n \r\nchunks."
+            + "\r\n"
+            + "0\r\n"
+            + "\r\n";
+
+    val rbelElement = rbelConverter.convertElement(message.getBytes(StandardCharsets.UTF_8), null);
+
+    assertThat(rbelElement)
+        .andPrintTree()
+        .extractFacet(RbelHttpMessageFacet.class)
+        .extracting(RbelHttpMessageFacet::getBody)
+        .matches(el -> el.getSize() == 32);
+  }
+
+  @Test
+  void testBodyContainingChunkTerminatorAsPayload() {
+    final String message =
+        "POST /foo/bar HTTP/1.1\r\n"
+            + "Host: localhost\r\n"
+            + "Transfer-Encoding: chunked\r\n"
+            + "\r\n"
+            + "7\r\n"
+            + "\r\n0\r\n\r\n"
+            + "\r\n"
+            + "0\r\n\r\n";
+
+    val rbelElement = rbelConverter.convertElement(message.getBytes(StandardCharsets.UTF_8), null);
+
+    assertThat(rbelElement)
+        .andPrintTree()
+        .extractFacet(RbelHttpMessageFacet.class)
+        .extracting(RbelHttpMessageFacet::getBody)
+        .matches(el -> el.getSize() == 7);
   }
 }

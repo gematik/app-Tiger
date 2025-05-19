@@ -21,7 +21,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-bom</artifactId>
-    <version>3.8.0-SNAPSHOT</version>
+    <version>4.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Tiger Bill of Materials</name>
@@ -89,7 +89,7 @@
         <version.jcommander>1.82</version.jcommander>
         <version.jetty>11.0.15</version.jetty>
         <version.jfiglet>1.0.1</version.jfiglet>
-        <version.jna-platform>5.17.0</version.jna-platform>
+        <version.jna>5.17.0</version.jna>
         <version.jose4j>0.9.6</version.jose4j>
         <version.jquery>3.7.1</version.jquery>
         <version.json>20250107</version.json>
@@ -315,62 +315,62 @@
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-common</artifactId>
-                <version>3.8.0-SNAPSHOT</version>
+                <version>4.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-failsafe-provider</artifactId>
-                <version>3.8.0-SNAPSHOT</version>
+                <version>4.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-httpbin</artifactId>
-                <version>3.8.0-SNAPSHOT</version>
+                <version>4.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-java-agent</artifactId>
-                <version>3.8.0-SNAPSHOT</version>
+                <version>4.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-maven-plugin</artifactId>
-                <version>3.8.0-SNAPSHOT</version>
+                <version>4.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-proxy</artifactId>
-                <version>3.8.0-SNAPSHOT</version>
+                <version>4.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-proxy-scrollable-webui</artifactId>
-                <version>3.8.0-SNAPSHOT</version>
+                <version>4.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-rbel</artifactId>
-                <version>3.8.0-SNAPSHOT</version>
+                <version>4.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-test-lib</artifactId>
-                <version>3.8.0-SNAPSHOT</version>
+                <version>4.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-test-utils</artifactId>
-                <version>3.8.0-SNAPSHOT</version>
+                <version>4.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-testenv-mgr</artifactId>
-                <version>3.8.0-SNAPSHOT</version>
+                <version>4.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-zion</artifactId>
-                <version>3.8.0-SNAPSHOT</version>
+                <version>4.0.0-SNAPSHOT</version>
             </dependency>
             <dependency>
                 <groupId>eu.europa.ec.joinup.sd-dss</groupId>
@@ -461,8 +461,13 @@
             </dependency>
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>${version.jna}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna-platform</artifactId>
-                <version>${version.jna-platform}</version>
+                <version>${version.jna}</version>
             </dependency>
             <dependency>
                 <groupId>net.javacrumbs.json-unit</groupId>

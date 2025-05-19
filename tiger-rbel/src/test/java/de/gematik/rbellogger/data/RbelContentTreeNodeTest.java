@@ -19,8 +19,8 @@ package de.gematik.rbellogger.data;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.writer.RbelContentTreeConverter;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;

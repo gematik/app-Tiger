@@ -20,8 +20,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.elements.RbelJweEncryptionInfo;
-import de.gematik.rbellogger.data.facet.RbelJweFacet;
+import de.gematik.rbellogger.facets.jose.RbelJweEncryptionInfo;
+import de.gematik.rbellogger.facets.jose.RbelJweFacet;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.util.JsonUtils;

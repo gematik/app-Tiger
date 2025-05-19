@@ -21,13 +21,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
-import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.RbelConversionPhase;
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelParsingNotCompleteFacet;
-import java.time.ZonedDateTime;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.collections4.IteratorUtils;
 import org.junit.jupiter.api.Test;
@@ -86,11 +85,11 @@ class RbelMessagesDequeFacadeTest {
     final RbelConverter converter = RbelConverter.builder().build();
 
     final RbelElement messageOne =
-        converter.parseMessage("1".getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+        converter.parseMessage("1".getBytes(), new RbelMessageMetadata());
     final RbelElement messageTwo =
-        converter.parseMessage("2".getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+        converter.parseMessage("2".getBytes(), new RbelMessageMetadata());
     final RbelElement messageThree =
-        converter.parseMessage("3".getBytes(), null, null, Optional.of(ZonedDateTime.now()));
+        converter.parseMessage("3".getBytes(), new RbelMessageMetadata());
 
     final RbelElement messageNotInDeque = converter.convertElement("3".getBytes(), null);
 
@@ -124,9 +123,7 @@ class RbelMessagesDequeFacadeTest {
     // lingering)
     final ArrayDeque<RbelElement> arrayDeque = new ArrayDeque<>();
     final RbelConverter converter = RbelConverter.builder().build();
-    final RbelElement element =
-        converter.parseMessage("2".getBytes(), null, null, Optional.empty());
-    element.addFacet(new RbelParsingNotCompleteFacet(converter));
+    final RbelElement element = converter.parseMessage("2".getBytes(), new RbelMessageMetadata());
     arrayDeque.add(element);
     Deque<RbelElement> immutableFacade = new RbelMessagesDequeFacade(arrayDeque, converter);
     // The get-operation should block until we manually remove the facet
@@ -134,7 +131,7 @@ class RbelMessagesDequeFacadeTest {
     thread.start();
     // Is it still alive?
     assertThat(thread.isAlive()).isTrue();
-    element.removeFacetsOfType(RbelParsingNotCompleteFacet.class);
+    element.setConversionPhase(RbelConversionPhase.COMPLETED);
     Thread.sleep(10);
     // Now it should be finished
     await().until(() -> !thread.isAlive());

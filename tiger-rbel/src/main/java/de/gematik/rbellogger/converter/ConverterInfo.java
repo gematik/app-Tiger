@@ -16,6 +16,7 @@
 
 package de.gematik.rbellogger.converter;
 
+import de.gematik.rbellogger.RbelConverterPlugin;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -33,8 +34,6 @@ public @interface ConverterInfo {
   String[] onlyActivateFor() default {};
 
   Class<? extends RbelConverterPlugin>[] dependsOn() default {};
-
-  boolean addAsPostConversionListener() default false;
 
   boolean addAutomatically() default true;
 }

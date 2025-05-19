@@ -19,11 +19,12 @@ package de.gematik.rbellogger.converter;
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.elements.RbelJwtSignature;
-import de.gematik.rbellogger.data.facet.RbelJsonFacet;
-import de.gematik.rbellogger.data.facet.RbelJwtFacet;
+import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
+import de.gematik.rbellogger.facets.jose.RbelJwtFacet;
+import de.gematik.rbellogger.facets.jose.RbelJwtSignature;
 import de.gematik.rbellogger.key.RbelKey;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;

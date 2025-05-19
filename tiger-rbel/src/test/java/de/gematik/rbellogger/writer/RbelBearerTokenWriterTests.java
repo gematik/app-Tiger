@@ -18,11 +18,11 @@ package de.gematik.rbellogger.writer;
 
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import org.junit.jupiter.api.Test;
 

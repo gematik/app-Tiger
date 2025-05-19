@@ -20,9 +20,9 @@ import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import java.io.IOException;
 import java.util.stream.Collectors;

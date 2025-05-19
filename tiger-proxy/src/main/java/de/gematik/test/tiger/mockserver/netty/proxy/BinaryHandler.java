@@ -35,8 +35,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 
 /*
@@ -59,9 +57,6 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
   @Override
   protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
     BinaryMessage binaryRequest = bytes(ByteBufUtil.getBytes(byteBuf));
-    log.atDebug()
-        .addArgument(() -> ByteBufUtil.hexDump(binaryRequest.getBytes()))
-        .log("received binary request: {}");
     final InetSocketAddress remoteAddress = getRemoteAddress(ctx);
     if (remoteAddress != null) {
       sendMessage(new BinaryRequestInfo(ctx.channel(), binaryRequest, remoteAddress));
@@ -82,19 +77,25 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
   }
 
   public void sendMessage(BinaryRequestInfo binaryRequestInfo) {
-    CompletableFuture<BinaryMessage> binaryResponseFuture =
-        httpClient.sendRequest(
-            binaryRequestInfo, isSslEnabledUpstream(binaryRequestInfo.getIncomingChannel()));
+    httpClient
+        .sendRequest(
+            binaryRequestInfo, isSslEnabledUpstream(binaryRequestInfo.getIncomingChannel()))
+        .exceptionally(
+            throwable -> {
+              binaryExchangeCallback.propagateExceptionMessageSafe(
+                  throwable,
+                  RbelHostname.create(binaryRequestInfo.getRemoteServerAddress()),
+                  RbelHostname.create(binaryRequestInfo.getIncomingChannel().remoteAddress()));
+              return null;
+            });
 
-    processNotWaitingForResponse(binaryRequestInfo, binaryResponseFuture);
+    processNotWaitingForResponse(binaryRequestInfo);
   }
 
-  private void processNotWaitingForResponse(
-      BinaryRequestInfo binaryRequestInfo, CompletableFuture<BinaryMessage> binaryResponseFuture) {
+  private void processNotWaitingForResponse(BinaryRequestInfo binaryRequestInfo) {
     if (binaryExchangeCallback != null) {
       binaryExchangeCallback.onProxy(
           binaryRequestInfo.getDataToSend(),
-          Optional.of(binaryResponseFuture),
           binaryRequestInfo.getRemoteServerAddress(),
           binaryRequestInfo.getIncomingChannel().remoteAddress());
     }

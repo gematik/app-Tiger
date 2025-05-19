@@ -17,7 +17,7 @@
 package de.gematik.rbellogger.modifier;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelUriFacet;
+import de.gematik.rbellogger.facets.uri.RbelUriFacet;
 import java.util.StringJoiner;
 
 public class RbelUriWriter implements RbelElementWriter {

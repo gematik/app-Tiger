@@ -18,8 +18,8 @@ package de.gematik.rbellogger.modifier;
 
 import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelVauErpFacet;
 import de.gematik.rbellogger.exceptions.RbelPkiException;
+import de.gematik.rbellogger.facets.vau.vau_erp.RbelVauErpFacet;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.util.CryptoUtils;
 import java.math.BigInteger;

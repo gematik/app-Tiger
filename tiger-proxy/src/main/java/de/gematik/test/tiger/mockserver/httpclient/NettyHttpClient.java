@@ -16,6 +16,7 @@
 
 package de.gematik.test.tiger.mockserver.httpclient;
 
+import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.INCOMING_CHANNEL;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
@@ -105,8 +106,8 @@ public class NettyHttpClient {
         (ChannelFutureListener)
             future -> {
               if (future.isSuccess()) {
+                future.channel().attr(INCOMING_CHANNEL).set(requestInfo.getIncomingChannel());
                 // ensure if HTTP2 is used then settings have been received from server
-
                 clientInitializer.whenComplete(
                     (protocol, throwable) -> {
                       if (throwable != null) {

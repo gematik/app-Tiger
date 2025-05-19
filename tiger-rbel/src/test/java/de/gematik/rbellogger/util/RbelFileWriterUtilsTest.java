@@ -23,6 +23,7 @@ import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.file.RbelFileWriter;
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
@@ -35,10 +36,10 @@ class RbelFileWriterUtilsTest {
 
     String rawSavedVauMessages =
         FileUtils.readFileToString(new File("src/test/resources/trafficLog.tgr"));
-    rbelFileWriter.convertFromRbelFile(rawSavedVauMessages);
+    rbelFileWriter.convertFromRbelFile(rawSavedVauMessages, Optional.empty());
 
     int initialNumberOfMessage = rbelLogger.getMessageHistory().size();
-    rbelFileWriter.convertFromRbelFile(rawSavedVauMessages);
+    rbelFileWriter.convertFromRbelFile(rawSavedVauMessages, Optional.empty());
 
     assertThat(rbelLogger.getMessageHistory()).hasSize(initialNumberOfMessage);
   }

@@ -21,7 +21,7 @@ import static j2html.TagCreator.div;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.data.facet.RbelFacet;
+import de.gematik.rbellogger.data.core.RbelFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
@@ -70,6 +70,15 @@ public class VauSessionFacet implements RbelFacet {
   }
 
   private final RbelElement recordId;
+
+  public static void buildFromOtherInstanceForRoot(
+      VauSessionFacet vauSessionFacet, RbelElement jsonRoot) {
+    jsonRoot.addFacet(
+        builder()
+            .recordId(
+                RbelElement.wrap(jsonRoot, vauSessionFacet.getRecordId().printValue().orElse("")))
+            .build());
+  }
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {

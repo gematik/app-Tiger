@@ -18,7 +18,6 @@ package de.gematik.test.tiger.proxy;
 
 import static org.awaitility.Awaitility.await;
 
-import de.gematik.rbellogger.data.facet.RbelParsingNotCompleteFacet;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import java.text.MessageFormat;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +38,7 @@ public class TigerProxyTestHelper {
           .until(
               () ->
                   tigerProxy.getRbelMessages().stream()
-                          .filter(msg -> !msg.hasFacet(RbelParsingNotCompleteFacet.class))
+                          .filter(msg -> msg.getConversionPhase().isFinished())
                           .count()
                       == expectedMessagesCount);
     } catch (ConditionTimeoutException cte) {
@@ -64,7 +63,10 @@ public class TigerProxyTestHelper {
           "Expected {} message(s) in rbel message list but found {}",
           expectedMessagesCount,
           tigerProxy.getRbelMessagesList().size());
-      tigerProxy.getRbelMessagesList().forEach(msg -> log.error(msg.printHttpDescription()));
+      tigerProxy
+          .getRbelLogger()
+          .getMessageHistory()
+          .forEach(msg -> log.error(msg.printTreeStructure()));
       throw cte;
     }
   }
@@ -84,7 +86,14 @@ public class TigerProxyTestHelper {
           tigerRemoteProxyClient.getRbelMessagesList().size());
       tigerRemoteProxyClient
           .getRbelMessagesList()
-          .forEach(msg -> log.error(msg.printHttpDescription()));
+          .forEach(
+              msg ->
+                  log.error(
+                      msg.printHttpDescription()
+                          + " with facets "
+                          + msg.getFacets().stream()
+                              .map(o -> o.getClass().getSimpleName())
+                              .toList()));
       throw new RuntimeException(
           MessageFormat.format(
               "Expected {0} message(s) in rbel message list but found {1}",

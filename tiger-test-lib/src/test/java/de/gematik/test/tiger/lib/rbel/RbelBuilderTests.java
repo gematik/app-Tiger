@@ -16,10 +16,10 @@
 
 package de.gematik.test.tiger.lib.rbel;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.builder.RbelBuilder;
 import de.gematik.rbellogger.builder.RbelBuilderManager;
 import de.gematik.rbellogger.builder.RbelObjectJexl;
-import de.gematik.rbellogger.converter.RbelConverter;
 import de.gematik.rbellogger.data.RbelSerializationAssertion;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;

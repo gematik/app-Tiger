@@ -17,7 +17,7 @@
 package de.gematik.test.tiger.proxy.controller;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
+import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
 import de.gematik.rbellogger.exceptions.RbelPathException;
 import de.gematik.rbellogger.renderer.MessageMetaDataDto;

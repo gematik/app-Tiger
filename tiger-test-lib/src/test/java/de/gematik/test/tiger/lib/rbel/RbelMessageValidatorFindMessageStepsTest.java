@@ -19,7 +19,7 @@ package de.gematik.test.tiger.lib.rbel;
 import static de.gematik.test.tiger.lib.rbel.RbelMessageRetriever.RBEL_REQUEST_TIMEOUT;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import de.gematik.rbellogger.data.pop3.RbelPop3Command;
+import de.gematik.rbellogger.facets.pop3.RbelPop3Command;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

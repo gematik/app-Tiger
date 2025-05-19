@@ -18,10 +18,11 @@ package de.gematik.rbellogger.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelOcspResponseFacet;
+import de.gematik.rbellogger.facets.pki.ocsp.RbelOcspResponseFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import java.io.IOException;

@@ -20,7 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.elements.RbelJwtSignature;
+import de.gematik.rbellogger.facets.jose.RbelJwtSignature;
 import lombok.AllArgsConstructor;
 import org.bouncycastle.util.Arrays;
 

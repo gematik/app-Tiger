@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;

@@ -17,6 +17,7 @@
 package de.gematik.test.tiger.proxy.controller;
 
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,8 +51,9 @@ public class TrafficPushController {
         .getRbelConverter()
         .parseMessage(
             IOUtils.toByteArray(dataStream),
-            sender.flatMap(RbelHostname::fromString).orElse(null),
-            receiver.flatMap(RbelHostname::fromString).orElse(null),
-            timestamp.map(ZonedDateTime::parse));
+            new RbelMessageMetadata()
+                .withSender(sender.flatMap(RbelHostname::fromString).orElse(null))
+                .withReceiver(receiver.flatMap(RbelHostname::fromString).orElse(null))
+                .withTransmissionTime(timestamp.map(ZonedDateTime::parse).orElse(null)));
   }
 }

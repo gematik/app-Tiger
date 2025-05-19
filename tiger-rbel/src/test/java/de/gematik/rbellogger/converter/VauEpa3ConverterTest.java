@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
 import java.math.BigInteger;
@@ -78,6 +78,8 @@ public class VauEpa3ConverterTest {
   @SneakyThrows
   @Test
   void testDecryption() {
+    final String html = RbelHtmlRenderer.render(rbelLogger.getMessageHistory());
+    Files.write(new File("target/decryption.html").toPath(), html.getBytes());
     assertThat(rbelLogger.getMessageList().get(1))
         .hasChildWithPath("$.body.AEAD_ct.decrypted_content");
     assertThat(rbelLogger.getMessageList().get(2))

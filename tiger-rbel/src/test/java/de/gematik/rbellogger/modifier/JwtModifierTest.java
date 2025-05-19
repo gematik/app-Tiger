@@ -21,8 +21,8 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.elements.RbelJwtSignature;
-import de.gematik.rbellogger.data.facet.RbelJwtFacet;
+import de.gematik.rbellogger.facets.jose.RbelJwtFacet;
+import de.gematik.rbellogger.facets.jose.RbelJwtSignature;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.modifier.RbelJwtWriter.InvalidJwtSignatureException;
 import de.gematik.rbellogger.modifier.RbelJwtWriter.JwtUpdateException;

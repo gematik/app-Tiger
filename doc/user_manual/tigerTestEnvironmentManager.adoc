@@ -759,7 +759,8 @@ tigerProxy:
     clearFileOnBoot: true
     # read traffic from a file at startup
     sourceFile: "sourceFile.tgr"
-    # filter messages read from file (JEXL expression)
+    # filter messages read from file (JEXL expression).
+    # Only message for which this expression is true will be loaded.
     readFilter: "message.statusCode == '200'"
 
   # a list of routing entries the proxy should apply to traffic

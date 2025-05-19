@@ -81,7 +81,8 @@ public class HttpAction {
             if (httpResponse != null) {
               try {
                 HttpResponse callbackResponse =
-                    expectationForwardAndResponseCallback.handle(overriddenRequest, httpResponse);
+                    expectationForwardAndResponseCallback.handle(
+                        overriddenRequest, httpResponse, request);
                 actionHandler.writeForwardActionResponse(callbackResponse, responseWriter, request);
               } catch (Exception e) {
                 log.warn("returning error because client response callback threw an exception", e);

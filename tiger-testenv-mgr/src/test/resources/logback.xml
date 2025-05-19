@@ -8,7 +8,7 @@
 
     <logger name="org.reflections" level="WARN"/>
     <logger name="org.apache" level="INFO"/>
-    <logger name="de.gematik.test.tiger" level="INFO"/>
+    <logger name="de.gematik" level="INFO"/>
     <logger name="httpclient" level="INFO"/>
 
     <root level="INFO">

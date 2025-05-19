@@ -19,9 +19,9 @@ package de.gematik.test.tiger.proxy;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.ByteArrayToStringRepresentation;
 import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
@@ -34,7 +34,6 @@ import java.io.*;
 import java.net.*;
 import java.security.KeyStore;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -101,7 +100,9 @@ public abstract class AbstractNonHttpTest {
                               .build())
                       .build());
           if (postConversionListeners.length > 0) {
-            tigerProxy.setRbelLogger(
+            ReflectionTestUtils.setField(
+                tigerProxy,
+                "rbelLogger",
                 RbelLogger.build(
                     RbelConfiguration.builder()
                         .postConversionListener(List.of(postConversionListeners))
@@ -139,7 +140,6 @@ public abstract class AbstractNonHttpTest {
             @Override
             public void onProxy(
                 BinaryMessage binaryMessage,
-                Optional<CompletableFuture<BinaryMessage>> completableFuture,
                 SocketAddress serverAddress,
                 SocketAddress clientAddress) {
               log.info(
@@ -154,7 +154,7 @@ public abstract class AbstractNonHttpTest {
               } else {
                 handlerCalledResponse.incrementAndGet();
               }
-              oldListener.onProxy(binaryMessage, completableFuture, serverAddress, clientAddress);
+              oldListener.onProxy(binaryMessage, serverAddress, clientAddress);
             }
           });
 

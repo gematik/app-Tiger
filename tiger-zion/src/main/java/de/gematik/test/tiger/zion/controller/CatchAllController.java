@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.writer.RbelWriter;
 import de.gematik.test.tiger.zion.config.TigerMockResponse;
 import de.gematik.test.tiger.zion.config.ZionConfiguration;
@@ -35,11 +36,11 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.http.RequestEntity;
@@ -108,10 +109,13 @@ public class CatchAllController implements WebMvcConfigurer {
             .hostname(servletRequest.getLocalAddr())
             .port(servletRequest.getLocalPort())
             .build();
+    val messageMetadata =
+        new RbelMessageMetadata()
+            .withSender(client)
+            .withReceiver(server)
+            .withTransmissionTime(ZonedDateTime.now());
     final RbelElement requestRbelMessage =
-        rbelLogger
-            .getRbelConverter()
-            .parseMessage(rawMessage, client, server, Optional.of(ZonedDateTime.now()));
+        rbelLogger.getRbelConverter().parseMessage(rawMessage, messageMetadata);
 
     final ResponseEntity<byte[]> response =
         ZionRequestExecutor.builder()

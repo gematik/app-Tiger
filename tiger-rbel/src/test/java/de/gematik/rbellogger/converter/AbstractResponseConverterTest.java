@@ -16,15 +16,16 @@
 
 package de.gematik.rbellogger.converter;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 
-public class AbstractResponseConverterTest {
+class AbstractResponseConverterTest {
   protected RbelConverter converter;
 
   @BeforeEach
@@ -50,6 +51,7 @@ public class AbstractResponseConverterTest {
 
   RbelElement convertToRbelElement(String input, RbelHostname sender, RbelHostname recipient) {
     return converter.parseMessage(
-        input.getBytes(StandardCharsets.UTF_8), sender, recipient, Optional.empty());
+        input.getBytes(StandardCharsets.UTF_8),
+        new RbelMessageMetadata().withSender(sender).withReceiver(recipient));
   }
 }

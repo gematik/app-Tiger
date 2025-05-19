@@ -18,7 +18,7 @@ package de.gematik.test.tiger.proxy.data;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.data.facet.RbelFacet;
+import de.gematik.rbellogger.data.core.RbelFacet;
 
 public class TigerDownloadedMessageFacet implements RbelFacet {
 

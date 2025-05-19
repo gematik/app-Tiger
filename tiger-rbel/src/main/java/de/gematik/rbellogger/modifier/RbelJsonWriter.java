@@ -18,8 +18,8 @@ package de.gematik.rbellogger.modifier;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelJsonFacet;
 import de.gematik.rbellogger.exceptions.RbelJexlException;
+import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.StringJoiner;

@@ -17,10 +17,10 @@
 package de.gematik.rbellogger.modifier;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelHttpHeaderFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpMessageFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpHeaderFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.UnaryOperator;

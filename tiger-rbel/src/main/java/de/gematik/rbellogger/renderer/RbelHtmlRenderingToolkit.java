@@ -29,7 +29,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.core.*;
 import de.gematik.rbellogger.exceptions.RbelRenderingException;
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;

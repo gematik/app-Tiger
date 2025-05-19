@@ -20,7 +20,7 @@ import static de.gematik.rbellogger.writer.RbelContentTreeConverter.ENCODE_AS;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.data.facet.RbelBearerTokenFacet;
+import de.gematik.rbellogger.facets.http.RbelBearerTokenFacet;
 import de.gematik.rbellogger.writer.RbelContentTreeConverter;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.test.tiger.common.config.TigerConfigurationLoader;

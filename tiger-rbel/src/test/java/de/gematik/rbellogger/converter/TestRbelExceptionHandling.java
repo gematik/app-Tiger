@@ -18,33 +18,34 @@ package de.gematik.rbellogger.converter;
 
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 
-import de.gematik.rbellogger.RbelLogger;
+import de.gematik.rbellogger.*;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.data.facet.RbelNoteFacet;
+import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.core.RbelNoteFacet;
 import lombok.val;
 import org.junit.jupiter.api.Test;
 
 class TestRbelExceptionHandling {
 
-  private static final RbelConverterPlugin EXCEPTION_PRODUCING_CONVERTER =
-      RbelConverterPlugin.createPlugin(
-          (rbelElement, converter) -> {
-            throw new RuntimeException("Test exception");
-          });
+  @ConverterInfo(addAutomatically = false)
+  private static class ExceptionProducingHandler extends RbelConverterPlugin {
+    @Override
+    public void consumeElement(RbelElement rbelElement, RbelConversionExecutor converter) {
+      throw new RuntimeException("Test exception");
+    }
+  }
 
   @Test
   void throwExceptionDuringParsing_expectCorrectData() {
     val rbelLogger = RbelLogger.build(new RbelConfiguration());
-    rbelLogger.getRbelConverter().addConverter(EXCEPTION_PRODUCING_CONVERTER);
+    rbelLogger.getRbelConverter().addConverter(new ExceptionProducingHandler());
     val result = rbelLogger.getRbelConverter().convertElement("Test", null);
 
     assertThat(result)
         .extractFacet(RbelNoteFacet.class)
         .extracting("value")
         .asString()
-        .startsWith(
-            "Exception during conversion with plugin"
-                + " 'de.gematik.rbellogger.converter.RbelConverterPlugin$1")
+        .startsWith("Exception during conversion with plugin 'ExceptionProducingHandler'")
         .containsAnyOf("(java.lang.RuntimeException: Test exception)");
   }
 }

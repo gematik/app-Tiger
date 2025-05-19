@@ -142,7 +142,7 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
     log.info("Routing traffic to {}", toRoute);
 
     proxyRest.get("https://maHost/ok").asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(1))
         .extractChildWithPath("$.responseCode")
@@ -187,7 +187,7 @@ class TigerProxyForwardToProxyTest extends AbstractTigerProxyTest {
     log.info("Routing traffic to {}", toRoute);
 
     proxyRest.get("https://maHost/ok").asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(1))
         .extractChildWithPath("$.responseCode")

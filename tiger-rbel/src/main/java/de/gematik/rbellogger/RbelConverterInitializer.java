@@ -19,6 +19,31 @@ package de.gematik.rbellogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.*;
 import de.gematik.rbellogger.exceptions.RbelInitializationException;
+import de.gematik.rbellogger.facets.asn1.RbelAsn1Converter;
+import de.gematik.rbellogger.facets.cetp.RbelCetpConverter;
+import de.gematik.rbellogger.facets.http.RbelBearerTokenConverter;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestConverter;
+import de.gematik.rbellogger.facets.http.RbelHttpResponseConverter;
+import de.gematik.rbellogger.facets.http.formdata.RbelHttpFormDataConverter;
+import de.gematik.rbellogger.facets.jackson.RbelCborConverter;
+import de.gematik.rbellogger.facets.jackson.RbelJsonConverter;
+import de.gematik.rbellogger.facets.jose.RbelJweConverter;
+import de.gematik.rbellogger.facets.jose.RbelJwtConverter;
+import de.gematik.rbellogger.facets.mime.RbelEncryptedMailConverter;
+import de.gematik.rbellogger.facets.mime.RbelMimeConverter;
+import de.gematik.rbellogger.facets.pki.RbelPkcs7Converter;
+import de.gematik.rbellogger.facets.pki.RbelX500Converter;
+import de.gematik.rbellogger.facets.pki.RbelX509Converter;
+import de.gematik.rbellogger.facets.pop3.RbelPop3CommandConverter;
+import de.gematik.rbellogger.facets.pop3.RbelPop3ResponseConverter;
+import de.gematik.rbellogger.facets.sicct.RbelSicctCommandConverter;
+import de.gematik.rbellogger.facets.sicct.RbelSicctEnvelopeConverter;
+import de.gematik.rbellogger.facets.smtp.RbelSmtpCommandConverter;
+import de.gematik.rbellogger.facets.smtp.RbelSmtpResponseConverter;
+import de.gematik.rbellogger.facets.uri.RbelUriConverter;
+import de.gematik.rbellogger.facets.vau.vau.RbelVauEpaKeyDeriver;
+import de.gematik.rbellogger.facets.xml.RbelMtomConverter;
+import de.gematik.rbellogger.facets.xml.RbelXmlConverter;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -50,18 +75,14 @@ public class RbelConverterInitializer {
           continue;
         }
 
-        if (converterInfo.addAsPostConversionListener()) {
-          rbelConverter.addLastPostConversionListener(buildConverterInstance(converterClass));
+        if (isAnyDependencyMissingForThisConverter(converterInfo)) {
+          log.atTrace().addArgument(converterClass::getSimpleName).log("Adding {} to leftovers");
+          leftovers.add(converterClass);
+          continue;
         } else {
-          if (isAnyDependencyMissingForThisConverter(converterInfo)) {
-            log.atTrace().addArgument(converterClass::getSimpleName).log("Adding {} to leftovers");
-            leftovers.add(converterClass);
-            continue;
-          } else {
-            log.atTrace()
-                .addArgument(converterClass::getSimpleName)
-                .log("NOT adding {} to leftovers");
-          }
+          log.atTrace()
+              .addArgument(converterClass::getSimpleName)
+              .log("NOT adding {} to leftovers");
         }
       }
       converters.add(converterClass);
@@ -77,24 +98,28 @@ public class RbelConverterInitializer {
 
     // finally instantiate and add them to the rbelConverter
     for (Class<? extends RbelConverterPlugin> converterClass : converters) {
-      rbelConverter.addConverter(buildConverterInstance(converterClass));
+      buildConverterInstance(converterClass).ifPresent(rbelConverter::addConverter);
     }
   }
 
-  private RbelConverterPlugin buildConverterInstance(
+  private Optional<RbelConverterPlugin> buildConverterInstance(
       Class<? extends RbelConverterPlugin> converterClass) {
     try {
-      return converterClass
-          .getDeclaredConstructor(RbelConfiguration.class)
-          .newInstance(rbelConfiguration);
+      return Optional.of(
+          converterClass
+              .getDeclaredConstructor(RbelConfiguration.class)
+              .newInstance(rbelConfiguration));
     } catch (NoSuchMethodException e) {
       try {
-
-        return converterClass.getDeclaredConstructor().newInstance();
+        return Optional.of(converterClass.getDeclaredConstructor().newInstance());
       } catch (Exception innerException) {
-        throw new RbelInitializationException(
-            "Could not initialize the converters. Error for '" + converterClass.getName() + "'",
-            innerException);
+        if (converterClass.isAnonymousClass()) {
+          return Optional.empty();
+        } else {
+          throw new RbelInitializationException(
+              "Could not initialize the converters. Error for '" + converterClass.getName() + "'",
+              innerException);
+        }
       }
     } catch (Exception e) {
       throw new RbelInitializationException(

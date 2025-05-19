@@ -18,7 +18,14 @@ package de.gematik.rbellogger.util;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.core.RbelNestedFacet;
+import de.gematik.rbellogger.data.core.RbelValueFacet;
+import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpHeaderFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
+import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -152,13 +159,10 @@ public class RbelContextDecorator {
     if (message.isEmpty()) {
       return Optional.empty();
     }
-    if (message.get().getFacet(RbelHttpRequestFacet.class).isPresent()) {
-      return message;
-    } else {
-      return message
-          .flatMap(el -> el.getFacet(RbelHttpResponseFacet.class))
-          .map(RbelHttpResponseFacet::getRequest);
-    }
+    return message
+        .flatMap(msg -> msg.getFacet(TracingMessagePairFacet.class))
+        .map(TracingMessagePairFacet::getRequest)
+        .or(() -> message.filter(msg -> msg.hasFacet(RbelHttpRequestFacet.class)));
   }
 
   private static Optional<RbelElement> tryToFindResponseMessage(Object element) {
@@ -169,14 +173,10 @@ public class RbelContextDecorator {
     if (message.isEmpty()) {
       return Optional.empty();
     }
-    if (message.get().getFacet(RbelHttpResponseFacet.class).isPresent()) {
-      return message;
-    } else {
-      return message
-          .flatMap(msg -> msg.getFacet(RbelHttpRequestFacet.class))
-          .map(RbelHttpRequestFacet::getResponse)
-          .filter(Objects::nonNull);
-    }
+    return message
+        .flatMap(msg -> msg.getFacet(TracingMessagePairFacet.class))
+        .map(TracingMessagePairFacet::getResponse)
+        .or(() -> message.filter(msg -> msg.hasFacet(RbelHttpResponseFacet.class)));
   }
 
   private static JexlMessage convertToJexlMessage(RbelElement element) {

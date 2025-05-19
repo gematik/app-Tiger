@@ -16,14 +16,14 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
-import de.gematik.rbellogger.data.RbelElementAssertion;
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
+import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
+import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.common.pki.TigerConfigurationPkiIdentity;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -45,6 +45,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -114,22 +115,12 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
             .isEqualTo("" + clientSocket.getLocalPort());
 
         // check response adresses
-        assertThat(
-                tigerProxy
-                    .getRbelMessagesList()
-                    .get(1)
-                    .findElement("$.sender.port")
-                    .get()
-                    .getRawStringContent())
-            .isEqualTo("" + serverSocket.getLocalPort());
-        assertThat(
-                tigerProxy
-                    .getRbelMessagesList()
-                    .get(1)
-                    .findElement("$.receiver.port")
-                    .get()
-                    .getRawStringContent())
-            .isEqualTo("" + clientSocket.getLocalPort());
+        assertThat(tigerProxy.getRbelMessagesList().get(1))
+            .extractChildWithPath("$.sender.port")
+            .hasStringContentEqualTo("" + serverSocket.getLocalPort());
+        assertThat(tigerProxy.getRbelMessagesList().get(1))
+            .extractChildWithPath("$.receiver.port")
+            .hasStringContentEqualTo("" + clientSocket.getLocalPort());
 
         // check timing
         final ZonedDateTime requestTime =
@@ -176,7 +167,7 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
       unirestInstance.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
       unirestInstance.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
-      awaitMessagesInTiger(4);
+      awaitMessagesInTigerProxy(4);
 
       val messages = tigerProxy.getRbelMessagesList();
 
@@ -185,26 +176,19 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
       val request2 = messages.get(2);
       val response2 = messages.get(3);
 
-      RbelElementAssertion.assertThat(request)
-          .extractChildWithPath("$.path")
-          .hasStringContentEqualTo("/foobar");
-      RbelElementAssertion.assertThat(response)
-          .extractChildWithPath("$.responseCode")
-          .hasStringContentEqualTo("666");
+      assertThat(request).extractChildWithPath("$.path").hasStringContentEqualTo("/foobar");
+      assertThat(response).extractChildWithPath("$.responseCode").hasStringContentEqualTo("666");
 
-      RbelElementAssertion.assertThat(request2)
-          .extractChildWithPath("$.path")
-          .hasStringContentEqualTo("/foobar");
-      RbelElementAssertion.assertThat(response2)
-          .extractChildWithPath("$.responseCode")
-          .hasStringContentEqualTo("666");
+      assertThat(request2).extractChildWithPath("$.path").hasStringContentEqualTo("/foobar");
+      assertThat(response2).extractChildWithPath("$.responseCode").hasStringContentEqualTo("666");
 
-      val responseInRequestFacet = request.getFacet(RbelHttpRequestFacet.class).get().getResponse();
-      assertThat(responseInRequestFacet).isEqualTo(response);
+      val responseInRequestFacet =
+          request.getFacet(TracingMessagePairFacet.class).get().getResponse();
+      Assertions.assertThat(responseInRequestFacet).isEqualTo(response);
 
       val responseInRequest2Facet =
-          request2.getFacet(RbelHttpRequestFacet.class).get().getResponse();
-      assertThat(responseInRequest2Facet).isEqualTo(response2);
+          request2.getFacet(TracingMessagePairFacet.class).get().getResponse();
+      Assertions.assertThat(responseInRequest2Facet).isEqualTo(response2);
     }
   }
 

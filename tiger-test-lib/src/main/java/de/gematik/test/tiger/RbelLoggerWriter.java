@@ -16,10 +16,10 @@
 
 package de.gematik.test.tiger;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.writer.RbelWriter;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.util.List;

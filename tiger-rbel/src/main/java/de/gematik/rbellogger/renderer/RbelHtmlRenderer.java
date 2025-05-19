@@ -18,9 +18,9 @@ package de.gematik.rbellogger.renderer;
 
 import static j2html.TagCreator.*;
 
-import de.gematik.rbellogger.converter.RbelValueShader;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.util.BinaryClassifier;
+import de.gematik.rbellogger.util.RbelValueShader;
 import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
 import java.util.*;

@@ -16,33 +16,22 @@
 
 package de.gematik.test.tiger.proxy.tracing;
 
-import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.facet.PreviousMessageFacet;
-import de.gematik.rbellogger.data.facet.ProxyTransmissionHistory;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
-import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
-import de.gematik.rbellogger.data.facet.RbelRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelResponseFacet;
-import de.gematik.rbellogger.data.facet.RbelRootFacet;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
-import de.gematik.rbellogger.data.facet.TigerNonPairedMessageFacet;
-import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
-import de.gematik.rbellogger.data.facet.UnparsedChunkFacet;
-import de.gematik.rbellogger.file.MessageTimeWriter;
-import de.gematik.rbellogger.file.RbelFileWriter;
-import de.gematik.rbellogger.file.TcpIpMessageFacetWriter;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.data.core.ProxyTransmissionHistory;
+import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.client.*;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Optional;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
+import lombok.val;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -58,30 +47,15 @@ public class TracingPushService {
   public void addWebSocketListener() {
     tigerProxy.addRbelMessageListener(this::propagateRbelMessageSafe);
     tigerProxy.addNewExceptionConsumer(this::propagateExceptionSafe);
-    tigerProxy
-        .getRbelLogger()
-        .getRbelConverter()
-        .addLastPostConversionListener(
-            RbelConverterPlugin.createPlugin(this::markUnsuccessfulMessageAsProcessed));
 
     log =
         LoggerFactory.getLogger(
             TracingPushService.class.getName() + "(" + tigerProxy.proxyName() + ")");
   }
 
-  private void markUnsuccessfulMessageAsProcessed(RbelElement result, RbelConverter rbelConverter) {
-    if (result.getFacets().stream()
-        .noneMatch(
-            f ->
-                f instanceof RbelRootFacet
-                    || f instanceof RbelResponseFacet
-                    || f instanceof RbelRequestFacet)) {
-      RbelConverter.setMessageFullyProcessed(result);
-    }
-  }
-
   private void propagateExceptionSafe(Throwable exc) {
     try {
+      log.atTrace().addArgument(exc::getMessage).log("Transmitting Exception: {}");
       propagateException(exc);
     } catch (RuntimeException e) {
       log.error("Error while propagating Exception", e);
@@ -92,7 +66,9 @@ public class TracingPushService {
   private void propagateRbelMessageSafe(RbelElement msg) {
     try {
       if (!msg.hasFacet(RbelTcpIpMessageFacet.class)) {
-        log.info("Skipping propagation, not a TCP/IP message {}", msg.getUuid());
+        log.atTrace()
+            .addArgument(msg::getUuid)
+            .log("Skipping propagation, not a TCP/IP message {}");
         return;
       }
 
@@ -107,142 +83,62 @@ public class TracingPushService {
   private synchronized void propagateRbelMessage(RbelElement msg) {
     log.atTrace()
         .addArgument(() -> getSequenceNumber(msg))
-        .addArgument(msg::printHttpDescription)
-        .log("Transmitting message #{}: {}");
-    if (msg.hasFacet(TigerNonPairedMessageFacet.class)) {
-      sendNonPairedMessage(msg);
-    } else if (msg.hasFacet(RbelHttpResponseFacet.class)
-        || msg.getFacet(TracingMessagePairFacet.class)
-            .map(facet -> facet.isResponse(msg))
-            .orElse(false)) {
-      sendPairedMessage(msg);
-    } else {
-      if (log.isTraceEnabled()) {
-        log.trace(
-            "Skipping propagation, not a response (facets: {}, uuid: {})",
-            msg.getFacets().stream()
-                .map(Object::getClass)
-                .map(Class::getSimpleName)
-                .collect(Collectors.joining(", ")),
-            msg.getUuid());
-      }
-    }
+        .addArgument(
+            () ->
+                Optional.ofNullable(msg.getRawStringContent())
+                    .map(String::lines)
+                    .flatMap(Stream::findFirst)
+                    .orElse("<>"))
+        .addArgument(() -> msg.getFacet(RbelMessageMetadata.class).map(RbelMessageMetadata::toMap))
+        .log("Transmitting message #{}: {}\nwith metadata: {}");
+    sendMessageToRemotes(
+        msg, msg.getFacet(RbelMessageMetadata.class).orElse(new RbelMessageMetadata()));
   }
 
-  private void sendNonPairedMessage(RbelElement msg) {
+  private void sendMessageToRemotes(RbelElement msg, RbelMessageMetadata metadata) {
     try {
       RbelTcpIpMessageFacet rbelTcpIpMessageFacet = msg.getFacetOrFail(RbelTcpIpMessageFacet.class);
       final RbelHostname sender =
-          RbelHostname.fromString(rbelTcpIpMessageFacet.getSender().getRawStringContent())
+          Optional.ofNullable(rbelTcpIpMessageFacet.getSender())
+              .map(RbelElement::getRawStringContent)
+              .flatMap(RbelHostname::fromString)
               .orElse(null);
       final RbelHostname receiver =
-          RbelHostname.fromString(rbelTcpIpMessageFacet.getReceiver().getRawStringContent())
+          Optional.ofNullable(rbelTcpIpMessageFacet.getReceiver())
+              .map(RbelElement::getRawStringContent)
+              .flatMap(RbelHostname::fromString)
               .orElse(null);
 
-      log.trace("Propagating new non-paired message (ID: {})", msg.getUuid());
+      log.atTrace().addArgument(msg::getUuid).log("Propagating message via mesh... (ID: {})");
 
-      template.convertAndSend(
-          TigerRemoteProxyClient.WS_TRACING,
+      final TigerTracingDto tracingDto =
           TigerTracingDto.builder()
               .receiver(receiver)
               .sender(sender)
-              .requestUuid(msg.getUuid())
-              .requestTransmissionTime(
-                  msg.getFacet(RbelMessageTimingFacet.class)
-                      .map(RbelMessageTimingFacet::getTransmissionTime)
-                      .orElse(null))
-              .additionalInformationRequest(gatherAdditionalInformation(msg))
-              .unparsedChunk(msg.hasFacet(UnparsedChunkFacet.class))
-              .sequenceNumberRequest(rbelTcpIpMessageFacet.getSequenceNumber())
-              .proxyTransmissionHistoryRequest(
+              .messageUuid(msg.getUuid())
+              .additionalInformation(gatherAdditionalInformation(metadata))
+              .sequenceNumber(rbelTcpIpMessageFacet.getSequenceNumber())
+              .proxyTransmissionHistory(
                   new ProxyTransmissionHistory(
                       tigerProxy.getTigerProxyConfiguration().getName(),
                       List.of(rbelTcpIpMessageFacet.getSequenceNumber()),
                       msg.getFacet(ProxyTransmissionHistory.class).orElse(null)))
-              .build());
+              .build();
+
+      template.convertAndSend(TigerRemoteProxyClient.WS_TRACING, tracingDto);
 
       mapRbelMessageAndSent(msg);
+      log.trace("completed sending message {}", msg.getUuid());
     } catch (RuntimeException e) {
-      log.error("Error while sending non-paired message: {}", e.getMessage());
+      log.error("Error while sending message: {}", e.getMessage());
       throw e;
     }
   }
 
-  private void sendPairedMessage(RbelElement response) {
-    final RbelElement request =
-        response
-            .getFacet(TracingMessagePairFacet.class)
-            .map(TracingMessagePairFacet::getRequest)
-            .or(
-                () ->
-                    response
-                        .getFacet(RbelHttpResponseFacet.class)
-                        .map(RbelHttpResponseFacet::getRequest))
-            .orElseThrow(
-                () ->
-                    new TigerRemoteProxyClientException(
-                        "Failure to correctly push message with id '"
-                            + response.getUuid()
-                            + "': Unable to find matching request"));
-
-    RbelTcpIpMessageFacet requestTcpIpFacet = request.getFacetOrFail(RbelTcpIpMessageFacet.class);
-    RbelTcpIpMessageFacet responseTcpIpFacet = response.getFacetOrFail(RbelTcpIpMessageFacet.class);
-    final RbelHostname sender =
-        RbelHostname.fromString(requestTcpIpFacet.getSender().getRawStringContent()).orElse(null);
-    final RbelHostname receiver =
-        RbelHostname.fromString(requestTcpIpFacet.getReceiver().getRawStringContent()).orElse(null);
-    log.trace(
-        "Propagating new request/response pair (IDs: {} and {})",
-        request.getUuid(),
-        response.getUuid());
-    template.convertAndSend(
-        TigerRemoteProxyClient.WS_TRACING,
-        TigerTracingDto.builder()
-            .receiver(receiver)
-            .sender(sender)
-            .responseUuid(response.getUuid())
-            .requestUuid(request.getUuid())
-            .responseTransmissionTime(
-                response
-                    .getFacet(RbelMessageTimingFacet.class)
-                    .map(RbelMessageTimingFacet::getTransmissionTime)
-                    .orElse(null))
-            .requestTransmissionTime(
-                request
-                    .getFacet(RbelMessageTimingFacet.class)
-                    .map(RbelMessageTimingFacet::getTransmissionTime)
-                    .orElse(null))
-            .additionalInformationRequest(gatherAdditionalInformation(request))
-            .additionalInformationResponse(gatherAdditionalInformation(response))
-            .sequenceNumberRequest(requestTcpIpFacet.getSequenceNumber())
-            .sequenceNumberResponse(responseTcpIpFacet.getSequenceNumber())
-            .proxyTransmissionHistoryRequest(
-                new ProxyTransmissionHistory(
-                    tigerProxy.getTigerProxyConfiguration().getName(),
-                    List.of(requestTcpIpFacet.getSequenceNumber()),
-                    request.getFacet(ProxyTransmissionHistory.class).orElse(null)))
-            .proxyTransmissionHistoryResponse(
-                new ProxyTransmissionHistory(
-                    tigerProxy.getTigerProxyConfiguration().getName(),
-                    List.of(responseTcpIpFacet.getSequenceNumber()),
-                    response.getFacet(ProxyTransmissionHistory.class).orElse(null)))
-            .build());
-
-    mapRbelMessageAndSent(request);
-    mapRbelMessageAndSent(response);
-  }
-
-  private Map<String, String> gatherAdditionalInformation(RbelElement msg) {
-    // create new blank jackson object
-    var infoObject = new JSONObject();
-    RbelFileWriter.DEFAULT_PRE_SAVE_LISTENER.stream()
-        .filter(
-            listener ->
-                !(listener instanceof TcpIpMessageFacetWriter)
-                    && !(listener instanceof MessageTimeWriter))
-        .forEach(listener -> listener.preSaveCallback(msg, infoObject));
-    return infoObject.toMap().entrySet().stream()
-        .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().toString()));
+  private Map<String, Object> gatherAdditionalInformation(RbelMessageMetadata metadata) {
+    val result = new HashMap<String, Object>();
+    metadata.forEach(result::put);
+    return result;
   }
 
   private void propagateException(Throwable exception) {
@@ -268,14 +164,15 @@ public class TracingPushService {
     final int size = content.getSize();
     final int chunkSize = content.getChunkSize();
     final int numberOfParts = (size + chunkSize - 1) / chunkSize;
-    int i = 0;
-    int nextPartIndex = 0;
-    while (nextPartIndex < size) {
+    for (int i = 0, nextPartIndex = 0; nextPartIndex < size; i++) {
       byte[] partContent =
           content.subArray(nextPartIndex, Math.min(nextPartIndex + chunkSize, size));
 
-      log.trace(
-          "sending part {} of {} for UUID {}...", i + 1, numberOfParts, rbelMessage.getUuid());
+      log.atTrace()
+          .addArgument(i + 1)
+          .addArgument(numberOfParts)
+          .addArgument(rbelMessage.getUuid())
+          .log("sending part {} of {} for UUID {}...");
       template.convertAndSend(
           TigerRemoteProxyClient.WS_DATA,
           TracingMessagePart.builder()
@@ -285,7 +182,6 @@ public class TracingPushService {
               .numberOfMessages(numberOfParts)
               .build());
       nextPartIndex += partContent.length;
-      i++;
     }
   }
 
@@ -295,18 +191,7 @@ public class TracingPushService {
         .orElse(-1L);
   }
 
-  private void waitForMessageFullyProcessed(RbelElement msg) {
-    log.atTrace().addArgument(() -> getSequenceNumber(msg)).log("Waiting for message #{}");
-    RbelConverter.waitUntilFullyProcessed(msg);
-  }
-
   private void waitForPreviousMessageFullyProcessed(RbelElement msg) {
-    log.atTrace()
-        .addArgument(() -> getSequenceNumber(msg))
-        .log("Waiting for previous message of #{}");
-    msg.getFacet(PreviousMessageFacet.class)
-        .map(PreviousMessageFacet::getMessage)
-        .ifPresent(this::waitForMessageFullyProcessed);
-    msg.removeFacetsOfType(PreviousMessageFacet.class);
+    tigerProxy.getRbelLogger().getRbelConverter().waitForAllElementsBeforeGivenToBeParsed(msg);
   }
 }

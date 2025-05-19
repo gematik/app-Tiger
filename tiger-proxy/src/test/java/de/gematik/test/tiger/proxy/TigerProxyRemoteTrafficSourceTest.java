@@ -19,7 +19,7 @@ package de.gematik.test.tiger.proxy;
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
+import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
 import de.gematik.test.tiger.proxy.controller.TrafficPushController;
 import java.io.IOException;
 import java.nio.file.Files;

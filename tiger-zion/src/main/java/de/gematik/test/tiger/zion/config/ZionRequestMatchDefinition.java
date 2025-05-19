@@ -22,7 +22,7 @@ import static de.gematik.test.tiger.zion.config.ZionRequestMatchDefinition.PathM
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.net.URI;
 import java.util.ArrayList;

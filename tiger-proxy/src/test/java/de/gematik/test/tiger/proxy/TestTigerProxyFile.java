@@ -21,22 +21,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 
-import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
+import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo.TigerFileSaveInfoBuilder;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.certificate.TlsFacet;
+import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.io.FileUtils;
-import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -51,7 +51,7 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
   void saveToFileAndReadAgain_pairsShouldBeReconstructed() {
     executeFileWritingAndReadingTest(
         otherProxy -> {
-          await().atMost(2, TimeUnit.SECONDS).until(() -> otherProxy.getRbelMessages().size() >= 4);
+          awaitMessagesInTigerProxy(otherProxy, 4);
           assertThat(
                   otherProxy
                       .getRbelLogger()
@@ -77,7 +77,7 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
   void filterFileForRequest_pairShouldBeIntact() {
     executeFileWritingAndReadingTest(
         otherProxy -> {
-          await().atMost(2, TimeUnit.SECONDS).until(otherProxy::isFileParsed);
+          otherProxy.waitForAllCurrentMessagesToBeParsed();
           assertThat(
                   otherProxy
                       .getRbelLogger()
@@ -102,17 +102,22 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
   void filterFileForResponse_pairShouldBeIntact() {
     executeFileWritingAndReadingTest(
         otherProxy -> {
-          await().atMost(2, TimeUnit.SECONDS).until(otherProxy::isFileParsed);
-          assertThat(
-                  otherProxy
-                      .getRbelLogger()
-                      .getMessageHistory()
-                      .getFirst()
-                      .findElement("$.path")
-                      .get()
-                      .getRawStringContent())
-              .isEqualTo("/faabor");
-          assertThat(otherProxy.getRbelLogger().getMessageHistory()).hasSize(2);
+          awaitMessagesInTigerProxy(otherProxy, 2);
+          val faaborResponse = otherProxy.getRbelLogger().getMessageHistory().getLast();
+          assertThat(faaborResponse).hasFacet(TracingMessagePairFacet.class);
+          val faaborRequest =
+              otherProxy
+                  .getRbelLogger()
+                  .getRbelConverter()
+                  .findMessageByUuid(
+                      faaborResponse
+                          .getFacetOrFail(TracingMessagePairFacet.class)
+                          .getRequest()
+                          .getUuid())
+                  .get();
+          assertThat(faaborRequest)
+              .extractChildWithPath("$.path")
+              .hasStringContentEqualTo("/faabor");
         },
         TigerFileSaveInfo.builder().readFilter("message.statusCode == '404'"),
         () -> {
@@ -127,16 +132,9 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
   void filterFileForRequestWithRequestFilter_pairShouldBeIntact() {
     executeFileWritingAndReadingTest(
         otherProxy -> {
-          await().atMost(2, TimeUnit.SECONDS).until(otherProxy::isFileParsed);
-          assertThat(
-                  otherProxy
-                      .getRbelLogger()
-                      .getMessageHistory()
-                      .getFirst()
-                      .findElement("$.path")
-                      .get()
-                      .getRawStringContent())
-              .isEqualTo("/foobar");
+          otherProxy.waitForAllCurrentMessagesToBeParsed();
+          assertThat(otherProxy.getRbelLogger().getMessageHistory().getFirst())
+              .hasStringContentEqualToAtPosition("$.path", "/foobar");
           assertThat(otherProxy.getRbelLogger().getMessageHistory()).hasSize(2);
         },
         TigerFileSaveInfo.builder().readFilter("request.url !$ 'faabor'"),
@@ -152,15 +150,12 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
   void saveTlsConnection_detailsShouldBeIntactAfterReadingFromFile() {
     executeFileWritingAndReadingTest(
         otherProxy -> {
-          await().atMost(2, TimeUnit.SECONDS).until(otherProxy::isFileParsed);
-          final RbelElement request = otherProxy.getRbelLogger().getMessageHistory().getFirst();
-          assertThat(request)
+          otherProxy.waitForAllCurrentMessagesToBeParsed();
+          assertThat(otherProxy.getRbelLogger().getMessageHistory().getFirst())
               .hasFacet(TlsFacet.class)
-              .extractChildWithPath("$.cipherSuite")
-              .hasStringContentEqualTo("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256");
-          assertThat(request)
-              .extractChildWithPath("$.tlsVersion")
-              .hasStringContentEqualTo("TLSv1.2");
+              .hasStringContentEqualToAtPosition(
+                  "$.cipherSuite", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
+              .hasStringContentEqualToAtPosition("$.tlsVersion", "TLSv1.2");
         },
         TigerFileSaveInfo.builder(),
         () -> {
@@ -177,12 +172,8 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
         TigerProxyConfiguration.builder()
             .fileSaveInfo(TigerFileSaveInfo.builder().sourceFile("pom.xml").build())
             .build();
-    assertThatThrownBy(
-            () -> {
-              final TigerProxy proxy = new TigerProxy(configuration);
-              await().atMost(200, TimeUnit.SECONDS).until(proxy::isFileParsed);
-            })
-        .isNotInstanceOf(ConditionTimeoutException.class);
+    val proxy = new TigerProxy(configuration);
+    assertThatThrownBy(proxy::ensureFileIsParsed).isInstanceOf(TigerProxyStartupException.class);
   }
 
   private void executeFileWritingAndReadingTest(

@@ -184,6 +184,14 @@ public class RbelContent {
     return size;
   }
 
+  public void truncate(int newSize) {
+    if (newSize < 0 || newSize > size) {
+      throw new IndexOutOfBoundsException("truncating to: " + newSize + ", size: " + size);
+    }
+    this.size = newSize;
+    cachedByteArray.clear();
+  }
+
   public boolean isEmpty() {
     return size == 0;
   }
@@ -205,6 +213,10 @@ public class RbelContent {
       cachedByteArray = new WeakReference<>(byteArray);
     }
     return byteArray;
+  }
+
+  public String toReadableString() {
+    return new String(toByteArray());
   }
 
   @SneakyThrows
@@ -232,10 +244,10 @@ public class RbelContent {
 
   public byte[] subArray(int from, int to) {
     if (from < 0 || from > size) {
-      throw new IndexOutOfBoundsException(MessageFormat.format("from: {0}", from));
+      throw new IndexOutOfBoundsException(MessageFormat.format("from: {0}, size: {1}", from, size));
     }
     if (to < 0 || to > size) {
-      throw new IndexOutOfBoundsException(MessageFormat.format("to: {0}", to));
+      throw new IndexOutOfBoundsException(MessageFormat.format("to: {0}, size: {1}", to, size));
     }
     if (to < from) {
       throw new IndexOutOfBoundsException(MessageFormat.format("from: {0}, to: {1}", from, to));
@@ -381,7 +393,10 @@ public class RbelContent {
     return false;
   }
 
-  private boolean startsWith(byte[] searchContent, int startIndex) {
+  public boolean startsWith(byte[] searchContent, int startIndex) {
+    if (startIndex + searchContent.length > size) {
+      return false;
+    }
     for (int j = 0, k = startIndex; j < searchContent.length; j++, k++) {
       if (getWithoutChecks(k) != searchContent[j]) {
         return false;

@@ -18,12 +18,12 @@ package de.gematik.rbellogger;
 
 import de.gematik.rbellogger.captures.RbelCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.*;
-import de.gematik.rbellogger.converter.listener.RbelJwkReader;
-import de.gematik.rbellogger.converter.listener.RbelX5cKeyReader;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.facets.jose.RbelJwkReader;
+import de.gematik.rbellogger.facets.jose.RbelX5cKeyReader;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.modifier.RbelModifier;
+import de.gematik.rbellogger.util.RbelValueShader;
 import java.util.*;
 import java.util.function.Consumer;
 import lombok.AccessLevel;
@@ -61,10 +61,10 @@ public class RbelLogger {
 
     rbelConverter.initializeConverters(configuration);
 
-    rbelConverter.registerListener(new RbelX5cKeyReader());
-    rbelConverter.registerListener(new RbelJwkReader());
-    rbelConverter.getPostConversionListeners().addAll(configuration.getPostConversionListener());
-    rbelConverter.registerListener(rbelConverter.getRbelValueShader().getPostConversionListener());
+    rbelConverter.addConverter(new RbelJwkReader());
+    rbelConverter.addConverter(new RbelX5cKeyReader());
+    configuration.getPostConversionListener().forEach(rbelConverter::addConverter);
+    rbelConverter.addConverter(rbelConverter.getRbelValueShader().getPostConversionListener());
 
     for (Consumer<RbelConverter> initializer : configuration.getInitializers()) {
       initializer.accept(rbelConverter);

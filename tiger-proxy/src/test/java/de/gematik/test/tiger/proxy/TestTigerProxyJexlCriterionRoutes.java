@@ -16,10 +16,12 @@
 
 package de.gematik.test.tiger.proxy;
 
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -51,20 +53,15 @@ class TestTigerProxyJexlCriterionRoutes extends AbstractTigerProxyTest {
           unirestInstance
               .get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar/blub.html")
               .asString();
-          awaitMessagesInTiger(2);
+          awaitMessagesInTigerProxy(2);
 
-          assertThat(tigerProxy.getRbelMessages())
-              .last()
-              // get the last request
-              .extracting(
-                  response -> response.getFacetOrFail(RbelHttpResponseFacet.class).getRequest())
-              // get the request url
-              .extracting(
-                  request ->
-                      request
-                          .getFacetOrFail(RbelHttpRequestFacet.class)
-                          .getPath()
-                          .getRawStringContent())
+          assertThat(tigerProxy.getRbelMessages().getLast())
+              .andPrintTree()
+              .extractFacet(TracingMessagePairFacet.class)
+              .extracting(TracingMessagePairFacet::getRequest)
+              .extracting(r -> r.getFacetOrFail(RbelHttpRequestFacet.class))
+              .extracting(RbelHttpRequestFacet::getPath)
+              .extracting(RbelElement::getRawStringContent)
               // do the assertions
               .matches(path -> !path.contains("wrong"), "Does the path not contain 'wrong'?")
               .matches(path -> path.contains("right"), "Does the path contain 'right'?");
@@ -103,6 +100,6 @@ class TestTigerProxyJexlCriterionRoutes extends AbstractTigerProxyTest {
   }
 
   private TigerConfigurationRoute route(String from, String to) {
-    return TigerConfigurationRoute.builder().from(from).to(to).build();
+    return TigerConfigurationRoute.builder().from(from).to(to).matchForProxyType(false).build();
   }
 }

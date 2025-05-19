@@ -17,7 +17,8 @@
 package de.gematik.rbellogger.renderer;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.core.*;
+import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;

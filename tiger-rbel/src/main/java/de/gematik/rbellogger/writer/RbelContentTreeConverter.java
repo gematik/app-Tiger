@@ -17,10 +17,10 @@
 package de.gematik.rbellogger.writer;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelJsonFacet;
-import de.gematik.rbellogger.data.facet.RbelNestedFacet;
-import de.gematik.rbellogger.data.facet.RbelXmlFacet;
+import de.gematik.rbellogger.data.core.RbelNestedFacet;
 import de.gematik.rbellogger.exceptions.RbelContentTreeConversionException;
+import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
+import de.gematik.rbellogger.facets.xml.RbelXmlFacet;
 import de.gematik.rbellogger.writer.tree.*;
 import de.gematik.test.tiger.common.config.*;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;

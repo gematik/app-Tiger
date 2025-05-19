@@ -1,0 +1,401 @@
+/*
+ * Copyright 2024 gematik GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package de.gematik.rbellogger;
+
+import static de.gematik.rbellogger.RbelConversionPhase.*;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
+import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.data.RbelMultiMap;
+import de.gematik.rbellogger.data.core.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.facet.RbelNonTransmissionMarkerFacet;
+import de.gematik.rbellogger.exceptions.RbelConversionException;
+import de.gematik.rbellogger.key.RbelKeyManager;
+import de.gematik.rbellogger.util.ConverterPluginMap;
+import de.gematik.rbellogger.util.RbelMessagesDequeFacade;
+import de.gematik.rbellogger.util.RbelValueShader;
+import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
+import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+import lombok.*;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.tuple.Pair;
+
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder(access = AccessLevel.PUBLIC)
+@Slf4j
+public class RbelConverter {
+
+  private static final String RECEIVER_METADATA_KEY = "receiver";
+  private static final String SENDER_METADATA_KEY = "sender";
+
+  static {
+    BrainpoolCurves.init();
+    TigerSecurityProviderInitialiser.initialize();
+  }
+
+  @Getter private final Deque<RbelElement> messageHistory = new ConcurrentLinkedDeque<>();
+  private final Set<String> knownMessageUuids = ConcurrentHashMap.newKeySet();
+  private final Set<String> messageUuidsWaitingForNextMessage = ConcurrentHashMap.newKeySet();
+  private final RbelMultiMap<CompletableFuture<RbelElement>> messagesWaitingForCompletion =
+      new RbelMultiMap<>();
+  @Getter private final RbelKeyManager rbelKeyManager;
+  @Getter private final RbelValueShader rbelValueShader = new RbelValueShader();
+
+  @Getter private final ConverterPluginMap converterPlugins = new ConverterPluginMap();
+  private final ExecutorService executorService =
+      new ThreadPoolExecutor(
+          0,
+          Integer.MAX_VALUE,
+          60L,
+          TimeUnit.SECONDS,
+          new SynchronousQueue<>(),
+          new ThreadFactoryBuilder().setNameFormat("rbel-converter-thread-%d").build());
+
+  @Builder.Default private int rbelBufferSizeInMb = 1024;
+  @Builder.Default private boolean manageBuffer = false;
+  @Getter @Builder.Default private long currentBufferSize = 0;
+  @Builder.Default private long messageSequenceNumber = 0;
+  @Builder.Default private int skipParsingWhenMessageLargerThanKb = -1;
+  @Builder.Default private List<String> activateRbelParsingFor = List.of();
+  @Builder.Default private volatile boolean shallInitializeConverters = true;
+  @Builder.Default @Getter private boolean isActivateRbelParsing = true;
+  @Builder.Default @Setter @Getter private String name = "<>";
+
+  @Builder.Default
+  private List<RbelConversionPhase> conversionPhases =
+      List.of(PREPARATION, PROTOCOL_PARSING, CONTENT_PARSING, CONTENT_ENRICHMENT, TRANSMISSION);
+
+  public static final TigerTypedConfigurationKey<Integer> RAW_STRING_MAX_TRACE_LENGTH =
+      new TigerTypedConfigurationKey<>(
+          "tiger.rbel.rawstring.max.trace.length", Integer.class, 1000);
+
+  public void initializeConverters(RbelConfiguration rbelConfiguration) {
+    if (shallInitializeConverters) {
+      // the outside check is done to avoid the synchronized overhead for most calls
+      synchronized (converterPlugins) {
+        if (shallInitializeConverters) {
+          new RbelConverterInitializer(this, rbelConfiguration, activateRbelParsingFor)
+              .addConverters();
+          shallInitializeConverters = false;
+        }
+      }
+    }
+  }
+
+  public RbelElement convertElement(RbelElement rbelElement) {
+    return new RbelConversionExecutor(
+            this, rbelElement, skipParsingWhenMessageLargerThanKb, rbelKeyManager, conversionPhases)
+        .execute();
+  }
+
+  public RbelElement convertElement(final byte[] input, RbelElement parentNode) {
+    return convertElement(RbelElement.builder().parentNode(parentNode).rawContent(input).build());
+  }
+
+  public void deactivatePlugins(List<String> pluginIds) {
+    synchronized (converterPlugins) {
+      converterPlugins.forEach(c -> c.deactivateIfIdMatches(pluginIds));
+    }
+  }
+
+  public void reactivateAllConfiguredPlugins() {
+    synchronized (converterPlugins) {
+      converterPlugins.forEach(RbelConverterPlugin::activate);
+    }
+  }
+
+  public RbelElement convertElement(final String input, RbelElement parentNode) {
+    return convertElement(
+        RbelElement.builder()
+            .parentNode(parentNode)
+            .rawContent(
+                input.getBytes(
+                    Optional.ofNullable(parentNode)
+                        .map(RbelElement::getElementCharset)
+                        .orElse(StandardCharsets.UTF_8)))
+            .build());
+  }
+
+  public void addConverter(RbelConverterPlugin converter) {
+    converterPlugins.put(converter);
+  }
+
+  public RbelElement parseMessage(byte[] content, RbelMessageMetadata convertionMetadata) {
+    final RbelElement messageElement = RbelElement.builder().rawContent(content).build();
+    return parseMessage(messageElement, convertionMetadata);
+  }
+
+  public RbelElement parseMessage(
+      @NonNull final RbelElement message, @NonNull final RbelMessageMetadata convertionMetadata) {
+    try {
+      return parseMessageAsync(message, convertionMetadata)
+          .exceptionally(
+              t -> {
+                log.error("Error while parsing message", t);
+                return null;
+              })
+          .get();
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RbelConversionException(e);
+    } catch (ExecutionException e) {
+      throw new RbelConversionException(e);
+    }
+  }
+
+  public CompletableFuture<RbelElement> parseMessageAsync(
+      @NonNull final RbelElement messageElement,
+      @NonNull final RbelMessageMetadata convertionMetadata) {
+    if (messageElement.getContent().isNull()) {
+      throw new RbelConversionException("content is empty");
+    }
+    if (isMessageUuidAlreadyKnown(messageElement.getUuid())) {
+      log.atTrace()
+          .addArgument(this::getName)
+          .addArgument(messageElement::getUuid)
+          .log("{} skipping parsing of message with UUID {}: UUID already known");
+      return CompletableFuture.completedFuture(
+          findMessageByUuid(messageElement.getUuid()).orElseThrow());
+    }
+
+    long seqNumber = addMessageToHistoryWithNextSequenceNumber(messageElement);
+
+    // TODO extract into a metadata pre processing plugin
+    if (!messageElement.hasFacet(RbelTcpIpMessageFacet.class)) {
+      messageElement.addFacet(
+          RbelTcpIpMessageFacet.builder()
+              .receiver(
+                  RbelMessageMetadata.MESSAGE_RECEIVER
+                      .getValue(convertionMetadata)
+                      .map(h -> RbelHostnameFacet.buildRbelHostnameFacet(messageElement, h))
+                      .orElse(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, null)))
+              .sender(
+                  RbelMessageMetadata.MESSAGE_SENDER
+                      .getValue(convertionMetadata)
+                      .map(h -> RbelHostnameFacet.buildRbelHostnameFacet(messageElement, h))
+                      .orElse(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, null)))
+              .sequenceNumber(seqNumber)
+              .build());
+    }
+    messageElement.addFacet(convertionMetadata);
+
+    return CompletableFuture.supplyAsync(() -> convertElement(messageElement), executorService);
+  }
+
+  public long addMessageToHistoryWithNextSequenceNumber(RbelElement rbelElement) {
+    long seqNumber;
+    synchronized (messageHistory) {
+      currentBufferSize += rbelElement.getSize();
+      knownMessageUuids.add(rbelElement.getUuid());
+      messageHistory.add(rbelElement);
+      seqNumber = messageSequenceNumber++;
+    }
+    manageRbelBufferSize();
+    return seqNumber;
+  }
+
+  public void deactivateRbelParsing() {
+    isActivateRbelParsing = false;
+    conversionPhases = List.of(PREPARATION, CONTENT_ENRICHMENT, TRANSMISSION);
+  }
+
+  public void manageRbelBufferSize() {
+    if (manageBuffer) {
+      synchronized (messageHistory) {
+        if (rbelBufferSizeInMb <= 0 && !messageHistory.isEmpty()) {
+          currentBufferSize = 0;
+          messageHistory.clear();
+          knownMessageUuids.clear();
+        }
+        if (rbelBufferSizeInMb > 0) {
+          long exceedingLimit = getExceedingLimit(currentBufferSize);
+          if (exceedingLimit > 0) {
+            log.atTrace()
+                .addArgument(() -> currentBufferSize / (1024 ^ 2))
+                .addArgument(rbelBufferSizeInMb)
+                .log("Buffer is currently at {} Mb which exceeds the limit of {} Mb");
+          }
+          while (exceedingLimit > 0 && !messageHistory.isEmpty()) {
+            log.trace("Exceeded buffer size, dropping oldest message in history");
+            final RbelElement messageToDrop = messageHistory.removeFirst();
+            exceedingLimit -= messageToDrop.getSize();
+            currentBufferSize -= messageToDrop.getSize();
+            knownMessageUuids.remove(messageToDrop.getUuid());
+          }
+        }
+      }
+    }
+  }
+
+  private long getExceedingLimit(long messageHistorySize) {
+    return messageHistorySize - ((long) rbelBufferSizeInMb * 1024 * 1024);
+  }
+
+  public boolean isMessageUuidAlreadyKnown(String msgUuid) {
+    return knownMessageUuids.contains(msgUuid);
+  }
+
+  public Stream<RbelElement> messagesStreamLatestFirst() {
+    return StreamSupport.stream(
+        Spliterators.spliteratorUnknownSize(
+            messageHistory.descendingIterator(), Spliterator.ORDERED),
+        false);
+  }
+
+  /**
+   * Returns a list of all fully parsed messages. This list does not include messages that are not
+   * parsed yet. To guarantee consistent sequence numbers the list stops before the first unparsed
+   * message.
+   */
+  public List<RbelElement> getMessageList() {
+    synchronized (messageHistory) {
+      return messageHistory.stream()
+          .filter(e -> !e.hasFacet(RbelNonTransmissionMarkerFacet.class))
+          .takeWhile(msg -> msg.getConversionPhase().isFinished())
+          .toList();
+    }
+  }
+
+  public Optional<RbelElement> findMessageByUuid(String uuid) {
+    synchronized (messageHistory) {
+      return messageHistory.stream().filter(msg -> msg.getUuid().equals(uuid)).findAny();
+    }
+  }
+
+  /**
+   * Gives a view of the current messages. This view includes messages that are not yet fully
+   * parsed.
+   */
+  public RbelMessagesDequeFacade getMessageHistoryAsync() {
+    synchronized (messageHistory) {
+      return new RbelMessagesDequeFacade(messageHistory, this);
+    }
+  }
+
+  public void clearAllMessages() {
+    synchronized (messageHistory) {
+      currentBufferSize = 0;
+      messageHistory.clear();
+      knownMessageUuids.clear();
+    }
+  }
+
+  public void removeMessage(RbelElement rbelMessage) {
+    synchronized (messageHistory) {
+      final Iterator<RbelElement> iterator = messageHistory.descendingIterator();
+      while (iterator.hasNext()) {
+        if (iterator.next().equals(rbelMessage)) {
+          iterator.remove();
+          currentBufferSize -= rbelMessage.getSize();
+          knownMessageUuids.remove(rbelMessage.getUuid());
+        }
+      }
+    }
+  }
+
+  public void waitForGivenElementToBeParsed(RbelElement result) {
+    waitForGivenMessagesToBeParsed(List.of(result));
+  }
+
+  public void waitForAllElementsBeforeGivenToBeParsed(RbelElement element) {
+    // Collect unfinished messages
+    List<RbelElement> unfinishedMessages = new ArrayList<>();
+    synchronized (messageHistory) {
+      for (RbelElement msg : messageHistory) {
+        if (msg == element || msg.getUuid().equals(element.getUuid())) {
+          break;
+        }
+        if (!msg.getConversionPhase().isFinished()) {
+          unfinishedMessages.add(msg);
+        }
+      }
+    }
+    waitForGivenMessagesToBeParsed(unfinishedMessages);
+  }
+
+  public void waitForAllCurrentMessagesToBeParsed() {
+    waitForGivenMessagesToBeParsed(new ArrayList<>(messageHistory));
+  }
+
+  private void waitForGivenMessagesToBeParsed(List<RbelElement> unfinishedMessages) {
+    // register callbacks
+    final List<Pair<CompletableFuture<RbelElement>, RbelElement>> callbacks;
+    synchronized (messagesWaitingForCompletion) {
+      callbacks =
+          unfinishedMessages.stream()
+              .filter(msg -> msg.getConversionPhase() != RbelConversionPhase.COMPLETED)
+              .map(
+                  msg -> {
+                    final CompletableFuture<RbelElement> future = new CompletableFuture<>();
+                    messagesWaitingForCompletion.put(msg.getUuid(), future);
+                    return Pair.of(future, msg);
+                  })
+              .toList();
+    }
+    // wait for completion
+    for (Pair<CompletableFuture<RbelElement>, RbelElement> future : callbacks) {
+      try {
+        future.getKey().get(100, TimeUnit.SECONDS);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new RbelConversionException(e, future.getValue());
+      } catch (ExecutionException e) {
+        throw new RbelConversionException(e, future.getValue());
+      } catch (TimeoutException e) {
+        throw new RbelConversionException(
+            "Tripped the timeout of 100 seconds while waiting for message "
+                + future.getValue().getUuid()
+                + " to finish parsing",
+            e,
+            future.getValue());
+      }
+    }
+  }
+
+  void signalMessageParsingIsComplete(RbelElement element) {
+    final List<CompletableFuture<RbelElement>> completableFutures;
+    synchronized (messagesWaitingForCompletion) {
+      completableFutures = messagesWaitingForCompletion.removeAll(element.getUuid());
+    }
+    completableFutures.forEach(future -> future.complete(element));
+  }
+
+  /**
+   * Triggers the "transmission" phase on the given element. The element is not stored in the
+   * messages list
+   *
+   * @param rbelElement
+   */
+  public void transmitElement(RbelElement rbelElement) {
+    new RbelConversionExecutor(
+            this,
+            rbelElement,
+            skipParsingWhenMessageLargerThanKb,
+            rbelKeyManager,
+            List.of(RbelConversionPhase.PREPARATION, RbelConversionPhase.TRANSMISSION))
+        .execute();
+  }
+}

@@ -18,8 +18,7 @@ package de.gematik.test.tiger.zion;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
-import de.gematik.rbellogger.key.RbelKeyManager;
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.util.RbelJexlExecutor;
 import de.gematik.rbellogger.writer.RbelWriter;
 import lombok.RequiredArgsConstructor;
@@ -46,10 +45,7 @@ public class ZionApplication {
   public RbelLogger rbelLogger() {
     log.info("Starting rbel build...");
     final RbelLogger logger =
-        RbelLogger.build(
-            new RbelConfiguration()
-                .addPostConversionListener(RbelKeyManager.RBEL_IDP_TOKEN_KEY_LISTENER)
-                .addInitializer(new RbelKeyFolderInitializer(".")));
+        RbelLogger.build(new RbelConfiguration().addInitializer(new RbelKeyFolderInitializer(".")));
     log.info("done with build");
     return logger;
   }

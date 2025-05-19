@@ -22,12 +22,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelJsonFacet;
-import de.gematik.rbellogger.data.facet.RbelJweFacet;
-import de.gematik.rbellogger.data.facet.RbelJwtFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
+import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
+import de.gematik.rbellogger.facets.jose.RbelJweFacet;
+import de.gematik.rbellogger.facets.jose.RbelJwtFacet;
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 

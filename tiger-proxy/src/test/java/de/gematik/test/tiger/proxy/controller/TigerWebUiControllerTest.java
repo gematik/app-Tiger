@@ -25,7 +25,7 @@ import static org.hamcrest.core.StringContains.containsString;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.data.RbelElementAssertion;
-import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
+import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
@@ -76,16 +76,8 @@ class TigerWebUiControllerTest {
     try (val proxyRest = Unirest.spawnInstance()) {
       proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());
 
-      System.out.println(
-          proxyRest
-              .get("http://localhost:" + fakeBackendServerPort + "/foobar")
-              .asString()
-              .getStatus());
-      System.out.println(
-          proxyRest
-              .post("http://localhost:" + fakeBackendServerPort + "/foobar")
-              .asString()
-              .getBody());
+      proxyRest.get("http://localhost:" + fakeBackendServerPort + "/foobar").asString().getStatus();
+      proxyRest.post("http://localhost:" + fakeBackendServerPort + "/foobar").asString().getBody();
     }
 
     TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(

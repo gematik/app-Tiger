@@ -903,7 +903,7 @@ public class RBelValidatorGlue {
     TigerProxy tigerProxy = rbelMessageRetriever.getTigerTestEnvMgr().getLocalTigerProxyOrFail();
     List<RbelElement> readElements = tigerProxy.readTrafficFromTgrFile(filePath);
     readElements.forEach(
-        rbelMessageRetriever.getLocalProxyRbelMessageListener()::triggerNewReceivedMessage);
+        e -> rbelMessageRetriever.getLocalProxyRbelMessageListener().triggerNewReceivedMessage(e));
   }
 
   /**

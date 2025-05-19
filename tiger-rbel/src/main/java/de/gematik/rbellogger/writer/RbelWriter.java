@@ -16,7 +16,7 @@
 
 package de.gematik.rbellogger.writer;
 
-import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;

@@ -18,10 +18,12 @@ package de.gematik.rbellogger.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import java.io.File;
@@ -29,7 +31,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -157,6 +158,7 @@ class RbelSmtpResponseConverterTest {
   private RbelElement convertToRbelElement(
       String input, RbelHostname sender, RbelHostname recipient) {
     return converter.parseMessage(
-        input.getBytes(StandardCharsets.UTF_8), sender, recipient, Optional.empty());
+        input.getBytes(StandardCharsets.UTF_8),
+        new RbelMessageMetadata().withSender(sender).withReceiver(recipient));
   }
 }

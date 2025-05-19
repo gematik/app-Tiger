@@ -44,9 +44,11 @@ public interface ExpectationCallback {
    *
    * @param httpRequest the request that was proxied
    * @param httpResponse the response the MockServer will return
+   * @param originalRequest the original request
    * @return the request that will be proxied
    */
-  HttpResponse handle(HttpRequest httpRequest, HttpResponse httpResponse);
+  HttpResponse handle(
+      HttpRequest httpRequest, HttpResponse httpResponse, HttpRequest originalRequest);
 
   default boolean matches(HttpRequest httpRequest) {
     return true;

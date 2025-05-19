@@ -21,11 +21,11 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import java.io.IOException;
 import java.security.Key;
-import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
@@ -81,9 +81,7 @@ class RbelKeyManagerTest {
         readCurlFromFileWithCorrectedLineBreaks(
                 "src/test/resources/sampleMessages/jwtWithKeysClaim.curl")
             .getBytes(),
-        null,
-        null,
-        Optional.empty());
+        new RbelMessageMetadata());
 
     assertThat(converter.getRbelKeyManager().findKeyByName("puk_fed_sig")).isPresent();
   }

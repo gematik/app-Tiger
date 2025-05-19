@@ -38,14 +38,15 @@ class MetaMessageScrollableDtoTest extends AbstractTigerProxyTest {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     proxyRest.get("http://backend/foobar").asJson();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     MetaMessageScrollableDto requestMetaData =
         MetaMessageScrollableDto.createFrom(tigerProxy.getRbelMessagesList().get(0));
     assertThat(requestMetaData)
         .hasFieldOrPropertyWithValue("infoString", "GET /foobar")
         .hasFieldOrPropertyWithValue("recipient", "backend:80")
-        .hasFieldOrPropertyWithValue("sequenceNumber", 0L);
+        .hasFieldOrPropertyWithValue("sequenceNumber", 0L)
+        .hasNoNullFieldsOrProperties();
     assertThat(requestMetaData.getSender()).matches("127\\.0\\.0\\.1:\\d*");
 
     MetaMessageScrollableDto responseMetaData =
@@ -69,7 +70,7 @@ class MetaMessageScrollableDtoTest extends AbstractTigerProxyTest {
                 .activateRbelParsingFor(List.of("epa3-vau"))
                 .build());
 
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     MetaMessageScrollableDto requestMetaData =
         MetaMessageScrollableDto.createFrom(tigerProxy.getRbelMessagesList().get(0));

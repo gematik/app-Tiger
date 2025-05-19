@@ -21,8 +21,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelElementAssertion;
-import de.gematik.rbellogger.data.facet.RbelPop3CommandFacet;
-import de.gematik.rbellogger.data.pop3.RbelPop3Command;
+import de.gematik.rbellogger.facets.pop3.RbelPop3Command;
+import de.gematik.rbellogger.facets.pop3.RbelPop3CommandFacet;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.glue.RBelValidatorGlue;

@@ -19,7 +19,7 @@ package de.gematik.rbellogger.modifier;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelHttpHeaderFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpHeaderFacet;
 import java.util.Map;
 import java.util.StringJoiner;
 

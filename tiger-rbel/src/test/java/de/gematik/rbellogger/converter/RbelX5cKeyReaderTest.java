@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
 import java.io.IOException;
+import lombok.val;
 import org.junit.jupiter.api.Test;
 
 class RbelX5cKeyReaderTest {
@@ -28,12 +29,14 @@ class RbelX5cKeyReaderTest {
   @Test
   void multipleKeyIds_shouldFindCorrectOne() throws IOException {
     RbelLogger logger = RbelLogger.build();
-    logger
-        .getRbelConverter()
-        .convertElement(
-            readCurlFromFileWithCorrectedLineBreaks(
-                "src/test/resources/sampleMessages/multipleKeyIds.curl"),
-            null);
+    val converted =
+        logger
+            .getRbelConverter()
+            .convertElement(
+                readCurlFromFileWithCorrectedLineBreaks(
+                    "src/test/resources/sampleMessages/multipleKeyIds.curl"),
+                null);
+    System.out.println(converted.printTreeStructure());
 
     assertThat(logger.getRbelKeyManager().findKeyByName("puk_idp_sig")).isPresent();
   }

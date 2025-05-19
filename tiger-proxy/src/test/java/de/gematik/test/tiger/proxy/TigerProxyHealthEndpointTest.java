@@ -90,7 +90,7 @@ class TigerProxyHealthEndpointTest {
   @Autowired ServletWebServerApplicationContext context;
 
   @BeforeEach
-  public void beforeEachLifecyleMethod(WireMockRuntimeInfo runtimeInfo) {
+  void beforeEachLifecyleMethod(WireMockRuntimeInfo runtimeInfo) {
     tigerProxy.getRoutes().stream()
         .filter(route -> !route.getFrom().contains("tiger"))
         .forEach(tigerRoute -> tigerProxy.removeRoute(tigerRoute.getId()));
@@ -110,7 +110,7 @@ class TigerProxyHealthEndpointTest {
   }
 
   @AfterEach
-  public void reset() {
+  void reset() {
     tigerProxy.clearAllRoutes();
     tigerProxy.clearAllMessages();
   }

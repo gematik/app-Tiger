@@ -2,6 +2,7 @@ HTTP/1.1 200
 Version: 9.0.0
 Content-Type: application/xml;charset=latin1
 Date: Fri, 13 Feb 2021 11:34:34 GMT
+Content-Length: 3937
 
 <?xml version="1.0" encoding="latin1" standalone="yes"?>
 <ns:RegistryResponse status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure" xmlns:ns="urn:oasis:names:tc:ebxml-regrep:xsd:rim:3.0" xmlns:ns2="urn:oasis:names:tc:ebxml-regrep:xsd:rs:3.0" xmlns:ns3="urn:oasis:names:tc:ebxml-regrep:xsd:query:3.0">
@@ -20,7 +21,7 @@ Date: Fri, 13 Feb 2021 11:34:34 GMT
             </some.other-tag>
             <textTest hier="ist kein text"></textTest>
             <urlText>http://url.text.de</urlText>
-            <charsetTest>àáâãäåæçèéêëìíîï</charsetTest>
+            <charsetTest>ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</charsetTest>
             <escaping>
                 {"urn:telematik:claims:email":"blab"}
             </escaping>

@@ -20,9 +20,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelJweFacet;
-import de.gematik.rbellogger.data.facet.RbelUriFacet;
-import de.gematik.rbellogger.data.facet.RbelUriParameterFacet;
+import de.gematik.rbellogger.facets.jose.RbelJweFacet;
+import de.gematik.rbellogger.facets.uri.RbelUriFacet;
+import de.gematik.rbellogger.facets.uri.RbelUriParameterFacet;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
