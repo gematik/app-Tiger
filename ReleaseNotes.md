@@ -2,10 +2,18 @@
 
 # Release 4.0.0
 
+## Breaking Changes
+
+* TGR-1617: Major rework of the entire message parsing & distribution mechanism within the Tiger-Proxy. Details of the
+  work done can be found in `doc/adr/015_rbel_protocol_parsing`. No actual breaking changes are expected, but minor
+  differences can occur, especially when mixing pre- and post-4.0 Tiger-Proxies in a mesh setup. When in doubt, please
+  update your version to 4.0 and talk to the Tiger-Team when you are experiencing problems.
+
 ## Bugfixes
 
 * TGR-1812: Tiger Test Lib: validating a JSON with a trailing comma in the schema definition no longer throws a
   NullPointerException.
+* TGR-1617: High-Load on a Direct-Forward-Proxy will no longer lead to dropped messages.
 
 # Release 3.7.9
 
@@ -733,8 +741,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+  key = PLUGIN_PROPERTY_NAME,
+  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

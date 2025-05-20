@@ -952,8 +952,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
                   {'hello': 'world'}
                   """;
     // Schema has a trailing comma which in an older version of JSON-java leads to
-    val schema =
-        """
+    val schema = """
        {"hello": 'world',}
        """;
 
