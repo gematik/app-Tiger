@@ -92,7 +92,7 @@
         <version.jna>5.17.0</version.jna>
         <version.jose4j>0.9.6</version.jose4j>
         <version.jquery>3.7.1</version.jquery>
-        <version.json>20250107</version.json>
+        <version.json>20250517</version.json>
         <version.json-schema-validator>1.5.6</version.json-schema-validator>
         <!-- 20240303 -->
         <version.json-unit>4.1.0</version.json-unit>

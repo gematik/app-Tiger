@@ -1,5 +1,12 @@
 # Changelog Tiger Test platform
 
+# Release 4.0.0
+
+## Bugfixes
+
+* TGR-1812: Tiger Test Lib: validating a JSON with a trailing comma in the schema definition no longer throws a
+  NullPointerException.
+
 # Release 3.7.9
 
 ## Bugfixes

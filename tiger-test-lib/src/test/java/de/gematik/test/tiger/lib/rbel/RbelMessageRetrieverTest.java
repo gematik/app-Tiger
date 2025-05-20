@@ -20,6 +20,7 @@ package de.gematik.test.tiger.lib.rbel;
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static de.gematik.test.tiger.util.CurlTestdataUtil.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
@@ -924,5 +925,49 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
         .containsAnyOf(
             "required property 'foobar' not found",
             "erforderliche Eigenschaft 'foobar' nicht gefunden");
+  }
+
+  /**
+   * tests bug TGR-1812
+   *
+   * <p>The schema has a trailing comma. This is allowed javascript, but not allowed JSON.
+   *
+   * <p>The parser that we use may accept it, if the strictMode validation is turned off.
+   *
+   * <p>In an old version of JSON-java, a bug would prevent the check to see if the strictMode is on
+   * or off, because of a null default configuration of the JSONObject.
+   *
+   * <p>The test threw java.lang.NullPointerException: Cannot invoke
+   * "org.json.JSONParserConfiguration.isStrictMode()" because "jsonParserConfiguration" is null
+   *
+   * <p>With JSON-java version 20250517 the code no longer throws NPE.
+   */
+  @Test
+  void testCurrentRequestMatchesAsJson() {
+    val responseToCheck =
+        """
+                  HTTP/1.1 200 OK
+                  Content-Length: 18
+
+                  {'hello': 'world'}
+                  """;
+    // Schema has a trailing comma which in an older version of JSON-java leads to
+    val schema =
+        """
+       {"hello": 'world',}
+       """;
+
+    rbelMessageRetriever.currentRequest =
+        RbelLogger.build()
+            .getRbelConverter()
+            .parseMessage(responseToCheck.getBytes(), new RbelMessageMetadata());
+
+    assertThatCode(
+            () -> {
+              glue.currentRequestAtMatchesAsJsonOrXml("$.body", ModeType.JSON, schema);
+            })
+        .doesNotThrowAnyException();
+
+    TigerGlobalConfiguration.reset();
   }
 }
