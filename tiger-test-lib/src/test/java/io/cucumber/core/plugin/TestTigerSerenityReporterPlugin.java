@@ -89,7 +89,7 @@ public class TestTigerSerenityReporterPlugin {
   public static final String GENERATED_JSON_REPORT =
       "target/site/serenity/d11408aff740706845d0a023dbe62d62f228d65c01a235474885c0879ce920e1.json";
 
-  public static final String TEST_GLUE_CLASS = "de.gematik.test.tiger.lib.integrationtest.TestGlue";
+  public static final String TEST_GLUE_CLASS = "io.cucumber.core.plugin.TestGlue";
   public static final String TEST_GLUE_STEP_LOCATION =
       TEST_GLUE_CLASS + ".testGlueMethod(java.lang.String,java.lang.String)";
   public static final String RESOLVABLE_DOCSTRING_STEP_LOCATION =

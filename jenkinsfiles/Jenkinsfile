@@ -34,6 +34,7 @@ pipeline {
             }
         }
 
+
         stage('gitCreateBranch') {
             when { branch BRANCH }
             steps {
@@ -58,8 +59,26 @@ pipeline {
                 TIGER_DOCKER_HOST = dockerGetCurrentHostname()
             }
             steps {
+                /**
+                 * We call mavenVerify with --fail-never, so that a failure in one submodule does not break immediately the tests
+                 *
+                 * Afterwards we check the logs to know if any test has failed and break the build only after all tests are run.
+                 */
                 withCredentials([string(credentialsId: 'GITHUB.API.Token', variable: 'GITHUB_TOKEN')]) {
-                    mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -P=NoLongrunner,dev -Djdk.httpclient.allowRestrictedHeaders=host")
+                    mavenVerify(POM_PATH, "-Dwdm.gitHubToken=$GITHUB_TOKEN -P=NoLongrunner,dev -Djdk.httpclient.allowRestrictedHeaders=host --fail-never")
+
+                    script {
+                        // The log contains ANSI color codes, therefore the regex must be a bit more permissive
+                        if (manager.logContains(/\[.*INFO.*\].*BUILD FAILURE.*/)) {
+                            echo "Found a build failure in the logs of the test execution. Will break build!"
+                            manager.buildFailure()
+                            // .buildFailure() just sets the result state of the build, but does not actually stop the build
+                            //we call error to do it.
+                            error("Build failed due to test failures.")
+                        } else {
+                            echo "Did not find a build failure. Everything is good!"
+                        }
+                    }
                 }
             }
         }
