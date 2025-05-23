@@ -151,17 +151,24 @@ pipeline {
                         values 'tiger-proxy', 'tiger-zion'
                     }
                 }
-                environment {
-                    IMAGE_NAME = "tiger/${APP}"
-                    DOCKER_TARGET_REGISTRY = dockerGetGematikRegistry('EUWEST3')
-                }
                 stages {
-                    stage('Retag Docker Image') {
-                        steps {
-                            dockerPull(IMAGE_NAME, "latest", DOCKER_TARGET_REGISTRY)
-                            dockerReTagImage(IMAGE_NAME, RELEASE_VERSION, "latest", DOCKER_TARGET_REGISTRY, DOCKER_TARGET_REGISTRY)
-                            dockerPushImage(IMAGE_NAME, RELEASE_VERSION, 'tiger-gar-writer', DOCKER_TARGET_REGISTRY)
-                            dockerRemoveLocalImage(IMAGE_NAME, RELEASE_VERSION, DOCKER_TARGET_REGISTRY)
+                    stage('Sequential Matrix') {
+                        options {
+                            lock('synchronous-matrix')
+                        }
+                        environment {
+                            IMAGE_NAME = "tiger/${APP}"
+                            DOCKER_TARGET_REGISTRY = dockerGetGematikRegistry('EUWEST3')
+                        }
+                        stages {
+                            stage('Retag Docker Image') {
+                                steps {
+                                    dockerPull(IMAGE_NAME, "latest", DOCKER_TARGET_REGISTRY)
+                                    dockerReTagImage(IMAGE_NAME, RELEASE_VERSION, "latest", DOCKER_TARGET_REGISTRY, DOCKER_TARGET_REGISTRY)
+                                    dockerPushImage(IMAGE_NAME, RELEASE_VERSION, 'tiger-gar-writer', DOCKER_TARGET_REGISTRY)
+                                    dockerRemoveLocalImage(IMAGE_NAME, RELEASE_VERSION, DOCKER_TARGET_REGISTRY)
+                                }
+                            }
                         }
                     }
                 }

@@ -124,33 +124,41 @@ pipeline {
                         values 'tiger-proxy', 'tiger-zion'
                     }
                 }
-                environment {
-                    IMAGE_NAME = "tiger/${APP}"
-                    IMAGE_VERSION = 'latest'
-                    VERSION = 'latest'
-                    BUILD_ARGS = "--build-arg APP=${APP}"
-                    DOCKER_TARGET_REGISTRY = dockerGetGematikRegistry('EUWEST3')
-                }
+
                 stages {
-                    stage('Build Docker Image') {
-                        steps {
-                            dockerBuild(IMAGE_NAME, VERSION, IMAGE_VERSION, BUILD_ARGS, 'Dockerfile_' + APP, DOCKER_TARGET_REGISTRY)
-
+                    stage('Sequential Matrix') {
+                        options {
+                            lock('synchronous-matrix')
                         }
-                    }
-
-                    stage('Push Docker Image') {
-                        when {
-                            branch BRANCH
+                        environment {
+                            IMAGE_NAME = "tiger/${APP}"
+                            IMAGE_VERSION = 'latest'
+                            VERSION = 'latest'
+                            BUILD_ARGS = "--build-arg APP=${APP}"
+                            DOCKER_TARGET_REGISTRY = dockerGetGematikRegistry('EUWEST3')
                         }
-                        steps {
-                            dockerPushImage(IMAGE_NAME, VERSION, 'tiger-gar-writer', DOCKER_TARGET_REGISTRY)
-                        }
-                    }
+                        stages {
+                            stage('Build Docker Image') {
+                                steps {
+                                    dockerBuild(IMAGE_NAME, VERSION, IMAGE_VERSION, BUILD_ARGS, 'Dockerfile_' + APP, DOCKER_TARGET_REGISTRY)
 
-                    stage('Cleanup Docker Image') {
-                        steps {
-                            dockerRemoveLocalImage(IMAGE_NAME, VERSION, DOCKER_TARGET_REGISTRY)
+                                }
+                            }
+
+                            stage('Push Docker Image') {
+                                when {
+                                    branch BRANCH
+                                }
+                                steps {
+                                    dockerPushImage(IMAGE_NAME, VERSION, 'tiger-gar-writer', DOCKER_TARGET_REGISTRY)
+                                }
+                            }
+
+                            stage('Cleanup Docker Image') {
+                                steps {
+                                    dockerRemoveLocalImage(IMAGE_NAME, VERSION, DOCKER_TARGET_REGISTRY)
+                                }
+                            }
                         }
                     }
                 }
