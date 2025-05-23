@@ -26,10 +26,10 @@ defineProps<{ onShowModal: () => void }>();
 
 <template>
   <a
-      class="btn modal-button float-end ms-2 test-btn-inspect"
-      data-bs-target="#jexlQueryModal"
-      data-bs-toggle="modal"
-      @click="onShowModal"
+    class="btn modal-button float-end ms-2 test-btn-inspect"
+    data-bs-target="#jexlQueryModal"
+    data-bs-toggle="modal"
+    @click="onShowModal"
   >
     <span class="is-size-7 fw-bold">Inspect</span>
   </a>

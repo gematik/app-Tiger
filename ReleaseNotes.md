@@ -14,6 +14,8 @@
 * TGR-1812: Tiger Test Lib: validating a JSON with a trailing comma in the schema definition no longer throws a
   NullPointerException.
 * TGR-1617: High-Load on a Direct-Forward-Proxy will no longer lead to dropped messages.
+* TGR-1842: Workflow Ui: fixed an issue where clicking a tree element in the RbelPath inspect dialog would prefill the
+  dialog with an incorrect expression.
 
 # Release 3.7.9
 

@@ -21,11 +21,11 @@
 
 -->
 <script setup lang="ts">
-import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
-import {inject, onMounted, ref, type Ref} from "vue";
-import {Dropdown} from "bootstrap";
-import type {UseMessageQueueReturn} from "@/api/MessageQueue.ts";
-import {settingsSymbol} from "../Settings.ts";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { inject, onMounted, ref, type Ref } from "vue";
+import { Dropdown } from "bootstrap";
+import type { UseMessageQueueReturn } from "@/api/MessageQueue.ts";
+import { settingsSymbol } from "../Settings.ts";
 import {
   faArrowDown19,
   faArrowUp19,
@@ -37,15 +37,15 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 const props = withDefaults(
-    defineProps<{
-      messageQueue: UseMessageQueueReturn;
-      onClickResetMessages: () => void;
-      onClickQuitProxy: () => void;
-      noLogo?: boolean;
-    }>(),
-    {
-      noLogo: false,
-    },
+  defineProps<{
+    messageQueue: UseMessageQueueReturn;
+    onClickResetMessages: () => void;
+    onClickQuitProxy: () => void;
+    noLogo?: boolean;
+  }>(),
+  {
+    noLogo: false,
+  },
 );
 const settings = inject(settingsSymbol)!;
 
@@ -87,84 +87,88 @@ function onClickQuitProxyFn(ev: MouseEvent) {
   <div class="sticky-header p-2 border-bottom d-flex justify-content-between">
     <template v-if="!noLogo">
       <span class="logo text-nowrap" id="test-tiger-logo">Tiger Proxy</span>
-      <div class="p-1 flex-grow-1"/>
+      <div class="p-1 flex-grow-1" />
     </template>
     <button
-        type="button"
-        class="btn test-btn-sort"
-        @click="() => (settings.reverseMessageQueue.value = !reversedQueueReversed)"
+      type="button"
+      class="btn test-btn-sort"
+      @click="() => (settings.reverseMessageQueue.value = !reversedQueueReversed)"
     >
       <FontAwesomeIcon
-          :icon="faArrowDown19"
-          title="Sort from oldest to newest"
-          v-if="reversedQueueReversed"
+        :icon="faArrowDown19"
+        title="Sort from oldest to newest"
+        v-if="reversedQueueReversed"
       />
-      <FontAwesomeIcon :icon="faArrowUp19" title="Sort from newest to oldest" v-else/>
+      <FontAwesomeIcon :icon="faArrowUp19" title="Sort from newest to oldest" v-else />
     </button>
-    <div class="border-end m-1"/>
+    <div class="border-end m-1" />
     <div ref="dropdownElement" class="dropdown">
       <button
-          type="button"
-          class="btn dropdown-toggle test-btn-settings"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-          data-bs-auto-close="outside"
-          id="test-settings-button"
-          title="Settings"
+        type="button"
+        class="btn dropdown-toggle test-btn-settings"
+        data-bs-toggle="dropdown"
+        aria-expanded="false"
+        data-bs-auto-close="outside"
+        id="test-settings-button"
+        title="Settings"
       >
-        <FontAwesomeIcon :icon="faGear"/>
+        <FontAwesomeIcon :icon="faGear" />
       </button>
       <form class="dropdown-menu p-3">
         <div class="mb-3">
           <label class="form-label bold"> Message Options </label>
           <div class="form-check">
             <input
-                v-model="settings.hideMessageHeaders.value"
-                type="checkbox"
-                class="form-check-input test-check-hide-header"
-                id="hideHeader"
+              v-model="settings.hideMessageHeaders.value"
+              type="checkbox"
+              class="form-check-input test-check-hide-header"
+              id="hideHeader"
             />
             <label class="form-check-label" for="hideHeader"> Hide Header </label>
           </div>
           <div class="form-check">
             <input
-                v-model="settings.hideMessageDetails.value"
-                type="checkbox"
-                class="form-check-input test-check-hide-details"
-                id="hideDetails"
+              v-model="settings.hideMessageDetails.value"
+              type="checkbox"
+              class="form-check-input test-check-hide-details"
+              id="hideDetails"
             />
             <label class="form-check-label" for="hideDetails"> Hide Details </label>
           </div>
         </div>
         <template v-if="__IS_ONLINE_MODE__">
-          <div class="border-bottom mb-3"/>
+          <div class="border-bottom mb-3" />
           <button
-              data-bs-toggle="modal"
-              data-bs-target="#exportModal"
-              id="exportModalButton"
-              @click="onClickExportFn"
-              class="btn btn-secondary w-100 mb-2 test-btn-export"
+            data-bs-toggle="modal"
+            data-bs-target="#exportModal"
+            id="exportModalButton"
+            @click="onClickExportFn"
+            class="btn btn-secondary w-100 mb-2 test-btn-export"
           >
-            <FontAwesomeIcon :icon="faFileExport"/>&nbsp;Export
+            <FontAwesomeIcon :icon="faFileExport" />&nbsp;Export
           </button>
           <button
-              data-bs-toggle="modal"
-              data-bs-target="#routeModal"
-              id="routeModalButton"
-              @click="onClickConfigRoutesFn"
-              class="btn btn-secondary w-100 mb-2 test-btn-config-routes"
+            data-bs-toggle="modal"
+            data-bs-target="#routeModal"
+            id="routeModalButton"
+            @click="onClickConfigRoutesFn"
+            class="btn btn-secondary w-100 mb-2 test-btn-config-routes"
           >
-            <FontAwesomeIcon :icon="faRoute"/>&nbsp;Configure Routes
+            <FontAwesomeIcon :icon="faRoute" />&nbsp;Configure Routes
           </button>
-          <button @click="onClickResetMessagesFn"
-                  class="btn btn-danger w-100 mb-2 test-btn-clear-messages"
-                  id="clearMessages">
-            <FontAwesomeIcon :icon="faTrashCan"/>&nbsp;Reset Messages
+          <button
+            @click="onClickResetMessagesFn"
+            class="btn btn-danger w-100 mb-2 test-btn-clear-messages"
+            id="clearMessages"
+          >
+            <FontAwesomeIcon :icon="faTrashCan" />&nbsp;Reset Messages
           </button>
-          <button @click="onClickQuitProxyFn"
-                  class="btn btn-outline-secondary w-100 test-btn-quit-proxy"
-                  id="test-quit-proxy">
-            <FontAwesomeIcon :icon="faPowerOff"/>&nbsp;Quit Proxy
+          <button
+            @click="onClickQuitProxyFn"
+            class="btn btn-outline-secondary w-100 test-btn-quit-proxy"
+            id="test-quit-proxy"
+          >
+            <FontAwesomeIcon :icon="faPowerOff" />&nbsp;Quit Proxy
           </button>
         </template>
       </form>

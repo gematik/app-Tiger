@@ -21,14 +21,14 @@
 
 -->
 <script setup lang="ts">
-import {computed, inject, nextTick, ref, watch} from "vue";
-import {toastSymbol} from "../Toast.ts";
-import {type Message} from "@/api/MessageQueue.ts";
-import {useRbelTestTreeMessage} from "@/api/RbelTestMessage.ts";
-import {rbelQueryModalSymbol} from "../RbelQueryModal.ts";
+import { computed, inject, nextTick, ref, watch } from "vue";
+import { toastSymbol } from "../Toast.ts";
+import { type Message } from "@/api/MessageQueue.ts";
+import { useRbelTestTreeMessage } from "@/api/RbelTestMessage.ts";
+import { rbelQueryModalSymbol } from "../RbelQueryModal.ts";
 import "simple-syntax-highlighter/dist/sshpre.css";
-import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
-import {faCircleCheck, faCircleExclamation} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { faCircleCheck, faCircleExclamation } from "@fortawesome/free-solid-svg-icons";
 
 const DEFAULT_RBEL_PATH = "$.body";
 
@@ -73,9 +73,9 @@ function copyPathToInputField(element: Element) {
       if (el.classList.contains("jexlResponseLink")) {
         const prevEl = el.previousElementSibling;
         if (
-            prevEl &&
-            prevEl.classList.contains("text-danger") &&
-            (prevEl.textContent?.length ?? 0) < (marker?.length ?? 0)
+          prevEl &&
+          prevEl.classList.contains("text-danger") &&
+          (prevEl.textContent?.length ?? 0) < (marker?.length ?? 0)
         ) {
           if (containsNonWordCharacters(el.textContent ?? "")) {
             text = "['" + el.textContent + "']." + text;
@@ -89,7 +89,8 @@ function copyPathToInputField(element: Element) {
     el = el.previousElementSibling;
   }
 
-  rbelQueryPath.value = "$." + text;
+  const prefix = text.startsWith(".") ? "$" : "$.";
+  rbelQueryPath.value = prefix + text;
 }
 
 watch(pathElements.value, async () => {
@@ -99,10 +100,8 @@ watch(pathElements.value, async () => {
 
     pathElements.value.forEach((element) => {
       const jexlResponseLinks = element.getElementsByClassName("jexlResponseLink");
-      for (let i = 0; i < jexlResponseLinks.length; i++) {
-        jexlResponseLinks[i].addEventListener("click", () =>
-            copyPathToInputField(jexlResponseLinks[i]),
-        );
+      for (const element of jexlResponseLinks) {
+        element.addEventListener("click", () => copyPathToInputField(element));
       }
     });
   }
@@ -113,12 +112,12 @@ watch(pathElements.value, async () => {
   <div>
     <label for="rbelTreeExpressionTextArea" class="form-label">Expression</label>
     <textarea
-        :class="['form-control', rbelPathTestResult?.errorMessage ? 'is-invalid' : '']"
-        aria-label="Enter Rbel Path"
-        v-model="rbelQueryPath"
-        id="rbelTreeExpressionTextArea"
-        placeholder="e.g. $.body"
-        @keydown.enter.prevent="rbelTest.testRbelPathQuery"
+      :class="['form-control', rbelPathTestResult?.errorMessage ? 'is-invalid' : '']"
+      aria-label="Enter Rbel Path"
+      v-model="rbelQueryPath"
+      id="rbelTreeExpressionTextArea"
+      placeholder="e.g. $.body"
+      @keydown.enter.prevent="rbelTest.testRbelPathQuery"
     ></textarea>
     <div class="invalid-feedback">{{ rbelPathTestResult?.errorMessage }}</div>
     <div class="d-flex flex-row align-items-end justify-content-end gap-2 mt-4">
@@ -127,30 +126,30 @@ watch(pathElements.value, async () => {
       </button>
     </div>
     <div
-        class="card mt-3"
-        v-if="rbelPathTestResult?.elementsWithTree && rbelPathTestResult?.elementsWithTree.length > 0"
+      class="card mt-3"
+      v-if="rbelPathTestResult?.elementsWithTree && rbelPathTestResult?.elementsWithTree.length > 0"
     >
       <div
-          class="d-flex flex-row align-items-center gap-2 border-start border-success border-4 rounded p-2 py-3"
+        class="d-flex flex-row align-items-center gap-2 border-start border-success border-4 rounded p-2 py-3"
       >
-        <FontAwesomeIcon :icon="faCircleCheck" class="text-success fs-5"/>
+        <FontAwesomeIcon :icon="faCircleCheck" class="text-success fs-5" />
         <div>
           Matching elements for the expression <code>'{{ rbelPathTestResult?.query }}'</code>.
         </div>
       </div>
     </div>
     <div
-        class="card mt-3"
-        v-if="
+      class="card mt-3"
+      v-if="
         rbelPathTestResult &&
         (!rbelPathTestResult?.elementsWithTree ||
           rbelPathTestResult?.elementsWithTree?.length === 0)
       "
     >
       <div
-          class="d-flex flex-row align-items-center gap-2 border-start border-warning border-4 rounded p-2 py-3"
+        class="d-flex flex-row align-items-center gap-2 border-start border-warning border-4 rounded p-2 py-3"
       >
-        <FontAwesomeIcon :icon="faCircleExclamation" class="text-warning fs-5"/>
+        <FontAwesomeIcon :icon="faCircleExclamation" class="text-warning fs-5" />
         <div>
           No matching elements for the expression <code>'{{ rbelPathTestResult?.query }}'</code>.
         </div>
@@ -160,7 +159,7 @@ watch(pathElements.value, async () => {
     <div v-if="rbelPathTestResult?.elementsWithTree" class="d-flex flex-column">
       <div v-for="entry in rbelPathTestResult.elementsWithTree" :key="Object.keys(entry)[0]">
         <div class="ssh-pre">
-          <pre class="ssh-pre__content" ref="pathElements" v-html="Object.values(entry)[0]"/>
+          <pre class="ssh-pre__content" ref="pathElements" v-html="Object.values(entry)[0]" />
         </div>
       </div>
     </div>

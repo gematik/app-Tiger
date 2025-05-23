@@ -21,10 +21,10 @@
 
 -->
 <script setup lang="ts">
-import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
-import {rbelFilterSymbol} from "@/api/RbelFilter.ts";
-import {inject} from "vue";
-import {faFilter, faSearch} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { rbelFilterSymbol } from "@/api/RbelFilter.ts";
+import { inject } from "vue";
+import { faFilter, faSearch } from "@fortawesome/free-solid-svg-icons";
 
 const rbelFilter = inject(rbelFilterSymbol)!;
 </script>
@@ -33,37 +33,37 @@ const rbelFilter = inject(rbelFilterSymbol)!;
   <div class="p-2 border-bottom d-flex gap-2 text-nowrap">
     <div class="filter input-group" v-if="__IS_ONLINE_MODE__">
       <span class="input-group-text">
-        <FontAwesomeIcon :icon="faFilter"/>
+        <FontAwesomeIcon :icon="faFilter" />
       </span>
       <input
-          readonly
-          id="test-rbel-path-input"
-          data-bs-toggle="modal"
-          data-bs-target="#filterBackdrop"
-          aria-expanded="false"
-          v-model="rbelFilter.rbelPath.value"
-          type="text"
-          class="form-control no-focus test-input-filter"
-          placeholder="Rbel Path..."
+        readonly
+        id="test-rbel-path-input"
+        data-bs-toggle="modal"
+        data-bs-target="#filterBackdrop"
+        aria-expanded="false"
+        v-model="rbelFilter.rbelPath.value"
+        type="text"
+        class="form-control no-focus test-input-filter"
+        placeholder="Rbel Path..."
       />
       <button
-          class="btn btn-outline-secondary test-btn-reset-filter"
-          id="test-reset-filter-button"
-          type="button"
-          @click="() => (rbelFilter.rbelPath.value = '')"
-          :disabled="!rbelFilter.rbelPath.value"
+        class="btn btn-outline-secondary test-btn-reset-filter"
+        id="test-reset-filter-button"
+        type="button"
+        @click="() => (rbelFilter.rbelPath.value = '')"
+        :disabled="!rbelFilter.rbelPath.value"
       >
         Reset Filter
       </button>
     </div>
     <!-- Search Button -->
     <button
-        type="button"
-        class="btn btn-outline-primary test-btn-search"
-        data-bs-toggle="modal"
-        data-bs-target="#searchModal"
+      type="button"
+      class="btn btn-outline-primary test-btn-search"
+      data-bs-toggle="modal"
+      data-bs-target="#searchModal"
     >
-      <FontAwesomeIcon :icon="faSearch"/>&nbsp;Search
+      <FontAwesomeIcon :icon="faSearch" />&nbsp;Search
     </button>
   </div>
 </template>
