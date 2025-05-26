@@ -15,6 +15,8 @@
 
 ## Bugfixes
 
+* TGR-1835: Rbel-Writer: Fixed a bug where replacing an existing element in the root node would overwrite all other
+  child nodes.
 * TGR-1812: Tiger Test Lib: validating a JSON with a trailing comma in the schema definition no longer throws a
   NullPointerException.
 * TGR-1617: High-Load on a Direct-Forward-Proxy will no longer lead to dropped messages.
@@ -747,8 +749,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+  key = PLUGIN_PROPERTY_NAME,
+  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

@@ -186,7 +186,10 @@ public class RbelBuilder {
         parentNode.addOrReplaceChild(
             entry.getKey().orElseThrow(), modifiedRbelContentTreeNode.getChildNodes().get(0));
       } else {
-        treeRootNode = modifiedRbelContentTreeNode;
+        modifiedRbelContentTreeNode.getChildNodesWithKey().stream()
+            .forEach(
+                childNode ->
+                    parentNode.addOrReplaceChild(childNode.getKey(), childNode.getValue()));
       }
     } else {
       RbelContentTreeNode newContentTreeNode = getContentTreeNodeFromString(newValue);
@@ -194,8 +197,7 @@ public class RbelBuilder {
       if (key.isPresent()) {
         entry.getParentNode().addOrReplaceChild(key.get(), newContentTreeNode);
       } else {
-        throw new NullPointerException(
-            "The key of the node which is to be changed is not set in its parent node.");
+        this.treeRootNode = newContentTreeNode;
       }
     }
     return this;

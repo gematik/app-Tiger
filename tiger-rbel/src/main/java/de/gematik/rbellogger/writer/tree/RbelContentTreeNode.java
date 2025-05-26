@@ -274,9 +274,7 @@ public class RbelContentTreeNode extends RbelPathAble {
   }
 
   private void updateContent() {
-
     if (type == RbelContentType.XML) {
-
       var formerParent = this.parentNode;
       var formerKey = this.getKey();
 
