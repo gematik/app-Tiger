@@ -9,6 +9,10 @@
   differences can occur, especially when mixing pre- and post-4.0 Tiger-Proxies in a mesh setup. When in doubt, please
   update your version to 4.0 and talk to the Tiger-Team when you are experiencing problems.
 
+## Features
+
+* TGR-1854: update spring boot dependency version to 3.4.5.
+
 ## Bugfixes
 
 * TGR-1812: Tiger Test Lib: validating a JSON with a trailing comma in the schema definition no longer throws a
@@ -743,8 +747,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-  key = PLUGIN_PROPERTY_NAME,
-  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+        key = PLUGIN_PROPERTY_NAME,
+        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }
