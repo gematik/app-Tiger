@@ -23,6 +23,7 @@ package de.gematik.test.tiger.mockserver.netty.unification;
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.*;
 import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.INCOMING_CHANNEL;
 import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.OUTGOING_CHANNEL;
+import static de.gematik.test.tiger.mockserver.httpclient.HttpClientInitializer.CONNECTION_ERROR_HANDLER_NAME;
 import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.REMOTE_SOCKET;
 import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.getRemoteAddress;
 import static de.gematik.test.tiger.mockserver.netty.HttpRequestHandler.LOCAL_HOST_HEADERS;
@@ -33,6 +34,8 @@ import static java.util.Collections.unmodifiableSet;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.test.tiger.mockserver.codec.MockServerHttpServerCodec;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
+import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
+import de.gematik.test.tiger.mockserver.logging.ChannelContextLogger;
 import de.gematik.test.tiger.mockserver.mock.HttpState;
 import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.netty.HttpRequestHandler;
@@ -54,13 +57,15 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.AttributeKey;
 import io.netty.util.Signal;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
@@ -69,7 +74,7 @@ import org.apache.commons.lang3.StringUtils;
  * @author jamesdbloom
  */
 @Slf4j
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class PortUnificationHandler extends ReplayingDecoder<Void> {
 
   public static final AttributeKey<Boolean> TLS_ENABLED_UPSTREAM =
@@ -84,20 +89,41 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
   private final HttpState httpState;
   private final HttpActionHandler actionHandler;
   private final MockServerInfiniteLoopChecker infiniteLoopChecker;
+  private ChannelPromise tlsEnabled;
+  private final ChannelContextLogger contextLogger = new ChannelContextLogger(log);
 
   private void performConnectionToRemote(ChannelHandlerContext ctx) {
     var incomingChannel = ctx.channel();
     if (incomingChannel.attr(OUTGOING_CHANNEL).get() != null
         || configuration.binaryProxyListener() == null) {
-      log.trace("already connected to remote server or no binary proxy listener");
+      contextLogger.logStage(ctx, "already connected to remote server or no binary proxy listener");
       return;
     }
-
+    initializeTlsEnabledPromise(incomingChannel);
     openNewConnection(ctx, incomingChannel);
   }
 
+  private void initializeTlsEnabledPromise(Channel channel) {
+    // tlsEnabled flag is only relevant for binary mode
+    if (configuration.binaryProxyListener() != null) {
+      tlsEnabled = channel.newPromise();
+    }
+  }
+
+  private void completeTlsEnabledPromise() {
+    if (tlsEnabled != null) {
+      tlsEnabled.setSuccess();
+    }
+  }
+
+  private void addListenerToTlsEnabledPromise(GenericFutureListener<Future<Void>> listener) {
+    if (tlsEnabled != null) {
+      tlsEnabled.addListener(listener);
+    }
+  }
+
   private void openNewConnection(ChannelHandlerContext ctx, Channel incomingChannel) {
-    log.trace("enabling connection to remote server");
+    contextLogger.logStage(ctx, "enabling connection to remote server");
     var remoteAddress = getRemoteAddress(ctx);
 
     val httpClient = actionHandler.getHttpClient();
@@ -120,6 +146,14 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
               // we don't try again to open the outgoing channel
               incomingChannel.attr(OUTGOING_CHANNEL).set(future.channel());
               future.channel().attr(INCOMING_CHANNEL).set(incomingChannel);
+              addListenerToTlsEnabledPromise(
+                  unused -> {
+                    contextLogger.logStage(
+                        ctx,
+                        "Detected TLS enabled on incoming channel and will activate it on outgoing"
+                            + " channel");
+                    activateSslOnOutgoingChannel(future.channel());
+                  });
               if (!future.isSuccess()) {
                 Optional.ofNullable(configuration.binaryProxyListener())
                     .filter(
@@ -134,6 +168,18 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
                             log.error("Failed to connect to {}", remoteAddress, future.cause()));
               }
             });
+  }
+
+  public void activateSslOnOutgoingChannel(Channel outgoingChannel) {
+    var remoteAddress = outgoingChannel.attr(NettyHttpClient.REMOTE_SOCKET).get();
+    SslHandler sslHandler =
+        actionHandler
+            .getHttpClient()
+            .createClientSslContext(Optional.empty())
+            .newHandler(
+                outgoingChannel.alloc(), remoteAddress.getHostName(), remoteAddress.getPort());
+
+    outgoingChannel.pipeline().addAfter(CONNECTION_ERROR_HANDLER_NAME, "ssl-handler", sslHandler);
   }
 
   private void doInfiniteLoopCheck(ChannelHandlerContext ctx) {
@@ -191,32 +237,21 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
     doInfiniteLoopCheck(ctx);
 
     if (isTls(msg) && configuration.enableTlsTermination()) {
-      logStage(ctx, "adding TLS decoders");
+      contextLogger.logStage(ctx, "adding TLS decoders");
       enableTls(ctx, msg);
-      performConnectionToRemote(ctx);
     } else {
-      performConnectionToRemote(ctx);
       if (configuration.binaryProxyListener() == null) {
         if (isHttp(msg)) {
-          logStage(ctx, "adding HTTP decoders");
+          contextLogger.logStage(ctx, "adding HTTP decoders");
           switchToHttp(ctx, msg);
         } else if (isProxyConnected(msg)) {
-          logStage(ctx, "setting proxy connected");
+          contextLogger.logStage(ctx, "setting proxy connected");
           switchToProxyConnected(ctx, msg);
         }
       } else {
-        logStage(ctx, "adding binary decoder");
+        contextLogger.logStage(ctx, "adding binary decoder");
         switchToBinary(ctx, msg);
       }
-    }
-  }
-
-  private void logStage(ChannelHandlerContext ctx, String message) {
-    if (log.isTraceEnabled()) {
-      log.trace(
-          message + " for channel: {} pipeline: {}",
-          ctx.channel().toString(),
-          ctx.pipeline().names());
     }
   }
 
@@ -242,6 +277,7 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
 
     // re-unify (with SSL enabled)
     ctx.pipeline().fireChannelRead(msg.readBytes(actualReadableBytes()));
+    completeTlsEnabledPromise();
   }
 
   private boolean isHttp(ByteBuf msg) {
@@ -414,5 +450,11 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
 
   private Optional<TigerProxyRoutingException> getTigerRoutingException(Throwable throwable) {
     return TigerExceptionUtils.getCauseWithType(throwable, TigerProxyRoutingException.class);
+  }
+
+  @Override
+  public void channelActive(ChannelHandlerContext ctx) {
+    contextLogger.logStage(ctx, "Incoming channel is active.");
+    performConnectionToRemote(ctx);
   }
 }

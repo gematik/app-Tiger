@@ -22,6 +22,7 @@
 * TGR-1617: High-Load on a Direct-Forward-Proxy will no longer lead to dropped messages.
 * TGR-1842: Workflow Ui: fixed an issue where clicking a tree element in the RbelPath inspect dialog would prefill the
   dialog with an incorrect expression.
+* TGR-1816: Tiger Proxy: it is now possible to use a direct binary proxy for pop3 and smtp without TLS.
 
 # Release 3.7.9
 

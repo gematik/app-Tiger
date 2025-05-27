@@ -24,6 +24,7 @@ import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.close
 
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
+import de.gematik.test.tiger.mockserver.logging.ChannelContextLogger;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import io.netty.buffer.Unpooled;
@@ -45,6 +46,7 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
   public static final AttributeKey<Channel> INCOMING_CHANNEL =
       AttributeKey.valueOf("INCOMING_CHANNEL");
   private final BinaryExchangeHandler binaryProxyListener;
+  private final ChannelContextLogger contextLogger = new ChannelContextLogger(log);
 
   public BinaryBridgeHandler(MockServerConfiguration configuration) {
     this.binaryProxyListener = configuration.binaryProxyListener();
@@ -63,6 +65,7 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
 
   @Override
   public void channelInactive(ChannelHandlerContext ctx) {
+    contextLogger.logStage(ctx, "Outgoing channel of binary proxy is being closed");
     ctx.close();
   }
 

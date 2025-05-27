@@ -55,6 +55,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
 
+  public static final String CONNECTION_ERROR_HANDLER_NAME = "connection-error-handler";
   private final HttpProtocol httpProtocol;
   private final HttpClientConnectionErrorHandler httpClientConnectionHandler;
   private final CompletableFuture<HttpProtocol> protocolFuture;
@@ -93,10 +94,14 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
     if (isHostNotOnNoProxyHostList(remoteAddress)) {
       addProxyHandlerIfApplicable(pipeline, secure);
     }
-    pipeline.addLast(httpClientConnectionHandler);
+    pipeline.addLast(CONNECTION_ERROR_HANDLER_NAME, httpClientConnectionHandler);
 
     if (secure) {
-      log.info("Adding SSL Handler in HttpClientInitializer.initChannel");
+      log.atTrace()
+          .log(
+              () ->
+                  "Adding SSL Handler in HttpClientInitializer.initChannel for channel %s. Current pipeline: %s"
+                      .formatted(channel.toString(), pipeline.toMap()));
       pipeline.addLast(
           nettySslContextFactory
               .createClientSslContext(Optional.ofNullable(httpProtocol))

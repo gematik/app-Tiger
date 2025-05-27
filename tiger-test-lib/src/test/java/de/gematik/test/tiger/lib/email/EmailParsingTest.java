@@ -63,17 +63,98 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 @Slf4j
 class EmailParsingTest {
 
+  /**
+   * Number of messages when retrieving a message over POP:
+   *
+   * <p>1: Sever: +OK POP3 GreenMail Server v2.1.3 ready
+   *
+   * <p>2: Client: CAPA
+   *
+   * <p>3: S: OK
+   *
+   * <p>UIDL
+   *
+   * <p>SASL
+   *
+   * <p>PLAIN
+   *
+   * <p>4: C: USER to@localhost
+   *
+   * <p>5: S: +OK
+   *
+   * <p>6: C: PASS to@localhost
+   *
+   * <p>7: S: +OK
+   *
+   * <p>8: C: STAT
+   *
+   * <p>9: S: +OK 1 26
+   *
+   * <p>10: C: NOOP
+   *
+   * <p>11: S: +OK noop rimes with poop
+   *
+   * <p>12: C: RETR 1
+   *
+   * <p>13: S: +OK\r\nReturn-Path: <from@localhost>\r\nReceive...
+   *
+   * <p>14: C: QUIT\r\n
+   *
+   * <p>15: S: +OK bye see you soon
+   */
+  public static final int NUMBER_OF_MESSAGES_PARSE_ONLY_POP = 15;
+
+  /**
+   * Number of messages when sending a message over SMTP:
+   *
+   * <p>1: Server: 220 /127.0.0.1 GreenMail SMTP Service v2.1.3
+   *
+   * <p>2: Client: EHLO
+   *
+   * <p>3: S: 250-/127.0.0.1 \r\n 250 AUTH PLAIN LOGIN XOAUTH2
+   *
+   * <p>4: C: MAIL FROM:<from@localhost>
+   *
+   * <p>5: S: 250 OK
+   *
+   * <p>6: C: RCPT TO:<to@localhost>
+   *
+   * <p>7: S: 250 OK
+   *
+   * <p>8: C: DATA\r\nDate: Mon, 26 May 2025 16:28:31 +0200 (...) # We parse the email data together
+   * in this RbelElement, even though it actually follows the 354 response from the server.
+   *
+   * <p>9: S: 354 Start mail input; end with <CRLF>.<CRLF>\r\n
+   *
+   * <p>10: S: 250 OK
+   *
+   * <p>11: C: QUIT
+   *
+   * <p>12: S: QUIT
+   */
+  public static final int NUMBER_OF_MESSAGES_PARSE_ONLY_SMTP = 12;
+
+  public static final int NUMBER_OF_MESSAGES_SEND_SMTP_RECEIVE_POP_SECURE_MESH = 27;
   ServerSetup smtpsAddress;
   ServerSetup pop3Address;
   GreenMail greenMail;
   private int smtpsProxyPort;
   private int pop3sProxyPort;
 
-  void startGreenMail() {
+  void startGreenMailSecure() {
+    startGreenMail(true);
+  }
+
+  void startGreenMailInsecure() {
+    startGreenMail(false);
+  }
+
+  void startGreenMail(boolean secure) {
     val smtpsPort =
         Integer.parseInt(
             TigerGlobalConfiguration.resolvePlaceholders(
@@ -91,7 +172,10 @@ class EmailParsingTest {
         Integer.parseInt(
             TigerGlobalConfiguration.resolvePlaceholders("${tiger.config_ports.pop3s.proxy}"));
 
-    val tigerGreenmailSetup = createGreenMailServerSetup(smtpsPort, pop3sPort);
+    val tigerGreenmailSetup =
+        secure
+            ? createGreenMailServerSetupSecure(smtpsPort, pop3sPort)
+            : createGreenMailServerSetupInsecure(smtpsPort, pop3sPort);
     smtpsAddress = tigerGreenmailSetup[0];
     pop3Address = tigerGreenmailSetup[1];
 
@@ -134,7 +218,7 @@ class EmailParsingTest {
    """)
   @Test
   void testReceiveEmailOverTigerProxy(TigerTestEnvMgr tigerTestEnvMgr) {
-    startGreenMail();
+    startGreenMailSecure();
     GreenMailUtil.sendTextEmail(
         "to@localhost",
         "from@localhost",
@@ -145,7 +229,7 @@ class EmailParsingTest {
     var message = retrieveByPopSecure(pop3sProxyPort);
     assertEqual(message, ExpectedMail.smallMessage());
 
-    expectReceivedMessages(tigerTestEnvMgr, 15);
+    expectReceivedMessages(tigerTestEnvMgr, NUMBER_OF_MESSAGES_PARSE_ONLY_POP);
   }
 
   @SneakyThrows
@@ -157,18 +241,18 @@ class EmailParsingTest {
         directReverseProxy:
           hostname: 127.0.0.1
           port: ${free.port.1}
-          ignoreConnectionErrors: true
         activateRbelParsingFor:
           - pop3""")
   @Test
+  @Timeout(value = 60, unit = TimeUnit.SECONDS) // to prevent it to run indefinitely
   void testSendCAPACommand_ServerRespondsWithLongOkLine(TigerTestEnvMgr tigerTestEnvMgr) {
 
     var fakeMailServerPort =
         Integer.parseInt(TigerGlobalConfiguration.resolvePlaceholders("${free.port.1}"));
+    log.info("Fakemail server port: " + fakeMailServerPort);
 
-    try (var mailClientSocket =
-            newClientSocketTo(tigerTestEnvMgr.getLocalTigerProxyOrFail(), true);
-        var fakeMailServer = new FakeMailServer(fakeMailServerPort, true);
+    try (var fakeMailServer = new FakeMailServer(fakeMailServerPort, true);
+        var mailClientSocket = newClientSocketTo(tigerTestEnvMgr.getLocalTigerProxyOrFail(), true);
         var clientInputStream = mailClientSocket.getInputStream();
         var clientOutputStream = mailClientSocket.getOutputStream();
         var reader =
@@ -202,10 +286,6 @@ class EmailParsingTest {
           .hasStringContentEqualTo("USER\r\nPASS\r\nUIDL");
     }
   }
-
-  /** A fake mail server that only responds to the CAPA command* */
-  @SneakyThrows
-  private static void createFakeMailServer(int port, boolean okWithHeader) throws IOException {}
 
   @NotNull
   public static Socket newClientSocketTo(TigerProxy tigerProxy, boolean secure) throws IOException {
@@ -261,31 +341,16 @@ class EmailParsingTest {
        greenmailServerPort: ${free.port.3}
    tigerProxy:
      proxyPort: ${tiger.config_ports.smtps.proxy}
-     fileSaveInfo:
-        writeToFile: true
      directReverseProxy:
            hostname: 127.0.0.1
            port: ${tiger.config_ports.smtps.greenmailServerPort}
      activateRbelParsingFor:
         - smtp
-   servers:
-     pop3sProxy:
-        type: tigerProxy
-        tigerProxyConfiguration:
-          adminPort: ${tiger.config_ports.pop3s.admin}
-          proxyPort: ${tiger.config_ports.pop3s.proxy}
-          directReverseProxy:
-             hostname: 127.0.0.1
-             port: ${tiger.config_ports.pop3s.greenmailServerPort}
-          activateRbelParsingFor:
-            - smtp
-            - pop3
-            - mime
    """)
   @Test
-  void testSendEmailOverTigerProxy(TigerTestEnvMgr tigerTestEnvMgr) {
-    startGreenMail();
-    ServerSetup smtpProxy = getSmtpProxy();
+  void testSendEmailOverTigerProxySecure(TigerTestEnvMgr tigerTestEnvMgr) {
+    startGreenMailSecure();
+    ServerSetup smtpProxy = getSmtpProxySecure();
     GreenMailUtil.sendTextEmail(
         "to@localhost",
         "from@localhost",
@@ -293,11 +358,51 @@ class EmailParsingTest {
         "here the body of the email\r\n",
         smtpProxy);
 
-    var message = retrieveByPopSecure(pop3sProxyPort);
+    var message = retrieveByPopSecure(pop3Address.getPort());
     assertEqual(message, ExpectedMail.smallMessage());
 
     tigerTestEnvMgr.getLocalTigerProxyOrFail().waitForAllCurrentMessagesToBeParsed();
-    expectReceivedMessages(tigerTestEnvMgr, 12);
+
+    expectReceivedMessages(tigerTestEnvMgr, NUMBER_OF_MESSAGES_PARSE_ONLY_SMTP);
+  }
+
+  @SneakyThrows
+  @TigerTest(
+      tigerYaml =
+          """
+           config_ports:
+             pop3s:
+               admin: ${free.port.0}
+               proxy: ${free.port.1}
+               greenmailServerPort: ${free.port.2}
+             smtps:
+               admin: ${free.port.4}
+               proxy: ${free.port.5}
+               greenmailServerPort: ${free.port.3}
+           tigerProxy:
+             proxyPort: ${tiger.config_ports.smtps.proxy}
+             directReverseProxy:
+                   hostname: 127.0.0.1
+                   port: ${tiger.config_ports.smtps.greenmailServerPort}
+             activateRbelParsingFor:
+                - smtp
+           """)
+  @Test
+  void testSendEmailOverTigerProxyInsecure(TigerTestEnvMgr tigerTestEnvMgr) {
+    startGreenMailInsecure();
+    ServerSetup smtpProxy = getSmtpProxyInsecure();
+    GreenMailUtil.sendTextEmail(
+        "to@localhost",
+        "from@localhost",
+        "test subject",
+        "here the body of the email\r\n",
+        smtpProxy);
+
+    var message = retrieveByPopInsecure(pop3Address.getPort());
+    assertEqual(message, ExpectedMail.smallMessage());
+
+    tigerTestEnvMgr.getLocalTigerProxyOrFail().waitForAllCurrentMessagesToBeParsed();
+    expectReceivedMessages(tigerTestEnvMgr, NUMBER_OF_MESSAGES_PARSE_ONLY_SMTP);
   }
 
   @SneakyThrows
@@ -345,8 +450,8 @@ class EmailParsingTest {
    """)
   @Test
   void testSendAndReceiveEmailOverMeshTigerProxy(TigerTestEnvMgr tigerTestEnvMgr) {
-    startGreenMail();
-    ServerSetup smtpProxy = getSmtpProxy();
+    startGreenMailSecure();
+    ServerSetup smtpProxy = getSmtpProxySecure();
 
     GreenMailUtil.sendTextEmail(
         "to@localhost",
@@ -358,7 +463,7 @@ class EmailParsingTest {
     var message = retrieveByPopSecure(pop3sProxyPort);
     assertEqual(message, ExpectedMail.smallMessage());
 
-    expectReceivedMessages(tigerTestEnvMgr, 27);
+    expectReceivedMessages(tigerTestEnvMgr, NUMBER_OF_MESSAGES_SEND_SMTP_RECEIVE_POP_SECURE_MESH);
   }
 
   @SneakyThrows
@@ -408,8 +513,8 @@ class EmailParsingTest {
            """)
   @Test
   void testSendAndReceiveEmailOverMeshTigerProxy_bigAttachment(TigerTestEnvMgr tigerTestEnvMgr) {
-    startGreenMail();
-    ServerSetup smtpProxy = getSmtpProxy();
+    startGreenMailSecure();
+    ServerSetup smtpProxy = getSmtpProxySecure();
 
     String to = "to@localhost";
     String from = "from@localhost";
@@ -462,6 +567,43 @@ class EmailParsingTest {
     }
   }
 
+  @SneakyThrows
+  @TigerTest(
+      tigerYaml =
+          """
+           config_ports:
+             pop3s:
+               admin: ${free.port.0}
+               proxy: ${free.port.1}
+               greenmailServerPort: ${free.port.2}
+             smtps:
+               admin: ${free.port.4}
+               proxy: ${free.port.5}
+               greenmailServerPort:  ${free.port.3}
+           tigerProxy:
+             proxyPort: ${tiger.config_ports.pop3s.proxy}
+             directReverseProxy:
+                   hostname: 127.0.0.1
+                   port: ${tiger.config_ports.pop3s.greenmailServerPort}
+             activateRbelParsingFor:
+                - pop3
+           """)
+  @Test
+  void testReceiveEmailOverTigerProxyWithoutTls(TigerTestEnvMgr tigerTestEnvMgr) {
+    startGreenMailInsecure();
+    GreenMailUtil.sendTextEmail(
+        "to@localhost",
+        "from@localhost",
+        "test subject",
+        "here the body of the email\r\n",
+        smtpsAddress);
+
+    var message = retrieveByPopInsecure(pop3sProxyPort);
+    assertEqual(message, ExpectedMail.smallMessage());
+
+    expectReceivedMessages(tigerTestEnvMgr, NUMBER_OF_MESSAGES_PARSE_ONLY_POP);
+  }
+
   private static boolean hasSmtpData(RbelElement e) {
     return e.getFacet(RbelSmtpCommandFacet.class)
         .map(RbelSmtpCommandFacet::getCommand)
@@ -512,23 +654,47 @@ class EmailParsingTest {
     }
   }
 
-  private @NotNull ServerSetup getSmtpProxy() {
+  private @NotNull ServerSetup getSmtpProxySecure() {
     return new ServerSetup(smtpsProxyPort, null, ServerSetup.PROTOCOL_SMTPS);
   }
 
-  private ServerSetup[] createGreenMailServerSetup(int smtpsPort, int pop3sPort) {
+  private @NotNull ServerSetup getSmtpProxyInsecure() {
+    return new ServerSetup(smtpsProxyPort, null, ServerSetup.PROTOCOL_SMTP);
+  }
+
+  private ServerSetup[] createGreenMailServerSetupSecure(int smtpsPort, int pop3sPort) {
     ServerSetup smtps = new ServerSetup(smtpsPort, null, ServerSetup.PROTOCOL_SMTPS);
     ServerSetup pop3s = new ServerSetup(pop3sPort, null, ServerSetup.PROTOCOL_POP3S);
 
     return new ServerSetup[] {smtps, pop3s};
   }
 
-  @SneakyThrows
-  Message retrieveByPopSecure(int portNumber) {
-    // in order to go through the tiger proxy, we need to make a request using directly the java
-    // mail
-    // api instead of green mail. in this way we can use a custom port
+  private ServerSetup[] createGreenMailServerSetupInsecure(int smtpPort, int pop3Port) {
+    ServerSetup smtp = new ServerSetup(smtpPort, null, ServerSetup.PROTOCOL_SMTP);
+    ServerSetup pop3s = new ServerSetup(pop3Port, null, ServerSetup.PROTOCOL_POP3);
 
+    return new ServerSetup[] {smtp, pop3s};
+  }
+
+  @SneakyThrows
+  Store createStoreObjectInsecurePop(int portNumber) {
+    // Set the host pop3 address
+    Properties properties = new Properties();
+
+    properties.setProperty("mail.pop3.host", "127.0.0.1");
+    properties.setProperty("mail.pop3.port", String.valueOf(portNumber));
+    properties.setProperty("mail.pop3.auth", "true");
+    properties.setProperty("mail.debug", "true");
+
+    // Get a Session object
+    Session session = Session.getInstance(properties);
+
+    // Create a Store object
+    return session.getStore("pop3");
+  }
+
+  @SneakyThrows
+  Store createStoreObjectSecurePop(int portNumber) {
     // Set the host pop3 address
     Properties properties = new Properties();
 
@@ -536,13 +702,30 @@ class EmailParsingTest {
     properties.setProperty("mail.pop3s.port", String.valueOf(portNumber));
     properties.setProperty("mail.pop3s.auth", "true");
     properties.setProperty("mail.pop3s.ssl.trust", "*");
+    properties.setProperty("mail.pop3s.ssl.checkserveridentity", "false");
     properties.setProperty("mail.debug", "true");
 
     // Get a Session object
     Session session = Session.getInstance(properties);
 
     // Create a Store object
-    Store store = session.getStore("pop3s");
+    return session.getStore("pop3s");
+  }
+
+  Message retrieveByPopSecure(int pop3sPort) {
+    return retrieveByPop(createStoreObjectSecurePop(pop3sPort));
+  }
+
+  Message retrieveByPopInsecure(int pop3sPort) {
+    return retrieveByPop(createStoreObjectInsecurePop(pop3sPort));
+  }
+
+  @SneakyThrows
+  Message retrieveByPop(Store store) {
+    // in order to go through the tiger proxy, we need to make a request using directly the java
+    // mail
+    // api instead of green mail. in this way we can use a custom port
+
     store.connect("to@localhost", "to@localhost");
 
     // Create a Folder object and open the folder
@@ -578,7 +761,7 @@ class EmailParsingTest {
     }
   }
 
-  class FakeMailServer implements AutoCloseable {
+  static class FakeMailServer implements AutoCloseable {
 
     private final ServerSocket serverSocket;
     private final Thread serverThread;
@@ -592,6 +775,7 @@ class EmailParsingTest {
       var serverThread =
           new Thread(
               () -> {
+                log.info("Fake Server will wait for connection");
                 try (Socket clientSocket = serverSocket.accept();
                     BufferedWriter out =
                         new BufferedWriter(
@@ -601,7 +785,7 @@ class EmailParsingTest {
                         new BufferedReader(
                             new InputStreamReader(
                                 clientSocket.getInputStream(), StandardCharsets.US_ASCII))) {
-
+                  log.info("Fake server received a connection");
                   // Send welcome message
                   out.write("+OK POP3 server ready\r\n");
                   out.flush();
@@ -638,6 +822,7 @@ class EmailParsingTest {
 
     @Override
     public void close() throws Exception {
+      log.info("closing fake server");
       if (serverThread != null) {
         serverThread.join(5000);
       }

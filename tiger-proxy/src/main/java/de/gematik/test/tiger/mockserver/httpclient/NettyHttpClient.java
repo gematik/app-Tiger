@@ -34,6 +34,7 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.EventLoopGroup;
+import io.netty.handler.ssl.SslContext;
 import io.netty.util.AttributeKey;
 import java.net.InetSocketAddress;
 import java.util.*;
@@ -48,7 +49,7 @@ import lombok.extern.slf4j.Slf4j;
 public class NettyHttpClient {
 
   static final AttributeKey<Boolean> SECURE = AttributeKey.valueOf("SECURE");
-  static final AttributeKey<InetSocketAddress> REMOTE_SOCKET =
+  public static final AttributeKey<InetSocketAddress> REMOTE_SOCKET =
       AttributeKey.valueOf("REMOTE_SOCKET");
   public static final AttributeKey<CompletableFuture<Message>> RESPONSE_FUTURE =
       AttributeKey.valueOf("RESPONSE_FUTURE");
@@ -268,5 +269,9 @@ public class NettyHttpClient {
 
   public int queryClientPort(int port) {
     return clientBootstrapFactory.getLoopCounterForOpenConnectionFromPort(port);
+  }
+
+  public SslContext createClientSslContext(Optional<HttpProtocol> httpProtocol) {
+    return nettySslContextFactory.createClientSslContext(httpProtocol);
   }
 }
