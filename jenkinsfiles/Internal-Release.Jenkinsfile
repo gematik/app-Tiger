@@ -107,7 +107,7 @@ pipeline {
 
                         sh 'git stash'
                         sh '''
-                            mvn generate-test-resources -P userManual 
+                            mvn generate-test-resources -P userManual -pl tiger-test-lib
                         '''
                         stash includes: 'tiger-test-lib/target/doc/user_manual/tiger_user_manual.pdf,tiger-test-lib/target/doc/user_manual/tiger_user_manual.html,tiger-test-lib/target/doc/user_manual/media/*,tiger-test-lib/target/doc/user_manual/screenshots/*.png', name: 'manual'
 

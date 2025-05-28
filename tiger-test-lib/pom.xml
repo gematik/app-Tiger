@@ -129,7 +129,7 @@
             <artifactId>junit-platform-suite</artifactId>
         </dependency>
         <!-- even though we don't directly use junit4, we still need the vintage engine
-                        because cucumber uses it on its PickleRunner -->
+                because cucumber uses it on its PickleRunner -->
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
@@ -466,6 +466,7 @@
                         <goals>
                             <goal>java</goal>
                         </goals>
+                        <phase>generate-test-resources</phase>
                         <configuration>
                             <mainClass>de.gematik.test.tiger.glue.AnnotationParser</mainClass>
                             <arguments>
