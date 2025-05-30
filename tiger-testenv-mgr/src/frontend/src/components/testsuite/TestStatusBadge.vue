@@ -22,28 +22,45 @@
 -->
 <template>
   <span :class="`${highlightText ? 'statustext' : ''}`">
+    <a
+        v-if="testStatus === 'FAILED' && failureLink"
+        class="failureLink"
+        :href="failureLink"
+    >
+      <i
+          :class="`statusbadge ${testStatus.toLowerCase()} left ${getTestResultIcon(testStatus, 'solid')}`"
+          :title="`${statusMessage ? statusMessage : testStatus}`"
+      ></i>
+    </a>
     <i
-      :id="`${link}`"
-      :class="`statusbadge ${testStatus.toLowerCase()} left ${getTestResultIcon(testStatus, 'solid')}`"
-      :title="`${testStatus}`"
+        v-else
+        :class="`statusbadge ${testStatus.toLowerCase()} left ${getTestResultIcon(testStatus, 'solid')}`"
+        :title="`${statusMessage ? statusMessage : testStatus}`"
     ></i>
-    {{ text }}
+    <a
+        class="scenarioLink"
+        :href="link"
+    >
+      {{ text }}
+    </a>
   </span>
   <span
-    :class="`statusbadge ${getStatusFGAndBGColorClass(testStatus)} badge rounded-pill test-feature-status-word`"
+      :class="`statusbadge ${getStatusFGAndBGColorClass(testStatus)} badge rounded-pill test-feature-status-word`"
   >
     {{ testStatus }}
   </span>
 </template>
 
 <script setup lang="ts">
-import { getTestResultIcon } from "@/types/testsuite/TestResult";
+import {getTestResultIcon} from "@/types/testsuite/TestResult";
 
 defineProps<{
   testStatus: string;
+  statusMessage: string;
   highlightText: boolean;
   text: string;
   link: string;
+  failureLink?: string;
 }>();
 
 function getStatusFGAndBGColorClass(status: string): string {

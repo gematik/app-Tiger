@@ -69,6 +69,8 @@ import io.cucumber.plugin.event.TestStepStarted;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -97,6 +99,7 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 
 @Slf4j
@@ -347,7 +350,7 @@ public class SerenityReporterCallbacks {
           Boolean.TRUE.equals(scenarioAlreadyFailed.get())
               ? TestResult.SKIPPED
               : TestResult.EXECUTING;
-      updateStepInformation(context, testCase, testStep, result, StepState.STARTED);
+      updateStepInformation(context, testCase, testStep, result, null, StepState.STARTED);
       evidenceRecorder.openStepContext(
           new ReportStepConfiguration(
               StepDescription.of((PickleStepTestStep) testStep).getUnresolvedDescriptionHtml()));
@@ -359,12 +362,13 @@ public class SerenityReporterCallbacks {
       TestCase testCase,
       TestStep testStep,
       TestResult result,
+      Throwable error,
       StepState stepState) {
     var dryRun = TestCaseDelegate.of(testCase).isDryRun();
     var status = dryRun ? TestResult.TEST_DISCOVERED : result;
     int dataVariantIndex = extractScenarioDataVariantIndex(context, testCase);
     informWorkflowUiAboutCurrentStep(
-        context, testCase, testStep, status, dryRun, dataVariantIndex, stepState);
+        context, testCase, testStep, status, error, dryRun, dataVariantIndex, stepState);
   }
 
   private void addBannerMessageToUpdate(
@@ -416,7 +420,8 @@ public class SerenityReporterCallbacks {
         if (TestResult.FAILED.equals(result)) {
           scenarioAlreadyFailed.set(true);
         }
-        updateStepInformation(context, testCase, testStep, result, StepState.FINISHED);
+        var error = event.getResult().getError();
+        updateStepInformation(context, testCase, testStep, result, error, StepState.FINISHED);
 
         if (TigerDirector.isSerenityAvailable()) {
           addStepEvidence();
@@ -444,6 +449,7 @@ public class SerenityReporterCallbacks {
       TestCase testCase,
       TestStep testStep,
       TestResult status,
+      Throwable error,
       boolean isDryRun,
       int variantDataIndex,
       StepState stepState) {
@@ -480,6 +486,8 @@ public class SerenityReporterCallbacks {
             .description(getHtmlDescription(stepDescription, isDryRun, status))
             .tooltip(stepDescription.getTooltip())
             .status(status)
+            .failureMessage(error != null ? error.getMessage() : null)
+            .failureStacktrace(getStackTrace(error))
             .stepIndex(stepIndex)
             .rbelMetaData(messageMetaData)
             .build();
@@ -496,6 +504,7 @@ public class SerenityReporterCallbacks {
                     : null)
             .exampleList(variantDataMap)
             .steps(Map.of(String.valueOf(stepIndex), currentStepUpdate))
+            .failureMessage(error != null ? error.getMessage() : null)
             .build();
 
     if (TestResult.EXECUTING.equals(status)) {
@@ -511,6 +520,17 @@ public class SerenityReporterCallbacks {
         .receiveTestEnvUpdate(
             builder.featureMap(convertToLinkedHashMap(featureName, featureUpdate)).build());
     LocalProxyRbelMessageListener.getInstance().removeStepRbelMessages(currentStepMessages);
+  }
+
+  private static @Nullable String getStackTrace(Throwable error) {
+    String stackTrace = null;
+    if (error != null) {
+      StringWriter sw = new StringWriter();
+      error.printStackTrace(new PrintWriter(sw));
+      stackTrace = sw.toString();
+      log.info("Stack trace for error: \n{}", stackTrace);
+    }
+    return stackTrace;
   }
 
   private void updateLastStepMessages(

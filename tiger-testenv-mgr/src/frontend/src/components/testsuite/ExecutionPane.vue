@@ -22,14 +22,14 @@
 -->
 <template>
   <div
-    id="execution_pane"
-    class="tab-pane active execution-pane-tabs"
-    role="tabpanel"
+      id="execution_pane"
+      class="tab-pane active execution-pane-tabs"
+      role="tabpanel"
   >
     <BannerMessageWindow
-      :banner-message="bannerMessage"
-      :quit-testrun-ongoing="quitTestrunOngoing"
-      :quit-reason="quitReason"
+        :banner-message="bannerMessage"
+        :quit-testrun-ongoing="quitTestrunOngoing"
+        :quit-reason="quitReason"
     ></BannerMessageWindow>
     <div class="w-100">
       <div id="test-execution-pane-date" class="mt-2 small text-muted text-end">
@@ -37,132 +37,139 @@
       </div>
       <div id="execution_table" class="pt-1">
         <div
-          v-if="featureUpdateMap.size === 0"
-          class="waiting-spinner alert w-100 text-center"
-          style="height: 200px"
+            v-if="featureUpdateMap.size === 0"
+            class="waiting-spinner alert w-100 text-center"
+            style="height: 200px"
         >
           <i class="fa-solid fa-spinner fa-spin left fa-2x"></i> Waiting for
           first Feature / Scenario to start...
         </div>
         <div v-else class="w-100">
           <div
-            v-for="(feature, featureKey) in featureUpdateMap"
-            :key="featureKey"
+              v-for="(feature, featureKey) in featureUpdateMap"
+              :key="featureKey"
           >
             <h3 class="featuretitle test-execution-pane-feature-title">
               <TestStatusBadge
-                :test-status="feature[1].status"
-                :highlight-text="true"
-                :text="`Feature: ${feature[1].description}`"
-                :link="feature[1].getLink(feature[1].description)"
+                  :test-status="feature[1].status"
+                  :status-message="feature[1].computeStatusMessage()"
+                  :highlight-text="true"
+                  :text="`Feature: ${feature[1].description}`"
+                  :link="feature[1].getLink(feature[1].description)"
               ></TestStatusBadge>
             </h3>
             <div
-              v-for="(scenario, scenarioKey) in feature[1].scenarios"
-              :key="scenarioKey"
+                v-for="(scenario, scenarioKey) in feature[1].scenarios"
+                :key="scenarioKey"
             >
               <h4 class="scenariotitle test-execution-pane-scenario-title">
                 <TestStatusBadge
-                  :test-status="scenario[1].status"
-                  :highlight-text="false"
-                  :text="`${scenario[1].description} ${scenario[1].variantIndex !== -1 ? '[' + (scenario[1].variantIndex + 1) + ']' : ''}`"
-                  :link="scenario[1].getLink(feature[1].description)"
+                    :test-status="scenario[1].status"
+                    :status-message="getStatusMessage(scenario[1].status, scenario[1].failureMessage)"
+                    :highlight-text="false"
+                    :text="`${scenario[1].description} ${scenario[1].variantIndex !== -1 ? '[' + (scenario[1].variantIndex + 1) + ']' : ''}`"
+                    :link="scenario[1].getLink(feature[1].description)"
+                    :failure-link="'#' + scenario[1].getFailureId(feature[1].description)"
                 >
                 </TestStatusBadge>
                 <large-play-button
-                  :scenario="scenario[1].getScenarioIdentifier()"
-                  :show-play-button="scenario[1].isDryRun"
+                    :scenario="scenario[1].getScenarioIdentifier()"
+                    :show-play-button="scenario[1].isDryRun"
                 ></large-play-button>
               </h4>
               <div v-if="scenario[1].variantIndex !== -1">
                 <div class="test-scenario-outline-example">
                   <div
-                    v-for="anzahl in getTableCountForScenarioOutlineKeysLength(
+                      v-for="anzahl in getTableCountForScenarioOutlineKeysLength(
                       scenario[1].exampleKeys,
                     )"
-                    :key="anzahl"
-                    class="d-inline-block"
+                      :key="anzahl"
+                      class="d-inline-block"
                   >
                     <table
-                      class="table table-sm table-data-variant"
-                      aria-label="Data used when executing this scenario"
+                        class="table table-sm table-data-variant"
+                        aria-label="Data used when executing this scenario"
                     >
                       <thead>
-                        <tr>
-                          <th
+                      <tr>
+                        <th
                             v-for="(key, index) in getScenarioOutlineKeysParts(
                               scenario[1].exampleKeys,
                               anzahl,
                             )"
                             :key="index"
-                          >
-                            {{ key }}
-                          </th>
-                        </tr>
+                        >
+                          {{ key }}
+                        </th>
+                      </tr>
                       </thead>
                       <tbody>
-                        <tr>
-                          <td
+                      <tr>
+                        <td
                             v-for="(key, index) in getScenarioOutlineKeysParts(
                               scenario[1].exampleKeys,
                               anzahl,
                             )"
                             :key="index"
-                          >
-                            {{ scenario[1].exampleList.get(key) }}
-                          </td>
-                        </tr>
+                        >
+                          {{ scenario[1].exampleList.get(key) }}
+                        </td>
+                      </tr>
                       </tbody>
                     </table>
                   </div>
                 </div>
               </div>
               <table
-                class="table table-borderless"
-                aria-label="Test steps performed when executing this scenario"
+                  class="table table-borderless"
+                  aria-label="Test steps performed when executing this scenario"
               >
                 <tbody>
-                  <tr v-for="(step, index) in scenario[1].steps" :key="index">
-                    <td
+                <tr v-for="(step, index) in scenario[1].steps" :key="index">
+                  <td
                       :class="`${step[1].status.toLowerCase()} step_status test-step-status-${step[1].status.toLowerCase()}`"
-                    >
-                      <i
+                  >
+                    <i
                         :class="`fa-solid ${getTestResultIcon(step[1].status, 'solid')}`"
-                        :title="`${step[1].status}`"
-                      ></i>
-                    </td>
-                    <td :class="`step_text step_index_${index}`">
-                      <div
+                        :title="getStatusMessage(step[1].status, step[1].failureMessage)"
+                    ></i>
+                  </td>
+                  <td :class="`step_text step_index_${index}`">
+                    <a v-if="step[1].failureMessage.length > 0"
+                       :id="scenario[1].getFailureId(feature[1].description)"/>
+                    <div
                         :title="step[1].tooltip"
                         v-html="step[1].description"
-                      />
-                      <div
+                    />
+                    <FailureMessage :message="step[1].failureMessage"
+                                    :stacktrace="step[1].failureStacktrace"/>
+                    <div
                         v-for="rbelmsg in step[1].rbelMetaData"
                         :key="rbelmsg.uuid"
-                      >
-                        <div v-if="rbelmsg.menuInfoString" class="rbelmessage">
-                          <a
+                    >
+                      <div v-if="rbelmsg.menuInfoString" class="rbelmessage">
+                        <a
                             href="#"
                             class="badge rbelDetailsBadge test-rbel-link"
                             @click="ui.showRbelLogDetails(rbelmsg.uuid, $event)"
-                          >
-                            {{ rbelmsg.sequenceNumber + 1 }}
-                          </a>
-                          <span
-                            ><i
-                              v-if="rbelmsg.symbol"
-                              class="fas"
-                              :class="rbelmsg.symbol"
-                            ></i
-                            >&nbsp;&nbsp;&nbsp;
+                        >
+                          {{ rbelmsg.sequenceNumber + 1 }}
+                        </a>
+                        <span
+                        ><i
+                            v-if="rbelmsg.symbol"
+                            class="fas"
+                            :class="rbelmsg.symbol"
+                        ></i
+                        >&nbsp;&nbsp;&nbsp;
                             {{ rbelmsg.recipient }}&nbsp;&nbsp;&nbsp;{{
-                              rbelmsg.menuInfoString
-                            }}</span
-                          >
-                        </div>
+                            rbelmsg.menuInfoString
+                          }}</span
+                        >
                       </div>
-                    </td>
-                  </tr>
+                    </div>
+                  </td>
+                </tr>
                 </tbody>
               </table>
             </div>
@@ -180,10 +187,11 @@ import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
 import BannerMessage from "@/types/BannerMessage";
 import TestStatusBadge from "@/components/testsuite/TestStatusBadge.vue";
 import BannerMessageWindow from "@/components/testsuite/BannerMessageWindow.vue";
-import { getTestResultIcon } from "@/types/testsuite/TestResult";
+import {getTestResultIcon} from "@/types/testsuite/TestResult";
 import Ui from "@/types/ui/Ui";
 import LargePlayButton from "@/components/replay/LargePlayButton.vue";
 import QuitReason from "@/types/QuitReason";
+import FailureMessage from "@/components/testsuite/FailureMessage.vue";
 
 defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;
@@ -198,25 +206,36 @@ defineProps<{
 const maxOutlineTableColumns = 4;
 
 function getTableCountForScenarioOutlineKeysLength(
-  list: Array<string>,
+    list: Array<string>,
 ): number {
   return Math.ceil(list.length / maxOutlineTableColumns);
 }
 
 function getScenarioOutlineKeysParts(
-  list: Array<string>,
-  count: number,
+    list: Array<string>,
+    count: number,
 ): Array<string> {
   const partScenarioOutlineList = new Array<string>();
   list.forEach((element, index) => {
     if (
-      index < count * maxOutlineTableColumns &&
-      index >= maxOutlineTableColumns * (count - 1)
+        index < count * maxOutlineTableColumns &&
+        index >= maxOutlineTableColumns * (count - 1)
     ) {
       partScenarioOutlineList.push(element);
     }
   });
   return partScenarioOutlineList;
+}
+
+function getStatusMessage(
+    status: string,
+    failureMessage: string,
+): string {
+  if (failureMessage.length > 0) {
+    return `${status}: ${failureMessage}`;
+  } else {
+    return status;
+  }
 }
 </script>
 

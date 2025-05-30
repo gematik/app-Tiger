@@ -23,46 +23,47 @@
 <template>
   <div class="container">
     <div
-      id="test-sidebar-featurelistbox"
-      class="alert alert-light engraved featurelistbox"
+        id="test-sidebar-featurelistbox"
+        class="alert alert-light engraved featurelistbox"
     >
       <div class="alert-heading featurelist">
         <div v-for="(feature, key) in featureUpdateMap" :key="key">
-          <div
-            class="truncate-text test-sidebar-feature-name"
-            :title="`${feature[1].description}`"
-          >
-            <b>{{ feature[1].description }}</b>
+          <div class="feature-list-header">
+            <i v-if="feature[1].status === 'FAILED'"
+               :class="`statusbadge ${feature[1].status.toLowerCase()} left ${getTestResultIcon(feature[1].status, 'solid')}`"
+               :title="feature[1].computeStatusMessage()"
+            ></i>
+            <div
+                class="truncate-text test-sidebar-feature-name"
+                :title="`${feature[1].description}`"
+            >
+              <b>{{ feature[1].description }}</b>
+            </div>
           </div>
           <div
-            v-for="(scenario, key) in feature[1].scenarios"
-            :key="key"
-            class="container"
+              v-for="(scenario, key) in feature[1].scenarios"
+              :key="key"
+              class="container"
           >
             <div
-              class="test-sidebar-scenario-name d-flex align-items-center"
-              :title="`${scenario[1].description}`"
+                class="test-sidebar-scenario-name d-flex align-items-center"
+                :title="`${scenario[1].description}`"
             >
               <div class="truncate-text">
-                <i
-                  :class="`${scenario[1].status.toLowerCase()} ${getTestResultIcon(scenario[1].status, 'regular')}`"
-                ></i>
-                <a
-                  class="scenarioLink"
-                  :href="'#' + scenario[1].getLink(feature[1].description)"
+                <TestStatusBadge
+                    :test-status="scenario[1].status"
+                    :status-message="getStatusMessage(scenario[1].status, scenario[1].failureMessage)"
+                    :highlight-text="false"
+                    :text="`${scenario[1].description} ${scenario[1].variantIndex !== -1 ? '[' + (scenario[1].variantIndex + 1) + ']' : ''}`"
+                    :link="'#' + scenario[1].getLink(feature[1].description)"
+                    :failure-link="'#' + scenario[1].getFailureId(feature[1].description)"
                 >
-                  &nbsp;{{ scenario[1].description }}&nbsp;
-                  <span
-                    v-if="scenario[1].variantIndex !== -1"
-                    class="test-sidebar-scenario-index"
-                    >[{{ scenario[1].variantIndex + 1 }}]</span
-                  >
-                </a>
+                </TestStatusBadge>
               </div>
               <small-play-button
-                class="ms-1"
-                :scenario="scenario[1].getScenarioIdentifier()"
-                :show-play-button="scenario[1].isDryRun"
+                  class="ms-1"
+                  :scenario="scenario[1].getScenarioIdentifier()"
+                  :show-play-button="scenario[1].isDryRun"
               />
             </div>
           </div>
@@ -74,12 +75,24 @@
 
 <script setup lang="ts">
 import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
-import { getTestResultIcon } from "@/types/testsuite/TestResult";
 import SmallPlayButton from "@/components/replay/SmallPlayButton.vue";
+import TestStatusBadge from "@/components/testsuite/TestStatusBadge.vue";
+import {getTestResultIcon} from "@/types/testsuite/TestResult.ts";
 
 defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;
 }>();
+
+function getStatusMessage(
+    status: string,
+    failureMessage: string,
+): string {
+  if (status === "FAILED" || status === "ERROR") {
+    return `${status}: ${failureMessage}`;
+  } else {
+    return status;
+  }
+}
 </script>
 
 <style>
@@ -92,8 +105,13 @@ defineProps<{
   font-size: 85%;
 }
 
-.scenarioLink {
-  text-decoration: none;
-  color: var(--gem-primary-400);
+.feature-list-header {
+  display: flex;
+  align-items: center; /* Align items vertically */
+}
+
+i.statusbadge {
+  font-size: 1.25rem;
+  padding-right: 5rem;
 }
 </style>

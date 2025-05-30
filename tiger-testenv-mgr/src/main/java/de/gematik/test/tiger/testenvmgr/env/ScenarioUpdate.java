@@ -39,6 +39,7 @@ public class ScenarioUpdate {
   @Builder.Default private Map<String, StepUpdate> steps = new LinkedHashMap<>();
   private String description;
   private TestResult status;
+  private String failureMessage;
   @Builder.Default private List<String> exampleKeys = new ArrayList<>();
   @Builder.Default private Map<String, String> exampleList = new LinkedHashMap<>();
   @Builder.Default private int variantIndex = -1;
