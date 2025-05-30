@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -128,7 +127,7 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
         .filter(c -> c.size() >= 4)
         .filter(this::startsWithOkOrErrOrSpace)
         .flatMap(c -> getCompleteResponse(element, context))
-        .map(s -> s.split(EmailConversionUtils.CRLF, -1))
+        .map(s -> s.split(EmailConversionUtils.CRLF_BYTES))
         .flatMap(lines -> parseLines(lines, element, context));
   }
 
@@ -139,7 +138,7 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
         || array.startsWith(SPACE_PREFIX);
   }
 
-  private Optional<String> getCompleteResponse(
+  private Optional<RbelContent> getCompleteResponse(
       RbelElement element, final RbelConversionExecutor context) {
     log.debug(
         "getCompleteResponse: {}",
@@ -174,7 +173,7 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
         endIndex += indexBytesAndIndex.getLeft().length;
       }
     }
-    String result = new String(element.getContent().subArray(0, endIndex), StandardCharsets.UTF_8);
+    var result = element.getContent().subArray(0, endIndex);
     log.debug("result: {}", result);
     return Optional.of(result);
   }
@@ -200,14 +199,20 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
   }
 
   private Optional<Pair<RbelPop3ResponseFacet, Integer>> parseLines(
-      String[] lines, RbelElement element, RbelConversionExecutor context) {
+      List<RbelContent> lines, RbelElement element, RbelConversionExecutor context) {
     var lastHeaderLine = findLastHeaderLineIndex(lines);
-    if (lastHeaderLine == lines.length) {
+    if (lastHeaderLine == lines.size()) {
       return Optional.empty();
     }
 
-    String[] firstLineParts = lines[lastHeaderLine].split(" ", 2);
-    String status = firstLineParts[lastHeaderLine];
+    RbelContent firstLineContent = lines.get(0);
+    String firstLine =
+        new String(
+            firstLineContent.toByteArray(
+                0, firstLineContent.size() - EmailConversionUtils.CRLF_BYTES.length),
+            StandardCharsets.UTF_8);
+    String[] firstLineParts = firstLine.split(" ", 2);
+    String status = firstLineParts[0];
     String header = firstLineParts.length > 1 ? firstLineParts[1] : null;
     if (header == null || header.isBlank()) {
       return Optional.of(buildResponseFacet(element, status, null, lines, lastHeaderLine + 1));
@@ -219,10 +224,10 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
     }
   }
 
-  private static int findLastHeaderLineIndex(String[] lines) {
+  private static int findLastHeaderLineIndex(List<RbelContent> lines) {
     var lastHeaderLine = 0;
-    while (lastHeaderLine < lines.length) {
-      if (lines[lastHeaderLine].startsWith("+ ")) {
+    while (lastHeaderLine < lines.size()) {
+      if (lines.get(lastHeaderLine).startsWith("+ ".getBytes())) {
         lastHeaderLine++;
       } else {
         break;
@@ -235,9 +240,9 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
       RbelElement element,
       String status,
       RbelElement headerElement,
-      String[] lines,
+      List<RbelContent> lines,
       int firstBodyLine) {
-    var length = Stream.of(lines).mapToInt(String::length).sum() + 2 * (lines.length - 1);
+    var length = lines.stream().mapToInt(RbelContent::size).sum();
     var response =
         RbelPop3ResponseFacet.builder()
             .status(EmailConversionUtils.createChildElement(element, status))

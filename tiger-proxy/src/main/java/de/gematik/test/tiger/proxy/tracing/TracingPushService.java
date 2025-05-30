@@ -165,12 +165,12 @@ public class TracingPushService {
       return;
     }
 
-    final int size = content.getSize();
+    final int size = content.size();
     final int chunkSize = content.getChunkSize();
     final int numberOfParts = (size + chunkSize - 1) / chunkSize;
     for (int i = 0, nextPartIndex = 0; nextPartIndex < size; i++) {
       byte[] partContent =
-          content.subArray(nextPartIndex, Math.min(nextPartIndex + chunkSize, size));
+          content.toByteArray(nextPartIndex, Math.min(nextPartIndex + chunkSize, size));
 
       log.atTrace()
           .addArgument(i + 1)

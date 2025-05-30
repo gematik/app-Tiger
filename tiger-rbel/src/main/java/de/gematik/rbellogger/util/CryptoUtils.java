@@ -82,8 +82,8 @@ public class CryptoUtils {
   public static byte[] decryptUnsafe(
       RbelContent encMessage, Key secretKey, int gcmIvLengthInBytes, int gcmTagLengthInBytes)
       throws GeneralSecurityException {
-    byte[] iv = encMessage.subArray(0, gcmIvLengthInBytes);
-    byte[] cipherText = encMessage.subArray(GCM_IV_LENGTH_IN_BYTES, encMessage.size());
+    byte[] iv = encMessage.toByteArray(0, gcmIvLengthInBytes);
+    byte[] cipherText = encMessage.toByteArray(GCM_IV_LENGTH_IN_BYTES, encMessage.size());
     Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", BOUNCY_CASTLE_PROVIDER); // NOSONAR
 
     cipher.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(gcmTagLengthInBytes * 8, iv));

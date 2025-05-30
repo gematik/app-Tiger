@@ -26,6 +26,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.*;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.key.RbelKeyManager;
+import de.gematik.rbellogger.util.RbelContent;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Predicate;
@@ -115,6 +116,10 @@ public class RbelConversionExecutor {
 
   public RbelElement convertElement(final byte[] input, RbelElement parentNode) {
     return convertElement(RbelElement.builder().parentNode(parentNode).rawContent(input).build());
+  }
+
+  public RbelElement convertElement(RbelContent input, RbelElement parentNode) {
+    return convertElement(RbelElement.builder().parentNode(parentNode).content(input).build());
   }
 
   public RbelElement convertElement(final String input, RbelElement parentNode) {

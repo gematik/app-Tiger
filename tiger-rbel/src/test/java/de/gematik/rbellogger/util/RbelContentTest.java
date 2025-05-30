@@ -40,7 +40,7 @@ class RbelContentTest {
 
   @Test
   void append() {
-    RbelContent bytes = RbelContent.builder().chunkSize(10).build();
+    RbelContentBase bytes = RbelContent.builder().chunkSize(10).build();
     byte[] input = "0123456789AB".getBytes();
     byte[] firstChunk = Arrays.copyOfRange(input, 0, 3);
     byte[] secondChunk = Arrays.copyOfRange(input, 3, 6);
@@ -60,18 +60,18 @@ class RbelContentTest {
     assertEquals(1, bytes.getChunks().get(1).length);
     assertArrayEquals(Arrays.copyOfRange(input, 0, 10), bytes.getChunks().get(0));
     assertArrayEquals(Arrays.copyOfRange(input, 10, 11), bytes.getChunks().get(1));
-    assertArrayEquals(bytes.subArray(0, 3), firstChunk);
-    assertArrayEquals(bytes.subArray(3, 6), secondChunk);
-    assertArrayEquals(bytes.subArray(6, 11), thirdChunk);
+    assertArrayEquals(bytes.toByteArray(0, 3), firstChunk);
+    assertArrayEquals(bytes.toByteArray(3, 6), secondChunk);
+    assertArrayEquals(bytes.toByteArray(6, 11), thirdChunk);
 
     bytes.append(fourthChunk);
     assertEquals(10, bytes.getChunks().get(1).length);
-    assertArrayEquals(bytes.subArray(11, 12), fourthChunk);
+    assertArrayEquals(bytes.toByteArray(11, 12), fourthChunk);
   }
 
   @Test
   void appendShort() {
-    RbelContent bytes = RbelContent.builder().chunkSize(10).build();
+    RbelContentBase bytes = RbelContent.builder().chunkSize(10).build();
     byte[] input = "0123456789AB".getBytes();
     byte[] firstChunk = Arrays.copyOfRange(input, 0, 3);
     byte[] secondChunk = Arrays.copyOfRange(input, 3, 6);
@@ -83,13 +83,13 @@ class RbelContentTest {
     assertNotNull(bytes.getChunks());
     assertEquals(1, bytes.getChunks().size());
     assertEquals(10, bytes.getChunks().get(0).length);
-    assertArrayEquals(bytes.subArray(0, 3), firstChunk);
-    assertArrayEquals(bytes.subArray(3, 6), secondChunk);
+    assertArrayEquals(bytes.toByteArray(0, 3), firstChunk);
+    assertArrayEquals(bytes.toByteArray(3, 6), secondChunk);
   }
 
   @Test
   void inputStream() throws IOException {
-    RbelContent bytes = RbelContent.builder().chunkSize(10).build();
+    RbelContentBase bytes = RbelContent.builder().chunkSize(10).build();
     byte[] input = "0123456789AB".getBytes();
     byte[] firstChunk = Arrays.copyOfRange(input, 0, 3);
     byte[] secondChunk = Arrays.copyOfRange(input, 3, 6);
@@ -100,13 +100,13 @@ class RbelContentTest {
     try (var inputStream = bytes.toInputStream()) {
       var inputStreamBytes = inputStream.readAllBytes();
       assertEquals(bytes.size(), inputStreamBytes.length);
-      assertArrayEquals(bytes.subArray(0, 6), inputStreamBytes);
+      assertArrayEquals(bytes.toByteArray(0, 6), inputStreamBytes);
     }
   }
 
   @Test
   void isNull() {
-    RbelContent bytes = RbelContent.builder().chunkSize(10).build();
+    RbelContentBase bytes = RbelContent.builder().chunkSize(10).build();
     assertTrue(bytes.isNull());
     assertTrue(bytes.isEmpty());
     assertEquals(0, bytes.size());
@@ -118,12 +118,67 @@ class RbelContentTest {
   }
 
   @Test
+  void toInputStream() throws IOException {
+    RbelContentBase bytes = RbelContent.builder().chunkSize(10).build();
+    bytes.append("foobar foobar foobar".getBytes());
+    int start = 3;
+    int end = 12;
+    try (var inputStream = bytes.toInputStream(start, end)) {
+      var inputStreamBytes = inputStream.readAllBytes();
+      assertEquals(end - start, inputStreamBytes.length);
+      assertArrayEquals(bytes.toByteArray(start, end), inputStreamBytes);
+    }
+
+    var slice = bytes.subArray(start, end);
+    try (var inputStream = slice.toInputStream()) {
+      var inputStreamBytes = inputStream.readAllBytes();
+      assertEquals(end - start, inputStreamBytes.length);
+      assertArrayEquals(slice.toByteArray(), inputStreamBytes);
+    }
+  }
+
+  @Test
+  void subArray() {
+    var bytes =
+        RbelContent.builder()
+            .chunkSize(10)
+            .content(List.of("foobar foobar foobar".getBytes()))
+            .build();
+    var concat =
+        RbelContent.of(List.of(bytes.subArray(0, 3), bytes.subArray(3, 7), bytes.subArray(7, 20)));
+    assertEquals(concat.size(), bytes.size());
+    assertArrayEquals(concat.toByteArray(), bytes.toByteArray());
+    assertArrayEquals(bytes.subArray(3, 7).toByteArray(), bytes.toByteArray(3, 7));
+    assertEquals(
+        bytes.subArray(3, 15).indexOf("foobar".getBytes()),
+        bytes.indexOf("foobar".getBytes(), 3) - 3);
+  }
+
+  @Test
+  void split() {
+    var bytes =
+        RbelContent.builder()
+            .chunkSize(10)
+            .content(List.of("foobar foobar foobar".getBytes()))
+            .build();
+    byte[] SPACE = " ".getBytes();
+    var parts = bytes.split(SPACE);
+    assertEquals(3, parts.size());
+    for (int i = 0; i < parts.size() - 1; i++) {
+      assertTrue(parts.get(i).endsWith(SPACE));
+    }
+    var concat = RbelContent.of(parts);
+    assertEquals(concat.size(), bytes.size());
+    assertArrayEquals(concat.toByteArray(), bytes.toByteArray());
+  }
+
+  @Test
   @SneakyThrows
   @Tag("de.gematik.test.tiger.common.PerformanceTest")
   void compareChunkedAgainstNonChunked_chunkedShouldBeSimilar() {
     var origContent =
         Files.readAllBytes(Paths.get("src/test/resources/sampleMessages/sampleMail_longer.txt"));
-    RbelContent chunked = RbelContent.builder().content(List.of(origContent)).build();
+    RbelContentBase chunked = RbelContent.builder().content(List.of(origContent)).build();
 
     double ratios = 0.0;
 
@@ -152,7 +207,7 @@ class RbelContentTest {
       log.info("Concatenating and converting content took {} ns", (end1 - begin1));
       var concatenatedNs = (end1 - begin1);
 
-      RbelContent array = RbelContent.builder().build();
+      RbelContentBase array = RbelContent.builder().build();
 
       var begin2 = System.nanoTime();
       for (byte[] chunk : chunked.getChunks()) {

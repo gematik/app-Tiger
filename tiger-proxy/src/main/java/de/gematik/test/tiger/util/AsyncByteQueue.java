@@ -25,6 +25,7 @@ import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.proxy.data.TcpConnectionEntry;
 import de.gematik.test.tiger.proxy.data.TcpIpConnectionIdentifier;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
@@ -81,7 +82,7 @@ public class AsyncByteQueue {
     if (head.get() == null) {
       return TcpConnectionEntry.empty();
     }
-    RbelContent data = RbelContent.builder().build();
+    var data = new LinkedList<RbelContent>();
     Node current = head.get();
     boolean initialDirection = current.isPrimaryDirection;
     var uuid = current.uuid;
@@ -94,13 +95,11 @@ public class AsyncByteQueue {
         if (availableBytes > 0) {
           RbelContent snapshot;
           if (current.readPos > 0) {
-            snapshot =
-                RbelContent.of(
-                    current.data.subArray(current.readPos, current.readPos + availableBytes));
+            snapshot = current.data.subArray(current.readPos, current.readPos + availableBytes);
           } else {
             snapshot = current.data;
           }
-          data.append(snapshot);
+          data.add(snapshot);
           sourceUuids.add(current.uuid);
         }
       }
@@ -110,7 +109,7 @@ public class AsyncByteQueue {
     val direction = initialDirection ? primaryDirection : primaryDirection.reverse();
     return TcpConnectionEntry.builder()
         .uuid(head.get().uuid)
-        .data(data)
+        .data(RbelContent.of(data))
         .connectionIdentifier(direction)
         .messagePreProcessor(head.get().preProcessingMessageManipulator)
         .previousUuid(Objects.equals(uuid, head.get().uuid) ? null : uuid)

@@ -25,7 +25,6 @@ import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelRootFacet;
-import de.gematik.rbellogger.data.core.RbelValueFacet;
 import de.gematik.rbellogger.facets.pki.base64.RbelBase64JsonConverter;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
@@ -101,9 +100,7 @@ public class RbelJwtConverter extends RbelConverterPlugin {
               .orElseGet(
                   () ->
                       RbelJwtSignature.builder()
-                          .isValid(
-                              new RbelElement(signatureElement)
-                                  .addFacet(new RbelValueFacet<>(false)))
+                          .isValid(RbelElement.wrap(null, signatureElement, false))
                           .verifiedUsing(null)
                           .build()));
       final RbelJwtFacet rbelJwtFacet =
@@ -143,9 +140,8 @@ public class RbelJwtConverter extends RbelConverterPlugin {
       if (jsonWebSignature.verifySignature()) {
         return Optional.of(
             RbelJwtSignature.builder()
-                .isValid(new RbelElement(signatureElement).addFacet(new RbelValueFacet<>(true)))
-                .verifiedUsing(
-                    new RbelElement(signatureElement).addFacet(new RbelValueFacet<>(keyId)))
+                .isValid(RbelElement.wrap(null, signatureElement, true))
+                .verifiedUsing(RbelElement.wrap(null, signatureElement, keyId))
                 .build());
       } else {
         return Optional.empty();

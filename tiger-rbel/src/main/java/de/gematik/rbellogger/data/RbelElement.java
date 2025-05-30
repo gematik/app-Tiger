@@ -30,6 +30,7 @@ import de.gematik.rbellogger.facets.jackson.RbelCborFacet;
 import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
 import de.gematik.rbellogger.util.*;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
+import java.lang.ref.WeakReference;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -42,6 +43,7 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.encoders.Hex;
 
 @Getter
@@ -54,6 +56,7 @@ public class RbelElement extends RbelPathAble {
 
   private final String uuid;
   private final RbelContent content;
+  private WeakReference<Pair<String, Charset>> rawStringContent = new WeakReference<>(null);
 
   private final RbelElement parentNode;
   private final Queue<RbelFacet> facets = new ConcurrentLinkedQueue<>();
@@ -175,12 +178,12 @@ public class RbelElement extends RbelPathAble {
   }
 
   public static RbelElement wrap(byte[] rawValue, @NonNull RbelElement parentNode, Object value) {
-    return new RbelElement(rawValue, parentNode).addFacet(new RbelValueFacet<>(value));
+    return new RbelElement(rawValue, parentNode).addFacet(RbelValueFacet.of(value));
   }
 
   public static RbelElement wrap(@NonNull RbelElement parentNode, Object value) {
     return new RbelElement(value.toString().getBytes(parentNode.getElementCharset()), parentNode)
-        .addFacet(new RbelValueFacet<>(value));
+        .addFacet(RbelValueFacet.of(value));
   }
 
   public <T> Optional<T> getFacet(@NonNull Class<T> clazz) {
@@ -321,7 +324,15 @@ public class RbelElement extends RbelPathAble {
     if (content.isNull()) {
       return null;
     } else {
-      return new String(getRawContent(), getElementCharset());
+      synchronized (content) {
+        Pair<String, Charset> cachedValue = rawStringContent.get();
+        var elementCharset = getElementCharset();
+        if (cachedValue == null || !elementCharset.equals(cachedValue.getRight())) {
+          cachedValue = Pair.of(new String(getRawContent(), elementCharset), elementCharset);
+          rawStringContent = new WeakReference<>(cachedValue);
+        }
+        return cachedValue.getLeft();
+      }
     }
   }
 

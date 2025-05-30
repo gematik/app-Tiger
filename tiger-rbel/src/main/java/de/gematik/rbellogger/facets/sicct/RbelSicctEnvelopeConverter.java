@@ -64,7 +64,7 @@ public class RbelSicctEnvelopeConverter extends RbelConverterPlugin {
                               Hex.toHexString(
                                   element
                                       .getContent()
-                                      .subArray(
+                                      .toByteArray(
                                           (int) element.getSize() - 2, (int) element.getSize()))));
                 }
               });
@@ -87,16 +87,16 @@ public class RbelSicctEnvelopeConverter extends RbelConverterPlugin {
     // compare SICCT-specification, chapter 6.1.4.2
     RbelContent content = element.getContent();
     final RbelElement commandElement =
-        new RbelElement(content.subArray(10, (int) element.getSize()), element);
+        new RbelElement(content.toByteArray(10, (int) element.getSize()), element);
     commandElement.addFacet(new RbelBinaryFacet());
     return RbelSicctEnvelopeFacet.builder()
         .messageType(
             RbelElement.wrap(
                 new byte[] {content.get(0)}, element, SicctMessageType.of(content.get(0))))
-        .srcOrDesAddress(new RbelElement(content.subArray(1, 3), element))
-        .sequenceNumber(new RbelElement(content.subArray(3, 5), element))
-        .abRfu(new RbelElement(content.subArray(5, 6), element))
-        .length(new RbelElement(content.subArray(6, 10), element))
+        .srcOrDesAddress(new RbelElement(content.toByteArray(1, 3), element))
+        .sequenceNumber(new RbelElement(content.toByteArray(3, 5), element))
+        .abRfu(new RbelElement(content.toByteArray(5, 6), element))
+        .length(new RbelElement(content.toByteArray(6, 10), element))
         .command(commandElement)
         .build();
   }

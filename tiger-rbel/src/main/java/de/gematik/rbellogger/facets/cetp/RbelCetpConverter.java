@@ -44,20 +44,21 @@ public class RbelCetpConverter extends RbelConverterPlugin {
         || !content.startsWith(CETP_INTRO_MARKER)) {
       return;
     }
-    byte[] messageLengthBytes = content.subArray(CETP_INTRO_MARKER.length, MIN_CETP_MESSAGE_LENGTH);
+    byte[] messageLengthBytes =
+        content.toByteArray(CETP_INTRO_MARKER.length, MIN_CETP_MESSAGE_LENGTH);
     int messageLength = java.nio.ByteBuffer.wrap(messageLengthBytes).getInt();
     if (contentSize < MIN_CETP_MESSAGE_LENGTH + messageLength) {
       return;
     }
 
-    byte[] messageBody =
+    var messageBody =
         content.subArray(MIN_CETP_MESSAGE_LENGTH, MIN_CETP_MESSAGE_LENGTH + messageLength);
 
     final RbelCetpFacet cetpFacet =
         RbelCetpFacet.builder()
             .menuInfoString("CETP")
             .messageLength(RbelElement.wrap(messageLengthBytes, targetElement, messageLength))
-            .body(new RbelElement(messageBody, targetElement))
+            .body(RbelElement.builder().content(messageBody).parentNode(targetElement).build())
             .build();
 
     targetElement.addFacet(cetpFacet);

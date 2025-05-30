@@ -72,7 +72,7 @@ public class RbelX500Converter extends RbelConverterPlugin {
       }
       if (!rdnMap.isEmpty()) {
         element.addFacet(new RbelMapFacet(rdnMap));
-        element.addFacet(new RbelValueFacet<>(principal));
+        element.addFacet(RbelValueFacet.of(principal));
       }
     } catch (RuntimeException e) {
       // swallow

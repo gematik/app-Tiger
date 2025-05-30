@@ -30,10 +30,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.*;
 
 @Slf4j
+@EqualsAndHashCode(callSuper = true)
 public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, RbelElement> {
 
   private final RbelElement initial;

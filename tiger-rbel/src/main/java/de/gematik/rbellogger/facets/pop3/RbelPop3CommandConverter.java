@@ -76,7 +76,7 @@ public class RbelPop3CommandConverter extends RbelConverterPlugin {
     if (command == RbelPop3Command.AUTH
         && commandBytes.length + 1 < commandEndIndex
         && new String(
-                element.getContent().subArray(commandBytes.length + 1, commandEndIndex),
+                element.getContent().toByteArray(commandBytes.length + 1, commandEndIndex),
                 StandardCharsets.UTF_8)
             .trim()
             .equalsIgnoreCase("PLAIN")) {
@@ -99,7 +99,7 @@ public class RbelPop3CommandConverter extends RbelConverterPlugin {
   private Optional<RbelPop3Command> parseCommand(RbelContent c) {
     try {
       var shortPrefix =
-          new String(c.subArray(0, RbelPop3Command.MAX_LENGTH + 1), StandardCharsets.UTF_8);
+          new String(c.toByteArray(0, RbelPop3Command.MAX_LENGTH + 1), StandardCharsets.UTF_8);
       var command = new StringTokenizer(shortPrefix).nextToken();
       return Optional.of(RbelPop3Command.fromStringIgnoringCase(command));
     } catch (IllegalArgumentException | NoSuchElementException | IndexOutOfBoundsException e) {
@@ -111,8 +111,8 @@ public class RbelPop3CommandConverter extends RbelConverterPlugin {
       RbelElement parentElement, int argumentsOffset, int commandEndIndex) {
     var content = parentElement.getContent();
     if (commandEndIndex > argumentsOffset) {
-      var argumentBytes = content.subArray(argumentsOffset, commandEndIndex);
-      return new RbelElement(argumentBytes, parentElement);
+      var argumentContent = content.subArray(argumentsOffset, commandEndIndex);
+      return RbelElement.builder().content(argumentContent).parentNode(parentElement).build();
     } else {
       return null;
     }

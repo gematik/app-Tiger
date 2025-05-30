@@ -26,6 +26,7 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelNoteFacet;
+import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
 import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
@@ -111,8 +112,9 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
     var origElement =
         convertMessagePair("RETR 1\r\n", origPop3Response).findElement("$.pop3Body").get();
 
+    RbelElement rbelElement = convertMessagePair("RETR 1\r\n", encryptedPop3Response);
     final RbelElement decryptedSignedRfc822BodyElement =
-        convertMessagePair("RETR 1\r\n", encryptedPop3Response)
+        rbelElement
             .findElement("$.pop3Body.mimeBody.decrypted.mimeBody.signed.mimeBody.mimeBody")
             .get();
 
@@ -197,5 +199,9 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
     final RbelElement convertedMessage = convertPop3RetrResponse(pop3Message);
 
     assertHtmlRendering(convertedMessage, "Decrypted Message:", "Signed Message:", "rfc822");
+
+    assertThat(convertedMessage)
+        .hasGivenFacetAtPosition(
+            "$.pop3Body.mimeBody.decrypted.mimeBody.signed.mimeBody.mimeBody", RbelJsonFacet.class);
   }
 }

@@ -25,6 +25,7 @@ import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
+import de.gematik.rbellogger.util.RbelContent;
 import java.util.Base64;
 import java.util.zip.GZIPInputStream;
 import lombok.extern.slf4j.Slf4j;
@@ -50,10 +51,10 @@ public class RbelB64GzipConverter extends RbelConverterPlugin {
   private void parseB64GzippedMessage(
       final RbelElement parentElement, final RbelConversionExecutor converter) {
     try {
-      val gzipped = Base64.getDecoder().decode(parentElement.getRawContent());
-      val gis = new GZIPInputStream(new java.io.ByteArrayInputStream(gzipped));
+      val gzipped = Base64.getDecoder().wrap(parentElement.getContent().toInputStream());
+      val gis = new GZIPInputStream(gzipped);
 
-      byte[] unzipped = gis.readAllBytes();
+      var unzipped = RbelContent.from(gis);
 
       val unzippedElement = converter.convertElement(unzipped, parentElement);
       val rbelB64GzipFacet = new RbelB64GzipFacet(unzippedElement);

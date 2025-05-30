@@ -133,7 +133,7 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
     var firstEndLineIndex = content.indexOf(eol.getBytes());
 
     String firstLine =
-        new String(content.subArray(0, firstEndLineIndex), targetElement.getElementCharset());
+        new String(content.toByteArray(0, firstEndLineIndex), targetElement.getElementCharset());
 
     final String[] firstLineParts = StringUtils.split(firstLine, " ", 3);
 
@@ -165,7 +165,7 @@ public class RbelHttpRequestConverter extends RbelHttpResponseConverter {
       return false;
     }
     String firstLine =
-        new String(data.subArray(0, Math.min(8, data.size())), StandardCharsets.US_ASCII);
+        new String(data.toByteArray(0, Math.min(8, data.size())), StandardCharsets.US_ASCII);
     String method = firstLine.split(" ", 2)[0];
     return HTTP_METHODS.contains(method)
         && data.size() > method.length()

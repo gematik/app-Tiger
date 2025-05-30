@@ -165,7 +165,7 @@ public class RbelAsn1Converter extends RbelConverterPlugin {
     } else if (asn1 instanceof ASN1TaggedObject asn1TaggedObject) {
       convertTaggedObject(converter, parentNode, asn1TaggedObject);
     } else if (asn1 instanceof ASN1Integer asn1Integer) {
-      parentNode.addFacet(RbelValueFacet.builder().value(asn1Integer.getValue()).build());
+      parentNode.addFacet(RbelValueFacet.of(asn1Integer.getValue()));
     } else if (asn1 instanceof ASN1ObjectIdentifier asn1ObjectIdentifier) {
       convertOid(parentNode, asn1ObjectIdentifier);
     } else if (asn1 instanceof ASN1OctetString asn1OctetString) {
@@ -177,15 +177,15 @@ public class RbelAsn1Converter extends RbelConverterPlugin {
     } else if (asn1 instanceof ASN1String asn1String) {
       convertString(asn1, converter, parentNode, asn1String);
     } else if (asn1 instanceof ASN1Boolean asn1Boolean) {
-      parentNode.addFacet(RbelValueFacet.builder().value(asn1Boolean.isTrue()).build());
+      parentNode.addFacet(RbelValueFacet.of(asn1Boolean.isTrue()));
     } else if (asn1 instanceof ASN1Null) {
-      parentNode.addFacet(RbelValueFacet.builder().value(null).build());
+      parentNode.addFacet(RbelValueFacet.of(null));
     } else if (asn1 instanceof ASN1UTCTime asn1UTCTime) {
       convertUtcTime(asn1, parentNode, asn1UTCTime);
     } else if (asn1 instanceof ASN1GeneralizedTime asn1GeneralizedTime) {
       convertGeneralizedTime(asn1, parentNode, asn1GeneralizedTime);
     } else if (asn1 instanceof ASN1Enumerated asn1Enumerated) {
-      parentNode.addFacet(RbelValueFacet.builder().value(asn1Enumerated.getValue()).build());
+      parentNode.addFacet(RbelValueFacet.of(asn1Enumerated.getValue()));
     } else {
       log.warn("Unable to convert " + asn1.getClass().getSimpleName() + "!");
     }
@@ -196,11 +196,9 @@ public class RbelAsn1Converter extends RbelConverterPlugin {
       ASN1Encodable asn1, RbelElement parentNode, ASN1GeneralizedTime asn1GeneralizedTime) {
     try {
       parentNode.addFacet(
-          RbelValueFacet.builder()
-              .value(
-                  ZonedDateTime.ofInstant(
-                      asn1GeneralizedTime.getDate().toInstant(), ZoneId.of("UTC")))
-              .build());
+          RbelValueFacet.of(
+              ZonedDateTime.ofInstant(
+                  asn1GeneralizedTime.getDate().toInstant(), ZoneId.of("UTC"))));
     } catch (ParseException e) {
       throw new RbelException("Error during time-conversion of " + asn1, e);
     }
@@ -210,11 +208,9 @@ public class RbelAsn1Converter extends RbelConverterPlugin {
       ASN1Encodable asn1, RbelElement parentNode, ASN1UTCTime asn1UTCTime) {
     try {
       parentNode.addFacet(
-          RbelValueFacet.builder()
-              .value(
-                  ZonedDateTime.ofInstant(
-                      asn1UTCTime.getAdjustedDate().toInstant(), ZoneId.of("UTC")))
-              .build());
+          RbelValueFacet.of(
+              ZonedDateTime.ofInstant(
+                  asn1UTCTime.getAdjustedDate().toInstant(), ZoneId.of("UTC"))));
     } catch (ParseException e) {
       throw new RbelException("Error during time-conversion of " + asn1, e);
     }
@@ -226,7 +222,7 @@ public class RbelAsn1Converter extends RbelConverterPlugin {
       RbelConversionExecutor converter,
       RbelElement parentNode,
       ASN1String asn1String) {
-    parentNode.addFacet(RbelValueFacet.builder().value(asn1String.getString()).build());
+    parentNode.addFacet(RbelValueFacet.of(asn1String.getString()));
     addCharsetInformation(parentNode, asn1);
     tryToParseEmbeddedContentAndAddFacetIfPresent(
         converter, parentNode, asn1String.getString().getBytes(parentNode.getElementCharset()));
@@ -237,7 +233,7 @@ public class RbelAsn1Converter extends RbelConverterPlugin {
       RbelConversionExecutor converter,
       RbelElement parentNode,
       ASN1PrintableString asn1String) {
-    parentNode.addFacet(RbelValueFacet.builder().value(asn1String.getString()).build());
+    parentNode.addFacet(RbelValueFacet.of(asn1String.getString()));
     addCharsetInformation(parentNode, asn1);
     tryToParseEmbeddedContentAndAddFacetIfPresent(converter, parentNode, asn1String.getOctets());
   }
@@ -245,20 +241,20 @@ public class RbelAsn1Converter extends RbelConverterPlugin {
   private void convertBitString(
       RbelConversionExecutor converter, RbelElement parentNode, ASN1BitString asn1BitString) {
     final byte[] octets = asn1BitString.getOctets();
-    parentNode.addFacet(RbelValueFacet.builder().value(octets).build());
+    parentNode.addFacet(RbelValueFacet.of(octets));
     tryToParseEmbeddedContentAndAddFacetIfPresent(converter, parentNode, octets);
   }
 
   private void convertOctetString(
       RbelConversionExecutor converter, RbelElement parentNode, ASN1OctetString asn1OctetString) {
     final byte[] octets = asn1OctetString.getOctets();
-    parentNode.addFacet(RbelValueFacet.builder().value(octets).build());
+    parentNode.addFacet(RbelValueFacet.of(octets));
     tryToParseEmbeddedContentAndAddFacetIfPresent(converter, parentNode, octets);
   }
 
   private static void convertOid(
       RbelElement parentNode, ASN1ObjectIdentifier asn1ObjectIdentifier) {
-    parentNode.addFacet(RbelValueFacet.builder().value(asn1ObjectIdentifier.getId()).build());
+    parentNode.addFacet(RbelValueFacet.of(asn1ObjectIdentifier.getId()));
     buildAndAddAsn1OidFacet(parentNode, asn1ObjectIdentifier.getId());
   }
 

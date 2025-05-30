@@ -22,7 +22,6 @@ package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.util.RbelContent;
-import java.lang.reflect.Array;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -57,22 +56,13 @@ public class PartialTracingMessage {
   }
 
   public RbelContent buildCompleteContent() {
-    if (messageParts.isEmpty()) {
-      return RbelContent.builder().build();
-    }
-
-    byte[] result =
-        new byte
-            [messageParts.stream()
-                .map(TracingMessagePart::getData)
-                .mapToInt(Array::getLength)
-                .sum()];
-    int resultIndex = 0;
-    for (TracingMessagePart messagePart :
-        messageParts.stream().sorted(Comparator.comparing(TracingMessagePart::getIndex)).toList()) {
-      System.arraycopy(messagePart.getData(), 0, result, resultIndex, messagePart.getData().length);
-      resultIndex += messagePart.getData().length;
-    }
-    return RbelContent.of(result);
+    var chunkSize =
+        messageParts.stream().mapToInt(part -> part.getData().length).max().orElse(1024);
+    var sortedParts =
+        messageParts.stream()
+            .sorted(Comparator.comparing(TracingMessagePart::getIndex))
+            .map(TracingMessagePart::getData)
+            .toList();
+    return RbelContent.builder().chunkSize(chunkSize).content(sortedParts).build();
   }
 }

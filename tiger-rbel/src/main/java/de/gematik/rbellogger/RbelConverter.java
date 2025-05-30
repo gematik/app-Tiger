@@ -68,6 +68,8 @@ public class RbelConverter {
   @Getter private final RbelKeyManager rbelKeyManager;
   @Getter private final RbelValueShader rbelValueShader = new RbelValueShader();
 
+  private final List<Runnable> clearHandlers = new LinkedList<>();
+
   @Getter private final ConverterPluginMap converterPlugins = new ConverterPluginMap();
   private final ExecutorService executorService =
       new ThreadPoolExecutor(
@@ -107,6 +109,10 @@ public class RbelConverter {
         }
       }
     }
+  }
+
+  public void addClearHandler(Runnable runnable) {
+    clearHandlers.add(runnable);
   }
 
   public RbelElement convertElement(RbelElement rbelElement) {
@@ -304,6 +310,7 @@ public class RbelConverter {
       currentBufferSize = 0;
       messageHistory.clear();
       knownMessageUuids.clear();
+      clearHandlers.forEach(Runnable::run);
     }
   }
 

@@ -20,6 +20,8 @@
 
 ## Bugfixes
 
+* TGR-1801: Do not copy sub-contents for sub-elements. Instead, reference slices of the content of the parent content.
+  Also, evaluate potentially large String values lazily on demand.
 * TGR-1835: Rbel-Writer: Fixed a bug where replacing an existing element in the root node would overwrite all other
   child nodes.
 * TGR-1812: Tiger Test Lib: validating a JSON with a trailing comma in the schema definition no longer throws a

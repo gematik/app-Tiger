@@ -29,13 +29,14 @@ import de.gematik.rbellogger.data.core.RbelRootFacet;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.facets.pop3.RbelPop3ResponseFacet;
 import de.gematik.rbellogger.facets.smtp.RbelSmtpCommandFacet;
+import de.gematik.rbellogger.util.RbelContent;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import lombok.SneakyThrows;
@@ -136,45 +137,71 @@ public class RbelMimeConverter extends RbelConverterPlugin {
       var bytes = bytesAndContent.getLeft();
       var content = bytesAndContent.getRight();
 
-      return context.convertElement(createBodyElementAndFacet(element, bytes, content));
+      int bodyPosition = element.getContent().indexOf(bytes);
+      if (bodyPosition == -1) {
+        return context.convertElement(
+            createBodyElementAndFacet(element, RbelContent.of(bytes), content));
+      } else {
+        return context.convertElement(
+            createBodyElementAndFacet(
+                element,
+                element.getContent().subArray(bodyPosition, bodyPosition + bytes.length),
+                content));
+      }
     }
 
     private RbelElement createBodyElementAndFacet(
-        RbelElement element, byte[] bytes, String content) {
+        RbelElement element, RbelContent bytes, Supplier<String> content) {
       var bodyFacet = new RbelMimeBodyFacet(content);
 
-      return new RbelElement(bytes, element)
+      return RbelElement.builder()
+          .content(bytes)
+          .parentNode(element)
+          .build()
           .addFacet(bodyFacet)
           .addFacet(new RbelRootFacet<>(bodyFacet));
     }
 
-    private Pair<byte[], String> extractContent(SingleBody singleBody) throws IOException {
+    private Pair<byte[], Supplier<String>> extractContent(SingleBody singleBody) {
       if (singleBody instanceof TextBody textBody) {
-        try (var reader = textBody.getReader();
-            var writer = new StringWriter()) {
-          reader.transferTo(writer);
-          var content = writer.toString();
-          return Pair.of(content.getBytes(), content);
-        }
+        Supplier<String> content = () -> readContent(textBody);
+        return Pair.of(content.get().getBytes(), content);
       } else {
-        try (var in = singleBody.getInputStream();
-            var out =
-                new ByteArrayOutputStream() {
-                  public byte[] getBytes() {
-                    return buf;
-                  }
-                }) {
-          in.transferTo(out);
-          var bytes = out.getBytes();
-          String content =
-              Optional.ofNullable(
-                      singleBody.getParent().getHeader().getField(CONTENT_TRANSFER_ENCODING))
-                  .map(Field::getBody)
-                  .filter(TRANSFER_ENCODING_7_BIT::equals)
-                  .map(encoding -> new String(bytes))
-                  .orElseGet(() -> Base64.getEncoder().encodeToString(bytes));
-          return Pair.of(bytes, content);
-        }
+        Supplier<byte[]> bytes = () -> readBytes(singleBody);
+        Supplier<String> content =
+            () ->
+                Optional.ofNullable(
+                        singleBody.getParent().getHeader().getField(CONTENT_TRANSFER_ENCODING))
+                    .map(Field::getBody)
+                    .filter(TRANSFER_ENCODING_7_BIT::equals)
+                    .map(encoding -> new String(bytes.get()))
+                    .orElseGet(() -> Base64.getEncoder().encodeToString(bytes.get()));
+        return Pair.of(bytes.get(), content);
+      }
+    }
+
+    @SneakyThrows
+    private static String readContent(TextBody textBody) {
+      String content;
+      try (var reader = textBody.getReader();
+          var writer = new StringWriter()) {
+        reader.transferTo(writer);
+        content = writer.toString();
+      }
+      return content;
+    }
+
+    @SneakyThrows
+    private static byte[] readBytes(SingleBody singleBody) {
+      try (var in = singleBody.getInputStream();
+          var out =
+              new ByteArrayOutputStream() {
+                public byte[] getBytes() {
+                  return buf;
+                }
+              }) {
+        in.transferTo(out);
+        return out.getBytes();
       }
     }
 
@@ -210,7 +237,7 @@ public class RbelMimeConverter extends RbelConverterPlugin {
   }
 
   private static RbelElement createChildNode(RbelElement element) {
-    return new RbelElement(element.getRawContent(), element);
+    return new RbelElement(null, element.getContent(), element, Optional.empty());
   }
 
   private static RbelElement buildElementIfPresent(RbelElement element, String value) {

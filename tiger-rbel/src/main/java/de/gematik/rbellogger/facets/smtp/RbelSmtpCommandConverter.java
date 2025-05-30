@@ -21,7 +21,6 @@
 package de.gematik.rbellogger.facets.smtp;
 
 import de.gematik.rbellogger.RbelConversionExecutor;
-import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
@@ -30,10 +29,9 @@ import de.gematik.rbellogger.data.core.RbelRootFacet;
 import de.gematik.rbellogger.util.EmailConversionUtils;
 import de.gematik.rbellogger.util.RbelContent;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.StringTokenizer;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
@@ -46,12 +44,6 @@ public class RbelSmtpCommandConverter extends RbelConverterPlugin {
   private static final byte[] AUTH_COMMAND_PREFIX_BYTES = "AUTH ".getBytes();
   private static final byte[] AUTH_PLAIN_PREFIX_BYTES = "AUTH PLAIN".getBytes();
   private static final byte[] DATA_PREFIX_BYTES = "DATA\r\n".getBytes();
-  public static final byte[] CRLF = "\r\n".getBytes();
-
-  @Override
-  public RbelConversionPhase getPhase() {
-    return RbelConversionPhase.PROTOCOL_PARSING;
-  }
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConversionExecutor context) {
@@ -87,38 +79,30 @@ public class RbelSmtpCommandConverter extends RbelConverterPlugin {
         .flatMap(
             command ->
                 Optional.of(element.getContent())
-                    .flatMap(this::getCommandEndIndex)
+                    .flatMap(this::getCompleteCommandContent)
                     .map(
-                        i ->
+                        content ->
                             Pair.of(
-                                new String(
-                                    element.getContent().subArray(0, i), StandardCharsets.UTF_8),
-                                i))
-                    .map(
-                        pair -> {
-                          var content = pair.getLeft();
-                          var length = pair.getRight();
-                          return Pair.of(buildSmtpCommandFacet(command, content, element), length);
-                        }));
+                                buildSmtpCommandFacet(command, content, element), content.size())));
   }
 
-  public Optional<Integer> findEndOfLine(RbelContent content, int numberOfLines) {
+  public Optional<RbelContent> findEndOfLine(RbelContent content, int numberOfLines) {
     int endIndex = 0;
     for (int i = 0; i < numberOfLines; i++) {
-      endIndex = content.indexOf(CRLF, endIndex);
+      endIndex = content.indexOf(EmailConversionUtils.CRLF_BYTES, endIndex);
       if (endIndex < 0) {
         return Optional.empty();
       }
-      endIndex += CRLF.length;
+      endIndex += EmailConversionUtils.CRLF_BYTES.length;
     }
-    return Optional.of(endIndex);
+    return Optional.of(content.subArray(0, endIndex));
   }
 
-  private Optional<Integer> getCommandEndIndex(RbelContent content) {
+  private Optional<RbelContent> getCompleteCommandContent(RbelContent content) {
     if (content.startsTrimmedWithIgnoreCase(DATA_PREFIX_BYTES, StandardCharsets.UTF_8)) {
       var endIndex = content.indexOf(CRLF_DOT_CRLF_BYTES);
       if (endIndex >= 0) {
-        return Optional.of(endIndex + CRLF_DOT_CRLF_BYTES.length);
+        return Optional.of(content.subArray(0, endIndex + CRLF_DOT_CRLF_BYTES.length));
       }
       return Optional.empty();
     } else if (content.startsTrimmedWithIgnoreCase(
@@ -133,7 +117,7 @@ public class RbelSmtpCommandConverter extends RbelConverterPlugin {
 
   private Optional<RbelSmtpCommand> parseCommand(RbelContent content) {
     var shortPrefix =
-        new String(content.subArray(0, MIN_SMTP_COMMAND_LINE_LENGTH), StandardCharsets.UTF_8);
+        new String(content.toByteArray(0, MIN_SMTP_COMMAND_LINE_LENGTH), StandardCharsets.UTF_8);
     var command = new StringTokenizer(shortPrefix).nextToken();
     try {
       return Optional.of(RbelSmtpCommand.fromStringIgnoringCase(command));
@@ -144,34 +128,38 @@ public class RbelSmtpCommandConverter extends RbelConverterPlugin {
   }
 
   private RbelSmtpCommandFacet buildSmtpCommandFacet(
-      RbelSmtpCommand command, String content, RbelElement element) {
-    String[] lines = content.split(EmailConversionUtils.CRLF, -1);
+      RbelSmtpCommand command, RbelContent content, RbelElement element) {
+    var lines = content.split(EmailConversionUtils.CRLF_BYTES);
     RbelElement body = buildSmtpBody(command, element, lines);
     return RbelSmtpCommandFacet.builder()
         .command(
             RbelElement.wrap(command.name().getBytes(StandardCharsets.UTF_8), element, command))
-        .arguments(parseArguments(lines[0], element))
+        .arguments(parseArguments(lines.get(0), element))
         .body(body)
         .build();
   }
 
-  private RbelElement buildSmtpBody(RbelSmtpCommand command, RbelElement element, String[] lines) {
+  private RbelElement buildSmtpBody(
+      RbelSmtpCommand command, RbelElement element, List<RbelContent> lines) {
     return switch (command) {
-      case AUTH -> lines.length > 2
+      case AUTH -> lines.size() > 2
           ? EmailConversionUtils.createChildElement(
               element,
-              Arrays.stream(lines)
-                  .skip(1)
-                  .limit(lines.length - 2L)
-                  .collect(Collectors.joining(EmailConversionUtils.CRLF)))
+              new String(
+                  EmailConversionUtils.mergeLines(lines.subList(1, lines.size())).toByteArray(),
+                  StandardCharsets.UTF_8))
           : null;
       case DATA -> EmailConversionUtils.parseMailBody(element, lines, 1);
       default -> null;
     };
   }
 
-  private static RbelElement parseArguments(String line, RbelElement element) {
-    String[] firstLineParts = line.split(" ", 2);
+  private static RbelElement parseArguments(RbelContent line, RbelElement element) {
+    String[] firstLineParts =
+        new String(
+                line.toByteArray(0, line.size() - EmailConversionUtils.CRLF_BYTES.length),
+                StandardCharsets.UTF_8)
+            .split(" ", 2);
     RbelElement argumentsElement = null;
     if (firstLineParts.length > 1) {
       argumentsElement = EmailConversionUtils.createChildElement(element, firstLineParts[1]);

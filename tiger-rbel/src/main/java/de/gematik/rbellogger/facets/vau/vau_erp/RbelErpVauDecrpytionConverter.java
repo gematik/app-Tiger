@@ -98,35 +98,12 @@ public class RbelErpVauDecrpytionConverter extends RbelConverterPlugin {
     return Optional.empty();
   }
 
-  private Optional<byte[]> decrypt(RbelContent encMessage, ECPrivateKey secretKey) {
-    try {
-      if (encMessage.isEmpty() || encMessage.get(0) != 1) {
-        return Optional.empty();
-      }
-      ECPublicKey otherSidePublicKey = extractPublicKeyFromVauMessage(encMessage);
-      byte[] sharedSecret = CryptoUtils.ecka(secretKey, otherSidePublicKey);
-      byte[] aesKeyBytes = CryptoUtils.hkdf(sharedSecret, "ecies-vau-transport", 16);
-      SecretKey aesKey = new SecretKeySpec(aesKeyBytes, "AES");
-
-      final byte[] ciphertext = encMessage.subArray(1 + 32 + 32, encMessage.size());
-
-      log.trace(
-          "Decrypting. AesKey '{}' and ciphertext {}",
-          Base64.getEncoder().encodeToString(aesKeyBytes),
-          Base64.getEncoder().encodeToString(ciphertext));
-
-      return CryptoUtils.decrypt(RbelContent.of(ciphertext), aesKey);
-    } catch (Exception e) {
-      return Optional.empty();
-    }
-  }
-
   private ECPublicKey extractPublicKeyFromVauMessage(RbelContent encMessage)
       throws NoSuchAlgorithmException, InvalidKeySpecException {
     final java.security.spec.ECPoint ecPoint =
         new java.security.spec.ECPoint(
-            new BigInteger(1, encMessage.subArray(1, 1 + 32)),
-            new BigInteger(1, encMessage.subArray(1 + 32, 1 + 32 + 32)));
+            new BigInteger(1, encMessage.toByteArray(1, 1 + 32)),
+            new BigInteger(1, encMessage.toByteArray(1 + 32, 1 + 32 + 32)));
     final ECPublicKeySpec keySpec = new ECPublicKeySpec(ecPoint, BrainpoolCurves.BP256);
     return (ECPublicKey) KeyFactory.getInstance("EC").generatePublic(keySpec);
   }
@@ -141,12 +118,35 @@ public class RbelErpVauDecrpytionConverter extends RbelConverterPlugin {
 
   private Optional<byte[]> decrypt(RbelContent content, Key key) {
     if (key instanceof ECPrivateKey ecPrivateKey) {
-      return decrypt(content, ecPrivateKey);
+      return decryptPrivateKey(content, ecPrivateKey);
     } else if (key instanceof SecretKey) {
       return CryptoUtils.decrypt(content, key, 96 / 8, 128 / 8);
     } else {
       throw new RbelConversionException(
           "Unexpected key-type encountered '" + key.getClass().getSimpleName() + "'");
+    }
+  }
+
+  private Optional<byte[]> decryptPrivateKey(RbelContent encMessage, ECPrivateKey secretKey) {
+    try {
+      if (encMessage.isEmpty() || encMessage.get(0) != 1) {
+        return Optional.empty();
+      }
+      ECPublicKey otherSidePublicKey = extractPublicKeyFromVauMessage(encMessage);
+      byte[] sharedSecret = CryptoUtils.ecka(secretKey, otherSidePublicKey);
+      byte[] aesKeyBytes = CryptoUtils.hkdf(sharedSecret, "ecies-vau-transport", 16);
+      SecretKey aesKey = new SecretKeySpec(aesKeyBytes, "AES");
+
+      var ciphertext = encMessage.subArray(1 + 32 + 32, encMessage.size());
+
+      log.atTrace()
+          .addArgument(() -> Base64.getEncoder().encodeToString(aesKeyBytes))
+          .addArgument(() -> Base64.getEncoder().encodeToString(ciphertext.toByteArray()))
+          .log("Decrypting. AesKey '{}' and ciphertext {}");
+
+      return CryptoUtils.decrypt(ciphertext, aesKey);
+    } catch (Exception e) {
+      return Optional.empty();
     }
   }
 

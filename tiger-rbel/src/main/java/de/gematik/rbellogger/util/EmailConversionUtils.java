@@ -22,7 +22,7 @@ package de.gematik.rbellogger.util;
 
 import de.gematik.rbellogger.data.RbelElement;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.AccessLevel;
@@ -33,27 +33,57 @@ public class EmailConversionUtils {
   public static final String CRLF = "\r\n";
   public static final byte[] CRLF_BYTES = CRLF.getBytes();
   public static final String CRLF_DOT_CRLF = CRLF + "." + CRLF;
+  private static final byte[] DOT_BYTE = ".".getBytes();
 
   public static RbelElement createChildElement(RbelElement parent, String value) {
     return new RbelElement(value.getBytes(StandardCharsets.UTF_8), parent);
   }
 
-  public static RbelElement parseMailBody(RbelElement element, String[] lines, int startLine) {
-    if (lines.length - startLine + 1 > 2) {
+  public static RbelElement parseMailBody(
+      RbelElement element, List<RbelContent> lines, int startLine) {
+    if (lines.size() > startLine + 1) {
       var body = extractBodyAndRemoveStuffedDots(lines, startLine);
-      return createChildElement(element, body);
+      return RbelElement.builder().content(body).parentNode(element).build();
     }
     return null;
   }
 
-  private static String extractBodyAndRemoveStuffedDots(String[] lines, int startLine) {
-    return Arrays.asList(lines).subList(startLine, lines.length - 2).stream()
-        .map(EmailConversionUtils::removeStuffedDot)
-        .collect(Collectors.joining(CRLF));
+  public static RbelContent removeStuffedDot(RbelContent line) {
+    return line.startsWith(DOT_BYTE) ? line.subArray(1, line.size()) : line;
   }
 
-  public static String removeStuffedDot(String line) {
-    return line.startsWith(".") ? line.substring(1) : line;
+  private static RbelContent extractBodyAndRemoveStuffedDots(
+      List<RbelContent> lines, int startLine) {
+    RbelContent baseContent = lines.get(0).getBaseContent();
+    assert lines.stream().allMatch(line -> line.getBaseContent() == baseContent);
+    var bodyLines =
+        getMiddleLines(lines, startLine).map(EmailConversionUtils::removeStuffedDot).toList();
+    int bodyLength = computeTotalLength(bodyLines.stream());
+    int originalLength = computeTotalLength(getMiddleLines(lines, startLine));
+    if (bodyLength == originalLength) {
+      // no stuffed dots found ==> we can reference the original content
+      int firstLineLength = lines.get(0).size();
+      return baseContent.subArray(
+          firstLineLength, firstLineLength + originalLength - CRLF_BYTES.length);
+    }
+    return mergeLines(bodyLines);
+  }
+
+  private static Integer computeTotalLength(Stream<RbelContent> bodyLinesStream) {
+    return bodyLinesStream.map(RbelContent::size).reduce(0, Integer::sum);
+  }
+
+  private static Stream<RbelContent> getMiddleLines(List<RbelContent> lines, int startLine) {
+    return lines.stream().skip(startLine).limit(lines.size() - 1L - startLine);
+  }
+
+  public static RbelContent mergeLines(List<RbelContent> lines) {
+    RbelContent content =
+        RbelContent.builder()
+            .content(lines.stream().map(RbelContent::toByteArray).toList())
+            .build();
+    // last CRLF needs to be cut off because it belongs to the CRLF_DOT_CRLF sequence
+    return content.subArray(0, content.size() - CRLF_BYTES.length);
   }
 
   public static String duplicateDotsAtLineBegins(String input) {

@@ -81,7 +81,7 @@ class RbelElementTest {
 
     assertThatThrownBy(() -> element.setUsedBytes(5))
         .isInstanceOf(IndexOutOfBoundsException.class)
-        .hasMessageContaining("to: 5, size: 3");
+        .hasMessageContaining("Invalid size: 5, current size: 3");
   }
 
   @Test
@@ -90,7 +90,7 @@ class RbelElementTest {
 
     assertThatThrownBy(() -> element.setUsedBytes(-1))
         .isInstanceOf(IndexOutOfBoundsException.class)
-        .hasMessageContaining("to: -1, size: 3");
+        .hasMessageContaining("Invalid size: -1, current size: 3");
   }
 
   @Test

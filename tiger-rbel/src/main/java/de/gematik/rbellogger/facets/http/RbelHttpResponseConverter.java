@@ -351,7 +351,7 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
       throw new RbelConversionException("Hit end of messages while trying to determine body size.");
     }
     byte[] inputData =
-        content.subArray(Math.min(bodyDataStartOffset, contentEndIndex), contentEndIndex);
+        content.toByteArray(Math.min(bodyDataStartOffset, contentEndIndex), contentEndIndex);
 
     Charset elementCharset = targetElement.getElementCharset();
     return applyCodings(
@@ -371,40 +371,7 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
     val messageBodyIsPresent = bodyDataStartOffset < content.size();
 
     if (messageBodyIsPresent) {
-      final Optional<RbelElement> contentLengthHeader =
-          headerMap.getCaseInsensitiveMatches("Content-Length").findAny();
-      final Optional<RbelElement> transferEncodingHeader =
-          headerMap.getCaseInsensitiveMatches("Transfer-Encoding").findAny();
-      if (contentLengthHeader.isPresent()) {
-        int endOfBodyIndex =
-            contentLengthHeader
-                .map(RbelElement::getRawStringContent)
-                .map(Integer::parseInt)
-                .map(contentLength -> contentLength + bodyDataStartOffset)
-                .orElseThrow();
-        if (endOfBodyIndex > content.size()) {
-          throw new RbelConversionException("Body-length exceeds available content");
-        }
-        targetElement.setUsedBytes(endOfBodyIndex);
-        return endOfBodyIndex;
-      } else if (transferEncodingHeader.isPresent()) {
-        final int endOfChunkedBody =
-            determineEndOfChunkedBody(targetElement.getContent(), bodyDataStartOffset, eol);
-        targetElement.setUsedBytes(endOfChunkedBody);
-        return endOfChunkedBody;
-      } else {
-        targetElement.addFacet(
-            RbelNoteFacet.builder()
-                .style(styleParsingError(targetElement))
-                .value(
-                    "Did not find content-length or transfer-encoding header. One of them is"
-                        + " required.")
-                .build());
-        if (!lenientParsingMode && isTcpMessage(targetElement)) {
-          throw new RbelConversionException("No content-length or transfer-encoding header found");
-        }
-        return content.size();
-      }
+      return parseBody(targetElement, bodyDataStartOffset, headerMap, eol, content);
     }
 
     if (bodyDataStartOffset == content.size()) {
@@ -426,6 +393,49 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
     return content.size();
   }
 
+  private int parseBody(
+      RbelElement targetElement,
+      int bodyDataStartOffset,
+      RbelHttpHeaderFacet headerMap,
+      String eol,
+      RbelContent content) {
+    final Optional<RbelElement> contentLengthHeader =
+        headerMap.getCaseInsensitiveMatches("Content-Length").findAny();
+    final Optional<RbelElement> transferEncodingHeader =
+        headerMap.getCaseInsensitiveMatches("Transfer-Encoding").findAny();
+    if (contentLengthHeader.isPresent()) {
+      final int endOfBodyIndex =
+          bodyDataStartOffset + parseContentLengthHeader(contentLengthHeader.get());
+      if (endOfBodyIndex > content.size()) {
+        throw new RbelConversionException("Body-length exceeds available content");
+      }
+      targetElement.setUsedBytes(endOfBodyIndex);
+      return endOfBodyIndex;
+    } else if (transferEncodingHeader.isPresent()) {
+      final int endOfChunkedBody = determineEndOfChunkedBody(content, bodyDataStartOffset, eol);
+      targetElement.setUsedBytes(endOfChunkedBody);
+      return endOfChunkedBody;
+    } else {
+      targetElement.addFacet(
+          RbelNoteFacet.builder()
+              .style(styleParsingError(targetElement))
+              .value(
+                  "Did not find content-length or transfer-encoding header. One of them is"
+                      + " required.")
+              .build());
+      if (!lenientParsingMode && isTcpMessage(targetElement)) {
+        throw new RbelConversionException("No content-length or transfer-encoding header found");
+      }
+      return content.size();
+    }
+  }
+
+  private static int parseContentLengthHeader(RbelElement contentLengthHeader) {
+    return Optional.ofNullable(contentLengthHeader.getRawStringContent())
+        .map(Integer::parseInt)
+        .orElseThrow();
+  }
+
   private static int determineEndOfChunkedBody(
       RbelContent content, int bodyDataStartOffset, String eol) {
     final byte[] bytes = eol.getBytes();
@@ -433,7 +443,7 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
     int currentChunkSize;
     do {
       byte[] currentChunkSizeData =
-          content.subArray(endOfChunkedBody, content.indexOf(bytes, endOfChunkedBody));
+          content.toByteArray(endOfChunkedBody, content.indexOf(bytes, endOfChunkedBody));
       try {
         currentChunkSize = HexFormat.fromHexDigits(new String(currentChunkSizeData));
       } catch (NumberFormatException e) {

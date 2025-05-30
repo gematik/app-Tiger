@@ -95,7 +95,7 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet> extends Rbel
     } else if (node.isValueNode()) {
       convertPrimitive(node, context, parentElement);
     } else {
-      parentElement.addFacet(RbelValueFacet.builder().value(null).build());
+      parentElement.addFacet(RbelValueFacet.of(null));
     }
   }
 

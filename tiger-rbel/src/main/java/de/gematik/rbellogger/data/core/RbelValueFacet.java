@@ -20,47 +20,17 @@
  */
 package de.gematik.rbellogger.data.core;
 
-import static j2html.TagCreator.p;
+import java.util.function.Supplier;
 
-import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelMultiMap;
-import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
-import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
-import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
-import j2html.tags.ContainerTag;
-import java.util.Optional;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+public interface RbelValueFacet<T> extends RbelFacet {
 
-@Data
-@Builder(toBuilder = true)
-@RequiredArgsConstructor(access = AccessLevel.PUBLIC)
-public class RbelValueFacet<T> implements RbelFacet {
-
-  static {
-    RbelHtmlRenderer.registerFacetRenderer(
-        new RbelHtmlFacetRenderer() {
-          @Override
-          public boolean checkForRendering(RbelElement element) {
-            return element.hasFacet(RbelValueFacet.class) && element.getFacets().size() == 1;
-          }
-
-          @Override
-          public ContainerTag performRendering(
-              RbelElement element,
-              Optional<String> key,
-              RbelHtmlRenderingToolkit renderingToolkit) {
-            return p().withText(element.getFacetOrFail(RbelValueFacet.class).getValue().toString());
-          }
-        });
+  static <T> RbelValueFacet<T> of(T value) {
+    return RbelBaseValueFacet.<T>builder().value(value).build();
   }
 
-  private final T value;
-
-  @Override
-  public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<>();
+  static <T> RbelValueFacet<T> from(Supplier<T> value) {
+    return RbelLazyValueFacet.<T>builder().valueSupplier(value).build();
   }
+
+  T getValue();
 }
