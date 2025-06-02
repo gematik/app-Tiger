@@ -73,11 +73,7 @@ public class RbelLdapConverter extends RbelConverterPlugin {
       val msgIdElement =
           extractBy(m -> Integer.toString(m.getMessageID()), ldapMessage, rbelElement, converter);
       val protocolOpElement =
-          extractBy(
-              m -> m.getProtocolOp().getClass().getSimpleName(),
-              ldapMessage,
-              rbelElement,
-              converter);
+          extractBy(this::getShortProtocolOpDesc, ldapMessage, rbelElement, converter);
 
       val attributes = extractAttributes(ldapMessage, rbelElement, converter);
 
@@ -90,6 +86,15 @@ public class RbelLdapConverter extends RbelConverterPlugin {
       handleRequestResponse(rbelElement, ldapMessage);
     } catch (final ASN1Exception | LDAPException | IOException e) {
       throw new RbelConversionException("Attempt to parse LDAP failed", e, rbelElement, this);
+    }
+  }
+
+  private String getShortProtocolOpDesc(final LDAPMessage ldapMessage) {
+    final String fullProtocolOpDesc = ldapMessage.getProtocolOp().toString();
+    if (fullProtocolOpDesc.contains("attrs=")) {
+      return fullProtocolOpDesc.substring(0, fullProtocolOpDesc.indexOf(", attrs=")) + ")";
+    } else {
+      return fullProtocolOpDesc;
     }
   }
 

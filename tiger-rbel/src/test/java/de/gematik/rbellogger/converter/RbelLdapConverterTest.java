@@ -110,7 +110,7 @@ class RbelLdapConverterTest {
         .hasStringContentEqualTo("5")
         .andTheInitialElement()
         .extractChildWithPath("$.protocolOp")
-        .hasStringContentEqualTo("DeleteRequestProtocolOp");
+        .hasStringContentEqualTo("DeleteRequestProtocolOp(dn='dc=example,dc=com')");
   }
 
   @Test
@@ -132,7 +132,7 @@ class RbelLdapConverterTest {
         .hasStringContentEqualTo("2")
         .andTheInitialElement()
         .extractChildWithPath("$.protocolOp")
-        .hasStringContentEqualTo("SearchResultEntryProtocolOp")
+        .hasStringContentEqualTo("SearchResultEntryProtocolOp(dn='dc=example,dc=com')")
         .andTheInitialElement()
         .extractChildWithPath("$.attributes")
         .hasFacet(RbelLdapAttributesFacet.class)
@@ -173,7 +173,8 @@ class RbelLdapConverterTest {
         .hasStringContentEqualTo("1")
         .andTheInitialElement()
         .extractChildWithPath("$.protocolOp")
-        .hasStringContentEqualTo("SearchResultEntryProtocolOp")
+        .hasStringContentEqualTo(
+            "SearchResultEntryProtocolOp(dn='uid=9489c6df-f805-44a2-9b3b-37aaac06840a,dc=data,dc=vzd')")
         .andTheInitialElement()
         .extractChildWithPath("$.attributes")
         .hasFacet(RbelLdapAttributesFacet.class)
@@ -212,19 +213,31 @@ class RbelLdapConverterTest {
   }
 
   @Test
-  void shouldRenderCleanHtml() {
+  void shouldRenderCleanHtmlIncludingAttributes() {
     final RbelElement convertedElement = rbelConverter.convertElement(SEARCH_RESPONSE, null);
     final String html = RbelHtmlRenderer.render(List.of(convertedElement));
 
     assertThat(html)
-        .contains("LDAPMessage(msgID=2")
-        .contains("dn=" + quoted("dc=example,dc=com"))
         .contains(
-            "Attribute(name=objectClass, values={" + quoted("top") + ", " + quoted("domain") + "})")
-        .contains("Attribute(name=dc, values={" + quoted("example") + "})");
+            "<td><pre class=\"key\">Operation</pre></td><td><pre"
+                + " class=\"value\">SearchResultEntryProtocolOp(dn=&#x27;dc=example,dc=com&#x27;)</pre></td>")
+        .contains(
+            "<td><pre class=\"key\">Attribute: objectClass</pre></td><td><pre class=\"value\">top,"
+                + " domain</pre></td>")
+        .contains(
+            "<td><pre class=\"key\">Attribute: dc</pre></td><td><pre"
+                + " class=\"value\">example</pre></td>");
   }
 
-  private String quoted(final String s) {
-    return "&#x27;" + s + "&#x27;";
+  @Test
+  void shouldRenderCleanHtmlWithoutAttributes() {
+    final RbelElement convertedElement = rbelConverter.convertElement(DELETE_REQUEST, null);
+    final String html = RbelHtmlRenderer.render(List.of(convertedElement));
+
+    assertThat(html)
+        .contains(
+            "<td><pre class=\"key\">Operation</pre></td><td><pre"
+                + " class=\"value\">DeleteRequestProtocolOp(dn=&#x27;dc=example,dc=com&#x27;)</pre></td>")
+        .doesNotContain("Attribute: ");
   }
 }

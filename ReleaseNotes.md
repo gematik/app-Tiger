@@ -17,6 +17,7 @@
   Also, the 'FAILED' icon of a scenario (both in the execution pane and the feature list) will display the failure
   message when hovering over it and clicking on the icon will make the execution view jump to the failed step.
 * TGR-1854: update spring boot dependency version to 3.4.5.
+* TGR-1726: show parsed values and attributes of LDAP messages in the Tiger-Proxy Web UI.
 
 ## Bugfixes
 
@@ -757,8 +758,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-    key = PLUGIN_PROPERTY_NAME,
-    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+        key = PLUGIN_PROPERTY_NAME,
+        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

@@ -31,7 +31,8 @@ import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
-import java.util.Optional;
+import j2html.tags.DomContent;
+import java.util.*;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +41,11 @@ import lombok.RequiredArgsConstructor;
 @Builder
 @RequiredArgsConstructor
 public class RbelLdapFacet implements RbelFacet {
+
+  public static final String MSG_ID_KEY = "msgId";
+  public static final String PROTOCOL_OP_KEY = "protocolOp";
+  public static final String TEXT_REPRESENTATION_KEY = "textRepresentation";
+  public static final String ATTRIBUTES_KEY = "attributes";
 
   static {
     RbelHtmlRenderer.registerFacetRenderer(
@@ -56,8 +62,39 @@ public class RbelLdapFacet implements RbelFacet {
               RbelHtmlRenderingToolkit renderingToolkit) {
             final RbelLdapFacet facet = element.getFacetOrFail(RbelLdapFacet.class);
 
-            final String textRepresentation =
-                facet.getChildElements().get("textRepresentation").getRawStringContent();
+            final String messageId = facet.getChildElements().get(MSG_ID_KEY).getRawStringContent();
+            final String protocolOperation =
+                facet.getChildElements().get(PROTOCOL_OP_KEY).getRawStringContent();
+
+            final Map<String, String> attributesMap = new LinkedHashMap<>();
+            attributesMap.put("Message ID", messageId);
+            attributesMap.put("Operation", protocolOperation);
+
+            if (facet.getChildElements().containsKey(ATTRIBUTES_KEY)) {
+              final RbelElement attributesElement = facet.getChildElements().get(ATTRIBUTES_KEY);
+              if (attributesElement != null
+                  && attributesElement.hasFacet(RbelLdapAttributesFacet.class)) {
+                final RbelLdapAttributesFacet attributesFacet =
+                    attributesElement.getFacetOrFail(RbelLdapAttributesFacet.class);
+
+                for (Map.Entry<String, RbelElement> attribute : attributesFacet.entries()) {
+                  String attributeName = "Attribute: " + attribute.getKey();
+                  String value = attribute.getValue().getRawStringContent();
+                  attributesMap.computeIfPresent(attributeName, (k, v) -> v + ", " + value);
+                  attributesMap.putIfAbsent(attributeName, value);
+                }
+              }
+            }
+
+            List<DomContent> tableRows = new ArrayList<>();
+            for (Map.Entry<String, String> entry : attributesMap.entrySet()) {
+              tableRows.add(
+                  tr(
+                      td(pre().withText(entry.getKey()).withClass("key")),
+                      td(pre().withText(entry.getValue()).withClass("value"))));
+            }
+
+            DomContent table = table().withClass("table").with(tbody().with(tableRows));
 
             return ancestorTitle()
                 .with(
@@ -65,7 +102,8 @@ public class RbelLdapFacet implements RbelFacet {
                         .with(
                             div()
                                 .withClass("tile is-child pe-2")
-                                .with(pre(textRepresentation).withClass("json language-json"))
+                                .with(pre("LDAP message").withClass("json language-json"))
+                                .with(table)
                                 .with(renderingToolkit.convertNested(element))));
           }
         });
@@ -79,9 +117,9 @@ public class RbelLdapFacet implements RbelFacet {
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
     return new RbelMultiMap<RbelElement>()
-        .with("textRepresentation", textRepresentation)
-        .with("msgId", msgId)
-        .with("protocolOp", protocolOp)
-        .with("attributes", attributes);
+        .with(TEXT_REPRESENTATION_KEY, textRepresentation)
+        .with(MSG_ID_KEY, msgId)
+        .with(PROTOCOL_OP_KEY, protocolOp)
+        .withSkipIfNull(ATTRIBUTES_KEY, attributes);
   }
 }
