@@ -17,7 +17,14 @@ git stash -k
 # apply spotless
 mvn spotless:apply
 
-# re-add any changes that spotless created
+# run the linters
+cd tiger-testenv-mgr/src/frontend
+npm run lint -- --fix
+cd ../../../tiger-proxy-scrollable-webui/src/frontend
+npm run lint -- --fix
+cd ../../..
+
+# re-add any changes that spotless/linters created
 git add -u
 
 # store the last exit code
