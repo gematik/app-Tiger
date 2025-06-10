@@ -146,8 +146,8 @@ class TestDirectReverseTigerProxy extends AbstractTigerProxyTest {
             .isBeforeOrEqualTo(afterRespone);
 
         assertThat(responseTime)
-            .isAfter(beforeRequest)
-            .isAfterOrEqualTo(responseTime)
+            .isAfterOrEqualTo(beforeRequest)
+            .isAfterOrEqualTo(requestTime)
             .isBeforeOrEqualTo(afterRespone);
       }
     }

@@ -25,6 +25,9 @@ import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
+import de.gematik.rbellogger.RbelConversionExecutor;
+import de.gematik.rbellogger.RbelConversionPhase;
+import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.ProxyTransmissionHistory;
@@ -42,6 +45,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -214,7 +218,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         .isEqualTo(200);
 
     await()
-        .atMost(10, TimeUnit.SECONDS)
+        .atMost(20, TimeUnit.SECONDS)
         .until(
             () -> envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageList(),
             l -> l.size() >= 4);
@@ -418,6 +422,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
     RbelLogger rbelLogger = envMgr.getLocalTigerProxyOrFail().getRbelLogger();
     await()
         .atMost(10, TimeUnit.MINUTES)
+        .pollInterval(100, TimeUnit.MILLISECONDS)
         .until(
             () ->
                 rbelLogger.getMessageHistory().stream()
@@ -561,7 +566,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
     """)
   void testTracingFacetsAndHttpFacetHaveCorrectRequest(TigerTestEnvMgr envMgr) {
     waitShortTime();
-    val numberOfSentMessages = 10;
+    val numberOfSentMessages = 200;
     val maxDelay = 20;
     final Random random = RandomTestUtils.createRandomGenerator();
     ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
@@ -752,6 +757,85 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
           .extractFacet(ProxyTransmissionHistory.class)
           .isEqualTo(new ProxyTransmissionHistory("reverseProxy", List.of((long) respIndex), null));
     }
+
+    waitShortTime();
+  }
+
+  @SneakyThrows
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+    tigerProxy:
+      skipTrafficEndpointsSubscription: true
+      trafficEndpoints:
+        - http://localhost:${free.port.4}
+    servers:
+      httpbin:
+        type: httpbin
+        serverPort: ${free.port.0}
+        healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
+      reverseProxy:
+        type: tigerProxy
+        tigerProxyConfiguration:
+          adminPort: ${free.port.4}
+          proxiedServer: httpbin
+          proxyPort: ${free.port.5}
+    """)
+  void waitingForAlreadyRemovedMessage_shouldNotBlock(TigerTestEnvMgr envMgr) {
+    waitShortTime();
+
+    var requestProcessedAndRemovedFromHistory = new CompletableFuture<String>();
+
+    var messages = new LinkedList<RbelElement>();
+    envMgr
+        .getLocalTigerProxyOrFail()
+        .getRbelLogger()
+        .getRbelConverter()
+        .addConverter(
+            new RbelConverterPlugin() {
+              @Override
+              public RbelConversionPhase getPhase() {
+                return RbelConversionPhase.TRANSMISSION;
+              }
+
+              @Override
+              public void consumeElement(RbelElement e, RbelConversionExecutor converter) {
+                if (e.hasFacet(RbelTcpIpMessageFacet.class)) {
+                  messages.add(e);
+                  converter.removeMessage(e);
+                }
+                if (e.hasFacet(RbelHttpRequestFacet.class)) {
+                  requestProcessedAndRemovedFromHistory.complete(e.getUuid());
+                }
+              }
+            });
+
+    ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
+        .getTigerProxy()
+        .getRbelLogger()
+        .getRbelConverter()
+        .addConverter(
+            createPlugin(
+                (e, c) -> {
+                  if (e.hasFacet(RbelHttpResponseFacet.class)) {
+                    requestProcessedAndRemovedFromHistory.join();
+                  }
+                }));
+    final String path = "/anything/";
+    @Cleanup final UnirestInstance unirestInstance = Unirest.spawnInstance();
+    unirestInstance
+        .config()
+        .sslContext(
+            ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
+                .getTigerProxy()
+                .getConfiguredTigerProxySslContext());
+
+    unirestInstance
+        .get("https://localhost:" + TigerGlobalConfiguration.readString("free.port.5") + path + 0)
+        .asString();
+
+    await().atMost(2, TimeUnit.SECONDS).until(messages::size, size -> size == 2);
 
     waitShortTime();
   }

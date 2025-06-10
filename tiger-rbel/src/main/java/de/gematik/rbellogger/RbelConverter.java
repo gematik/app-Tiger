@@ -41,6 +41,7 @@ import de.gematik.test.tiger.common.util.TigerSecurityProviderInitialiser;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import lombok.*;
@@ -68,7 +69,8 @@ public class RbelConverter {
   @Getter private final RbelKeyManager rbelKeyManager;
   @Getter private final RbelValueShader rbelValueShader = new RbelValueShader();
 
-  private final List<Runnable> clearHandlers = new LinkedList<>();
+  private final List<Runnable> historyClearCallbacks = new LinkedList<>();
+  private final List<Consumer<RbelElement>> messageRemovedFromHistoryCallbacks = new LinkedList<>();
 
   @Getter private final ConverterPluginMap converterPlugins = new ConverterPluginMap();
   private final ExecutorService executorService =
@@ -111,8 +113,12 @@ public class RbelConverter {
     }
   }
 
-  public void addClearHandler(Runnable runnable) {
-    clearHandlers.add(runnable);
+  public void addClearHistoryCallback(Runnable runnable) {
+    historyClearCallbacks.add(runnable);
+  }
+
+  public void addMessageRemovedFromHistoryCallback(Consumer<RbelElement> consumer) {
+    messageRemovedFromHistoryCallbacks.add(consumer);
   }
 
   public RbelElement convertElement(RbelElement rbelElement) {
@@ -237,6 +243,7 @@ public class RbelConverter {
       synchronized (messageHistory) {
         if (rbelBufferSizeInMb <= 0 && !messageHistory.isEmpty()) {
           currentBufferSize = 0;
+          messageHistory.forEach(e -> messageRemovedFromHistoryCallbacks.forEach(h -> h.accept(e)));
           messageHistory.clear();
           knownMessageUuids.clear();
         }
@@ -251,6 +258,7 @@ public class RbelConverter {
           while (exceedingLimit > 0 && !messageHistory.isEmpty()) {
             log.trace("Exceeded buffer size, dropping oldest message in history");
             final RbelElement messageToDrop = messageHistory.removeFirst();
+            messageRemovedFromHistoryCallbacks.forEach(h -> h.accept(messageToDrop));
             exceedingLimit -= messageToDrop.getSize();
             currentBufferSize -= messageToDrop.getSize();
             knownMessageUuids.remove(messageToDrop.getUuid());
@@ -310,7 +318,7 @@ public class RbelConverter {
       currentBufferSize = 0;
       messageHistory.clear();
       knownMessageUuids.clear();
-      clearHandlers.forEach(Runnable::run);
+      historyClearCallbacks.forEach(Runnable::run);
     }
   }
 
@@ -320,6 +328,7 @@ public class RbelConverter {
       while (iterator.hasNext()) {
         if (iterator.next().equals(rbelMessage)) {
           iterator.remove();
+          messageRemovedFromHistoryCallbacks.forEach(r -> r.accept(rbelMessage));
           currentBufferSize -= rbelMessage.getSize();
           knownMessageUuids.remove(rbelMessage.getUuid());
         }

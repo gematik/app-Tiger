@@ -48,6 +48,7 @@ import kong.unirest.core.Unirest;
 import kong.unirest.core.UnirestInstance;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Tag;
@@ -193,16 +194,24 @@ class TracingResilienceTest {
             getLastRequestPaths(receivingProxy.getRbelMessagesList(), toBeSkippedMessages);
         log.error("////sending, aggregating receiving messages: ////");
         for (int i = 0; i < sendingMsgs.size(); i++) {
-          if (makeReadable(sendingMsgs.get(i)).contains("msg")) {
-            log.error(
-                "{}, {}, {}",
-                softQueryList(sendingMsgs, i).map(this::makeReadable).orElse(EMPTY_MESSAGE_STRING),
-                softQueryList(aggregatingMsgs, i)
-                    .map(this::makeReadable)
-                    .orElse(EMPTY_MESSAGE_STRING),
-                softQueryList(receivingMsgs, i)
-                    .map(this::makeReadable)
-                    .orElse(EMPTY_MESSAGE_STRING));
+          if (makeReadable(sendingMsgs.get(i)).getLeft().contains("msg")) {
+            var sent = softQueryList(sendingMsgs, i).map(this::makeReadable);
+            var aggregated = softQueryList(aggregatingMsgs, i).map(this::makeReadable);
+            var received = softQueryList(receivingMsgs, i).map(this::makeReadable);
+            if (!(sent.isPresent()
+                && aggregated.isPresent()
+                && received.isPresent()
+                && sent.get().getLeft().equals(aggregated.get().getLeft())
+                && aggregated.get().getLeft().equals(received.get().getLeft()))) {
+              log.error(
+                  "{} {}, {} {}, {} {}",
+                  sent.map(Pair::getLeft).orElse(EMPTY_MESSAGE_STRING),
+                  sent.map(Pair::getRight).orElse(EMPTY_MESSAGE_STRING),
+                  aggregated.map(Pair::getLeft).orElse(EMPTY_MESSAGE_STRING),
+                  aggregated.map(Pair::getRight).orElse(EMPTY_MESSAGE_STRING),
+                  received.map(Pair::getLeft).orElse(EMPTY_MESSAGE_STRING),
+                  received.map(Pair::getRight).orElse(EMPTY_MESSAGE_STRING));
+            }
           }
         }
         log.error("/////////////////////////////////////////////////////////////////////////////");
@@ -220,7 +229,7 @@ class TracingResilienceTest {
     return Optional.of(list.get(i));
   }
 
-  private String makeReadable(RbelElement message) {
+  private Pair<String, String> makeReadable(RbelElement message) {
     String downloadedMarker = "PUSH";
     if (message.hasFacet(TigerDownloadedMessageFacet.class)) {
       downloadedMarker = "DOWN";
@@ -239,7 +248,7 @@ class TracingResilienceTest {
             .replace("/messageNumber", "msg");
     final String shortUuid =
         Optional.ofNullable(message).map(RbelElement::getUuid).orElse("").split("-")[0];
-    return httpRequestString + " (" + downloadedMarker + ", " + shortUuid + ")";
+    return Pair.of(httpRequestString + " (" + shortUuid + ")", downloadedMarker);
   }
 
   @NotNull

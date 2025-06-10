@@ -21,7 +21,6 @@
 package de.gematik.test.tiger.common;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 import java.util.Map;
@@ -30,13 +29,13 @@ import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class BoundedMapTest {
+class RingBufferHashMapTest {
 
-  private BoundedMap<String, String> boundedMap;
+  private RingBufferHashMap<String, String> boundedMap;
 
   @BeforeEach
   void setUp() {
-    boundedMap = new BoundedMap<>(3); // Create a bounded map with a max size of 3
+    boundedMap = new RingBufferHashMap<>(3); // Create a bounded map with a max size of 3
   }
 
   @Test
@@ -78,6 +77,7 @@ class BoundedMapTest {
   void testEntries() {
     boundedMap.getOrPutDefault("key1", () -> "value1");
     boundedMap.getOrPutDefault("key2", () -> "value2");
+    boundedMap.getOrPutDefault("key1", () -> "value3");
 
     List<Map.Entry<String, String>> entries = boundedMap.entries();
     assertThat(entries).hasSize(2);
@@ -85,6 +85,17 @@ class BoundedMapTest {
     assertThat(entries.get(0).getValue()).isEqualTo("value1");
     assertThat(entries.get(1).getKey()).isEqualTo("key2");
     assertThat(entries.get(1).getValue()).isEqualTo("value2");
+  }
+
+  @Test
+  void testEntriesOrderAfterRemoveAndReAdd() {
+    boundedMap.getOrPutDefault("key1", () -> "value1");
+    boundedMap.getOrPutDefault("key2", () -> "value2");
+    boundedMap.remove("key1");
+    boundedMap.put("key1", "value4");
+
+    assertThat(boundedMap.entries().stream().map(Map.Entry::getKey))
+        .isEqualTo(List.of("key2", "key1"));
   }
 
   @Test
@@ -98,7 +109,7 @@ class BoundedMapTest {
 
   @Test
   void testIsThreadSafe() throws InterruptedException {
-    BoundedMap<Integer, Integer> threadSafeMap = new BoundedMap<>(100);
+    RingBufferHashMap<Integer, Integer> threadSafeMap = new RingBufferHashMap<>(100);
     Runnable task =
         () -> {
           for (int i = 0; i < 1000; i++) {
@@ -116,5 +127,13 @@ class BoundedMapTest {
     thread2.join();
 
     assertThat(threadSafeMap.size()).isEqualTo(100); // Ensure bounded size is respected
+  }
+
+  @Test
+  void testClear() {
+    boundedMap.getOrPutDefault("key1", () -> "value1");
+    boundedMap.getOrPutDefault("key2", () -> "value2");
+    boundedMap.clear();
+    assertThat(boundedMap.size()).isZero();
   }
 }

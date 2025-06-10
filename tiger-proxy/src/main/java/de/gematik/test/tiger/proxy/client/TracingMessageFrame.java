@@ -66,7 +66,7 @@ public class TracingMessageFrame {
           .addArgument(message.getTracingDto()::getMessageUuid)
           .addArgument(() -> previousMessageUuid)
           .log("Queueing {} behind {}");
-      remoteProxyClient.queueParsingTaskBehindMessageWithId(
+      remoteProxyClient.scheduleAfterMessage(
           previousMessageUuid, this::parseThisMessage, message.getTracingDto().getMessageUuid());
     } else {
       log.atTrace()

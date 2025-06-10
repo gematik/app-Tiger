@@ -27,8 +27,10 @@ import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.data.core.RbelFacet;
 import de.gematik.rbellogger.util.IRbelMessageListener;
-import de.gematik.test.tiger.common.BoundedMap;
+import de.gematik.test.tiger.common.RingBufferHashMap;
+import de.gematik.test.tiger.common.RingBufferHashSet;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
@@ -39,7 +41,7 @@ import de.gematik.test.tiger.proxy.TigerProxyRemoteTransmissionConversionPlugin;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.handler.MultipleBinaryConnectionParser;
-import de.gematik.test.tiger.proxy.handler.SingleConnectionParser.SingleConnectionParserMarkerFacet;
+import de.gematik.test.tiger.proxy.handler.SingleConnectionParser;
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.WebSocketContainer;
 import java.time.Duration;
@@ -133,7 +135,10 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     connectionTimeoutInSeconds = configuration.getConnectionTimeoutInSeconds();
 
     addRbelMessageListener(this::signalNewCompletedMessage);
-    getRbelLogger().getRbelConverter().addConverter(new TigerProxyMessageDeletedPlugin(this));
+    var converter = getRbelLogger().getRbelConverter();
+    converter.addConverter(new TigerProxyMessageDeletedPlugin(this));
+    converter.addClearHistoryCallback(this::discardDelayedParsingTasks);
+    converter.addMessageRemovedFromHistoryCallback(this::handleMessageRemovalFromHistory);
   }
 
   public void connect() {
@@ -464,40 +469,77 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
   }
 
+  public void propagateException(RuntimeException e) {
+    if (masterTigerProxy != null) {
+      masterTigerProxy.propagateException(e);
+    } else {
+      log.atWarn()
+          .addArgument(this::proxyName)
+          .log("Exception thrown (isolated TigerRemoteProxyClient instance {})", e);
+    }
+  }
+
+  private final RingBufferHashMap<String, List<Runnable>> parsingTasksWaitingForUuid =
+      new RingBufferHashMap<>(10_000);
+
   /**
-   * Map with Futures indicating if a message with the given UUID has been parsed. The map is
-   * bounded to avoid memory leaks. Every connection on every upstream proxy will create a new
-   * entry, so the upper limit needs to be quite high.
+   * The messages that have been fully parsed, but since removed from the message history and that
+   * potentially still will have follow-up messages that see one of these messages as their previous
+   * message.
+   *
+   * <p>If a message does not have a follow-up message, it will not be removed from this map until
+   * the buffer is full.
    */
-  private final BoundedMap<String, Map<String, Runnable>> previousMessages =
-      new BoundedMap<>(10_000);
+  private final RingBufferHashSet<String> removedMessageUuids = new RingBufferHashSet<>(10_000);
 
-  public void queueParsingTaskBehindMessageWithId(
-      String previousMessageUuid, Runnable runnable, String thisMessageUuid) {
-    synchronized (previousMessages) {
-      final Optional<RbelConversionPhase> conversionPhase =
-          getRbelLogger()
-              .getRbelConverter()
-              .findMessageByUuid(previousMessageUuid)
-              .map(RbelElement::getConversionPhase);
+  private void handleMessageRemovalFromHistory(RbelElement element) {
+    if (!element.hasFacet(NextMessageParsedFacet.class)) {
+      removedMessageUuids.add(element.getUuid());
+    }
+  }
 
-      if (conversionPhase.map(RbelConversionPhase::isFinished).orElse(false)) {
-        log.info(
+  private void discardDelayedParsingTasks() {
+    synchronized (parsingTasksWaitingForUuid) {
+      parsingTasksWaitingForUuid.clear();
+      removedMessageUuids.clear();
+    }
+  }
+
+  public void scheduleAfterMessage(
+      String previousMessageUuid, Runnable parseMessageTask, String thisMessageUuid) {
+    synchronized (parsingTasksWaitingForUuid) {
+      if (removedMessageUuids.contains(previousMessageUuid)) {
+        log.trace(
+            "parsing {} immediately, prev {} is already finished and removed",
+            thisMessageUuid,
+            previousMessageUuid);
+        meshHandlerPool.submit(parseMessageTask);
+        removedMessageUuids.remove(previousMessageUuid);
+        return;
+      }
+      Optional<RbelElement> previousMessage =
+          getRbelLogger().getRbelConverter().findMessageByUuid(previousMessageUuid);
+      final Optional<RbelConversionPhase> previousMessageConversionPhase =
+          previousMessage.map(RbelElement::getConversionPhase);
+
+      if (previousMessageConversionPhase.map(RbelConversionPhase::isFinished).orElse(false)) {
+        log.trace(
             "parsing {} immediately, prev {} has status {}",
             thisMessageUuid,
             previousMessageUuid,
-            conversionPhase);
-        getMeshHandlerPool().submit(runnable);
+            previousMessageConversionPhase);
+        previousMessage.ifPresent(msg -> msg.addFacet(new NextMessageParsedFacet()));
+        meshHandlerPool.submit(parseMessageTask);
       } else {
         log.atTrace()
             .addArgument(thisMessageUuid)
             .addArgument(previousMessageUuid)
-            .addArgument(conversionPhase)
-            .addArgument(previousMessages::size)
+            .addArgument(previousMessageConversionPhase)
+            .addArgument(parsingTasksWaitingForUuid::size)
             .log("Queueing {} behind {} ({}), currently {} messages waiting");
-        previousMessages
-            .getOrPutDefault(previousMessageUuid, HashMap::new)
-            .put(thisMessageUuid, runnable);
+        parsingTasksWaitingForUuid
+            .getOrPutDefault(previousMessageUuid, LinkedList::new)
+            .add(parseMessageTask);
       }
     }
   }
@@ -505,8 +547,8 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   public void signalNewCompletedMessage(RbelElement msg) {
     signalNewCompletedMessage(msg.getUuid());
     msg
-        .getFacet(SingleConnectionParserMarkerFacet.class)
-        .map(SingleConnectionParserMarkerFacet::getSourceUuids)
+        .getFacet(SingleConnectionParser.SingleConnectionParserMarkerFacet.class)
+        .map(SingleConnectionParser.SingleConnectionParserMarkerFacet::getSourceUuids)
         .stream()
         .flatMap(Collection::stream)
         .distinct()
@@ -514,8 +556,8 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   }
 
   private void signalNewCompletedMessage(String uuid) {
-    List<Runnable> runnableList = new ArrayList<>();
-    log.atInfo()
+    List<Runnable> parsingTasks = new ArrayList<>();
+    log.atDebug()
         .addArgument(uuid)
         .addArgument(
             () ->
@@ -524,19 +566,27 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
                     .findMessageByUuid(uuid)
                     .map(RbelElement::getConversionPhase))
         .log("Signal new completed message {} (Status is {})");
-    synchronized (previousMessages) {
-      final Optional<Map<String, Runnable>> entry = previousMessages.get(uuid);
-      entry.map(Map::values).ifPresent(runnableList::addAll);
-      previousMessages.remove(uuid);
+    synchronized (parsingTasksWaitingForUuid) {
+      parsingTasksWaitingForUuid
+          .get(uuid)
+          .ifPresent(
+              waitingParsingTasks -> {
+                if (removedMessageUuids.contains(uuid)) {
+                  removedMessageUuids.remove(uuid);
+                } else {
+                  getRbelLogger()
+                      .getRbelConverter()
+                      .findMessageByUuid(uuid)
+                      .ifPresent(e -> e.addFacet(new NextMessageParsedFacet()));
+                }
+                parsingTasksWaitingForUuid.remove(uuid);
+                parsingTasks.addAll(waitingParsingTasks);
+              });
     }
-    runnableList.forEach(getMeshHandlerPool()::submit);
+    parsingTasks.forEach(meshHandlerPool::submit);
   }
 
-  public void propagateException(RuntimeException e) {
-    if (masterTigerProxy != null) {
-      masterTigerProxy.propagateException(e);
-    } else {
-      log.warn("Exception thrown (isolated TigerRemoteProxyClient instance{})", proxyName(), e);
-    }
+  private static class NextMessageParsedFacet implements RbelFacet {
+    // This is a marker facet to indicate that the next message has been parsed
   }
 }

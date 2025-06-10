@@ -20,57 +20,64 @@
  */
 package de.gematik.test.tiger.common;
 
-import com.google.common.collect.EvictingQueue;
-import java.util.*;
-import java.util.Map.Entry;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /** Ringbuffer with bounded size. */
-public class BoundedMap<K, V> {
-  private final EvictingQueue<Map.Entry<K, V>> backingQueue;
-  private final Map<K, V> backingMap;
-  private final int maxSize;
+public class RingBufferHashMap<K, V> {
+  private final LinkedHashMap<K, V> map = new LinkedHashMap<>();
+  private final int size;
 
-  public BoundedMap(final int size) {
-    this.backingQueue = EvictingQueue.create(size);
-    this.backingMap = new HashMap<>(size);
-    this.maxSize = size;
+  public RingBufferHashMap(final int size) {
+    this.size = size;
   }
 
   public synchronized Optional<V> get(K key) {
-    return Optional.ofNullable(backingMap.get(key));
+    return Optional.ofNullable(map.get(key));
   }
 
   public synchronized void remove(K key) {
-    backingQueue.removeIf(entry -> entry.getKey().equals(key));
-    backingMap.remove(key);
+    map.remove(key);
   }
 
   public synchronized V getOrPutDefault(K key, Supplier<V> defaultValue) {
-    if (backingMap.containsKey(key)) {
-      return backingMap.get(key);
-    } else {
-      V value = defaultValue.get();
-      addNewEntry(key, value);
-      return value;
+    try {
+      return map.computeIfAbsent(key, k -> defaultValue.get());
+    } finally {
+      deleteOldestEntryOnOverflow();
     }
   }
 
-  private void addNewEntry(K key, V value) {
-    if (backingQueue.size() == maxSize) {
-      final Entry<K, V> deletedEntry = backingQueue.remove();
-      backingMap.remove(deletedEntry.getKey());
+  private synchronized void deleteOldestEntryOnOverflow() {
+    if (map.size() > size) {
+      var iterator = map.entrySet().iterator();
+      iterator.next();
+      iterator.remove();
     }
-
-    backingQueue.add(Map.entry(key, value));
-    backingMap.put(key, value);
   }
 
   public synchronized List<Map.Entry<K, V>> entries() {
-    return new ArrayList<>(backingQueue);
+    return new ArrayList<>(map.entrySet());
   }
 
   public int size() {
-    return backingQueue.size();
+    return map.size();
+  }
+
+  public boolean containsKey(K key) {
+    return map.containsKey(key);
+  }
+
+  public synchronized void put(K key, V value) {
+    map.put(key, value);
+    deleteOldestEntryOnOverflow();
+  }
+
+  public void clear() {
+    map.clear();
   }
 }
