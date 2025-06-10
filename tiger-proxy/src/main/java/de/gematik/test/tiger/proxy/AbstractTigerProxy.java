@@ -150,7 +150,15 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   }
 
   private void readTrafficFromSourceFile(String sourceFile) {
-    fileParsingFuture = CompletableFuture.runAsync(() -> readTrafficFromTgrFile(sourceFile));
+    fileParsingFuture =
+        CompletableFuture.runAsync(() -> readTrafficFromTgrFile(sourceFile))
+            .exceptionally(
+                e -> {
+                  log.error(
+                      "Error while reading traffic from file '{}': {}", sourceFile, e.getMessage());
+                  throw new TigerProxyStartupException(
+                      "Error while reading traffic from file '" + sourceFile + "'", e);
+                });
   }
 
   public synchronized List<RbelElement> readTrafficFromTgrFile(String sourceFile) {

@@ -121,14 +121,6 @@ class TestRbelMessageProvider {
     assertThat(msgs).isEmpty();
   }
 
-  @Test
-  // TODO what does this test
-  void jexlToolboxTest() {
-    final RbelMessageProvider rmProvider = new RbelMessageProvider();
-    rmProvider.triggerNewReceivedMessage(buildMessageWithContent("TestMessage1"));
-    rmProvider.triggerNewReceivedMessage(buildMessageWithContent("TestMessage2"));
-  }
-
   private RbelElement buildMessageWithContent(String messageBody) {
     return RbelElement.builder().rawContent(messageBody.getBytes(StandardCharsets.UTF_8)).build();
   }

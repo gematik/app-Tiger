@@ -330,7 +330,7 @@ public class SerenityReporterCallbacks {
     return map;
   }
 
-  private enum StepState {
+  public enum StepState {
     STARTED,
     FINISHED
   }
@@ -616,7 +616,7 @@ public class SerenityReporterCallbacks {
         .collect(Collectors.toCollection(ArrayList::new));
   }
 
-  private List<RbelElement> getCurrentStepMessages(boolean isDryRun, StepState stepState) {
+  public static List<RbelElement> getCurrentStepMessages(boolean isDryRun, StepState stepState) {
     if (isDryRun || stepState != StepState.FINISHED) {
       return Collections.emptyList();
     }
@@ -629,7 +629,9 @@ public class SerenityReporterCallbacks {
       Awaitility.await()
           .atMost(waitTime, TimeUnit.SECONDS)
           .pollInterval(200, TimeUnit.MILLISECONDS)
-          .until(this::getFullyProcessedStepMessages, this::allRequestsPaired);
+          .until(
+              SerenityReporterCallbacks::getFullyProcessedStepMessages,
+              SerenityReporterCallbacks::allRequestsPaired);
     } catch (ConditionTimeoutException e) {
       log.atWarn()
           .addArgument(waitTime)
@@ -638,25 +640,26 @@ public class SerenityReporterCallbacks {
     return LocalProxyRbelMessageListener.getInstance().getStepRbelMessages();
   }
 
-  private List<RbelElement> getFullyProcessedStepMessages() {
+  private static List<RbelElement> getFullyProcessedStepMessages() {
     TigerDirector.getTigerTestEnvMgr()
         .getLocalTigerProxyOptional()
         .ifPresent(TigerProxy::waitForAllCurrentMessagesToBeParsed);
     return LocalProxyRbelMessageListener.getInstance().getStepRbelMessages();
   }
 
-  private boolean allRequestsPaired(List<RbelElement> stepMessages) {
+  private static boolean allRequestsPaired(List<RbelElement> stepMessages) {
     var messages = new HashSet<>(stepMessages);
 
     var requestsWaitingForResponses =
         stepMessages.stream()
             .filter(message -> message.hasFacet(RbelRequestFacet.class))
             .filter(
-                msg ->
-                    msg.getFacet(TracingMessagePairFacet.class)
+                message ->
+                    message
+                        .getFacet(TracingMessagePairFacet.class)
                         .map(TracingMessagePairFacet::getResponse)
-                        .map(messages::contains)
-                        .orElse(false))
+                        .stream()
+                        .noneMatch(messages::contains))
             .toList();
     if (!requestsWaitingForResponses.isEmpty()) {
       log.atDebug()

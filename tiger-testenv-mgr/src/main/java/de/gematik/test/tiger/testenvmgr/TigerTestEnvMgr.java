@@ -533,6 +533,7 @@ public class TigerTestEnvMgr
   }
 
   private void ensureLocalTigerProxyReadFilesSuccesfully() {
+    getLocalTigerProxyOptional().ifPresent(TigerProxy::ensureFileIsParsed);
     getLocalTigerProxyOptional().ifPresent(TigerProxy::waitForAllCurrentMessagesToBeParsed);
   }
 
