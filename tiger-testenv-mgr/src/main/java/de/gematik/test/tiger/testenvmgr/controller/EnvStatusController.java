@@ -31,6 +31,7 @@ import io.micrometer.common.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -165,11 +166,20 @@ public class EnvStatusController implements TigerUpdateListener {
     if (stepUpdate.getStatus() != null) {
       fillInStatus(scenario, stepUpdate, step);
     }
-    if (!StringUtils.isBlank(stepUpdate.getFailureMessage())) {
-      step.setFailureMessage(stepUpdate.getFailureMessage());
-    }
-    if (!StringUtils.isBlank(stepUpdate.getFailureStacktrace())) {
-      step.setFailureStacktrace(stepUpdate.getFailureStacktrace());
+    updateStep(stepUpdate, step);
+  }
+
+  private static void updateStep(StepUpdate stepUpdate, StepUpdate step) {
+    if (stepUpdate.getStatus() != TestResult.FAILED) {
+      step.setFailureMessage(null);
+      step.setFailureStacktrace(null);
+    } else {
+      if (!StringUtils.isBlank(stepUpdate.getFailureMessage())) {
+        step.setFailureMessage(stepUpdate.getFailureMessage());
+      }
+      if (!StringUtils.isBlank(stepUpdate.getFailureStacktrace())) {
+        step.setFailureStacktrace(stepUpdate.getFailureStacktrace());
+      }
     }
     if (!StringUtils.isBlank(stepUpdate.getDescription())) {
       step.setDescription(stepUpdate.getDescription());
@@ -179,6 +189,30 @@ public class EnvStatusController implements TigerUpdateListener {
     }
     step.setStepIndex(stepUpdate.getStepIndex());
     fillInMetaData(stepUpdate, step);
+    fillInStepData(stepUpdate, step);
+  }
+
+  private static void fillInStepData(StepUpdate stepUpdate, StepUpdate step) {
+    if (stepUpdate.getStatus() == TestResult.PENDING) {
+      step.getSubSteps().clear();
+      return;
+    }
+    AtomicInteger stepIndex = new AtomicInteger(0);
+    stepUpdate
+        .getSubSteps()
+        .forEach(
+            subStepUpdate -> {
+              if (stepIndex.get() < step.getSubSteps().size()) {
+                StepUpdate subStep = step.getSubSteps().get(stepIndex.get());
+                if (subStepUpdate.getStatus() != null) {
+                  subStep.setStatus(subStepUpdate.getStatus());
+                }
+                updateStep(subStepUpdate, subStep);
+              } else {
+                step.getSubSteps().add(subStepUpdate);
+              }
+              stepIndex.incrementAndGet();
+            });
   }
 
   private static void fillInMetaData(StepUpdate stepUpdate, StepUpdate step) {
@@ -195,7 +229,9 @@ public class EnvStatusController implements TigerUpdateListener {
       ScenarioUpdate scenario, StepUpdate stepUpdate, StepUpdate step) {
     TestResult newStatus = stepUpdate.getStatus();
     if (newStatus != TestResult.UNUSED && newStatus != null) {
-      step.setStatus(newStatus);
+      if (step.getStatus() == null || step.getStatus().ordinal() > newStatus.ordinal()) {
+        step.setStatus(newStatus);
+      }
       updateScenarioStatus(scenario, newStatus);
     }
   }

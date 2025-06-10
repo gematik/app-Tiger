@@ -78,6 +78,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.List;
 import java.util.Map.Entry;
@@ -92,6 +93,11 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import net.serenitybdd.core.Serenity;
+import net.serenitybdd.core.listeners.AbstractStepListener;
+import net.thucydides.model.domain.TestOutcome;
+import net.thucydides.model.screenshots.ScreenshotAndHtmlSource;
+import net.thucydides.model.steps.ExecutedStepDescription;
+import net.thucydides.model.steps.StepFailure;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.lang3.tuple.Pair;
@@ -103,7 +109,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 
 @Slf4j
-public class SerenityReporterCallbacks {
+public class SerenityReporterCallbacks extends AbstractStepListener {
 
   public static final String TARGET_DIR = "target";
   public final TigerInitializer tigerInitializer = new TigerInitializer();
@@ -129,6 +135,9 @@ public class SerenityReporterCallbacks {
   @Getter private int scFailed = 0;
 
   private final FeatureExecutionMonitor featureExecutionMonitor = new FeatureExecutionMonitor();
+
+  private static final ThreadLocal<TigerStatusUpdate> currentStatusUpdate = new ThreadLocal<>();
+  private static final ThreadLocal<Stack<StepUpdate>> currentSteps = new ThreadLocal<>();
 
   @NotNull
   private static Path getEvidenceDir() throws IOException {
@@ -414,6 +423,8 @@ public class SerenityReporterCallbacks {
         TigerDirector.getCurlLoggingFilter().printToReport();
       }
 
+      resetSubSteps();
+
       var testCase = event.getTestCase();
       if (context.getCurrentStep(testCase) != null) {
         var result = TestResult.from(event.getResult().getStatus());
@@ -516,9 +527,14 @@ public class SerenityReporterCallbacks {
             .description(featureName)
             .scenarios(convertToLinkedHashMap(scenarioUniqueId, scenarioUpdate))
             .build();
-    TigerDirector.getTigerTestEnvMgr()
-        .receiveTestEnvUpdate(
-            builder.featureMap(convertToLinkedHashMap(featureName, featureUpdate)).build());
+    TigerStatusUpdate tigerStatusUpdate =
+        builder.featureMap(convertToLinkedHashMap(featureName, featureUpdate)).build();
+    if (!isDryRun && stepState == StepState.STARTED) {
+      resetStepListener(context);
+      currentSteps.get().push(currentStepUpdate);
+      currentStatusUpdate.set(tigerStatusUpdate);
+    }
+    TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(tigerStatusUpdate);
     LocalProxyRbelMessageListener.getInstance().removeStepRbelMessages(currentStepMessages);
   }
 
@@ -903,5 +919,132 @@ public class SerenityReporterCallbacks {
 
   public String scenarioIdFrom(TestCase testCase) {
     return SerenityUtils.scenarioIdFrom(featureLoader, testCase);
+  }
+
+  private void resetSubSteps() {
+    currentSteps.remove();
+    currentStatusUpdate.remove();
+  }
+
+  private void resetStepListener(IScenarioContext context) {
+    resetSubSteps();
+    currentSteps.set(new Stack<>());
+    context.stepEventBus().registerListener(this);
+  }
+
+  private void beginStep(ExecutedStepDescription description) {
+    Stack<StepUpdate> stepUpdates = currentSteps.get();
+    if (stepUpdates != null && !stepUpdates.isEmpty()) {
+      List<StepUpdate> currentSubSteps = stepUpdates.peek().getSubSteps();
+      StepUpdate subStep =
+          StepUpdate.builder()
+              .description(description.getTitle())
+              .stepIndex(currentSubSteps.size())
+              .status(TestResult.EXECUTING)
+              .build();
+      currentSubSteps.add(subStep);
+      stepUpdates.push(subStep);
+
+      updateStatus();
+    }
+  }
+
+  private void endStep() {
+    Stack<StepUpdate> stepUpdates = currentSteps.get();
+    if (stepUpdates != null && !stepUpdates.isEmpty()) {
+      var step = stepUpdates.pop();
+      if (!stepUpdates.isEmpty() && step.getStatus() != TestResult.FAILED) {
+        step.setStatus(TestResult.PASSED);
+        updateStatus();
+      }
+    }
+  }
+
+  private void handleStepFailure(StepFailure stepFailure) {
+    Stack<StepUpdate> stepUpdates = currentSteps.get();
+    if (stepUpdates != null && stepUpdates.size() > 1) {
+      StepUpdate currentStep = stepUpdates.peek();
+      currentStep.setStatus(TestResult.FAILED);
+      currentStep.setFailureMessage(stepFailure.getMessage());
+      currentStep.setFailureStacktrace(getStackTrace(stepFailure.getException()));
+      updateStatus();
+    }
+  }
+
+  private void updateStatus() {
+    TigerDirector.getTigerTestEnvMgr().receiveTestEnvUpdate(currentStatusUpdate.get());
+  }
+
+  @Override
+  public void stepStarted(ExecutedStepDescription description) {
+    beginStep(description);
+  }
+
+  @Override
+  public void stepStarted(ExecutedStepDescription description, ZonedDateTime startTime) {
+    beginStep(description);
+  }
+
+  @Override
+  public void stepFinished(List<ScreenshotAndHtmlSource> screenshotList) {
+    endStep();
+  }
+
+  @Override
+  public void stepFinished(List<ScreenshotAndHtmlSource> list, ZonedDateTime zonedDateTime) {
+    endStep();
+  }
+
+  @Override
+  public void stepFinished() {
+    endStep();
+  }
+
+  @Override
+  public void stepFailed(
+      StepFailure stepFailure,
+      List<ScreenshotAndHtmlSource> list,
+      boolean b,
+      ZonedDateTime zonedDateTime) {
+    handleStepFailure(stepFailure);
+  }
+
+  @Override
+  public void stepFailed(
+      StepFailure failure,
+      List<ScreenshotAndHtmlSource> screenshotList,
+      boolean isInDataDrivenTest) {
+    handleStepFailure(failure);
+  }
+
+  @Override
+  public void testStarted(String s, String s1) {
+    // no-op
+  }
+
+  @Override
+  public void testStarted(String s, String s1, ZonedDateTime zonedDateTime) {
+    // no-op
+  }
+
+  @Override
+  public void testFinished(TestOutcome testOutcome, boolean b, ZonedDateTime zonedDateTime) {
+    resetSubSteps();
+  }
+
+  @Override
+  public void testRunFinished() {
+    // no-op
+  }
+
+  @Override
+  public void takeScreenshots(List<ScreenshotAndHtmlSource> list) {
+    // no-op
+  }
+
+  @Override
+  public void takeScreenshots(
+      net.thucydides.model.domain.TestResult testResult, List<ScreenshotAndHtmlSource> list) {
+    // no-op
   }
 }

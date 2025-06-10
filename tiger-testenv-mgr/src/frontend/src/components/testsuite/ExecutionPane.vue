@@ -121,7 +121,7 @@
                 </div>
               </div>
               <table
-                  class="table table-borderless"
+                  class="table table-borderless table-test-steps"
                   aria-label="Test steps performed when executing this scenario"
               >
                 <tbody>
@@ -135,14 +135,12 @@
                     ></i>
                   </td>
                   <td :class="`step_text step_index_${index}`">
-                    <a v-if="step[1].failureMessage.length > 0"
+                    <a v-if="step[1].failureMessage && step[1].failureMessage.length > 0"
                        :id="scenario[1].getFailureId(feature[1].description)"/>
-                    <div
-                        :title="step[1].tooltip"
-                        v-html="step[1].description"
+                    <Step :step="step[1]"
+                          :ui="ui"
+                          ariaLabel=""
                     />
-                    <FailureMessage :message="step[1].failureMessage"
-                                    :stacktrace="step[1].failureStacktrace"/>
                     <div
                         v-for="rbelmsg in step[1].rbelMetaData"
                         :key="rbelmsg.uuid"
@@ -187,11 +185,11 @@ import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
 import BannerMessage from "@/types/BannerMessage";
 import TestStatusBadge from "@/components/testsuite/TestStatusBadge.vue";
 import BannerMessageWindow from "@/components/testsuite/BannerMessageWindow.vue";
-import {getTestResultIcon} from "@/types/testsuite/TestResult";
 import Ui from "@/types/ui/Ui";
 import LargePlayButton from "@/components/replay/LargePlayButton.vue";
 import QuitReason from "@/types/QuitReason";
-import FailureMessage from "@/components/testsuite/FailureMessage.vue";
+import Step from "@/components/testsuite/Step.vue";
+import {getTestResultIcon} from "@/types/testsuite/TestResult.ts";
 
 defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;
@@ -291,6 +289,13 @@ h4.scenariotitle {
 .step_status {
   text-align: center;
   vertical-align: top;
+  margin-top: 0;
+}
+
+.step_status i {
+  vertical-align: top;
+  margin-top: 0;
+  font-size: 1.0rem;
 }
 
 .step_text {

@@ -78,6 +78,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import net.minidev.json.JSONArray;
+import net.thucydides.model.steps.ExecutedStepDescription;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -296,6 +297,9 @@ public class TestTigerSerenityReporterPlugin {
     listener.handleTestStepStarted(stepStartedEvent1);
     assertThat(listener.getContext(featureUri).getCurrentStep(testCase).getLocation().getLine())
         .isEqualTo(71);
+
+    checkSubstepHandling(testCase);
+
     listener.handleTestStepFinished(
         new TestStepFinished(
             Instant.now(),
@@ -323,6 +327,38 @@ public class TestTigerSerenityReporterPlugin {
     StepUpdate step0 = scenario.getSteps().get("0");
     assertThat(step0.getStatus()).isEqualTo(TestResult.PASSED);
     assertThat(scenario.getSteps().get("1").getStatus()).isEqualTo(TestResult.FAILED);
+  }
+
+  private void checkSubstepHandling(TestCase testCase) {
+    var stepEventBus = listener.getContext(featureUri).stepEventBus();
+    var substepStatus = envStatusController.getStatus();
+    var scenarios = substepStatus.getFeatureMap().get(featureName).getScenarios();
+    var scenarioId = findScenarioUniqueId(testCase);
+    var subSteps = scenarios.get(scenarioId).getSteps().get("0").getSubSteps();
+
+    assertThat(subSteps).isEmpty();
+
+    stepEventBus.stepStarted(new ExecutedStepDescription("Substep 1"));
+
+    assertThat(subSteps).hasSize(1);
+
+    var substepUpdate = subSteps.get(0);
+    assertThat(substepUpdate.getDescription()).isEqualTo("Substep 1");
+    assertThat(substepUpdate.getStatus()).isEqualTo(TestResult.EXECUTING);
+
+    stepEventBus.stepStarted(new ExecutedStepDescription("Substep 2"));
+    assertThat(subSteps).hasSize(1);
+
+    var subsubstepUpdate = subSteps.get(0).getSubSteps().get(0);
+    assertThat(subsubstepUpdate.getDescription()).isEqualTo("Substep 2");
+    assertThat(subsubstepUpdate.getStatus()).isEqualTo(TestResult.EXECUTING);
+
+    stepEventBus.stepFinished();
+    assertThat(substepUpdate.getStatus()).isEqualTo(TestResult.EXECUTING);
+    assertThat(subsubstepUpdate.getStatus()).isEqualTo(TestResult.PASSED);
+
+    stepEventBus.stepFinished();
+    assertThat(substepUpdate.getStatus()).isEqualTo(TestResult.PASSED);
   }
 
   @AfterEach

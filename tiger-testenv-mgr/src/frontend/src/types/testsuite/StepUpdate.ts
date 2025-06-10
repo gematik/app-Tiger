@@ -30,6 +30,7 @@ export interface IStep {
     failureStacktrace: string;
     rbelMetaData: MessageMetaDataDto[];
     stepIndex: number;
+    subSteps: IStep[];
 }
 
 export interface IJsonSteps {
@@ -44,6 +45,7 @@ export default class StepUpdate implements IStep {
     failureStacktrace = "";
     stepIndex = -1;
     rbelMetaData: MessageMetaDataDto[] = [];
+    subSteps: IStep[] = [];
 
     public static fromJson(json: IStep): StepUpdate {
         const step: StepUpdate = new StepUpdate();
@@ -68,6 +70,9 @@ export default class StepUpdate implements IStep {
         if (json.stepIndex !== -1) {
             step.stepIndex = json.stepIndex;
         }
+        if (json.subSteps?.length) {
+            step.subSteps = json.subSteps;
+        }
         return step;
     }
 
@@ -91,17 +96,27 @@ export default class StepUpdate implements IStep {
         if (step.status) {
             this.status = step.status;
         }
-        if (step.failureMessage) {
-            this.failureMessage = step.failureMessage;
-        }
-        if (step.failureStacktrace) {
-            this.failureStacktrace = step.failureStacktrace;
+        if (step.status && step.status !== TestResult.FAILED) {
+            this.failureMessage = "";
+            this.failureStacktrace = "";
+        } else {
+            if (step.failureMessage) {
+                this.failureMessage = step.failureMessage;
+            }
+            if (step.failureStacktrace) {
+                this.failureStacktrace = step.failureStacktrace;
+            }
         }
         if (step.rbelMetaData?.length) {
             this.rbelMetaData = step.rbelMetaData;
         }
         if (step.stepIndex) {
             this.stepIndex = step.stepIndex;
+        }
+        if (step.status === TestResult.PENDING) {
+            this.subSteps = [];
+        } else if (step.subSteps?.length) {
+            this.subSteps = step.subSteps;
         }
     }
 

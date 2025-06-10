@@ -30,7 +30,7 @@
         <div v-for="(feature, key) in featureUpdateMap" :key="key">
           <div class="feature-list-header">
             <i v-if="feature[1].status === 'FAILED'"
-               :class="`statusbadge ${feature[1].status.toLowerCase()} left ${getTestResultIcon(feature[1].status, 'solid')}`"
+               :class="`statusbadge ${feature[1].status.toLowerCase()} left fa-triangle-exclamation fa-solid`"
                :title="feature[1].computeStatusMessage()"
             ></i>
             <div
@@ -50,15 +50,32 @@
                 :title="`${scenario[1].description}`"
             >
               <div class="truncate-text">
-                <TestStatusBadge
-                    :test-status="scenario[1].status"
-                    :status-message="getStatusMessage(scenario[1].status, scenario[1].failureMessage)"
-                    :highlight-text="false"
-                    :text="`${scenario[1].description} ${scenario[1].variantIndex !== -1 ? '[' + (scenario[1].variantIndex + 1) + ']' : ''}`"
-                    :link="'#' + scenario[1].getLink(feature[1].description)"
-                    :failure-link="'#' + scenario[1].getFailureId(feature[1].description)"
+                <a
+                    v-if="scenario[1].status === 'FAILED'"
+                    class="failureLink"
+                    :href="'#' + scenario[1].getFailureId(feature[1].description)"
                 >
-                </TestStatusBadge>
+                  <i
+                      :class="`${scenario[1].status.toLowerCase()} ${getTestResultIcon(scenario[1].status, 'regular')}`"
+                      :title="getStatusMessage(scenario[1].status, scenario[1].failureMessage)"
+                  ></i>
+                </a>
+                <i
+                    v-else
+                    :class="`${scenario[1].status.toLowerCase()} ${getTestResultIcon(scenario[1].status, 'regular')}`"
+                    :title="scenario[1].status"
+                ></i>
+                <a
+                    class="scenarioLink"
+                    :href="'#' + scenario[1].getLink(feature[1].description)"
+                >
+                  &nbsp;{{ scenario[1].description }}&nbsp;
+                  <span
+                      v-if="scenario[1].variantIndex !== -1"
+                      class="test-sidebar-scenario-index"
+                  >[{{ scenario[1].variantIndex + 1 }}]</span
+                  >
+                </a>
               </div>
               <small-play-button
                   class="ms-1"
@@ -76,7 +93,6 @@
 <script setup lang="ts">
 import FeatureUpdate from "@/types/testsuite/FeatureUpdate";
 import SmallPlayButton from "@/components/replay/SmallPlayButton.vue";
-import TestStatusBadge from "@/components/testsuite/TestStatusBadge.vue";
 import {getTestResultIcon} from "@/types/testsuite/TestResult.ts";
 
 defineProps<{

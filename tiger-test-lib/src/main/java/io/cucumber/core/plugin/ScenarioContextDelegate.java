@@ -25,6 +25,7 @@ import io.cucumber.messages.types.Step;
 import io.cucumber.plugin.event.TestCase;
 import java.net.URI;
 import lombok.Getter;
+import net.thucydides.core.steps.StepEventBus;
 import net.thucydides.model.domain.DataTable;
 
 @SuppressWarnings({"java:S1172", "java:S1874"})
@@ -52,6 +53,11 @@ public class ScenarioContextDelegate implements IScenarioContext {
   @Override
   public Step getCurrentStep(TestCase testCase) {
     return context.getCurrentStep();
+  }
+
+  @Override
+  public StepEventBus stepEventBus() {
+    return context.stepEventBus();
   }
 
   @Override

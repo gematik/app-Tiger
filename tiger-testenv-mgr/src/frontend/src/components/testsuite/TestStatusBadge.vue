@@ -28,18 +28,20 @@
         :href="failureLink"
     >
       <i
+          :id="link"
           :class="`statusbadge ${testStatus.toLowerCase()} left ${getTestResultIcon(testStatus, 'solid')}`"
           :title="`${statusMessage ? statusMessage : testStatus}`"
       ></i>
     </a>
     <i
         v-else
+        :id="link"
         :class="`statusbadge ${testStatus.toLowerCase()} left ${getTestResultIcon(testStatus, 'solid')}`"
         :title="`${statusMessage ? statusMessage : testStatus}`"
     ></i>
     <a
         class="scenarioLink"
-        :href="link"
+        :href="`#${link}`"
     >
       {{ text }}
     </a>

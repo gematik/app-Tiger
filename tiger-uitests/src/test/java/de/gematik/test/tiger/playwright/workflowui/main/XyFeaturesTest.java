@@ -225,12 +225,12 @@ class XyFeaturesTest extends AbstractBase {
         page.locator(".test-execution-pane-scenario-title")
             .first()
             .locator("..")
-            .locator("table")
+            .locator(".table-test-steps")
             .locator("tr")
             .last()
             .locator("td")
             .last()
-            .locator("div");
+            .locator(".test-step-description");
     String title = last.getAttribute("title");
 
     assertEquals(

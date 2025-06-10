@@ -41,4 +41,5 @@ public class StepUpdate {
   private String tooltip;
   @Builder.Default private int stepIndex = -1;
   @Builder.Default private List<MessageMetaDataDto> rbelMetaData = new ArrayList<>();
+  @Builder.Default private List<StepUpdate> subSteps = new ArrayList<>();
 }

@@ -24,6 +24,7 @@ import io.cucumber.messages.types.Scenario;
 import io.cucumber.messages.types.Step;
 import io.cucumber.plugin.event.TestCase;
 import java.net.URI;
+import net.thucydides.core.steps.StepEventBus;
 import net.thucydides.model.domain.DataTable;
 
 public interface IScenarioContext {
@@ -38,4 +39,6 @@ public interface IScenarioContext {
   boolean isAScenarioOutline(String scenarioId);
 
   URI getFeatureURI();
+
+  StepEventBus stepEventBus();
 }
