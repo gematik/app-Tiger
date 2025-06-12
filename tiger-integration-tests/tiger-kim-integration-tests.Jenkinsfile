@@ -4,7 +4,7 @@ def executeKimCommand(desc, parameter, kimVersion, tigerVersion, archiveResults 
     echo "Running: ${desc} (kim=${kimVersion}) (tiger=${tigerVersion}) ${parameter}"
     def archiveRootDir = archiveResults ? "serenity-report-${desc}-v${kimVersion}" : null
 
-    dir('kim-tiger-dc/kim-cm-testsuite') {
+    dir('kim-tiger-dc/KIM-CM-Testsuite') {
         withKimEnv(kimVersion, tigerVersion) {
             def testStatus = 'Failed'
             def exitCode = 0
@@ -48,7 +48,7 @@ def archiveTestResults(archiveDir, desc, parameter, kimVersion, testStatus) {
     def fullArchiveDir = "../${archiveDir}"
     sh "mkdir -p ${fullArchiveDir}"
     sh "cp -r target/site/serenity/* ${fullArchiveDir}/ || true"
-    sh "cp kim-cm-testsuite/tmp/logs/test_run.log ${fullArchiveDir}/ || true"
+    sh "cp KIM-CM-Testsuite/tmp/logs/test_run.log ${fullArchiveDir}/ || true"
 
     writeFile file: "${fullArchiveDir}/test_info.txt", text: """Test Description: ${desc}
 Parameters: ${parameter}
@@ -65,7 +65,7 @@ def echoMemoryUsage() {
 def archiveKimVersionLogs(kimVersion) {
     echo "Archiving logs for KIM version ${kimVersion}"
     sh "mkdir -p kim-logs-v${kimVersion}"
-    sh "cp -r kim-tiger-dc/kim-cm-testsuite/tmp/logs/* kim-logs-v${kimVersion}/ || true"
+    sh "cp -r kim-tiger-dc/KIM-CM-Testsuite/tmp/logs/* kim-logs-v${kimVersion}/ || true"
     archiveArtifacts artifacts: "kim-logs-v${kimVersion}/**/*.log",
                      allowEmptyArchive: true,
                      fingerprint: true
@@ -124,43 +124,50 @@ pipeline {
             }
         }
 
-        stage('Activate Cache') {
-            steps {
-                activateOptionalBuildCache()
+        stage("Wait until KIM resources are free") {
+            options {
+                lock("KIM-Resources-Lock")
             }
-        }
-
-        stage('Checkout Projects') {
-            steps {
-                script {
-                    ['kim-tiger-dc', 'kim-tiger-testsuite', 'kim-tiger-lib'].each { project ->
-                        checkoutProject(project)
+            stages {
+                stage('Activate Cache') {
+                    steps {
+                        activateOptionalBuildCache()
                     }
                 }
-            }
-        }
 
-        stage('Install KIM-Tiger-Runner') {
-            steps {
-                script {
-                    dir('kim-tiger-lib/kim-tiger-runner') {
-                        sh 'mvn clean install -DskipTests'
+                stage('Checkout Projects') {
+                    steps {
+                        script {
+                            ['kim-tiger-dc', 'KIM-CM-Testsuite', 'KIM-Testsuite-Library'].each { project ->
+                                checkoutProject(project)
+                            }
+                        }
                     }
                 }
-            }
-        }
 
-        stage('Login to Gematik Registry') {
-            steps {
-                dockerLoginGematikRegistry()
-            }
-        }
+                stage('Install KIM-Tiger-Runner') {
+                    steps {
+                        script {
+                            dir('KIM-Testsuite-Library/kim-tiger-runner') {
+                                sh 'mvn clean install -DskipTests'
+                            }
+                        }
+                    }
+                }
 
-        stage('Run Kim Test for KIM v1_5_3') {
-            steps {
-                timeout(time: 20, unit: 'MINUTES') {
-                    script {
-                        runKimStages("1.5.3")
+                stage('Login to Gematik Registry') {
+                    steps {
+                        dockerLoginGematikRegistry()
+                    }
+                }
+
+                stage('Run Kim Test for KIM v1_5_3') {
+                    steps {
+                        timeout(time: 20, unit: 'MINUTES') {
+                            script {
+                                runKimStages("1.5.3")
+                            }
+                        }
                     }
                 }
             }
@@ -169,11 +176,7 @@ pipeline {
 
     post {
         always {
-            //kim cleanup
             stopKimSim()
-        }
-        changed {
-            sendEMailNotification(getTigerEMailList())
         }
         success {
             script {
@@ -181,8 +184,11 @@ pipeline {
                     sendEMailNotification(getTigerEMailList() + "," + getCommunicationsEMailList())
             }
         }
+        changed {
+            sendEMailNotification(getTigerEMailList())
+        }
         failure {
-            archiveArtifacts artifacts: 'kim-tiger-dc/kim-cm-testsuite/logs/*.log',
+            archiveArtifacts artifacts: 'kim-tiger-dc/KIM-CM-Testsuite/logs/*.log',
                              allowEmptyArchive: true,
                              fingerprint: true
             script {
