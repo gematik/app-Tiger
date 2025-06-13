@@ -16,7 +16,7 @@
   ~
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.gematik.test</groupId>
@@ -125,7 +125,7 @@
         <version.npm>10.2.4</version.npm>
         <version.okhttp>4.12.0</version.okhttp>
         <version.org.glassfish.jaxb>4.0.5</version.org.glassfish.jaxb>
-        <version.serenity.core>4.2.17</version.serenity.core>
+        <version.serenity.core>4.2.30</version.serenity.core>
         <version.serenity.maven.plugin>4.2.17</version.serenity.maven.plugin>
         <version.slf4j>2.0.17</version.slf4j>
         <version.snakeyaml>2.4</version.snakeyaml>

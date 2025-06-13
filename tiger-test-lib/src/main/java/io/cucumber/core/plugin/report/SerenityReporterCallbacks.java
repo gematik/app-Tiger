@@ -1047,4 +1047,9 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
       net.thucydides.model.domain.TestResult testResult, List<ScreenshotAndHtmlSource> list) {
     // no-op
   }
+
+  @Override
+  public void recordScreenshot(String s, byte[] bytes) {
+    // no-op
+  }
 }

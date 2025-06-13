@@ -2,6 +2,8 @@
 
 # Release 4.0.0
 
+* Serenity BDD 4.2.30
+
 ## Breaking Changes
 
 * TGR-1617: Major rework of the entire message parsing & distribution mechanism within the Tiger-Proxy. Details of the
