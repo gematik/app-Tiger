@@ -60,6 +60,7 @@
         <version.awaitility>4.3.0</version.awaitility>
         <version.bootstrap>5.3.3</version.bootstrap>
         <version.bouncycastle>1.78.1</version.bouncycastle>
+        <version.central-publishing-maven-plugin>0.7.0</version.central-publishing-maven-plugin>
         <version.commons-codec>1.18.0</version.commons-codec>
         <version.commons-collections4>4.4</version.commons-collections4>
         <version.commons-compress>1.27.1</version.commons-compress>
@@ -1011,15 +1012,13 @@
                         </executions>
                     </plugin>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.7.0</version>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${version.central-publishing-maven-plugin}</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <serverId>ossrh</serverId>
-                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                            <stagingProgressTimeoutMinutes>20</stagingProgressTimeoutMinutes>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
                         </configuration>
                     </plugin>
                     <plugin>
