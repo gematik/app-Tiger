@@ -130,4 +130,9 @@ i.statusbadge {
   font-size: 1.25rem;
   padding-right: 5rem;
 }
+
+.scenarioLink {
+  text-decoration: none;
+  color: var(--gem-primary-400);
+}
 </style>

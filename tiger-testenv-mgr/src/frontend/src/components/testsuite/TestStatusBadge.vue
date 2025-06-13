@@ -87,4 +87,9 @@ i.statusbadge {
   padding: 0.25rem 1rem;
   margin-right: 0.5rem;
 }
+
+.scenarioLink {
+  text-decoration: none;
+  color: var(--gem-primary-400);
+}
 </style>

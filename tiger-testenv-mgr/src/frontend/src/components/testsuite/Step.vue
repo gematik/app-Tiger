@@ -48,10 +48,10 @@ function toggleTable() {
       <tbody>
       <tr>
         <td>
-          <div class="test-step-toggle">
+          <div v-if="step.subSteps.length > 0"
+               class="test-step-toggle">
             <button
-                v-if="step.subSteps.length > 0"
-                class="btn btn-outline-primary"
+                class="btn btn-outline-primary test-step-toggle-button"
                 @click="toggleTable"
                 title="Toggle sub step visibility"
             >
@@ -145,7 +145,6 @@ td {
 
 /* Target the first column specifically for consistent width and alignment */
 tr td:first-child {
-  width: 40px; /* Fixed width for the icon column */
   text-align: left;
   padding-left: 0;
 }

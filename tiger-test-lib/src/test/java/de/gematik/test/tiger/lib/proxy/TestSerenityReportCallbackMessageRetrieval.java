@@ -22,6 +22,7 @@ package de.gematik.test.tiger.lib.proxy;
 
 import static org.awaitility.Awaitility.await;
 
+import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -37,17 +38,17 @@ class TestSerenityReportCallbackMessageRetrieval {
   @TigerTest(
       tigerYaml =
           """
-rbel.request.timeout: 10000
-tigerProxy:
-  fileSaveInfo.sourceFile: "src/test/resources/testdata/interleavedRequests.tgr"
-""")
+          rbel.request.timeout: 10000
+          tigerProxy:
+            fileSaveInfo.sourceFile: "src/test/resources/testdata/interleavedRequests.tgr"
+          """)
   void parseTgrFile_SerenityCallbackShouldReportNoProblems(TigerTestEnvMgr envMgr) {
     ReflectionTestUtils.setField(TigerDirector.class, "initialized", true);
     ReflectionTestUtils.setField(TigerDirector.class, "tigerTestEnvMgr", envMgr);
-    ReflectionTestUtils.setField(
-        LocalProxyRbelMessageListener.getInstance(),
-        "stepRbelMessages",
-        envMgr.getLocalTigerProxyOrFail().getRbelMessagesList());
+    LocalProxyRbelMessageListener.getInstance().clearAllMessages();
+    for (RbelElement rbelElement : envMgr.getLocalTigerProxyOrFail().getRbelMessagesList()) {
+      LocalProxyRbelMessageListener.getInstance().triggerNewReceivedMessage(rbelElement);
+    }
 
     await()
         .untilAsserted(

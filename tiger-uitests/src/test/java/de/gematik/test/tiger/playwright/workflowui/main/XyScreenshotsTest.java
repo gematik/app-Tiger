@@ -110,6 +110,21 @@ class XyScreenshotsTest extends AbstractBase {
         "document.getElementsByClassName(\"test-feature-status-word\")[2].style.removeProperty(\"background-color\")");
   }
 
+  @Test
+  void screenshotSubstepToggles() {
+    page.querySelector("#test-execution-pane-tab").click();
+    page.locator(".test-step-toggle-button").first().focus();
+    screenshotByClassname(page, "webui_substep_collapsed.png", "test-step-toggle-button");
+    page.locator(".test-step-toggle-button").first().click();
+    page.querySelector("#test-execution-pane-tab").click();
+    page.locator(".test-step-toggle-button").first().focus();
+    screenshotByClassname(page, "webui_substep_partially_expanded.png", "test-step-toggle-button");
+    page.locator(".test-step-toggle-button").nth(1).click();
+    page.querySelector("#test-execution-pane-tab").click();
+    page.locator(".test-step-toggle-button").nth(1).focus();
+    screenshotByClassname(page, "webui_substep_fully_expanded.png", "test-step-toggle-button");
+  }
+
   @SuppressWarnings("squid:S2699")
   @Test
   void screenshotLargeReplayButton() {

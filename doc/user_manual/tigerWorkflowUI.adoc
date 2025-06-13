@@ -124,7 +124,9 @@ If a test step executes sub-steps, these are displayed (per default collapsed) i
 They can be expanded by clicking on the small plus symbol to the left of the step description.
 Steps without sub-steps will not have the plus symbol and will not be expandable.
 
-image::screenshots/webui_step_substeps.png[title="Sub-steps of a test step"]
+image::screenshots/webui_substep_collapsed.png[title="Collapsed sub-steps of a test step"]
+image::screenshots/webui_substep_partially_expanded.png[title="Partially expanded sub-steps of a test step"]
+image::screenshots/webui_substep_fully_expanded.png[title="Fully expanded sub-steps of a test step"]
 
 Sub-steps can not be defined in feature files directly.
 They can be produced by glue code calling methods that are also glue code steps.

@@ -62,7 +62,7 @@ class StaticMainContentTests extends AbstractBase {
                             .first())
                     .isVisible());
 
-    page.locator("#workflow-messages").locator(".btn-banner-close").first().click();
+    //    page.locator("#workflow-messages").locator(".btn-success").first().click();
   }
 
   @Test

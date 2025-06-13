@@ -100,7 +100,8 @@ class XyFeaturesTest extends AbstractBase {
                 JEXL Rbel Namespace Test                | 23 | 5 |
                 Request a non existing url              | 24 | 0 |
                 Request for testing tooltips            | 25 | 0 |
-                Test zeige HTML                         | 26 | 0 |
+                A scenario with substeps                | 26 | 0 |
+                Test zeige HTML                         | 27 | 0 |
                 """)
   void testScenarioNames(String scenarioName, int counter, int index) {
     openSidebar();

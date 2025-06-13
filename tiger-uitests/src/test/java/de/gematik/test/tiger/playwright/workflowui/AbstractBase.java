@@ -85,7 +85,7 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
   private static final String user_manual = "user_manual";
   private static final String screenshots = "screenshots";
   protected static final int NUMBER_OF_FEATURES = 2;
-  protected static final int NUMBER_OF_SCENARIOS = 27;
+  protected static final int NUMBER_OF_SCENARIOS = 28;
   protected static final int TOTAL_MESSAGES = 58;
   protected static final int MESSAGES_PER_PAGE = 20;
   protected static final int TOTAL_PAGES =
