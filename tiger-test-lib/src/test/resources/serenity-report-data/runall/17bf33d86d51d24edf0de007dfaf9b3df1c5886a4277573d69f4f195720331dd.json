@@ -1,0 +1,266 @@
+{
+  "name": "Hello \u003cHelloWhat\u003e",
+  "id": "testing-scenario-outlines;hello-\u003chellowhat\u003e",
+  "scenarioId": "myFeature/restapi/tiger-demo-restapi:Hello \u003cHelloWhat\u003e",
+  "methodName": "Hello \u003cHelloWhat\u003e",
+  "testSteps": [
+    {
+      "number": 1,
+      "description": "1: Hello Life ({HelloWhat\u003dLife})",
+      "duration": 1076,
+      "startTime": "2025-06-05T13:40:31.394208300+02:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0,
+      "lineNumber": 18,
+      "children": [
+        {
+          "number": 2,
+          "description": "Given TGR clear recorded messages",
+          "duration": 218,
+          "startTime": "2025-06-05T13:40:31.403208600+02:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1
+        },
+        {
+          "number": 3,
+          "description": "When TGR show banner \"HELLO Life\"",
+          "duration": 214,
+          "startTime": "2025-06-05T13:40:31.623249600+02:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1
+        },
+        {
+          "number": 4,
+          "description": "Then TGR set global variable \"hello\" to \"Life\"",
+          "duration": 203,
+          "startTime": "2025-06-05T13:40:31.838059600+02:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1
+        },
+        {
+          "number": 5,
+          "description": "And TGR print variable \"hello\"",
+          "duration": 217,
+          "startTime": "2025-06-05T13:40:32.041724900+02:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "reportData": [
+            {
+              "title": "RBellog 1",
+              "path": "downloadable\\downloadable-f087b50e-3cff-42c7-8dcb-a9b33c40c97d-rbel_Hello_Life_1_2025-06-05_13-40-32.html",
+              "isEvidence": true,
+              "id": "report-data-930a1981-d425-44bc-bbad-29c3bed9cb05"
+            }
+          ],
+          "precondition": false,
+          "level": 1
+        }
+      ]
+    },
+    {
+      "number": 6,
+      "description": "2: Hello Universe ({HelloWhat\u003dUniverse})",
+      "duration": 1072,
+      "startTime": "2025-06-05T13:40:32.490208200+02:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0,
+      "lineNumber": 19,
+      "children": [
+        {
+          "number": 7,
+          "description": "Given TGR clear recorded messages",
+          "duration": 216,
+          "startTime": "2025-06-05T13:40:32.495268+02:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1
+        },
+        {
+          "number": 8,
+          "description": "When TGR show banner \"HELLO Universe\"",
+          "duration": 219,
+          "startTime": "2025-06-05T13:40:32.713259200+02:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1
+        },
+        {
+          "number": 9,
+          "description": "Then TGR set global variable \"hello\" to \"Universe\"",
+          "duration": 202,
+          "startTime": "2025-06-05T13:40:32.933492700+02:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1
+        },
+        {
+          "number": 10,
+          "description": "And TGR print variable \"hello\"",
+          "duration": 204,
+          "startTime": "2025-06-05T13:40:33.137465200+02:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "reportData": [
+            {
+              "title": "RBellog 2",
+              "path": "downloadable\\downloadable-db1ce5be-4b9e-46eb-91ec-f281131cfd80-rbel_Hello_Universe_2_2025-06-05_13-40-33.html",
+              "isEvidence": true,
+              "id": "report-data-32d02aaf-a533-4a07-a731-ede4f327e7e4"
+            }
+          ],
+          "precondition": false,
+          "level": 1
+        }
+      ]
+    },
+    {
+      "number": 11,
+      "description": "3: Hello Everything ({HelloWhat\u003dEverything})",
+      "duration": 1081,
+      "startTime": "2025-06-05T13:40:33.578096700+02:00[Europe/Berlin]",
+      "result": "SUCCESS",
+      "precondition": false,
+      "level": 0,
+      "lineNumber": 20,
+      "children": [
+        {
+          "number": 12,
+          "description": "Given TGR clear recorded messages",
+          "duration": 212,
+          "startTime": "2025-06-05T13:40:33.582095400+02:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1
+        },
+        {
+          "number": 13,
+          "description": "When TGR show banner \"HELLO Everything\"",
+          "duration": 219,
+          "startTime": "2025-06-05T13:40:33.794880900+02:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1
+        },
+        {
+          "number": 14,
+          "description": "Then TGR set global variable \"hello\" to \"Everything\"",
+          "duration": 204,
+          "startTime": "2025-06-05T13:40:34.015084600+02:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "precondition": false,
+          "level": 1
+        },
+        {
+          "number": 15,
+          "description": "And TGR print variable \"hello\"",
+          "duration": 224,
+          "startTime": "2025-06-05T13:40:34.219254600+02:00[Europe/Berlin]",
+          "result": "SUCCESS",
+          "reportData": [
+            {
+              "title": "RBellog 3",
+              "path": "downloadable\\downloadable-a1f0ea92-cecd-4a24-96a9-ffd85a5d8815-rbel_Hello_Everything_3_2025-06-05_13-40-34.html",
+              "isEvidence": true,
+              "id": "report-data-a34da0a3-83b3-4b6c-a8a8-82f55602ad96"
+            }
+          ],
+          "precondition": false,
+          "level": 1
+        }
+      ]
+    }
+  ],
+  "userStory": {
+    "id": "myFeature/restapi/tiger-demo-restapi",
+    "storyName": "Testing scenario outlines",
+    "displayName": "Testing scenario outlines",
+    "path": "myFeature/restapi/tiger-demo-restapi",
+    "pathElements": [
+      {
+        "name": "myFeature",
+        "description": ""
+      },
+      {
+        "name": "restapi",
+        "description": ""
+      },
+      {
+        "name": "tiger-demo-restapi",
+        "description": ""
+      }
+    ],
+    "type": "feature"
+  },
+  "title": "Hello \u003cHelloWhat\u003e",
+  "description": "",
+  "backgroundTitle": "",
+  "backgroundDescription": "",
+  "tags": [
+    {
+      "name": "C:\\repos\\tiger-demo\\src\\test\\resources\\features\\myFeature\\restapi",
+      "type": "capability",
+      "displayName": "Restapi"
+    },
+    {
+      "name": "myFeature/restapi/tiger-demo-restapi",
+      "type": "feature",
+      "displayName": "Testing scenario outlines"
+    },
+    {
+      "name": "C:\\repos\\tiger-demo\\src\\test\\resources\\features\\myFeature",
+      "type": "theme",
+      "displayName": "My feature"
+    }
+  ],
+  "startTime": "2025-06-05T13:40:31.391208500+02:00[Europe/Berlin]",
+  "endTime": "2025-06-05T13:40:34.659104200+02:00[Europe/Berlin]",
+  "duration": 230,
+  "projectKey": "",
+  "isManualTestingUpToDate": false,
+  "dataTable": {
+    "headers": [
+      "HelloWhat"
+    ],
+    "rows": [
+      {
+        "values": [
+          "Life"
+        ],
+        "lineNumber": 18,
+        "result": "SUCCESS"
+      },
+      {
+        "values": [
+          "Universe"
+        ],
+        "lineNumber": 19,
+        "result": "SUCCESS"
+      },
+      {
+        "values": [
+          "Everything"
+        ],
+        "lineNumber": 20,
+        "result": "SUCCESS"
+      }
+    ],
+    "predefinedRows": true,
+    "scenarioOutline": "When TGR show banner \"HELLO \u003cHelloWhat\u003e\"\n\rThen TGR set global variable \"hello\" to \"\u003cHelloWhat\u003e\"\n\rAnd TGR print variable \"hello\"\n\r",
+    "dataSetDescriptors": [
+      {
+        "startRow": 0,
+        "rowCount": 0,
+        "name": "",
+        "description": ""
+      }
+    ]
+  },
+  "manual": false,
+  "testSource": "Cucumber",
+  "order": 0,
+  "result": "SUCCESS",
+  "scenarioOutline": "When TGR show banner \"HELLO \u003cHelloWhat\u003e\"\r\nThen TGR set global variable \"hello\" to \"\u003cHelloWhat\u003e\"\r\nAnd TGR print variable \"hello\""
+}

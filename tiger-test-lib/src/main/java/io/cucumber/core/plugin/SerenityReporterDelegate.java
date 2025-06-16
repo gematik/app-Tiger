@@ -20,6 +20,8 @@
  */
 package io.cucumber.core.plugin;
 
+import io.cucumber.core.plugin.report.merging.MergingSerenityReporter;
+import io.cucumber.core.plugin.report.merging.outcome.TestOutcomeMerger;
 import io.cucumber.plugin.event.TestCaseFinished;
 import io.cucumber.plugin.event.TestCaseStarted;
 import io.cucumber.plugin.event.TestRunFinished;
@@ -30,11 +32,14 @@ import io.cucumber.plugin.event.TestStepStarted;
 import io.cucumber.plugin.event.WriteEvent;
 import java.net.URI;
 import lombok.experimental.Delegate;
+import lombok.extern.slf4j.Slf4j;
 
 @SuppressWarnings("java:S1874")
+@Slf4j
 public class SerenityReporterDelegate implements ISerenityReporter {
 
-  @Delegate private final SerenityReporter reporter = new SerenityReporter();
+  @Delegate
+  private final SerenityReporter reporter = new MergingSerenityReporter(new TestOutcomeMerger());
 
   public IScenarioContext getContext(URI featureURI) {
     return new ScenarioContextDelegate(featureURI, reporter.getContext());

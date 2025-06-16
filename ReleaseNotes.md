@@ -36,6 +36,8 @@
 * TGR-1816: Tiger Proxy: it is now possible to use a direct binary proxy for pop3 and smtp without TLS.
 * TGR-1864: Fixed a mesh setup racing condition between a message being removed from history of the downstream proxy
   before the following message arrives that waits for the previous message to have be processed.
+* TGR-1658: Serenity Reports: the results of executing individual scenario variants via the WorkflowUI "play" and "
+  replay" functionality are now correctly aggregated in the serenity html report.
 
 # Release 3.7.9
 

@@ -51,6 +51,11 @@ public class TigerExecutionListener implements TestExecutionListener {
 
   @Override
   public void testPlanExecutionFinished(TestPlan testPlan) {
+    if (!TigerDirector.isInitialized()) {
+      // when running unit tests in the tiger-test-lib module, this listener also
+      // gets called by junit and would break when we read the TigerDirector.getLibConfig()
+      return;
+    }
     testPlan
         .getConfigurationParameters()
         .getBoolean(EXECUTION_DRY_RUN_PROPERTY_NAME)
