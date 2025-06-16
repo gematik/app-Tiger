@@ -18,22 +18,13 @@
  *
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-package de.gematik.test.tiger.glue;
+package de.gematik.test.tiger.glue.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Marks a method whose parameter will be resolved in the method body by the Tiger Global
- * Configuration.
- *
- * <p>It is just a marker annotation, whose purpose is to know which arguments we want to resolve
- * when passing information into the workflow ui and the reports.
- *
- * <p>Only needed to mark methods with arguments of type datatable and docstring.
- */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ResolvableArgument {}
+public @interface FirstRowKeyTable {}

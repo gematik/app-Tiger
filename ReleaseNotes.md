@@ -10,6 +10,10 @@
   work done can be found in `doc/adr/015_rbel_protocol_parsing`. No actual breaking changes are expected, but minor
   differences can occur, especially when mixing pre- and post-4.0 Tiger-Proxies in a mesh setup. When in doubt, please
   update your version to 4.0 and talk to the Tiger-Team when you are experiencing problems.
+* TGR-1843: Workflow UI: improve formating of headers and parameters tables to make clear which element is the key and
+  which element is the value. If you use DataTable arguments in your own glue code you can take advantage of the new
+  annotations: `@FirstColumnKeyTable` and `@FirstRowKeyTable` to control the formatting of the table in the Workflow UI.
+  See the user manual for more details.
 
 ## Features
 

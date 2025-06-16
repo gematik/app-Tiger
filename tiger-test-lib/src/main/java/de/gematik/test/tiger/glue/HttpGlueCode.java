@@ -24,6 +24,9 @@ import static de.gematik.test.tiger.lib.TigerHttpClient.*;
 
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.glue.annotation.FirstColumnKeyTable;
+import de.gematik.test.tiger.glue.annotation.FirstRowKeyTable;
+import de.gematik.test.tiger.glue.annotation.ResolvableArgument;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Wenn;
@@ -107,6 +110,7 @@ public class HttpGlueCode {
           + " sendet:")
   @Dann("TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} mit folgenden Headern:")
   @ResolvableArgument
+  @FirstColumnKeyTable
   public void sendEmptyRequestWithHeaders(Method method, URI address, DataTable customHeaders) {
     log.info("Sending empty {} request with headers to {}", method, address);
     Map<String, String> defaultHeaders =
@@ -136,6 +140,7 @@ public class HttpGlueCode {
       "TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten"
           + " mit folgenden Headern:")
   @ResolvableArgument
+  @FirstColumnKeyTable
   public void sendEmptyRequestWithHeadersNonBlocking(
       Method method, URI address, DataTable customHeaders) {
     log.info("Sending empty {} non-blocking request with headers to {}", method, address);
@@ -216,6 +221,7 @@ public class HttpGlueCode {
   @Wenn("TGR eine {requestType} Anfrage an {tigerResolvedUrl} mit den folgenden Daten sendet:")
   @Dann("TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit folgenden Daten:")
   @ResolvableArgument
+  @FirstRowKeyTable
   public void sendRequestWithParams(Method method, URI address, DataTable parameters) {
     List<Map<String, String>> dataAsMaps = parameters.asMaps();
     if (dataAsMaps.size() != 1) {
@@ -307,6 +313,7 @@ public class HttpGlueCode {
       "TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten mit"
           + " folgenden Daten:")
   @ResolvableArgument
+  @FirstRowKeyTable
   public void sendRequestWithParamsNonBlocking(Method method, URI address, DataTable parameters) {
     List<Map<String, String>> dataAsMaps = parameters.asMaps();
     if (dataAsMaps.size() != 1) {

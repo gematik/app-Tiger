@@ -20,7 +20,7 @@
  */
 package io.cucumber.core.plugin;
 
-import de.gematik.test.tiger.glue.ResolvableArgument;
+import de.gematik.test.tiger.glue.annotation.ResolvableArgument;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.en.When;
 

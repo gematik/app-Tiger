@@ -352,6 +352,14 @@ label {
     display: inline-block;
 }
 
+.table-first-column-key td:first-child {
+    font-weight: bold
+}
+
+.table-first-row-key tr:first-child {
+    font-weight: bold
+}
+
 button {
     border-radius: 0;
 }
