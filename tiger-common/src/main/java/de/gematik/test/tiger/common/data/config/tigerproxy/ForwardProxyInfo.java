@@ -29,6 +29,10 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+/**
+ * Represents the configuration for a forward proxy, including its hostname, port, type, and
+ * authentication details.
+ */
 @AllArgsConstructor
 @NoArgsConstructor
 @Data

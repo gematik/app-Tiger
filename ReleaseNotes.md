@@ -38,9 +38,10 @@
 * TGR-1617: High-Load on a Direct-Forward-Proxy will no longer lead to dropped messages.
 * TGR-1842: Workflow Ui: fixed an issue where clicking a tree element in the RbelPath inspect dialog would prefill the
   dialog with an incorrect expression.
-* TGR-1816: Tiger Proxy: it is now possible to use a direct binary proxy for pop3 and smtp without TLS.
+* TGR-1816: Tiger Proxy: It is now possible to use a direct binary proxy for pop3 and smtp without TLS.
 * TGR-1864: Fixed a mesh setup racing condition between a message being removed from history of the downstream proxy
   before the following message arrives that waits for the previous message to have be processed.
+* KOB-56: Tiger Proxy: Fixed findAvailableHosts error, caused by incorrect proxy usage
 * TGR-1658: Serenity Reports: the results of executing individual scenario variants via the WorkflowUI "play" and "
   replay" functionality are now correctly aggregated in the serenity html report.
 
