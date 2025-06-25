@@ -88,7 +88,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
           .build();
 
   @BeforeEach
-  public void setupForwardProxy(WireMockRuntimeInfo runtimeInfo) {
+  void setupForwardProxy(WireMockRuntimeInfo runtimeInfo) {
     if (!forwardProxy.getStubMappings().isEmpty()) {
       return;
     }
@@ -199,7 +199,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   }
 
   @Test
-  void reverseProxy_headersShouldBeUntouched() throws Exception {
+  void reverseProxy_headersShouldBeUntouched() {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")

@@ -26,6 +26,7 @@ import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.logging.ChannelContextLogger;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
+import de.gematik.test.tiger.mockserver.netty.proxy.BinaryModifierApplier;
 import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
@@ -34,6 +35,7 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.AttributeKey;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 
 /**
  * When creating a direct reverse proxy, we want to keep two channels open and forward all messages
@@ -46,21 +48,25 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
   public static final AttributeKey<Channel> INCOMING_CHANNEL =
       AttributeKey.valueOf("INCOMING_CHANNEL");
   private final BinaryExchangeHandler binaryProxyListener;
+  private final BinaryModifierApplier binaryModifierApplier;
   private final ChannelContextLogger contextLogger = new ChannelContextLogger(log);
 
   public BinaryBridgeHandler(MockServerConfiguration configuration) {
     this.binaryProxyListener = configuration.binaryProxyListener();
+    this.binaryModifierApplier = new BinaryModifierApplier(configuration);
   }
 
   @Override
   protected void channelRead0(ChannelHandlerContext ctx, BinaryMessage msg) {
-    Optional.ofNullable(ctx.channel().attr(INCOMING_CHANNEL).get())
-        .orElseThrow(() -> new IllegalStateException("Incoming channel is not set."))
-        .writeAndFlush(Unpooled.copiedBuffer(msg.getBytes()));
-    binaryProxyListener.onProxy(
-        msg,
-        ctx.channel().attr(INCOMING_CHANNEL).get().remoteAddress(),
-        ctx.channel().remoteAddress());
+    for (val msgToSend : binaryModifierApplier.applyModifierPlugins(msg, ctx)) {
+      Optional.ofNullable(ctx.channel().attr(INCOMING_CHANNEL).get())
+          .orElseThrow(() -> new IllegalStateException("Incoming channel is not set."))
+          .writeAndFlush(Unpooled.copiedBuffer(msgToSend.getBytes()));
+      binaryProxyListener.onProxy(
+          msgToSend,
+          ctx.channel().attr(INCOMING_CHANNEL).get().remoteAddress(),
+          ctx.channel().remoteAddress());
+    }
   }
 
   @Override

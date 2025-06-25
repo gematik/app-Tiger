@@ -98,6 +98,9 @@ class RbelContentSlice extends RbelContent {
 
   @Override
   public int indexOf(byte o) {
+    if (isEmpty()) {
+      return -1;
+    }
     return indexOf(o, 0);
   }
 
@@ -119,6 +122,9 @@ class RbelContentSlice extends RbelContent {
 
   @Override
   public boolean startsWith(byte[] prefix) {
+    if (isEmpty()) {
+      return prefix.length == 0;
+    }
     return startsWith(prefix, 0);
   }
 
@@ -129,6 +135,9 @@ class RbelContentSlice extends RbelContent {
 
   @Override
   public boolean startsTrimmedWith(byte[] firstNonBlankBytes) {
+    if (isEmpty()) {
+      return firstNonBlankBytes.length == 0;
+    }
     return startsTrimmedWith(firstNonBlankBytes, 0);
   }
 

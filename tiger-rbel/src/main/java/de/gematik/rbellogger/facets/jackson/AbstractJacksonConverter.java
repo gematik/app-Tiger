@@ -75,6 +75,9 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet> extends Rbel
 
   @Override
   public void consumeElement(RbelElement rbelElement, RbelConversionExecutor converter) {
+    if (rbelElement.getContent().isEmpty()) {
+      return;
+    }
     convertToJacksonNode(rbelElement)
         .filter(json -> json.isContainerNode() && !json.isEmpty())
         .ifPresent(

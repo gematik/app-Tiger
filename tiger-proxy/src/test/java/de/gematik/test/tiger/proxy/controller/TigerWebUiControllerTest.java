@@ -61,7 +61,7 @@ class TigerWebUiControllerTest {
   private static final int TOTAL_OF_EXCHANGED_MESSAGES = 4;
 
   @BeforeEach
-  public void setupBackendServer(WireMockRuntimeInfo runtimeInfo) {
+  void setupBackendServer(WireMockRuntimeInfo runtimeInfo) {
     int fakeBackendServerPort = runtimeInfo.getHttpPort();
     log.info("Started Backend-Server on port {}", fakeBackendServerPort);
 

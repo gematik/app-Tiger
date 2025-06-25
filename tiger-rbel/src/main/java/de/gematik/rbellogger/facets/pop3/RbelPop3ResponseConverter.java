@@ -64,7 +64,6 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
       RbelElement response,
       RbelConversionExecutor context,
       Class<? extends RbelFacet> requestFacetClass) {
-
     if (response.hasFacet(TracingMessagePairFacet.class)) {
       return Optional.of(response.getFacetOrFail(TracingMessagePairFacet.class).getRequest());
     }

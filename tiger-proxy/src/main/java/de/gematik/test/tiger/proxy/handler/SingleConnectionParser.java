@@ -34,13 +34,13 @@ import de.gematik.test.tiger.proxy.data.TcpConnectionEntry;
 import de.gematik.test.tiger.proxy.data.TcpIpConnectionIdentifier;
 import de.gematik.test.tiger.util.AsyncByteQueue;
 import de.gematik.test.tiger.util.DeterministicUuidGenerator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.val;
-import org.apache.commons.lang3.StringUtils;
 
 @RequiredArgsConstructor
 public class SingleConnectionParser {
@@ -49,7 +49,7 @@ public class SingleConnectionParser {
 
   private final BundledServerNamesAdder bundledServerNamesAdder = new BundledServerNamesAdder();
 
-  private final AbstractTigerProxy tigerProxy;
+  private final ExecutorService executor;
   private final BinaryExchangeHandler binaryExchangeHandler;
   private final RbelConverter rbelConverter;
   private final AsyncByteQueue bufferedParts;
@@ -61,40 +61,50 @@ public class SingleConnectionParser {
       TcpIpConnectionIdentifier connectionIdentifier,
       AbstractTigerProxy tigerProxy,
       BinaryExchangeHandler binaryExchangeHandler) {
-    this.tigerProxy = tigerProxy;
     this.binaryExchangeHandler = binaryExchangeHandler;
     this.rbelConverter = tigerProxy.getRbelLogger().getRbelConverter();
     this.bufferedParts = new AsyncByteQueue(connectionIdentifier);
+    this.executor = tigerProxy.getExecutor();
     log =
         org.slf4j.LoggerFactory.getLogger(
             tigerProxy.getName().orElse("TigerProxy") + "-ConnectionParser");
   }
 
-  private Void handleException(
+  public SingleConnectionParser(
+      TcpIpConnectionIdentifier connectionIdentifier,
+      ExecutorService executor,
+      RbelConverter rbelConverter,
+      BinaryExchangeHandler binaryExchangeHandler) {
+    this.binaryExchangeHandler = binaryExchangeHandler;
+    this.rbelConverter = rbelConverter;
+    this.executor = executor;
+    this.bufferedParts = new AsyncByteQueue(connectionIdentifier);
+    log = org.slf4j.LoggerFactory.getLogger(this.getClass());
+  }
+
+  private List<RbelElement> handleException(
       Throwable throwable, TcpIpConnectionIdentifier direction, TcpConnectionEntry entry) {
     log.warn("Exception while parsing buffered content for message {}", entry.getUuid(), throwable);
     binaryExchangeHandler.propagateExceptionMessageSafe(
         throwable,
         RbelHostname.create(direction.sender()),
         RbelHostname.create(direction.receiver()));
-    return null;
+    return List.of();
   }
 
-  public void bufferNewPart(TcpConnectionEntry entry) {
+  public CompletableFuture<List<RbelElement>> bufferNewPart(TcpConnectionEntry entry) {
     val bufferedEntry = bufferedParts.write(entry);
-    log.atTrace()
-        .addArgument(entry.getData()::size)
-        .addArgument(tigerProxy::proxyName)
-        .addArgument(bufferedEntry::getUuid)
-        .addArgument(bufferedEntry::getPreviousUuid)
-        .addArgument(() -> StringUtils.abbreviate(entry.getData().toReadableString(), 20))
-        .addArgument(entry::getUuid)
-        .addArgument(entry::getPreviousUuid)
-        .log(
-            "Buffering new content with {} bytes, in {} with uuid {} and prevUuid {} and first line"
-                + " '{}' (original {} and prev {})");
-    CompletableFuture.runAsync(() -> propagateNewChunk(bufferedEntry), tigerProxy.getExecutor())
-        .thenRunAsync(this::parseAllAvailableMessages, tigerProxy.getExecutor())
+    CompletableFuture.runAsync(() -> propagateNewChunk(bufferedEntry), executor)
+        .exceptionally(
+            e -> {
+              log.warn(
+                  "Exception while propagating new chunk for message {}: {}",
+                  bufferedEntry.getUuid(),
+                  e.getMessage(),
+                  e);
+              return null;
+            });
+    return CompletableFuture.supplyAsync(this::parseAllAvailableMessages, executor)
         .exceptionally(e -> handleException(e, bufferedEntry.getConnectionIdentifier(), entry));
   }
 
@@ -136,16 +146,19 @@ public class SingleConnectionParser {
     rbelConverter.transmitElement(messageElement);
   }
 
-  private synchronized void parseAllAvailableMessages() {
+  private synchronized List<RbelElement> parseAllAvailableMessages() {
+    val result = new ArrayList<RbelElement>();
     while (!bufferedParts.isEmpty()) {
       val message = tryToConvertMessage();
       if (message.isPresent()) {
         lastMessageUuid = message.get().getUuid();
         bufferedParts.consume(message.get().getSize());
+        result.add(message.get());
       } else {
         break;
       }
     }
+    return result;
   }
 
   private Optional<RbelElement> tryToConvertMessage() {
@@ -184,7 +197,7 @@ public class SingleConnectionParser {
         .addArgument(messageElement.getContent()::size)
         .addArgument(messageElement::getUuid)
         .log("Trying to parse message with {} bytes and uuid {}");
-    val result = rbelConverter.parseMessage(messageElement, messageMetadata);
+    final var result = triggerActualMessageParsing(messageElement, messageMetadata);
     messageElement.removeFacetsOfType(SingleConnectionParserMarkerFacet.class);
     if (result.getConversionPhase() == RbelConversionPhase.DELETED) {
       log.atTrace()
@@ -203,7 +216,7 @@ public class SingleConnectionParser {
                 + " {}. Is complete: {}");
 
     bundledServerNamesAdder.addBundledServerNameToHostnameFacet(result);
-    if (!tigerProxy.getTigerProxyConfiguration().isActivateRbelParsing()) {
+    if (!rbelConverter.isActivateRbelParsing()) {
       result.addOrReplaceFacet(new UnparsedChunkFacet());
     }
     log.atTrace()
@@ -211,6 +224,11 @@ public class SingleConnectionParser {
         .addArgument(result::getSize)
         .log("parsed one message with {} bytes and {} used");
     return Optional.of(result).filter(RbelConverterPlugin::messageIsCompleteOrParsingDeactivated);
+  }
+
+  public RbelElement triggerActualMessageParsing(
+      RbelElement messageElement, RbelMessageMetadata messageMetadata) {
+    return rbelConverter.parseMessage(messageElement, messageMetadata);
   }
 
   private static String getOrGenerateUuid(TcpConnectionEntry bufferedContent) {

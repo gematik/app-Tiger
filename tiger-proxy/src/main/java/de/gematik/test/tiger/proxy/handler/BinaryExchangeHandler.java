@@ -85,4 +85,8 @@ public class BinaryExchangeHandler {
           "While propagating an exception another error occured (ignoring):", handlingException);
     }
   }
+
+  public void waitForAllParsingTasksToBeFinished() {
+    connectionParser.waitForAllParsingTasksToBeFinished();
+  }
 }

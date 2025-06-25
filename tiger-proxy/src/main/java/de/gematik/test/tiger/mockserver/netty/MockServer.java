@@ -33,6 +33,7 @@ import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
+import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelInitializer;
@@ -48,6 +49,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -157,6 +159,12 @@ public class MockServer extends LifeCycle {
   public Expectation addRoute(Expectation expectation) {
     getHttpState().add(expectation);
     return expectation;
+  }
+
+  public void waitForAllParsingTasksToBeFinished() {
+    Optional.of(getConfiguration())
+        .map(MockServerConfiguration::binaryProxyListener)
+        .ifPresent(BinaryExchangeHandler::waitForAllParsingTasksToBeFinished);
   }
 
   @RequiredArgsConstructor

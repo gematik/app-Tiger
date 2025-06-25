@@ -44,6 +44,7 @@ import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import de.gematik.test.tiger.proxy.handler.ForwardAllCallback;
+import de.gematik.test.tiger.proxy.handler.RbelBinaryModifierPlugin;
 import de.gematik.test.tiger.proxy.tls.DynamicKeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.tls.MockServerTlsConfigurator;
 import jakarta.annotation.PreDestroy;
@@ -84,7 +85,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
 
   private MockServer mockServer;
   private TigerPkiIdentity serverRootCa;
-  @Getter private TigerProxyPairingConverter pairingConverter;
+  @Getter private final TigerProxyPairingConverter pairingConverter;
 
   public TigerProxy(final TigerProxyConfiguration configuration) {
     super(configuration);
@@ -156,6 +157,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   private void createNewMockServer() {
     MockServerConfiguration mockServerConfiguration = MockServerConfiguration.configuration();
     mockServerConfiguration.mockServerName(getName().orElse("MockServer"));
+    mockServerConfiguration.rbelConverter(getRbelLogger().getRbelConverter());
 
     final MockServerTlsConfigurator tlsConfigurator =
         MockServerTlsConfigurator.builder()
@@ -208,6 +210,12 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
         InetSocketAddress.createUnresolved(
             getTigerProxyConfiguration().getDirectReverseProxy().getHostname(),
             getTigerProxyConfiguration().getDirectReverseProxy().getPort()));
+    if (getTigerProxyConfiguration().getDirectReverseProxy().getModifierPlugins() != null) {
+      mockServerConfiguration.binaryModifierPlugins(
+          getTigerProxyConfiguration().getDirectReverseProxy().getModifierPlugins().stream()
+              .map(RbelBinaryModifierPlugin::instantiateModifierPlugin)
+              .toList());
+    }
 
     MockServer newMockServer =
         new MockServer(mockServerConfiguration, getTigerProxyConfiguration().getPortAsArray());
@@ -553,6 +561,9 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   }
 
   public void waitForAllCurrentMessagesToBeParsed() {
+    remoteProxyClients.forEach(TigerRemoteProxyClient::waitForAllParsingTasksToBeFinished);
+    mockServer.waitForAllParsingTasksToBeFinished();
+
     if (!getRbelLogger().getMessageHistory().isEmpty()) {
       getRbelLogger().getRbelConverter().waitForAllCurrentMessagesToBeParsed();
     }

@@ -60,6 +60,10 @@ public class ConverterPluginMap {
     return source.values().stream().flatMap(OrderedSet::stream);
   }
 
+  public void addAll(ConverterPluginMap converterPlugins) {
+    converterPlugins.forEach(this::put);
+  }
+
   public static class OrderedSet implements Iterable<RbelConverterPlugin> {
     private final ConcurrentSkipListSet<Entry> set = new ConcurrentSkipListSet<>();
     private final AtomicLong insertionOrder = new AtomicLong(0);

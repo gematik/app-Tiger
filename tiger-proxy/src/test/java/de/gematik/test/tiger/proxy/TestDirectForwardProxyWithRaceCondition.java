@@ -50,7 +50,8 @@ public class TestDirectForwardProxyWithRaceCondition {
   @Test
   public void cetpReplayWithRandomTcpChunks() {
     final PcapReplayer replayer =
-        new PcapReplayer("src/test/resources/stapelsignatur_log.pcapng", 50294, 7001).readReplay();
+        new PcapReplayer("src/test/resources/stapelsignatur_log.pcapng", 50294, 7001, false)
+            .readReplay();
     val tigerProxy = replayer.replayWithDirectForwardUsing(new TigerProxyConfiguration());
 
     final String html = RbelHtmlRenderer.render(tigerProxy.getRbelMessagesList());
@@ -63,7 +64,8 @@ public class TestDirectForwardProxyWithRaceCondition {
   @Test
   public void httpReplayWithRandomTcpChunks() {
     final PcapReplayer replayer =
-        new PcapReplayer("src/test/resources/stapelsignatur_log.pcapng", 53335, 80).readReplay();
+        new PcapReplayer("src/test/resources/stapelsignatur_log.pcapng", 53335, 80, false)
+            .readReplay();
     val tigerProxy = replayer.replayWithDirectForwardUsing(new TigerProxyConfiguration());
 
     final String html = RbelHtmlRenderer.render(tigerProxy.getRbelMessagesList());

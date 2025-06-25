@@ -96,7 +96,7 @@ public class VauEpa3ConverterTest {
         .hasStringContentEqualTo("Right back at ya!")
         .andTheInitialElement()
         .extractChildWithPath("$.body.header.reqCtr")
-        .hasValueEqualTo(1l)
+        .hasValueEqualTo(1L)
         .andTheInitialElement()
         .extractChildWithPath("$.body.header.version")
         .hasValueEqualTo((byte) 2)

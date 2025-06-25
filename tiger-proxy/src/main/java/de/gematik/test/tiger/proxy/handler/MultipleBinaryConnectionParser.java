@@ -29,33 +29,38 @@ import de.gematik.test.tiger.proxy.data.TcpConnectionEntry;
 import de.gematik.test.tiger.proxy.data.TcpIpConnectionIdentifier;
 import java.net.SocketAddress;
 import java.time.ZonedDateTime;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
 /** Buffers incomplete messages and tries to convert them to RbelElements if they are parsable */
 @Slf4j
+@AllArgsConstructor
 public class MultipleBinaryConnectionParser {
   private final Map<TcpIpConnectionIdentifier, SingleConnectionParser> connectionParsers =
       new ConcurrentHashMap<>();
-  private final AbstractTigerProxy tigerProxy;
-  private final BinaryExchangeHandler binaryExchangeHandler;
+  private final Function<TcpIpConnectionIdentifier, SingleConnectionParser>
+      createSingleConnectionParser;
+  private final List<CompletableFuture<List<RbelElement>>> currentParsingTasks =
+      Collections.synchronizedList(new ArrayList<>());
 
   public MultipleBinaryConnectionParser(
       AbstractTigerProxy tigerProxy, BinaryExchangeHandler binaryExchangeHandler) {
-    this.tigerProxy = tigerProxy;
-    this.binaryExchangeHandler = binaryExchangeHandler;
+    this.createSingleConnectionParser =
+        conId -> new SingleConnectionParser(conId, tigerProxy, binaryExchangeHandler);
   }
 
-  public void addToBuffer(
+  public CompletableFuture<List<RbelElement>> addToBuffer(
       SocketAddress senderAddress,
       SocketAddress receiverAddress,
       byte[] part,
       ZonedDateTime timestamp) {
-    addToBuffer(
+    return addToBuffer(
         UUID.randomUUID().toString(),
         senderAddress,
         receiverAddress,
@@ -65,7 +70,7 @@ public class MultipleBinaryConnectionParser {
         null);
   }
 
-  public void addToBuffer(
+  public CompletableFuture<List<RbelElement>> addToBuffer(
       String uuid,
       SocketAddress senderAddress,
       SocketAddress receiverAddress,
@@ -75,16 +80,38 @@ public class MultipleBinaryConnectionParser {
       String previousMessageUuid) {
     val direction = new TcpIpConnectionIdentifier(senderAddress, receiverAddress);
     val connectionParser =
-        connectionParsers.computeIfAbsent(
-            direction, k -> new SingleConnectionParser(k, tigerProxy, binaryExchangeHandler));
-    connectionParser.bufferNewPart(
-        TcpConnectionEntry.builder()
-            .uuid(uuid)
-            .data(RbelContent.of(part))
-            .connectionIdentifier(direction)
-            .messagePreProcessor(messagePreProcessor)
-            .previousUuid(previousMessageUuid)
-            .build()
-            .addAdditionalData(additionalData));
+        connectionParsers.computeIfAbsent(direction, createSingleConnectionParser);
+    val future =
+        connectionParser.bufferNewPart(
+            TcpConnectionEntry.builder()
+                .uuid(uuid)
+                .data(RbelContent.of(part))
+                .connectionIdentifier(direction)
+                .messagePreProcessor(messagePreProcessor)
+                .previousUuid(previousMessageUuid)
+                .build()
+                .addAdditionalData(additionalData));
+    synchronized (currentParsingTasks) {
+      currentParsingTasks.add(future);
+    }
+    future.whenComplete(
+        (message, throwable) -> {
+          synchronized (currentParsingTasks) {
+            currentParsingTasks.remove(future);
+          }
+        });
+    return future;
+  }
+
+  public void waitForAllParsingTasksToBeFinished() {
+    List<CompletableFuture<?>> tasks;
+    synchronized (currentParsingTasks) {
+      tasks = new ArrayList<>(currentParsingTasks);
+    }
+    log.trace("Waiting for all parsing tasks to finish, found {} tasks", tasks.size());
+    val currentParsingTasksFuture =
+        CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]));
+    currentParsingTasksFuture.join();
+    log.trace("All {} parsing tasks finished", tasks.size());
   }
 }

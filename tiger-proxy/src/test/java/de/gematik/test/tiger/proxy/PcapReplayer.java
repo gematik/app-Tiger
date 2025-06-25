@@ -23,10 +23,16 @@ package de.gematik.test.tiger.proxy;
 import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import javax.net.ssl.*;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -48,9 +54,13 @@ public class PcapReplayer implements AutoCloseable {
   private final String pcapFilename;
   private final int srcPort;
   private final int dstPort;
+  private final boolean useSsl;
   private final List<TigerTestReplayPacket> toBeReplayedPackets = new ArrayList<>();
   private TigerProxy tigerProxy;
   private Socket clientSocket;
+  private SSLContext sslContext;
+  @Getter private final List<byte[]> receivedPacketsInClient = new ArrayList<>();
+  @Getter private final List<byte[]> receivedPacketsInServer = new ArrayList<>();
 
   public static PcapReplayer writeReplay(String textBlob) {
     return writeReplay(
@@ -85,7 +95,7 @@ public class PcapReplayer implements AutoCloseable {
   }
 
   public static PcapReplayer writeReplay(List<TigerTestReplayPacket> toBeReplayedPackets) {
-    final PcapReplayer replayer = new PcapReplayer(null, -1, -1);
+    final PcapReplayer replayer = new PcapReplayer(null, -1, -1, false);
     replayer.toBeReplayedPackets.addAll(toBeReplayedPackets);
     return replayer;
   }
@@ -112,45 +122,72 @@ public class PcapReplayer implements AutoCloseable {
 
   @SneakyThrows
   public TigerProxy replayWithDirectForwardUsing(TigerProxyConfiguration tigerProxyConfiguration) {
-    SSLContext sslContext = createSSLContext();
-    SSLServerSocketFactory serverSocketFactory = sslContext.getServerSocketFactory();
-    SSLSocketFactory clientSocketFactory = sslContext.getSocketFactory();
+    try (val serverSocket = buildServerSocket()) {
 
-    SSLServerSocket serverSocket = (SSLServerSocket) serverSocketFactory.createServerSocket(0);
+      val binaryInfoBuilder =
+          tigerProxyConfiguration.getDirectReverseProxy() == null
+              ? DirectReverseProxyInfo.builder()
+              : tigerProxyConfiguration.getDirectReverseProxy().toBuilder();
+      this.tigerProxy =
+          new TigerProxy(
+              tigerProxyConfiguration.setDirectReverseProxy(
+                  binaryInfoBuilder
+                      .port(serverSocket.getLocalPort())
+                      .hostname("localhost")
+                      .build()));
+      buildClientSocket();
 
-    this.tigerProxy =
-        new TigerProxy(
-            tigerProxyConfiguration.setDirectReverseProxy(
-                DirectReverseProxyInfo.builder()
-                    .port(serverSocket.getLocalPort())
-                    .hostname("localhost")
-                    .build()));
+      log.info("Replaying with direct forward using TigerProxy");
+      log.info(
+          "Bouncing traffic via {} -> {} and {} -> {} (Wireshark Filter: tcp.port in {{}, {}, {}})",
+          clientSocket.getLocalPort(),
+          tigerProxy.getProxyPort(),
+          "<unknown>",
+          serverSocket.getLocalPort(),
+          clientSocket.getLocalPort(),
+          tigerProxy.getProxyPort(),
+          serverSocket.getLocalPort());
 
-    SSLSocket clientSocket =
-        (SSLSocket) clientSocketFactory.createSocket("localhost", tigerProxy.getProxyPort());
-    clientSocket.startHandshake();
-    log.info("Replaying with direct forward using TigerProxy");
-    log.info(
-        "Bouncing traffic via {} -> {} and {} -> {}",
-        clientSocket.getLocalPort(),
-        tigerProxy.getProxyPort(),
-        "<unknown>",
-        serverSocket.getLocalPort());
+      replayPackets(clientSocket, serverSocket);
+      int before = tigerProxy.getRbelMessagesList().size();
+      tigerProxy.waitForAllCurrentMessagesToBeParsed();
+      int after = tigerProxy.getRbelMessages().size();
 
-    replayPackets(clientSocket, serverSocket);
-    int before = tigerProxy.getRbelMessagesList().size();
-    Thread.sleep(1000);
-    int after = tigerProxy.getRbelMessagesList().size();
-    tigerProxy.waitForAllCurrentMessagesToBeParsed();
-    int afterAfter = tigerProxy.getRbelMessages().size();
+      log.info("Before: {}, After: {}", before, after);
 
-    log.info("Before: {}, After: {}, AfterAfter: {}", before, after, afterAfter);
+      return tigerProxy;
+    }
+  }
 
-    return tigerProxy;
+  private void buildClientSocket() throws IOException {
+    if (useSsl) {
+      initializeSslContext();
+      SSLSocketFactory clientSocketFactory = sslContext.getSocketFactory();
+      val sslClientSocket =
+          (SSLSocket) clientSocketFactory.createSocket("localhost", tigerProxy.getProxyPort());
+      sslClientSocket.startHandshake();
+      this.clientSocket = sslClientSocket;
+    } else {
+      this.clientSocket = new Socket("localhost", tigerProxy.getProxyPort());
+    }
+    clientSocket.setTcpNoDelay(true);
+  }
+
+  private ServerSocket buildServerSocket() throws IOException {
+    if (useSsl) {
+      initializeSslContext();
+      SSLServerSocketFactory serverSocketFactory = sslContext.getServerSocketFactory();
+      return serverSocketFactory.createServerSocket(0);
+    } else {
+      return new ServerSocket(0);
+    }
   }
 
   @SneakyThrows
-  private SSLContext createSSLContext() {
+  private void initializeSslContext() {
+    if (sslContext != null) {
+      return;
+    }
     val keyStore =
         new TigerPkiIdentity("src/test/resources/gateway_ecc.p12")
             .toKeyStoreWithPassword("password");
@@ -158,7 +195,7 @@ public class PcapReplayer implements AutoCloseable {
         KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
     keyManagerFactory.init(keyStore, "password".toCharArray());
 
-    SSLContext sslContext = SSLContext.getInstance("TLS");
+    sslContext = SSLContext.getInstance("TLS");
     sslContext.init(
         keyManagerFactory.getKeyManagers(),
         new TrustManager[] {
@@ -182,7 +219,6 @@ public class PcapReplayer implements AutoCloseable {
           }
         },
         null);
-    return sslContext;
   }
 
   @SneakyThrows
@@ -191,14 +227,16 @@ public class PcapReplayer implements AutoCloseable {
     int bytesSendFromClientCount = 0;
     int bytesSendFromServerCount = 0;
     serverConnectionSocket = serverSocket.accept();
+    serverConnectionSocket.setTcpNoDelay(true);
     for (val packet : toBeReplayedPackets) {
       if (packet.isServerRequest) {
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         /// CLIENT
-        // ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        readNumberOfBytesFromSocket(bytesSendFromServerCount, clientSocket, "client");
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        readNumberOfBytesFromSocket(bytesSendFromServerCount, clientSocket, "client")
+            .thenAccept(result -> result.ifPresent(receivedPacketsInClient::add));
         bytesSendFromServerCount = 0;
-        log.atDebug()
+        log.atInfo()
             .addArgument(() -> new String(packet.payload).lines().findFirst().get())
             .log("Sending packet to server.... ({})");
         clientSocket.getOutputStream().write(packet.payload);
@@ -207,10 +245,11 @@ public class PcapReplayer implements AutoCloseable {
       } else {
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         /// SERVER
-        // ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        readNumberOfBytesFromSocket(bytesSendFromClientCount, serverConnectionSocket, "server");
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        readNumberOfBytesFromSocket(bytesSendFromClientCount, serverConnectionSocket, "server")
+            .thenAccept(result -> result.ifPresent(receivedPacketsInServer::add));
         bytesSendFromClientCount = 0;
-        log.atDebug()
+        log.atInfo()
             .addArgument(() -> new String(packet.payload).lines().findFirst().get())
             .log("Sending packet to client.... ({})");
         serverConnectionSocket.getOutputStream().write(packet.payload);
@@ -223,16 +262,36 @@ public class PcapReplayer implements AutoCloseable {
     }
   }
 
-  @SneakyThrows
-  private void readNumberOfBytesFromSocket(int bytesCount, Socket socket, String message) {
+  private CompletableFuture<Optional<byte[]>> readNumberOfBytesFromSocket(
+      int bytesCount, Socket socket, String message) {
     if (bytesCount > 0) {
-      log.info("Awaiting {} bytes in {} ...", bytesCount, message);
-      val read = socket.getInputStream().readNBytes(bytesCount);
-      log.info(
-          "Read {} bytes from socket: {}",
-          read.length,
-          new String(read).lines().findFirst().orElse("<no data>"));
+      try {
+        val result =
+            CompletableFuture.supplyAsync(() -> readBytesFromSocket(bytesCount, socket, message))
+                .get(2000, TimeUnit.MILLISECONDS);
+        return CompletableFuture.completedFuture(result);
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException(e);
+      } catch (TimeoutException e) {
+        return CompletableFuture.supplyAsync(
+            () -> readBytesFromSocket(bytesCount, socket, message));
+      }
+    } else {
+      log.info("No bytes to read in {} ...", message);
+      return CompletableFuture.completedFuture(Optional.empty());
     }
+  }
+
+  @SneakyThrows
+  private static @NotNull Optional<byte[]> readBytesFromSocket(
+      int bytesCount, Socket socket, String message) {
+    log.info("Awaiting {} bytes in {} ...", bytesCount, message);
+    val read = socket.getInputStream().readNBytes(bytesCount);
+    log.info(
+        "Read {} bytes from socket: {}",
+        read.length,
+        new String(read).lines().findFirst().orElse("<no data>"));
+    return Optional.of(read);
   }
 
   @Override

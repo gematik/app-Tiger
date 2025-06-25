@@ -57,11 +57,6 @@ class Pop3PerformanceTest extends AbstractTigerProxyTest {
                         .build())
                 .setTrafficEndpoints(List.of("localhost:" + tigerProxy.getAdminPort())));
     log.info("Local TigerProxy started");
-    //    RbelFileReaderCapturer.builder()
-    //        .rbelFile("src/test/resources/pop3Performance.tgr")
-    //        .rbelConverter(tigerProxy.getRbelLogger().getRbelConverter())
-    //        .build()
-    //        .initialize();
     await()
         .atMost(5, TimeUnit.MINUTES)
         .pollInterval(1, TimeUnit.SECONDS)
@@ -85,9 +80,6 @@ class Pop3PerformanceTest extends AbstractTigerProxyTest {
         .map(RbelLogger::getMessageHistory)
         .map(List::copyOf)
         .orElseGet(Collections::emptyList);
-    //        .forEach(RbelConverter::waitUntilFullyProcessed);
-    // TODO signal completion
-    // element.removeFacetsOfType();
     log.info("All messages processed");
   }
 }

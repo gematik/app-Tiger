@@ -586,6 +586,10 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     parsingTasks.forEach(meshHandlerPool::submit);
   }
 
+  public void waitForAllParsingTasksToBeFinished() {
+    binaryChunksBuffer.waitForAllParsingTasksToBeFinished();
+  }
+
   private static class NextMessageParsedFacet implements RbelFacet {
     // This is a marker facet to indicate that the next message has been parsed
   }

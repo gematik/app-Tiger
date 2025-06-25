@@ -49,9 +49,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Builder(access = AccessLevel.PUBLIC)
+@Builder(access = AccessLevel.PUBLIC, toBuilder = true)
 @Slf4j
-public class RbelConverter {
+public class RbelConverter implements RbelConverterInterface {
 
   private static final String RECEIVER_METADATA_KEY = "receiver";
   private static final String SENDER_METADATA_KEY = "sender";
@@ -68,7 +68,6 @@ public class RbelConverter {
       new RbelMultiMap<>();
   @Getter private final RbelKeyManager rbelKeyManager;
   @Getter private final RbelValueShader rbelValueShader = new RbelValueShader();
-
   private final List<Runnable> historyClearCallbacks = new LinkedList<>();
   private final List<Consumer<RbelElement>> messageRemovedFromHistoryCallbacks = new LinkedList<>();
 
@@ -82,15 +81,15 @@ public class RbelConverter {
           new SynchronousQueue<>(),
           new ThreadFactoryBuilder().setNameFormat("rbel-converter-thread-%d").build());
 
-  @Builder.Default private int rbelBufferSizeInMb = 1024;
-  @Builder.Default private boolean manageBuffer = false;
+  @Builder.Default int rbelBufferSizeInMb = 1024;
+  @Builder.Default boolean manageBuffer = false;
   @Getter @Builder.Default private long currentBufferSize = 0;
-  @Builder.Default private long messageSequenceNumber = 0;
-  @Builder.Default private int skipParsingWhenMessageLargerThanKb = -1;
-  @Builder.Default private List<String> activateRbelParsingFor = List.of();
+  @Builder.Default long messageSequenceNumber = 0;
+  @Builder.Default int skipParsingWhenMessageLargerThanKb = -1;
+  @Builder.Default List<String> activateRbelParsingFor = List.of();
   @Builder.Default private volatile boolean shallInitializeConverters = true;
-  @Builder.Default @Getter private boolean isActivateRbelParsing = true;
-  @Builder.Default @Setter @Getter private String name = "<>";
+  @Builder.Default @Getter boolean isActivateRbelParsing = true;
+  @Builder.Default @Setter @Getter String name = "<>";
 
   @Builder.Default
   private List<RbelConversionPhase> conversionPhases =

@@ -50,12 +50,14 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
   private final NettyHttpClient httpClient;
   private final BinaryExchangeHandler binaryExchangeCallback;
+  private final BinaryModifierApplier binaryModifierApplier;
 
   public BinaryHandler(
       final MockServerConfiguration configuration, final NettyHttpClient httpClient) {
     super(true);
     this.httpClient = httpClient;
     this.binaryExchangeCallback = configuration.binaryProxyListener();
+    this.binaryModifierApplier = new BinaryModifierApplier(configuration);
   }
 
   @Override
@@ -63,7 +65,9 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
     BinaryMessage binaryRequest = bytes(ByteBufUtil.getBytes(byteBuf));
     final InetSocketAddress remoteAddress = getRemoteAddress(ctx);
     if (remoteAddress != null) {
-      sendMessage(new BinaryRequestInfo(ctx.channel(), binaryRequest, remoteAddress));
+      binaryModifierApplier
+          .applyModifierPlugins(binaryRequest, ctx)
+          .forEach(msg -> sendMessage(new BinaryRequestInfo(ctx.channel(), msg, remoteAddress)));
     } else {
       log.info(
           "unknown message format, only HTTP requests are supported for mocking or HTTP &"
@@ -80,7 +84,7 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
     }
   }
 
-  public void sendMessage(BinaryRequestInfo binaryRequestInfo) {
+  private void sendMessage(BinaryRequestInfo binaryRequestInfo) {
     httpClient
         .sendRequest(
             binaryRequestInfo, isSslEnabledUpstream(binaryRequestInfo.getIncomingChannel()))

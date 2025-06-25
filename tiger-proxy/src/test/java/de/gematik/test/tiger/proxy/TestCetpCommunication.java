@@ -45,7 +45,7 @@ class TestCetpCommunication extends AbstractNonHttpTest {
   private static byte[] message;
 
   @BeforeAll
-  public static void setupFixture() throws IOException {
+  static void setupFixture() throws IOException {
     String xml = Files.readString(Path.of("pom.xml"));
     message =
         Arrays.concatenate(
