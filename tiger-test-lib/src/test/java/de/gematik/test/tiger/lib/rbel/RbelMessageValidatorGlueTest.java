@@ -54,9 +54,10 @@ class RbelMessageValidatorGlueTest {
 
   @Test
   void testSharedValidatorInstance() {
-    TigerConfigurationKeys.TIGER_YAML_VALUE.setAsSystemProperty("""
-localProxyActive: true
-""");
+    TigerConfigurationKeys.TIGER_YAML_VALUE.setAsSystemProperty(
+        """
+      localProxyActive: true
+      """);
     executeWithSecureShutdown(
         () -> {
           TigerDirector.start();
@@ -128,7 +129,7 @@ localProxyActive: true
               .doesNotHaveFacet(RbelPop3CommandFacet.class)
               .doesNotHaveChildWithPath("$.pop3Command");
 
-          glue.reactivateParsingForAll();
+          glue.activateParsingForAll();
           convertedCapaElement =
               rbelConverter.convertElement(
                   RbelElement.builder()
@@ -139,6 +140,60 @@ localProxyActive: true
               .hasFacet(RbelPop3CommandFacet.class)
               .extractChildWithPath("$.pop3Command")
               .hasValueEqualTo(RbelPop3Command.CAPA);
+        });
+  }
+
+  @SneakyThrows
+  @Test
+  void testActivateParser() {
+    TigerConfigurationKeys.TIGER_YAML_VALUE.setAsSystemProperty(
+        """
+        tigerProxy:
+            activateRbelParsingFor:
+                - pop3
+        """);
+    executeWithSecureShutdown(
+        () -> {
+          TigerDirector.start();
+          var tigerProxy = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail();
+          var rbelConverter = tigerProxy.getRbelLogger().getRbelConverter();
+
+          RBelValidatorGlue glue = new RBelValidatorGlue();
+
+          glue.deactivateOptionalParsing();
+
+          var convertedCapaElement =
+              rbelConverter.convertElement(
+                  RbelElement.builder()
+                      .rawContent("CAPA\r\n".getBytes(StandardCharsets.US_ASCII))
+                      .build());
+
+          RbelElementAssertion.assertThat(convertedCapaElement)
+              .doesNotHaveFacet(RbelPop3CommandFacet.class);
+
+          glue.activateParsingFor("pop3");
+
+          convertedCapaElement =
+              rbelConverter.convertElement(
+                  RbelElement.builder()
+                      .rawContent("CAPA\r\n".getBytes(StandardCharsets.US_ASCII))
+                      .build());
+
+          RbelElementAssertion.assertThat(convertedCapaElement)
+              .hasFacet(RbelPop3CommandFacet.class)
+              .extractChildWithPath("$.pop3Command")
+              .hasValueEqualTo(RbelPop3Command.CAPA);
+
+          glue.deactivateOptionalParsing();
+
+          convertedCapaElement =
+              rbelConverter.convertElement(
+                  RbelElement.builder()
+                      .rawContent("CAPA\r\n".getBytes(StandardCharsets.US_ASCII))
+                      .build());
+
+          RbelElementAssertion.assertThat(convertedCapaElement)
+              .doesNotHaveFacet(RbelPop3CommandFacet.class);
         });
   }
 

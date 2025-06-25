@@ -25,6 +25,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.*;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import lombok.Getter;
@@ -48,20 +49,19 @@ public abstract class RbelConverterPlugin {
 
   private boolean isActive = true;
 
+  public boolean isOptional() {
+    return Optional.ofNullable(getClass().getAnnotation(ConverterInfo.class))
+        .map(ConverterInfo::onlyActivateFor)
+        .filter(ArrayUtils::isNotEmpty)
+        .isPresent();
+  }
+
   public boolean skipParsingOversizedContent() {
     return false;
   }
 
-  private boolean isParserFor(String parserIdentifier) {
-    return getParserIdentifiers().contains(parserIdentifier);
-  }
-
-  public void deactivateIfIdMatches(List<String> pluginIds) {
-    for (String pluginId : pluginIds) {
-      if (isParserFor(pluginId)) {
-        isActive = false;
-      }
-    }
+  public boolean isParserFor(List<String> pluginIds) {
+    return pluginIds.stream().anyMatch(getParserIdentifiers()::contains);
   }
 
   private Set<String> initializeParserIdentifiers() {
@@ -75,6 +75,10 @@ public abstract class RbelConverterPlugin {
 
   public void activate() {
     isActive = true;
+  }
+
+  public void deactivate() {
+    isActive = false;
   }
 
   public void doConversionIfActive(

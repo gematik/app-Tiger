@@ -32,6 +32,7 @@ import de.gematik.rbellogger.data.core.RbelFacet;
 import de.gematik.rbellogger.data.core.RbelRequestFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.data.facet.RbelNonTransmissionMarkerFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -171,7 +172,6 @@ public class RbelFileWriter {
                   other.addOrReplaceFacet(pair);
                 });
       } else {
-        // TODO Is this still necessary?
         pairPotentialHttpResponseWithPreviousMessage(rbelElement, converter);
       }
     }
@@ -183,7 +183,9 @@ public class RbelFileWriter {
           .orElse(false)) {
         converter
             .messagesStreamLatestFirst()
-            .dropWhile(candidate -> candidate == message)
+            .dropWhile(candidate -> candidate != message)
+            .filter(msg -> msg.hasFacet(RbelHttpRequestFacet.class))
+            .filter(msg -> !msg.hasFacet(TracingMessagePairFacet.class))
             .findFirst()
             .ifPresent(
                 previousMessage -> {

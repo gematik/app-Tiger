@@ -24,6 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
+import de.gematik.rbellogger.data.core.RbelRequestFacet;
+import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.file.RbelFileWriter;
 import java.io.File;
 import java.io.IOException;
@@ -32,6 +34,34 @@ import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 
 class RbelFileWriterUtilsTest {
+
+  @Test
+  void readOldFile_pairingShouldBeCorrect() throws IOException {
+
+    RbelLogger rbelLogger = RbelLogger.build(new RbelConfiguration());
+    var rbelFileWriter = new RbelFileWriter(rbelLogger.getRbelConverter());
+    String tgrContent =
+        FileUtils.readFileToString(new File("src/test/resources/rezepsFiltered.tgr"));
+    rbelFileWriter.convertFromRbelFile(tgrContent, Optional.empty());
+
+    var requests =
+        rbelLogger.getRbelConverter().getMessageList().stream()
+            .filter(msg -> msg.hasFacet(RbelRequestFacet.class))
+            .toList();
+
+    assertThat(requests).hasSize(48);
+
+    requests.forEach(
+        request -> {
+          assertThat(request.hasFacet(TracingMessagePairFacet.class)).isTrue();
+          assertThat(
+                  request
+                      .getFacetOrFail(TracingMessagePairFacet.class)
+                      .getResponse()
+                      .hasFacet(TracingMessagePairFacet.class))
+              .isTrue();
+        });
+  }
 
   @Test
   void readFileTwice_shouldOnlyReadMsgsOnceBasedOnUuid() throws IOException {

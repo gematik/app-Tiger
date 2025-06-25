@@ -23,6 +23,7 @@ package de.gematik.rbellogger;
 import static de.gematik.rbellogger.RbelConversionPhase.*;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.unboundid.util.NotNull;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.converter.brainpool.BrainpoolCurves;
 import de.gematik.rbellogger.data.RbelElement;
@@ -42,6 +43,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import lombok.*;
@@ -130,15 +132,9 @@ public class RbelConverter implements RbelConverterInterface {
     return convertElement(RbelElement.builder().parentNode(parentNode).rawContent(input).build());
   }
 
-  public void deactivatePlugins(List<String> pluginIds) {
+  public List<RbelConverterPlugin> getPlugins(Predicate<RbelConverterPlugin> filter) {
     synchronized (converterPlugins) {
-      converterPlugins.forEach(c -> c.deactivateIfIdMatches(pluginIds));
-    }
-  }
-
-  public void reactivateAllConfiguredPlugins() {
-    synchronized (converterPlugins) {
-      converterPlugins.forEach(RbelConverterPlugin::activate);
+      return converterPlugins.stream().filter(filter).toList();
     }
   }
 
@@ -416,5 +412,41 @@ public class RbelConverter implements RbelConverterInterface {
             rbelKeyManager,
             List.of(RbelConversionPhase.PREPARATION, RbelConversionPhase.TRANSMISSION))
         .execute();
+  }
+
+  private static @NotNull List<String> getTrimmedListElements(String commaSeparatedList) {
+    return Arrays.stream(commaSeparatedList.split(","))
+        .map(String::trim)
+        .filter(s -> !s.isEmpty())
+        .toList();
+  }
+
+  public void deactivateParsingFor(String parsersToDeactivate) {
+    List<String> idsToDeactivate = getTrimmedListElements(parsersToDeactivate);
+    getConverterPlugins().stream()
+        .filter(plugin -> plugin.isParserFor(idsToDeactivate))
+        .forEach(RbelConverterPlugin::deactivate);
+  }
+
+  public void activateParsingForAll() {
+    getConverterPlugins().forEach(RbelConverterPlugin::activate);
+  }
+
+  @Deprecated(since = "4.0.0")
+  public void reactivateParsingForAll() {
+    activateParsingForAll();
+  }
+
+  public void deactivateOptionalParsing() {
+    getConverterPlugins().stream()
+        .filter(RbelConverterPlugin::isOptional)
+        .forEach(RbelConverterPlugin::deactivate);
+  }
+
+  public void activateParsingFor(String parsersToActivate) {
+    List<String> idsToActivate = getTrimmedListElements(parsersToActivate);
+    getConverterPlugins().stream()
+        .filter(plugin -> plugin.isParserFor(idsToActivate))
+        .forEach(RbelConverterPlugin::activate);
   }
 }

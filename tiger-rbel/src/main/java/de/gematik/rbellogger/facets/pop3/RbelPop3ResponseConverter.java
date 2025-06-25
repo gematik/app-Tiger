@@ -100,8 +100,10 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
                     .getFacet(TracingMessagePairFacet.class)
                     .ifPresent(
                         pair -> {
-                          pair.getRequest().removeFacetsOfType(TracingMessagePairFacet.class);
-                          pair.getResponse().removeFacetsOfType(TracingMessagePairFacet.class);
+                          if (pair.getRequest().hasFacet(RbelPop3CommandFacet.class)) {
+                            pair.getRequest().removeFacetsOfType(TracingMessagePairFacet.class);
+                            pair.getResponse().removeFacetsOfType(TracingMessagePairFacet.class);
+                          }
                         }));
   }
 

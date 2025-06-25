@@ -1,5 +1,8 @@
 Feature: Provide a test to check if parsing of tgr file works
 
+  Background:
+    Given TGR the rbel parsing is activated for all configured parsers
+
   Scenario: Parse Tgr file check response 1
     Given TGR reads the following .tgr file "src/test/resources/testdata/rezepsFiltered.tgr"
     Then TGR find last request to path "/VAUCertificate"

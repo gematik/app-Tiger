@@ -26,6 +26,21 @@
 * TGR-1853: Add local sub-steps in Workflow-UI
 * TGR-1854: update spring boot dependency version to 3.4.5.
 * TGR-1726: show parsed values and attributes of LDAP messages in the Tiger-Proxy Web UI.
+* TGR-1802: Allow deactivation of all optional parsers and activation of specific parsers.
+  It is only possible
+  to (re-)activate a parser that is specifically configured via the configuration.
+  See https://gematik.github.io/app-Tiger/Tiger-User-Manual.html#activaterbelparsing for the
+  configurable parsers. The
+  following glue
+  code methods are available:
+
+```gherkin
+Given TGR all optional rbel parsers are deactivated
+
+Given TGR the rbel parsing is activated for {string}
+
+Given TGR the rbel parsing is activated for all configured parsers
+```
 
 ## Bugfixes
 
