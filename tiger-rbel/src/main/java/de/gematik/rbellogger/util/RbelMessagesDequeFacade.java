@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,24 +13,30 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.rbellogger.util;
 
-import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.function.Consumer;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
-@AllArgsConstructor
+@RequiredArgsConstructor
 @SuppressWarnings({"java:S6355", "java:S1133", "java:S1123"})
 public class RbelMessagesDequeFacade implements Deque<RbelElement> {
 
   private final Deque<RbelElement> remoteDeque;
   private final RbelConverter rbelConverter;
+  @Setter private boolean allowUnparsedMessagesToAppearInFacade = false;
 
   @Override
   @Deprecated
@@ -252,7 +259,9 @@ public class RbelMessagesDequeFacade implements Deque<RbelElement> {
     @Override
     public RbelElement next() {
       final RbelElement result = remoteIterator.next();
-      rbelConverter.waitForGivenElementToBeParsed(result);
+      if (!allowUnparsedMessagesToAppearInFacade) {
+        rbelConverter.waitForGivenElementToBeParsed(result);
+      }
       return result;
     }
 
@@ -266,7 +275,9 @@ public class RbelMessagesDequeFacade implements Deque<RbelElement> {
     public void forEachRemaining(Consumer action) {
       remoteIterator.forEachRemaining(
           element -> {
-            rbelConverter.waitForGivenElementToBeParsed(element);
+            if (!allowUnparsedMessagesToAppearInFacade) {
+              rbelConverter.waitForGivenElementToBeParsed(element);
+            }
             action.accept(element);
           });
     }

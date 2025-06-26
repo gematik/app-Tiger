@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,25 +13,24 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.proxy;
-
-import static de.gematik.rbellogger.file.RbelFileWriter.PAIRED_MESSAGE_UUID;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.file.RbelFileWriter;
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.util.IRbelMessageListener;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.KeyMgr;
-import de.gematik.test.tiger.proxy.certificate.TlsFacet;
-import de.gematik.test.tiger.proxy.client.ProxyFileReadingFilter;
 import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import java.io.File;
@@ -46,25 +46,16 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.*;
 import javax.annotation.Nullable;
 import kong.unirest.core.Unirest;
-import lombok.Data;
-import lombok.Getter;
-import lombok.SneakyThrows;
+import lombok.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
 
-@Data
+@EqualsAndHashCode
 public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
-
-  static {
-    TlsFacet.init();
-  }
 
   private static final String FIX_VAU_KEY =
       """
@@ -75,15 +66,16 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
             -----END PRIVATE KEY-----
             """;
   private final List<IRbelMessageListener> rbelMessageListeners = new ArrayList<>();
-  private final TigerProxyConfiguration tigerProxyConfiguration;
-  private RbelLogger rbelLogger;
-  private RbelFileWriter rbelFileWriter;
+  @Getter private final TigerProxyConfiguration tigerProxyConfiguration;
+  @Getter private RbelLogger rbelLogger;
+  @Getter private RbelFileWriter rbelFileWriter;
   @Getter private Optional<String> name;
   @Getter protected final org.slf4j.Logger log;
-  @Getter private final ExecutorService trafficParserExecutor = Executors.newCachedThreadPool();
-  private AtomicBoolean fileParsedCompletely = new AtomicBoolean(false);
-  private AtomicReference<RuntimeException> fileParsingException = new AtomicReference<>();
-  private boolean isShuttingDown = false;
+  @Getter private boolean isShuttingDown = false;
+  @Getter private ExecutorService executor = Executors.newCachedThreadPool();
+
+  @Setter(AccessLevel.PRIVATE)
+  private CompletableFuture<Void> fileParsingFuture;
 
   protected AbstractTigerProxy(TigerProxyConfiguration configuration) {
     this(configuration, null);
@@ -103,8 +95,10 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
     } else {
       this.rbelLogger = rbelLogger;
     }
+    this.rbelLogger.getRbelConverter().setName(proxyName());
+    addTransmissionPluginToRbelIfNotPresentAlready();
     if (!configuration.isActivateRbelParsing()) {
-      this.rbelLogger.getRbelConverter().removeAllConverterPlugins();
+      this.rbelLogger.getRbelConverter().deactivateRbelParsing();
     }
     addFixVauKey();
     initializeFileWriter();
@@ -114,8 +108,28 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
         && StringUtils.isNotEmpty(configuration.getFileSaveInfo().getSourceFile())) {
       readTrafficFromSourceFile(configuration.getFileSaveInfo().getSourceFile());
     } else {
-      fileParsedCompletely.set(true);
+      fileParsingFuture = CompletableFuture.completedFuture(null);
     }
+  }
+
+  private void addTransmissionPluginToRbelIfNotPresentAlready() {
+    final boolean noPluginAddedYet =
+        rbelLogger.getRbelConverter().getConverterPlugins().stream()
+            .filter(TigerProxyRemoteTransmissionConversionPlugin.class::isInstance)
+            .map(TigerProxyRemoteTransmissionConversionPlugin.class::cast)
+            .filter(this::isTigerProxyMatching)
+            .findAny()
+            .isEmpty();
+
+    if (noPluginAddedYet) {
+      rbelLogger
+          .getRbelConverter()
+          .addConverter(new TigerProxyRemoteTransmissionConversionPlugin(this));
+    }
+  }
+
+  protected boolean isTigerProxyMatching(TigerProxyRemoteTransmissionConversionPlugin plugin) {
+    return plugin.getTigerProxy() == this;
   }
 
   private void addNoteCriterions() {
@@ -133,26 +147,18 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
 
   private void initializeFileWriter() {
     rbelFileWriter = new RbelFileWriter(rbelLogger.getRbelConverter());
-    rbelFileWriter.preSaveListener.add(
-        (el, json) ->
-            el.getFacet(TracingMessagePairFacet.class)
-                .filter(pairFacet -> pairFacet.getResponse().equals(el))
-                .ifPresent(
-                    pairFacet -> json.put(PAIRED_MESSAGE_UUID, pairFacet.getRequest().getUuid())));
   }
 
   private void readTrafficFromSourceFile(String sourceFile) {
-    new Thread(
-            () -> {
-              try {
-                readTrafficFromTgrFile(sourceFile);
-                fileParsedCompletely.set(true);
-              } catch (RuntimeException e) {
-                fileParsingException.set(e);
-              }
-            },
-            "readTrafficFromSourceFile")
-        .start();
+    fileParsingFuture =
+        CompletableFuture.runAsync(() -> readTrafficFromTgrFile(sourceFile))
+            .exceptionally(
+                e -> {
+                  log.error(
+                      "Error while reading traffic from file '{}': {}", sourceFile, e.getMessage());
+                  throw new TigerProxyStartupException(
+                      "Error while reading traffic from file '" + sourceFile + "'", e);
+                });
   }
 
   public synchronized List<RbelElement> readTrafficFromTgrFile(String sourceFile) {
@@ -169,23 +175,11 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   }
 
   public synchronized List<RbelElement> readTrafficFromString(String tgrFileContent) {
-    try {
-      rbelFileWriter.postConversionListener.add(TracingMessagePairFacet.pairingPostProcessor);
-      rbelFileWriter.postConversionListener.add(
-          TracingMessagePairFacet.updateHttpFacetsBasedOnPairsPostProcessor);
-      if (getTigerProxyConfiguration().getFileSaveInfo() != null
-          && StringUtils.isNotEmpty(
-              getTigerProxyConfiguration().getFileSaveInfo().getReadFilter())) {
-        rbelFileWriter.postConversionListener.add(
-            new ProxyFileReadingFilter(
-                getTigerProxyConfiguration().getFileSaveInfo().getReadFilter()));
-      }
-      return rbelFileWriter.convertFromRbelFile(tgrFileContent);
-    } finally {
-      rbelFileWriter.postConversionListener.remove(TracingMessagePairFacet.pairingPostProcessor);
-      rbelFileWriter.postConversionListener.remove(
-          TracingMessagePairFacet.updateHttpFacetsBasedOnPairsPostProcessor);
-    }
+    return rbelFileWriter.convertFromRbelFile(
+        tgrFileContent,
+        Optional.ofNullable(getTigerProxyConfiguration().getFileSaveInfo())
+            .map(TigerFileSaveInfo::getReadFilter)
+            .filter(StringUtils::isNotBlank));
   }
 
   private void addFixVauKey() {
@@ -271,12 +265,10 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
     rbelLogger.getRbelKeyManager().addKey(keyid, key, RbelKey.PRECEDENCE_KEY_FOLDER);
   }
 
-  public void triggerListener(RbelElement element) {
-    try {
-      getRbelMessageListeners().forEach(listener -> listener.triggerNewReceivedMessage(element));
-    } finally {
-      RbelConverter.setMessageFullyProcessed(element);
-    }
+  public void triggerListener(RbelElement element, RbelMessageMetadata metadata) {
+    executor.submit(
+        () ->
+            rbelMessageListeners.forEach(listener -> listener.triggerNewReceivedMessage(element)));
   }
 
   @Override
@@ -342,20 +334,22 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
     getRbelLogger().getRbelConverter().clearAllMessages();
   }
 
-  public Boolean isFileParsed() {
-    if (fileParsingException.get() != null) {
-      throw fileParsingException.get();
-    }
-    return fileParsedCompletely.get();
-  }
-
   public Deque<RbelElement> getRbelMessages() {
     return getRbelLogger().getMessageHistory();
   }
 
-  @Override
-  public void close() {
-    isShuttingDown = true;
-    trafficParserExecutor.shutdown();
+  /*
+   * This method is used to ensure that the file is parsed before the proxy is started.
+   * It is only called by the TigerTestEnvMgr.
+   */
+  public void ensureFileIsParsed() {
+    try {
+      fileParsingFuture.get();
+    } catch (CancellationException | ExecutionException e) {
+      throw new TigerProxyStartupException("Error while parsing tgr file", e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new TigerProxyStartupException("Error while parsing tgr file", e);
+    }
   }
 }

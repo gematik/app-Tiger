@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,14 +13,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
-import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
+import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.proxy.data.TigerDownloadedMessageFacet;
 import java.util.HashMap;
 import java.util.List;
@@ -52,14 +55,17 @@ public class TigerRemoteTrafficDownloader {
 
     log.info(
         "Successfully downloaded & parsed missed traffic from '{}'. Now {} message(s)"
-            + " in local history",
+            + " in local history ({} actual messages)",
         getRemoteProxyUrl(),
-        getRbelLogger().getMessageHistory().size());
+        getRbelLogger().getMessageHistory().size(),
+        getRbelLogger().getMessageList().size());
   }
 
   private void parseTrafficChunk(String rawTraffic) {
     final List<RbelElement> convertedMessages =
-        tigerRemoteProxyClient.getRbelFileWriter().convertFromRbelFile(rawTraffic);
+        tigerRemoteProxyClient
+            .getRbelFileWriter()
+            .convertFromRbelFile(rawTraffic, Optional.empty());
     final long expectedNumberOfMessages = rawTraffic.lines().count();
 
     doMessageBatchPostProcessing(convertedMessages, expectedNumberOfMessages);
@@ -71,7 +77,6 @@ public class TigerRemoteTrafficDownloader {
           msg.addFacet(new TigerDownloadedMessageFacet());
           addRemoteUrlToTcpIpFacet(msg);
         });
-    addSequenceNumbersForOlderTigerProxies(convertedMessages);
     if (log.isTraceEnabled()) {
       log.trace(
           "Just parsed another traffic batch of {} lines, got {} messages, expected {} (rest was"
@@ -86,7 +91,6 @@ public class TigerRemoteTrafficDownloader {
           .getLastMessageUuid()
           .set(convertedMessages.get(convertedMessages.size() - 1).getUuid());
     }
-    convertedMessages.forEach(tigerRemoteProxyClient::triggerListener);
     if (log.isTraceEnabled()) {
       log.trace(
           "Parsed traffic, ending with {}",
@@ -95,25 +99,6 @@ public class TigerRemoteTrafficDownloader {
               .flatMap(content -> Stream.of(content.split(" ")).skip(1).limit(1))
               .filter(httpHeaderString -> httpHeaderString.startsWith("/"))
               .collect(Collectors.joining(", ")));
-    }
-  }
-
-  private static void addSequenceNumbersForOlderTigerProxies(List<RbelElement> convertedMessages) {
-    if (convertedMessages.isEmpty()) {
-      return;
-    }
-    if (convertedMessages.get(0).hasFacet(TracingMessagePairFacet.class)) {
-      return;
-    }
-    for (int i = 0; i < convertedMessages.size(); i += 2) {
-      val pairFacet =
-          TracingMessagePairFacet.builder()
-              .response(convertedMessages.get(i + 1))
-              .request(convertedMessages.get(i))
-              .build();
-      if (convertedMessages.size() >= i + 1) {
-        convertedMessages.get(i + 2).addFacet(pairFacet);
-      }
     }
   }
 

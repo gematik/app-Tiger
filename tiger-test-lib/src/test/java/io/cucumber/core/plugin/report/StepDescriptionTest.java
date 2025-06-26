@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,15 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package io.cucumber.core.plugin.report;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
-import de.gematik.test.tiger.glue.ResolvableArgument;
+import de.gematik.test.tiger.glue.annotation.ResolvableArgument;
 import io.cucumber.plugin.event.DataTableArgument;
 import io.cucumber.plugin.event.PickleStepTestStep;
 import io.cucumber.plugin.event.Step;
@@ -62,7 +64,7 @@ class StepDescriptionTest {
     when(step.getArgument()).thenReturn(dataTableArgument);
     when(dataTableArgument.cells()).thenReturn(List.of(List.of("1", "2", "3")));
     when(pickleStepTestStep.getCodeLocation()).thenReturn(methodName);
-    assertThat(StepDescription.of(pickleStepTestStep).isMethodResolvable(methodName)).isTrue();
+    assertThat(StepDescription.of(pickleStepTestStep).isMethodResolvable()).isTrue();
   }
 
   @ParameterizedTest
@@ -88,7 +90,7 @@ class StepDescriptionTest {
     when(step.getArgument()).thenReturn(dataTableArgument);
     when(dataTableArgument.cells()).thenReturn(List.of(List.of("1", "2", "3")));
     when(pickleStepTestStep.getCodeLocation()).thenReturn(methodName);
-    assertThat(StepDescription.of(pickleStepTestStep).isMethodResolvable(methodName)).isFalse();
+    assertThat(StepDescription.of(pickleStepTestStep).isMethodResolvable()).isFalse();
   }
 
   @ResolvableArgument

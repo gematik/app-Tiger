@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.mockserver.netty;
 
 import static de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration.configuration;
@@ -29,6 +33,7 @@ import de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler;
 import de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import de.gematik.test.tiger.proxy.data.TigerConnectionStatus;
+import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelInitializer;
@@ -44,6 +49,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import lombok.Getter;
@@ -153,6 +159,12 @@ public class MockServer extends LifeCycle {
   public Expectation addRoute(Expectation expectation) {
     getHttpState().add(expectation);
     return expectation;
+  }
+
+  public void waitForAllParsingTasksToBeFinished() {
+    Optional.of(getConfiguration())
+        .map(MockServerConfiguration::binaryProxyListener)
+        .ifPresent(BinaryExchangeHandler::waitForAllParsingTasksToBeFinished);
   }
 
   @RequiredArgsConstructor

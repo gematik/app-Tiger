@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,15 +13,18 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.proxy;
 
 import static de.gematik.test.tiger.mockserver.mock.Expectation.buildForwardProxyRoute;
 import static de.gematik.test.tiger.mockserver.mock.Expectation.buildReverseProxyRoute;
 import static de.gematik.test.tiger.mockserver.model.HttpRequest.request;
 
-import de.gematik.rbellogger.converter.HttpPairingInBinaryChannelConverter;
+import de.gematik.rbellogger.facets.http.RbelHttpPairingInBinaryChannelConverter;
 import de.gematik.rbellogger.util.RbelMessagesSupplier;
 import de.gematik.test.tiger.common.config.RbelModificationDescription;
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
@@ -40,6 +44,7 @@ import de.gematik.test.tiger.proxy.data.TigerProxyRoute;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
 import de.gematik.test.tiger.proxy.handler.BinaryExchangeHandler;
 import de.gematik.test.tiger.proxy.handler.ForwardAllCallback;
+import de.gematik.test.tiger.proxy.handler.RbelBinaryModifierPlugin;
 import de.gematik.test.tiger.proxy.tls.DynamicKeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.tls.MockServerTlsConfigurator;
 import jakarta.annotation.PreDestroy;
@@ -80,10 +85,13 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
 
   private MockServer mockServer;
   private TigerPkiIdentity serverRootCa;
+  @Getter private final TigerProxyPairingConverter pairingConverter;
 
   public TigerProxy(final TigerProxyConfiguration configuration) {
     super(configuration);
 
+    pairingConverter = new TigerProxyPairingConverter();
+    getRbelLogger().getRbelConverter().addConverter(pairingConverter);
     mockServerToRbelConverter = new MockServerToRbelConverter(getRbelLogger().getRbelConverter());
     bootMockServer();
 
@@ -149,6 +157,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   private void createNewMockServer() {
     MockServerConfiguration mockServerConfiguration = MockServerConfiguration.configuration();
     mockServerConfiguration.mockServerName(getName().orElse("MockServer"));
+    mockServerConfiguration.rbelConverter(getRbelLogger().getRbelConverter());
 
     final MockServerTlsConfigurator tlsConfigurator =
         MockServerTlsConfigurator.builder()
@@ -169,14 +178,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
     outputForwardProxyConfigLogs(proxyConfiguration);
     proxyConfiguration.ifPresent(mockServerConfiguration::proxyConfiguration);
     mockServerConfiguration.exceptionHandlingCallback(
-        (t, c) -> {
-          try {
-            var errorResponse = getMockServerToRbelConverter().convertErrorResponse(null, null, t);
-            triggerListener(errorResponse);
-          } catch (Exception e) {
-            log.error("Error while converting error response", e);
-          }
-        });
+        getMockServerToRbelConverter().exceptionCallback());
 
     if (getTigerProxyConfiguration().getDirectReverseProxy() == null) {
       mockServer =
@@ -208,14 +210,18 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
         InetSocketAddress.createUnresolved(
             getTigerProxyConfiguration().getDirectReverseProxy().getHostname(),
             getTigerProxyConfiguration().getDirectReverseProxy().getPort()));
+    if (getTigerProxyConfiguration().getDirectReverseProxy().getModifierPlugins() != null) {
+      mockServerConfiguration.binaryModifierPlugins(
+          getTigerProxyConfiguration().getDirectReverseProxy().getModifierPlugins().stream()
+              .map(RbelBinaryModifierPlugin::instantiateModifierPlugin)
+              .toList());
+    }
 
     MockServer newMockServer =
         new MockServer(mockServerConfiguration, getTigerProxyConfiguration().getPortAsArray());
     addReverseProxyRouteIfNotPresent();
 
-    getRbelLogger()
-        .getRbelConverter()
-        .addFirstPostConversionListener(new HttpPairingInBinaryChannelConverter());
+    getRbelLogger().getRbelConverter().addConverter(new RbelHttpPairingInBinaryChannelConverter());
 
     return newMockServer;
   }
@@ -514,7 +520,7 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
             .addArgument(() -> configNotEmpty.getProxyAddress().getAddress())
             .addArgument(() -> configNotEmpty.getProxyAddress().getPort())
             .log("Forward proxy is set to {}://{}:{}");
-      } else if (configNotEmpty.getUsername() != null) {
+      } else {
         log.atInfo()
             .addArgument(() -> configNotEmpty.getType().toString().toLowerCase())
             .addArgument(() -> configNotEmpty.getProxyAddress().getAddress())
@@ -539,7 +545,6 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   public void close() {
     String tigerProxyName = getName().orElse("");
     log.info("Shutting down Tiger-Proxy {}", tigerProxyName);
-    super.close();
     remoteProxyClients.forEach(TigerRemoteProxyClient::close);
     mockServer.stop();
   }
@@ -556,6 +561,9 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
   }
 
   public void waitForAllCurrentMessagesToBeParsed() {
+    remoteProxyClients.forEach(TigerRemoteProxyClient::waitForAllParsingTasksToBeFinished);
+    mockServer.waitForAllParsingTasksToBeFinished();
+
     if (!getRbelLogger().getMessageHistory().isEmpty()) {
       getRbelLogger().getRbelConverter().waitForAllCurrentMessagesToBeParsed();
     }

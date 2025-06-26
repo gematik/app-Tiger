@@ -3,6 +3,7 @@
 This plugin allows to dynamically generate the JUnit driver classes that are then used in the Surefire plugin to start the test runs.
 And replaces the serenity maven plugin to generate Serenity BDD test reports.
 
+[#maven-plugin-generate-drivers]
 == Generate Drivers goal
 
 NOTE: You may decide to manually write your own JUnit driver classes in which case you can omit this plugin.

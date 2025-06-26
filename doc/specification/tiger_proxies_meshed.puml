@@ -1,0 +1,34 @@
+@startuml
+
+!include plantuml.style
+
+hide stereotype
+
+' left to right direction
+
+'title Tiger components
+
+' component TigerServer  <<NextRelease>>
+
+    component TigerProxy as tp <<Tiger>>
+    component "Zeroline Testsuite"  as tdir <<Tiger>>
+
+    component "Weitere Testobjekte" as testobj <<Other>>
+    component "Zu testendes System" as sut <<Other>>
+    component "Tiger Proxy 2" as tp2 <<Tiger>>
+
+
+'sims -up- locdock <<HTTP2>>
+'rutu -up- clddock <<HTTP2>>
+
+tdir -right-> tp  <<HTTP>> : Testnachrichten\nwerden\nversendet
+tp -right-> sut <<HTTP>>
+tp -up-> tdir : Testnachrichten\nwerden  zur\nValidierung\nzurück geleitet
+
+
+sut -right-> tp2  <<HTTP>>
+tp2 -right-> testobj <<HTTP>>
+
+tp2 -left-> tp : Testnachrichten\nwerden an den\nlokalen Tiger\nProxy retourniert
+
+@enduml

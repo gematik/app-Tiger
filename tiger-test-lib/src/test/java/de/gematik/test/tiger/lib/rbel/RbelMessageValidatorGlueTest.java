@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.lib.rbel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelElementAssertion;
-import de.gematik.rbellogger.data.facet.RbelPop3CommandFacet;
-import de.gematik.rbellogger.data.pop3.RbelPop3Command;
+import de.gematik.rbellogger.facets.pop3.RbelPop3Command;
+import de.gematik.rbellogger.facets.pop3.RbelPop3CommandFacet;
 import de.gematik.test.tiger.LocalProxyRbelMessageListener;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.glue.RBelValidatorGlue;
@@ -51,9 +54,10 @@ class RbelMessageValidatorGlueTest {
 
   @Test
   void testSharedValidatorInstance() {
-    TigerConfigurationKeys.TIGER_YAML_VALUE.setAsSystemProperty("""
-localProxyActive: true
-""");
+    TigerConfigurationKeys.TIGER_YAML_VALUE.setAsSystemProperty(
+        """
+      localProxyActive: true
+      """);
     executeWithSecureShutdown(
         () -> {
           TigerDirector.start();
@@ -125,7 +129,7 @@ localProxyActive: true
               .doesNotHaveFacet(RbelPop3CommandFacet.class)
               .doesNotHaveChildWithPath("$.pop3Command");
 
-          glue.reactivateParsingForAll();
+          glue.activateParsingForAll();
           convertedCapaElement =
               rbelConverter.convertElement(
                   RbelElement.builder()
@@ -136,6 +140,60 @@ localProxyActive: true
               .hasFacet(RbelPop3CommandFacet.class)
               .extractChildWithPath("$.pop3Command")
               .hasValueEqualTo(RbelPop3Command.CAPA);
+        });
+  }
+
+  @SneakyThrows
+  @Test
+  void testActivateParser() {
+    TigerConfigurationKeys.TIGER_YAML_VALUE.setAsSystemProperty(
+        """
+        tigerProxy:
+            activateRbelParsingFor:
+                - pop3
+        """);
+    executeWithSecureShutdown(
+        () -> {
+          TigerDirector.start();
+          var tigerProxy = TigerDirector.getTigerTestEnvMgr().getLocalTigerProxyOrFail();
+          var rbelConverter = tigerProxy.getRbelLogger().getRbelConverter();
+
+          RBelValidatorGlue glue = new RBelValidatorGlue();
+
+          glue.deactivateOptionalParsing();
+
+          var convertedCapaElement =
+              rbelConverter.convertElement(
+                  RbelElement.builder()
+                      .rawContent("CAPA\r\n".getBytes(StandardCharsets.US_ASCII))
+                      .build());
+
+          RbelElementAssertion.assertThat(convertedCapaElement)
+              .doesNotHaveFacet(RbelPop3CommandFacet.class);
+
+          glue.activateParsingFor("pop3");
+
+          convertedCapaElement =
+              rbelConverter.convertElement(
+                  RbelElement.builder()
+                      .rawContent("CAPA\r\n".getBytes(StandardCharsets.US_ASCII))
+                      .build());
+
+          RbelElementAssertion.assertThat(convertedCapaElement)
+              .hasFacet(RbelPop3CommandFacet.class)
+              .extractChildWithPath("$.pop3Command")
+              .hasValueEqualTo(RbelPop3Command.CAPA);
+
+          glue.deactivateOptionalParsing();
+
+          convertedCapaElement =
+              rbelConverter.convertElement(
+                  RbelElement.builder()
+                      .rawContent("CAPA\r\n".getBytes(StandardCharsets.US_ASCII))
+                      .build());
+
+          RbelElementAssertion.assertThat(convertedCapaElement)
+              .doesNotHaveFacet(RbelPop3CommandFacet.class);
         });
   }
 

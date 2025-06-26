@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.playwright.workflowui;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
@@ -82,7 +85,7 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
   private static final String user_manual = "user_manual";
   private static final String screenshots = "screenshots";
   protected static final int NUMBER_OF_FEATURES = 2;
-  protected static final int NUMBER_OF_SCENARIOS = 27;
+  protected static final int NUMBER_OF_SCENARIOS = 28;
   protected static final int TOTAL_MESSAGES = 58;
   protected static final int MESSAGES_PER_PAGE = 20;
   protected static final int TOTAL_PAGES =

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 gematik GmbH
+ * Copyright 2024 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
 
 package de.gematik.test.tiger.playwright.workflowui.main;
@@ -122,10 +125,10 @@ class XDynamicSidebarTests extends AbstractBase {
       delimiter = '|',
       textBlock =
           """
-                                      | 0 |
-                    remoteTigerProxy  | 1 |
-                    httpbin           | 2 |
-                """)
+                                                  | 0 |
+                                remoteTigerProxy  | 1 |
+                                httpbin           | 2 |
+                            """)
   void ServerBoxLocalTigerProxyLogfiles(String servername, int counter) {
     openSidebar();
     log.info(
@@ -179,6 +182,11 @@ class XDynamicSidebarTests extends AbstractBase {
 
   @Test
   void testExecutionPaneScenariosExists() {
+    // wait for up to 30 seconds for the other thread to finish execution of second feature file
+    await()
+        .atMost(120, TimeUnit.SECONDS)
+        .pollInterval(1, TimeUnit.SECONDS)
+        .until(() -> page.locator(".test-execution-pane-feature-title").count() == 2);
     assertAll(
         () -> assertThat(page.locator(".test-execution-pane-feature-title")).hasCount(2),
         () ->

@@ -11,6 +11,7 @@ tigerProxy:
   activateRbelParsingFor:
     - X509
     - epa3-vau
+    - pop3
 
 servers:
   httpbin:

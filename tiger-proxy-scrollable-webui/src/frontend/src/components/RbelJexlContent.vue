@@ -1,31 +1,36 @@
 <!--
-  - Copyright 2024 gematik GmbH
-  -
-  - Licensed under the Apache License, Version 2.0 (the "License");
-  - you may not use this file except in compliance with the License.
-  - You may obtain a copy of the License at
-  -
-  -     http://www.apache.org/licenses/LICENSE-2.0
-  -
-  - Unless required by applicable law or agreed to in writing, software
-  - distributed under the License is distributed on an "AS IS" BASIS,
-  - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  - See the License for the specific language governing permissions and
-  - limitations under the License.
-  -
-  -->
 
+
+    Copyright 2021-2025 gematik GmbH
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+    *******
+
+    For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+
+-->
 <script setup lang="ts">
-import {computed, inject, ref} from "vue";
-import {toastSymbol} from "../Toast.ts";
-import {type Message} from "@/api/MessageQueue.ts";
-import {useRbelTestMessage} from "@/api/RbelTestMessage.ts";
-import {rbelQueryModalSymbol} from "../RbelQueryModal.ts";
+import { computed, inject, ref } from "vue";
+import { toastSymbol } from "../Toast.ts";
+import { type Message } from "@/api/MessageQueue.ts";
+import { useRbelTestMessage } from "@/api/RbelTestMessage.ts";
+import { rbelQueryModalSymbol } from "../RbelQueryModal.ts";
 import SshPre from "simple-syntax-highlighter";
 import "simple-syntax-highlighter/dist/sshpre.css";
-import {FontAwesomeIcon} from "@fortawesome/vue-fontawesome";
-import {rbelFilterSymbol} from "@/api/RbelFilter.ts";
-import {faCircleCheck, faCircleExclamation} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { rbelFilterSymbol } from "@/api/RbelFilter.ts";
+import { faCircleCheck, faCircleExclamation } from "@fortawesome/free-solid-svg-icons";
 
 const DEFAULT_JEXL_PATH = '"RbelHttpMessageFacet" =~facets';
 
@@ -55,12 +60,12 @@ defineExpose({
   <div>
     <label for="rbelJexlExpressionTextArea" class="form-label">Expression</label>
     <textarea
-        :class="['form-control', rbelPathTestResult?.errorMessage ? 'is-invalid' : '']"
-        aria-label="Enter Rbel Path"
-        v-model="rbelQueryPath"
-        id="rbelJexlExpressionTextArea"
-        placeholder='e.g. "RbelHttpMessageFacet" =~facets'
-        @keydown.enter.prevent="rbelTest.testRbelPathQuery"
+      :class="['form-control', rbelPathTestResult?.errorMessage ? 'is-invalid' : '']"
+      aria-label="Enter Rbel Path"
+      v-model="rbelQueryPath"
+      id="rbelJexlExpressionTextArea"
+      placeholder='e.g. "RbelHttpMessageFacet" =~facets'
+      @keydown.enter.prevent="rbelTest.testRbelPathQuery"
     ></textarea>
     <div class="invalid-feedback">{{ rbelPathTestResult?.errorMessage }}</div>
     <div class="d-flex flex-row align-items-end justify-content-end gap-2 mt-4">
@@ -68,24 +73,24 @@ defineExpose({
         Test Expression
       </button>
       <button
-          class="btn btn-outline-primary"
-          type="button"
-          :disabled="
+        class="btn btn-outline-primary"
+        type="button"
+        :disabled="
           !(
             rbelPathTestResult?.matchSuccessful === true &&
             rbelPathTestResult?.query === rbelQueryPath
           )
         "
-          @click="() => (rbelFilter.rbelPath.value = rbelQueryPath)"
+        @click="() => (rbelFilter.rbelPath.value = rbelQueryPath)"
       >
         Apply as Filter
       </button>
     </div>
     <div class="card mt-3" v-if="rbelPathTestResult?.matchSuccessful === true">
       <div
-          class="d-flex flex-row align-items-center gap-2 border-start border-success border-4 rounded p-2 py-3"
+        class="d-flex flex-row align-items-center gap-2 border-start border-success border-4 rounded p-2 py-3"
       >
-        <FontAwesomeIcon :icon="faCircleCheck" class="text-success fs-5"/>
+        <FontAwesomeIcon :icon="faCircleCheck" class="text-success fs-5" />
         <div>
           Expression <code>'{{ rbelPathTestResult?.query }}'</code> matches! Below is the entire
           message context.
@@ -94,9 +99,9 @@ defineExpose({
     </div>
     <div class="card mt-3" v-if="rbelPathTestResult?.matchSuccessful === false">
       <div
-          class="d-flex flex-row align-items-center gap-2 border-start border-warning border-4 rounded p-2 py-3"
+        class="d-flex flex-row align-items-center gap-2 border-start border-warning border-4 rounded p-2 py-3"
       >
-        <FontAwesomeIcon :icon="faCircleExclamation" class="text-warning fs-5"/>
+        <FontAwesomeIcon :icon="faCircleExclamation" class="text-warning fs-5" />
         <div>
           Expression <code>'{{ rbelPathTestResult?.query }}'</code> doesn't match anything in the
           message. Below is the entire message context.
@@ -105,11 +110,11 @@ defineExpose({
     </div>
     <div v-if="rbelPathTestResult?.messageContext">
       <SshPre
-          v-for="[key, value] in Object.entries(rbelPathTestResult?.messageContext)"
-          :key="key"
-          language="json"
+        v-for="[key, value] in Object.entries(rbelPathTestResult?.messageContext)"
+        :key="key"
+        language="json"
       >
-        {{ JSON.stringify({[key]: value}, undefined, 2).trim() }}
+        {{ JSON.stringify({ [key]: value }, undefined, 2).trim() }}
       </SshPre>
     </div>
   </div>

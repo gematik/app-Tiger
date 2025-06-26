@@ -1,5 +1,6 @@
 /*
- * Copyright 2025 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.playwright.workflowui.main;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
@@ -97,7 +100,8 @@ class XyFeaturesTest extends AbstractBase {
                 JEXL Rbel Namespace Test                | 23 | 5 |
                 Request a non existing url              | 24 | 0 |
                 Request for testing tooltips            | 25 | 0 |
-                Test zeige HTML                         | 26 | 0 |
+                A scenario with substeps                | 26 | 0 |
+                Test zeige HTML                         | 27 | 0 |
                 """)
   void testScenarioNames(String scenarioName, int counter, int index) {
     openSidebar();
@@ -222,12 +226,12 @@ class XyFeaturesTest extends AbstractBase {
         page.locator(".test-execution-pane-scenario-title")
             .first()
             .locator("..")
-            .locator("table")
+            .locator(".table-test-steps")
             .locator("tr")
             .last()
             .locator("td")
             .last()
-            .locator("div");
+            .locator(".test-step-description");
     String title = last.getAttribute("title");
 
     assertEquals(

@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
 
 package de.gematik.test.tiger.playwright.workflowui.main;
@@ -55,8 +58,16 @@ class ZQuitTests extends AbstractBase {
 
   @Test
   void testQuitMessageOnSidebarExists() {
+    // close the HTML banner from scenario of second feature file to end the test run in the other
+    // thread
+    page.locator("#workflow-messages").locator(".btn-success").click();
     openSidebar();
-    assertThat(page.locator("#test-sidebar-stop-message")).isVisible();
+    // wait for up to 2 minutes for test run in other thread to finish
+    await()
+        .atMost(120, TimeUnit.SECONDS)
+        .alias("Wait for test stopped message")
+        .pollInterval(1, TimeUnit.SECONDS)
+        .until(() -> page.locator("#test-sidebar-stop-message").isVisible());
   }
 
   @Test

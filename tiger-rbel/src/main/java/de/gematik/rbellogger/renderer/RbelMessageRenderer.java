@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.rbellogger.renderer;
 
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.collapsibleCard;
@@ -22,7 +26,10 @@ import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.*;
 import static j2html.TagCreator.*;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.core.*;
+import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
+import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
 import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
 import java.time.format.DateTimeFormatter;
@@ -39,8 +46,12 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
       return span();
     }
     final RbelTcpIpMessageFacet messageFacet = element.getFacetOrFail(RbelTcpIpMessageFacet.class);
-    if (messageFacet.getSender().getFacet(RbelHostnameFacet.class).isEmpty()
-        && messageFacet.getReceiver().getFacet(RbelHostnameFacet.class).isEmpty()) {
+    if (Optional.ofNullable(messageFacet.getSender())
+            .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
+            .isEmpty()
+        && Optional.ofNullable(messageFacet.getReceiver())
+            .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
+            .isEmpty()) {
       return span();
     }
     final String left;
@@ -49,29 +60,25 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
     final Optional<Boolean> isRequest = determineIsRequest(element);
     if (isRequest.isEmpty() || Boolean.TRUE.equals(isRequest.get())) {
       left =
-          messageFacet
-              .getSender()
-              .getFacet(RbelHostnameFacet.class)
+          Optional.ofNullable(messageFacet.getSender())
+              .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
               .map(RbelHostnameFacet::toString)
               .orElse(null);
       right =
-          messageFacet
-              .getReceiver()
-              .getFacet(RbelHostnameFacet.class)
+          Optional.ofNullable(messageFacet.getReceiver())
+              .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
               .map(RbelHostnameFacet::toString)
               .orElse(null);
       icon = "fa-arrow-right";
     } else {
       left =
-          messageFacet
-              .getReceiver()
-              .getFacet(RbelHostnameFacet.class)
+          Optional.ofNullable(messageFacet.getReceiver())
+              .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
               .map(RbelHostnameFacet::toString)
               .orElse(null);
       right =
-          messageFacet
-              .getSender()
-              .getFacet(RbelHostnameFacet.class)
+          Optional.ofNullable(messageFacet.getSender())
+              .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
               .map(RbelHostnameFacet::toString)
               .orElse(null);
       icon = "fa-arrow-left";
@@ -123,7 +130,7 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         element.getFacet(RbelHttpRequestFacet.class);
     final Optional<RbelMessageInfoFacet> messageInfoFacet =
         element.getFacet(RbelMessageInfoFacet.class);
-    final Optional<RbelElement> partnerMessage = findHttpPartner(element);
+    final Optional<RbelElement> partnerMessage = findPartner(element);
     ///////////////////// TITLE (+path, response-code...) //////////////////////////
     List<DomContent> messageTitleElements = new ArrayList<>();
     messageTitleElements.add(a().attr("name", element.getUuid()));
@@ -193,15 +200,10 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         "msg-content");
   }
 
-  private Optional<RbelElement> findHttpPartner(RbelElement element) {
+  private Optional<RbelElement> findPartner(RbelElement element) {
     return element
-        .getFacet(RbelHttpRequestFacet.class)
-        .map(RbelHttpRequestFacet::getResponse)
-        .or(
-            () ->
-                element
-                    .getFacet(RbelHttpResponseFacet.class)
-                    .map(RbelHttpResponseFacet::getRequest));
+        .getFacet(TracingMessagePairFacet.class)
+        .flatMap(msg -> msg.getOtherMessage(element));
   }
 
   private List<DomContent> performRenderingForBody(

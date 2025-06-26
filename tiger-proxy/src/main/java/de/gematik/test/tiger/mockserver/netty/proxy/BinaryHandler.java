@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.mockserver.netty.proxy;
 
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.closeOnFlush;
@@ -35,8 +39,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import lombok.extern.slf4j.Slf4j;
 
 /*
@@ -48,23 +50,24 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
 
   private final NettyHttpClient httpClient;
   private final BinaryExchangeHandler binaryExchangeCallback;
+  private final BinaryModifierApplier binaryModifierApplier;
 
   public BinaryHandler(
       final MockServerConfiguration configuration, final NettyHttpClient httpClient) {
     super(true);
     this.httpClient = httpClient;
     this.binaryExchangeCallback = configuration.binaryProxyListener();
+    this.binaryModifierApplier = new BinaryModifierApplier(configuration);
   }
 
   @Override
   protected void channelRead0(ChannelHandlerContext ctx, ByteBuf byteBuf) {
     BinaryMessage binaryRequest = bytes(ByteBufUtil.getBytes(byteBuf));
-    log.atDebug()
-        .addArgument(() -> ByteBufUtil.hexDump(binaryRequest.getBytes()))
-        .log("received binary request: {}");
     final InetSocketAddress remoteAddress = getRemoteAddress(ctx);
     if (remoteAddress != null) {
-      sendMessage(new BinaryRequestInfo(ctx.channel(), binaryRequest, remoteAddress));
+      binaryModifierApplier
+          .applyModifierPlugins(binaryRequest, ctx)
+          .forEach(msg -> sendMessage(new BinaryRequestInfo(ctx.channel(), msg, remoteAddress)));
     } else {
       log.info(
           "unknown message format, only HTTP requests are supported for mocking or HTTP &"
@@ -81,20 +84,26 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
     }
   }
 
-  public void sendMessage(BinaryRequestInfo binaryRequestInfo) {
-    CompletableFuture<BinaryMessage> binaryResponseFuture =
-        httpClient.sendRequest(
-            binaryRequestInfo, isSslEnabledUpstream(binaryRequestInfo.getIncomingChannel()));
+  private void sendMessage(BinaryRequestInfo binaryRequestInfo) {
+    httpClient
+        .sendRequest(
+            binaryRequestInfo, isSslEnabledUpstream(binaryRequestInfo.getIncomingChannel()))
+        .exceptionally(
+            throwable -> {
+              binaryExchangeCallback.propagateExceptionMessageSafe(
+                  throwable,
+                  RbelHostname.create(binaryRequestInfo.getRemoteServerAddress()),
+                  RbelHostname.create(binaryRequestInfo.getIncomingChannel().remoteAddress()));
+              return null;
+            });
 
-    processNotWaitingForResponse(binaryRequestInfo, binaryResponseFuture);
+    processNotWaitingForResponse(binaryRequestInfo);
   }
 
-  private void processNotWaitingForResponse(
-      BinaryRequestInfo binaryRequestInfo, CompletableFuture<BinaryMessage> binaryResponseFuture) {
+  private void processNotWaitingForResponse(BinaryRequestInfo binaryRequestInfo) {
     if (binaryExchangeCallback != null) {
       binaryExchangeCallback.onProxy(
           binaryRequestInfo.getDataToSend(),
-          Optional.of(binaryResponseFuture),
           binaryRequestInfo.getRemoteServerAddress(),
           binaryRequestInfo.getIncomingChannel().remoteAddress());
     }

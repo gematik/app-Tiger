@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,20 +13,26 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.rbellogger.data;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.builder.RbelBuilder;
+import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import de.gematik.rbellogger.writer.RbelContentTreeConverter;
 import de.gematik.rbellogger.writer.tree.RbelContentTreeNode;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import lombok.val;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -61,10 +68,11 @@ class RbelContentTreeNodeTest {
             """;
 
   static String xmlTest = "<blub><foo>bar</foo></blub>";
+  private RbelConverter converter;
 
   @BeforeEach
   void setup() {
-    RbelConverter converter = RbelLogger.build().getRbelConverter();
+    converter = RbelLogger.build().getRbelConverter();
 
     final RbelElement input1 = new RbelElement(jsonTest.getBytes(StandardCharsets.UTF_8), null);
     converter.convertElement(input1);
@@ -173,5 +181,37 @@ class RbelContentTreeNodeTest {
   void setRawStringContent() {
     msg1.findElement("$.blub.foo").orElseThrow().setRawStringContent("new String");
     assertEquals("new String", msg1.findElement("$.blub.foo").orElseThrow().getRawStringContent());
+  }
+
+  @Test
+  void changeJsonRootNodeChildDirectly_shouldKeepUntouchedChildrenIntact() {
+    final RbelElement input =
+        converter.convertElement(
+            """
+        {
+          "alice": "bob",
+          "tom": "jerry"
+        }
+        """,
+            null);
+    val builder =
+        new RbelBuilder(
+            new RbelContentTreeConverter(input, new TigerJexlContext()).convertToContentTree());
+    builder.setValueAt("$.alice", "munro");
+    RbelElementAssertion.assertThat(converter.convertElement(builder.serialize(), null))
+        .hasStringContentEqualToAtPosition("$.alice", "munro")
+        .hasStringContentEqualToAtPosition("$.tom", "jerry");
+  }
+
+  @Test
+  void replaceRootNodeChildDirectly() {
+    final RbelElement input = converter.convertElement("{‘alice': 'bob'}", null);
+    val builder =
+        new RbelBuilder(
+            new RbelContentTreeConverter(input, new TigerJexlContext()).convertToContentTree());
+    builder.setValueAt("$.", "{'foo':'bar'}");
+    RbelElementAssertion.assertThat(converter.convertElement(builder.serialize(), null))
+        .hasStringContentEqualToAtPosition("$.foo", "bar")
+        .doesNotHaveChildWithPath("$.alice");
   }
 }

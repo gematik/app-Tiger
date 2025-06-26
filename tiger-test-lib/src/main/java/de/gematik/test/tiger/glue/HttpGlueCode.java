@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.glue;
 
 import static de.gematik.test.tiger.lib.TigerHttpClient.*;
 
 import de.gematik.test.tiger.common.config.TigerConfigurationKey;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.glue.annotation.FirstColumnKeyTable;
+import de.gematik.test.tiger.glue.annotation.FirstRowKeyTable;
+import de.gematik.test.tiger.glue.annotation.ResolvableArgument;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Wenn;
@@ -104,6 +110,7 @@ public class HttpGlueCode {
           + " sendet:")
   @Dann("TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} mit folgenden Headern:")
   @ResolvableArgument
+  @FirstColumnKeyTable
   public void sendEmptyRequestWithHeaders(Method method, URI address, DataTable customHeaders) {
     log.info("Sending empty {} request with headers to {}", method, address);
     Map<String, String> defaultHeaders =
@@ -133,6 +140,7 @@ public class HttpGlueCode {
       "TGR sende eine leere {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten"
           + " mit folgenden Headern:")
   @ResolvableArgument
+  @FirstColumnKeyTable
   public void sendEmptyRequestWithHeadersNonBlocking(
       Method method, URI address, DataTable customHeaders) {
     log.info("Sending empty {} non-blocking request with headers to {}", method, address);
@@ -213,6 +221,7 @@ public class HttpGlueCode {
   @Wenn("TGR eine {requestType} Anfrage an {tigerResolvedUrl} mit den folgenden Daten sendet:")
   @Dann("TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} mit folgenden Daten:")
   @ResolvableArgument
+  @FirstRowKeyTable
   public void sendRequestWithParams(Method method, URI address, DataTable parameters) {
     List<Map<String, String>> dataAsMaps = parameters.asMaps();
     if (dataAsMaps.size() != 1) {
@@ -304,6 +313,7 @@ public class HttpGlueCode {
       "TGR sende eine {requestType} Anfrage an {tigerResolvedUrl} ohne auf Antwort zu warten mit"
           + " folgenden Daten:")
   @ResolvableArgument
+  @FirstRowKeyTable
   public void sendRequestWithParamsNonBlocking(Method method, URI address, DataTable parameters) {
     List<Map<String, String>> dataAsMaps = parameters.asMaps();
     if (dataAsMaps.size() != 1) {

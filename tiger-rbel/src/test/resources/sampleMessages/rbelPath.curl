@@ -1,5 +1,6 @@
 HTTP/1.1 200 OK
 Cache-Control: max-age=300
+Content-Length: 2654 
 Some-Value: {"urn:telematik:claims:email":"emailValue"}
 nbf: nbf-Wert in http header
 

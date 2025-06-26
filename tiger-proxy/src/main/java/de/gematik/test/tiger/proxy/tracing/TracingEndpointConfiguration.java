@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,11 +13,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.proxy.tracing;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Configuration;
@@ -38,13 +44,16 @@ public class TracingEndpointConfiguration
     implements WebSocketMessageBrokerConfigurer, ApplicationListener<ContextStoppedEvent> {
 
   private final TigerProxyConfiguration tigerProxyConfiguration;
-  private final ThreadPoolTaskExecutor taskExecutor = getThreadPoolTaskExecutor();
-  private final ThreadPoolTaskScheduler scheduler = getThreadPoolTaskScheduler();
+  private final List<ThreadPoolTaskExecutor> taskExecutors = new ArrayList<>();
+  private final List<ThreadPoolTaskScheduler> schedulers = new ArrayList<>();
 
   private static ThreadPoolTaskExecutor getThreadPoolTaskExecutor() {
     final ThreadPoolTaskExecutor threadPoolTaskExecutor = new ThreadPoolTaskExecutor();
     threadPoolTaskExecutor.setWaitForTasksToCompleteOnShutdown(true);
     threadPoolTaskExecutor.setAwaitTerminationSeconds(2);
+    threadPoolTaskExecutor.setCorePoolSize(4);
+    threadPoolTaskExecutor.setMaxPoolSize(10);
+    threadPoolTaskExecutor.initialize();
     return threadPoolTaskExecutor;
   }
 
@@ -53,6 +62,8 @@ public class TracingEndpointConfiguration
     scheduler.setThreadNamePrefix("TGR_scheduler-");
     scheduler.setWaitForTasksToCompleteOnShutdown(true);
     scheduler.setAwaitTerminationSeconds(2);
+    scheduler.setPoolSize(4);
+    scheduler.setThreadGroupName("TGR_scheduler-foobar");
     scheduler.initialize();
     return scheduler;
   }
@@ -62,7 +73,7 @@ public class TracingEndpointConfiguration
     config.enableSimpleBroker("/topic");
     config.setApplicationDestinationPrefixes(
         tigerProxyConfiguration.getTrafficEndpointConfiguration().getStompTopic());
-    config.configureBrokerChannel().taskExecutor(taskExecutor);
+    config.configureBrokerChannel().taskExecutor(getThreadPoolTaskExecutor());
   }
 
   @Override
@@ -70,32 +81,35 @@ public class TracingEndpointConfiguration
     registry
         .addEndpoint(tigerProxyConfiguration.getTrafficEndpointConfiguration().getWsEndpoint())
         .withSockJS()
-        .setTaskScheduler(scheduler);
+        .setTaskScheduler(getThreadPoolTaskScheduler());
 
     registry
         .addEndpoint(tigerProxyConfiguration.getTrafficEndpointConfiguration().getWsEndpoint())
         .setHandshakeHandler(new DefaultHandshakeHandler(new TomcatRequestUpgradeStrategy()))
-        .setAllowedOrigins("*");
+        .setAllowedOrigins("*")
+        .withSockJS()
+        .setTaskScheduler(getThreadPoolTaskScheduler());
 
     registry
         .addEndpoint("/newMessages")
         .setHandshakeHandler(new DefaultHandshakeHandler(new TomcatRequestUpgradeStrategy()))
-        .withSockJS();
+        .withSockJS()
+        .setTaskScheduler(getThreadPoolTaskScheduler());
   }
 
   @Override
   public void configureClientOutboundChannel(ChannelRegistration registration) {
-    registration.taskExecutor(taskExecutor);
+    registration.taskExecutor(getThreadPoolTaskExecutor());
   }
 
   @Override
   public void configureClientInboundChannel(ChannelRegistration registration) {
-    registration.taskExecutor(taskExecutor);
+    registration.taskExecutor(getThreadPoolTaskExecutor());
   }
 
   @Override
   public void onApplicationEvent(ContextStoppedEvent event) {
-    taskExecutor.shutdown();
-    scheduler.shutdown();
+    taskExecutors.forEach(ThreadPoolTaskExecutor::shutdown);
+    schedulers.forEach(ThreadPoolTaskScheduler::shutdown);
   }
 }

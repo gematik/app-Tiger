@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,18 +13,22 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.rbellogger.exceptions;
 
-import de.gematik.rbellogger.converter.RbelConverterPlugin;
+import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelNoteFacet;
+import de.gematik.rbellogger.data.core.RbelNoteFacet;
 import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.util.Base64;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 
@@ -72,6 +77,11 @@ public class RbelConversionException extends GenericTigerException {
     this.converter = plugin;
   }
 
+  public RbelConversionException(String msg, Exception e, RbelElement value) {
+    super(msg, e);
+    this.currentElement = value;
+  }
+
   public static RbelConversionException wrapIfNotAConversionException(
       Exception input, RbelConverterPlugin plugin, RbelElement currentElement) {
     if (input instanceof RbelConversionException conversionException) {
@@ -88,8 +98,9 @@ public class RbelConversionException extends GenericTigerException {
     log.debug("Stack trace", this);
     if (log.isTraceEnabled()) {
       log.trace(
-          "Content in failed conversion-attempt was (B64-encoded) {}",
-          Base64.getEncoder().encodeToString(currentElement.getRawContent()));
+          "Content in failed conversion-attempt was {} bytes: {}",
+          currentElement.getRawContent().length,
+          currentElement.getRawStringContent());
       if (currentElement.getParentNode() != null) {
         log.trace(
             "Parent-Content in failed conversion-attempt was (B64-encoded) {}",
@@ -100,12 +111,18 @@ public class RbelConversionException extends GenericTigerException {
 
   private String generateGenericConversionErrorMessage() {
     return "Exception during conversion with plugin '"
-        + (converter.getClass().isAnonymousClass()
-            ? converter.getClass().getName()
-            : converter.getClass().getSimpleName())
+        + chooseAppropriateScreenNameForConverter()
         + "' ("
         + getMessage()
         + ")";
+  }
+
+  private String chooseAppropriateScreenNameForConverter() {
+    if (StringUtils.isEmpty(converter.getClass().getSimpleName())) {
+      return converter.getClass().getName();
+    } else {
+      return converter.getClass().getSimpleName();
+    }
   }
 
   public void addErrorNoteFacetToElement() {

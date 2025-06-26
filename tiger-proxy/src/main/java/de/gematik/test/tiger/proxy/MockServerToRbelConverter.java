@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,16 +13,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.proxy;
 
-import de.gematik.rbellogger.converter.RbelConverter;
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelElementConvertionPair;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.test.tiger.mockserver.model.Header;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
@@ -29,6 +31,7 @@ import de.gematik.test.tiger.mockserver.model.SocketAddress;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyParsingException;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
 import de.gematik.test.tiger.proxy.exceptions.TigerRoutingErrorFacet;
+import io.netty.channel.ChannelHandlerContext;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -37,6 +40,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,81 +56,73 @@ public class MockServerToRbelConverter {
   private final RbelConverter rbelConverter;
 
   public CompletableFuture<RbelElement> convertResponse(
+      HttpRequest request,
       HttpResponse response,
       String senderUrl,
       String receiverUrl,
-      CompletableFuture<RbelElement> pairedParsedRequest,
-      Optional<ZonedDateTime> timestamp) {
+      Optional<ZonedDateTime> timestamp,
+      AtomicReference<String> previousMessageReference) {
     log.atTrace()
         .addArgument(response)
         .addArgument(response.getHeaders())
         .addArgument(() -> new String(response.getBody()))
         .log("Converting response {}, headers {}, body {}");
 
-    return rbelConverter
-        .parseMessageAsync(
-            new RbelElementConvertionPair(responseToRbelMessage(response), pairedParsedRequest),
-            convertUri(senderUrl),
-            RbelHostname.fromString(receiverUrl).orElse(null),
-            timestamp)
-        .thenApply(element -> addHttpResponseFacetIfNotPresent(response, element));
-  }
-
-  private static RbelElement addHttpResponseFacetIfNotPresent(
-      HttpResponse response, RbelElement element) {
-    if (!element.hasFacet(RbelHttpResponseFacet.class)) {
-      element.addFacet(
-          RbelHttpResponseFacet.builder()
-              .responseCode(
-                  RbelElement.builder()
-                      .parentNode(element)
-                      .rawContent(response.getStatusCode().toString().getBytes())
-                      .build())
-              .build());
-    }
-    return element;
+    final RbelElement responseRbelMessage = responseToRbelMessage(response, request);
+    val conversionMetadata =
+        new RbelMessageMetadata()
+            .withSender(convertUri(senderUrl))
+            .withReceiver(RbelHostname.fromString(receiverUrl).orElse(null))
+            .withPreviousMessage(request.getCorrespondingRbelMessage().getUuid())
+            .withPairedMessage(request.getCorrespondingRbelMessage().getUuid())
+            .withTransmissionTime(timestamp.orElse(null))
+            .withPreviousMessage(previousMessageReference.getAndSet(responseRbelMessage.getUuid()));
+    return rbelConverter.parseMessageAsync(responseRbelMessage, conversionMetadata);
   }
 
   public CompletableFuture<RbelElement> convertRequest(
-      HttpRequest request, String protocolAndHost, Optional<ZonedDateTime> timestamp) {
-    if (request.getParsedRbelMessage() != null) {
-      return CompletableFuture.completedFuture(request.getParsedRbelMessage());
+      HttpRequest request,
+      String protocolAndHost,
+      Optional<ZonedDateTime> timestamp,
+      AtomicReference<String> previousMessageReference) {
+    if (request.getCorrespondingRbelMessage() != null) {
+      return CompletableFuture.completedFuture(request.getCorrespondingRbelMessage());
     }
     log.atTrace().addArgument(request::printLogLineDescription).log("Converting request {}");
 
-    return rbelConverter
-        .parseMessageAsync(
-            new RbelElementConvertionPair(requestToRbelMessage(request)),
-            RbelHostname.fromString(request.getSenderAddress()).orElse(null),
-            convertUri(protocolAndHost),
-            timestamp)
-        .thenApply(e -> addHttpRequestFacetIfNotPresent(request, e));
+    val unparsedRbelMessage = requestToRbelMessage(request);
+    val conversionMetadata =
+        new RbelMessageMetadata()
+            .withSender(RbelHostname.fromString(request.getSenderAddress()).orElse(null))
+            .withReceiver(convertUri(protocolAndHost))
+            .withTransmissionTime(timestamp.orElse(null))
+            .withPreviousMessage(previousMessageReference.getAndSet(unparsedRbelMessage.getUuid()));
+    val parseMessageFuture =
+        rbelConverter.parseMessageAsync(unparsedRbelMessage, conversionMetadata);
+
+    request.setParsedMessageFuture(parseMessageFuture);
+    request.setCorrespondingRbelMessage(unparsedRbelMessage);
+    return parseMessageFuture;
   }
 
   public RbelElement convertErrorResponse(
-      HttpRequest request, String protocolAndHost, TigerProxyRoutingException routingException) {
+      HttpRequest request,
+      String protocolAndHost,
+      TigerProxyRoutingException routingException,
+      AtomicReference<String> previousMessageReference) {
     val message = new RbelElement(new byte[] {}, null);
     message.addFacet(new TigerRoutingErrorFacet(routingException));
     return rbelConverter.parseMessage(
-        new RbelElementConvertionPair(message),
-        convertUri(protocolAndHost),
-        Optional.ofNullable(request)
-            .map(HttpRequest::getReceiverAddress)
-            .map(SocketAddress::toRbelHostname)
-            .orElse(null),
-        Optional.of(routingException.getTimestamp()));
-  }
-
-  private RbelElement addHttpRequestFacetIfNotPresent(HttpRequest request, RbelElement element) {
-    if (!element.hasFacet(RbelHttpRequestFacet.class)) {
-      element.addFacet(
-          RbelHttpRequestFacet.builder()
-              .path(RbelElement.wrap(element, request.getPath()))
-              .method(RbelElement.wrap(element, request.getMethod()))
-              .build());
-    }
-
-    return element;
+        message,
+        new RbelMessageMetadata()
+            .withSender(convertUri(protocolAndHost))
+            .withReceiver(
+                Optional.ofNullable(request)
+                    .map(HttpRequest::getReceiverAddress)
+                    .map(SocketAddress::toRbelHostname)
+                    .orElse(null))
+            .withTransmissionTime(routingException.getTimestamp())
+            .withPreviousMessage(previousMessageReference.getAndSet(message.getUuid())));
   }
 
   private RbelHostname convertUri(String protocolAndHost) {
@@ -141,14 +138,18 @@ public class MockServerToRbelConverter {
     }
   }
 
-  public RbelElement responseToRbelMessage(final HttpResponse response) {
+  public RbelElement responseToRbelMessage(final HttpResponse response, final HttpRequest request) {
     final byte[] httpMessage = responseToRawMessage(response);
-    return RbelElement.builder().rawContent(httpMessage).build();
+    final RbelElement result = RbelElement.builder().rawContent(httpMessage).build();
+    result.addFacet(new MockServerResponseFacet(request, response));
+    return result;
   }
 
   public RbelElement requestToRbelMessage(final HttpRequest request) {
     final byte[] httpMessage = requestToRawMessage(request);
-    return RbelElement.builder().rawContent(httpMessage).build();
+    final RbelElement result = RbelElement.builder().rawContent(httpMessage).build();
+    result.addFacet(new MockServerRequestFacet(request));
+    return result;
   }
 
   private byte[] requestToRawMessage(HttpRequest request) {
@@ -202,5 +203,15 @@ public class MockServerToRbelConverter {
     }
 
     return pathToQueryJoiner.toString();
+  }
+
+  public BiConsumer<TigerProxyRoutingException, ChannelHandlerContext> exceptionCallback() {
+    return (exception, channelHandlerContext) -> {
+      try {
+        convertErrorResponse(null, null, exception, new AtomicReference<>(null));
+      } catch (Exception e) {
+        log.error("Error while converting error response", e);
+      }
+    };
   }
 }

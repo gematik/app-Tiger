@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
 
 package de.gematik.test.tiger.playwright.workflowui.main;
@@ -22,17 +25,16 @@ import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.microsoft.playwright.Download;
-import com.microsoft.playwright.FrameLocator;
-import com.microsoft.playwright.Keyboard;
-import com.microsoft.playwright.Locator;
+import com.microsoft.playwright.*;
 import com.microsoft.playwright.Locator.FilterOptions;
-import com.microsoft.playwright.Page;
 import de.gematik.test.tiger.playwright.workflowui.AbstractBase;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 /**
  * Tests for dynamic content of the web ui content, e.g. tests of all buttons, dropdowns, modals.
@@ -314,6 +316,6 @@ class XYDynamicRbelLogTests extends AbstractBase {
     }
     Assertions.assertThat(ctr)
         .isLessThanOrEqualTo(200)
-        .withFailMessage("Pressed page down 20 time3s but didnt reach end of rbel log list!");
+        .withFailMessage("Pressed page down 20 times but didnt reach end of rbel log list!");
   }
 }

@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,20 +13,24 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.rbellogger.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.google.common.io.Files;
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
-import de.gematik.rbellogger.data.facet.RbelCetpFacet;
-import de.gematik.rbellogger.data.facet.RbelXmlFacet;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.facets.cetp.RbelCetpFacet;
+import de.gematik.rbellogger.facets.xml.RbelXmlFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
 import java.util.List;
-import java.util.Optional;
 import lombok.SneakyThrows;
 import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.BeforeAll;
@@ -46,7 +51,7 @@ class CetpConverterTest {
   @Test
   void convertMessage_shouldGiveCetpFacet() {
     var convertedMessage =
-        rbelConverter.parseMessage(cetpMessageAsBytes, null, null, Optional.empty());
+        rbelConverter.parseMessage(cetpMessageAsBytes, new RbelMessageMetadata());
     assertThat(convertedMessage.hasFacet(RbelCetpFacet.class)).isTrue();
     assertThat(convertedMessage.findElement("$.body").get().hasFacet(RbelXmlFacet.class)).isTrue();
   }
@@ -55,14 +60,14 @@ class CetpConverterTest {
   void convertMessageWithMissingBytes_shouldNotGiveCetpFacet() {
     var convertedMessage =
         rbelConverter.parseMessage(
-            Arrays.copyOfRange(cetpMessageAsBytes, 0, 50), null, null, Optional.empty());
+            Arrays.copyOfRange(cetpMessageAsBytes, 0, 50), new RbelMessageMetadata());
     assertThat(convertedMessage.hasFacet(RbelCetpFacet.class)).isFalse();
   }
 
   @Test
   void messageLengthShouldBeWrappedCorrectly() {
     var convertedMessage =
-        rbelConverter.parseMessage(cetpMessageAsBytes, null, null, Optional.empty());
+        rbelConverter.parseMessage(cetpMessageAsBytes, new RbelMessageMetadata());
     assertThat(convertedMessage.findElement("$.messageLength").get().seekValue(Integer.class))
         .get()
         .isEqualTo(286);
@@ -82,7 +87,7 @@ class CetpConverterTest {
   @Test
   @SuppressWarnings("java:S2699")
   void checkRendering() {
-    rbelConverter.parseMessage(cetpMessageAsBytes, null, null, Optional.empty());
+    rbelConverter.parseMessage(cetpMessageAsBytes, new RbelMessageMetadata());
     RbelHtmlRenderer.render(rbelConverter.getMessageList());
   }
 
@@ -90,7 +95,7 @@ class CetpConverterTest {
   @Test
   void shouldRenderCleanHtmlCetp2() {
     var convertedMessage =
-        rbelConverter.parseMessage(cetpMessageAsBytes, null, null, Optional.empty());
+        rbelConverter.parseMessage(cetpMessageAsBytes, new RbelMessageMetadata());
     assertThat(RbelHtmlRenderer.render(List.of(convertedMessage))).isNotBlank();
   }
 }

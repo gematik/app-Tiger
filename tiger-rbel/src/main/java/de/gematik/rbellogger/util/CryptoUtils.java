@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.rbellogger.util;
 
 import java.nio.charset.StandardCharsets;
@@ -78,8 +82,8 @@ public class CryptoUtils {
   public static byte[] decryptUnsafe(
       RbelContent encMessage, Key secretKey, int gcmIvLengthInBytes, int gcmTagLengthInBytes)
       throws GeneralSecurityException {
-    byte[] iv = encMessage.subArray(0, gcmIvLengthInBytes);
-    byte[] cipherText = encMessage.subArray(GCM_IV_LENGTH_IN_BYTES, encMessage.size());
+    byte[] iv = encMessage.toByteArray(0, gcmIvLengthInBytes);
+    byte[] cipherText = encMessage.toByteArray(GCM_IV_LENGTH_IN_BYTES, encMessage.size());
     Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", BOUNCY_CASTLE_PROVIDER); // NOSONAR
 
     cipher.init(Cipher.DECRYPT_MODE, secretKey, new GCMParameterSpec(gcmTagLengthInBytes * 8, iv));

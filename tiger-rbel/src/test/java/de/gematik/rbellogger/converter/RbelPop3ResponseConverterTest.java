@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,14 +13,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.rbellogger.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelPop3ResponseFacet;
+import de.gematik.rbellogger.facets.pop3.RbelPop3ResponseFacet;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,10 +40,14 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
     String count = "2";
     String size = "320";
     String header = count + " messages (" + size + " octets)";
-    String response = status + " " + header + "\r\n";
+    String response = status + " " + header + "\r\n1 100\r\n2 220\r\n.\r\n";
+
+    convertToRbelElement("+OK greeting\r\n");
     RbelElement element = convertMessagePair(request, response);
 
-    checkListOrStatResponseWithoutBody(element, status, header, count, size);
+    checkListOrStatResponse(element, status, header, count, size)
+        .andTheInitialElement()
+        .hasChildWithPath("$.pop3Body");
   }
 
   @Test
@@ -48,7 +56,9 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
     String status = "+OK";
     String count = "2";
     String header = count + " messages:";
-    String response = status + " " + header + "\r\n";
+    String response = status + " " + header + "\r\n1 100\r\n2 220\r\n.\r\n";
+
+    convertToRbelElement("+OK greeting\r\n");
     RbelElement element = convertMessagePair(request, response);
     RbelElementAssertion.assertThat(element)
         .extractChildWithPath("$.pop3Status")
@@ -62,7 +72,7 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
         .andTheInitialElement()
         .doesNotHaveChildWithPath("$.pop3Header.size")
         .andTheInitialElement()
-        .doesNotHaveChildWithPath("$.pop3Body");
+        .hasChildWithPath("$.pop3Body");
   }
 
   @Test
@@ -73,14 +83,17 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
     String size = "320";
     String header = count + " " + size;
     String response = status + " " + header + "\r\n";
+    convertToRbelElement("+OK greeting\r\n");
     RbelElement element = convertMessagePair(request, response);
 
-    checkListOrStatResponseWithoutBody(element, status, header, count, size);
+    checkListOrStatResponse(element, status, header, count, size)
+        .andTheInitialElement()
+        .doesNotHaveChildWithPath("$.pop3Body");
   }
 
-  private static void checkListOrStatResponseWithoutBody(
+  private static RbelElementAssertion checkListOrStatResponse(
       RbelElement element, String status, String header, String count, String size) {
-    RbelElementAssertion.assertThat(element)
+    return RbelElementAssertion.assertThat(element)
         .extractChildWithPath("$.pop3Status")
         .hasStringContentEqualTo(status)
         .andTheInitialElement()
@@ -91,9 +104,7 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
         .hasStringContentEqualTo(count)
         .andTheInitialElement()
         .extractChildWithPath("$.pop3Header.size")
-        .hasStringContentEqualTo(size)
-        .andTheInitialElement()
-        .doesNotHaveChildWithPath("$.pop3Body");
+        .hasStringContentEqualTo(size);
   }
 
   @ParameterizedTest
@@ -103,6 +114,8 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
     String status = "+OK";
     String header = "foobar foobar";
     String response = status + " " + header + "\r\n";
+
+    convertToRbelElement("+OK greeting\r\n");
     RbelElement element = convertMessagePair(request, response);
 
     RbelElementAssertion.assertThat(element).doesNotHaveFacet(RbelPop3ResponseFacet.class);
@@ -115,6 +128,8 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
     String status = "+OK";
     String body = "foobar foobar";
     String response = status + "\r\n" + body + "\r\n.\r\n";
+
+    convertToRbelElement("+OK greeting\r\n");
     RbelElement element = convertMessagePair(request, response);
     RbelElementAssertion.assertThat(element)
         .extractChildWithPath("$.pop3Status")
@@ -134,6 +149,7 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
     String body = "foobar foobar";
     String header = " ";
     String response = status + " " + header + "\r\n" + body + "\r\n.\r\n";
+    convertToRbelElement("+OK greeting\r\n");
     RbelElement element = convertMessagePair(request, response);
     RbelElementAssertion.assertThat(element)
         .extractChildWithPath("$.pop3Status")
@@ -162,23 +178,13 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"USER x@y.de", "PASS xzy"})
-  void shouldRejectMultiline(String command) {
-    String request = command + "\r\n";
-    String status = "+OK";
-    String body = "foobar foobar";
-    String response = status + "\r\n" + body + "\r\n.\r\n";
-    RbelElement element = convertMessagePair(request, response);
-
-    RbelElementAssertion.assertThat(element).doesNotHaveFacet(RbelPop3ResponseFacet.class);
-  }
-
-  @ParameterizedTest
   @ValueSource(strings = {"CAPA", "RETR 1", "TOP 2 10"})
   void shouldRejectMissingBody(String command) {
     String request = command + "\r\n";
     String status = "+OK";
     String response = status + "\r\n";
+
+    convertToRbelElement("+OK greeting\r\n");
     RbelElement element = convertMessagePair(request, response);
 
     RbelElementAssertion.assertThat(element).doesNotHaveFacet(RbelPop3ResponseFacet.class);
@@ -221,6 +227,8 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
         """;
     String input = status + " " + header + "\r\n" + duplicateDotsAtLineBegins(body) + "\r\n.\r\n";
 
+    convertToRbelElement("+OK greeting\r\n");
+    convertToRbelElement("RETR 1\r\n");
     RbelElement element = convertToRbelElement(input);
     RbelElementAssertion.assertThat(element)
         .extractChildWithPath("$.pop3Status")
@@ -236,13 +244,11 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
   @ParameterizedTest
   @ValueSource(
       strings = {
-        "+OK foobar foobar\r\nfoobar foobar\r\n", // missing dot trailer
-        "-ERR foobar foobar", //                     missing CRLF
-        "-ERROR foobar foobar\r\n", //               invalid status
-        "+OK-STATUS foobar\r\n", //                  invalid status
-        "+OK\r\n", //                                missing info
-        "-ERR\r\n", //                               missing info
-        "-OK foobar\r\n.\r\nbarfoo\r\n" //           trailing content
+        "+OK foobar foobar\r", //      missing LF
+        "-ERR foobar foobar", //       missing CRLF
+        "-ERROR foobar foobar\r\n", // invalid status
+        "+OK-STATUS foobar\r\n", //    invalid status
+        "-ERR\r\n", //                 missing info
       })
   void shouldRejectMalformedPop3Response(String input) {
     RbelElement element = convertToRbelElement(input);
@@ -269,8 +275,9 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
         "+OK Capability list follows\r\n",
         "+OK\r\n",
       })
-  void afterCapaCommand_ResponseWithoutCrLfCrLfIsRejected(String capaResponse) {
+  void afterCapaCommand_ResponseWithoutCrlfCrlfIsRejected(String capaResponse) {
 
+    convertToRbelElement("+OK greeting\r\n");
     var request = "CAPA\r\n";
     var capaResponseElement = convertMessagePair(request, capaResponse);
 
