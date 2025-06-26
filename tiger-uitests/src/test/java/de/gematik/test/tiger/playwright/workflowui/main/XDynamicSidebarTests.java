@@ -13,7 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
+
 package de.gematik.test.tiger.playwright.workflowui.main;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
@@ -121,10 +125,10 @@ class XDynamicSidebarTests extends AbstractBase {
       delimiter = '|',
       textBlock =
           """
-                                      | 0 |
-                    remoteTigerProxy  | 1 |
-                    httpbin           | 2 |
-                """)
+                                                  | 0 |
+                                remoteTigerProxy  | 1 |
+                                httpbin           | 2 |
+                            """)
   void ServerBoxLocalTigerProxyLogfiles(String servername, int counter) {
     openSidebar();
     log.info(

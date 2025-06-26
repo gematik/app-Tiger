@@ -39,6 +39,12 @@ pipeline {
             }
         }
 
+       stage('Check for needed files') {
+            steps {
+                openSourceGuidelineCheck()
+            }
+        }
+
         stage('set Version') {
             steps {
                 mavenSetVersionFromJiraProject(JIRA_PROJECT_ID, POM_PATH_SET_VERSION, true, "", false)

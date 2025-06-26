@@ -48,6 +48,17 @@ pipeline {
             }
         }
 
+       stage('Check for needed files') {
+            when {
+                not {
+                    branch BRANCH
+                }
+            }
+            steps {
+                openSourceGuidelineCheck()
+            }
+        }
+
         stage('Build') {
             steps {
                 mavenBuild(POM_PATH)
