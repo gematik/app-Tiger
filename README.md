@@ -65,6 +65,15 @@ licenses:
 * Font Awesome by Dave Gandy - [Website](http://fontawesome.io) [License](https://fontawesome.com/license/free) (Icons:
   CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
 
+## License
+
+Copyright 2025 gematik GmbH
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License.
+
+See the [LICENSE](./LICENSE) for the specific language governing permissions and limitations under the License.
+
 ## Additional Notes and Disclaimer from gematik GmbH
 
 1. Copyright notice: Each published work result is accompanied by an explicit statement of the license conditions for
