@@ -1,5 +1,6 @@
 /*
- * Copyright 2025 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.proxy.controller;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -25,7 +29,7 @@ import static org.hamcrest.core.StringContains.containsString;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.data.RbelElementAssertion;
-import de.gematik.rbellogger.data.facet.TracingMessagePairFacet;
+import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
@@ -57,7 +61,7 @@ class TigerWebUiControllerTest {
   private static final int TOTAL_OF_EXCHANGED_MESSAGES = 4;
 
   @BeforeEach
-  public void setupBackendServer(WireMockRuntimeInfo runtimeInfo) {
+  void setupBackendServer(WireMockRuntimeInfo runtimeInfo) {
     int fakeBackendServerPort = runtimeInfo.getHttpPort();
     log.info("Started Backend-Server on port {}", fakeBackendServerPort);
 
@@ -76,16 +80,8 @@ class TigerWebUiControllerTest {
     try (val proxyRest = Unirest.spawnInstance()) {
       proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());
 
-      System.out.println(
-          proxyRest
-              .get("http://localhost:" + fakeBackendServerPort + "/foobar")
-              .asString()
-              .getStatus());
-      System.out.println(
-          proxyRest
-              .post("http://localhost:" + fakeBackendServerPort + "/foobar")
-              .asString()
-              .getBody());
+      proxyRest.get("http://localhost:" + fakeBackendServerPort + "/foobar").asString().getStatus();
+      proxyRest.post("http://localhost:" + fakeBackendServerPort + "/foobar").asString().getBody();
     }
 
     TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(

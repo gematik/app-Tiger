@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,12 +13,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.proxy;
 
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
@@ -46,7 +49,7 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
         .isInstanceOf(UnirestException.class)
         .hasCauseInstanceOf(IOException.class);
 
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
   }
 
   @SneakyThrows
@@ -59,7 +62,7 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
         .isInstanceOf(UnirestException.class)
         .hasCauseInstanceOf(IOException.class);
 
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(1))
         .extractChildWithPath("$.sender")
@@ -86,7 +89,7 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
         .isInstanceOf(UnirestException.class)
         .hasCauseInstanceOf(IOException.class);
 
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     renderTrafficTo("error.html");
 
@@ -124,7 +127,7 @@ class TigerProxyExceptionsTest extends AbstractTigerProxyTest {
                       .asString())
           .isInstanceOf(UnirestException.class);
 
-      awaitMessagesInTiger(2);
+      awaitMessagesInTigerProxy(2);
 
       assertThat(tigerProxy.getRbelMessagesList().get(1))
           .extractChildWithPath("$.sender")

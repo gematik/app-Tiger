@@ -1,5 +1,67 @@
 # Changelog Tiger Test platform
 
+# Release 4.0.2
+
+# Release 4.0.0
+
+* Serenity BDD 4.2.30
+
+## Breaking Changes
+
+* TGR-1617: Major rework of the entire message parsing & distribution mechanism within the Tiger-Proxy. Details of the
+  work done can be found in `doc/adr/015_rbel_protocol_parsing`. No actual breaking changes are expected, but minor
+  differences can occur, especially when mixing pre- and post-4.0 Tiger-Proxies in a mesh setup. When in doubt, please
+  update your version to 4.0 and talk to the Tiger-Team when you are experiencing problems.
+* TGR-1843: Workflow UI: improve formating of headers and parameters tables to make clear which element is the key and
+  which element is the value. If you use DataTable arguments in your own glue code you can take advantage of the new
+  annotations: `@FirstColumnKeyTable` and `@FirstRowKeyTable` to control the formatting of the table in the Workflow UI.
+  See the user manual for more details.
+
+## Features
+
+* TGR-1144: Failed steps now will display their failure message in the Workflow UI beneath the failed step's
+  description,
+  including the full stack trace (per default collapsed) of the exception that caused the failure.
+  Also, the 'FAILED' icon of a scenario (both in the execution pane and the feature list) will display the failure
+  message when hovering over it and clicking on the icon will make the execution view jump to the failed step.
+* TGR-1846: Tiger Proxy: Added binary content modifications
+* TGR-1853: Add local sub-steps in Workflow-UI
+* TGR-1854: update spring boot dependency version to 3.4.5.
+* TGR-1726: show parsed values and attributes of LDAP messages in the Tiger-Proxy Web UI.
+* TGR-1802: Allow deactivation of all optional parsers and activation of specific parsers.
+  It is only possible
+  to (re-)activate a parser that is specifically configured via the configuration.
+  See https://gematik.github.io/app-Tiger/Tiger-User-Manual.html#activaterbelparsing for the
+  configurable parsers. The
+  following glue
+  code methods are available:
+
+```gherkin
+Given TGR all optional rbel parsers are deactivated
+
+Given TGR the rbel parsing is activated for {string}
+
+Given TGR the rbel parsing is activated for all configured parsers
+```
+
+## Bugfixes
+
+* TGR-1801: Do not copy sub-contents for sub-elements. Instead, reference slices of the content of the parent content.
+  Also, evaluate potentially large String values lazily on demand.
+* TGR-1835: Rbel-Writer: Fixed a bug where replacing an existing element in the root node would overwrite all other
+  child nodes.
+* TGR-1812: Tiger Test Lib: validating a JSON with a trailing comma in the schema definition no longer throws a
+  NullPointerException.
+* TGR-1617: High-Load on a Direct-Forward-Proxy will no longer lead to dropped messages.
+* TGR-1842: Workflow Ui: fixed an issue where clicking a tree element in the RbelPath inspect dialog would prefill the
+  dialog with an incorrect expression.
+* TGR-1816: Tiger Proxy: It is now possible to use a direct binary proxy for pop3 and smtp without TLS.
+* TGR-1864: Fixed a mesh setup racing condition between a message being removed from history of the downstream proxy
+  before the following message arrives that waits for the previous message to have be processed.
+* KOB-56: Tiger Proxy: Fixed findAvailableHosts error, caused by incorrect proxy usage
+* TGR-1658: Serenity Reports: the results of executing individual scenario variants via the WorkflowUI "play" and "
+  replay" functionality are now correctly aggregated in the serenity html report.
+
 # Release 3.7.9
 
 ## Bugfixes

@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package io.cucumber.core.plugin;
 
 import io.cucumber.messages.types.Scenario;
@@ -21,6 +25,7 @@ import io.cucumber.messages.types.Step;
 import io.cucumber.plugin.event.TestCase;
 import java.net.URI;
 import lombok.Getter;
+import net.thucydides.core.steps.StepEventBus;
 import net.thucydides.model.domain.DataTable;
 
 @SuppressWarnings({"java:S1172", "java:S1874"})
@@ -48,6 +53,11 @@ public class ScenarioContextDelegate implements IScenarioContext {
   @Override
   public Step getCurrentStep(TestCase testCase) {
     return context.getCurrentStep();
+  }
+
+  @Override
+  public StepEventBus stepEventBus() {
+    return context.stepEventBus();
   }
 
   @Override

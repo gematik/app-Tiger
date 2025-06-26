@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,11 +13,24 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.rbellogger.data;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import de.gematik.rbellogger.exceptions.RbelHostnameFormatException;
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -33,6 +47,8 @@ import org.apache.commons.lang3.StringUtils;
 @Builder
 @RequiredArgsConstructor(access = AccessLevel.PUBLIC)
 @Slf4j
+@JsonSerialize(using = RbelHostname.RbelHostnameSerializer.class)
+@JsonDeserialize(using = RbelHostname.RbelHostnameDeserializer.class)
 public class RbelHostname implements Serializable {
 
   private final String hostname;
@@ -99,6 +115,7 @@ public class RbelHostname implements Serializable {
     }
   }
 
+  @JsonProperty
   public String toString() {
     if (port > 0) {
       return hostname + ":" + port;
@@ -109,5 +126,21 @@ public class RbelHostname implements Serializable {
 
   public boolean isLocalHost() {
     return "localhost".equals(hostname) || "127.0.0.1".equals(hostname);
+  }
+
+  public static class RbelHostnameSerializer extends JsonSerializer<RbelHostname> {
+    @Override
+    public void serialize(RbelHostname value, JsonGenerator gen, SerializerProvider serializers)
+        throws IOException {
+      gen.writeString(value.toString());
+    }
+  }
+
+  public static class RbelHostnameDeserializer extends JsonDeserializer<RbelHostname> {
+
+    @Override
+    public RbelHostname deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+      return RbelHostname.fromString(p.getValueAsString()).orElse(null);
+    }
   }
 }

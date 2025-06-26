@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,14 +13,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.zion;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
-import de.gematik.rbellogger.key.RbelKeyManager;
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.util.RbelJexlExecutor;
 import de.gematik.rbellogger.writer.RbelWriter;
 import lombok.RequiredArgsConstructor;
@@ -46,10 +49,7 @@ public class ZionApplication {
   public RbelLogger rbelLogger() {
     log.info("Starting rbel build...");
     final RbelLogger logger =
-        RbelLogger.build(
-            new RbelConfiguration()
-                .addPostConversionListener(RbelKeyManager.RBEL_IDP_TOKEN_KEY_LISTENER)
-                .addInitializer(new RbelKeyFolderInitializer(".")));
+        RbelLogger.build(new RbelConfiguration().addInitializer(new RbelKeyFolderInitializer(".")));
     log.info("done with build");
     return logger;
   }

@@ -143,11 +143,11 @@ Feature: Playwright Test feature
     Then TGR current response with attribute "$.body.html.head.title.text" matches "!{rbel:currentResponseAsString('$.body.html.head.title.text')}"
     Examples:
       | Text1                   | Text2 | Text3 | Text4 | Text5 |
-      | ${tiger.example.0.text} | 21    | 31    | 41    | 51   |
-      | ${tiger.example.1.text} | 22    | 32    | 42    | 52   |
-      | ${tiger.example.2.text} | 23    | 33    | 43    | 53   |
-      | ${tiger.example.3.text} | 24    | 34    | 44    | 54   |
-      | ${tiger.example.4.text} | 25    | 35    | 45    | 55   |
+      | ${tiger.example.0.text} | 21    | 31    | 41    | 51    |
+      | ${tiger.example.1.text} | 22    | 32    | 42    | 52    |
+      | ${tiger.example.2.text} | 23    | 33    | 43    | 53    |
+      | ${tiger.example.3.text} | 24    | 34    | 44    | 54    |
+      | ${tiger.example.4.text} | 25    | 35    | 45    | 55    |
 
   Scenario: Request a non existing url
     When TGR send empty GET request to "http://www.this_is_not_a_real_url_blablabla.com"
@@ -159,3 +159,8 @@ Feature: Playwright Test feature
     Then TGR find last request to path ".*"
     And TGR print current request as rbel-tree
     And TGR assert "!{rbel:currentRequestAsString('$.header.foo')}" matches "bar"
+
+  Scenario: A scenario with substeps
+    When a step calls a substep of level 2
+    Then a step calls a substep of level 1
+    When a step calls a substep of level 3

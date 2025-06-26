@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,16 +13,22 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.testenvmgr;
 
 import static org.awaitility.Awaitility.await;
 
+import de.gematik.rbellogger.RbelConversionExecutor;
+import de.gematik.rbellogger.RbelConversionPhase;
+import de.gematik.rbellogger.RbelConverter;
+import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
-import de.gematik.rbellogger.converter.RbelConverter;
-import de.gematik.rbellogger.converter.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
@@ -62,8 +69,18 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
     final RbelConverter upstreamRbelConverter =
         upstreamTigerProxy.getRbelLogger().getRbelConverter();
 
-    upstreamRbelConverter.addLastPostConversionListener(
-        RbelConverterPlugin.createPlugin((el, conv) -> upstreamTigerProxy.triggerListener(el)));
+    upstreamRbelConverter.addConverter(
+        new RbelConverterPlugin() {
+          @Override
+          public RbelConversionPhase getPhase() {
+            return RbelConversionPhase.CONTENT_ENRICHMENT;
+          }
+
+          @Override
+          public void consumeElement(RbelElement rbelElement, RbelConversionExecutor converter) {
+            upstreamTigerProxy.triggerListener(rbelElement, new RbelMessageMetadata());
+          }
+        });
     RbelFileReaderCapturer.builder()
         .rbelFile("src/test/resources/vauEpa2Flow.tgr")
         .rbelConverter(upstreamRbelConverter)

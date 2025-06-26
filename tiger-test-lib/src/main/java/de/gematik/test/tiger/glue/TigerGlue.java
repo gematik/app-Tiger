@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.glue;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,6 +26,7 @@ import static org.awaitility.Awaitility.await;
 import de.gematik.test.tiger.common.banner.Banner;
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.glue.annotation.ResolvableArgument;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.testenvmgr.controller.TigerGlobalConfigurationController;

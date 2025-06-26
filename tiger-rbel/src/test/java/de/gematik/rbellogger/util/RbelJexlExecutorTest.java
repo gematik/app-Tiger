@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.rbellogger.util;
 
 import static de.gematik.rbellogger.TestUtils.localhostWithPort;
@@ -23,8 +27,9 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelHttpRequestFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
+import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.jexl.TigerJexlContext;
@@ -46,24 +51,27 @@ class RbelJexlExecutorTest {
   @BeforeEach
   public void setUp() throws IOException {
     final RbelLogger rbelLogger = RbelLogger.build();
+    final RbelHostname serverHostname = RbelHostname.fromString("server:1234").get();
+    final RbelHostname clientHostname = RbelHostname.fromString("client:54321").get();
     request =
         rbelLogger
             .getRbelConverter()
-            .convertElement(
+            .parseMessage(
                 readCurlFromFileWithCorrectedLineBreaks(
                         "src/test/resources/sampleMessages/getRequest.curl")
                     .getBytes(),
-                null);
+                new RbelMessageMetadata().withReceiver(serverHostname).withSender(clientHostname));
     response =
         rbelLogger
             .getRbelConverter()
-            .convertElement(
+            .parseMessage(
                 readCurlFromFileWithCorrectedLineBreaks(
                         "src/test/resources/sampleMessages/rbelPath.curl")
                     .getBytes(),
-                null);
-    RbelHttpResponseFacet.updateRequestOfResponseFacet(response, request);
-    RbelHttpRequestFacet.updateResponseOfRequestFacet(request, response);
+                new RbelMessageMetadata().withSender(serverHostname).withReceiver(clientHostname));
+    // Hacky, but all pairing converters are part of tiger-proxy
+    request.addOrReplaceFacet(new TracingMessagePairFacet(response, request));
+    response.addOrReplaceFacet(new TracingMessagePairFacet(response, request));
   }
 
   @Test
@@ -127,9 +135,7 @@ class RbelJexlExecutorTest {
                 readCurlFromFileWithCorrectedLineBreaks(
                         "src/test/resources/sampleMessages/doubleHeader.curl")
                     .getBytes(),
-                null,
-                null,
-                Optional.of(ZonedDateTime.now()));
+                new RbelMessageMetadata());
 
     assertThat(
             TigerJexlExecutor.matchesAsJexlExpression(
@@ -146,9 +152,10 @@ class RbelJexlExecutorTest {
                 readCurlFromFileWithCorrectedLineBreaks(
                         "src/test/resources/sampleMessages/getRequest.curl")
                     .getBytes(),
-                localhostWithPort(44444),
-                localhostWithPort(5432),
-                Optional.of(ZonedDateTime.now()));
+                new RbelMessageMetadata()
+                    .withSender(localhostWithPort(44444))
+                    .withReceiver(localhostWithPort(5432))
+                    .withTransmissionTime(ZonedDateTime.now()));
 
     assertThat(
             TigerJexlExecutor.matchesAsJexlExpression(

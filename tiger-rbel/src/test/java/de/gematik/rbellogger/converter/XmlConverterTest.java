@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.rbellogger.converter;
 
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
@@ -23,10 +27,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.facets.xml.RbelXmlAttributeFacet;
+import de.gematik.rbellogger.facets.xml.RbelXmlFacet;
+import de.gematik.rbellogger.facets.xml.RbelXmlNamespaceFacet;
+import de.gematik.rbellogger.facets.xml.RbelXmlProcessingInstructionFacet;
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
 import java.io.IOException;
@@ -71,12 +79,9 @@ class XmlConverterTest {
     final RbelElement convertedMessage =
         RbelLogger.build().getRbelConverter().convertElement(curlMessageHtml, null);
 
-    assertThat(convertedMessage.findElement("$.body").get().hasFacet(RbelXmlFacet.class)).isTrue();
-
-    assertThat(convertedMessage.findElement("$.body.html.head.link.href"))
-        .get()
-        .extracting(RbelElement::getRawStringContent)
-        .isEqualTo("jetty-dir.css");
+    assertThat(convertedMessage)
+        .hasGivenFacetAtPosition("$.body", RbelXmlFacet.class)
+        .hasStringContentEqualToAtPosition("$.body.html.head.link.href", "jetty-dir.css");
   }
 
   @Test

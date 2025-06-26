@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package io.cucumber.core.plugin;
 
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.LOCAL_PROXY_ADMIN_PORT;
@@ -74,6 +78,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import net.minidev.json.JSONArray;
+import net.thucydides.model.steps.ExecutedStepDescription;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -89,7 +94,7 @@ public class TestTigerSerenityReporterPlugin {
   public static final String GENERATED_JSON_REPORT =
       "target/site/serenity/d11408aff740706845d0a023dbe62d62f228d65c01a235474885c0879ce920e1.json";
 
-  public static final String TEST_GLUE_CLASS = "de.gematik.test.tiger.lib.integrationtest.TestGlue";
+  public static final String TEST_GLUE_CLASS = "io.cucumber.core.plugin.TestGlue";
   public static final String TEST_GLUE_STEP_LOCATION =
       TEST_GLUE_CLASS + ".testGlueMethod(java.lang.String,java.lang.String)";
   public static final String RESOLVABLE_DOCSTRING_STEP_LOCATION =
@@ -292,6 +297,9 @@ public class TestTigerSerenityReporterPlugin {
     listener.handleTestStepStarted(stepStartedEvent1);
     assertThat(listener.getContext(featureUri).getCurrentStep(testCase).getLocation().getLine())
         .isEqualTo(71);
+
+    checkSubstepHandling(testCase);
+
     listener.handleTestStepFinished(
         new TestStepFinished(
             Instant.now(),
@@ -319,6 +327,38 @@ public class TestTigerSerenityReporterPlugin {
     StepUpdate step0 = scenario.getSteps().get("0");
     assertThat(step0.getStatus()).isEqualTo(TestResult.PASSED);
     assertThat(scenario.getSteps().get("1").getStatus()).isEqualTo(TestResult.FAILED);
+  }
+
+  private void checkSubstepHandling(TestCase testCase) {
+    var stepEventBus = listener.getContext(featureUri).stepEventBus();
+    var substepStatus = envStatusController.getStatus();
+    var scenarios = substepStatus.getFeatureMap().get(featureName).getScenarios();
+    var scenarioId = findScenarioUniqueId(testCase);
+    var subSteps = scenarios.get(scenarioId).getSteps().get("0").getSubSteps();
+
+    assertThat(subSteps).isEmpty();
+
+    stepEventBus.stepStarted(new ExecutedStepDescription("Substep 1"));
+
+    assertThat(subSteps).hasSize(1);
+
+    var substepUpdate = subSteps.get(0);
+    assertThat(substepUpdate.getDescription()).isEqualTo("Substep 1");
+    assertThat(substepUpdate.getStatus()).isEqualTo(TestResult.EXECUTING);
+
+    stepEventBus.stepStarted(new ExecutedStepDescription("Substep 2"));
+    assertThat(subSteps).hasSize(1);
+
+    var subsubstepUpdate = subSteps.get(0).getSubSteps().get(0);
+    assertThat(subsubstepUpdate.getDescription()).isEqualTo("Substep 2");
+    assertThat(subsubstepUpdate.getStatus()).isEqualTo(TestResult.EXECUTING);
+
+    stepEventBus.stepFinished();
+    assertThat(substepUpdate.getStatus()).isEqualTo(TestResult.EXECUTING);
+    assertThat(subsubstepUpdate.getStatus()).isEqualTo(TestResult.PASSED);
+
+    stepEventBus.stepFinished();
+    assertThat(substepUpdate.getStatus()).isEqualTo(TestResult.PASSED);
   }
 
   @AfterEach

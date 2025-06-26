@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +13,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.mockserver.httpclient;
 
+import static de.gematik.test.tiger.mockserver.httpclient.BinaryBridgeHandler.INCOMING_CHANNEL;
 import static de.gematik.test.tiger.mockserver.model.HttpResponse.response;
 
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
@@ -29,6 +34,7 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.EventLoopGroup;
+import io.netty.handler.ssl.SslContext;
 import io.netty.util.AttributeKey;
 import java.net.InetSocketAddress;
 import java.util.*;
@@ -43,7 +49,7 @@ import lombok.extern.slf4j.Slf4j;
 public class NettyHttpClient {
 
   static final AttributeKey<Boolean> SECURE = AttributeKey.valueOf("SECURE");
-  static final AttributeKey<InetSocketAddress> REMOTE_SOCKET =
+  public static final AttributeKey<InetSocketAddress> REMOTE_SOCKET =
       AttributeKey.valueOf("REMOTE_SOCKET");
   public static final AttributeKey<CompletableFuture<Message>> RESPONSE_FUTURE =
       AttributeKey.valueOf("RESPONSE_FUTURE");
@@ -105,8 +111,8 @@ public class NettyHttpClient {
         (ChannelFutureListener)
             future -> {
               if (future.isSuccess()) {
+                future.channel().attr(INCOMING_CHANNEL).set(requestInfo.getIncomingChannel());
                 // ensure if HTTP2 is used then settings have been received from server
-
                 clientInitializer.whenComplete(
                     (protocol, throwable) -> {
                       if (throwable != null) {
@@ -263,5 +269,9 @@ public class NettyHttpClient {
 
   public int queryClientPort(int port) {
     return clientBootstrapFactory.getLoopCounterForOpenConnectionFromPort(port);
+  }
+
+  public SslContext createClientSslContext(Optional<HttpProtocol> httpProtocol) {
+    return nettySslContextFactory.createClientSslContext(httpProtocol);
   }
 }

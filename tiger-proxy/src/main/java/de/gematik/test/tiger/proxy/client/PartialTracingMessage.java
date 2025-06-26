@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,14 +13,18 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.proxy.client;
 
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.util.RbelContent;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import lombok.Builder;
@@ -40,11 +45,9 @@ public class PartialTracingMessage {
   private final RbelHostname sender;
   private final RbelHostname receiver;
   @ToString.Exclude private final TracingMessageFrame messageFrame;
-  private final ZonedDateTime transmissionTime;
   private final ZonedDateTime receivedTime = ZonedDateTime.now();
   private final List<TracingMessagePart> messageParts = new ArrayList<>();
-  @Builder.Default private final Map<String, String> additionalInformation = Map.of();
-  @Builder.Default private final boolean unparsedChunk = false;
+  @Builder.Default private final Map<String, Object> additionalInformation = Map.of();
 
   public boolean isComplete() {
     return !messageParts.isEmpty()
@@ -53,12 +56,13 @@ public class PartialTracingMessage {
   }
 
   public RbelContent buildCompleteContent() {
-    if (messageParts.isEmpty()) {
-      return RbelContent.builder().build();
-    }
-    return RbelContent.builder()
-        .chunkSize(Math.max(messageParts.get(0).getData().length, 1024))
-        .content(messageParts.stream().map(TracingMessagePart::getData).toList())
-        .build();
+    var chunkSize =
+        messageParts.stream().mapToInt(part -> part.getData().length).max().orElse(1024);
+    var sortedParts =
+        messageParts.stream()
+            .sorted(Comparator.comparing(TracingMessagePart::getIndex))
+            .map(TracingMessagePart::getData)
+            .toList();
+    return RbelContent.builder().chunkSize(chunkSize).content(sortedParts).build();
   }
 }

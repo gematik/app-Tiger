@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +13,14 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.proxy;
 
+import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
@@ -23,6 +28,7 @@ import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
+import de.gematik.test.tiger.proxy.tls.vau.VauSessionFacet;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -55,37 +61,31 @@ class EpaVauParsingTest {
       FileUtils.writeStringToFile(
           new File("target/vauFlow.html"), htmlData, StandardCharsets.UTF_8);
 
-      assertThat(tigerProxy.getRbelMessagesList().get(24).findElement("$.body.recordId"))
-          .get()
-          .extracting(RbelElement::getRawStringContent)
-          .isEqualTo("X114428539");
-      assertThat(tigerProxy.getRbelMessagesList().get(25).findElement("$.body.recordId"))
-          .get()
-          .extracting(RbelElement::getRawStringContent)
-          .isEqualTo("X114428539");
-
-      assertThat(tigerProxy.getRbelMessagesList().get(28).findElement("$.body.recordId"))
-          .get()
-          .extracting(RbelElement::getRawStringContent)
-          .isEqualTo("X114428539");
-      assertThat(tigerProxy.getRbelMessagesList().get(29).findElement("$.body.recordId"))
-          .get()
-          .extracting(RbelElement::getRawStringContent)
-          .isEqualTo("X114428539");
-
-      assertThat(tigerProxy.getRbelMessagesList().get(30).findElement("$.body.recordId"))
-          .get()
-          .extracting(RbelElement::getRawStringContent)
-          .isEqualTo("X114428539");
-      assertThat(tigerProxy.getRbelMessagesList().get(31).findElement("$.body.recordId"))
-          .get()
-          .extracting(RbelElement::getRawStringContent)
-          .isEqualTo("X114428539");
+      // VAUClientHello
+      assertThatMessageNumberXXContainsVauSessionFacetWithCorrectRecordId(tigerProxy, 24);
+      // VAUServerHello
+      assertThatMessageNumberXXContainsVauSessionFacetWithCorrectRecordId(tigerProxy, 25);
+      // VAUClientSigFin
+      assertThatMessageNumberXXContainsVauSessionFacetWithCorrectRecordId(tigerProxy, 28);
+      // VAUServerFin
+      assertThatMessageNumberXXContainsVauSessionFacetWithCorrectRecordId(tigerProxy, 29);
+      // VAU encrypted client request
+      assertThatMessageNumberXXContainsVauSessionFacetWithCorrectRecordId(tigerProxy, 30);
+      // VAU encrypted server response
+      assertThatMessageNumberXXContainsVauSessionFacetWithCorrectRecordId(tigerProxy, 31);
 
       assertThat(htmlData)
           .contains("P Header (raw):")
           .contains("01 00 00 00 00 00 00 00 07 00 00 01 07");
     }
+  }
+
+  private static void assertThatMessageNumberXXContainsVauSessionFacetWithCorrectRecordId(
+      TigerProxy tigerProxy, int index) {
+    assertThat(tigerProxy.getRbelMessagesList().get(index))
+        .extractChildWithPath("$.body")
+        .hasFacet(VauSessionFacet.class)
+        .hasStringContentEqualToAtPosition("$.recordId", "X114428539");
   }
 
   @SneakyThrows

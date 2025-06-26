@@ -21,7 +21,7 @@
 
     <groupId>de.gematik.test</groupId>
     <artifactId>tiger-bom</artifactId>
-    <version>3.7.9</version>
+    <version>4.0.4</version>
     <packaging>pom</packaging>
 
     <name>Tiger Bill of Materials</name>
@@ -60,6 +60,7 @@
         <version.awaitility>4.3.0</version.awaitility>
         <version.bootstrap>5.3.3</version.bootstrap>
         <version.bouncycastle>1.78.1</version.bouncycastle>
+        <version.central-publishing-maven-plugin>0.7.0</version.central-publishing-maven-plugin>
         <version.commons-codec>1.18.0</version.commons-codec>
         <version.commons-collections4>4.4</version.commons-collections4>
         <version.commons-compress>1.27.1</version.commons-compress>
@@ -89,10 +90,10 @@
         <version.jcommander>1.82</version.jcommander>
         <version.jetty>11.0.15</version.jetty>
         <version.jfiglet>1.0.1</version.jfiglet>
-        <version.jna-platform>5.17.0</version.jna-platform>
+        <version.jna>5.17.0</version.jna>
         <version.jose4j>0.9.6</version.jose4j>
         <version.jquery>3.7.1</version.jquery>
-        <version.json>20250107</version.json>
+        <version.json>20250517</version.json>
         <version.json-schema-validator>1.5.6</version.json-schema-validator>
         <!-- 20240303 -->
         <version.json-unit>4.1.0</version.json-unit>
@@ -120,11 +121,11 @@
         <version.mockito>5.16.1</version.mockito>
         <version.mockserver>5.15.0</version.mockserver>
         <version.netty>4.1.119.Final</version.netty>
-        <version.node>v20.11.1</version.node>
-        <version.npm>10.2.4</version.npm>
+        <version.node>v22.16.0</version.node>
+        <version.npm>10.9.2</version.npm>
         <version.okhttp>4.12.0</version.okhttp>
         <version.org.glassfish.jaxb>4.0.5</version.org.glassfish.jaxb>
-        <version.serenity.core>4.2.17</version.serenity.core>
+        <version.serenity.core>4.2.30</version.serenity.core>
         <version.serenity.maven.plugin>4.2.17</version.serenity.maven.plugin>
         <version.slf4j>2.0.17</version.slf4j>
         <version.snakeyaml>2.4</version.snakeyaml>
@@ -132,7 +133,7 @@
         <version.sonar-jacoco-listeners>5.14.0.18788</version.sonar-jacoco-listeners>
         <version.spotless-maven-plugin>2.44.3</version.spotless-maven-plugin>
         <version.spotless.google-java-format>1.18.1</version.spotless.google-java-format>
-        <version.spring-boot>3.4.4</version.spring-boot>
+        <version.spring-boot>3.4.5</version.spring-boot>
         <version.stomp-websocket>2.3.4</version.stomp-websocket>
         <version.swagger-parser>2.1.26</version.swagger-parser>
         <version.system-stubs>2.1.7</version.system-stubs>
@@ -203,7 +204,7 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>3.4.4</version>
+                <version>${version.spring-boot}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -315,62 +316,62 @@
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-common</artifactId>
-                <version>3.7.9</version>
+                <version>4.0.4</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-failsafe-provider</artifactId>
-                <version>3.7.9</version>
+                <version>4.0.4</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-httpbin</artifactId>
-                <version>3.7.9</version>
+                <version>4.0.4</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-java-agent</artifactId>
-                <version>3.7.9</version>
+                <version>4.0.4</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-maven-plugin</artifactId>
-                <version>3.7.9</version>
+                <version>4.0.4</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-proxy</artifactId>
-                <version>3.7.9</version>
+                <version>4.0.4</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-proxy-scrollable-webui</artifactId>
-                <version>3.7.9</version>
+                <version>4.0.4</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-rbel</artifactId>
-                <version>3.7.9</version>
+                <version>4.0.4</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-test-lib</artifactId>
-                <version>3.7.9</version>
+                <version>4.0.4</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-test-utils</artifactId>
-                <version>3.7.9</version>
+                <version>4.0.4</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-testenv-mgr</artifactId>
-                <version>3.7.9</version>
+                <version>4.0.4</version>
             </dependency>
             <dependency>
                 <groupId>de.gematik.test</groupId>
                 <artifactId>tiger-zion</artifactId>
-                <version>3.7.9</version>
+                <version>4.0.4</version>
             </dependency>
             <dependency>
                 <groupId>eu.europa.ec.joinup.sd-dss</groupId>
@@ -461,8 +462,13 @@
             </dependency>
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>${version.jna}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna-platform</artifactId>
-                <version>${version.jna-platform}</version>
+                <version>${version.jna}</version>
             </dependency>
             <dependency>
                 <groupId>net.javacrumbs.json-unit</groupId>
@@ -1006,15 +1012,13 @@
                         </executions>
                     </plugin>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.7.0</version>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${version.central-publishing-maven-plugin}</version>
                         <extensions>true</extensions>
                         <configuration>
-                            <serverId>ossrh</serverId>
-                            <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
-                            <stagingProgressTimeoutMinutes>20</stagingProgressTimeoutMinutes>
+                            <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
                         </configuration>
                     </plugin>
                     <plugin>

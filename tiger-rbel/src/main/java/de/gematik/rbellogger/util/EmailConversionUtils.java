@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,14 +13,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.rbellogger.util;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.exceptions.RbelConversionException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.AccessLevel;
@@ -28,74 +31,64 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class EmailConversionUtils {
   public static final String CRLF = "\r\n";
-  private static final byte[] CRLF_BYTES = CRLF.getBytes();
+  public static final byte[] CRLF_BYTES = CRLF.getBytes();
   public static final String CRLF_DOT_CRLF = CRLF + "." + CRLF;
+  private static final byte[] DOT_BYTE = ".".getBytes();
 
   public static RbelElement createChildElement(RbelElement parent, String value) {
     return new RbelElement(value.getBytes(StandardCharsets.UTF_8), parent);
   }
 
-  public static boolean endsWithCrLf(RbelContent content) {
-    return content.endsWith(CRLF_BYTES);
-  }
-
-  public static boolean endsWithCrLf(byte[] c) {
-    return c[c.length - 2] == '\r' && c[c.length - 1] == '\n';
-  }
-
-  public static RbelElement parseMailBody(RbelElement element, String[] lines) {
-    if (lines.length > 2) {
-      var body = extractBodyAndRemoveStuffedDots(lines);
-      return createChildElement(element, body);
+  public static RbelElement parseMailBody(
+      RbelElement element, List<RbelContent> lines, int startLine) {
+    if (lines.size() > startLine + 1) {
+      var body = extractBodyAndRemoveStuffedDots(lines, startLine);
+      return RbelElement.builder().content(body).parentNode(element).build();
     }
     return null;
   }
 
-  private static String extractBodyAndRemoveStuffedDots(String[] lines) {
-    return Arrays.asList(lines).subList(1, lines.length - 2).stream()
-        .map(EmailConversionUtils::removeStuffedDot)
-        .collect(Collectors.joining(CRLF));
+  public static RbelContent removeStuffedDot(RbelContent line) {
+    return line.startsWith(DOT_BYTE) ? line.subArray(1, line.size()) : line;
   }
 
-  public static String removeStuffedDot(String line) {
-    return line.startsWith(".") ? line.substring(1) : line;
+  private static RbelContent extractBodyAndRemoveStuffedDots(
+      List<RbelContent> lines, int startLine) {
+    RbelContent baseContent = lines.get(0).getBaseContent();
+    assert lines.stream().allMatch(line -> line.getBaseContent() == baseContent);
+    var bodyLines =
+        getMiddleLines(lines, startLine).map(EmailConversionUtils::removeStuffedDot).toList();
+    int bodyLength = computeTotalLength(bodyLines.stream());
+    int originalLength = computeTotalLength(getMiddleLines(lines, startLine));
+    if (bodyLength == originalLength) {
+      // no stuffed dots found ==> we can reference the original content
+      int firstLineLength = lines.get(0).size();
+      return baseContent.subArray(
+          firstLineLength, firstLineLength + originalLength - CRLF_BYTES.length);
+    }
+    return mergeLines(bodyLines);
+  }
+
+  private static Integer computeTotalLength(Stream<RbelContent> bodyLinesStream) {
+    return bodyLinesStream.map(RbelContent::size).reduce(0, Integer::sum);
+  }
+
+  private static Stream<RbelContent> getMiddleLines(List<RbelContent> lines, int startLine) {
+    return lines.stream().skip(startLine).limit(lines.size() - 1L - startLine);
+  }
+
+  public static RbelContent mergeLines(List<RbelContent> lines) {
+    RbelContent content =
+        RbelContent.builder()
+            .content(lines.stream().map(RbelContent::toByteArray).toList())
+            .build();
+    // last CRLF needs to be cut off because it belongs to the CRLF_DOT_CRLF sequence
+    return content.subArray(0, content.size() - CRLF_BYTES.length);
   }
 
   public static String duplicateDotsAtLineBegins(String input) {
     return Stream.of(input.split("\r\n", -1))
         .map(line -> line.startsWith(".") ? "." + line : line)
         .collect(Collectors.joining("\r\n"));
-  }
-
-  public static boolean hasCompleteLines(RbelContent content, int requiredCount) {
-    if (requiredCount < 0) {
-      throw new RbelConversionException(
-          "hasCompleteLines needs non-negative requiredCount, but got: " + requiredCount);
-    }
-    int linesEndingInCrLf = 0;
-    // searchIndex is the next index from which to search for the next
-    // occurrence of CRLF in content
-    int searchIndex = 0;
-    // searchIndex == content.length - 1 ==> CRLF not possible anymore
-    while (searchIndex + 1 < content.size()) {
-      int crIndex = content.indexOf((byte) '\r', searchIndex);
-      if (crIndex < 0) {
-        // No CR found, so no more CRLF possible after searchIndex
-        break;
-      }
-      // After finding a CR, we check for following LF and if found, increase
-      // the searchIndex to the index after the found CRLF
-      if (crIndex + 1 < content.size() && content.get(crIndex + 1) == '\n') {
-        ++linesEndingInCrLf;
-        if (linesEndingInCrLf > requiredCount) {
-          return false;
-        }
-        searchIndex = crIndex + 2;
-      } else {
-        // CR found, but no following LF ==> not a proper line ending
-        ++searchIndex;
-      }
-    }
-    return linesEndingInCrLf == requiredCount;
   }
 }

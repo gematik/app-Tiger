@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2025 gematik GmbH
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
 package de.gematik.rbellogger.converter;
 
@@ -21,12 +25,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.*;
+import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
+import de.gematik.rbellogger.facets.ldap.RbelLdapFacet;
+import de.gematik.rbellogger.facets.pki.base64.RbelB64GzipFacet;
+import de.gematik.rbellogger.facets.xml.RbelXmlFacet;
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
 import java.io.File;
@@ -44,7 +53,7 @@ class RbelB64GzipConverterTest {
   @SneakyThrows
   @Test
   void convertMessage_shouldConvertInPlace() {
-    final RbelLogger rbelConverter =
+    final RbelLogger rbelLogger =
         RbelLogger.build(
             new RbelConfiguration()
                 .activateConversionFor("b64gzip")
@@ -53,15 +62,16 @@ class RbelB64GzipConverterTest {
                     RbelFileReaderCapturer.builder()
                         .rbelFile("src/test/resources/nestedGzippedContent.tgr")
                         .build()));
-    rbelConverter.getRbelCapturer().initialize();
+    rbelLogger.getRbelCapturer().initialize();
+    rbelLogger.getRbelConverter().waitForAllCurrentMessagesToBeParsed();
 
     final RbelElement postFmvsdmResponse =
-        rbelConverter.getMessageList().stream()
+        rbelLogger.getMessageList().stream()
             .filter(e -> e.hasFacet(RbelHttpResponseFacet.class))
             .filter(
                 request ->
                     request
-                        .getFacet(RbelHttpResponseFacet.class)
+                        .getFacet(TracingMessagePairFacet.class)
                         .get()
                         .getRequest()
                         .getRawStringContent()

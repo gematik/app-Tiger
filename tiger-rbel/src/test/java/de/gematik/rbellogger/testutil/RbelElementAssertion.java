@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,13 +13,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.rbellogger.testutil;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelFacet;
-import de.gematik.rbellogger.data.facet.RbelValueFacet;
+import de.gematik.rbellogger.data.core.RbelFacet;
+import de.gematik.rbellogger.data.core.RbelValueFacet;
 import de.gematik.rbellogger.util.RbelPathAble;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import java.nio.charset.Charset;
@@ -26,10 +30,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 import org.assertj.core.api.*;
 
 @Slf4j
+@EqualsAndHashCode(callSuper = true)
 public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, RbelElement> {
 
   private final RbelElement initial;
@@ -162,15 +168,25 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
     return this.myself;
   }
 
+  public ByteArrayAssert getContent() {
+    return new ByteArrayAssert(actual.getRawContent());
+  }
+
+  public OptionalAssert<String> valueAsString() {
+    return AssertionsForClassTypes.assertThat(actual.printValue());
+  }
+
   public RbelElementAssertion doesNotHaveFacet(Class<? extends RbelFacet> facetToTest) {
     if (actual.hasFacet(facetToTest)) {
       failWithMessage(
           """
-                Expecting element to have NOT facet of type %s, but it was found along with %s
+                Expecting element to have NOT facet of type %s, but it was found along with \n%s \n \n
                 at element:
                 $.%s
             """,
-          facetToTest.getSimpleName(), new ArrayList<>(actual.getFacets()), actual.findNodePath());
+          facetToTest.getSimpleName(),
+          actual.getFacets().stream().map(Object::toString).collect(Collectors.joining("\n\n")),
+          actual.findNodePath());
     }
     return this.myself;
   }

@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.mockserver.httpclient;
 
 import static de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient.REMOTE_SOCKET;
@@ -51,6 +55,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
 
+  public static final String CONNECTION_ERROR_HANDLER_NAME = "connection-error-handler";
   private final HttpProtocol httpProtocol;
   private final HttpClientConnectionErrorHandler httpClientConnectionHandler;
   private final CompletableFuture<HttpProtocol> protocolFuture;
@@ -89,10 +94,14 @@ public class HttpClientInitializer extends ChannelInitializer<SocketChannel> {
     if (isHostNotOnNoProxyHostList(remoteAddress)) {
       addProxyHandlerIfApplicable(pipeline, secure);
     }
-    pipeline.addLast(httpClientConnectionHandler);
+    pipeline.addLast(CONNECTION_ERROR_HANDLER_NAME, httpClientConnectionHandler);
 
     if (secure) {
-      log.info("Adding SSL Handler in HttpClientInitializer.initChannel");
+      log.atTrace()
+          .log(
+              () ->
+                  "Adding SSL Handler in HttpClientInitializer.initChannel for channel %s. Current pipeline: %s"
+                      .formatted(channel.toString(), pipeline.toMap()));
       pipeline.addLast(
           nettySslContextFactory
               .createClientSslContext(Optional.ofNullable(httpProtocol))

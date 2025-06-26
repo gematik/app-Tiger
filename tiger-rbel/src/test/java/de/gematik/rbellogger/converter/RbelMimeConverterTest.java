@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,17 +13,21 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.rbellogger.converter;
 
 import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
-import de.gematik.rbellogger.converter.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelNoteFacet;
+import de.gematik.rbellogger.data.core.RbelNoteFacet;
+import de.gematik.rbellogger.facets.jackson.RbelJsonFacet;
+import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import java.io.File;
 import java.io.IOException;
@@ -69,6 +74,8 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
   void shouldConvertMimeMessage() {
     final byte[] mimeMessage = readMimeMessage("sampleMessages/sampleMail.txt");
     final String pop3Response = getPop3Response(mimeMessage);
+
+    convertToRbelElement("+OK greeting\r\n");
     final var element = convertPop3RetrResponse(pop3Response);
     assertThat(element)
         .extractChildWithPath("$.pop3Body")
@@ -100,11 +107,14 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
     final String encryptedPop3Response = getPop3Response(encryptedMessage);
     final byte[] origMessage = readMimeMessage("example_mail/01_origMessage_VERIFY.eml");
     final String origPop3Response = getPop3Response(origMessage);
+
+    convertToRbelElement("+OK greeting\r\n");
     var origElement =
         convertMessagePair("RETR 1\r\n", origPop3Response).findElement("$.pop3Body").get();
 
+    RbelElement rbelElement = convertMessagePair("RETR 1\r\n", encryptedPop3Response);
     final RbelElement decryptedSignedRfc822BodyElement =
-        convertMessagePair("RETR 1\r\n", encryptedPop3Response)
+        rbelElement
             .findElement("$.pop3Body.mimeBody.decrypted.mimeBody.signed.mimeBody.mimeBody")
             .get();
 
@@ -121,6 +131,7 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
         Arrays.copyOf(encryptedMessage, encryptedMessage.length - 200);
     final String encryptedPop3Response = getPop3Response(trimmedEncryptedMessage);
 
+    convertToRbelElement("+OK greeting\r\n");
     final RbelElement mimeBody =
         convertMessagePair("RETR 1\r\n", encryptedPop3Response)
             .findElement("$.pop3Body.mimeBody")
@@ -138,6 +149,8 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
     RbelConfiguration configuration = createMimePop3ConverterConfiguration();
     converter = RbelLogger.build(configuration).getRbelConverter();
 
+    convertToRbelElement("+OK greeting\r\n");
+
     final RbelElement mimeBody =
         convertMessagePair("RETR 1\r\n", encryptedPop3Response)
             .findElement("$.pop3Body.mimeBody")
@@ -150,6 +163,8 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
   void shouldRenderMimeContent() throws IOException {
     final byte[] mimeMessage = readMimeMessage("sampleMessages/sampleMail.txt");
     final String pop3Message = getPop3Response(mimeMessage);
+
+    convertToRbelElement("+OK greeting\r\n");
     final RbelElement convertedMessage = convertPop3RetrResponse(pop3Message);
 
     assertHtmlRendering(convertedMessage, "Mime Message:", "Mime Headers:", "Mime Body:");
@@ -168,6 +183,8 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
   void shouldRenderTopMimeContent() throws IOException {
     final byte[] mimeMessage = readMimeMessage("sampleMessages/sampleMail.txt");
     final String pop3Message = "+OK\r\n" + new String(mimeMessage) + "\r\n.\r\n";
+
+    convertToRbelElement("+OK greeting\r\n");
     final RbelElement convertedMessage = convertMessagePair("TOP 1 10\r\n", pop3Message);
 
     assertHtmlRendering(convertedMessage, "Mime Message:", "Mime Headers:", "Mime Body:");
@@ -177,8 +194,14 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
   void shouldRenderEncryptedMimeContent() throws IOException {
     final byte[] mimeMessage = readMimeMessage("example_mail/05_msgReceived-00.eml");
     final String pop3Message = getPop3Response(mimeMessage);
+
+    convertToRbelElement("+OK greeting\r\n");
     final RbelElement convertedMessage = convertPop3RetrResponse(pop3Message);
 
     assertHtmlRendering(convertedMessage, "Decrypted Message:", "Signed Message:", "rfc822");
+
+    assertThat(convertedMessage)
+        .hasGivenFacetAtPosition(
+            "$.pop3Body.mimeBody.decrypted.mimeBody.signed.mimeBody.mimeBody", RbelJsonFacet.class);
   }
 }

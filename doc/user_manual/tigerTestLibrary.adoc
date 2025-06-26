@@ -144,6 +144,88 @@ When comparing values (e.g. in the `TGR current response body matches:`) general
 // /src/test/java/de/gematik/test/tiger/glue/RBelValidatorGlue.java
 include::./RBelValidatorGlueCommentsOnly.adoc[]
 
+=== Writing your own Glue code
+
+You can define your own BDD steps and write the corresponding glue code in your own project.
+You must remember to configure the packages where your glue code is defined in the xref:maven-plugin-generate-drivers[tiger-maven-plugin] configuration.
+
+Additionally, you can use some tiger specific annotations to improve the integration with your glue code with the tiger Workflow Ui and reporting.
+
+==== Resolving Variables
+
+When defining a glue code method, you can use the variables with the names +{tigerResolvedString}+ and +{tigerResolvedUrl}+.
+These will be automatically resolved by the TigerGlobalConfiguration resolver, and the result is injected directly in the java method.
+
+Here an example:
+
+[source,java]
+----
+@Given("an example with a {tigerResolvedString} and a {tigerResolvedUrl}")
+public void myExampleMethod(String thisIsTheResolvedStringVariable, URI thisIsTheResolvedUrlVariable){
+    //do something with the variables
+}
+----
+
+When using this step in a feature file, the passed string and url are resolved before being passed to the java code.
+Inside the java code you don't need to call the resolver again.
+The resolved values are also displayed in the Workflow UI and serenity reports.
+
+===== DataTables and Multiline string arguments
+
+Datatables and multiline strings are special arguments that are passed as the last argument of a method.
+They have no placeholder in the cucumber expression.
+Here we do not provide an automatic resolving of the arguments before passing them to the java method.
+This is because the resolving may not be applicable on every possible use case.
+Instead, we provide the marker annotation `@ResolvableArgument` whose purpose is to ensure that the arguments appear resolved in the Workflow Ui and reports.
+Inside the java method the code must do the resolving explicitly.
+
+Here are two examples:
+
+[source,java]
+----
+@Given("here is an example of multiline string argument:")
+@ResolvableArgument
+public void multilineStringExample(String docstring){
+ var resolvedExplicitly = TigerGlobalConfiguration.resolvePlaceholders(docString);
+}
+
+@Given("here is an example of datatable argument:")
+@ResolvableArgument
+public void multilineStringExample(DataTable dataTable){
+ var resolvedExplicitly = dataTable.asMap().entrySet().stream()
+        .collect(
+            Collectors.toMap(
+                entry -> resolveToString(entry.getKey()),
+                entry -> resolveToString(entry.getValue)));
+}
+----
+
+==== Formating Tables
+
+Depending on the concrete useage, a `DataTable` may be interpreted by the glue code as a row wise argument or as a column wise argument.
+To make it clearer to the user, it may be helpful to highlight the first row or the first column of the table when displaying it in the Workflow Ui.
+For that you can use the annotations `@FirstColumnKeyTable` and `@FirstRowKeyTable` on your own glue code.
+
+When applying the annotations to a glue code method with a `DataTable` argument, the datatable will apply a bold formatting to the first column or the first row accordingly.
+You can apply both annotations to the same method.
+
+For example, this method is annotated with `@FirstColumnKeyTable`
+
+[source,java]
+----
+ @When("TGR send empty {requestType} request to {tigerResolvedUrl} with headers:")
+  @FirstColumnKeyTable
+  public void sendEmptyRequestWithHeaders(Method method, URI address, DataTable customHeaders){}
+----
+
+and its argument will be displayed like this in the Workflow Ui:
+
+image::media/table-first-column-keys.png[width=800,alt="a table with 2 columns and 2 rows, where the words in the first column are bold"]
+
+With `@FirstRowKeyTable` the table will look like this:
+
+image::media/table-first-row-keys.png[width=800,alt="a table with 2 columns and 2 rows, where the words in the first row are bold"]
+
 === Modifying RbelObjects (RbelBuilder)
 
 ==== Introduction

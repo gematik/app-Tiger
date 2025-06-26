@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.testenvmgr.env;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -35,6 +39,7 @@ public class ScenarioUpdate {
   @Builder.Default private Map<String, StepUpdate> steps = new LinkedHashMap<>();
   private String description;
   private TestResult status;
+  private String failureMessage;
   @Builder.Default private List<String> exampleKeys = new ArrayList<>();
   @Builder.Default private Map<String, String> exampleList = new LinkedHashMap<>();
   @Builder.Default private int variantIndex = -1;

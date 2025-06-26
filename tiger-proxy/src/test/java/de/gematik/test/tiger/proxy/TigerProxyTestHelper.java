@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,13 +13,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.proxy;
 
 import static org.awaitility.Awaitility.await;
 
-import de.gematik.rbellogger.data.facet.RbelParsingNotCompleteFacet;
 import de.gematik.test.tiger.proxy.client.TigerRemoteProxyClient;
 import java.text.MessageFormat;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +42,7 @@ public class TigerProxyTestHelper {
           .until(
               () ->
                   tigerProxy.getRbelMessages().stream()
-                          .filter(msg -> !msg.hasFacet(RbelParsingNotCompleteFacet.class))
+                          .filter(msg -> msg.getConversionPhase().isFinished())
                           .count()
                       == expectedMessagesCount);
     } catch (ConditionTimeoutException cte) {
@@ -58,13 +61,16 @@ public class TigerProxyTestHelper {
       await()
           .atMost(timeoutSec, TimeUnit.SECONDS)
           .pollDelay(200, TimeUnit.MILLISECONDS)
-          .until(() -> tigerProxy.getRbelMessagesList().size() == expectedMessagesCount);
+          .until(() -> tigerProxy.getRbelMessagesList().size() >= expectedMessagesCount);
     } catch (ConditionTimeoutException cte) {
       log.error(
           "Expected {} message(s) in rbel message list but found {}",
           expectedMessagesCount,
           tigerProxy.getRbelMessagesList().size());
-      tigerProxy.getRbelMessagesList().forEach(msg -> log.error(msg.printHttpDescription()));
+      tigerProxy
+          .getRbelLogger()
+          .getMessageHistory()
+          .forEach(msg -> log.error(msg.printTreeStructure()));
       throw cte;
     }
   }
@@ -84,7 +90,14 @@ public class TigerProxyTestHelper {
           tigerRemoteProxyClient.getRbelMessagesList().size());
       tigerRemoteProxyClient
           .getRbelMessagesList()
-          .forEach(msg -> log.error(msg.printHttpDescription()));
+          .forEach(
+              msg ->
+                  log.error(
+                      msg.printHttpDescription()
+                          + " with facets "
+                          + msg.getFacets().stream()
+                              .map(o -> o.getClass().getSimpleName())
+                              .toList()));
       throw new RuntimeException(
           MessageFormat.format(
               "Expected {0} message(s) in rbel message list but found {1}",

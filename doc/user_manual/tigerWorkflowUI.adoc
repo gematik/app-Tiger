@@ -107,6 +107,31 @@ Alternatively, a scenario can be replayed by clicking the small replay button in
 
 image::screenshots/sidebar_replaybutton.png[title="Small replay buttons in the sidebar"]
 
+When a scenario has failed, the failure message is displayed beneath the failed step description.
+
+image::screenshots/webui_step_failure_message.png[title="Step failure message (expanded)"]
+
+Additionally, the stack trace of the failure can be expanded and collapsed by clicking the button beside the failure message.
+
+To navigate to the failed step of a scenario, the user can click on the failed icon beside the scenario title.
+The same works when clicking on the failed icon beside the scenario in the feature list.
+
+Hovering over the failed icon will display the failure message as a tooltip.
+
+image::screenshots/webui_failure_icon_hover.png[title="Hovering over the failed icon"]
+
+If a test step executes sub-steps, these are displayed (per default collapsed) in the test execution section beneath their parent test step.
+They can be expanded by clicking on the small plus symbol to the left of the step description.
+Steps without sub-steps will not have the plus symbol and will not be expandable.
+
+image::screenshots/webui_substep_collapsed.png[title="Collapsed sub-steps of a test step"]
+image::screenshots/webui_substep_partially_expanded.png[title="Partially expanded sub-steps of a test step"]
+image::screenshots/webui_substep_fully_expanded.png[title="Fully expanded sub-steps of a test step"]
+
+Sub-steps can not be defined in feature files directly.
+They can be produced by glue code calling methods that are also glue code steps.
+The serenity screenplay pattern also produces sub-steps, e.g. for each task an actor performs.
+
 [#_rbel_logs]
 The communication requests that are called during the step execution are displayed beneath the step that initiated the request.
 When the user clicks on the light blue rectangle with the number (whereas uneven numbers are requests, even number are responses) of the request then the Rbel Log view opens on the right hand side of the Workflow UI as shown on the screenshot below.

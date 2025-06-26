@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.proxy;
 
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
@@ -68,7 +72,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
     assertThat(proxyRest.get(requestProtocol + "://backend/combotest").asString().getStatus())
         .isEqualTo(666);
 
-    awaitMessagesInTiger(4);
+    awaitMessagesInTigerProxy(4);
     if (routeToProtocol.equals("https")) {
       assertThat(tigerProxy.getRbelMessagesList().get(1))
           .extractChildWithPath("$.tlsVersion")
@@ -92,7 +96,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
 
     assertThat(proxyRest.get("http://backend" + requestPath).asString().getStatus())
         .isEqualTo(expectedReturnCode);
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
     final RbelElement request = tigerProxy.getRbelMessagesList().get(0);
 
     assertThat(request)
@@ -119,7 +123,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
                 .asString()
                 .getStatus())
         .isEqualTo(expectedReturnCode);
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
     final RbelElement request = tigerProxy.getRbelMessagesList().get(0);
 
     assertThat(request)
@@ -229,7 +233,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + requestPath)
         .asString()
         .getStatus();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
     final RbelElement request = tigerProxy.getRbelMessagesList().get(0);
 
     assertThat(request)
@@ -260,7 +264,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
     backendServer.getWireMock().getServeEvents().clear();
 
     proxyRest.get("http://mydomain" + requestPath).asString().getStatus();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0))
         .extractChildWithPath("$.path")
@@ -312,7 +316,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
                 .asString()
                 .getStatus())
         .isEqualTo(666);
-    awaitMessagesInTiger(4);
+    awaitMessagesInTigerProxy(4);
   }
 
   @ParameterizedTest
@@ -339,7 +343,7 @@ class TestTigerProxyRouting extends AbstractTigerProxyTest {
             .build());
 
     assertThat(proxyRest.get("http://backend" + requestPath).asString().getStatus()).isEqualTo(666);
-    awaitMessagesInTiger(4);
+    awaitMessagesInTigerProxy(4);
   }
 
   @Test

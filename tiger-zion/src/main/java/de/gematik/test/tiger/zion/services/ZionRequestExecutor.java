@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.zion.services;
 
 import static de.gematik.test.tiger.zion.config.ZionRequestMatchDefinition.PathMatchingResult.EMPTY_MATCH;
@@ -22,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.writer.RbelContentType;
 import de.gematik.rbellogger.writer.RbelSerializationResult;
 import de.gematik.rbellogger.writer.RbelWriter;
@@ -386,9 +391,10 @@ public class ZionRequestExecutor {
         .getRbelConverter()
         .parseMessage(
             buildRawMessageApproximate(el),
-            serverHostname,
-            clientHostname,
-            Optional.of(ZonedDateTime.now()));
+            new RbelMessageMetadata()
+                .withSender(serverHostname)
+                .withReceiver(clientHostname)
+                .withTransmissionTime(ZonedDateTime.now()));
   }
 
   private byte[] buildRawMessageApproximate(ResponseEntity<byte[]> response) {

@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package io.cucumber.core.plugin.report;
 
 import de.gematik.test.tiger.common.config.TigerConfigurationException;
@@ -22,13 +25,16 @@ import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.config.TigerTypedConfigurationKey;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
 import de.gematik.test.tiger.common.report.ReportDataKeys;
-import de.gematik.test.tiger.glue.ResolvableArgument;
 import de.gematik.test.tiger.glue.TigerParameterTypeDefinitions;
+import de.gematik.test.tiger.glue.annotation.FirstColumnKeyTable;
+import de.gematik.test.tiger.glue.annotation.FirstRowKeyTable;
+import de.gematik.test.tiger.glue.annotation.ResolvableArgument;
 import io.cucumber.plugin.event.Argument;
 import io.cucumber.plugin.event.DataTableArgument;
 import io.cucumber.plugin.event.DocStringArgument;
 import io.cucumber.plugin.event.PickleStepTestStep;
 import io.cucumber.plugin.event.TestCase;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
@@ -61,6 +67,9 @@ public class StepDescription {
 
   @Getter(value = AccessLevel.PRIVATE, lazy = true)
   private final Boolean shouldResolveStepArgument = shouldResolveStepArgument();
+
+  @Getter(value = AccessLevel.PRIVATE, lazy = true)
+  private final List<Annotation> methodAnnotations = collectMethodAnnotations();
 
   public static List<StepDescription> extractStepDescriptions(TestCase testCase) {
     return testCase.getTestSteps().stream()
@@ -180,7 +189,7 @@ public class StepDescription {
 
   private boolean hasDocStringArgument() {
     var argument = step.getStep().getArgument();
-    return argument instanceof DocStringArgument docStringArgument;
+    return argument instanceof DocStringArgument;
   }
 
   private String dataTablePlainText(DataTableArgument dataTableArgument, boolean resolve) {
@@ -191,7 +200,14 @@ public class StepDescription {
   }
 
   private String dataTableHtml(DataTableArgument dataTableArgument, boolean resolve) {
-    var result = new StringBuilder("<br/><table class=\"table table-sm table-data-table\">");
+    var cssClasses = "table table-sm table-data-table";
+    if (isFirstColumnKey()) {
+      cssClasses += " table-first-column-key";
+    }
+    if (isFirstRowKey()) {
+      cssClasses += " table-first-row-key";
+    }
+    var result = new StringBuilder("<br/><table class=\"%s\">".formatted(cssClasses));
     var resolver = resolver(resolve);
     dataTableArgument
         .cells()
@@ -243,13 +259,20 @@ public class StepDescription {
     return result.toString();
   }
 
-  /**
-   * @param methodSignature of the form package.class.method(params). This signature string maybe
-   *     INCLUDES generics information! The return type is not part of the method signature!
-   * @return flag whether this method can be found in the class path and has resolvable arguments
-   */
-  boolean isMethodResolvable(String methodSignature) {
+  boolean isMethodResolvable() {
+    return getMethodAnnotations().stream()
+        .anyMatch(a -> a.annotationType().equals(ResolvableArgument.class));
+  }
 
+  /**
+   * collects the annotations in the method defined in step.getCodeLocation(). The method signature
+   * returned by step.getCodeLocation() maybe INCLUDES generics information! The return type is not
+   * part of the method signature!
+   *
+   * @return list of annotations present in the step method
+   */
+  private List<Annotation> collectMethodAnnotations() {
+    var methodSignature = step.getCodeLocation();
     int parenIndex = methodSignature.indexOf("(");
     int lastDotInMethodPath = methodSignature.lastIndexOf('.', parenIndex - 1);
     String className = methodSignature.substring(0, lastDotInMethodPath);
@@ -260,12 +283,11 @@ public class StepDescription {
     try {
       Method method = BeanUtils.resolveSignature(methodName, Class.forName(className));
       if (method == null) {
-        return false;
+        return List.of();
       }
-      return Arrays.stream(method.getAnnotations())
-          .anyMatch(a -> a.annotationType().equals(ResolvableArgument.class));
+      return Arrays.asList(method.getAnnotations());
     } catch (ClassNotFoundException | IllegalArgumentException e) {
-      return false;
+      return List.of();
     }
   }
 
@@ -285,11 +307,20 @@ public class StepDescription {
   // annotation ensures this is only called once. Call getShouldResolveStepArgument() to access the
   // value.
   private boolean shouldResolveStepArgument() {
-    var codeLocation = step.getCodeLocation();
-    return isMethodResolvable(codeLocation);
+    return isMethodResolvable();
   }
 
   private static String abbreviate(String input) {
     return StringUtils.abbreviate(input, MAX_STEP_DESCRIPTION_DISPLAY_LENGTH.getValueOrDefault());
+  }
+
+  private boolean isFirstColumnKey() {
+    return getMethodAnnotations().stream()
+        .anyMatch(a -> a.annotationType().equals(FirstColumnKeyTable.class));
+  }
+
+  private boolean isFirstRowKey() {
+    return getMethodAnnotations().stream()
+        .anyMatch(a -> a.annotationType().equals(FirstRowKeyTable.class));
   }
 }

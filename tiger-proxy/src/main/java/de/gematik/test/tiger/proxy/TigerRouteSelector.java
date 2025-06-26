@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2024 gematik GmbH
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
 package de.gematik.test.tiger.proxy;
 
@@ -24,7 +28,10 @@ import java.net.*;
 import java.net.Proxy.Type;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+/** Executor for selecting a route destination from a list of potential destinations. */
+@Slf4j
 @AllArgsConstructor
 public class TigerRouteSelector {
   private final List<String> routeDestinations;
@@ -48,17 +55,8 @@ public class TigerRouteSelector {
 
   private boolean isReachable(String destination) {
     try {
-      HttpURLConnection connection = (HttpURLConnection) new URL(destination).openConnection();
-      if (forwardProxyInfo != null) {
-        final InetAddress targetHost = InetAddress.getByName(forwardProxyInfo.getHostname());
-        if (NoProxyUtils.shouldUseProxyForHost(targetHost, forwardProxyInfo.getNoProxyHosts())) {
-          final InetSocketAddress inetSocketAddress =
-              new InetSocketAddress(targetHost, forwardProxyInfo.getPort());
-          connection =
-              (HttpURLConnection)
-                  new URL(destination).openConnection(new Proxy(Type.HTTP, inetSocketAddress));
-        }
-      }
+      log.debug("Checking if destination '{}' is reachable", destination);
+      HttpURLConnection connection = openConnection(URI.create(destination).toURL());
       connection.setConnectTimeout(5000);
       connection.setReadTimeout(5000);
       connection.setInstanceFollowRedirects(false);
@@ -66,9 +64,36 @@ public class TigerRouteSelector {
       InsecureTrustAllManager.allowAllSsl(connection);
       connection.connect();
       var responseCode = connection.getResponseCode();
+      log.debug("Got response code {} for destination '{}'", responseCode, destination);
       return responseCode != -1;
     } catch (IOException e) {
+      log.warn("Destination '{}' is not reachable:", destination, e);
       return false;
     }
+  }
+
+  private HttpURLConnection openConnection(URL destination) throws IOException {
+    HttpURLConnection connection;
+    if (forwardProxyInfo != null) {
+      final InetAddress targetHost = InetAddress.getByName(forwardProxyInfo.getHostname());
+      if (NoProxyUtils.shouldUseProxyForHost(targetHost, forwardProxyInfo.getNoProxyHosts())) {
+        final InetSocketAddress inetSocketAddress =
+            new InetSocketAddress(targetHost, forwardProxyInfo.getPort());
+        log.debug(
+            "Using forward proxy for host '{}': {}:{}",
+            targetHost,
+            inetSocketAddress.getHostName(),
+            inetSocketAddress.getPort());
+        connection =
+            (HttpURLConnection) destination.openConnection(new Proxy(Type.HTTP, inetSocketAddress));
+      } else {
+        log.debug("No forward proxy configured for host '{}', using direct connection", targetHost);
+        connection = (HttpURLConnection) destination.openConnection(Proxy.NO_PROXY);
+      }
+    } else {
+      log.debug("No forward proxy configured, using direct connection for {}", destination);
+      connection = (HttpURLConnection) destination.openConnection(Proxy.NO_PROXY);
+    }
+    return connection;
   }
 }

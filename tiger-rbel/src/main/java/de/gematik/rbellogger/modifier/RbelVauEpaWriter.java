@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,13 +13,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.rbellogger.modifier;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.facet.RbelVauEpaFacet;
 import de.gematik.rbellogger.exceptions.RbelPkiException;
+import de.gematik.rbellogger.facets.vau.vau.RbelVauEpaFacet;
 import de.gematik.rbellogger.key.RbelKey;
 import de.gematik.rbellogger.modifier.RbelModifier.RbelModificationException;
 import de.gematik.rbellogger.util.CryptoUtils;
@@ -81,7 +85,7 @@ public class RbelVauEpaWriter implements RbelElementWriter {
     int headerLength =
         java.nio.ByteBuffer.wrap((Arrays.copyOfRange(oldCleartext, 1 + 8, 1 + 8 + 4))).getInt();
     int introLength = 1 + 8 + 4 + headerLength;
-    byte[] oldIv = oldEncryptedMessage.subArray(0, 12);
+    byte[] oldIv = oldEncryptedMessage.toByteArray(0, 12);
     final byte[] newCleartext =
         ArrayUtils.addAll(Arrays.copyOfRange(oldCleartext, 0, introLength), newContent);
 

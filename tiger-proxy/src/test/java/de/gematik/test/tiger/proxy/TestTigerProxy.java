@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.proxy;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -27,10 +31,10 @@ import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.facet.RbelHostnameFacet;
-import de.gematik.rbellogger.data.facet.RbelHttpResponseFacet;
-import de.gematik.rbellogger.data.facet.RbelMessageTimingFacet;
-import de.gematik.rbellogger.data.facet.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.data.core.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
+import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.*;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -84,7 +88,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
           .build();
 
   @BeforeEach
-  public void setupForwardProxy(WireMockRuntimeInfo runtimeInfo) {
+  void setupForwardProxy(WireMockRuntimeInfo runtimeInfo) {
     if (!forwardProxy.getStubMappings().isEmpty()) {
       return;
     }
@@ -105,7 +109,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     final HttpResponse<JsonNode> response = proxyRest.get("http://backend/foobar").asJson();
     final HttpResponse<JsonNode> response2 = proxyRest.get("http://backend/foobar").asJson();
 
-    awaitMessagesInTiger(4);
+    awaitMessagesInTigerProxy(4);
 
     assertThat(response.getStatus()).isEqualTo(666);
     assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
@@ -115,14 +119,14 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .get(0)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getReceiverHostname())
-        .isEqualTo(new RbelHostname("backend", 80));
+        .contains(new RbelHostname("backend", 80));
     assertThat(
             tigerProxy
                 .getRbelMessagesList()
                 .get(1)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getSenderHostname())
-        .isEqualTo(new RbelHostname("backend", 80));
+        .contains(new RbelHostname("backend", 80));
 
     assertThat(response2.getStatus()).isEqualTo(666);
     assertThat(response2.getBody().getObject().get("foo")).hasToString("bar");
@@ -132,14 +136,14 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .get(2)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getReceiverHostname())
-        .isEqualTo(new RbelHostname("backend", 80));
+        .contains(new RbelHostname("backend", 80));
     assertThat(
             tigerProxy
                 .getRbelMessagesList()
                 .get(3)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getSenderHostname())
-        .isEqualTo(new RbelHostname("backend", 80));
+        .contains(new RbelHostname("backend", 80));
   }
 
   @Test
@@ -147,7 +151,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     final HttpResponse<JsonNode> response = proxyRest.get("http://backend/foobar").asJson();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(response.getStatus()).isEqualTo(666);
     assertThat(response.getBody().getObject().get("foo")).hasToString("bar");
@@ -156,14 +160,16 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .getRbelMessagesList()
                 .get(0)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
-                .getReceiverHostname())
+                .getReceiverHostname()
+                .get())
         .isEqualTo(new RbelHostname("backend", 80));
     assertThat(
             tigerProxy
                 .getRbelMessagesList()
                 .get(1)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
-                .getSenderHostname())
+                .getSenderHostname()
+                .get())
         .isEqualTo(new RbelHostname("backend", 80));
   }
 
@@ -176,7 +182,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         .header("foo", "bar")
         .header("x-forwarded-for", "someStuff")
         .asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0))
         .extractChildWithPath("$.header.foo")
@@ -193,7 +199,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
   }
 
   @Test
-  void reverseProxy_headersShouldBeUntouched() throws Exception {
+  void reverseProxy_headersShouldBeUntouched() {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
@@ -211,7 +217,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
         .header("x-forwarded-for", "someStuff")
         .header("Host", "RandomStuffShouldBePreserved")
         .asString();
-    awaitMessagesInTiger(6);
+    awaitMessagesInTigerProxy(6);
 
     final RbelElement request = tigerProxy.getRbelMessagesList().get(0);
     assertThat(request).extractChildWithPath("$.header.foo").hasStringContentEqualTo("bar");
@@ -234,7 +240,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
         .header("Host", "RandomStuffShouldBeOverwritten")
         .asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(
             tigerProxy
@@ -260,7 +266,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .build());
 
     proxyRest.get("http://foo.bar/foobar").asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(
             tigerProxy
@@ -277,7 +283,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(
             tigerProxy
@@ -349,7 +355,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .build());
 
     proxyRest.get("http://foo.bar/foobar").asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(
             tigerProxy
@@ -382,7 +388,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
     final HttpResponse<JsonNode> response =
         proxyRest.get("http://localhost:" + fakeBackendServerPort + "/foobar").asJson();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(response.getStatus()).isEqualTo(666);
 
@@ -411,7 +417,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                             .withBody("Hallo".getBytes()))));
 
     proxyRest.get("http://backend/binary").asBytes();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(tigerProxy.getRbelMessagesList().size() - 1))
         .extractChildWithPath("$.body")
@@ -423,7 +429,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     proxyRest.get("http://backend/foobar").asString().getBody();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(1))
         .extractChildWithPath("$.body.foo.content")
@@ -435,10 +441,10 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     final AtomicInteger callCounter = new AtomicInteger(0);
-    tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
+    tigerProxy.addRbelMessageListener(msg -> callCounter.incrementAndGet());
 
     proxyRest.get("http://backend/foobar").asString().getBody();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(callCounter.get()).isEqualTo(2);
   }
@@ -457,11 +463,11 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                         .build()))
             .build());
 
-    tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
+    tigerProxy.addRbelMessageListener(msg -> callCounter.incrementAndGet());
 
     // no (forward)-proxy! we use the tiger-proxy as a reverse-proxy
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/notAServer/foobar").asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(callCounter.get()).isEqualTo(2);
     assertThat(tigerProxy.getRbelMessagesList().get(1))
@@ -475,11 +481,11 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
-    tigerProxy.addRbelMessageListener(message -> callCounter.incrementAndGet());
+    tigerProxy.addRbelMessageListener(msg -> callCounter.incrementAndGet());
 
     // no (forward)-proxy! we use the tiger-proxy as a reverse-proxy
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(callCounter.get()).isEqualTo(2);
   }
@@ -617,7 +623,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .build());
 
     proxyRest.get("http://backend?jws=" + jwsSerialized).asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0))
         .extractChildWithPath("$.path.jws.value.signature.isValid")
@@ -668,7 +674,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     secondInstance.config().proxy("localhost", tigerProxy.getProxyPort());
     secondInstance.get("http://backend/foobar").asString();
 
-    awaitMessagesInTiger(4);
+    awaitMessagesInTigerProxy(4);
 
     checkMessageAddresses(LOCALHOST_REGEX, "backend");
     checkMessagePorts();
@@ -684,7 +690,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     final UnirestInstance secondInstance = Unirest.spawnInstance();
     secondInstance.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
 
-    awaitMessagesInTiger(4);
+    awaitMessagesInTigerProxy(4);
 
     checkMessageAddresses(LOCALHOST_REGEX, LOCALHOST_REGEX);
     checkMessagePorts();
@@ -735,7 +741,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     proxyRest.get("http://backend/foobar").asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(
             tigerProxy
@@ -758,7 +764,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     spawnTigerProxyWithDefaultRoutesAndWith(new TigerProxyConfiguration());
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar").asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(
             tigerProxy
@@ -783,7 +789,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     final UnirestInstance unirestInstance = Unirest.spawnInstance();
     unirestInstance.config().proxy("localhost", tigerProxy.getProxyPort());
     unirestInstance.get("http://localhost:" + fakeBackendServerPort + "/foobar").asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(
             tigerProxy
@@ -830,7 +836,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                                     + "/deep/foobar"))));
 
     proxyRest.get("http://server/mainserver").asString();
-    awaitMessagesInTiger(4);
+    awaitMessagesInTigerProxy(4);
 
     assertThat(
             tigerProxy.getRbelMessages().stream()
@@ -869,7 +875,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .contentType(MediaType.APPLICATION_XML.toString())
             .asBytes();
 
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(response.getBody()).isEqualTo(rawContent);
 
@@ -901,7 +907,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     Unirest.post("http://localhost:" + tigerProxy.getProxyPort() + "/foobar")
         .body("{'foobar':'" + RandomStringUtils.insecure().nextAlphanumeric(2_000) + "'}")
         .asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0)).doesNotHaveChildWithPath("$.body.foobar");
   }
@@ -912,7 +918,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
 
     Unirest.get("http://localhost:" + tigerProxy.getProxyPort() + "/foobar?foo=!bar&!foo=bar")
         .asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0))
         .extractChildWithPath("$.path.foo.value")
@@ -948,6 +954,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .get(1)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getSenderHostname()
+                .get()
                 .getPort())
         .isPositive()
         .isEqualTo(
@@ -956,6 +963,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .get(0)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getReceiverHostname()
+                .get()
                 .getPort());
     assertThat(
             tigerProxy
@@ -963,6 +971,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .get(2)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getSenderHostname()
+                .get()
                 .getPort())
         .isPositive()
         .isEqualTo(
@@ -971,6 +980,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .get(3)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getReceiverHostname()
+                .get()
                 .getPort());
     assertThat(
             tigerProxy
@@ -978,6 +988,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .get(0)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getSenderHostname()
+                .get()
                 .getPort())
         .isPositive()
         .isNotEqualTo(
@@ -986,6 +997,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
                 .get(2)
                 .getFacetOrFail(RbelTcpIpMessageFacet.class)
                 .getSenderHostname()
+                .get()
                 .getPort());
   }
 
@@ -1017,7 +1029,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
             .build());
 
     proxyRest.get("http://foo.bar/foobar?foo=this%20is%20bar").asString();
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(tigerProxy.getRbelMessagesList().get(0))
         .extractChildWithPath("$.path.foo")
@@ -1034,7 +1046,7 @@ class TestTigerProxy extends AbstractTigerProxyTest {
     final HttpResponse<String> response =
         proxyRest.post("http://backend/echo").body("Hello World!").asString();
 
-    awaitMessagesInTiger(2);
+    awaitMessagesInTigerProxy(2);
 
     assertThat(response.getStatusText()).isEmpty();
     assertThat(tigerProxy.getRbelMessagesList().get(1))

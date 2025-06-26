@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,8 +13,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.testenvmgr.controller;
 
 import de.gematik.rbellogger.renderer.MessageMetaDataDto;
@@ -27,6 +31,7 @@ import io.micrometer.common.util.StringUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -87,11 +92,7 @@ public class EnvStatusController implements TigerUpdateListener {
           try {
             if (tigerEnvStatus.getFeatureMap().containsKey(featureKey)) {
               FeatureUpdate feature = tigerEnvStatus.getFeatureMap().get(featureKey);
-              if (featureUpdate.getStatus() != TestResult.UNUSED) {
-                feature.setStatus(featureUpdate.getStatus());
-              }
-              feature.setDescription(featureUpdate.getDescription());
-              fillInScenarioData(featureUpdate, feature);
+              updateExistingFeature(featureUpdate, feature);
             } else {
               tigerEnvStatus.getFeatureMap().put(featureKey, featureUpdate);
             }
@@ -101,6 +102,14 @@ public class EnvStatusController implements TigerUpdateListener {
         });
   }
 
+  private static void updateExistingFeature(FeatureUpdate featureUpdate, FeatureUpdate feature) {
+    if (featureUpdate.getStatus() != TestResult.UNUSED) {
+      feature.setStatus(featureUpdate.getStatus());
+    }
+    feature.setDescription(featureUpdate.getDescription());
+    fillInScenarioData(featureUpdate, feature);
+  }
+
   private static void fillInScenarioData(FeatureUpdate featureUpdate, FeatureUpdate feature) {
     featureUpdate
         .getScenarios()
@@ -108,25 +117,34 @@ public class EnvStatusController implements TigerUpdateListener {
             (scenarioKey, scenarioUpdate) -> {
               if (feature.getScenarios().containsKey(scenarioKey)) {
                 ScenarioUpdate scenario = feature.getScenarios().get(scenarioKey);
-                if (scenarioUpdate.getStatus() != TestResult.UNUSED) {
-                  scenario.setStatus(scenarioUpdate.getStatus());
-                }
-                if (!StringUtils.isBlank(scenarioUpdate.getDescription())) {
-                  scenario.setDescription(scenarioUpdate.getDescription());
-                }
-                if (scenarioUpdate.getExampleKeys() != null) {
-                  scenario.setExampleKeys(scenarioUpdate.getExampleKeys());
-                }
-                if (scenarioUpdate.getExampleList() != null) {
-                  scenario.setExampleList(scenarioUpdate.getExampleList());
-                }
-                scenario.setVariantIndex(scenarioUpdate.getVariantIndex());
-                scenario.setDryRun(scenarioUpdate.isDryRun());
-                fillInStepData(scenarioUpdate, scenario);
+                updateExistingScenario(scenarioUpdate, scenario);
               } else {
                 feature.getScenarios().put(scenarioKey, scenarioUpdate);
               }
             });
+  }
+
+  private static void updateExistingScenario(
+      ScenarioUpdate scenarioUpdate, ScenarioUpdate scenario) {
+    var newStatus = scenarioUpdate.getStatus();
+    if (newStatus != TestResult.UNUSED && newStatus != null) {
+      updateScenarioStatus(scenario, newStatus);
+    }
+    if (!StringUtils.isBlank(scenarioUpdate.getFailureMessage())) {
+      scenario.setFailureMessage(scenarioUpdate.getFailureMessage());
+    }
+    if (!StringUtils.isBlank(scenarioUpdate.getDescription())) {
+      scenario.setDescription(scenarioUpdate.getDescription());
+    }
+    if (scenarioUpdate.getExampleKeys() != null) {
+      scenario.setExampleKeys(scenarioUpdate.getExampleKeys());
+    }
+    if (scenarioUpdate.getExampleList() != null) {
+      scenario.setExampleList(scenarioUpdate.getExampleList());
+    }
+    scenario.setVariantIndex(scenarioUpdate.getVariantIndex());
+    scenario.setDryRun(scenarioUpdate.isDryRun());
+    fillInStepData(scenarioUpdate, scenario);
   }
 
   private static void fillInStepData(ScenarioUpdate scenarioUpdate, ScenarioUpdate scenario) {
@@ -136,24 +154,68 @@ public class EnvStatusController implements TigerUpdateListener {
             (stepKey, stepUpdate) -> {
               if (scenario.getSteps().containsKey(stepKey)) {
                 StepUpdate step = scenario.getSteps().get(stepKey);
-                if (stepUpdate.getStatus() != null) {
-                  fillInStatus(scenario, step, stepUpdate);
-                }
-                if (!StringUtils.isBlank(stepUpdate.getDescription())) {
-                  step.setDescription(stepUpdate.getDescription());
-                }
-                if (!StringUtils.isBlank(stepUpdate.getTooltip())) {
-                  step.setTooltip(stepUpdate.getTooltip());
-                }
-                step.setStepIndex(stepUpdate.getStepIndex());
-                fillInMetaData(step, stepUpdate);
+                updateExistingStep(scenario, stepUpdate, step);
               } else {
                 scenario.getSteps().put(stepKey, stepUpdate);
               }
             });
   }
 
-  private static void fillInMetaData(StepUpdate step, StepUpdate stepUpdate) {
+  private static void updateExistingStep(
+      ScenarioUpdate scenario, StepUpdate stepUpdate, StepUpdate step) {
+    if (stepUpdate.getStatus() != null) {
+      fillInStatus(scenario, stepUpdate, step);
+    }
+    updateStep(stepUpdate, step);
+  }
+
+  private static void updateStep(StepUpdate stepUpdate, StepUpdate step) {
+    if (stepUpdate.getStatus() != TestResult.FAILED) {
+      step.setFailureMessage(null);
+      step.setFailureStacktrace(null);
+    } else {
+      if (!StringUtils.isBlank(stepUpdate.getFailureMessage())) {
+        step.setFailureMessage(stepUpdate.getFailureMessage());
+      }
+      if (!StringUtils.isBlank(stepUpdate.getFailureStacktrace())) {
+        step.setFailureStacktrace(stepUpdate.getFailureStacktrace());
+      }
+    }
+    if (!StringUtils.isBlank(stepUpdate.getDescription())) {
+      step.setDescription(stepUpdate.getDescription());
+    }
+    if (!StringUtils.isBlank(stepUpdate.getTooltip())) {
+      step.setTooltip(stepUpdate.getTooltip());
+    }
+    step.setStepIndex(stepUpdate.getStepIndex());
+    fillInMetaData(stepUpdate, step);
+    fillInStepData(stepUpdate, step);
+  }
+
+  private static void fillInStepData(StepUpdate stepUpdate, StepUpdate step) {
+    if (stepUpdate.getStatus() == TestResult.PENDING) {
+      step.getSubSteps().clear();
+      return;
+    }
+    AtomicInteger stepIndex = new AtomicInteger(0);
+    stepUpdate
+        .getSubSteps()
+        .forEach(
+            subStepUpdate -> {
+              if (stepIndex.get() < step.getSubSteps().size()) {
+                StepUpdate subStep = step.getSubSteps().get(stepIndex.get());
+                if (subStepUpdate.getStatus() != null) {
+                  subStep.setStatus(subStepUpdate.getStatus());
+                }
+                updateStep(subStepUpdate, subStep);
+              } else {
+                step.getSubSteps().add(subStepUpdate);
+              }
+              stepIndex.incrementAndGet();
+            });
+  }
+
+  private static void fillInMetaData(StepUpdate stepUpdate, StepUpdate step) {
     List<MessageMetaDataDto> newMetaData = stepUpdate.getRbelMetaData();
     if (newMetaData != null) {
       if (step.getRbelMetaData() == null) {
@@ -164,15 +226,19 @@ public class EnvStatusController implements TigerUpdateListener {
   }
 
   private static void fillInStatus(
-      ScenarioUpdate scenario, StepUpdate step, StepUpdate stepUpdate) {
+      ScenarioUpdate scenario, StepUpdate stepUpdate, StepUpdate step) {
     TestResult newStatus = stepUpdate.getStatus();
-    if (newStatus != TestResult.UNUSED) {
-      step.setStatus(newStatus);
-      if (newStatus != null
-          && (scenario.getStatus() == null
-              || scenario.getStatus().ordinal() > newStatus.ordinal())) {
-        scenario.setStatus(newStatus);
+    if (newStatus != TestResult.UNUSED && newStatus != null) {
+      if (step.getStatus() == null || step.getStatus().ordinal() > newStatus.ordinal()) {
+        step.setStatus(newStatus);
       }
+      updateScenarioStatus(scenario, newStatus);
+    }
+  }
+
+  private static void updateScenarioStatus(ScenarioUpdate scenario, TestResult newStatus) {
+    if (scenario.getStatus() == null || scenario.getStatus().ordinal() > newStatus.ordinal()) {
+      scenario.setStatus(newStatus);
     }
   }
 

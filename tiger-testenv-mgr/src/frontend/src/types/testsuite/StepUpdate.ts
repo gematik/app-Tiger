@@ -1,6 +1,6 @@
 ///
 ///
-/// Copyright 2024 gematik GmbH
+/// Copyright 2021-2025 gematik GmbH
 ///
 /// Licensed under the Apache License, Version 2.0 (the "License");
 /// you may not use this file except in compliance with the License.
@@ -14,78 +14,113 @@
 /// See the License for the specific language governing permissions and
 /// limitations under the License.
 ///
+/// *******
+///
+/// For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
+///
 
 import TestResult from "./TestResult";
 import MessageMetaDataDto from "@/types/rbel/MessageMetaDataDto";
 
 export interface IStep {
-  description: string;
-  tooltip: string;
-  status: TestResult;
-  rbelMetaData: MessageMetaDataDto[];
-  stepIndex: number;
+    description: string;
+    tooltip: string;
+    status: TestResult;
+    failureMessage: string;
+    failureStacktrace: string;
+    rbelMetaData: MessageMetaDataDto[];
+    stepIndex: number;
+    subSteps: IStep[];
 }
 
 export interface IJsonSteps {
-  [key: string]: IStep;
+    [key: string]: IStep;
 }
 
 export default class StepUpdate implements IStep {
-  description = "";
-  tooltip = "";
-  status = TestResult.UNUSED;
-  stepIndex = -1;
-  rbelMetaData: MessageMetaDataDto[] = [];
+    description = "";
+    tooltip = "";
+    status = TestResult.UNUSED;
+    failureMessage = "";
+    failureStacktrace = "";
+    stepIndex = -1;
+    rbelMetaData: MessageMetaDataDto[] = [];
+    subSteps: IStep[] = [];
 
-  public static fromJson(json: IStep): StepUpdate {
-    const step: StepUpdate = new StepUpdate();
-    if (json.description) {
-      step.description = json.description;
+    public static fromJson(json: IStep): StepUpdate {
+        const step: StepUpdate = new StepUpdate();
+        if (json.description) {
+            step.description = json.description;
+        }
+        if (json.tooltip) {
+            step.tooltip = json.tooltip;
+        }
+        if (json.status) {
+            step.status = json.status;
+        }
+        if (json.failureMessage) {
+            step.failureMessage = json.failureMessage;
+        }
+        if (json.failureStacktrace) {
+            step.failureStacktrace = json.failureStacktrace;
+        }
+        if (json.rbelMetaData?.length) {
+            step.rbelMetaData = json.rbelMetaData;
+        }
+        if (json.stepIndex !== -1) {
+            step.stepIndex = json.stepIndex;
+        }
+        if (json.subSteps?.length) {
+            step.subSteps = json.subSteps;
+        }
+        return step;
     }
-    if (json.tooltip) {
-      step.tooltip = json.tooltip;
-    }
-    if (json.status) {
-      step.status = json.status;
-    }
-    if (json.rbelMetaData?.length) {
-      step.rbelMetaData = json.rbelMetaData;
-    }
-    if (json.stepIndex !== -1) {
-      step.stepIndex = json.stepIndex;
-    }
-    return step;
-  }
 
-  public static mapFromJson(jsonsteps: IJsonSteps): Map<string, StepUpdate> {
-    const map: Map<string, StepUpdate> = new Map<string, StepUpdate>();
-    if (jsonsteps) {
-      Object.entries(jsonsteps).forEach(([key, value]) =>
-        map.set(key, this.fromJson(value)),
-      );
+    public static mapFromJson(jsonsteps: IJsonSteps): Map<string, StepUpdate> {
+        const map: Map<string, StepUpdate> = new Map<string, StepUpdate>();
+        if (jsonsteps) {
+            Object.entries(jsonsteps).forEach(([key, value]) =>
+                map.set(key, this.fromJson(value)),
+            );
+        }
+        return map;
     }
-    return map;
-  }
 
-  public merge(step: StepUpdate) {
-    if (step.description) {
-      this.description = step.description;
+    public merge(step: StepUpdate) {
+        if (step.description) {
+            this.description = step.description;
+        }
+        if (step.tooltip) {
+            this.tooltip = step.tooltip;
+        }
+        if (step.status) {
+            this.status = step.status;
+        }
+        if (step.status && step.status !== TestResult.FAILED) {
+            this.failureMessage = "";
+            this.failureStacktrace = "";
+        } else {
+            if (step.failureMessage) {
+                this.failureMessage = step.failureMessage;
+            }
+            if (step.failureStacktrace) {
+                this.failureStacktrace = step.failureStacktrace;
+            }
+        }
+        if (step.rbelMetaData?.length) {
+            this.rbelMetaData = step.rbelMetaData;
+        }
+        if (step.stepIndex) {
+            this.stepIndex = step.stepIndex;
+        }
+        if (step.status === TestResult.PENDING) {
+            this.subSteps = [];
+        } else if (step.subSteps?.length) {
+            this.subSteps = step.subSteps;
+        }
     }
-    if (step.tooltip) {
-      this.tooltip = step.tooltip;
-    }
-    if (step.status) {
-      this.status = step.status;
-    }
-    if (step.rbelMetaData?.length) {
-      this.rbelMetaData = step.rbelMetaData;
-    }
-    if (step.stepIndex) {
-      this.stepIndex = step.stepIndex;
-    }
-  }
 
-  public toString() {
-    return JSON.stringify(this);
-  }
+    public toString() {
+        return JSON.stringify(this);
+    }
 }

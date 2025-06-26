@@ -1,5 +1,6 @@
 /*
- * Copyright 2024 gematik GmbH
+ *
+ * Copyright 2021-2025 gematik GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
+ * *******
+ *
+ * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-
 package de.gematik.test.tiger.glue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
+import de.gematik.test.tiger.glue.annotation.ResolvableArgument;
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerLibraryException;
 import de.gematik.test.tiger.lib.json.JsonChecker;
 import de.gematik.test.tiger.lib.rbel.*;
 import de.gematik.test.tiger.lib.rbel.ModeType;
 import de.gematik.test.tiger.proxy.TigerProxy;
+import de.gematik.test.tiger.testenvmgr.util.TigerTestEnvException;
 import io.cucumber.java.BeforeAll;
 import io.cucumber.java.de.Dann;
 import io.cucumber.java.de.Gegebensei;
@@ -36,7 +42,6 @@ import io.cucumber.java.de.Wenn;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -903,7 +908,7 @@ public class RBelValidatorGlue {
     TigerProxy tigerProxy = rbelMessageRetriever.getTigerTestEnvMgr().getLocalTigerProxyOrFail();
     List<RbelElement> readElements = tigerProxy.readTrafficFromTgrFile(filePath);
     readElements.forEach(
-        rbelMessageRetriever.getLocalProxyRbelMessageListener()::triggerNewReceivedMessage);
+        e -> rbelMessageRetriever.getLocalProxyRbelMessageListener().triggerNewReceivedMessage(e));
   }
 
   /**
@@ -925,6 +930,14 @@ public class RBelValidatorGlue {
     TigerConfigurationKeys.CUSTOM_FAILURE_MESSAGE.clearValue();
   }
 
+  private static RbelConverter getRbelConverter() {
+    return TigerDirector.getTigerTestEnvMgr()
+        .getLocalTigerProxyOptional()
+        .orElseThrow(() -> new TigerTestEnvException("No local tiger proxy configured"))
+        .getRbelLogger()
+        .getRbelConverter();
+  }
+
   /**
    * Deactivate the rbel parsing for the given parsers.
    *
@@ -932,27 +945,40 @@ public class RBelValidatorGlue {
    */
   @Given("TGR the rbel parsing is deactivated for {string}")
   @Gegebensei("TGR das rbel parsing ist inaktiv für {string}")
+  @Gegebensei("TGR die Parser für {string} sind deaktiviert")
   public void deactivateParsingFor(String parsersToDeactivate) {
-    List<String> idsToDeactivate =
-        Arrays.stream(parsersToDeactivate.split(","))
-            .map(String::trim)
-            .filter(s -> !s.isEmpty())
-            .toList();
-    TigerDirector.getTigerTestEnvMgr()
-        .getLocalTigerProxyOrFail()
-        .getRbelLogger()
-        .getRbelConverter()
-        .deactivatePlugins(idsToDeactivate);
+    getRbelConverter().deactivateParsingFor(parsersToDeactivate);
   }
 
-  /** Reactivate all parsers that were configured at startup */
+  /**
+   * Activate the rbel parsing for the given parsers.
+   *
+   * @param parsersToActivate a comma separated list of parser identifiers to activate.
+   */
+  @Given("TGR the rbel parsing is activated for {string}")
+  @Gegebensei("TGR die Parser für {string} sind aktiviert")
+  public void activateParsingFor(String parsersToActivate) {
+    getRbelConverter().activateParsingFor(parsersToActivate);
+  }
+
+  /** Activate all parsers that were configured at startup */
+  @Given("TGR the rbel parsing is activated for all configured parsers")
+  @Gegebensei("TGR alle konfigurierten Parser sind aktiviert")
+  public void activateParsingForAll() {
+    getRbelConverter().activateParsingForAll();
+  }
+
+  @Deprecated(forRemoval = true)
   @Given("TGR the rbel parsing is reactivated for all configured parsers")
   @Gegebensei("TGR das rbel parsing ist wieder aktiv für alle konfigurierten Parser")
   public void reactivateParsingForAll() {
-    TigerDirector.getTigerTestEnvMgr()
-        .getLocalTigerProxyOrFail()
-        .getRbelLogger()
-        .getRbelConverter()
-        .reactivateAllConfiguredPlugins();
+    getRbelConverter().reactivateParsingForAll();
+  }
+
+  /** Deactivate the rbel parsing for all optional parsers. */
+  @Given("TGR all optional rbel parsers are deactivated")
+  @Gegebensei("TGR alle optionalen Parser sind deaktiviert")
+  public void deactivateOptionalParsing() {
+    getRbelConverter().deactivateOptionalParsing();
   }
 }
