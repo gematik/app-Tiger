@@ -67,12 +67,13 @@ licenses:
 
 ## License
 
-Copyright 2025 gematik GmbH
+Copyright [YEAR CREATED]-[CURRENT YEAR] gematik GmbH
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
-License.
+EUROPEAN UNION PUBLIC LICENCE v. 1.2
 
-See the [LICENSE](./LICENSE) for the specific language governing permissions and limitations under the License.
+EUPL © the European Union 2007, 2016
+
+See the [LICENSE](./LICENSE) for the specific language governing permissions and limitations under the License
 
 ## Additional Notes and Disclaimer from gematik GmbH
 
