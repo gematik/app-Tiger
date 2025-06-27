@@ -30,9 +30,9 @@
         <version>4.0.6-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
     <artifactId>tiger-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
+    <name>${project.artifactId}</name>
     <description>This plugin supports generating custom Junit5 driver classes for Serenity test runs.</description>
 
     <dependencies>

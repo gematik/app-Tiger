@@ -31,8 +31,9 @@
         <version>4.0.6-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
     <artifactId>tiger-testenv-mgr</artifactId>
+    <name>${project.artifactId}</name>
+    <description>tiger-testenv-mgr modul of the tiger test platform.</description>
 
     <dependencies>
         <dependency>

@@ -34,7 +34,8 @@
 
     <artifactId>tiger-zion</artifactId>
     <packaging>jar</packaging>
-
+    <name>${project.artifactId}</name>
+    <description>Tiger Zion modul of the tiger test platform.</description>
     <dependencies>
         <dependency>
             <groupId>com.konghq</groupId>

@@ -29,7 +29,8 @@
 
     <artifactId>tiger-standalone-proxy</artifactId>
     <packaging>jar</packaging>
-
+    <name>${project.artifactId}</name>
+    <description>tiger-standalone-proxy modul of the tiger test platform.</description>
     <dependencies>
         <dependency>
             <groupId>de.gematik.test</groupId>

@@ -33,7 +33,8 @@
     </parent>
 
     <artifactId>tiger-proxy-scrollable-webui</artifactId>
-
+    <name>${project.artifactId}</name>
+    <description>tiger-proxy-scrollable-webui modul of the tiger test platform.</description>
     <build>
         <plugins>
             <plugin>

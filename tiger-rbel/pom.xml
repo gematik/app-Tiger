@@ -31,7 +31,8 @@
     </parent>
 
     <artifactId>tiger-rbel</artifactId>
-
+    <name>${project.artifactId}</name>
+    <description>tiger-rbel modul of the tiger test platform.</description>
     <properties>
         <build.date>${maven.build.timestamp}</build.date>
         <maven.build.timestamp.format>dd-MM-yyyy HH:mm:ss</maven.build.timestamp.format>

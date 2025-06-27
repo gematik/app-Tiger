@@ -31,9 +31,10 @@
         <version>4.0.6-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-
     <artifactId>tiger-test-lib</artifactId>
     <packaging>jar</packaging>
+    <name>${project.artifactId}</name>
+    <description>tiger-test-lib modul of the tiger test platform.</description>
 
     <properties>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>

@@ -32,7 +32,8 @@
     </parent>
 
     <artifactId>tiger-uitests</artifactId>
-
+    <name>${project.artifactId}</name>
+    <description>Tiger uitests modul of the tiger test platform.</description>
     <dependencies>
         <dependency>
             <groupId>com.microsoft.playwright</groupId>

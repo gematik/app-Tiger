@@ -30,8 +30,9 @@
         <artifactId>tiger</artifactId>
         <version>4.0.6-SNAPSHOT</version>
     </parent>
-
     <artifactId>tiger-test-utils</artifactId>
+    <name>${project.artifactId}</name>
+    <description>tiger-test-utils Zion modul of the tiger test platform.</description>
 
     <dependencies>
         <dependency>
