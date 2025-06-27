@@ -28,12 +28,13 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.0.5</version>
+        <version>4.0.6</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>tiger-proxy-scrollable-webui</artifactId>
-
+    <name>${project.artifactId}</name>
+    <description>tiger-proxy-scrollable-webui modul of the tiger test platform.</description>
     <build>
         <plugins>
             <plugin>

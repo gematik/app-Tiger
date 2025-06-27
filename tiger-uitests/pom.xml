@@ -27,12 +27,13 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.0.5</version>
+        <version>4.0.6</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>tiger-uitests</artifactId>
-
+    <name>${project.artifactId}</name>
+    <description>Tiger uitests modul of the tiger test platform.</description>
     <dependencies>
         <dependency>
             <groupId>com.microsoft.playwright</groupId>
