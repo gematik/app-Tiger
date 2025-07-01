@@ -66,6 +66,7 @@ public class RbelSmtpResponseConverter extends RbelConverterPlugin {
               element.addFacet(facet);
               element.addFacet(new RbelRootFacet<>(facet));
               element.addFacet(new RbelResponseFacet(facet.getStatus().getRawStringContent()));
+              context.findAndPairMatchingRequest(element, RbelSmtpCommandFacet.class);
             });
   }
 

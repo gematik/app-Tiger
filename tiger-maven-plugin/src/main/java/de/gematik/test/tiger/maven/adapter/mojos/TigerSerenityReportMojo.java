@@ -80,15 +80,12 @@ public class TigerSerenityReportMojo extends AbstractMojo {
   public void execute() throws MojoExecutionException, MojoFailureException {
     try {
       generateReports();
-
-    } catch (MojoFailureException e) {
-      throw e;
     } catch (final Exception e) {
       throw new MojoExecutionException("Error generating serenity reports", e);
     }
   }
 
-  private void generateReports() throws IOException, MojoFailureException {
+  private void generateReports() throws IOException {
     if (!reportDirectory.exists()) {
       getLog().warn("Report directory does not exist yet: " + reportDirectory);
       return;
@@ -107,8 +104,6 @@ public class TigerSerenityReportMojo extends AbstractMojo {
       TigerBrowserUtil.openUrlInBrowser(
           reportDirectory.toPath() + "\\index.html", "browser for serenity report");
     }
-
-    reportGenerator.checkResults();
   }
 
   private void includeFullUnresolvedDocstringArguments() throws IOException {

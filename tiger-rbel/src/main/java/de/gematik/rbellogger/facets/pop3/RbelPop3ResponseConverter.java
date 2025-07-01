@@ -27,7 +27,6 @@ import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.core.RbelFacet;
 import de.gematik.rbellogger.data.core.RbelResponseFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.util.EmailConversionUtils;
@@ -58,30 +57,6 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
   @Override
   public RbelConversionPhase getPhase() {
     return RbelConversionPhase.PROTOCOL_PARSING;
-  }
-
-  public static Optional<RbelElement> findAndPairMatchingRequest(
-      RbelElement response,
-      RbelConversionExecutor context,
-      Class<? extends RbelFacet> requestFacetClass) {
-    if (response.hasFacet(TracingMessagePairFacet.class)) {
-      return Optional.of(response.getFacetOrFail(TracingMessagePairFacet.class).getRequest());
-    }
-    List<RbelElement> lastMessages =
-        context
-            .getPreviousMessagesInSameConnectionAs(response)
-            .filter(msg -> msg.hasFacet(requestFacetClass))
-            .takeWhile(msg -> !msg.hasFacet(TracingMessagePairFacet.class))
-            .toList();
-    if (lastMessages.isEmpty()) {
-      return Optional.empty();
-    }
-    var request = lastMessages.get(lastMessages.size() - 1);
-
-    var pair = TracingMessagePairFacet.builder().request(request).response(response).build();
-    response.addFacet(pair);
-    request.addFacet(pair);
-    return Optional.of(request);
   }
 
   @Override
@@ -158,9 +133,10 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
                   command -> {
                     log.debug("found command: {}", command);
                     return switch (command) {
-                      case TOP, CAPA, LIST, RETR, UIDL -> Pair.of(
+                      case TOP, CAPA, RETR, UIDL -> Pair.of(
                           CRLF_DOT_CRLF_BYTES,
                           element.getContent().indexOf(CRLF_DOT_CRLF_BYTES, firstLineEnd));
+                      case LIST -> findListLinesEndIndex(element, context, firstLineEnd);
                       case AUTH -> Pair.of(
                           EmailConversionUtils.CRLF_BYTES, findAuthLinesEndIndex(element));
                       default -> null;
@@ -177,6 +153,20 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
     var result = element.getContent().subArray(0, endIndex);
     log.debug("result: {}", result);
     return Optional.of(result);
+  }
+
+  private Pair<byte[], Integer> findListLinesEndIndex(
+      RbelElement element, RbelConversionExecutor context, int firstLineEnd) {
+    return findPop3Request(element, context)
+        .flatMap(request -> request.getFacet(RbelPop3CommandFacet.class))
+        .filter(
+            facet -> facet.getArguments() == null || facet.getArguments().getContent().isEmpty())
+        .map(
+            facet ->
+                Pair.of(
+                    CRLF_DOT_CRLF_BYTES,
+                    element.getContent().indexOf(CRLF_DOT_CRLF_BYTES, firstLineEnd)))
+        .orElse(null);
   }
 
   private static int findAuthLinesEndIndex(RbelElement element) {
@@ -271,7 +261,7 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
 
   private static Optional<RbelElement> findPop3Request(
       RbelElement element, RbelConversionExecutor context) {
-    return findAndPairMatchingRequest(element, context, RbelPop3CommandFacet.class);
+    return context.findAndPairMatchingRequest(element, RbelPop3CommandFacet.class);
   }
 
   private static Optional<RbelPop3Command> findPop3Command(

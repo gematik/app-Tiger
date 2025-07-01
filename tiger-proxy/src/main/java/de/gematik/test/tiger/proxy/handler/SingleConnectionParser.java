@@ -232,10 +232,11 @@ public class SingleConnectionParser {
   }
 
   private static String getOrGenerateUuid(TcpConnectionEntry bufferedContent) {
-    if (Boolean.FALSE.equals(
-        bufferedContent
-            .getAdditionalData()
-            .getOrDefault(IS_UNPARSED_MESSAGE_CHUNK.getKey(), false))) {
+    if (bufferedContent.getPositionInBaseNode() == 0
+        && Boolean.FALSE.equals(
+            bufferedContent
+                .getAdditionalData()
+                .getOrDefault(IS_UNPARSED_MESSAGE_CHUNK.getKey(), false))) {
       return bufferedContent.getUuid();
     } else {
       return DeterministicUuidGenerator.generateUuid(
