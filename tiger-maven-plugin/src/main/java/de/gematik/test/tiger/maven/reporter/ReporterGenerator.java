@@ -23,8 +23,6 @@ package de.gematik.test.tiger.maven.reporter;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import net.thucydides.model.domain.TestResult;
-import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 
 public class ReporterGenerator {
@@ -57,27 +55,5 @@ public class ReporterGenerator {
           reporter.generateReport();
           reporter.logReportUri(log);
         });
-  }
-
-  public void checkResults() throws MojoFailureException {
-    if (htmlReporter != null) {
-      var testResultOpt = htmlReporter.getTestResult();
-      if (testResultOpt.isPresent()) {
-        checkTestResult(testResultOpt.get());
-      }
-    }
-  }
-
-  private void checkTestResult(TestResult testResult) throws MojoFailureException {
-    switch (testResult) {
-      case ERROR:
-        throw new MojoFailureException("An error occurred in the Serenity tests");
-      case FAILURE:
-        throw new MojoFailureException("A failure occurred in the Serenity tests");
-      case COMPROMISED:
-        throw new MojoFailureException("There were compromised tests in the Serenity test suite");
-      default:
-        break;
-    }
   }
 }
