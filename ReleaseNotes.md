@@ -1,6 +1,32 @@
 # Changelog Tiger Test platform
 
-# Release 4.0.2
+# Release 4.0.7
+
+## Bugfixes
+
+* TGR-1890: Re-add SMTP message pairing.
+
+* TGR-1891: response for POP3 LIST command with argument handled properly.
+
+* TGR-1889: Tiger Maven Plugin: when creating serenity reports, an automatic check of the aggregated report would break
+  the build too soon, preventing maven plugins from performing actions in the post-integration-test phase. To check the
+  aggregated serenity report for test failures you can configure the new plugin goal:
+
+```xml
+
+<plugin>
+    <groupId>de.gematik.test</groupId>
+    <artifactId>tiger-maven-plugin</artifactId>
+    <version>${tiger.version}</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>check-report</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+```
 
 # Release 4.0.0
 

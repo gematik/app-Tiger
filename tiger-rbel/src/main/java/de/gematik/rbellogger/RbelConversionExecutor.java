@@ -188,6 +188,27 @@ public class RbelConversionExecutor {
         .filter(msg -> haveSameConnection(msg, targetElement));
   }
 
+  public Optional<RbelElement> findAndPairMatchingRequest(
+      RbelElement response, Class<? extends RbelFacet> requestFacetClass) {
+    if (response.hasFacet(TracingMessagePairFacet.class)) {
+      return Optional.of(response.getFacetOrFail(TracingMessagePairFacet.class).getRequest());
+    }
+    List<RbelElement> lastMessages =
+        getPreviousMessagesInSameConnectionAs(response)
+            .filter(msg -> msg.hasFacet(requestFacetClass))
+            .takeWhile(msg -> !msg.hasFacet(TracingMessagePairFacet.class))
+            .toList();
+    if (lastMessages.isEmpty()) {
+      return Optional.empty();
+    }
+    var request = lastMessages.get(lastMessages.size() - 1);
+
+    var pair = TracingMessagePairFacet.builder().request(request).response(response).build();
+    response.addFacet(pair);
+    request.addFacet(pair);
+    return Optional.of(request);
+  }
+
   public String converterName() {
     return converter.getName();
   }
