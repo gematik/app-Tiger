@@ -39,13 +39,70 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfigurati
 import java.io.File;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.Test;
 
 @Slf4j
 public class TestDirectForwardProxyWithRaceCondition {
+
+  public static final String SMTP_COMMUNICATION =
+      """
+S: 220 smtp.example.com ESMTP Postfix
+
+C: HELO relay.example.org
+
+S: 250 Hello relay.example.org, I am glad to meet you
+
+C: MAIL FROM:<bob@example.org>
+
+S: 250 Ok
+
+C: RCPT TO:<alice@example.com>
+
+S: 250 Ok
+
+C: RCPT TO:<theboss@example.com>
+
+S: 250 Ok
+
+C: DATA
+
+S: 354 End data with <CR><LF>.<CR><LF>
+
+C: From: "Bob Example" <bob@example.org>
+C: To: "Alice Example" <alice@example.com>
+C: Cc: theboss@example.com
+C: Date: Tue, 15 Jan 2008 16:02:43 -0500
+C: Subject: Test message
+C:
+C: Hello Alice.
+C: This is a test message with 5 header fields and 4 lines in the message body.
+C: Your friend,
+C: Bob
+C: .
+
+S: 250 Ok: queued as 12345
+
+C: QUIT
+
+S: 221 Bye
+      """;
+  public static final String POP3_COMMUNICATION =
+      """
+S: +OK POP3 server ready <1896.697170952@dbc.mtview.ca.us>
+C: AUTH PLAIN
+S: +\s
+C: dGVzdAB0ZXN0AHRlc3Q=
+S: +OK Maildrop locked and ready
+C: AUTH PLAIN dGVzdAB0ZXN0AHRlc3Q=
+S: +OK Maildrop locked and ready
+      """;
+
   @SneakyThrows
   @Test
   public void cetpReplayWithRandomTcpChunks() {
@@ -57,7 +114,8 @@ public class TestDirectForwardProxyWithRaceCondition {
     final String html = RbelHtmlRenderer.render(tigerProxy.getRbelMessagesList());
     Files.write(new File("target/cetpReplay.html").toPath(), html.getBytes());
     tigerProxy.waitForAllCurrentMessagesToBeParsed();
-    assertThat(tigerProxy.getRbelMessagesList()).hasSize(70);
+
+    waitForMessages(tigerProxy, 68);
   }
 
   @SneakyThrows
@@ -125,11 +183,11 @@ public class TestDirectForwardProxyWithRaceCondition {
         replayer.replayWithDirectForwardUsing(
             new TigerProxyConfiguration().setActivateRbelParsingFor(List.of("pop3", "mime")));
 
+    waitForMessages(tigerProxy, 3);
+
     final String html = RbelHtmlRenderer.render(tigerProxy.getRbelMessagesList());
     Files.write(new File("target/pop3Replay.html").toPath(), html.getBytes());
-    tigerProxy.getRbelMessagesList().stream()
-        .map(RbelElement::printTreeStructure)
-        .forEach(System.out::println);
+
     assertThat(
             tigerProxy.getRbelMessagesList().stream()
                 .filter(TestDirectForwardProxyWithRaceCondition::isPop3Message))
@@ -155,6 +213,9 @@ public class TestDirectForwardProxyWithRaceCondition {
 
     final String html = RbelHtmlRenderer.render(tigerProxy.getRbelMessagesList());
     Files.write(new File("target/pop3Replay.html").toPath(), html.getBytes());
+
+    waitForMessages(tigerProxy, 5);
+
     var messages =
         tigerProxy.getRbelMessagesList().stream()
             .filter(TestDirectForwardProxyWithRaceCondition::isPop3Message)
@@ -177,6 +238,19 @@ public class TestDirectForwardProxyWithRaceCondition {
         .isEqualTo(quitCommand);
   }
 
+  private static void waitForMessages(TigerProxy tigerProxy, int expectedMessages) {
+    try {
+      Awaitility.await()
+          .atMost(2, TimeUnit.SECONDS)
+          .until(() -> tigerProxy.getRbelMessagesList().size() == expectedMessages);
+    } catch (ConditionTimeoutException ex) {
+      tigerProxy.getRbelMessagesList().stream()
+          .map(RbelElement::printTreeStructure)
+          .forEach(System.out::println);
+      throw ex;
+    }
+  }
+
   private static boolean isPop3Message(RbelElement msg) {
     return msg.hasFacet(RbelPop3CommandFacet.class) || msg.hasFacet(RbelPop3ResponseFacet.class);
   }
@@ -184,52 +258,12 @@ public class TestDirectForwardProxyWithRaceCondition {
   @SneakyThrows
   @Test
   public void textBlobDemonstratorTest() {
-    val replayer =
-        PcapReplayer.writeReplay(
-            """
-S: 220 smtp.example.com ESMTP Postfix
-
-C: HELO relay.example.org
-
-S: 250 Hello relay.example.org, I am glad to meet you
-
-C: MAIL FROM:<bob@example.org>
-
-S: 250 Ok
-
-C: RCPT TO:<alice@example.com>
-
-S: 250 Ok
-
-C: RCPT TO:<theboss@example.com>
-
-S: 250 Ok
-
-C: DATA
-
-S: 354 End data with <CR><LF>.<CR><LF>
-
-C: From: "Bob Example" <bob@example.org>
-C: To: "Alice Example" <alice@example.com>
-C: Cc: theboss@example.com
-C: Date: Tue, 15 Jan 2008 16:02:43 -0500
-C: Subject: Test message
-C:
-C: Hello Alice.
-C: This is a test message with 5 header fields and 4 lines in the message body.
-C: Your friend,
-C: Bob
-C: .
-
-S: 250 Ok: queued as 12345
-
-C: QUIT
-
-S: 221 Bye
-""");
+    val replayer = PcapReplayer.writeReplay(SMTP_COMMUNICATION);
     val tigerProxy =
         replayer.replayWithDirectForwardUsing(
             new TigerProxyConfiguration().setActivateRbelParsingFor(List.of("smtp", "mime")));
+
+    waitForMessages(tigerProxy, 14);
 
     final String html = RbelHtmlRenderer.render(tigerProxy.getRbelMessagesList());
     Files.write(new File("target/mailReplay.html").toPath(), html.getBytes());
@@ -244,18 +278,23 @@ S: 221 Bye
 
   @SneakyThrows
   @Test
+  public void testSmtpRequestPairing() {
+    val replayer = PcapReplayer.writeReplay(SMTP_COMMUNICATION);
+    val tigerProxy =
+        replayer.replayWithDirectForwardUsing(
+            new TigerProxyConfiguration().setActivateRbelParsingFor(List.of("smtp")));
+
+    assertThat(
+            tigerProxy.getRbelMessagesList().stream()
+                .filter(msg -> msg.hasFacet(RbelSmtpCommandFacet.class))
+                .allMatch(msg -> msg.hasFacet(TracingMessagePairFacet.class)))
+        .isTrue();
+  }
+
+  @SneakyThrows
+  @Test
   public void testMultilinePop3AuthPlain() {
-    val replayer =
-        PcapReplayer.writeReplay(
-            """
-S: +OK POP3 server ready <1896.697170952@dbc.mtview.ca.us>
-C: AUTH PLAIN
-S: +\s
-C: dGVzdAB0ZXN0AHRlc3Q=
-S: +OK Maildrop locked and ready
-C: AUTH PLAIN dGVzdAB0ZXN0AHRlc3Q=
-S: +OK Maildrop locked and ready
-           """);
+    val replayer = PcapReplayer.writeReplay(POP3_COMMUNICATION);
     val tigerProxy =
         replayer.replayWithDirectForwardUsing(
             new TigerProxyConfiguration().setActivateRbelParsingFor(List.of("pop3")));

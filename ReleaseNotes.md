@@ -1,8 +1,10 @@
 # Changelog Tiger Test platform
 
-# Release 4.0.6
+# Release 4.0.7
 
 ## Bugfixes
+
+* TGR-1890: Re-add SMTP message pairing.
 
 * TGR-1889: Tiger Maven Plugin: when creating serenity reports, an automatic check of the aggregated report would break
   the build too soon, preventing maven plugins from performing actions in the post-integration-test phase. To check the

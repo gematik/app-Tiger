@@ -27,7 +27,6 @@ import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.core.RbelFacet;
 import de.gematik.rbellogger.data.core.RbelResponseFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.util.EmailConversionUtils;
@@ -58,30 +57,6 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
   @Override
   public RbelConversionPhase getPhase() {
     return RbelConversionPhase.PROTOCOL_PARSING;
-  }
-
-  public static Optional<RbelElement> findAndPairMatchingRequest(
-      RbelElement response,
-      RbelConversionExecutor context,
-      Class<? extends RbelFacet> requestFacetClass) {
-    if (response.hasFacet(TracingMessagePairFacet.class)) {
-      return Optional.of(response.getFacetOrFail(TracingMessagePairFacet.class).getRequest());
-    }
-    List<RbelElement> lastMessages =
-        context
-            .getPreviousMessagesInSameConnectionAs(response)
-            .filter(msg -> msg.hasFacet(requestFacetClass))
-            .takeWhile(msg -> !msg.hasFacet(TracingMessagePairFacet.class))
-            .toList();
-    if (lastMessages.isEmpty()) {
-      return Optional.empty();
-    }
-    var request = lastMessages.get(lastMessages.size() - 1);
-
-    var pair = TracingMessagePairFacet.builder().request(request).response(response).build();
-    response.addFacet(pair);
-    request.addFacet(pair);
-    return Optional.of(request);
   }
 
   @Override
@@ -271,7 +246,7 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
 
   private static Optional<RbelElement> findPop3Request(
       RbelElement element, RbelConversionExecutor context) {
-    return findAndPairMatchingRequest(element, context, RbelPop3CommandFacet.class);
+    return context.findAndPairMatchingRequest(element, RbelPop3CommandFacet.class);
   }
 
   private static Optional<RbelPop3Command> findPop3Command(
