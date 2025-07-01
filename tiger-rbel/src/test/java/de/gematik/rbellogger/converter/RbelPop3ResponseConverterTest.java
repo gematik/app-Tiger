@@ -51,6 +51,24 @@ class RbelPop3ResponseConverterTest extends AbstractResponseConverterTest {
   }
 
   @Test
+  void shouldConvertListHeaderForSingleListRequest() {
+    String request = "LIST 1\r\n";
+    String status = "+OK";
+    String response = status + " " + "1 100\r\n";
+
+    convertToRbelElement("+OK greeting\r\n");
+    RbelElement element = convertMessagePair(request, response);
+
+    RbelElementAssertion.assertThat(element)
+        .extractChildWithPath("$.pop3Status")
+        .hasStringContentEqualTo(status)
+        .andTheInitialElement()
+        .hasStringContentEqualToAtPosition("$.pop3Header", "1 100")
+        .andTheInitialElement()
+        .doesNotHaveChildWithPath("$.pop3Body");
+  }
+
+  @Test
   void shouldConvertListHeaderWithoutSize() {
     String request = "LIST\r\n";
     String status = "+OK";

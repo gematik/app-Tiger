@@ -133,9 +133,10 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
                   command -> {
                     log.debug("found command: {}", command);
                     return switch (command) {
-                      case TOP, CAPA, LIST, RETR, UIDL -> Pair.of(
+                      case TOP, CAPA, RETR, UIDL -> Pair.of(
                           CRLF_DOT_CRLF_BYTES,
                           element.getContent().indexOf(CRLF_DOT_CRLF_BYTES, firstLineEnd));
+                      case LIST -> findListLinesEndIndex(element, context, firstLineEnd);
                       case AUTH -> Pair.of(
                           EmailConversionUtils.CRLF_BYTES, findAuthLinesEndIndex(element));
                       default -> null;
@@ -152,6 +153,20 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
     var result = element.getContent().subArray(0, endIndex);
     log.debug("result: {}", result);
     return Optional.of(result);
+  }
+
+  private Pair<byte[], Integer> findListLinesEndIndex(
+      RbelElement element, RbelConversionExecutor context, int firstLineEnd) {
+    return findPop3Request(element, context)
+        .flatMap(request -> request.getFacet(RbelPop3CommandFacet.class))
+        .filter(
+            facet -> facet.getArguments() == null || facet.getArguments().getContent().isEmpty())
+        .map(
+            facet ->
+                Pair.of(
+                    CRLF_DOT_CRLF_BYTES,
+                    element.getContent().indexOf(CRLF_DOT_CRLF_BYTES, firstLineEnd)))
+        .orElse(null);
   }
 
   private static int findAuthLinesEndIndex(RbelElement element) {

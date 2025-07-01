@@ -6,6 +6,8 @@
 
 * TGR-1890: Re-add SMTP message pairing.
 
+* TGR-1891: response for POP3 LIST command with argument handled properly.
+
 * TGR-1889: Tiger Maven Plugin: when creating serenity reports, an automatic check of the aggregated report would break
   the build too soon, preventing maven plugins from performing actions in the post-integration-test phase. To check the
   aggregated serenity report for test failures you can configure the new plugin goal:
