@@ -63,7 +63,6 @@ public class TracingEndpointConfiguration
     scheduler.setWaitForTasksToCompleteOnShutdown(true);
     scheduler.setAwaitTerminationSeconds(2);
     scheduler.setPoolSize(4);
-    scheduler.setThreadGroupName("TGR_scheduler-foobar");
     scheduler.initialize();
     return scheduler;
   }

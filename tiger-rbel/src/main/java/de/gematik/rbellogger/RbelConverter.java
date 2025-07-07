@@ -188,8 +188,7 @@ public class RbelConverter implements RbelConverterInterface {
           .addArgument(this::getName)
           .addArgument(messageElement::getUuid)
           .log("{} skipping parsing of message with UUID {}: UUID already known");
-      return CompletableFuture.completedFuture(
-          findMessageByUuid(messageElement.getUuid()).orElseThrow());
+      return CompletableFuture.failedFuture(new RbelConversionException("UUID is already known"));
     }
 
     long seqNumber = addMessageToHistoryWithNextSequenceNumber(messageElement);

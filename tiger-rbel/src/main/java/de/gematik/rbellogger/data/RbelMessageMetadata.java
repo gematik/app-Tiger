@@ -101,10 +101,6 @@ public class RbelMessageMetadata implements RbelFacet {
     return this;
   }
 
-  public Optional<String> getPreviousMessage() {
-    return PREVIOUS_MESSAGE_UUID.getValue(this);
-  }
-
   public RbelMessageMetadata withPairedMessage(String uuid) {
     addMetadata(PAIRED_MESSAGE_UUID.getKey(), uuid);
     return this;

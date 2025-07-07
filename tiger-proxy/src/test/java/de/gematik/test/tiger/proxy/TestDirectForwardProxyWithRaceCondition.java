@@ -120,6 +120,20 @@ S: +OK Maildrop locked and ready
 
   @SneakyThrows
   @Test
+  public void testSicctHandshake() {
+    final PcapReplayer replayer =
+        new PcapReplayer("src/test/resources/sicctHandshakeDecryptedPcap.json", 53406, 4741, false)
+            .readReplay();
+    val tigerProxy =
+        replayer.replayWithDirectForwardUsing(
+            new TigerProxyConfiguration().setActivateRbelParsingFor(List.of("sicct")));
+
+    tigerProxy.waitForAllCurrentMessagesToBeParsed();
+    assertThat(tigerProxy.getRbelMessagesList()).hasSize(14);
+  }
+
+  @SneakyThrows
+  @Test
   public void httpReplayWithRandomTcpChunks() {
     final PcapReplayer replayer =
         new PcapReplayer("src/test/resources/stapelsignatur_log.pcapng", 53335, 80, false)
