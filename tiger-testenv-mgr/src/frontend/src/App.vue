@@ -22,17 +22,22 @@
 -->
 <template>
   <TestProject />
+  <!-- one instance of DynamicDialog is required, and then other components
+  can start dialogs with custom components-->
+  <DynamicDialog />
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
 import TestProject from "@/pages/TestProject.vue";
+import DynamicDialog from "primevue/dynamicdialog";
 import "bootstrap";
 
 export default defineComponent({
   name: "App",
   components: {
     TestProject,
+    DynamicDialog,
   },
 });
 </script>

@@ -20,11 +20,15 @@
  */
 package de.gematik.test.tiger.testenvmgr.env;
 
+import java.net.URI;
 import java.util.LinkedHashMap;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.junit.platform.engine.TestSource;
+import org.junit.platform.engine.support.descriptor.ClasspathResourceSource;
+import org.junit.platform.engine.support.descriptor.UriSource;
 
 @Data
 @Builder
@@ -35,4 +39,21 @@ public class FeatureUpdate {
   private LinkedHashMap<String, ScenarioUpdate> scenarios;
   private String description;
   private TestResult status;
+  private String sourcePath;
+
+  public static class FeatureUpdateBuilder {
+    public FeatureUpdateBuilder sourcePathFromUri(URI sourcePathUri) {
+      this.sourcePath = sourcePathUri.getPath();
+      return this;
+    }
+
+    public FeatureUpdateBuilder sourcePathForSource(TestSource source) {
+      if (source instanceof ClasspathResourceSource classpathSource) {
+        this.sourcePath = classpathSource.getClasspathResourceName();
+      } else if (source instanceof UriSource uriSource) {
+        this.sourcePath = uriSource.getUri().getPath();
+      }
+      return this;
+    }
+  }
 }

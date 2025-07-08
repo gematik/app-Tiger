@@ -2,6 +2,16 @@
 
 # Release 4.0.8
 
+## Features
+
+* TGR-1662: Workflow UI: it is now possible to select a subset of tests in the Workflow UI and execute them. To activate
+  the feature you need to explicitly configure it in your tiger.yaml.
+
+```yaml
+lib:
+  enableTestSelection: true
+```
+
 ## Bugfixes
 
 * TGR-1897: Tiger-Proxy: Fixed parsing of chunked SICCT messages.
@@ -820,8 +830,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-  key = PLUGIN_PROPERTY_NAME,
-  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+        key = PLUGIN_PROPERTY_NAME,
+        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

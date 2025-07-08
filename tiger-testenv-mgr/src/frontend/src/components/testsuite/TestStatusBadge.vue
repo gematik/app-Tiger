@@ -23,38 +23,35 @@
 <template>
   <span :class="`${highlightText ? 'statustext' : ''}`">
     <a
-        v-if="testStatus === 'FAILED' && failureLink"
-        class="failureLink"
-        :href="failureLink"
+      v-if="testStatus === 'FAILED' && failureLink"
+      class="failureLink"
+      :href="failureLink"
     >
       <i
-          :id="link"
-          :class="`statusbadge ${testStatus.toLowerCase()} left ${getTestResultIcon(testStatus, 'solid')}`"
-          :title="`${statusMessage ? statusMessage : testStatus}`"
-      ></i>
-    </a>
-    <i
-        v-else
         :id="link"
         :class="`statusbadge ${testStatus.toLowerCase()} left ${getTestResultIcon(testStatus, 'solid')}`"
         :title="`${statusMessage ? statusMessage : testStatus}`"
+      ></i>
+    </a>
+    <i
+      v-else
+      :id="link"
+      :class="`statusbadge ${testStatus.toLowerCase()} left ${getTestResultIcon(testStatus, 'solid')}`"
+      :title="`${statusMessage ? statusMessage : testStatus}`"
     ></i>
-    <a
-        class="scenarioLink"
-        :href="`#${link}`"
-    >
+    <a class="scenarioLink" :href="`#${link}`">
       {{ text }}
     </a>
   </span>
   <span
-      :class="`statusbadge ${getStatusFGAndBGColorClass(testStatus)} badge rounded-pill test-feature-status-word`"
+    :class="`statusbadge ${getStatusFGAndBGColorClass(testStatus)} badge rounded-pill test-feature-status-word`"
   >
     {{ testStatus }}
   </span>
 </template>
 
 <script setup lang="ts">
-import {getTestResultIcon} from "@/types/testsuite/TestResult";
+import { getTestResultIcon } from "@/types/testsuite/TestResult";
 
 defineProps<{
   testStatus: string;

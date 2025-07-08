@@ -19,25 +19,14 @@
 /// For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
 ///
 
-import { createApp } from "vue";
-import PrimeVue from "primevue/config";
-import DialogService from "primevue/dialogservice";
-import Lara from "@primeuix/themes/lara";
-import App from "./App.vue";
-import { createPinia } from "pinia";
+export class FeatureFlags {
+  trafficVisualization: boolean = false;
+  testSelection: boolean = false;
 
-const pinia = createPinia();
-const app = createApp(App);
-app.use(pinia);
-app.use(PrimeVue, {
-  theme: {
-    preset: Lara, //theme inspired in bootstrap
-    options: {
-      prefix: "p",
-      darkModeSelector: "system",
-      cssLayer: false,
-    },
-  },
-});
-app.use(DialogService);
-app.mount("#app");
+  static fromMap(map: { [x: string]: string }): FeatureFlags {
+    const features = new FeatureFlags();
+    features.trafficVisualization = map["trafficvisualization"] === "true";
+    features.testSelection = map["enabletestselection"] === "true";
+    return features;
+  }
+}

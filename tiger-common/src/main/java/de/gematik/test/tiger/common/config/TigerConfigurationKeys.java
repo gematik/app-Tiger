@@ -103,6 +103,9 @@ public class TigerConfigurationKeys {
   public static final TigerTypedConfigurationKey<Boolean> RUN_TESTS_ON_START =
       new TigerTypedConfigurationKey<>("tiger.lib.runTestsOnStart", Boolean.class, true);
 
+  public static final TigerTypedConfigurationKey<Boolean> ENABLE_TEST_SELECTOR =
+      new TigerTypedConfigurationKey<>("tiger.lib.enableTestSelector", Boolean.class, false);
+
   public static final TigerConfigurationKey CUCUMBER_ENGINE_RUNTIME_CONFIGURATION = // NOSONAR
       new TigerConfigurationKey("tiger.cucumber.runtime-configuration");
   public static final TigerTypedConfigurationKey<Boolean> TIGER_CUSTOM_FAILSAFE_PROVIDER_ACTIVE =

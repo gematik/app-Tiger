@@ -19,9 +19,12 @@
 /// For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
 ///
 
-import pluginVue from 'eslint-plugin-vue'
-import {defineConfigWithVueTs, vueTsConfigs} from '@vue/eslint-config-typescript'
-import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
+import pluginVue from "eslint-plugin-vue";
+import {
+  defineConfigWithVueTs,
+  vueTsConfigs,
+} from "@vue/eslint-config-typescript";
+import skipFormatting from "@vue/eslint-config-prettier/skip-formatting";
 
 // To allow more languages other than `ts` in `.vue` files, uncomment the following lines:
 // import { configureVueProject } from '@vue/eslint-config-typescript'
@@ -29,25 +32,30 @@ import skipFormatting from '@vue/eslint-config-prettier/skip-formatting'
 // More info at https://github.com/vuejs/eslint-config-typescript/#advanced-setup
 
 export default defineConfigWithVueTs(
-    {
-        name: 'app/files-to-lint',
-        files: ['**/*.{ts,mts,tsx,vue}'],
-    },
+  {
+    name: "app/files-to-lint",
+    files: ["**/*.{ts,mts,tsx,vue}"],
+  },
 
-    {
-        name: 'app/files-to-ignore',
-        ignores: ['**/dist/**', '**/dist-ssr/**', '**/coverage/**', '**/src/assets/**'],
-    },
+  {
+    name: "app/files-to-ignore",
+    ignores: [
+      "**/dist/**",
+      "**/dist-ssr/**",
+      "**/coverage/**",
+      "**/src/assets/**",
+    ],
+  },
 
-    pluginVue.configs['flat/essential'],
-    vueTsConfigs.recommended,
-    skipFormatting,
-    {
-        rules: {
-            "@typescript-eslint/no-explicit-any": "off",
-            "@typescript-eslint/no-empty-object-type": "off",
-            "@typescript-eslint/no-unused-expressions": "off",
-            "vue/multi-word-component-names": "off",
-        }
+  pluginVue.configs["flat/essential"],
+  vueTsConfigs.recommended,
+  skipFormatting,
+  {
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
+      "@typescript-eslint/no-unused-expressions": "off",
+      "vue/multi-word-component-names": "off",
     },
-)
+  },
+);

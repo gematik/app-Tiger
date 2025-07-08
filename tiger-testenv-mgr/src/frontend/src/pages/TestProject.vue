@@ -129,12 +129,15 @@
         <h4>
           <i
             id="test-sidebar-status-icon"
-            :class="`${currentOverallTestRunStatus(featureUpdateMap)} fa-xl fa-solid fa-square-poll-vertical left`"
+            :class="`${currentOverallTestRunStatus(featuresStore.featureUpdateMap)} fa-xl fa-solid fa-square-poll-vertical left`"
           >
           </i>
           <span id="test-sidebar-status">Status</span>
         </h4>
-        <TestStatus :feature-update-map="featureUpdateMap" :started="started" />
+        <TestStatus
+          :feature-update-map="featuresStore.featureUpdateMap"
+          :started="started"
+        />
         <!-- feature list -->
         <h4>
           <i
@@ -143,7 +146,20 @@
           ></i>
           <span id="test-sidebar-feature">Features</span>
         </h4>
-        <FeatureList :feature-update-map="featureUpdateMap" />
+
+        <div class="container">
+          <div class="row mb-1">
+            <button
+              v-if="features.testSelection"
+              class="btn btn-primary"
+              type="button"
+              @click="openTestSelectorDialog"
+            >
+              Select tests to execute...
+            </button>
+          </div>
+        </div>
+        <FeatureList :feature-update-map="featuresStore.featureUpdateMap" />
         <!-- server status -->
         <h4>
           <i
@@ -207,7 +223,7 @@
         <!-- tabs -->
         <div class="tab-content">
           <execution-pane
-            :feature-update-map="featureUpdateMap"
+            :feature-update-map="featuresStore.featureUpdateMap"
             :banner-message="
               bannerData.length ? bannerData[bannerData.length - 1] : false
             "
@@ -226,7 +242,7 @@
           />
           <traffic-visualization
             v-if="features.trafficVisualization"
-            :feature-update-map="featureUpdateMap"
+            :feature-update-map="featuresStore.featureUpdateMap"
             :ui="ui"
           />
         </div>
@@ -266,9 +282,9 @@
  *
  * Sounds complicated and YES it is, but its also safe / defensive and reducing the load on the server
  */
-import { onMounted, provide, ref, Ref } from "vue";
+import { onMounted, provide, ref, type Ref } from "vue";
 import SockJS from "sockjs-client";
-import Stomp, { Client, Frame, Message } from "webstomp-client";
+import Stomp, { Client, Frame, type Message } from "webstomp-client";
 import TigerServerStatusUpdateDto from "@/types/TigerServerStatusUpdateDto";
 import TestEnvStatusDto from "@/types/TestEnvStatusDto";
 import ServerStatus from "@/components/server/ServerStatus.vue";
@@ -291,12 +307,16 @@ import "vue3-side-panel/dist/vue3-side-panel.css";
 import { VueSidePanel } from "vue3-side-panel";
 import TrafficVisualization from "@/components/sequence_diagram/TrafficVisualization.vue";
 import { useConfigurationLoader } from "@/components/global_configuration/ConfigurationLoader";
-import { Features } from "@/types/Features";
+import { FeatureFlags } from "@/types/FeatureFlags.ts";
 import RbelLogDetailsPane from "@/components/testsuite/RbelLogDetailsPane.vue";
 import type QuitReason from "@/types/QuitReason";
+import TestSelector from "@/components/testselector/TestSelector.vue";
+import { useDialog } from "primevue";
+import { useFeaturesStore } from "@/stores/features.ts";
+import debug from "@/logging/log.ts";
 
 const { loadSubsetOfProperties } = useConfigurationLoader();
-const features = ref(new Features());
+const features = ref(new FeatureFlags());
 
 const baseURL = import.meta.env.BASE_URL;
 let socket: WebSocket;
@@ -334,9 +354,7 @@ const currentServerStatus: Ref<Map<string, TigerServerStatusDto>> = ref(
 /** complex map of features which contain a map of scenarios, which contain a map of steps,
  * representing the current state of the test run.
  */
-const featureUpdateMap: Ref<Map<string, FeatureUpdate>> = ref(
-  new Map<string, FeatureUpdate>(),
-);
+const featuresStore = useFeaturesStore();
 
 /** list of server logs which contain a log message, a timestamp, a server name and the log level.
  */
@@ -370,7 +388,9 @@ const configEditorSidePanelIsOpened: Ref<boolean> = ref(false);
 let hasTestRunFinished = false;
 
 async function loadFeaturesFlags() {
-  features.value = Features.fromMap(await loadSubsetOfProperties("tiger.lib"));
+  features.value = FeatureFlags.fromMap(
+    await loadSubsetOfProperties("tiger.lib"),
+  );
 }
 
 onMounted(() => {
@@ -382,13 +402,14 @@ onMounted(() => {
   loadFeaturesFlags();
 });
 
-const DEBUG = true;
-
-function debug(message: string) {
-  if (DEBUG) {
-    console.log(new Date().toISOString() + " " + message);
-  }
-}
+const dialog = useDialog();
+const openTestSelectorDialog = () => {
+  dialog.open(TestSelector, {
+    props: {
+      modal: true,
+    },
+  });
+};
 
 function setTestRunFinished() {
   hasTestRunFinished = true;
@@ -605,7 +626,7 @@ function mergeMessage(
 ) {
   debug("MESSAGE MERGE: " + message.index);
   updateServerStatus(map, message.servers);
-  updateFeatureMap(message.featureMap);
+  featuresStore.updateFeatureMap(message.featureMap);
   if (message.bannerMessage) {
     const bm = new BannerMessage();
     bm.text = message.bannerMessage;
@@ -663,8 +684,7 @@ function fetchInitialServerStatus() {
         return;
       }
 
-      featureUpdateMap.value.clear();
-      FeatureUpdate.addToMapFromJson(featureUpdateMap.value, json.featureMap);
+      featuresStore.replaceFeatureMap(json.featureMap);
       debug("FETCH FEATURE MERGE DONE");
 
       if (json.bannerMessage) {
@@ -725,30 +745,6 @@ function updateServerStatus(
     if (key == "local_tiger_proxy") {
       if (value.baseUrl) {
         localProxyWebUiUrl.value = value.baseUrl;
-      }
-    }
-  });
-}
-
-function updateFeatureMap(update: Map<string, FeatureUpdate>) {
-  update.forEach((featureUpdate: FeatureUpdate, featureKey: string) => {
-    if (featureUpdate.description) {
-      debug("FEATURE UPDATE " + featureUpdate.description);
-      const featureToBeUpdated: FeatureUpdate | undefined =
-        featureUpdateMap.value.get(featureKey);
-      if (!featureToBeUpdated) {
-        // add new feature
-        debug(
-          "add new feature " +
-            featureKey +
-            " => " +
-            JSON.stringify(featureUpdate),
-        );
-        const feature = new FeatureUpdate().merge(featureUpdate);
-        featureUpdateMap.value.set(featureKey, feature);
-        debug("added new feature " + featureKey + " => " + feature.toString());
-      } else {
-        featureToBeUpdated.merge(featureUpdate);
       }
     }
   });

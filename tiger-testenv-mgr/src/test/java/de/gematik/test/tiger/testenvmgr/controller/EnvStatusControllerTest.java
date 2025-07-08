@@ -57,6 +57,7 @@ class EnvStatusControllerTest {
 
     String featureKey = "featureKey";
     String featureDescription = "feature";
+    String featureSourcePath = "featureSourcePath";
     String scenarioKey = "scenarioKey";
     String scenarioDescription = "scenario";
     String stepKey = "0";
@@ -73,6 +74,7 @@ class EnvStatusControllerTest {
     FeatureUpdate featureUpdate =
         FeatureUpdate.builder()
             .description(featureDescription)
+            .sourcePath(featureSourcePath)
             .scenarios(convertToLinkedHashMap(scenarioKey, scenarioUpdate))
             .build();
     envMgr.receiveTestEnvUpdate(
@@ -82,6 +84,7 @@ class EnvStatusControllerTest {
 
     FeatureUpdate feature = envStatusController.getStatus().getFeatureMap().get(featureKey);
     assertThat(feature.getDescription()).isEqualTo(featureDescription);
+    assertThat(feature.getSourcePath()).isEqualTo(featureSourcePath);
     ScenarioUpdate scenario = feature.getScenarios().get(scenarioKey);
     assertThat(scenario.getDescription()).isEqualTo(scenarioDescription);
     StepUpdate step = scenario.getSteps().get(stepKey);
@@ -111,6 +114,7 @@ class EnvStatusControllerTest {
             .build();
     FeatureUpdate firstFeatureUpdate =
         FeatureUpdate.builder()
+            .sourcePath("featureSourcePath")
             .description("feature")
             .scenarios(convertToLinkedHashMap("scenario", firstScenarioUpdate))
             .build();
@@ -147,6 +151,7 @@ class EnvStatusControllerTest {
             .build();
     FeatureUpdate nextFeatureUpdate =
         FeatureUpdate.builder()
+            .sourcePath("featureSourcePath")
             .description("feature")
             .scenarios(convertToLinkedHashMap("scenario", nextScenarioUpdate))
             .build();
@@ -157,6 +162,7 @@ class EnvStatusControllerTest {
 
     FeatureUpdate feature = envStatusController.getStatus().getFeatureMap().get("feature");
     assertThat(feature.getDescription()).isEqualTo("feature");
+    assertThat(feature.getSourcePath()).isEqualTo("featureSourcePath");
     ScenarioUpdate scenario = feature.getScenarios().get("scenario");
     assertThat(scenario.getDescription()).isEqualTo("scenario");
     assertThat(scenario.getStatus()).isEqualTo(TestResult.FAILED);
