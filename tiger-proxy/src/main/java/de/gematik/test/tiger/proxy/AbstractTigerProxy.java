@@ -72,7 +72,15 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   @Getter private Optional<String> name;
   @Getter protected final org.slf4j.Logger log;
   @Getter private boolean isShuttingDown = false;
-  @Getter private ExecutorService executor = Executors.newCachedThreadPool();
+
+  @Getter
+  private ExecutorService executor =
+      Executors.newCachedThreadPool(
+          r -> {
+            Thread t = Executors.defaultThreadFactory().newThread(r);
+            t.setName("TigerProxy" + getName().map(n -> "-" + n).orElse("") + "-" + t.getId());
+            return t;
+          });
 
   @Setter(AccessLevel.PRIVATE)
   private CompletableFuture<Void> fileParsingFuture;

@@ -20,12 +20,16 @@
  */
 package de.gematik.test.tiger.testenvmgr.controller;
 
+import static io.cucumber.junit.platform.engine.Constants.FEATURES_PROPERTY_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.request;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import de.gematik.test.tiger.common.config.ConfigurationValuePrecedence;
+import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
+import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgrApplication;
 import de.gematik.test.tiger.testenvmgr.api.model.ErrorDto;
 import de.gematik.test.tiger.testenvmgr.api.model.ExecutionResultDto;
@@ -80,6 +84,10 @@ class TestsApiControllerTest {
   private UnirestInstance unirestInstance;
   private static final String BASE_URL = "http://localhost:";
   @Autowired ObjectMapper objectMapper;
+  private static final String cucumberFeaturesConfigKey =
+      TigerConfigurationKeys.CUCUMBER_ENGINE_RUNTIME_CONFIGURATION
+          .createWithNewSubkey(FEATURES_PROPERTY_NAME)
+          .downsampleKey();
 
   @BeforeEach
   void setup() {
@@ -91,6 +99,7 @@ class TestsApiControllerTest {
   void clearScenarios() {
     unirestInstance.close();
     ScenarioRunner.clearScenarios();
+    TigerGlobalConfiguration.clearLocalTestVariables();
   }
 
   @Test
@@ -378,15 +387,16 @@ class TestsApiControllerTest {
   // plan instead of dummytestdescriptors
   public TestPlan loadRealTestDescriptors(String... fileName) {
     Launcher launcher = LauncherFactory.create();
+    var cucumberFeatures =
+        Arrays.stream(fileName)
+            .map(f -> "classpath:/features/" + f)
+            .collect(Collectors.joining(","));
     LauncherDiscoveryRequest testRunRequest =
-        request()
-            .configurationParameters(
-                Map.of(
-                    "cucumber.features",
-                    Arrays.stream(fileName)
-                        .map(f -> "classpath:/features/" + f)
-                        .collect(Collectors.joining(","))))
-            .build();
+        request().configurationParameters(Map.of(FEATURES_PROPERTY_NAME, cucumberFeatures)).build();
+    TigerGlobalConfiguration.putValue(
+        cucumberFeaturesConfigKey,
+        cucumberFeatures,
+        ConfigurationValuePrecedence.LOCAL_TEST_CASE_CONTEXT);
     return launcher.discover(testRunRequest);
   }
 

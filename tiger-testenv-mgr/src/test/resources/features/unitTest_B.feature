@@ -5,5 +5,5 @@ Feature: Feature B - This feature shall be found by the unit tests
     When TGR show banner "HELLO"
 
   @Another_Tag_To_Filter
-  Scenario: This one just hello
+  Scenario: This one also just hello
     When TGR show banner "HELLO"

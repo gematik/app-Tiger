@@ -22,11 +22,11 @@
 -->
 <script setup lang="ts">
 import type Ui from "@/types/ui/Ui.ts";
-import type {IStep} from "@/types/testsuite/StepUpdate.ts";
+import type { IStep } from "@/types/testsuite/StepUpdate.ts";
 
-import {ref} from 'vue';
+import { ref } from "vue";
 import FailureMessage from "@/components/testsuite/FailureMessage.vue";
-import {getTestResultIcon} from "@/types/testsuite/TestResult.ts";
+import { getTestResultIcon } from "@/types/testsuite/TestResult.ts";
 
 defineProps<{
   step: IStep;
@@ -42,64 +42,71 @@ function toggleTable() {
 </script>
 
 <template>
-  <div class="test-step-container"
-       :aria-label="ariaLabel">
+  <div class="test-step-container" :aria-label="ariaLabel">
     <table>
       <tbody>
-      <tr>
-        <td>
-          <div v-if="step.subSteps.length > 0"
-               class="test-step-toggle">
-            <button
+        <tr>
+          <td>
+            <div v-if="step.subSteps.length > 0" class="test-step-toggle">
+              <button
                 class="btn btn-outline-primary test-step-toggle-button"
                 @click="toggleTable"
                 title="Toggle sub step visibility"
-            >
-              <i :class="isVisible ? 'fas fa-minus-circle' : 'fas fa-plus-circle'"/>
-            </button>
-          </div>
-        </td>
-        <td>
-          <div class="test-step-line">
-            <div class="test-step-description"
-                 :title="step.tooltip"
-                 v-html="step.description"
-            />
-          </div>
-        </td>
-      </tr>
-      <tr v-show="isVisible"
-          v-for="subStep in step.subSteps" :key="subStep.stepIndex">
-        <td
-            :class="`${subStep.status.toLowerCase()} step_status test-step-status-${subStep.status.toLowerCase()}`"
+              >
+                <i
+                  :class="
+                    isVisible ? 'fas fa-minus-circle' : 'fas fa-plus-circle'
+                  "
+                />
+              </button>
+            </div>
+          </td>
+          <td>
+            <div class="test-step-line">
+              <div
+                class="test-step-description"
+                :title="step.tooltip"
+                v-html="step.description"
+              />
+            </div>
+          </td>
+        </tr>
+        <tr
+          v-show="isVisible"
+          v-for="subStep in step.subSteps"
+          :key="subStep.stepIndex"
         >
-          <div class="test-status-icon">
-            <i
+          <td
+            :class="`${subStep.status.toLowerCase()} step_status test-step-status-${subStep.status.toLowerCase()}`"
+          >
+            <div class="test-status-icon">
+              <i
                 :class="`fa-solid ${getTestResultIcon(subStep.status, 'solid')}`"
                 :title="subStep.status"
+              />
+            </div>
+          </td>
+          <td>
+            <Step
+              :step="subStep"
+              :ui="ui"
+              ariaLabel="Sub-steps performed when executing this test step"
             />
-          </div>
-        </td>
-        <td>
-          <Step :step="subStep"
-                :ui="ui"
-                ariaLabel="Sub-steps performed when executing this test step"
-          />
-        </td>
-      </tr>
+          </td>
+        </tr>
       </tbody>
     </table>
     <FailureMessage
-        v-if="step.failureMessage"
-        :message="step.failureMessage"
-        :stacktrace="step.failureStacktrace"
+      v-if="step.failureMessage"
+      :message="step.failureMessage"
+      :stacktrace="step.failureStacktrace"
     />
   </div>
 </template>
 
 <style scoped>
 button.btn.btn-outline-primary {
-  font-size: 1.0rem;
+  font-size: 1rem;
   border-radius: 0.5rem; /* Optional: reduce border radius */
   border: none;
   padding: 0 0;
@@ -122,7 +129,7 @@ button.btn.btn-outline-primary {
 }
 
 .test-status-icon {
-  font-size: 1.0rem;
+  font-size: 1rem;
   display: flex;
   justify-content: flex-start; /* Center horizontally */
   margin-left: 0;
@@ -131,7 +138,7 @@ button.btn.btn-outline-primary {
 
 /* Match the icon size in both components */
 .test-status-icon i {
-  font-size: 1.0rem;
+  font-size: 1rem;
 }
 
 .step_status {

@@ -93,7 +93,16 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   @Getter private final AtomicReference<String> lastMessageUuid = new AtomicReference<>();
   private final SockJsClient webSocketClient;
   private final int connectionTimeoutInSeconds;
-  @Getter private final ExecutorService meshHandlerPool = Executors.newCachedThreadPool();
+
+  @Getter
+  private final ExecutorService meshHandlerPool =
+      Executors.newCachedThreadPool(
+          r -> {
+            Thread t = Executors.defaultThreadFactory().newThread(r);
+            t.setName(
+                "TigerProxyClient" + getName().map(n -> "-" + n).orElse("") + "-" + t.getId());
+            return t;
+          });
 
   public TigerRemoteProxyClient(String remoteProxyUrl) {
     this(remoteProxyUrl, new TigerProxyConfiguration(), null);

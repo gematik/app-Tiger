@@ -637,8 +637,9 @@ class EmailParsingTest {
                                     || msg.hasFacet(RbelSmtpResponseFacet.class))
                         .count();
                 log.debug("currently " + size + " messages, wanted " + expectedMessages);
-                return size == expectedMessages;
-              });
+                return size;
+              },
+              size -> size == expectedMessages);
     } catch (ConditionTimeoutException e) {
       var messages =
           tigerTestEnvMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().stream()

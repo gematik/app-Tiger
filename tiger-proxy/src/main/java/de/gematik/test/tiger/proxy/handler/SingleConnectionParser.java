@@ -44,8 +44,8 @@ import lombok.val;
 
 @RequiredArgsConstructor
 public class SingleConnectionParser {
-  public static final RbelMetadataValue<Boolean> IS_UNPARSED_MESSAGE_CHUNK =
-      new RbelMetadataValue<>("isUnparsedMessageChunk", Boolean.class);
+  public static final RbelMetadataValue<Boolean> IS_PROPAGATED_CHUNK_FROM_UPSTREAM_TIGER_PROXY =
+      new RbelMetadataValue<>("propagatedMessageChunk", Boolean.class);
 
   private final BundledServerNamesAdder bundledServerNamesAdder = new BundledServerNamesAdder();
 
@@ -109,17 +109,19 @@ public class SingleConnectionParser {
   }
 
   private void propagateNewChunk(TcpConnectionEntry entry) {
-    if (Boolean.FALSE.equals(
-        entry.getAdditionalData().getOrDefault(IS_UNPARSED_MESSAGE_CHUNK.getKey(), false))) {
+    if (entry
+            .getAdditionalData()
+            .getOrDefault(IS_PROPAGATED_CHUNK_FROM_UPSTREAM_TIGER_PROXY.getKey(), false)
+        == Boolean.FALSE) {
       log.atTrace()
           .addArgument(entry::getUuid)
-          .log("Skipping propagation of unparsed message chunk {}");
+          .log("Skipping propagation of local message chunk {}");
       return;
     }
     var messageElement =
         RbelElement.builder().uuid(entry.getUuid()).content(entry.getData()).build();
-    final var messageMetadata = generateMetadataFromBufferedContent(entry);
-    IS_UNPARSED_MESSAGE_CHUNK.putValue(messageMetadata, true);
+    final var messageMetadata = readMetadataFromBufferedContent(entry);
+    IS_PROPAGATED_CHUNK_FROM_UPSTREAM_TIGER_PROXY.putValue(messageMetadata, true);
     messageElement.addFacet(messageMetadata);
 
     RbelMessageMetadata.PREVIOUS_MESSAGE_UUID.putValue(messageMetadata, entry.getPreviousUuid());
@@ -183,14 +185,7 @@ public class SingleConnectionParser {
                 + " bytes");
     Optional.ofNullable(bufferedContent.getMessagePreProcessor())
         .ifPresent(manipulator -> manipulator.accept(messageElement));
-    final var messageMetadata = generateMetadataFromBufferedContent(bufferedContent);
-    if (lastMessageUuid != null) {
-      RbelMessageMetadata.PREVIOUS_MESSAGE_UUID.putValue(messageMetadata, lastMessageUuid);
-      log.atTrace()
-          .addArgument(messageElement::getUuid)
-          .addArgument(lastMessageUuid)
-          .log("Setting previous message uuid of {} to {}");
-    }
+    final var messageMetadata = readMetadataFromBufferedContent(bufferedContent);
     messageElement.addFacet(
         new SingleConnectionParserMarkerFacet(bufferedContent.getSourceUuids()));
     log.atTrace()
@@ -231,20 +226,20 @@ public class SingleConnectionParser {
     return rbelConverter.parseMessage(messageElement, messageMetadata);
   }
 
-  private static String getOrGenerateUuid(TcpConnectionEntry bufferedContent) {
-    if (bufferedContent.getPositionInBaseNode() == 0
-        && Boolean.FALSE.equals(
+  private String getOrGenerateUuid(TcpConnectionEntry bufferedContent) {
+    if (bufferedContent.getPositionInBaseNode() > 0
+        || Boolean.TRUE.equals(
             bufferedContent
                 .getAdditionalData()
-                .getOrDefault(IS_UNPARSED_MESSAGE_CHUNK.getKey(), false))) {
-      return bufferedContent.getUuid();
-    } else {
+                .getOrDefault(IS_PROPAGATED_CHUNK_FROM_UPSTREAM_TIGER_PROXY.getKey(), false))) {
       return DeterministicUuidGenerator.generateUuid(
           bufferedContent.getUuid(), bufferedContent.getPositionInBaseNode());
+    } else {
+      return bufferedContent.getUuid();
     }
   }
 
-  private static RbelMessageMetadata generateMetadataFromBufferedContent(
+  private static RbelMessageMetadata readMetadataFromBufferedContent(
       TcpConnectionEntry bufferedContent) {
     final RbelMessageMetadata metadata =
         new RbelMessageMetadata()

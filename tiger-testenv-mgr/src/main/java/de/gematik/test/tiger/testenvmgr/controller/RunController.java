@@ -20,8 +20,10 @@
  */
 package de.gematik.test.tiger.testenvmgr.controller;
 
+import de.gematik.test.tiger.testenvmgr.api.model.TestExecutionRequestDto;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.NoSuchElementException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +52,21 @@ public class RunController {
   public void runScenario(
       @Valid @RequestBody ScenarioRunner.ScenarioIdentifier scenarioIdentifier) {
     scenarioRunner.runTest(scenarioIdentifier);
+  }
+
+  @PostMapping("/selection")
+  @ResponseStatus(value = HttpStatus.NO_CONTENT)
+  public void runScenarios(
+      @Valid @RequestBody List<ScenarioRunner.ScenarioIdentifier> scenarioIdentifiers) {
+    if (scenarioIdentifiers.isEmpty()) {
+      return;
+    }
+    scenarioRunner.enqueueExecutionSelectedTests(
+        new TestExecutionRequestDto()
+            .testUniqueIds(
+                scenarioIdentifiers.stream()
+                    .map(ScenarioRunner.ScenarioIdentifier::uniqueId)
+                    .toList()));
   }
 
   @ExceptionHandler(value = NoSuchElementException.class)

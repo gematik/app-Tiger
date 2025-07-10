@@ -31,7 +31,7 @@ describe("testing BannerMessage class", () => {
       bannerDetails: {
         detailedMessage: "detailed message",
         exceptionClassName: "exception class name",
-        stackTrace: "stack trace as string"
+        stackTrace: "stack trace as string",
       },
       bannerIsHtml: false,
     });
@@ -39,13 +39,13 @@ describe("testing BannerMessage class", () => {
     expect(bannerMessage.color).toBe("Green");
     expect(bannerMessage.bannerDetails).toBeDefined();
     expect(bannerMessage.bannerDetails?.detailedMessage).toBe(
-      "detailed message"
+      "detailed message",
     );
     expect(bannerMessage.bannerDetails?.exceptionClassName).toBe(
-      "exception class name"
+      "exception class name",
     );
     expect(bannerMessage.bannerDetails?.stackTrace).toBe(
-      "stack trace as string"
+      "stack trace as string",
     );
     expect(bannerMessage.type).toBe(BannerType.MESSAGE);
     expect(bannerMessage.isHtml).toBe(false);

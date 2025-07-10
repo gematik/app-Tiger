@@ -28,3 +28,14 @@ export function runScenario(scenarioIdentifier: ScenarioIdentifier) {
     body: JSON.stringify(scenarioIdentifier),
   });
 }
+
+export function runScenarios(scenarioIdentifiers: ScenarioIdentifier[]) {
+  if (scenarioIdentifiers.length === 0) {
+    return;
+  }
+  fetch(import.meta.env.BASE_URL + "run/selection", {
+    headers: new Headers({ "content-type": "application/json" }),
+    method: "POST",
+    body: JSON.stringify(scenarioIdentifiers),
+  });
+}

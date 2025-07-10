@@ -20,12 +20,15 @@
  */
 package de.gematik.test.tiger.proxy;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -38,7 +41,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
+import org.bouncycastle.util.encoders.Hex;
 import org.pcap4j.core.BpfProgram.BpfCompileMode;
 import org.pcap4j.core.PacketListener;
 import org.pcap4j.core.PcapHandle;
@@ -51,9 +54,9 @@ import org.pcap4j.packet.TcpPacket.TcpHeader;
 @RequiredArgsConstructor
 public class PcapReplayer implements AutoCloseable {
 
-  private final String pcapFilename;
-  private final int srcPort;
-  private final int dstPort;
+  private final String filename;
+  private final int filterSrcPort;
+  private final int filterDstPort;
   private final boolean useSsl;
   private final List<TigerTestReplayPacket> toBeReplayedPackets = new ArrayList<>();
   private TigerProxy tigerProxy;
@@ -71,7 +74,7 @@ public class PcapReplayer implements AutoCloseable {
             .toList());
   }
 
-  private static Optional<TigerTestReplayPacket> textLineToPacket(@NotNull String s) {
+  private static Optional<TigerTestReplayPacket> textLineToPacket(String s) {
     if (!s.contains(":")) {
       return Optional.empty();
     }
@@ -87,8 +90,51 @@ public class PcapReplayer implements AutoCloseable {
 
   @SneakyThrows
   public PcapReplayer readReplay() {
-    final PcapHandle pcapFile = Pcaps.openOffline(pcapFilename);
-    val myListener = new MyPacketListener(srcPort, dstPort, toBeReplayedPackets);
+    if (filename.endsWith(".pcap") || filename.endsWith(".pcapng")) {
+      readPcapReplay();
+    } else if (filename.endsWith(".json")) {
+      readJsonReplay();
+    } else {
+      throw new IllegalArgumentException(
+          "Unsupported file format: " + filename + ". Only .pcap and .json are supported.");
+    }
+    return this;
+  }
+
+  @SneakyThrows
+  private void readJsonReplay() {
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode root = mapper.readTree(Paths.get(filename).toFile());
+    for (JsonNode packet : root) {
+      val packetSrcPort =
+          Integer.parseInt(
+              packet.get("_source").get("layers").get("tcp").get("tcp.srcport").asText());
+      val packetDstPort =
+          Integer.parseInt(
+              packet.get("_source").get("layers").get("tcp").get("tcp.dstport").asText());
+      val isServer = packetSrcPort == filterSrcPort;
+      val clientMatches = packetSrcPort == filterSrcPort || packetDstPort == filterSrcPort;
+      val serverMatches = packetSrcPort == filterDstPort || packetDstPort == filterDstPort;
+      val hasData = packet.get("_source").get("layers").has("data");
+      if (hasData && clientMatches && serverMatches) {
+        val dataString =
+            packet
+                .get("_source")
+                .get("layers")
+                .get("data")
+                .get("data.data")
+                .asText()
+                .replace(":", "");
+        val data = Hex.decode(dataString);
+        addPacket(new TigerTestReplayPacket(isServer, data));
+      }
+    }
+  }
+
+  @SneakyThrows
+  public PcapReplayer readPcapReplay() {
+    final PcapHandle pcapFile = Pcaps.openOffline(filename);
+    val myListener = new MyPacketListener(filterSrcPort, filterDstPort, toBeReplayedPackets);
     pcapFile.setFilter("tcp", BpfCompileMode.OPTIMIZE);
     pcapFile.loop(-1, myListener);
     return this;
@@ -148,13 +194,14 @@ public class PcapReplayer implements AutoCloseable {
           tigerProxy.getProxyPort(),
           serverSocket.getLocalPort());
 
-      replayPackets(clientSocket, serverSocket);
+      val serverConnectionSocket = replayPackets(clientSocket, serverSocket);
       int before = tigerProxy.getRbelMessagesList().size();
       tigerProxy.waitForAllCurrentMessagesToBeParsed();
       int after = tigerProxy.getRbelMessages().size();
 
       log.info("Before: {}, After: {}", before, after);
 
+      serverConnectionSocket.close();
       return tigerProxy;
     }
   }
@@ -222,7 +269,7 @@ public class PcapReplayer implements AutoCloseable {
   }
 
   @SneakyThrows
-  private void replayPackets(Socket clientSocket, ServerSocket serverSocket) {
+  private Socket replayPackets(Socket clientSocket, ServerSocket serverSocket) {
     Socket serverConnectionSocket = null;
     int bytesSendFromClientCount = 0;
     int bytesSendFromServerCount = 0;
@@ -257,9 +304,7 @@ public class PcapReplayer implements AutoCloseable {
         serverConnectionSocket.getOutputStream().flush();
       }
     }
-    if (serverConnectionSocket != null) {
-      serverConnectionSocket.close();
-    }
+    return serverConnectionSocket;
   }
 
   private CompletableFuture<Optional<byte[]>> readNumberOfBytesFromSocket(
@@ -283,7 +328,7 @@ public class PcapReplayer implements AutoCloseable {
   }
 
   @SneakyThrows
-  private static @NotNull Optional<byte[]> readBytesFromSocket(
+  private static Optional<byte[]> readBytesFromSocket(
       int bytesCount, Socket socket, String message) {
     log.info("Awaiting {} bytes in {} ...", bytesCount, message);
     val read = socket.getInputStream().readNBytes(bytesCount);
@@ -302,6 +347,10 @@ public class PcapReplayer implements AutoCloseable {
     if (clientSocket != null) {
       clientSocket.close();
     }
+  }
+
+  public void addPacket(TigerTestReplayPacket packet) {
+    this.toBeReplayedPackets.add(packet);
   }
 
   @RequiredArgsConstructor

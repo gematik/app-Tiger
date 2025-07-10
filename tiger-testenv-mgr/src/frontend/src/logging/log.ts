@@ -19,12 +19,10 @@
 /// For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
 ///
 
-export class Features {
-  trafficVisualization: boolean = false;
+const DEBUG = true;
 
-  static fromMap(map: { [x: string]: string }): Features {
-    const features = new Features();
-    features.trafficVisualization = map["trafficvisualization"] === "true";
-    return features;
+export default function debug(message: string) {
+  if (DEBUG) {
+    console.log(new Date().toISOString() + " " + message);
   }
 }

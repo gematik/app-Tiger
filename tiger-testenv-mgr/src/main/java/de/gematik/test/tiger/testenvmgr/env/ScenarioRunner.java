@@ -30,6 +30,7 @@ import de.gematik.test.tiger.testenvmgr.api.model.mapper.TigerTestIdentifier;
 import de.gematik.test.tiger.testenvmgr.util.ScenarioCollector;
 import io.cucumber.messages.types.Location;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -46,16 +47,18 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.groovy.util.Arrays;
 import org.junit.platform.engine.DiscoverySelector;
+import org.junit.platform.engine.FilterResult;
+import org.junit.platform.engine.TestDescriptor;
 import org.junit.platform.engine.TestSource;
 import org.junit.platform.engine.TestTag;
 import org.junit.platform.engine.UniqueId;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
-import org.junit.platform.engine.discovery.UniqueIdSelector;
 import org.junit.platform.engine.support.descriptor.ClasspathResourceSource;
 import org.junit.platform.engine.support.descriptor.FilePosition;
 import org.junit.platform.engine.support.descriptor.FileSource;
 import org.junit.platform.launcher.EngineFilter;
 import org.junit.platform.launcher.Launcher;
+import org.junit.platform.launcher.PostDiscoveryFilter;
 import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.TestPlan;
@@ -101,7 +104,7 @@ public class ScenarioRunner {
 
     // if one of the sourceFiles / tags / uniqueIds lists is empty, their filter is not used. That
     // means all scenarios are selected for the next filter round.
-    List<UniqueIdSelector> selectors =
+    List<UniqueId> filteredUniqueIds =
         tigerScenarios.stream()
             .filter(
                 testIdentifier ->
@@ -114,17 +117,15 @@ public class ScenarioRunner {
                 testIdentifier ->
                     uniqueIds.isEmpty()
                         || anyUniqueIdMatches(uniqueIds, testIdentifier.getTestIdentifier()))
-            .map(t -> DiscoverySelectors.selectUniqueId(t.getTestIdentifier().getUniqueId()))
+            .map(t -> t.getTestIdentifier().getUniqueIdObject())
             .toList();
-    return runTests(selectors);
+    return runTests(filteredUniqueIds);
   }
 
   public TestExecutionStatus enqueueExecutionAllTests() {
-    List<UniqueIdSelector> selectors =
-        tigerScenarios.stream()
-            .map(t -> DiscoverySelectors.selectUniqueId(t.getTestIdentifier().getUniqueId()))
-            .toList();
-    return runTests(selectors);
+    List<UniqueId> allUniqueIds =
+        tigerScenarios.stream().map(t -> t.getTestIdentifier().getUniqueIdObject()).toList();
+    return runTests(allUniqueIds);
   }
 
   public static void clearScenarios() {
@@ -136,19 +137,25 @@ public class ScenarioRunner {
   }
 
   public TestExecutionStatus runTest(ScenarioIdentifier scenarioIdentifier) {
-    UniqueIdSelector selector = DiscoverySelectors.selectUniqueId(scenarioIdentifier.uniqueId());
-    return runTests(List.of(selector));
+    return runTests(List.of(UniqueId.parse(scenarioIdentifier.uniqueId)));
   }
 
-  protected TestExecutionStatus runTests(List<? extends DiscoverySelector> selectors) {
+  protected TestExecutionStatus runTests(List<UniqueId> uniqueIds) {
     var initialConfiguration =
         TigerGlobalConfiguration.readMap(
             TigerConfigurationKeys.CUCUMBER_ENGINE_RUNTIME_CONFIGURATION.downsampleKey());
     initialConfiguration.put(EXECUTION_DRY_RUN_PROPERTY_NAME, "false");
     val uuidForThisRun = UUID.randomUUID();
 
+    List<DiscoverySelector> selectors = new ArrayList<>();
+    List<UniqueId> uniqueIdsToFilter = new ArrayList<>();
+    configureSelectorsAndFilters(uniqueIds, selectors, uniqueIdsToFilter);
+
     LauncherDiscoveryRequestBuilder runRequestBuilder =
-        request().selectors(selectors).configurationParameters(initialConfiguration);
+        request()
+            .selectors(selectors)
+            .filters(new UniqueIdPostFilter(uniqueIdsToFilter))
+            .configurationParameters(initialConfiguration);
 
     if (TigerConfigurationKeys.TIGER_CUSTOM_FAILSAFE_PROVIDER_ACTIVE
         .getValueOrDefault()
@@ -164,6 +171,7 @@ public class ScenarioRunner {
     val summaryListener = new TigerSummaryListener(testPlan);
     val testExecutionStatus = new TestExecutionStatus(uuidForThisRun, testPlan, summaryListener);
     testExecutionResults.put(uuidForThisRun, testExecutionStatus);
+
     scenarioExecutionService.execute(
         () ->
             launcher.execute(
@@ -171,6 +179,36 @@ public class ScenarioRunner {
                 Arrays.concat(
                     testExecutionListener, new TestExecutionListener[] {summaryListener})));
     return testExecutionStatus;
+  }
+
+  private void configureSelectorsAndFilters(
+      List<UniqueId> selectedUniqueIds,
+      List<DiscoverySelector> selectors,
+      List<UniqueId> uniqueIdsToFilter) {
+    // the discovery of tests works differently when running from intellij -> the tests are
+    // discovered by feature file,
+    // or when running from maven -> the tests are discovered by the junit platform engine based on
+    // the driver classes,
+    // and only aftewards are they passed to the cucumber engine.
+    // When intellij, we want to filter by postdiscoveryfilter, when mvn, we can directly use the
+    // selector
+    // we can distinguish them by the engine id of the root element of the uniqueid.
+
+    selectedUniqueIds.forEach(
+        uid -> {
+          if (isCucumberEngine(uid)) {
+            uniqueIdsToFilter.add(uid);
+          } else {
+            selectors.add(DiscoverySelectors.selectUniqueId(uid));
+          }
+        });
+  }
+
+  private static boolean isCucumberEngine(UniqueId uid) {
+    return uid.getEngineId()
+        .map(engineId -> engineId.equals("cucumber"))
+        .orElse(false)
+        .booleanValue();
   }
 
   public static UniqueId findScenarioUniqueId(URI featurePath, Location location) {
@@ -272,6 +310,31 @@ public class ScenarioRunner {
 
     public List<TigerSummaryListener.TestResultWithId> getIndividualTestResults() {
       return testSummaryListener.getIndividualTestResults();
+    }
+  }
+
+  private static class UniqueIdPostFilter implements PostDiscoveryFilter {
+
+    private final Collection<UniqueId> uniqueIds;
+
+    public UniqueIdPostFilter(Collection<UniqueId> uniqueIds) {
+      this.uniqueIds = uniqueIds;
+    }
+
+    @Override
+    public FilterResult apply(TestDescriptor object) {
+      if (!object.isTest()) {
+        return FilterResult.included(
+            "including root TestDescriptor before filtering selected tests");
+      }
+      if (!isCucumberEngine(object.getUniqueId())) {
+        return FilterResult.included("non cucumber engine are always included");
+      }
+      if (uniqueIds.stream().anyMatch(s -> s.equals(object.getUniqueId()))) {
+        return FilterResult.included("user selected test");
+      } else {
+        return FilterResult.excluded("user did not select test");
+      }
     }
   }
 }

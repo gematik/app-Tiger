@@ -250,6 +250,7 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
             .build();
     FeatureUpdate featureUpdate =
         FeatureUpdate.builder()
+            .sourcePathFromUri(context.getFeatureURI())
             .description(feature.getName())
             .scenarios(convertToLinkedHashMap(scenarioUniqueId, scenarioUpdate))
             .build();
@@ -525,6 +526,7 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
     val featureUpdate =
         FeatureUpdate.builder()
             .description(featureName)
+            .sourcePathFromUri(context.getFeatureURI())
             .scenarios(convertToLinkedHashMap(scenarioUniqueId, scenarioUpdate))
             .build();
     TigerStatusUpdate tigerStatusUpdate =
@@ -597,6 +599,7 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
       val featureUpdate =
           FeatureUpdate.builder()
               .description(featureName)
+              .sourcePathFromUri(context.getFeatureURI())
               .scenarios(convertToLinkedHashMap(scenarioUniqueId, scenarioUpdate))
               .build();
 

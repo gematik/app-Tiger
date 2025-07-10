@@ -29,12 +29,17 @@ import de.gematik.rbellogger.data.core.RbelRequestFacet;
 import de.gematik.rbellogger.data.core.RbelResponseFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
 import de.gematik.rbellogger.util.RbelContent;
+import java.nio.ByteBuffer;
+import java.util.Objects;
+import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.util.encoders.Hex;
 
 @ConverterInfo(onlyActivateFor = "sicct")
 @Slf4j
 public class RbelSicctEnvelopeConverter extends RbelConverterPlugin {
+
+  private static final int ENVELOPE_LENGTH = 10;
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConversionExecutor context) {
@@ -79,15 +84,23 @@ public class RbelSicctEnvelopeConverter extends RbelConverterPlugin {
         .getFacet(RbelSicctCommandFacet.class)
         .map(RbelSicctCommandFacet::getHeader)
         .flatMap(el -> el.getFacet(RbelSicctHeaderFacet.class))
-        .map(header -> header.getCommand().toString())
+        .map(RbelSicctHeaderFacet::getCommand)
+        .map(Objects::toString)
         .orElse("");
   }
 
   private RbelSicctEnvelopeFacet buildEnvelopeFacet(RbelElement element) {
     // compare SICCT-specification, chapter 6.1.4.2
     RbelContent content = element.getContent();
+    final byte[] lengthContent = content.toByteArray(6, 10);
+    int length = ByteBuffer.wrap(lengthContent).getInt();
     final RbelElement commandElement =
-        new RbelElement(content.toByteArray(10, (int) element.getSize()), element);
+        new RbelElement(
+            null,
+            content.subArray(ENVELOPE_LENGTH, length + ENVELOPE_LENGTH),
+            element,
+            Optional.empty());
+    element.setUsedBytes(length + ENVELOPE_LENGTH);
     commandElement.addFacet(new RbelBinaryFacet());
     return RbelSicctEnvelopeFacet.builder()
         .messageType(
