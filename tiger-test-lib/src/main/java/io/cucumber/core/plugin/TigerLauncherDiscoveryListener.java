@@ -21,7 +21,6 @@
 package io.cucumber.core.plugin;
 
 import static io.cucumber.core.options.Constants.EXECUTION_DRY_RUN_PROPERTY_NAME;
-import static io.cucumber.core.options.Constants.FEATURES_PROPERTY_NAME;
 import static io.cucumber.core.options.Constants.FILTER_TAGS_PROPERTY_NAME;
 import static io.cucumber.junit.platform.engine.Constants.JUNIT_PLATFORM_SHORT_NAMING_STRATEGY_EXAMPLE_NAME_PROPERTY_NAME;
 
@@ -66,11 +65,6 @@ public class TigerLauncherDiscoveryListener implements LauncherDiscoveryListener
       var newConfiguration = new HashMap<String, String>();
       configurationParameters.keySet().stream()
           .filter(key -> key.startsWith("cucumber."))
-          .filter(
-              key ->
-                  !FEATURES_PROPERTY_NAME.equals(
-                      key)) // we don't want the features property, otherwise we cannot replay a
-          // subset of the tests
           .forEach(
               key -> newConfiguration.put(key, configurationParameters.get(key).orElseThrow()));
       TigerGlobalConfiguration.putValue(

@@ -136,6 +136,7 @@ public class TigerCucumberRunner {
                   FeatureUpdate.builder()
                       .description(featureName)
                       .scenarios(new LinkedHashMap<>())
+                      .sourcePathForSource(t.getTestIdentifier().getSource().orElse(null))
                       .build())
           .getScenarios()
           .put(scenarioUniqueId, scenarioUpdate);

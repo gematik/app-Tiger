@@ -1,5 +1,21 @@
 # Changelog Tiger Test platform
 
+# Release 4.0.8
+
+## Features
+
+* TGR-1662: Workflow UI: it is now possible to select a subset of tests in the Workflow UI and execute them. To activate
+  the feature you need to explicitly configure it in your tiger.yaml.
+
+```yaml
+lib:
+  enableTestSelection: true
+```
+
+## Bugfixes
+
+* TGR-1897: Tiger-Proxy: Fixed parsing of chunked SICCT messages.
+
 # Release 4.0.7
 
 ## Bugfixes

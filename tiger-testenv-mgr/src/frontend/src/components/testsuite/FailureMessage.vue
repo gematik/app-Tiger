@@ -21,32 +21,32 @@
 
 -->
 <template>
-  <table v-if="message.length > 0"
-         class="failure-text">
+  <table v-if="message.length > 0" class="failure-text">
     <tr>
       <td>
         <div class="failure-message-container">
-          <button v-if="stacktrace.length > 0"
-                  class="btn btn-outline-primary"
-                  @click="toggleVisibility"
-                  title="Toggle stack trace visibility">
-            <i :class="visible ? 'fas fa-minus' : 'fas fa-plus'"/>
+          <button
+            v-if="stacktrace.length > 0"
+            class="btn btn-outline-primary"
+            @click="toggleVisibility"
+            title="Toggle stack trace visibility"
+          >
+            <i :class="visible ? 'fas fa-minus' : 'fas fa-plus'" />
           </button>
-          <div v-html="'FAILED: ' + replaceNewlines(message)"/>
+          <div v-html="'FAILED: ' + replaceNewlines(message)" />
         </div>
       </td>
     </tr>
     <tr v-show="visible && stacktrace.length > 0">
       <td>
-        <div class="font-monospace"
-             v-html="replaceNewlines(stacktrace)"/>
+        <div class="font-monospace" v-html="replaceNewlines(stacktrace)" />
       </td>
     </tr>
   </table>
 </template>
 
 <script setup lang="ts">
-import {ref} from "vue";
+import { ref } from "vue";
 
 defineProps<{
   message: string;

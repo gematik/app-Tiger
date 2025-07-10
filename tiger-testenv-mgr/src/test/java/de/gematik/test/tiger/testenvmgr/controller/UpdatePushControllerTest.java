@@ -97,6 +97,7 @@ class UpdatePushControllerTest {
                     Map.of(
                         "feature",
                         FeatureUpdate.builder()
+                            .sourcePath("sourcePath")
                             .description("feature")
                             .scenarios(
                                 new LinkedHashMap<>(

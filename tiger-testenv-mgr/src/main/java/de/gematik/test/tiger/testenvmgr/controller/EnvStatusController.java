@@ -107,6 +107,7 @@ public class EnvStatusController implements TigerUpdateListener {
       feature.setStatus(featureUpdate.getStatus());
     }
     feature.setDescription(featureUpdate.getDescription());
+    feature.setSourcePath(featureUpdate.getSourcePath());
     fillInScenarioData(featureUpdate, feature);
   }
 

@@ -24,7 +24,10 @@ import static de.gematik.rbellogger.RbelConverterPlugin.createPlugin;
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.awaitility.Awaitility.waitAtMost;
 
+import com.google.common.primitives.Bytes;
+import com.google.common.primitives.Ints;
 import de.gematik.rbellogger.RbelConversionExecutor;
 import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelConverterPlugin;
@@ -33,6 +36,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.ProxyTransmissionHistory;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
+import de.gematik.rbellogger.facets.cetp.RbelCetpFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
@@ -833,5 +837,73 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
     await().atMost(2, TimeUnit.SECONDS).until(messages::size, size -> size == 2);
 
     waitShortTime();
+  }
+
+  @SneakyThrows
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+        tigerProxy:
+          adminPort: ${free.port.6}
+          trafficEndpoints:
+            - http://localhost:${free.port.4}
+        servers:
+          httpbin:
+            type: httpbin
+            serverPort: ${free.port.0}
+            healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
+          reverseProxy:
+            type: tigerProxy
+            tigerProxyConfiguration:
+              adminPort: ${free.port.4}
+              proxyPort: ${free.port.5}
+              directReverseProxy:
+                hostname: localhost
+                port: 45678
+        lib:
+          trafficVisualization: true
+        """)
+  void verifyChunkingLeadsToPredictableUuidGeneration(TigerTestEnvMgr envMgr) {
+    final byte[] cetpMessage = wrapInCetpMessage("{'foo': 'bar'}".getBytes());
+    waitShortTime();
+    val reverseProxyLogger =
+        ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
+            .getTigerProxy()
+            .getRbelLogger();
+    try (Socket clientSocket =
+        new Socket(
+            "localhost",
+            Integer.parseInt(TigerGlobalConfiguration.resolvePlaceholders("${free.port.5}")))) {
+      clientSocket.setTcpNoDelay(true);
+      clientSocket
+          .getOutputStream()
+          .write(Bytes.concat(cetpMessage, Arrays.copyOfRange(cetpMessage, 0, 10)));
+      clientSocket.getOutputStream().flush();
+      waitAtMost(2, TimeUnit.SECONDS)
+          .until(() -> reverseProxyLogger.getMessageHistory().size() > 1);
+      clientSocket
+          .getOutputStream()
+          .write(
+              Bytes.concat(Arrays.copyOfRange(cetpMessage, 10, cetpMessage.length), cetpMessage));
+      waitAtMost(2, TimeUnit.SECONDS)
+          .until(() -> reverseProxyLogger.getMessageHistory().size() > 3);
+    }
+    val revProxyUuids =
+        reverseProxyLogger.getMessageList().stream()
+            .filter(msg -> msg.hasFacet(RbelCetpFacet.class))
+            .map(RbelElement::getUuid)
+            .toList();
+    val localProxyUuids =
+        envMgr.getLocalTigerProxyOrFail().getRbelMessagesList().stream()
+            .filter(msg -> msg.hasFacet(RbelCetpFacet.class))
+            .map(RbelElement::getUuid)
+            .toList();
+    assertThat(revProxyUuids).isEqualTo(localProxyUuids);
+    waitShortTime();
+  }
+
+  private static byte @NotNull [] wrapInCetpMessage(byte[] message) {
+    return Bytes.concat("CETP".getBytes(), Ints.toByteArray(message.length), message);
   }
 }
