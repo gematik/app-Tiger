@@ -87,7 +87,7 @@ pipeline {
 
                 stage('Release Jira-Version') {
                     steps {
-                        jiraReleaseVersion(JIRA_PROJECT_ID, RELEASE_VERSION)
+                        jiraReleaseProjectVersion(JIRA_PROJECT_ID, RELEASE_VERSION)
                     }
                 }
                 stage('Create New Jira-Version') {
