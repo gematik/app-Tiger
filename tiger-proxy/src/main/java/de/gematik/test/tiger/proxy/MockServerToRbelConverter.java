@@ -77,6 +77,7 @@ public class MockServerToRbelConverter {
             .withPairedMessage(request.getCorrespondingRbelMessage().getUuid())
             .withTransmissionTime(timestamp.orElse(null))
             .withPreviousMessage(previousMessageReference.getAndSet(responseRbelMessage.getUuid()));
+
     return rbelConverter.parseMessageAsync(responseRbelMessage, conversionMetadata);
   }
 
@@ -97,6 +98,7 @@ public class MockServerToRbelConverter {
             .withReceiver(convertUri(protocolAndHost))
             .withTransmissionTime(timestamp.orElse(null))
             .withPreviousMessage(previousMessageReference.getAndSet(unparsedRbelMessage.getUuid()));
+
     val parseMessageFuture =
         rbelConverter.parseMessageAsync(unparsedRbelMessage, conversionMetadata);
 
@@ -112,8 +114,7 @@ public class MockServerToRbelConverter {
       AtomicReference<String> previousMessageReference) {
     val message = new RbelElement(new byte[] {}, null);
     message.addFacet(new TigerRoutingErrorFacet(routingException));
-    return rbelConverter.parseMessage(
-        message,
+    RbelMessageMetadata metaData =
         new RbelMessageMetadata()
             .withSender(convertUri(protocolAndHost))
             .withReceiver(
@@ -121,8 +122,15 @@ public class MockServerToRbelConverter {
                     .map(HttpRequest::getReceiverAddress)
                     .map(SocketAddress::toRbelHostname)
                     .orElse(null))
+            .withPairedMessage(
+                Optional.ofNullable(request)
+                    .map(HttpRequest::getCorrespondingRbelMessage)
+                    .map(RbelElement::getUuid)
+                    .orElse(null))
             .withTransmissionTime(routingException.getTimestamp())
-            .withPreviousMessage(previousMessageReference.getAndSet(message.getUuid())));
+            .withPreviousMessage(previousMessageReference.getAndSet(message.getUuid()));
+
+    return rbelConverter.parseMessage(message, metaData);
   }
 
   private RbelHostname convertUri(String protocolAndHost) {

@@ -21,6 +21,7 @@
 package de.gematik.test.tiger.proxy.data;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.rbellogger.util.RbelContent;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,11 +42,19 @@ public class TcpConnectionEntry {
   Consumer<RbelElement> messagePreProcessor;
   Long sequenceNumber;
   String previousUuid;
+  RbelMessageKind messageKind;
   Integer positionInBaseNode;
 
   public static TcpConnectionEntry empty() {
     return new TcpConnectionEntry(
-        null, RbelContent.builder().build(), null, msg -> {}, null, null, null);
+        null,
+        RbelContent.builder().build(),
+        null,
+        msg -> {},
+        null,
+        null,
+        RbelMessageKind.REQUEST,
+        null);
   }
 
   public TcpConnectionEntry addSourceUuids(ArrayList<String> sourceUuids) {

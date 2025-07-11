@@ -42,45 +42,34 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
 
   @SuppressWarnings({"rawtypes", "java:S3740"})
   public static ContainerTag buildAddressInfo(final RbelElement element) {
-    if (!element.hasFacet(RbelTcpIpMessageFacet.class)) {
+    final var messageFacet = element.getFacet(RbelTcpIpMessageFacet.class);
+    String senderHostname =
+        messageFacet
+            .map(RbelTcpIpMessageFacet::getSender)
+            .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
+            .map(RbelHostnameFacet::toString)
+            .orElse(null);
+    String receiverHostname =
+        messageFacet
+            .map(RbelTcpIpMessageFacet::getReceiver)
+            .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
+            .map(RbelHostnameFacet::toString)
+            .orElse(null);
+
+    if (senderHostname == null && receiverHostname == null) {
       return span();
     }
-    final RbelTcpIpMessageFacet messageFacet = element.getFacetOrFail(RbelTcpIpMessageFacet.class);
-    if (Optional.ofNullable(messageFacet.getSender())
-            .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
-            .isEmpty()
-        && Optional.ofNullable(messageFacet.getReceiver())
-            .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
-            .isEmpty()) {
-      return span();
-    }
+
     final String left;
     final String right;
     final String icon;
-    final Optional<Boolean> isRequest = determineIsRequest(element);
-    if (isRequest.isEmpty() || Boolean.TRUE.equals(isRequest.get())) {
-      left =
-          Optional.ofNullable(messageFacet.getSender())
-              .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
-              .map(RbelHostnameFacet::toString)
-              .orElse(null);
-      right =
-          Optional.ofNullable(messageFacet.getReceiver())
-              .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
-              .map(RbelHostnameFacet::toString)
-              .orElse(null);
+    if (isRequestMessage(element)) {
+      left = senderHostname;
+      right = receiverHostname;
       icon = "fa-arrow-right";
     } else {
-      left =
-          Optional.ofNullable(messageFacet.getReceiver())
-              .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
-              .map(RbelHostnameFacet::toString)
-              .orElse(null);
-      right =
-          Optional.ofNullable(messageFacet.getSender())
-              .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
-              .map(RbelHostnameFacet::toString)
-              .orElse(null);
+      left = receiverHostname;
+      right = senderHostname;
       icon = "fa-arrow-left";
     }
 
@@ -91,14 +80,8 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         .withClass("is-size-7 ms-4");
   }
 
-  private static Optional<Boolean> determineIsRequest(RbelElement element) {
-    if (element.hasFacet(RbelRequestFacet.class)) {
-      return Optional.of(true);
-    } else if (element.hasFacet(RbelResponseFacet.class)) {
-      return Optional.of(false);
-    } else {
-      return Optional.empty();
-    }
+  private static boolean isRequestMessage(RbelElement element) {
+    return element.hasFacet(RbelRequestFacet.class) || !element.hasFacet(RbelResponseFacet.class);
   }
 
   @SuppressWarnings({"rawtypes", "java:S3740"})

@@ -35,9 +35,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class BundledServerNameWriterAndReader {
 
-  private static final RbelMetadataValue<String> BUNDLED_HOSTNAME_SENDER =
+  public static final RbelMetadataValue<String> BUNDLED_HOSTNAME_SENDER =
       new RbelMetadataValue<>("bundledHostnameSender", String.class);
-  private static final RbelMetadataValue<String> BUNDLED_HOSTNAME_RECEIVER =
+  public static final RbelMetadataValue<String> BUNDLED_HOSTNAME_RECEIVER =
       new RbelMetadataValue<>("bundledHostnameReceiver", String.class);
 
   public static class BundledServerNameReader extends RbelConverterPlugin {

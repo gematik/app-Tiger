@@ -34,6 +34,8 @@ import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.ProxyTransmissionHistory;
+import de.gematik.rbellogger.data.core.RbelRequestFacet;
+import de.gematik.rbellogger.data.core.RbelResponseFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.facets.cetp.RbelCetpFacet;
@@ -42,6 +44,7 @@ import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
+import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.testenvmgr.junit.TigerTest;
 import de.gematik.test.tiger.testenvmgr.servers.TigerProxyServer;
 import de.gematik.test.tiger.testenvmgr.utils.RandomTestUtils;
@@ -63,6 +66,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import net.jcip.annotations.NotThreadSafe;
+import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -149,14 +153,14 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
     assertThat(localTigerMessages.get(0))
         .hasStringContentEqualToAtPosition("$.tlsVersion", "TLSv1.2")
         .hasStringContentEqualToAtPosition("$.cipherSuite", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
-        .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "local client")
+        .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "reverseProxy")
         .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "httpbin")
         .hasStringContentEqualToAtPosition(
             "$.receiver.port", TigerGlobalConfiguration.readString("free.port.0"));
     assertThat(localTigerMessages.get(1))
         .hasStringContentEqualToAtPosition("$.tlsVersion", "TLSv1.2")
         .hasStringContentEqualToAtPosition("$.cipherSuite", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
-        .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "local client")
+        .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "reverseProxy")
         .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "httpbin")
         .hasStringContentEqualToAtPosition(
             "$.sender.port", TigerGlobalConfiguration.readString("free.port.0"));
@@ -169,6 +173,8 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
+            lib:
+              trafficVisualization: true
             tigerProxy:
               skipTrafficEndpointsSubscription: true
               trafficEndpoints:
@@ -222,7 +228,110 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         .until(
             () -> envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageList(),
             l -> l.size() >= 4);
+
+    envMgr
+        .getLocalTigerProxyOrFail()
+        .getRbelLogger()
+        .getMessageList()
+        .forEach(
+            msg ->
+                assertThat(msg)
+                    .extractChildWithPath("$.sender.bundledServerName")
+                    .matches(
+                        bundledServerName ->
+                            bundledServerName
+                                .getRawStringContent()
+                                .matches(
+                                    msg.hasFacet(RbelRequestFacet.class)
+                                        ? "reverseProxy1|reverseProxy2"
+                                        : "httpbin"))
+                    .andTheInitialElement()
+                    .extractChildWithPath("$.receiver.bundledServerName")
+                    .matches(
+                        bundledServerName ->
+                            bundledServerName
+                                .getRawStringContent()
+                                .matches(
+                                    msg.hasFacet(RbelResponseFacet.class)
+                                        ? "reverseProxy1|reverseProxy2"
+                                        : "httpbin")));
+
     waitShortTime();
+  }
+
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+      servers:
+        distributingProxy:
+          type: tigerProxy
+          dependsOn: specialServer, otherServer
+          tigerProxyConfiguration:
+            proxyPort: ${free.port.3}
+            adminPort: ${free.port.4}
+            proxyRoutes:
+              - from: /
+                to: http://localhost:${free.port.2}
+                criterions:
+                  - message.path == '/specialrequest'
+              - from: /
+                to: http://localhost:${free.port.1}
+
+        specialServer:
+          type: httpbin
+          serverPort: ${free.port.2}
+          healthcheckUrl: http://127.0.0.1:${free.port.2}/status/200
+
+        otherServer:
+          type: httpbin
+          serverPort: ${free.port.1}
+          healthcheckUrl: http://127.0.0.1:${free.port.1}/status/200
+
+      lib:
+        trafficVisualization: true
+      """)
+  void multipleUpstreamProxiesWithDifferentCriteria_shouldShowCorrectServer(
+      TigerTestEnvMgr envMgr) {
+
+    Unirest.get(
+            "http://localhost:"
+                + TigerGlobalConfiguration.readString("free.port.3")
+                + "/otherrequest")
+        .asString();
+    Unirest.get(
+            "http://localhost:"
+                + TigerGlobalConfiguration.readString("free.port.3")
+                + "/specialrequest")
+        .asString();
+
+    TigerProxy distributingProxy =
+        ((TigerProxyServer) envMgr.getServers().get("distributingProxy")).getTigerProxy();
+
+    distributingProxy.waitForAllCurrentMessagesToBeParsed();
+
+    try {
+      await()
+          .atMost(5, TimeUnit.SECONDS)
+          .until(distributingProxy.getRbelMessagesList()::size, size -> size >= 4);
+    } catch (ConditionTimeoutException ex) {
+      distributingProxy.getRbelMessagesList().stream()
+          .map(RbelElement::printTreeStructure)
+          .forEach(System.out::println);
+      throw ex;
+    }
+
+    var messages = distributingProxy.getRbelMessagesList();
+
+    assertThat(messages.get(0))
+        .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "otherServer");
+    assertThat(messages.get(1))
+        .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "otherServer");
+
+    assertThat(messages.get(2))
+        .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "specialServer");
+    assertThat(messages.get(3))
+        .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "specialServer");
   }
 
   @SneakyThrows
@@ -355,6 +464,8 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
+            lib:
+              trafficVisualization: true
             tigerProxy:
               adminPort: ${free.port.31}
               dependsOn: reverseProxy1, reverseProxy2
@@ -440,6 +551,14 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
 
     RbelElement msg0 = httpMessages.get(0);
     RbelElement msg1 = httpMessages.get(1);
+
+    assertThat(msg0)
+        .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "reverseProxy2")
+        .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "localhost");
+
+    assertThat(msg1)
+        .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "reverseProxy1")
+        .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "localhost");
 
     assertThat(msg0)
         .extractFacet(ProxyTransmissionHistory.class)
@@ -530,8 +649,8 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
           .matches("((view-|)localhost|127\\.0\\.0\\.1):" + senderPort);
 
       assertThat(message)
-          .extractChildWithPath("$.receiver.bundledServerName")
-          .hasStringContentEqualTo("reverseHostname");
+          .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "reverseHostname")
+          .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "reverseProxy");
     }
     waitShortTime();
   }

@@ -4,6 +4,8 @@
 
 ## Features
 
+* TGR-1805: Better treatment of proxy client endpoints in traffic visualization. Instead of showing 'local client', the
+  proxy name will be shown.
 * TGR-1662: Workflow UI: it is now possible to select a subset of tests in the Workflow UI and execute them. To activate
   the feature you need to explicitly configure it in your tiger.yaml.
 

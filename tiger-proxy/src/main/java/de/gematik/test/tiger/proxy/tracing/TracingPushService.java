@@ -24,6 +24,8 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.core.ProxyTransmissionHistory;
+import de.gematik.rbellogger.data.core.RbelRequestFacet;
+import de.gematik.rbellogger.data.core.RbelResponseFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -127,6 +129,8 @@ public class TracingPushService {
                       tigerProxy.getTigerProxyConfiguration().getName(),
                       List.of(rbelTcpIpMessageFacet.getSequenceNumber()),
                       msg.getFacet(ProxyTransmissionHistory.class).orElse(null)))
+              .request(
+                  msg.hasFacet(RbelRequestFacet.class) || !msg.hasFacet(RbelResponseFacet.class))
               .build();
 
       template.convertAndSend(TigerRemoteProxyClient.WS_TRACING, tracingDto);

@@ -26,6 +26,7 @@ import static de.gematik.test.tiger.mockserver.model.BinaryMessage.bytes;
 import static de.gematik.test.tiger.mockserver.netty.unification.PortUnificationHandler.isSslEnabledUpstream;
 
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.httpclient.BinaryRequestInfo;
 import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
@@ -66,7 +67,7 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
     final InetSocketAddress remoteAddress = getRemoteAddress(ctx);
     if (remoteAddress != null) {
       binaryModifierApplier
-          .applyModifierPlugins(binaryRequest, ctx)
+          .applyModifierPlugins(binaryRequest, ctx, RbelMessageKind.REQUEST)
           .forEach(msg -> sendMessage(new BinaryRequestInfo(ctx.channel(), msg, remoteAddress)));
     } else {
       log.info(
@@ -105,7 +106,8 @@ public class BinaryHandler extends SimpleChannelInboundHandler<ByteBuf> {
       binaryExchangeCallback.onProxy(
           binaryRequestInfo.getDataToSend(),
           binaryRequestInfo.getRemoteServerAddress(),
-          binaryRequestInfo.getIncomingChannel().remoteAddress());
+          binaryRequestInfo.getIncomingChannel().remoteAddress(),
+          RbelMessageKind.REQUEST);
     }
   }
 

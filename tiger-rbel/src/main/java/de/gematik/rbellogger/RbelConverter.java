@@ -123,6 +123,11 @@ public class RbelConverter implements RbelConverterInterface {
   }
 
   public RbelElement convertElement(RbelElement rbelElement) {
+    return convertElement(rbelElement, conversionPhases);
+  }
+
+  public RbelElement convertElement(
+      RbelElement rbelElement, List<RbelConversionPhase> conversionPhases) {
     return new RbelConversionExecutor(
             this, rbelElement, skipParsingWhenMessageLargerThanKb, rbelKeyManager, conversionPhases)
         .execute();
@@ -154,15 +159,15 @@ public class RbelConverter implements RbelConverterInterface {
     converterPlugins.put(converter);
   }
 
-  public RbelElement parseMessage(byte[] content, RbelMessageMetadata convertionMetadata) {
+  public RbelElement parseMessage(byte[] content, RbelMessageMetadata conversionMetadata) {
     final RbelElement messageElement = RbelElement.builder().rawContent(content).build();
-    return parseMessage(messageElement, convertionMetadata);
+    return parseMessage(messageElement, conversionMetadata);
   }
 
   public RbelElement parseMessage(
-      @NonNull final RbelElement message, @NonNull final RbelMessageMetadata convertionMetadata) {
+      @NonNull final RbelElement message, @NonNull final RbelMessageMetadata conversionMetadata) {
     try {
-      return parseMessageAsync(message, convertionMetadata)
+      return parseMessageAsync(message, conversionMetadata)
           .exceptionally(
               t -> {
                 log.error("Error while parsing message", t);
@@ -179,7 +184,7 @@ public class RbelConverter implements RbelConverterInterface {
 
   public CompletableFuture<RbelElement> parseMessageAsync(
       @NonNull final RbelElement messageElement,
-      @NonNull final RbelMessageMetadata convertionMetadata) {
+      @NonNull final RbelMessageMetadata conversionMetadata) {
     if (messageElement.getContent().isNull()) {
       throw new RbelConversionException("content is empty");
     }
@@ -199,18 +204,18 @@ public class RbelConverter implements RbelConverterInterface {
           RbelTcpIpMessageFacet.builder()
               .receiver(
                   RbelMessageMetadata.MESSAGE_RECEIVER
-                      .getValue(convertionMetadata)
+                      .getValue(conversionMetadata)
                       .map(h -> RbelHostnameFacet.buildRbelHostnameFacet(messageElement, h))
                       .orElse(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, null)))
               .sender(
                   RbelMessageMetadata.MESSAGE_SENDER
-                      .getValue(convertionMetadata)
+                      .getValue(conversionMetadata)
                       .map(h -> RbelHostnameFacet.buildRbelHostnameFacet(messageElement, h))
                       .orElse(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, null)))
               .sequenceNumber(seqNumber)
               .build());
     }
-    messageElement.addFacet(convertionMetadata);
+    messageElement.addFacet(conversionMetadata);
 
     return CompletableFuture.supplyAsync(() -> convertElement(messageElement), executorService);
   }
@@ -404,13 +409,8 @@ public class RbelConverter implements RbelConverterInterface {
    * @param rbelElement
    */
   public void transmitElement(RbelElement rbelElement) {
-    new RbelConversionExecutor(
-            this,
-            rbelElement,
-            skipParsingWhenMessageLargerThanKb,
-            rbelKeyManager,
-            List.of(RbelConversionPhase.PREPARATION, RbelConversionPhase.TRANSMISSION))
-        .execute();
+    convertElement(
+        rbelElement, List.of(RbelConversionPhase.PREPARATION, RbelConversionPhase.TRANSMISSION));
   }
 
   private static @NotNull List<String> getTrimmedListElements(String commaSeparatedList) {

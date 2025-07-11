@@ -641,6 +641,7 @@ class TigerRemoteProxyClientTest {
           .sender(RbelHostname.fromString("server:80").get())
           .receiver(RbelHostname.fromString("client:80").get());
     }
+    builder.request(request);
     return builder.build();
   }
 

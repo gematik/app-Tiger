@@ -18,24 +18,13 @@
  *
  * For additional notes and disclaimer from gematik and in case of changes by gematik find details in the "Readme" file.
  */
-package de.gematik.test.tiger.proxy.client;
+package de.gematik.rbellogger.data;
 
-import de.gematik.rbellogger.data.RbelHostname;
-import de.gematik.rbellogger.data.core.ProxyTransmissionHistory;
-import java.util.Map;
-import lombok.Builder;
-import lombok.Data;
+public enum RbelMessageKind {
+  REQUEST,
+  RESPONSE;
 
-@Data
-@Builder
-public class TigerTracingDto {
-
-  // TODO fold into metadata-map structure: make NO assumptions about the keys in the map
-  private final String messageUuid;
-  private final RbelHostname sender;
-  private final RbelHostname receiver;
-  private final @Builder.Default Map<String, Object> additionalInformation = Map.of();
-  private final Long sequenceNumber;
-  private final ProxyTransmissionHistory proxyTransmissionHistory;
-  private final boolean request;
+  public boolean isRequest() {
+    return this == REQUEST;
+  }
 }

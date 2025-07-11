@@ -22,6 +22,7 @@ package de.gematik.test.tiger.proxy.handler;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -46,12 +47,16 @@ public class BinaryExchangeHandler {
   }
 
   public void onProxy(
-      BinaryMessage binaryRequest, SocketAddress serverAddress, SocketAddress clientAddress) {
+      BinaryMessage binaryMessage,
+      SocketAddress serverAddress,
+      SocketAddress clientAddress,
+      RbelMessageKind messageKind) {
     connectionParser.addToBuffer(
         clientAddress,
         serverAddress,
-        binaryRequest.getBytes(),
-        binaryRequest.getTimestamp().atZone(ZoneId.systemDefault()));
+        binaryMessage.getBytes(),
+        binaryMessage.getTimestamp().atZone(ZoneId.systemDefault()),
+        messageKind);
   }
 
   public void propagateExceptionMessageSafe(

@@ -26,6 +26,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.core.RbelFacet;
 import de.gematik.rbellogger.util.IRbelMessageListener;
@@ -352,6 +353,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             message.getReceiver().asSocketAddress(),
             message.buildCompleteContent().toByteArray(),
             message.getAdditionalInformation(),
+            message.getTracingDto().isRequest()
+                ? RbelMessageKind.REQUEST
+                : RbelMessageKind.RESPONSE,
             messagePreProcessor,
             Optional.ofNullable(
                     message.getAdditionalInformation().get(PREVIOUS_MESSAGE_UUID.getKey()))

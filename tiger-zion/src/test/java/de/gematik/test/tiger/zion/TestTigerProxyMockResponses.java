@@ -244,12 +244,12 @@ class TestTigerProxyMockResponses {
                         .statusCode("666")
                         .body(
                             """
-{'headers':\s
-    [
-        {'header': '${header}',
-         'tgrFor': 'header : request.headers.entrySet()'}]
-}
-""")
+                            {'headers':\s
+                                [
+                                    {'header': '${header}',
+                                     'tgrFor': 'header : request.headers.entrySet()'}]
+                            }
+                            """)
                         .build())
                 .build()));
 

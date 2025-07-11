@@ -79,7 +79,7 @@ public class SocketAddress extends ObjectWithJsonToString {
   }
 
   public RbelHostname toRbelHostname() {
-    return null;
+    return RbelHostname.builder().hostname(host).port(port).build();
   }
 
   public enum Scheme {

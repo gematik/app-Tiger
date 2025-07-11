@@ -78,12 +78,26 @@ public class MessageMetaDataDto {
                     .map(RbelTcpIpMessageFacet::getSender)
                     .flatMap(RbelHostnameFacet::tryToExtractServerName)
                     .filter(s -> !s.startsWith("localhost") && !s.startsWith("127.0.0.1"))
+                    .or(
+                        () ->
+                            el.getFacet(RbelTcpIpMessageFacet.class)
+                                .map(RbelTcpIpMessageFacet::getSender)
+                                .flatMap(e -> e.getFacet(RbelHostnameFacet.class))
+                                .map(RbelHostnameFacet::toString)
+                                .map(s -> s.replace(":", "#58;")))
                     .orElse(""))
             .bundledServerNameReceiver(
                 el.getFacet(RbelTcpIpMessageFacet.class)
                     .map(RbelTcpIpMessageFacet::getReceiver)
                     .flatMap(RbelHostnameFacet::tryToExtractServerName)
                     .filter(s -> !s.startsWith("localhost") && !s.startsWith("127.0.0.1"))
+                    .or(
+                        () ->
+                            el.getFacet(RbelTcpIpMessageFacet.class)
+                                .map(RbelTcpIpMessageFacet::getReceiver)
+                                .flatMap(e -> e.getFacet(RbelHostnameFacet.class))
+                                .map(RbelHostnameFacet::toString)
+                                .map(s -> s.replace(":", "#58;")))
                     .orElse(""))
             .pairedUuid(
                 el.getFacet(TracingMessagePairFacet.class)

@@ -90,19 +90,25 @@ public class HttpState {
 
   public Expectation firstMatchingExpectation(HttpRequest request) {
     log.atTrace().addArgument(request::printLogLineDescription).log("Trying to find route for {}");
-    for (Expectation expectation : expectations.stream().sorted().toList()) {
-      if (expectation.matches(request)) {
-        log.atDebug()
-            .addArgument(expectation::createShortDescription)
-            .addArgument(request::printLogLineDescription)
-            .log("Route {} matched request {}");
-        return expectation;
+    var oldCorrespondingMessage = request.getCorrespondingRbelMessage();
+    try {
+      request.setCorrespondingRbelMessage(null);
+      for (Expectation expectation : expectations.stream().sorted().toList()) {
+        if (expectation.matches(request)) {
+          log.atDebug()
+              .addArgument(expectation::createShortDescription)
+              .addArgument(request::printLogLineDescription)
+              .log("Route {} matched request {}");
+          return expectation;
+        }
       }
+      log.atWarn()
+          .addArgument(request::printLogLineDescription)
+          .log("No matching route found for request {}");
+      return null;
+    } finally {
+      request.setCorrespondingRbelMessage(oldCorrespondingMessage);
     }
-    log.atWarn()
-        .addArgument(request::printLogLineDescription)
-        .log("No matching route found for request {}");
-    return null;
   }
 
   public boolean handle(HttpRequest request) {
