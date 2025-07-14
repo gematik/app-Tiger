@@ -25,6 +25,7 @@ import static de.gematik.test.tiger.common.SocketHelper.findFreePort;
 
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyApplication;
@@ -109,6 +110,8 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
                       .toList());
             });
 
+    addAlternativeNamesToProxyConfiguration(tigerProxyConfiguration);
+
     if (getTigerTestEnvMgr().isShuttingDown()) {
       log.debug("Skipping startup, already shutting down...");
       publishNewStatusUpdate(
@@ -161,6 +164,25 @@ public class TigerProxyServer extends AbstractExternalTigerServer {
     addServerNameForPort(tigerProxyConfiguration.getProxyPort(), this.getServerId());
     addServerNameForPort(tigerProxyConfiguration.getAdminPort(), this.getServerId());
     tigerProxyBean = applicationContext.getBean(TigerProxy.class);
+  }
+
+  private void addAlternativeNamesToProxyConfiguration(
+      TigerProxyConfiguration tigerProxyConfiguration) {
+    if (tigerProxyConfiguration.getTls() == null) {
+      tigerProxyConfiguration.setTls(TigerTlsConfiguration.builder().build());
+    }
+    if (tigerProxyConfiguration.getTls().getAlternativeNames() == null) {
+      tigerProxyConfiguration.getTls().setAlternativeNames(new ArrayList<>());
+    } else {
+      tigerProxyConfiguration
+          .getTls()
+          .setAlternativeNames(
+              new ArrayList<>(tigerProxyConfiguration.getTls().getAlternativeNames()));
+    }
+    tigerProxyConfiguration.getTls().getAlternativeNames().add(getHostname());
+    if (!getHostname().equals(getServerId())) {
+      tigerProxyConfiguration.getTls().getAlternativeNames().add(getServerId());
+    }
   }
 
   @Override

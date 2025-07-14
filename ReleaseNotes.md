@@ -1,5 +1,12 @@
 # Changelog Tiger Test platform
 
+# Release 4.0.9
+
+## Features
+
+* TGR-1796: Tiger-Proxy: When creating a Tiger-Proxy-Server the servername and hostname are now
+  automatically added to the alternative names list, making TLS connections to the proxy easier.
+
 # Release 4.0.8
 
 ## Features
@@ -832,8 +839,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+  key = PLUGIN_PROPERTY_NAME,
+  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }
