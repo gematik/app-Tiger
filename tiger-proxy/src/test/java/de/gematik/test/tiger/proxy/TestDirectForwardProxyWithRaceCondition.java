@@ -25,6 +25,7 @@ import static de.gematik.test.tiger.proxy.PcapReplayer.client;
 import static de.gematik.test.tiger.proxy.PcapReplayer.server;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
@@ -35,11 +36,17 @@ import de.gematik.rbellogger.facets.pop3.RbelPop3ResponseFacet;
 import de.gematik.rbellogger.facets.smtp.RbelSmtpCommandFacet;
 import de.gematik.rbellogger.facets.smtp.RbelSmtpResponseFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyModifierDescription;
+import de.gematik.test.tiger.proxy.handler.RbelBinaryModifierPlugin;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -126,10 +133,74 @@ S: +OK Maildrop locked and ready
             .readReplay();
     val tigerProxy =
         replayer.replayWithDirectForwardUsing(
-            new TigerProxyConfiguration().setActivateRbelParsingFor(List.of("sicct")));
+            TigerProxyConfiguration.builder()
+                .directReverseProxy(
+                    DirectReverseProxyInfo.builder()
+                        .modifierPlugins(
+                            List.of(
+                                TigerProxyModifierDescription.builder()
+                                    .name("SicctPairingFaker")
+                                    .parameters(Map.of("parameterName", "Value"))
+                                    .build()))
+                        .build())
+                .activateRbelParsingFor(List.of("sicct"))
+                .build());
+
+    final String html = RbelHtmlRenderer.render(tigerProxy.getRbelMessagesList());
+    Files.write(new File("target/sicct.html").toPath(), html.getBytes());
 
     tigerProxy.waitForAllCurrentMessagesToBeParsed();
     assertThat(tigerProxy.getRbelMessagesList()).hasSize(14);
+  }
+
+  @Data
+  public static class SicctPairingFaker implements RbelBinaryModifierPlugin {
+    private String targetString;
+    private String replacementString;
+
+    @Override
+    public Optional<byte[]> modify(RbelElement target, RbelConverter converter) {
+      System.out.println(target.printTreeStructureWithoutColors());
+      if (messageIsPairingRequest(target)) {
+        log.info("Found pairing request: {}", target.getRawStringContent());
+        return Optional.empty();
+      } else {
+        return Optional.empty();
+      }
+    }
+
+    private boolean messageIsPairingRequest(RbelElement target) {
+      return checkValue(target, "p1", (byte) 0)
+          && checkValue(target, "p2", (byte) 1)
+          && checkValue(target, "cla", (byte) 0x81)
+          && checkValue(target, "ins", (byte) 0xaa);
+    }
+
+    private static boolean checkValue(RbelElement target, String rbelPath, byte x) {
+      return target
+          .findElement("$.command.header." + rbelPath)
+          .flatMap(el -> el.seekValue(Byte.class))
+          .filter(
+              value -> {
+                if (value == x) return true;
+                else {
+                  log.warn("Expected value {} for {}, but got {}", x, rbelPath, value);
+                  return false;
+                }
+              })
+          .isPresent();
+    }
+
+    public String toString() {
+      return "MyBinaryModifier{"
+          + "targetString='"
+          + targetString
+          + '\''
+          + ", replacementString='"
+          + replacementString
+          + '\''
+          + '}';
+    }
   }
 
   @SneakyThrows

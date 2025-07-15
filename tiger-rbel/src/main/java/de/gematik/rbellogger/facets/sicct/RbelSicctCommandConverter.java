@@ -26,6 +26,7 @@ import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelBinaryFacet;
 import de.gematik.rbellogger.data.core.RbelFacet;
+import de.gematik.rbellogger.data.core.RbelValueFacet;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
@@ -57,19 +58,10 @@ public class RbelSicctCommandConverter extends RbelConverterPlugin {
 
   private RbelFacet buildHeaderFacet(RbelElement element) {
     // compare SICCT-specification, chapter 5.1
-    final RbelElement cla =
-        new RbelElement(ArrayUtils.subarray(element.getRawContent(), 0, 1), element);
-    final RbelElement ins =
-        new RbelElement(ArrayUtils.subarray(element.getRawContent(), 1, 2), element);
-    final RbelElement p1 =
-        new RbelElement(ArrayUtils.subarray(element.getRawContent(), 2, 3), element);
-    final RbelElement p2 =
-        new RbelElement(ArrayUtils.subarray(element.getRawContent(), 3, 4), element);
-
-    cla.addFacet(new RbelBinaryFacet());
-    ins.addFacet(new RbelBinaryFacet());
-    p1.addFacet(new RbelBinaryFacet());
-    p2.addFacet(new RbelBinaryFacet());
+    final RbelElement cla = extractHeaderValue(element, 0, 1);
+    final RbelElement ins = extractHeaderValue(element, 1, 2);
+    final RbelElement p1 = extractHeaderValue(element, 2, 3);
+    final RbelElement p2 = extractHeaderValue(element, 3, 4);
 
     return RbelSicctHeaderFacet.builder()
         .cla(cla)
@@ -78,6 +70,17 @@ public class RbelSicctCommandConverter extends RbelConverterPlugin {
         .p2(p2)
         .command(RbelSicctCommand.from(cla, ins).orElse(null))
         .build();
+  }
+
+  private static RbelElement extractHeaderValue(
+      RbelElement element, int startIndexInclusive, int endIndexExclusive) {
+    final RbelElement headerValue =
+        new RbelElement(
+            ArrayUtils.subarray(element.getRawContent(), startIndexInclusive, endIndexExclusive),
+            element);
+    headerValue.addFacet(new RbelBinaryFacet());
+    headerValue.addFacet(RbelValueFacet.of(headerValue.getRawContent()[0]));
+    return headerValue;
   }
 
   private RbelSicctCommandFacet buildBodyFacet(RbelElement element) {
