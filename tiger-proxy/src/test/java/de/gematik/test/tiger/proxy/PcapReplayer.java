@@ -217,7 +217,7 @@ public class PcapReplayer implements AutoCloseable {
     } else {
       this.clientSocket = new Socket("localhost", tigerProxy.getProxyPort());
     }
-    clientSocket.setTcpNoDelay(true);
+    // clientSocket.setTcpNoDelay(true);
   }
 
   private ServerSocket buildServerSocket() throws IOException {

@@ -31,7 +31,6 @@ import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
-import java.math.BigInteger;
 import java.util.Optional;
 import lombok.Builder;
 import lombok.Data;
@@ -77,17 +76,13 @@ public class RbelSicctEnvelopeFacet implements RbelFacet {
                                                 context.formatHex(sicctEnv.getSrcOrDesAddress())))
                                         .with(
                                             context.packAsInfoLine(
-                                                "Reserved for future use",
-                                                context.formatHex(sicctEnv.getAbRfu())))
-                                        .with(
-                                            context.packAsInfoLine(
-                                                "Length",
-                                                context.formatHex(sicctEnv.getLength()),
-                                                text(
-                                                    " ("
-                                                        + new BigInteger(
-                                                            sicctEnv.getLength().getRawContent())
-                                                        + " bytes)"))),
+                                                "Sequence Number",
+                                                context.formatHexAlike(
+                                                    sicctEnv
+                                                        .getSequenceNumber()
+                                                        .seekValue(Integer.class)
+                                                        .map(Object::toString)
+                                                        .orElse("")))),
                                     childBoxNotifTitle(CLS_BODY)
                                         .with(t2("Body"))
                                         .with(context.convert(sicctEnv.getCommand())))));

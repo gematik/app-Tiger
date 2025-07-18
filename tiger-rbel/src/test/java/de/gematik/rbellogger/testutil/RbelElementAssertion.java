@@ -91,6 +91,11 @@ public class RbelElementAssertion extends AbstractAssert<RbelElementAssertion, R
     return this;
   }
 
+  public RbelElementAssertion hasContentEqualToAtPosition(String rbelPath, byte[] expectedValue) {
+    extractChildWithPath(rbelPath).getContent().isEqualTo(expectedValue);
+    return this;
+  }
+
   public RbelElementAssertion extractChildWithPath(String rbelPath, int index) {
     final List<RbelElement> kids = actual.findRbelPathMembers(rbelPath);
     if (kids.isEmpty()) {

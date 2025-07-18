@@ -129,8 +129,7 @@ S: +OK Maildrop locked and ready
   @Test
   public void testSicctHandshake() {
     final PcapReplayer replayer =
-        new PcapReplayer("src/test/resources/sicctHandshakeDecryptedPcap.json", 53406, 4741, false)
-            .readReplay();
+        new PcapReplayer("src/test/resources/sicctExtended.json", 55648, 4741, false).readReplay();
     val tigerProxy =
         replayer.replayWithDirectForwardUsing(
             TigerProxyConfiguration.builder()
@@ -146,10 +145,12 @@ S: +OK Maildrop locked and ready
                 .activateRbelParsingFor(List.of("sicct"))
                 .build());
 
+    tigerProxy.waitForAllCurrentMessagesToBeParsed();
+    waitForMessages(tigerProxy, 8);
+
     final String html = RbelHtmlRenderer.render(tigerProxy.getRbelMessagesList());
     Files.write(new File("target/sicct.html").toPath(), html.getBytes());
 
-    tigerProxy.waitForAllCurrentMessagesToBeParsed();
     assertThat(tigerProxy.getRbelMessagesList()).hasSize(14);
   }
 
@@ -327,7 +328,7 @@ S: +OK Maildrop locked and ready
     try {
       Awaitility.await()
           .atMost(2, TimeUnit.SECONDS)
-          .until(() -> tigerProxy.getRbelMessagesList().size() == expectedMessages);
+          .until(tigerProxy.getRbelMessagesList()::size, size -> size == expectedMessages);
     } catch (ConditionTimeoutException ex) {
       tigerProxy.getRbelMessagesList().stream()
           .map(RbelElement::printTreeStructure)

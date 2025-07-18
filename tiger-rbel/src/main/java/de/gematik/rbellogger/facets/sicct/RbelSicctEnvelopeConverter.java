@@ -27,12 +27,14 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelBinaryFacet;
 import de.gematik.rbellogger.data.core.RbelRequestFacet;
 import de.gematik.rbellogger.data.core.RbelResponseFacet;
+import de.gematik.rbellogger.data.core.RbelValueFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
 import de.gematik.rbellogger.util.RbelContent;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.bouncycastle.util.encoders.Hex;
 
 @ConverterInfo(onlyActivateFor = "sicct")
@@ -102,12 +104,14 @@ public class RbelSicctEnvelopeConverter extends RbelConverterPlugin {
             Optional.empty());
     element.setUsedBytes(length + ENVELOPE_LENGTH);
     commandElement.addFacet(new RbelBinaryFacet());
+    val seq = new RbelElement(content.toByteArray(3, 5), element);
+    seq.addFacet(RbelValueFacet.of((int) ByteBuffer.wrap(seq.getRawContent()).getShort()));
     return RbelSicctEnvelopeFacet.builder()
         .messageType(
             RbelElement.wrap(
                 new byte[] {content.get(0)}, element, SicctMessageType.of(content.get(0))))
         .srcOrDesAddress(new RbelElement(content.toByteArray(1, 3), element))
-        .sequenceNumber(new RbelElement(content.toByteArray(3, 5), element))
+        .sequenceNumber(seq)
         .abRfu(new RbelElement(content.toByteArray(5, 6), element))
         .length(new RbelElement(content.toByteArray(6, 10), element))
         .command(commandElement)
