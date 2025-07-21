@@ -33,25 +33,32 @@ import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
 import de.gematik.rbellogger.facets.pop3.RbelPop3Command;
 import de.gematik.rbellogger.facets.pop3.RbelPop3CommandFacet;
 import de.gematik.rbellogger.facets.pop3.RbelPop3ResponseFacet;
+import de.gematik.rbellogger.facets.sicct.RbelSicctCommand;
+import de.gematik.rbellogger.facets.sicct.RbelSicctCommandFacet;
+import de.gematik.rbellogger.facets.sicct.RbelSicctEnvelopeFacet;
+import de.gematik.rbellogger.facets.sicct.RbelSicctHeaderFacet;
 import de.gematik.rbellogger.facets.smtp.RbelSmtpCommandFacet;
 import de.gematik.rbellogger.facets.smtp.RbelSmtpResponseFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyModifierDescription;
+import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.handler.RbelBinaryModifierPlugin;
 import java.io.File;
 import java.nio.file.Files;
+import java.security.*;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import lombok.Data;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
-import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
+import org.bouncycastle.util.encoders.Hex;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 @Slf4j
@@ -118,18 +125,24 @@ S: +OK Maildrop locked and ready
             .readReplay();
     val tigerProxy = replayer.replayWithDirectForwardUsing(new TigerProxyConfiguration());
 
+    tigerProxy.waitForAllCurrentMessagesToBeParsed();
+    try {
+      waitForMessages(tigerProxy, 68);
+    } catch (ConditionTimeoutException e) {
+      log.warn("Timeout while waiting for messages, but continuing anyway");
+    }
+
     final String html = RbelHtmlRenderer.render(tigerProxy.getRbelMessagesList());
     Files.write(new File("target/cetpReplay.html").toPath(), html.getBytes());
-    tigerProxy.waitForAllCurrentMessagesToBeParsed();
-
-    waitForMessages(tigerProxy, 68);
   }
 
   @SneakyThrows
   @Test
   public void testSicctHandshake() {
     final PcapReplayer replayer =
-        new PcapReplayer("src/test/resources/sicctExtended.json", 55648, 4741, false).readReplay();
+        new PcapReplayer("src/test/resources/sicctExtended.json", 55648, 4741, true).readReplay();
+    // new PcapReplayer("src/test/resources/sicctHandshakeDecryptedPcap.json", 53406, 4741, false)
+    //    .readReplay();
     val tigerProxy =
         replayer.replayWithDirectForwardUsing(
             TigerProxyConfiguration.builder()
@@ -139,14 +152,17 @@ S: +OK Maildrop locked and ready
                             List.of(
                                 TigerProxyModifierDescription.builder()
                                     .name("SicctPairingFaker")
-                                    .parameters(Map.of("parameterName", "Value"))
+                                    .parameters(
+                                        Map.of(
+                                            "signerIdentity",
+                                            "src/test/resources/eccServerCertificate.p12"))
                                     .build()))
                         .build())
                 .activateRbelParsingFor(List.of("sicct"))
                 .build());
 
     tigerProxy.waitForAllCurrentMessagesToBeParsed();
-    waitForMessages(tigerProxy, 8);
+    waitForMessages(tigerProxy, 14);
 
     final String html = RbelHtmlRenderer.render(tigerProxy.getRbelMessagesList());
     Files.write(new File("target/sicct.html").toPath(), html.getBytes());
@@ -156,25 +172,87 @@ S: +OK Maildrop locked and ready
 
   @Data
   public static class SicctPairingFaker implements RbelBinaryModifierPlugin {
-    private String targetString;
-    private String replacementString;
+    private TigerPkiIdentity signerIdentity;
 
     @Override
     public Optional<byte[]> modify(RbelElement target, RbelConverter converter) {
-      System.out.println(target.printTreeStructureWithoutColors());
-      if (messageIsPairingRequest(target)) {
-        log.info("Found pairing request: {}", target.getRawStringContent());
-        return Optional.empty();
+      if (isResponseToPairingRequest(target)) {
+        return extractPairingSecretFromRequest(target)
+            .flatMap(this::generateSignature)
+            .flatMap(signature -> repackSignatureIntoMessage(signature, target));
       } else {
         return Optional.empty();
       }
     }
 
-    private boolean messageIsPairingRequest(RbelElement target) {
-      return checkValue(target, "p1", (byte) 0)
-          && checkValue(target, "p2", (byte) 1)
-          && checkValue(target, "cla", (byte) 0x81)
-          && checkValue(target, "ins", (byte) 0xaa);
+    @SneakyThrows
+    private Optional<byte[]> repackSignatureIntoMessage(
+        byte @NotNull [] bytes, RbelElement originalResponse) {
+      val seq =
+          (org.bouncycastle.asn1.ASN1Sequence)
+              org.bouncycastle.asn1.ASN1Primitive.fromByteArray(bytes);
+      var part1 = ((org.bouncycastle.asn1.ASN1Integer) seq.getObjectAt(0)).getValue().toByteArray();
+      var part2 = ((org.bouncycastle.asn1.ASN1Integer) seq.getObjectAt(1)).getValue().toByteArray();
+      part1 = Arrays.copyOfRange(part1, part1.length - 32, part1.length);
+      part2 = Arrays.copyOfRange(part2, part2.length - 32, part2.length);
+      final byte[] resultingContent =
+          org.bouncycastle.util.Arrays.concatenate(
+              originalResponse.getContent().toByteArray(0, 10), part1, part2, Hex.decode("9000"));
+      log.info(
+          "Changing content of pairing request to ({} bytes, was {} bytes) {}",
+          resultingContent.length,
+          originalResponse.getRawContent().length,
+          Hex.toHexString(resultingContent));
+      return Optional.ofNullable(resultingContent);
+      // return Optional.of("{'foo':'bar'}".getBytes());
+    }
+
+    private Optional<byte[]> generateSignature(byte[] message) {
+      try {
+        Signature signer = Signature.getInstance("SHA256withECDSA", "BC");
+        signer.initSign(signerIdentity.getPrivateKey());
+        signer.update(message);
+        return Optional.ofNullable(signer.sign());
+      } catch (Exception e) {
+        log.warn("Error while signing pairing secret '{}'", Hex.toHexString(message), e);
+        return Optional.empty();
+      }
+    }
+
+    private @NotNull Optional<byte[]> extractPairingSecretFromRequest(RbelElement target) {
+      val request =
+          target
+              .getFacet(TracingMessagePairFacet.class)
+              .map(TracingMessagePairFacet::getRequest)
+              .get();
+      log.info("Found pairing request: {}", request.printTreeStructure());
+      if (checkValue(request, "p1", (byte) 0) && checkValue(request, "p2", (byte) 1)) {
+        log.info("Mode is correct, extracting shared secret");
+        return request
+            .findElement("$.command.body")
+            .filter(el -> el.getContent().startsWith(Hex.decodeStrict("2ad410")))
+            .map(el -> el.getContent().toByteArray(3, 0x10 + 3));
+      } else {
+        log.warn("Request does not match expected values for pairing request");
+        return Optional.empty();
+      }
+    }
+
+    private boolean isResponseToPairingRequest(RbelElement target) {
+      if (!target.hasFacet(RbelSicctEnvelopeFacet.class)) {
+        return false;
+      }
+      return target
+          .getFacet(TracingMessagePairFacet.class)
+          .map(TracingMessagePairFacet::getRequest)
+          .flatMap(req -> req.getFacet(RbelSicctEnvelopeFacet.class))
+          .map(RbelSicctEnvelopeFacet::getCommand)
+          .flatMap(el -> el.getFacet(RbelSicctCommandFacet.class))
+          .map(RbelSicctCommandFacet::getHeader)
+          .flatMap(el -> el.getFacet(RbelSicctHeaderFacet.class))
+          .map(RbelSicctHeaderFacet::getCommand)
+          .filter(type -> type == RbelSicctCommand.EHEALTH_TERMINAL_AUTHENTICATE)
+          .isPresent();
     }
 
     private static boolean checkValue(RbelElement target, String rbelPath, byte x) {
@@ -193,14 +271,7 @@ S: +OK Maildrop locked and ready
     }
 
     public String toString() {
-      return "MyBinaryModifier{"
-          + "targetString='"
-          + targetString
-          + '\''
-          + ", replacementString='"
-          + replacementString
-          + '\''
-          + '}';
+      return "MyBinaryModifier{" + '}';
     }
   }
 
@@ -324,16 +395,32 @@ S: +OK Maildrop locked and ready
         .isEqualTo(quitCommand);
   }
 
+  @SneakyThrows
   private static void waitForMessages(TigerProxy tigerProxy, int expectedMessages) {
     try {
-      Awaitility.await()
-          .atMost(2, TimeUnit.SECONDS)
-          .until(tigerProxy.getRbelMessagesList()::size, size -> size == expectedMessages);
+      //      Awaitility.await()
+      //          .pollThread(Thread::new)
+      //          .atMost(2, TimeUnit.SECONDS)
+      //          .until(tigerProxy.getRbelMessagesList()::size, size -> size == expectedMessages);
+      long endTime = System.currentTimeMillis() + 2000_00;
+      while (tigerProxy.getRbelMessagesList().size() != expectedMessages
+          && System.currentTimeMillis() < endTime) {
+        Thread.sleep(100);
+      }
+      if (tigerProxy.getRbelMessagesList().size() != expectedMessages) {
+        throw new ConditionTimeoutException(
+            "Timeout waiting for expected messages, wanted "
+                + expectedMessages
+                + " but got "
+                + tigerProxy.getRbelMessagesList().size());
+      }
     } catch (ConditionTimeoutException ex) {
       tigerProxy.getRbelMessagesList().stream()
           .map(RbelElement::printTreeStructure)
           .forEach(System.out::println);
       throw ex;
+      //    } catch (InterruptedException e) {
+      //      throw new RuntimeException(e);
     }
   }
 

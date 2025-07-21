@@ -30,7 +30,6 @@ import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.core.RbelHostnameFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
-import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.proxy.data.TcpIpConnectionIdentifier;
@@ -187,13 +186,14 @@ public class BinaryModifierApplier {
       }
       messageElement.addFacet(messageMetadata);
       val result = rbelConverter.convertElement(messageElement);
+      /* TODO bricht das hier nicht einige tests?
       result
-          .getFacet(TracingMessagePairFacet.class)
-          .ifPresent(
-              pairFacet -> {
-                pairFacet.getRequest().removeFacetsOfType(TracingMessagePairFacet.class);
-                pairFacet.getResponse().removeFacetsOfType(TracingMessagePairFacet.class);
-              });
+      .getFacet(TracingMessagePairFacet.class)
+      .ifPresent(
+          pairFacet -> {
+            pairFacet.getRequest().removeFacetsOfType(TracingMessagePairFacet.class);
+            pairFacet.getResponse().removeFacetsOfType(TracingMessagePairFacet.class);
+          });*/
       return result;
     }
   }

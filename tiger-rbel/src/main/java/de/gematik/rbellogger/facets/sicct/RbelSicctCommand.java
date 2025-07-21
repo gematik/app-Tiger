@@ -45,7 +45,9 @@ public enum RbelSicctCommand {
   SICCT_DOWNLOAD_FINISH((byte) 0x80, (byte) 0x26),
   SICCT_CONTROLCOMMAND((byte) 0x80, (byte) 0x27),
   SICCT_INIT_CT_SESSION((byte) 0x80, (byte) 0x28),
-  SICCT_CLOSE_CT_SESSION((byte) 0x80, (byte) 0x29);
+  SICCT_CLOSE_CT_SESSION((byte) 0x80, (byte) 0x29),
+  // Additional commands from gemSpec_KT
+  EHEALTH_TERMINAL_AUTHENTICATE((byte) 0x81, (byte) 0xAA);
 
   final byte cla;
   final byte ins;

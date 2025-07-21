@@ -30,9 +30,7 @@ import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@ConverterInfo(
-    dependsOn = {RbelSicctEnvelopeConverter.class},
-    addAutomatically = true)
+@ConverterInfo(dependsOn = {RbelSicctEnvelopeConverter.class})
 public class RbelSicctPairingProcessor extends RbelConverterPlugin {
 
   @Override

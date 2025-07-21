@@ -49,6 +49,7 @@ public class RbelSicctCommandConverter extends RbelConverterPlugin {
       context.convertElement(sicctCommandFacet.getHeader());
       context.convertElement(sicctCommandFacet.getBody());
     } else if (element.getParentNode().hasFacet(RbelSicctCommandFacet.class)
+        && element.getKey().filter("header"::equals).isPresent()
         && findMessageType(element)
             .map(msgType -> msgType == SicctMessageType.C_COMMAND)
             .orElse(false)) {

@@ -34,6 +34,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.net.ssl.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -217,7 +218,7 @@ public class PcapReplayer implements AutoCloseable {
     } else {
       this.clientSocket = new Socket("localhost", tigerProxy.getProxyPort());
     }
-    // clientSocket.setTcpNoDelay(true);
+    clientSocket.setTcpNoDelay(true);
   }
 
   private ServerSocket buildServerSocket() throws IOException {
@@ -271,8 +272,8 @@ public class PcapReplayer implements AutoCloseable {
   @SneakyThrows
   private Socket replayPackets(Socket clientSocket, ServerSocket serverSocket) {
     Socket serverConnectionSocket = null;
-    int bytesSendFromClientCount = 0;
-    int bytesSendFromServerCount = 0;
+    AtomicInteger bytesSendFromClientCount = new AtomicInteger(0);
+    AtomicInteger bytesSendFromServerCount = new AtomicInteger(0);
     serverConnectionSocket = serverSocket.accept();
     serverConnectionSocket.setTcpNoDelay(true);
     for (val packet : toBeReplayedPackets) {
@@ -280,40 +281,41 @@ public class PcapReplayer implements AutoCloseable {
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         /// CLIENT
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        readNumberOfBytesFromSocket(bytesSendFromServerCount, clientSocket, "client")
-            .thenAccept(result -> result.ifPresent(receivedPacketsInClient::add));
-        bytesSendFromServerCount = 0;
         log.atInfo()
-            .addArgument(() -> new String(packet.payload).lines().findFirst().get())
+            //            .addArgument(() -> new String(packet.payload).lines().findFirst().get())
+            .addArgument(() -> Hex.toHexString(packet.payload))
             .log("Sending packet to server.... ({})");
         clientSocket.getOutputStream().write(packet.payload);
-        bytesSendFromClientCount += packet.payload.length;
+        bytesSendFromClientCount.getAndAdd(packet.payload.length);
         clientSocket.getOutputStream().flush();
+        readNumberOfBytesFromSocket(bytesSendFromClientCount, serverConnectionSocket, "server")
+            .thenAccept(result -> result.ifPresent(receivedPacketsInServer::add));
       } else {
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
         /// SERVER
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        readNumberOfBytesFromSocket(bytesSendFromClientCount, serverConnectionSocket, "server")
-            .thenAccept(result -> result.ifPresent(receivedPacketsInServer::add));
-        bytesSendFromClientCount = 0;
         log.atInfo()
-            .addArgument(() -> new String(packet.payload).lines().findFirst().get())
+            //            .addArgument(() -> new String(packet.payload).lines().findFirst().get())
+            .addArgument(() -> Hex.toHexString(packet.payload))
             .log("Sending packet to client.... ({})");
         serverConnectionSocket.getOutputStream().write(packet.payload);
-        bytesSendFromServerCount += packet.payload.length;
+        bytesSendFromServerCount.getAndAdd(packet.payload.length);
         serverConnectionSocket.getOutputStream().flush();
+        readNumberOfBytesFromSocket(bytesSendFromServerCount, clientSocket, "client")
+            .thenAccept(result -> result.ifPresent(receivedPacketsInClient::add));
       }
     }
     return serverConnectionSocket;
   }
 
   private CompletableFuture<Optional<byte[]>> readNumberOfBytesFromSocket(
-      int bytesCount, Socket socket, String message) {
-    if (bytesCount > 0) {
+      AtomicInteger bytesCount, Socket socket, String message) {
+    if (bytesCount.get() > 0) {
       try {
         val result =
             CompletableFuture.supplyAsync(() -> readBytesFromSocket(bytesCount, socket, message))
                 .get(2000, TimeUnit.MILLISECONDS);
+        log.info("Read bytes: {}", Hex.toHexString(result.get()));
         return CompletableFuture.completedFuture(result);
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
@@ -329,13 +331,16 @@ public class PcapReplayer implements AutoCloseable {
 
   @SneakyThrows
   private static Optional<byte[]> readBytesFromSocket(
-      int bytesCount, Socket socket, String message) {
+      AtomicInteger bytesCount, Socket socket, String message) {
     log.info("Awaiting {} bytes in {} ...", bytesCount, message);
-    val read = socket.getInputStream().readNBytes(bytesCount);
-    log.info(
+    val read = socket.getInputStream().readNBytes(bytesCount.get());
+    log.debug(
         "Read {} bytes from socket: {}",
         read.length,
         new String(read).lines().findFirst().orElse("<no data>"));
+    if (read.length > 0) {
+      bytesCount.addAndGet(-read.length);
+    }
     return Optional.of(read);
   }
 

@@ -37,6 +37,7 @@ import io.netty.util.AttributeKey;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.apache.commons.codec.binary.Hex;
 
 /**
  * When creating a direct reverse proxy, we want to keep two channels open and forward all messages
@@ -64,6 +65,7 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
       Optional.ofNullable(ctx.channel().attr(INCOMING_CHANNEL).get())
           .orElseThrow(() -> new IllegalStateException("Incoming channel is not set."))
           .writeAndFlush(Unpooled.copiedBuffer(msgToSend.getBytes()));
+      val hexString = Hex.encodeHexString(msgToSend.getBytes());
       binaryProxyListener.onProxy(
           msgToSend,
           ctx.channel().attr(INCOMING_CHANNEL).get().remoteAddress(),
