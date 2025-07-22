@@ -24,6 +24,7 @@ import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
 import static de.gematik.test.tiger.proxy.PcapReplayer.client;
 import static de.gematik.test.tiger.proxy.PcapReplayer.server;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.bouncycastle.util.Arrays.concatenate;
 
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
@@ -46,6 +47,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyModifierDes
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.proxy.handler.RbelBinaryModifierPlugin;
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.security.*;
 import java.util.Arrays;
@@ -162,12 +164,12 @@ S: +OK Maildrop locked and ready
                 .build());
 
     tigerProxy.waitForAllCurrentMessagesToBeParsed();
-    waitForMessages(tigerProxy, 14);
+    waitForMessages(tigerProxy, 9);
 
     final String html = RbelHtmlRenderer.render(tigerProxy.getRbelMessagesList());
     Files.write(new File("target/sicct.html").toPath(), html.getBytes());
 
-    assertThat(tigerProxy.getRbelMessagesList()).hasSize(14);
+    assertThat(tigerProxy.getRbelMessagesList()).hasSize(9);
   }
 
   @Data
@@ -195,16 +197,16 @@ S: +OK Maildrop locked and ready
       var part2 = ((org.bouncycastle.asn1.ASN1Integer) seq.getObjectAt(1)).getValue().toByteArray();
       part1 = Arrays.copyOfRange(part1, part1.length - 32, part1.length);
       part2 = Arrays.copyOfRange(part2, part2.length - 32, part2.length);
-      final byte[] resultingContent =
-          org.bouncycastle.util.Arrays.concatenate(
-              originalResponse.getContent().toByteArray(0, 10), part1, part2, Hex.decode("9000"));
+      val contentLength = ByteBuffer.allocate(4).putInt(part1.length + part2.length + 2).array();
+      val newEnvelope = concatenate(originalResponse.getContent().toByteArray(0, 6), contentLength);
+      val newBody = concatenate(part1, part2, new byte[] {(byte) 0x90, (byte) 0});
+      val resultingContent = concatenate(newEnvelope, newBody);
       log.info(
           "Changing content of pairing request to ({} bytes, was {} bytes) {}",
           resultingContent.length,
           originalResponse.getRawContent().length,
           Hex.toHexString(resultingContent));
       return Optional.ofNullable(resultingContent);
-      // return Optional.of("{'foo':'bar'}".getBytes());
     }
 
     private Optional<byte[]> generateSignature(byte[] message) {

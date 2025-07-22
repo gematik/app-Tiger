@@ -22,7 +22,6 @@ package de.gematik.test.tiger.proxy.tls;
 
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
-import java.security.*;
 import java.util.*;
 import lombok.Data;
 
