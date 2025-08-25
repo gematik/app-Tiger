@@ -42,45 +42,34 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
 
   @SuppressWarnings({"rawtypes", "java:S3740"})
   public static ContainerTag buildAddressInfo(final RbelElement element) {
-    if (!element.hasFacet(RbelTcpIpMessageFacet.class)) {
+    final var messageFacet = element.getFacet(RbelTcpIpMessageFacet.class);
+    String senderHostname =
+        messageFacet
+            .map(RbelTcpIpMessageFacet::getSender)
+            .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
+            .map(RbelHostnameFacet::toString)
+            .orElse(null);
+    String receiverHostname =
+        messageFacet
+            .map(RbelTcpIpMessageFacet::getReceiver)
+            .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
+            .map(RbelHostnameFacet::toString)
+            .orElse(null);
+
+    if (senderHostname == null && receiverHostname == null) {
       return span();
     }
-    final RbelTcpIpMessageFacet messageFacet = element.getFacetOrFail(RbelTcpIpMessageFacet.class);
-    if (Optional.ofNullable(messageFacet.getSender())
-            .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
-            .isEmpty()
-        && Optional.ofNullable(messageFacet.getReceiver())
-            .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
-            .isEmpty()) {
-      return span();
-    }
+
     final String left;
     final String right;
     final String icon;
-    final Optional<Boolean> isRequest = determineIsRequest(element);
-    if (isRequest.isEmpty() || Boolean.TRUE.equals(isRequest.get())) {
-      left =
-          Optional.ofNullable(messageFacet.getSender())
-              .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
-              .map(RbelHostnameFacet::toString)
-              .orElse(null);
-      right =
-          Optional.ofNullable(messageFacet.getReceiver())
-              .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
-              .map(RbelHostnameFacet::toString)
-              .orElse(null);
+    if (isRequestMessage(element)) {
+      left = senderHostname;
+      right = receiverHostname;
       icon = "fa-arrow-right";
     } else {
-      left =
-          Optional.ofNullable(messageFacet.getReceiver())
-              .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
-              .map(RbelHostnameFacet::toString)
-              .orElse(null);
-      right =
-          Optional.ofNullable(messageFacet.getSender())
-              .flatMap(f -> f.getFacet(RbelHostnameFacet.class))
-              .map(RbelHostnameFacet::toString)
-              .orElse(null);
+      left = receiverHostname;
+      right = senderHostname;
       icon = "fa-arrow-left";
     }
 
@@ -91,14 +80,8 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         .withClass("is-size-7 ms-4");
   }
 
-  private static Optional<Boolean> determineIsRequest(RbelElement element) {
-    if (element.hasFacet(RbelRequestFacet.class)) {
-      return Optional.of(true);
-    } else if (element.hasFacet(RbelResponseFacet.class)) {
-      return Optional.of(false);
-    } else {
-      return Optional.empty();
-    }
+  private static boolean isRequestMessage(RbelElement element) {
+    return element.hasFacet(RbelRequestFacet.class) || !element.hasFacet(RbelResponseFacet.class);
   }
 
   @SuppressWarnings({"rawtypes", "java:S3740"})
@@ -131,54 +114,16 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
     final Optional<RbelMessageInfoFacet> messageInfoFacet =
         element.getFacet(RbelMessageInfoFacet.class);
     final Optional<RbelElement> partnerMessage = findPartner(element);
+    boolean showExpanded = renderingToolkit.showElementExpanded(element);
     ///////////////////// TITLE (+path, response-code...) //////////////////////////
     List<DomContent> messageTitleElements = new ArrayList<>();
     messageTitleElements.add(a().attr("name", element.getUuid()));
-    messageTitleElements.add(
-        i().withClasses(
-                "fa-solid fa-toggle-on toggle-icon float-end me-3 is-size-3 msg-toggle",
-                messageInfoFacet.map(RbelMessageInfoFacet::getColor).orElse("")));
+    messageTitleElements.add(showBodyToggleButton(showExpanded, "msg-toggle", messageInfoFacet));
     messageTitleElements.add(showContentButtonAndDialog(element, renderingToolkit));
-    partnerMessage.ifPresent(
-        msg ->
-            messageTitleElements.add(
-                span()
-                    .with(
-                        a().withClass(
-                                "btn modal-button modal-button-details float-end"
-                                    + " partner-message-button")
-                            .attr(
-                                "onclick",
-                                "scrollToMessage('"
-                                    + msg.getUuid()
-                                    + "',"
-                                    + msg.getFacet(RbelTcpIpMessageFacet.class)
-                                        .map(RbelTcpIpMessageFacet::getSequenceNumber)
-                                        .map(Object::toString)
-                                        .orElse("null")
-                                    + ")")
-                            .with(
-                                span()
-                                    .withClass("icon is-small")
-                                    .with(i().withClass("fas fa-right-left"))))));
-    messageTitleElements.add(
-        h1(
-                renderingToolkit.constructMessageId(element),
-                constructMessageSymbol(element),
-                messageInfoFacet
-                    .map(
-                        facet ->
-                            span(facet.getMenuInfoString()).withClass("font-monospace title ms-3 "))
-                    .orElse(span("")),
-                span()
-                    .with(buildTimingInfo(element), buildAddressInfo(element))
-                    .withStyle("display: block;"))
-            .withClasses(
-                "title",
-                "ms-3",
-                "text-ellipsis",
-                messageInfoFacet.map(RbelMessageInfoFacet::getColor).orElse(""))
-            .withStyle("overflow: hidden;"));
+    partnerMessage
+        .map(RbelMessageRenderer::showPartnerMessageButton)
+        .ifPresent(messageTitleElements::add);
+    messageTitleElements.add(showMessageInfos(element, renderingToolkit, messageInfoFacet));
     messageTitleElements.addAll(addNotes(element));
     //////////////////////////////// HEADER & BODY //////////////////////////////////////
     List<DomContent> messageBodyElements = new ArrayList<>();
@@ -197,7 +142,57 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
         ancestorTitle().with(messageBodyElements),
         "msg-card",
         "mx-3 mt-3",
-        "msg-content");
+        "msg-content " + (showExpanded ? "" : "d-none"));
+  }
+
+  private static DomContent showPartnerMessageButton(RbelElement msg) {
+    return span()
+        .with(
+            a().withClass(
+                    "btn modal-button modal-button-details float-end" + " partner-message-button")
+                .attr(
+                    "onclick",
+                    "scrollToMessage('"
+                        + msg.getUuid()
+                        + "',"
+                        + msg.getFacet(RbelTcpIpMessageFacet.class)
+                            .map(RbelTcpIpMessageFacet::getSequenceNumber)
+                            .map(Object::toString)
+                            .orElse("null")
+                        + ")")
+                .with(span().withClass("icon is-small").with(i().withClass("fas fa-right-left"))));
+  }
+
+  private DomContent showMessageInfos(
+      RbelElement element,
+      RbelHtmlRenderingToolkit renderingToolkit,
+      Optional<RbelMessageInfoFacet> messageInfoFacet) {
+    return h1(
+            renderingToolkit.constructMessageId(element),
+            constructMessageSymbol(element),
+            messageInfoFacet
+                .map(
+                    facet ->
+                        span(facet.getMenuInfoString()).withClass("font-monospace title ms-3 "))
+                .orElse(span("")),
+            span()
+                .with(buildTimingInfo(element), buildAddressInfo(element))
+                .withStyle("display: block;"))
+        .withClasses(
+            "title",
+            "ms-3",
+            "text-ellipsis",
+            messageInfoFacet.map(RbelMessageInfoFacet::getColor).orElse(""))
+        .withStyle("overflow: hidden;");
+  }
+
+  public static DomContent showBodyToggleButton(
+      boolean showExpanded, String toggleClass, Optional<RbelMessageInfoFacet> messageInfoFacet) {
+    return i().withClasses(
+            "fa-solid toggle-icon float-end me-3 is-size-3 ms-auto",
+            toggleClass,
+            messageInfoFacet.map(RbelMessageInfoFacet::getColor).orElse(""),
+            showExpanded ? "fa-toggle-on" : "fa-toggle-off");
   }
 
   private Optional<RbelElement> findPartner(RbelElement element) {

@@ -21,11 +21,13 @@
 package de.gematik.test.tiger.testenvmgr.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.server.TigerBuildPropertiesService;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -35,7 +37,10 @@ import de.gematik.test.tiger.testenvmgr.servers.TigerServerStatus;
 import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -298,5 +303,113 @@ class EnvStatusControllerTest {
                         .getServers()
                         .get(TigerTestEnvMgr.LOCAL_TIGER_PROXY_TYPE)
                         .getBaseUrl()));
+  }
+
+  @Test
+  @TigerTest
+  void removeMessage_shouldCauseUpdate(TigerTestEnvMgr envMgr)
+      throws ExecutionException, InterruptedException, TimeoutException {
+
+    // register message UUID remove handler
+    envMgr.initializeLocalProxyCallbacks();
+
+    var updateFuture = getTigerStatusUpdate(envMgr);
+
+    var converter = envMgr.getLocalTigerProxyOrFail().getRbelLogger().getRbelConverter();
+
+    var message = converter.parseMessage("{'foo':'bar'}".getBytes(), new RbelMessageMetadata());
+
+    converter.removeMessage(message);
+
+    var update = updateFuture.get(1, TimeUnit.SECONDS);
+    assertThat(update.getRemovedMessageUuids()).containsExactly(message.getUuid());
+  }
+
+  private static @NotNull CompletableFuture<TigerStatusUpdate> getTigerStatusUpdate(
+      TigerTestEnvMgr envMgr) {
+    envMgr.getListeners().clear();
+    var updateFuture = new CompletableFuture<TigerStatusUpdate>();
+    envMgr.registerNewListener(
+        update -> {
+          if (update.getRemovedMessageUuids() != null) {
+            updateFuture.complete(update);
+          }
+        });
+    return updateFuture;
+  }
+
+  @Test
+  @TigerTest
+  void clearMessages_shouldCauseUpdate(TigerTestEnvMgr envMgr)
+      throws ExecutionException, InterruptedException, TimeoutException {
+
+    // register message UUID remove handler
+    envMgr.initializeLocalProxyCallbacks();
+
+    var updateFuture = getTigerStatusUpdate(envMgr);
+
+    var converter = envMgr.getLocalTigerProxyOrFail().getRbelLogger().getRbelConverter();
+
+    var message = converter.parseMessage("{'foo':'bar'}".getBytes(), new RbelMessageMetadata());
+
+    converter.clearAllMessages();
+
+    var update = updateFuture.get(1, TimeUnit.SECONDS);
+
+    assertThat(update.getRemovedMessageUuids()).containsExactly(message.getUuid());
+  }
+
+  @Test
+  @TigerTest
+  void removeMessageWithoutHandler_shouldNotCauseUpdate(TigerTestEnvMgr envMgr) {
+
+    var updateFuture = getTigerStatusUpdate(envMgr);
+
+    var converter = envMgr.getLocalTigerProxyOrFail().getRbelLogger().getRbelConverter();
+
+    converter.getKnownMessageUuids().setRemovedMessageUuidsHandler(null);
+
+    var message = converter.parseMessage("{'foo':'bar'}".getBytes(), new RbelMessageMetadata());
+
+    converter.removeMessage(message);
+
+    assertThatThrownBy(() -> updateFuture.get(500, TimeUnit.MILLISECONDS))
+        .isInstanceOf(TimeoutException.class);
+  }
+
+  @Test
+  @TigerTest
+  void clearMessagesWithoutHandler_shouldNotCauseUpdate(TigerTestEnvMgr envMgr) {
+
+    var updateFuture = getTigerStatusUpdate(envMgr);
+
+    var converter = envMgr.getLocalTigerProxyOrFail().getRbelLogger().getRbelConverter();
+
+    converter.getKnownMessageUuids().setRemovedMessageUuidsHandler(null);
+
+    var message = converter.parseMessage("{'foo':'bar'}".getBytes(), new RbelMessageMetadata());
+
+    converter.clearAllMessages();
+
+    assertThatThrownBy(() -> updateFuture.get(500, TimeUnit.MILLISECONDS))
+        .isInstanceOf(TimeoutException.class);
+  }
+
+  @Test
+  @TigerTest
+  void clearMessagesWhenHistoryEmtpy_shouldNotCauseUpdate(TigerTestEnvMgr envMgr) {
+
+    var converter = envMgr.getLocalTigerProxyOrFail().getRbelLogger().getRbelConverter();
+
+    converter.clearAllMessages();
+
+    envMgr.initializeLocalProxyCallbacks();
+
+    var updateFuture = getTigerStatusUpdate(envMgr);
+
+    converter.clearAllMessages();
+
+    assertThatThrownBy(() -> updateFuture.get(500, TimeUnit.MILLISECONDS))
+        .isInstanceOf(TimeoutException.class);
   }
 }

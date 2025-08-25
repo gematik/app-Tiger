@@ -1,0 +1,4 @@
+lib:
+  activateWorkflowUi: true
+  startBrowser: false
+  workflowUiStartTimeoutInSeconds: 2

@@ -32,6 +32,17 @@ public interface RbelHtmlFacetRenderer {
   ContainerTag performRendering(
       RbelElement element, Optional<String> key, RbelHtmlRenderingToolkit renderingToolkit);
 
+  /**
+   * If this method returns true, the renderer will also be used to render large elements (e.g.
+   * large MIME messages), allowing to recursively render small sub elements (e.g. headers) instead
+   * of redacting the whole element.
+   *
+   * @return true if large elements should be rendered, false otherwise
+   */
+  default boolean shouldRenderLargeElements() {
+    return false;
+  }
+
   default int order() {
     return 0;
   }

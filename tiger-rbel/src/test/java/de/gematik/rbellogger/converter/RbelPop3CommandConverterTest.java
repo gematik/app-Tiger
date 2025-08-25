@@ -22,23 +22,46 @@ package de.gematik.rbellogger.converter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.facets.pop3.RbelPop3Command;
 import de.gematik.rbellogger.facets.pop3.RbelPop3ResponseFacet;
 import de.gematik.rbellogger.testutil.RbelElementAssertion;
+import de.gematik.rbellogger.util.RbelContent;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
 import java.util.stream.Collectors;
 import lombok.val;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 class RbelPop3CommandConverterTest {
+
+  private RbelConverter converter;
+
+  @BeforeEach
+  void setUp() {
+    if (converter == null) {
+      converter =
+          RbelLogger.build(
+                  new RbelConfiguration()
+                      .activateConversionFor("smtp")
+                      .activateConversionFor("pop3")
+                      .activateConversionFor("mime"))
+              .getRbelConverter();
+    } else {
+      converter.clearAllMessages();
+    }
+  }
 
   private static String randomizeCase(String input) {
     Random random = new Random();
@@ -103,9 +126,37 @@ class RbelPop3CommandConverterTest {
     assertThat(element.hasFacet(RbelPop3ResponseFacet.class)).isFalse();
   }
 
-  private static RbelElement convertToRbelElement(String input) {
-    return RbelLogger.build(RbelConfiguration.builder().build().activateConversionFor("pop3"))
-        .getRbelConverter()
-        .convertElement(input, null);
+  @ParameterizedTest
+  @MethodSource("providePop3Commands")
+  void shouldRejectPop3CommandAfterSmtpCommand(String commandAsString) {
+    convertToRbelElement("EHLO x.yz\r\n");
+    String input = commandAsString + "\r\n";
+    RbelElement element = convertToRbelElement(input);
+
+    element
+        .findElement("$.pop3Command")
+        .ifPresent(command -> assertThat(command.seekValue()).hasValue(RbelPop3Command.CAPA));
+  }
+
+  @ParameterizedTest
+  @MethodSource("providePop3Commands")
+  void shouldRejectPop3CommandAfterSmtpResponse(String commandAsString) {
+    convertToRbelElement("EHLO x.yz\r\n");
+    String input = commandAsString + "\r\n";
+    RbelElement element = convertToRbelElement(input);
+
+    element
+        .findElement("$.pop3Command")
+        .ifPresent(command -> assertThat(command.seekValue()).hasValue(RbelPop3Command.CAPA));
+  }
+
+  private RbelElement convertToRbelElement(String input) {
+    var sender = new RbelHostname("host1", 1);
+    var receiver = new RbelHostname("host2", 2);
+    return converter.parseMessage(
+        RbelElement.builder()
+            .content(RbelContent.of(input.getBytes(StandardCharsets.UTF_8)))
+            .build(),
+        new RbelMessageMetadata().withSender(sender).withReceiver(receiver));
   }
 }

@@ -126,6 +126,7 @@ public class TigerDirector {
         if (libConfig.clearEnvironmentStartupTraffic) {
           LocalProxyRbelMessageListener.getInstance().clearAllMessages();
         }
+        tigerTestEnvMgr.initializeLocalProxyCallbacks();
       }
     } catch (RuntimeException e) {
       initialized = false;
@@ -366,19 +367,26 @@ public class TigerDirector {
                     .toString(),
             "Workflow UI");
       }
-      log.info("Waiting for workflow Ui to fetch status...");
       try {
         int duration = 10;
         if (!libConfig.startBrowser) {
           log.info(
               "Workflow UI http://localhost:" + TESTENV_MGR_RESERVED_PORT.getValue().orElseThrow());
-          duration = 120;
+          duration = Math.max(2, libConfig.workflowUiStartTimeoutInSeconds);
         }
+
+        log.info("Waiting {} seconds for workflow Ui to fetch status...", duration);
+        final Thread currentThread = Thread.currentThread();
         await()
             .atMost(Duration.ofSeconds(duration))
             .pollInterval(Duration.ofSeconds(1))
-            .until(() -> tigerTestEnvMgr.isWorkflowUiSentFetch());
-
+            .until(
+                () -> {
+                  if (currentThread.isInterrupted()) {
+                    throw new InterruptedException();
+                  }
+                  return tigerTestEnvMgr.isWorkflowUiSentFetch();
+                });
       } catch (ConditionTimeoutException cte) {
         libConfig.activateWorkflowUi = false;
         throw new TigerTestEnvException("No feedback from workflow Ui, aborting!", cte);

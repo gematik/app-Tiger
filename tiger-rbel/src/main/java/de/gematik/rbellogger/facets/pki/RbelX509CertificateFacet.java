@@ -28,7 +28,6 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelFacet;
 import de.gematik.rbellogger.data.core.RbelMapFacet;
-import de.gematik.rbellogger.data.core.RbelValueFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
@@ -85,10 +84,7 @@ public class RbelX509CertificateFacet implements RbelFacet {
           }
 
           private List<DomContent> printPublicKeyInfo(RbelMultiMap<RbelElement> infoMap) {
-            return infoMap.stream()
-                .filter(pair -> pair.getValue().hasFacet(RbelValueFacet.class))
-                .map(pair -> retrieveAndPrintValueNullSafe(pair.getKey() + ": ", pair.getValue()))
-                .toList();
+            return renderValueChildren(infoMap);
           }
         });
   }

@@ -37,4 +37,5 @@ public class TigerEnvStatusDto {
   private BannerType bannerType;
   private TigerStatusUpdate.BannerDetails bannerDetails;
   private boolean bannerIsHtml;
+  private java.util.List<String> removedMessageUuids = new java.util.ArrayList<>();
 }

@@ -26,8 +26,10 @@ import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.test.tiger.common.config.TigerConfigurationKeys;
 import java.util.Optional;
 import java.util.function.Function;
+import lombok.extern.slf4j.Slf4j;
 
 /** Modifies a given RbelElement to include the bundled sender and receiver server names. */
+@Slf4j
 public class AddBundledServerNamesModifier implements MessageMetadataModifier {
 
   private final Function<RbelElement, Optional<String>> bundledServernameSupplier;
@@ -76,6 +78,10 @@ public class AddBundledServerNamesModifier implements MessageMetadataModifier {
 
   private void setBundledServerName(RbelElement hostNameElement, String bundledServerName) {
     RbelElement serverNameElement = RbelElement.wrap(hostNameElement, bundledServerName);
+    log.atTrace()
+        .addArgument(serverNameElement)
+        .addArgument(() -> hostNameElement.getFacetOrFail(RbelHostnameFacet.class).toRbelHostname())
+        .log("Adding bundled server name '{}' to hostname facet of element: {}");
     hostNameElement
         .getFacet(RbelHostnameFacet.class)
         .ifPresent(

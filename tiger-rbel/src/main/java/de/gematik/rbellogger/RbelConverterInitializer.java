@@ -33,7 +33,7 @@ import de.gematik.rbellogger.facets.jackson.RbelCborConverter;
 import de.gematik.rbellogger.facets.jackson.RbelJsonConverter;
 import de.gematik.rbellogger.facets.jose.RbelJweConverter;
 import de.gematik.rbellogger.facets.jose.RbelJwtConverter;
-import de.gematik.rbellogger.facets.mime.RbelEncryptedMailConverter;
+import de.gematik.rbellogger.facets.mime.RbelCmsEnvelopedDataConverter;
 import de.gematik.rbellogger.facets.mime.RbelMimeConverter;
 import de.gematik.rbellogger.facets.pki.RbelPkcs7Converter;
 import de.gematik.rbellogger.facets.pki.RbelX500Converter;
@@ -176,7 +176,7 @@ public class RbelConverterInitializer {
                 RbelPop3CommandConverter.class,
                 RbelPop3ResponseConverter.class,
                 RbelMimeConverter.class,
-                RbelEncryptedMailConverter.class,
+                RbelCmsEnvelopedDataConverter.class,
                 RbelPkcs7Converter.class,
                 RbelSmtpCommandConverter.class,
                 RbelSmtpResponseConverter.class,

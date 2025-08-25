@@ -20,6 +20,8 @@
  */
 package de.gematik.test.tiger;
 
+import static de.gematik.rbellogger.util.GlobalServerMap.addServerNameForPort;
+
 import de.gematik.test.tiger.common.util.TigerSerializationUtil;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.config.CfgServer;
@@ -97,6 +99,7 @@ public class ZionServerType extends AbstractExternalTigerServer {
     waitForServerUp();
 
     addServerToLocalProxyRouteMap(new URL(getZionServerBaseUrl()));
+    addServerNameForPort(serverPort, this.getServerId());
 
     publishNewStatusUpdate(
         TigerServerStatusUpdate.builder().baseUrl(getZionServerBaseUrl()).build());

@@ -57,6 +57,9 @@ public class RbelX509Converter extends AbstractX509Converter {
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConversionExecutor context) {
+    if (element.hasFacet(RbelX509CertificateFacet.class)) {
+      return;
+    }
     if (!tryConversion(element, context, () -> element.getContent().toInputStream())) {
       if (!tryConversion(
           element, context, () -> Base64.getDecoder().wrap(element.getContent().toInputStream()))) {

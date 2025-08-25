@@ -563,6 +563,11 @@ public class TigerTestEnvMgr
     }
   }
 
+  private void handleRemovedMessageUuids(List<String> strings) {
+    publishStatusUpdateToListeners(
+        TigerStatusUpdate.builder().removedMessageUuids(strings).build(), listeners);
+  }
+
   private void assertNoUnknownServersInDependencies() {
     getServers().values().forEach(AbstractTigerServer::getDependUponList);
   }
@@ -749,5 +754,9 @@ public class TigerTestEnvMgr
 
   public void abortTestExecution() {
     shouldAbortTestExecution = true;
+  }
+
+  public void initializeLocalProxyCallbacks() {
+    getLocalTigerProxyOrFail().setRemovedMessageUuidsHandler(this::handleRemovedMessageUuids);
   }
 }

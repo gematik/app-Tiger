@@ -29,10 +29,11 @@ import de.gematik.rbellogger.data.core.RbelRootFacet;
 import de.gematik.rbellogger.exceptions.RbelConversionException;
 import de.gematik.rbellogger.facets.pop3.RbelPop3ResponseFacet;
 import de.gematik.rbellogger.facets.smtp.RbelSmtpCommandFacet;
+import de.gematik.rbellogger.util.ByteArrayUtils;
 import de.gematik.rbellogger.util.RbelContent;
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Optional;
@@ -68,17 +69,42 @@ public class RbelMimeConverter extends RbelConverterPlugin {
   @Override
   public void consumeElement(final RbelElement element, final RbelConversionExecutor context) {
     Optional.ofNullable(element.getParentNode())
-        .filter(
-            parent ->
-                parent.hasFacet(RbelPop3ResponseFacet.class)
-                    || parent.hasFacet(RbelDecryptedEmailFacet.class)
-                    || parent.hasFacet(RbelSmtpCommandFacet.class)
-                    || parent.hasFacet(RbelMimeBodyFacet.class))
+        .filter(parent -> isPossibleMimeElementOf(element, parent))
         .map(facet -> element.getContent().toInputStream())
-        .ifPresent(content -> new Parser(context).parseEntity(element, parseMimeMessage(content)));
+        .ifPresent(
+            content ->
+                new Parser(context).buildMimeMessageFacet(element, parseMimeMessage(content)));
+  }
+
+  private boolean isPossibleMimeElementOf(RbelElement element, RbelElement parent) {
+    return parent
+            .getFacet(RbelPop3ResponseFacet.class)
+            .map(RbelPop3ResponseFacet::getBody)
+            .filter(element::equals)
+            .isPresent()
+        || parent
+            .getFacet(RbelSmtpCommandFacet.class)
+            .map(RbelSmtpCommandFacet::getBody)
+            .filter(element::equals)
+            .isPresent()
+        || parent
+            .getFacet(RbelCmsEnvelopedDataFacet.class)
+            .map(RbelCmsEnvelopedDataFacet::getDecrypted)
+            .filter(element::equals)
+            .isPresent()
+        || parent.hasFacet(RbelMimeBodyFacet.class);
   }
 
   private record Parser(RbelConversionExecutor context) {
+
+    @SneakyThrows
+    private void buildMimeMessageFacet(RbelElement element, Entity message) {
+      if (message.getHeader().iterator().hasNext()
+          || !(message.getBody() instanceof SingleBody singleBody)
+          || singleBody.size() > 0) {
+        parseEntity(element, message);
+      }
+    }
 
     private RbelElement parseEntity(RbelElement element, Entity message) {
       RbelMimeMessageFacet messageFacet = buildMessageFacet(element, message);
@@ -104,7 +130,8 @@ public class RbelMimeConverter extends RbelConverterPlugin {
 
     private RbelElement parseHeader(RbelElement element, Header messageHeader) {
       var headerFacet = new RbelMimeHeaderFacet();
-      RbelElement headerElement = RbelElement.wrap(element, messageHeader.toString());
+      RbelElement headerElement =
+          new RbelElement(messageHeader.toString().getBytes(StandardCharsets.UTF_8), element);
       messageHeader
           .getFieldsAsMap()
           .forEach(
@@ -193,15 +220,8 @@ public class RbelMimeConverter extends RbelConverterPlugin {
 
     @SneakyThrows
     private static byte[] readBytes(SingleBody singleBody) {
-      try (var in = singleBody.getInputStream();
-          var out =
-              new ByteArrayOutputStream() {
-                public byte[] getBytes() {
-                  return buf;
-                }
-              }) {
-        in.transferTo(out);
-        return out.getBytes();
+      try (var in = singleBody.getInputStream()) {
+        return ByteArrayUtils.getBytesFrom(in::transferTo);
       }
     }
 

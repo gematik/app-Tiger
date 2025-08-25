@@ -21,6 +21,8 @@
 package de.gematik.test.tiger.proxy.controller;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static de.gematik.rbellogger.file.RbelFileWriter.MESSAGE_UUID;
+import static de.gematik.rbellogger.file.RbelFileWriter.RAW_MESSAGE_CONTENT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
@@ -30,15 +32,24 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.data.RbelElementAssertion;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.TigerProxyTestHelper;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import kong.unirest.core.HttpResponse;
+import kong.unirest.core.RawResponse;
 import kong.unirest.core.Unirest;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import net.jcip.annotations.NotThreadSafe;
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,10 +70,11 @@ class TigerWebUiControllerTest {
   @Autowired private TigerProxy tigerProxy;
   @LocalServerPort private int adminPort;
   private static final int TOTAL_OF_EXCHANGED_MESSAGES = 4;
+  private int fakeBackendServerPort;
 
   @BeforeEach
   void setupBackendServer(WireMockRuntimeInfo runtimeInfo) {
-    int fakeBackendServerPort = runtimeInfo.getHttpPort();
+    fakeBackendServerPort = runtimeInfo.getHttpPort();
     log.info("Started Backend-Server on port {}", fakeBackendServerPort);
 
     runtimeInfo.getWireMock().resetMappings();
@@ -94,8 +106,9 @@ class TigerWebUiControllerTest {
   }
 
   public String getWebUiUrl() {
-    log.info("Connecting to {}", "http://localhost:" + adminPort + "/webui");
-    return "http://localhost:" + adminPort + "/webui";
+    var url = "http://localhost:" + adminPort + "/webui";
+    log.info("Connecting to {}", url);
+    return url;
   }
 
   @Test
@@ -408,7 +421,7 @@ class TigerWebUiControllerTest {
 
     var rbelMessages = tigerProxy.getRbelMessagesList();
 
-    assertThat(rbelMessages).size().isEqualTo(TOTAL_OF_EXCHANGED_MESSAGES - 2);
+    assertThat(rbelMessages).hasSize(TOTAL_OF_EXCHANGED_MESSAGES - 2);
     RbelElementAssertion.assertThat(rbelMessages.get(0)).hasFacet(TracingMessagePairFacet.class);
     RbelElementAssertion.assertThat(rbelMessages.get(1)).hasFacet(TracingMessagePairFacet.class);
 
@@ -417,5 +430,100 @@ class TigerWebUiControllerTest {
 
     assertThat(requestFacet.getResponse().getUuid()).isEqualTo(rbelMessages.get(1).getUuid());
     assertThat(responseFacet.getRequest().getUuid()).isEqualTo(rbelMessages.get(0).getUuid());
+  }
+
+  @Test
+  @ResourceLock(value = "TigerWebUiController")
+  void downloadMessageContent() {
+    var uuid = tigerProxy.getRbelMessagesList().get(0).getUuid();
+    final HttpResponse<RbelContent> response = downloadMessageContent(uuid);
+
+    var content = response.getBody().toByteArray();
+    String body = new String(content);
+    log.info("Response: {}", body);
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(content).containsExactly(tigerProxy.getRbelMessagesList().get(0).getRawContent());
+  }
+
+  private HttpResponse<RbelContent> downloadMessageContent(String uuid) {
+    return Unirest.get(getWebUiUrl() + "/messageContent/" + uuid)
+        .asObject(TigerWebUiControllerTest::getRbelContent);
+  }
+
+  @SneakyThrows
+  private static RbelContent getRbelContent(RawResponse r) {
+    return RbelContent.from(r.getContent());
+  }
+
+  @Test
+  void testLargeMessageContent() {
+    tigerProxy.clearAllMessages();
+
+    try (val proxyRest = Unirest.spawnInstance()) {
+      proxyRest.config().proxy("localhost", tigerProxy.getProxyPort());
+
+      proxyRest
+          .post("http://localhost:" + fakeBackendServerPort + "/foobar")
+          .body("A".repeat(TigerWebUiController.SKIP_CONTENT_THRESHOLD))
+          .asEmpty();
+    }
+
+    TigerProxyTestHelper.waitUntilMessageListInProxyContainsCountMessagesWithTimeout(
+        tigerProxy, 2, 10);
+
+    var downloadedMessages = downloadTrafficFollowing(null);
+
+    assertThat(downloadedMessages).hasSize(2);
+    assertThat(downloadedMessages.get(0).has(RAW_MESSAGE_CONTENT)).isFalse();
+
+    var messageContent =
+        downloadMessageContent(downloadedMessages.get(0).getString(MESSAGE_UUID)).getBody();
+    assertThat(messageContent.toByteArray())
+        .isEqualTo(tigerProxy.getRbelMessagesList().get(0).getContent().toByteArray());
+  }
+
+  @Test
+  void testTrafficDownload_givingUnknownLastMsgUuidShouldFindAllMessages() {
+    var downloadedMessages = downloadTrafficFollowing("unknownUuid");
+
+    assertThat(downloadedMessages).hasSize(4);
+  }
+
+  @Test
+  void testTrafficDownload_givingKnownLastMsgUuidShouldFindAllFollowingMessages() {
+    var msg = tigerProxy.getRbelMessagesList().get(1);
+    var downloadedMessages = downloadTrafficFollowing(msg.getUuid());
+
+    assertThat(downloadedMessages).hasSize(2);
+  }
+
+  @Test
+  void testNewDownload_givingRemovedLastMsgUuidShouldFindAllMessagesInHistory() {
+    var msg = tigerProxy.getRbelMessagesList().get(1);
+
+    tigerProxy.getRbelLogger().getRbelConverter().removeMessage(msg);
+
+    var downloadedMessages = downloadTrafficFollowing(msg.getUuid());
+
+    assertThat(downloadedMessages).hasSize(3);
+  }
+
+  private @NotNull List<JSONObject> downloadTrafficFollowing(String lastMsgUuid) {
+    final String downloadUrl = getWebUiUrl() + "/trafficLog.tgr";
+    final Map<String, Object> parameters = new HashMap<>();
+    if (lastMsgUuid != null) {
+      parameters.put("lastMsgUuid", lastMsgUuid);
+    }
+
+    final HttpResponse<String> jsonResponse =
+        Unirest.get(downloadUrl).queryString(parameters).asString();
+    log.info("Received: {}", jsonResponse.getBody());
+
+    return jsonResponse
+        .getBody()
+        .lines()
+        .filter(line -> !line.isEmpty())
+        .map(JSONObject::new)
+        .toList();
   }
 }

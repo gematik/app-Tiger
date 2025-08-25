@@ -20,10 +20,14 @@
  */
 package de.gematik.test.tiger.proxy.tracing;
 
+import static de.gematik.rbellogger.util.MemoryConstants.KB;
+
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.core.ProxyTransmissionHistory;
+import de.gematik.rbellogger.data.core.RbelRequestFacet;
+import de.gematik.rbellogger.data.core.RbelResponseFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -43,7 +47,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 @RequiredArgsConstructor
 public class TracingPushService {
 
-  public static final int MAX_MESSAGE_SIZE = 512 * 1024;
+  public static final int MAX_MESSAGE_SIZE = 512 * KB;
   private final SimpMessagingTemplate template;
   private final TigerProxy tigerProxy;
   private Logger log = LoggerFactory.getLogger(TracingPushService.class);
@@ -127,6 +131,8 @@ public class TracingPushService {
                       tigerProxy.getTigerProxyConfiguration().getName(),
                       List.of(rbelTcpIpMessageFacet.getSequenceNumber()),
                       msg.getFacet(ProxyTransmissionHistory.class).orElse(null)))
+              .request(
+                  msg.hasFacet(RbelRequestFacet.class) || !msg.hasFacet(RbelResponseFacet.class))
               .build();
 
       template.convertAndSend(TigerRemoteProxyClient.WS_TRACING, tracingDto);

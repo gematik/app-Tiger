@@ -20,6 +20,10 @@
  */
 package de.gematik.rbellogger.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import lombok.SneakyThrows;
+
 public class BinaryClassifier {
 
   private BinaryClassifier() {}
@@ -27,12 +31,17 @@ public class BinaryClassifier {
   private static final int BYTES_TO_CHECK = 100;
 
   public static boolean isBinary(byte[] data) {
-    for (int pos = 0; pos < BYTES_TO_CHECK && pos < data.length; pos++) {
+    return isBinary(new ByteArrayInputStream(data));
+  }
+
+  @SneakyThrows
+  public static boolean isBinary(InputStream data) {
+    for (int readByte, pos = 0; pos < BYTES_TO_CHECK && (readByte = data.read()) >= 0; pos++) {
       // CR LF
-      if (data[pos] == 0xA || data[pos] == 0xD) {
+      if (readByte == 0xA || readByte == 0xD) {
         continue;
       }
-      if (data[pos] < 0x20) {
+      if (readByte < 0x20) {
         return true;
       }
     }

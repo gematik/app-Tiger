@@ -44,13 +44,18 @@ public class RbelMimeBodyFacet extends RbelLazyValueFacet<String> {
           }
 
           @Override
+          public boolean shouldRenderLargeElements() {
+            return true;
+          }
+
+          @Override
           public ContainerTag performRendering(
               RbelElement element,
               Optional<String> key,
               RbelHtmlRenderingToolkit renderingToolkit) {
             H2Tag title = h2().withClass("title").withText("Mime Body: ");
             if (allRootFacetsAreMimeBody(element)) {
-              return div(title, renderingToolkit.renderMimeBodyContent(element));
+              return div(title, renderingToolkit.renderValueAsTextArea(element));
             } else {
               return title;
             }

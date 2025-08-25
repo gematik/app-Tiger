@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -70,6 +71,9 @@ public class EnvStatusController implements TigerUpdateListener {
         tigerEnvStatus.setBannerDetails(update.getBannerDetails());
         tigerEnvStatus.setBannerIsHtml(update.isBannerIsHtml());
       }
+
+      markMessagesAsRemoved(update.getRemovedMessageUuids());
+
       // TODO make sure to check that the index is the expected next number, if not we do have to
       // cache this and wait for the correct message to be received and then process
       // the cached messages in order, currently this is done on the client side
@@ -240,6 +244,41 @@ public class EnvStatusController implements TigerUpdateListener {
   private static void updateScenarioStatus(ScenarioUpdate scenario, TestResult newStatus) {
     if (scenario.getStatus() == null || scenario.getStatus().ordinal() > newStatus.ordinal()) {
       scenario.setStatus(newStatus);
+    }
+  }
+
+  private void markMessagesAsRemoved(List<String> removedMessageUuids) {
+    if (removedMessageUuids != null && !removedMessageUuids.isEmpty()) {
+      var toBeMarked = new AtomicInteger(removedMessageUuids.size());
+      Predicate<Object> moreToBeFound = (o) -> toBeMarked.get() > 0;
+      // iterate through all features, scenarios and steps
+      // and mark the metadata as removed if the uuid is in the removedMessageUuids list
+      // until all have been marked
+      tigerEnvStatus.getFeatureMap().values().stream()
+          .takeWhile(moreToBeFound)
+          .forEach(
+              feature -> {
+                feature.getScenarios().values().stream()
+                    .takeWhile(moreToBeFound)
+                    .forEach(
+                        scenario -> {
+                          scenario.getSteps().values().stream()
+                              .takeWhile(moreToBeFound)
+                              .forEach(
+                                  step -> {
+                                    step.getRbelMetaData().stream()
+                                        .takeWhile(moreToBeFound)
+                                        .filter(
+                                            metaData ->
+                                                removedMessageUuids.contains(metaData.getUuid()))
+                                        .forEach(
+                                            metaData -> {
+                                              metaData.setRemoved(true);
+                                              toBeMarked.addAndGet(-1);
+                                            });
+                                  });
+                        });
+              });
     }
   }
 

@@ -47,7 +47,7 @@ public class RbelPop3CommandConverter extends RbelConverterPlugin {
 
   @Override
   public void consumeElement(final RbelElement element, final RbelConversionExecutor context) {
-    buildPop3CommandFacet(element)
+    buildPop3CommandFacet(element, context)
         .ifPresent(
             pair -> {
               var facet = pair.getLeft();
@@ -59,16 +59,30 @@ public class RbelPop3CommandConverter extends RbelConverterPlugin {
             });
   }
 
-  private Optional<Pair<RbelPop3CommandFacet, Integer>> buildPop3CommandFacet(RbelElement element) {
+  private Optional<Pair<RbelPop3CommandFacet, Integer>> buildPop3CommandFacet(
+      RbelElement element, RbelConversionExecutor context) {
     return Optional.of(element.getContent())
         .filter(c -> c.size() > 4)
         .flatMap(this::parseCommand)
-        .flatMap(command -> buildRbelPop3CommandFacet(element, command));
+        .flatMap(command -> buildRbelPop3CommandFacet(element, command, context));
   }
 
   private Optional<Pair<RbelPop3CommandFacet, Integer>> buildRbelPop3CommandFacet(
-      RbelElement element, RbelPop3Command command) {
+      RbelElement element, RbelPop3Command command, RbelConversionExecutor context) {
     var commandBytes = command.name().getBytes(StandardCharsets.UTF_8);
+    if (command != RbelPop3Command.CAPA) {
+      var previousMessage = context.findPreviousMessageInSameConnectionAs(element, e -> true);
+      if (previousMessage.isPresent()) {
+        var message = previousMessage.get();
+        if (!(message.hasFacet(RbelPop3CommandFacet.class)
+            || message.hasFacet(RbelPop3ResponseFacet.class))) {
+          log.debug(
+              "Previous message {} is not a POP3 message, skipping POP3 command parsing",
+              message.getUuid());
+          return Optional.empty();
+        }
+      }
+    }
     int commandEndIndex = element.getContent().indexOf(CRLF_BYTES);
     if (commandEndIndex == -1) {
       return Optional.empty();

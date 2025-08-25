@@ -37,4 +37,5 @@ public class TigerTracingDto {
   private final @Builder.Default Map<String, Object> additionalInformation = Map.of();
   private final Long sequenceNumber;
   private final ProxyTransmissionHistory proxyTransmissionHistory;
+  private final boolean request;
 }

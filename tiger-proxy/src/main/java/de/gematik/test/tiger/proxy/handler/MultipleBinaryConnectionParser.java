@@ -23,6 +23,7 @@ package de.gematik.test.tiger.proxy.handler;
 import static de.gematik.rbellogger.data.RbelMessageMetadata.MESSAGE_TRANSMISSION_TIME;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import de.gematik.test.tiger.proxy.data.TcpConnectionEntry;
@@ -59,13 +60,15 @@ public class MultipleBinaryConnectionParser {
       SocketAddress senderAddress,
       SocketAddress receiverAddress,
       byte[] part,
-      ZonedDateTime timestamp) {
+      ZonedDateTime timestamp,
+      RbelMessageKind messageKind) {
     return addToBuffer(
         UUID.randomUUID().toString(),
         senderAddress,
         receiverAddress,
         part,
         Map.of(MESSAGE_TRANSMISSION_TIME.getKey(), timestamp),
+        messageKind,
         null,
         null);
   }
@@ -76,19 +79,21 @@ public class MultipleBinaryConnectionParser {
       SocketAddress receiverAddress,
       byte[] part,
       Map<String, Object> additionalData,
+      RbelMessageKind messageKind,
       Consumer<RbelElement> messagePreProcessor,
       String previousMessageUuid) {
-    val direction = new TcpIpConnectionIdentifier(senderAddress, receiverAddress);
+    val connectionId = new TcpIpConnectionIdentifier(senderAddress, receiverAddress);
     val connectionParser =
-        connectionParsers.computeIfAbsent(direction, createSingleConnectionParser);
+        connectionParsers.computeIfAbsent(connectionId, createSingleConnectionParser);
     val future =
         connectionParser.bufferNewPart(
             TcpConnectionEntry.builder()
                 .uuid(uuid)
                 .data(RbelContent.of(part))
-                .connectionIdentifier(direction)
+                .connectionIdentifier(connectionId)
                 .messagePreProcessor(messagePreProcessor)
                 .previousUuid(previousMessageUuid)
+                .messageKind(messageKind)
                 .build()
                 .addAdditionalData(additionalData));
     synchronized (currentParsingTasks) {
@@ -108,10 +113,12 @@ public class MultipleBinaryConnectionParser {
     synchronized (currentParsingTasks) {
       tasks = new ArrayList<>(currentParsingTasks);
     }
-    log.trace("Waiting for all parsing tasks to finish, found {} tasks", tasks.size());
-    val currentParsingTasksFuture =
-        CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]));
-    currentParsingTasksFuture.join();
-    log.trace("All {} parsing tasks finished", tasks.size());
+    if (!tasks.isEmpty()) {
+      log.trace("Waiting for all parsing tasks to finish, found {} tasks", tasks.size());
+      val currentParsingTasksFuture =
+          CompletableFuture.allOf(tasks.toArray(new CompletableFuture[0]));
+      currentParsingTasksFuture.join();
+      log.trace("All {} parsing tasks finished", tasks.size());
+    }
   }
 }

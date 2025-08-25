@@ -20,6 +20,8 @@
 
 package de.gematik.rbellogger.util;
 
+import static de.gematik.rbellogger.util.MemoryConstants.KB;
+
 import com.google.common.base.Preconditions;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -41,7 +43,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 @Getter
 class RbelContentBase extends RbelContent {
-  private static final int DEFAULT_CHUNK_SIZE = 8 * 1024;
+  private static final int DEFAULT_CHUNK_SIZE = 8 * KB;
 
   private final int chunkSize;
   private int size = 0;

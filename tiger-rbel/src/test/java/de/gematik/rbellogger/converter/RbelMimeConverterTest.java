@@ -63,6 +63,7 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
         .build()
         .activateConversionFor("mime")
         .activateConversionFor("pop3");
+    //        .activateConversionFor("X509");
   }
 
   @SneakyThrows
@@ -113,14 +114,28 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
         convertMessagePair("RETR 1\r\n", origPop3Response).findElement("$.pop3Body").get();
 
     RbelElement rbelElement = convertMessagePair("RETR 1\r\n", encryptedPop3Response);
-    final RbelElement decryptedSignedRfc822BodyElement =
-        rbelElement
-            .findElement("$.pop3Body.mimeBody.decrypted.mimeBody.signed.mimeBody.mimeBody")
-            .get();
 
     var originalBodyContent = origElement.findElement("$.mimeBody").get().getRawStringContent();
 
-    assertThat(decryptedSignedRfc822BodyElement).hasStringContentEqualTo(originalBodyContent);
+    assertThat(rbelElement)
+        .extractChildWithPath("$.pop3Body.mimeBody.decrypted.mimeBody.signed.mimeBody.mimeBody")
+        .hasStringContentEqualTo(originalBodyContent);
+
+    assertThat(rbelElement)
+        .extractChildWithPath("$.pop3Body.mimeBody.decrypted.mimeBody.signerInfos.0")
+        .hasStringContentEqualToAtPosition("$.contentType.name", "data")
+        .hasStringContentEqualToAtPosition("$.digestAlgorithm.name", "sha-256")
+        .hasStringContentEqualToAtPosition("$.encryptionAlgorithm.name", "rsaPSS")
+        .hasChildWithPath("$.signerId.issuer")
+        .hasChildWithPath("$.signerId.serialNumber")
+        .hasChildWithPath("$.signature")
+        .hasChildWithPath("$.signedAttributes.recipientEmails.0.emailAddress")
+        .hasChildWithPath("$.signedAttributes.recipientEmails.0.recipientId");
+
+    assertThat(rbelElement)
+        .extractChildWithPath("$.pop3Body.mimeBody")
+        .hasChildWithPath("$.recipientInfos.0.recipientId.serialNumber")
+        .hasChildWithPath("$.unauthAttributes.recipientEmails.0.emailAddress");
   }
 
   @ParameterizedTest
@@ -172,7 +187,9 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
 
   private static AbstractStringAssert<?> assertHtmlRendering(
       RbelElement convertedMessage, String... expected) throws IOException {
-    final String convertedHtml = RbelHtmlRenderer.render(List.of(convertedMessage));
+    var renderer = new RbelHtmlRenderer();
+    renderer.setMaximumEntitySizeInBytes(3000);
+    var convertedHtml = renderer.doRender(List.of(convertedMessage));
     FileUtils.writeStringToFile(
         new File("target/directHtml.html"), convertedHtml, StandardCharsets.UTF_8);
 
@@ -198,7 +215,17 @@ class RbelMimeConverterTest extends AbstractResponseConverterTest {
     convertToRbelElement("+OK greeting\r\n");
     final RbelElement convertedMessage = convertPop3RetrResponse(pop3Message);
 
-    assertHtmlRendering(convertedMessage, "Decrypted Message:", "Signed Message:", "rfc822");
+    assertHtmlRendering(
+        convertedMessage,
+        "Decrypted Message:",
+        "Signed Message:",
+        "rfc822",
+        "Recipient Email Addresses",
+        "Recipient Info",
+        "Recipient Identifier",
+        "Signer Info",
+        "Signer Identifier",
+        "redacted");
 
     assertThat(convertedMessage)
         .hasGivenFacetAtPosition(

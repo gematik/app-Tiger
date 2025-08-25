@@ -21,6 +21,7 @@
 package de.gematik.test.tiger.lib.email;
 
 import static de.gematik.rbellogger.data.RbelElementAssertion.assertThat;
+import static de.gematik.rbellogger.util.MemoryConstants.MB;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -31,6 +32,7 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.facets.pop3.RbelPop3Command;
 import de.gematik.rbellogger.facets.pop3.RbelPop3CommandFacet;
 import de.gematik.rbellogger.facets.pop3.RbelPop3ResponseFacet;
+import de.gematik.rbellogger.facets.smtp.RbelSmtpCommand;
 import de.gematik.rbellogger.facets.smtp.RbelSmtpCommandFacet;
 import de.gematik.rbellogger.facets.smtp.RbelSmtpResponseFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
@@ -51,6 +53,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -62,6 +65,7 @@ import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -135,11 +139,13 @@ class EmailParsingTest {
    *
    * <p>11: C: QUIT
    *
-   * <p>12: S: QUIT
+   * <p>12: S: 250 Bye
    */
   public static final int NUMBER_OF_MESSAGES_PARSE_ONLY_SMTP = 12;
 
-  public static final int NUMBER_OF_MESSAGES_SEND_SMTP_RECEIVE_POP_SECURE_MESH = 27;
+  public static final int NUMBER_OF_MESSAGES_SEND_SMTP_RECEIVE_POP_SECURE_MESH =
+      NUMBER_OF_MESSAGES_PARSE_ONLY_SMTP + NUMBER_OF_MESSAGES_PARSE_ONLY_POP;
+
   ServerSetup smtpsAddress;
   ServerSetup pop3Address;
   GreenMail greenMail;
@@ -499,6 +505,7 @@ class EmailParsingTest {
                 activateRbelParsingFor:
                   - smtp
                 skipParsingWhenMessageLargerThanKb: 1
+                stompClientBufferSizeInMb: 20
              pop3sProxy:
               type: tigerProxy
               tigerProxyConfiguration:
@@ -510,42 +517,53 @@ class EmailParsingTest {
                 activateRbelParsingFor:
                   - pop3
                 skipParsingWhenMessageLargerThanKb: 1
+                stompClientBufferSizeInMb: 20
            """)
   @Test
+  @Tag("de.gematik.test.tiger.common.LongRunnerTest")
   void testSendAndReceiveEmailOverMeshTigerProxy_bigAttachment(TigerTestEnvMgr tigerTestEnvMgr) {
     startGreenMailSecure();
     ServerSetup smtpProxy = getSmtpProxySecure();
 
     String to = "to@localhost";
     String from = "from@localhost";
-    String subject = "Test Large Email";
-    int attachmentSize = 1024 * 1024;
-    String body = "A".repeat(attachmentSize); // 3 MB body
+    int attachmentSize = 10 * MB;
+    String body = "A".repeat(attachmentSize);
 
-    MimeMessage message = new MimeMessage(GreenMailUtil.getSession(smtpProxy));
-    message.setFrom(new InternetAddress(from));
-    message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
-    message.setSubject(subject);
+    int numberOfMails = 20;
+    var extractedBodies = new LinkedList<String>();
+    for (int i = 0; i < numberOfMails; i++) {
+      String subject = "Test Large Email " + (i + 1);
+      MimeMessage message = new MimeMessage(GreenMailUtil.getSession(smtpProxy));
+      message.setFrom(new InternetAddress(from));
+      message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(to));
+      message.setSubject(subject);
 
-    MimeBodyPart textPart = new MimeBodyPart();
-    textPart.setText(body);
+      MimeBodyPart textPart = new MimeBodyPart();
+      textPart.setText(body);
 
-    MimeMultipart multipart = new MimeMultipart();
-    multipart.addBodyPart(textPart);
+      MimeMultipart multipart = new MimeMultipart();
+      multipart.addBodyPart(textPart);
 
-    message.setContent(multipart);
+      message.setContent(multipart);
 
-    GreenMailUtil.sendMimeMessage(message);
-    MimeMessage messageRetrieved = (MimeMessage) retrieveByPopSecure(pop3sProxyPort);
-    var extractedBody = GreenMailUtil.getWholeMessage(messageRetrieved);
-    assertThat(extractedBody)
-        .contains("Content-Type: multipart/mixed;")
-        .contains("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")
-        .hasSizeGreaterThan(attachmentSize);
+      GreenMailUtil.sendMimeMessage(message);
+
+      var messageRetrieved = retrieveByPopSecure(pop3sProxyPort);
+
+      var extractedBody = GreenMailUtil.getWholeMessage(messageRetrieved);
+
+      assertThat(extractedBody)
+          .contains("Content-Type: multipart/mixed;")
+          .contains("AAAAA=")
+          .hasSizeGreaterThan(attachmentSize);
+
+      extractedBodies.add(extractedBody);
+    }
 
     try {
       await()
-          .atMost(30, TimeUnit.SECONDS)
+          .atMost(20, TimeUnit.SECONDS)
           .pollInterval(1, TimeUnit.SECONDS)
           .until(
               () -> {
@@ -553,12 +571,18 @@ class EmailParsingTest {
                     tigerTestEnvMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageList();
                 log.info("Currently {} messages", messages.size());
                 return messages.stream()
-                    .filter(EmailParsingTest::hasSmtpData)
-                    .map(EmailParsingTest::extractSmtpBody)
-                    // we compare with endsWith because the extractedBody contains two extra
-                    // initial
-                    // lines added by the greenmail client
-                    .anyMatch(extractedBody::endsWith);
+                        .filter(EmailParsingTest::hasSmtpData)
+                        .map(EmailParsingTest::extractSmtpBody)
+                        // we compare with endsWith because the extractedBody contains two extra
+                        // initial
+                        // lines added by the greenmail client
+                        .filter(
+                            smtpBody ->
+                                extractedBodies.stream()
+                                    .anyMatch(extractedBody -> extractedBody.endsWith(smtpBody)))
+                        .toList()
+                        .size()
+                    == numberOfMails;
               });
     } catch (ConditionTimeoutException e) {
       var messages = tigerTestEnvMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageList();
@@ -607,7 +631,8 @@ class EmailParsingTest {
   private static boolean hasSmtpData(RbelElement e) {
     return e.getFacet(RbelSmtpCommandFacet.class)
         .map(RbelSmtpCommandFacet::getCommand)
-        .filter(cmd -> "DATA".equals(cmd.getRawStringContent()))
+        .flatMap(cmd -> cmd.seekValue(RbelSmtpCommand.class))
+        .filter(RbelSmtpCommand.DATA::equals)
         .isPresent();
   }
 
@@ -685,7 +710,7 @@ class EmailParsingTest {
     properties.setProperty("mail.pop3.host", "127.0.0.1");
     properties.setProperty("mail.pop3.port", String.valueOf(portNumber));
     properties.setProperty("mail.pop3.auth", "true");
-    properties.setProperty("mail.debug", "true");
+    properties.setProperty("mail.debug", "false");
 
     // Get a Session object
     Session session = Session.getInstance(properties);
@@ -704,7 +729,7 @@ class EmailParsingTest {
     properties.setProperty("mail.pop3s.auth", "true");
     properties.setProperty("mail.pop3s.ssl.trust", "*");
     properties.setProperty("mail.pop3s.ssl.checkserveridentity", "false");
-    properties.setProperty("mail.debug", "true");
+    properties.setProperty("mail.debug", "false");
 
     // Get a Session object
     Session session = Session.getInstance(properties);
@@ -713,7 +738,7 @@ class EmailParsingTest {
     return session.getStore("pop3s");
   }
 
-  Message retrieveByPopSecure(int pop3sPort) {
+  MimeMessage retrieveByPopSecure(int pop3sPort) {
     return retrieveByPop(createStoreObjectSecurePop(pop3sPort));
   }
 
@@ -722,7 +747,7 @@ class EmailParsingTest {
   }
 
   @SneakyThrows
-  Message retrieveByPop(Store store) {
+  MimeMessage retrieveByPop(Store store) {
     // in order to go through the tiger proxy, we need to make a request using directly the java
     // mail
     // api instead of green mail. in this way we can use a custom port
@@ -737,9 +762,9 @@ class EmailParsingTest {
     Message[] messages = folder.getMessages();
 
     // Print each message
-    assertThat(messages).hasSize(1);
+    assertThat(messages).hasSizeGreaterThan(0);
     // copies the message so that we can safely close the folder before making assertions
-    val messageCopy = new MimeMessage((MimeMessage) messages[0]);
+    val messageCopy = new MimeMessage((MimeMessage) messages[messages.length - 1]);
 
     // Close the folder and store
     folder.close(false);

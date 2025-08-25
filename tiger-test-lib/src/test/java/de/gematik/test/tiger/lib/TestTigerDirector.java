@@ -366,6 +366,26 @@ class TestTigerDirector {
   }
 
   @Test
+  void testStartWorkflowUiExternalTimeout() {
+    executeWithSecureShutdown(
+        () -> {
+          new EnvironmentVariables(
+                  "TIGER_TESTENV_CFGFILE",
+                  "src/test/resources/testdata/startWorkflowUiExternal.yaml")
+              .execute(
+                  () ->
+                      await()
+                          .atMost(10, TimeUnit.SECONDS)
+                          .untilAsserted(
+                              () ->
+                                  assertThatThrownBy(TigerDirector::start)
+                                      .isInstanceOf(TigerTestEnvException.class)
+                                      .hasMessageContaining(
+                                          "No feedback from workflow Ui, aborting!")));
+        });
+  }
+
+  @Test
   void testQuitTestRunViaConsole() throws Exception {
     new EnvironmentVariables(
             "TIGER_TESTENV_CFGFILE", "src/test/resources/testdata/noServersNoForwardProxy.yaml")

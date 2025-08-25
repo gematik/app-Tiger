@@ -128,6 +128,15 @@ public class RbelElement extends RbelPathAble {
     this.size = usedBytes;
   }
 
+  public int getDepth() {
+    int depth = 1;
+    RbelElement current = this;
+    while ((current = current.getParentNode()) != null) {
+      depth++;
+    }
+    return depth;
+  }
+
   public static class Builder {
     String uuid;
     RbelContent content = RbelContent.builder().build();
@@ -305,14 +314,6 @@ public class RbelElement extends RbelPathAble {
         .toList();
   }
 
-  public Optional<String> findKeyInParentElement() {
-    return Optional.of(this).map(RbelElement::getParentNode).stream()
-        .flatMap(parent -> parent.getChildNodesWithKey().stream())
-        .filter(e -> e.getValue() == this)
-        .map(Map.Entry::getKey)
-        .findFirst();
-  }
-
   @Override
   public List<RbelElement> findRbelPathMembers(String rbelPath) {
     return new RbelPathExecutor<>(this, rbelPath).execute();
@@ -388,12 +389,9 @@ public class RbelElement extends RbelPathAble {
     if (parentNode == null) {
       return Optional.empty();
     }
-    for (Map.Entry<String, RbelElement> ptr : parentNode.getChildNodesWithKey().getValues()) {
-      if (ptr.getValue() == this) {
-        return Optional.ofNullable(ptr.getKey());
-      }
-    }
-    throw new RbelException("Unable to find key for element " + this);
+    return findKeyInParentElement()
+        .map(Optional::of)
+        .orElseThrow(() -> new RbelException("Unable to find key for element " + this));
   }
 
   public void addOrReplaceFacet(RbelFacet facet) {

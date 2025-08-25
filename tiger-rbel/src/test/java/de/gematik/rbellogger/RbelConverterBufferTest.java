@@ -21,6 +21,7 @@
 package de.gematik.rbellogger;
 
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static de.gematik.rbellogger.util.MemoryConstants.MB;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.configuration.RbelConfiguration;
@@ -60,7 +61,7 @@ class RbelConverterBufferTest {
     RbelConverter rbelConverter = rbelLogger.getRbelConverter();
 
     var allParsedMessages = new LinkedList<RbelElement>();
-    final int maxBufferSizeInBytes = 1024 * 1024;
+    final int maxBufferSizeInBytes = MB;
     for (int i = 0; i < maxBufferSizeInBytes / curlMessage.getBytes().length + 1; i++) {
       allParsedMessages.add(
           rbelConverter.parseMessage(curlMessage.getBytes(), new RbelMessageMetadata()));

@@ -21,11 +21,13 @@
 package de.gematik.test.tiger.proxy.client;
 
 import static de.gematik.rbellogger.data.RbelMessageMetadata.PREVIOUS_MESSAGE_UUID;
+import static de.gematik.rbellogger.util.MemoryConstants.MB;
 
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.core.RbelFacet;
 import de.gematik.rbellogger.util.IRbelMessageListener;
@@ -82,7 +84,8 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   @Getter private final List<TigerExceptionDto> receivedRemoteExceptions = new ArrayList<>();
 
   @Getter
-  private final Map<String, PartialTracingMessage> partiallyReceivedMessageMap = new HashMap<>();
+  private final Map<String, PartialTracingMessage> partiallyReceivedMessageMap =
+      new LinkedHashMap<>();
 
   @Getter private final MultipleBinaryConnectionParser binaryChunksBuffer;
 
@@ -124,10 +127,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             masterTigerProxy == null ? this : masterTigerProxy, null);
 
     WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-    container.setDefaultMaxBinaryMessageBufferSize(
-        1024 * 1024 * configuration.getPerMessageBufferSizeInMb());
-    container.setDefaultMaxTextMessageBufferSize(
-        1024 * 1024 * configuration.getPerMessageBufferSizeInMb());
+    var perMessageBufferSize = configuration.getPerMessageBufferSizeInMb() * MB;
+    container.setDefaultMaxBinaryMessageBufferSize(perMessageBufferSize);
+    container.setDefaultMaxTextMessageBufferSize(perMessageBufferSize);
 
     final MappingJackson2MessageConverter messageConverter = new MappingJackson2MessageConverter();
     messageConverter.getObjectMapper().registerModule(new JavaTimeModule());
@@ -137,7 +139,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     tigerProxyStompClient = new WebSocketStompClient(webSocketClient);
     tigerProxyStompClient.setMessageConverter(messageConverter);
     tigerProxyStompClient.setInboundMessageSizeLimit(
-        1024 * 1024 * configuration.getStompClientBufferSizeInMb());
+        configuration.getStompClientBufferSizeInMb() * MB);
     tigerStompSessionHandler = new TigerStompSessionHandler(this);
     maximumPartialMessageAge =
         Duration.ofSeconds(configuration.getMaximumPartialMessageAgeInSeconds());
@@ -345,18 +347,24 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   }
 
   void tryParseMessages(PartialTracingMessage message, Consumer<RbelElement> messagePreProcessor) {
-    getBinaryChunksBuffer()
-        .addToBuffer(
-            message.getTracingDto().getMessageUuid(),
-            message.getSender().asSocketAddress(),
-            message.getReceiver().asSocketAddress(),
-            message.buildCompleteContent().toByteArray(),
-            message.getAdditionalInformation(),
-            messagePreProcessor,
-            Optional.ofNullable(
-                    message.getAdditionalInformation().get(PREVIOUS_MESSAGE_UUID.getKey()))
-                .map(Object::toString)
-                .orElse(null));
+    var messageUuid = message.getTracingDto().getMessageUuid();
+    if (getRbelLogger().getRbelConverter().getKnownMessageUuids().add(messageUuid)) {
+      getBinaryChunksBuffer()
+          .addToBuffer(
+              messageUuid,
+              message.getSender().asSocketAddress(),
+              message.getReceiver().asSocketAddress(),
+              message.buildCompleteContent().toByteArray(),
+              message.getAdditionalInformation(),
+              message.getTracingDto().isRequest()
+                  ? RbelMessageKind.REQUEST
+                  : RbelMessageKind.RESPONSE,
+              messagePreProcessor,
+              Optional.ofNullable(
+                      message.getAdditionalInformation().get(PREVIOUS_MESSAGE_UUID.getKey()))
+                  .map(Object::toString)
+                  .orElse(null));
+    }
   }
 
   @Override
@@ -402,7 +410,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         retrieveOrInitializePartialMessage(
             tracingMessagePart.getUuid(), PartialTracingMessage.builder().build());
 
-    tracingMessage.getMessageParts().add(tracingMessagePart);
+    tracingMessage.addMessagePart(tracingMessagePart);
     checkForCompletion(tracingMessage, tracingMessagePart.getUuid());
   }
 
@@ -426,7 +434,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
       partiallyReceivedMessageMap.put(uuid, partialTracingMessage);
     }
     if (oldMessage != null) {
-      partialTracingMessage.getMessageParts().addAll(oldMessage.getMessageParts());
+      partialTracingMessage.addMessageParts(oldMessage);
     }
     checkForCompletion(partialTracingMessage, uuid);
   }
@@ -448,6 +456,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         log.trace("Trying to remove {}, cutoff is {}", next.getReceivedTime(), cutoff);
         if (cutoff.isAfter(next.getReceivedTime())) {
           entryIterator.remove();
+        } else {
+          // everything after this is newer than the cutoff, so we can stop here
+          break;
         }
       }
     }

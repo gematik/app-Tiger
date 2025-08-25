@@ -29,11 +29,16 @@ import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.RbelMessageMetadata.RbelMetadataValue;
 import de.gematik.rbellogger.data.core.*;
+import de.gematik.rbellogger.file.BundledServerNameWriterAndReader;
+import de.gematik.rbellogger.util.GlobalServerMap;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import de.gematik.test.tiger.proxy.data.TcpConnectionEntry;
 import de.gematik.test.tiger.proxy.data.TcpIpConnectionIdentifier;
 import de.gematik.test.tiger.util.AsyncByteQueue;
 import de.gematik.test.tiger.util.DeterministicUuidGenerator;
+import io.micrometer.common.util.StringUtils;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -52,6 +57,7 @@ public class SingleConnectionParser {
   private final ExecutorService executor;
   private final BinaryExchangeHandler binaryExchangeHandler;
   private final RbelConverter rbelConverter;
+  private final String proxyName;
   private final AsyncByteQueue bufferedParts;
   private final org.slf4j.Logger log;
 
@@ -65,6 +71,7 @@ public class SingleConnectionParser {
     this.rbelConverter = tigerProxy.getRbelLogger().getRbelConverter();
     this.bufferedParts = new AsyncByteQueue(connectionIdentifier);
     this.executor = tigerProxy.getExecutor();
+    this.proxyName = tigerProxy.proxyName();
     log =
         org.slf4j.LoggerFactory.getLogger(
             tigerProxy.getName().orElse("TigerProxy") + "-ConnectionParser");
@@ -79,16 +86,17 @@ public class SingleConnectionParser {
     this.rbelConverter = rbelConverter;
     this.executor = executor;
     this.bufferedParts = new AsyncByteQueue(connectionIdentifier);
+    this.proxyName = null;
     log = org.slf4j.LoggerFactory.getLogger(this.getClass());
   }
 
   private List<RbelElement> handleException(
-      Throwable throwable, TcpIpConnectionIdentifier direction, TcpConnectionEntry entry) {
+      Throwable throwable, TcpIpConnectionIdentifier connectionId, TcpConnectionEntry entry) {
     log.warn("Exception while parsing buffered content for message {}", entry.getUuid(), throwable);
     binaryExchangeHandler.propagateExceptionMessageSafe(
         throwable,
-        RbelHostname.create(direction.sender()),
-        RbelHostname.create(direction.receiver()));
+        RbelHostname.create(connectionId.sender()),
+        RbelHostname.create(connectionId.receiver()));
     return List.of();
   }
 
@@ -148,6 +156,33 @@ public class SingleConnectionParser {
     rbelConverter.transmitElement(messageElement);
   }
 
+  private void setBundledServerName(TcpConnectionEntry entry) {
+    if (!StringUtils.isBlank(proxyName)
+        && !proxyName.equals("local_tiger_proxy")
+        && getDynamicConnectionEndpoint(entry) instanceof InetSocketAddress inetSocketAddress) {
+      GlobalServerMap.addServerNameForPort(inetSocketAddress.getPort(), proxyName);
+    }
+  }
+
+  private static SocketAddress getDynamicConnectionEndpoint(TcpConnectionEntry entry) {
+    var connectionId = entry.getConnectionIdentifier();
+    if (entry.getMessageKind().isRequest()) {
+      if (entry
+          .getAdditionalData()
+          .containsKey(BundledServerNameWriterAndReader.BUNDLED_HOSTNAME_SENDER.getKey())) {
+        return null;
+      }
+      return connectionId.sender();
+    } else {
+      if (entry
+          .getAdditionalData()
+          .containsKey(BundledServerNameWriterAndReader.BUNDLED_HOSTNAME_RECEIVER.getKey())) {
+        return null;
+      }
+      return connectionId.receiver();
+    }
+  }
+
   private synchronized List<RbelElement> parseAllAvailableMessages() {
     val result = new ArrayList<RbelElement>();
     while (!bufferedParts.isEmpty()) {
@@ -168,6 +203,9 @@ public class SingleConnectionParser {
       return Optional.empty();
     }
     val bufferedContent = bufferedParts.peek();
+
+    setBundledServerName(bufferedContent);
+
     val originalSize = bufferedContent.getData().size();
     var messageElement =
         RbelElement.builder()
@@ -186,8 +224,16 @@ public class SingleConnectionParser {
     Optional.ofNullable(bufferedContent.getMessagePreProcessor())
         .ifPresent(manipulator -> manipulator.accept(messageElement));
     final var messageMetadata = readMetadataFromBufferedContent(bufferedContent);
+    if (lastMessageUuid != null) {
+      RbelMessageMetadata.PREVIOUS_MESSAGE_UUID.putValue(messageMetadata, lastMessageUuid);
+      log.atTrace()
+          .addArgument(messageElement::getUuid)
+          .addArgument(lastMessageUuid)
+          .log("Setting previous message uuid of {} to {}");
+    }
     messageElement.addFacet(
         new SingleConnectionParserMarkerFacet(bufferedContent.getSourceUuids()));
+
     log.atTrace()
         .addArgument(messageElement.getContent()::size)
         .addArgument(messageElement::getUuid)

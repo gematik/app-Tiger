@@ -30,6 +30,7 @@ export default class MessageMetaDataDto {
   sequenceNumber: number = -1;
   timestamp: Date | string = "";
   pairedUuid: string = "";
+  removed: boolean = false;
 
   public toString() {
     return `{ uuid: "${this.uuid}" }\n`;

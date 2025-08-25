@@ -23,7 +23,10 @@ package de.gematik.test.tiger.proxy.client;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.proxy.data.TigerDownloadedMessageFacet;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +34,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import kong.unirest.core.HttpResponse;
+import kong.unirest.core.RawResponse;
 import kong.unirest.core.Unirest;
 import lombok.*;
 import org.apache.commons.lang3.StringUtils;
@@ -61,14 +65,45 @@ public class TigerRemoteTrafficDownloader {
         getRbelLogger().getMessageList().size());
   }
 
+  @SneakyThrows
   private void parseTrafficChunk(String rawTraffic) {
     final List<RbelElement> convertedMessages =
         tigerRemoteProxyClient
             .getRbelFileWriter()
-            .convertFromRbelFile(rawTraffic, Optional.empty());
+            .convertRbelFileEntries(
+                rawTraffic.lines(), Optional.empty(), this::downloadMessageContent);
     final long expectedNumberOfMessages = rawTraffic.lines().count();
 
     doMessageBatchPostProcessing(convertedMessages, expectedNumberOfMessages);
+  }
+
+  @SneakyThrows
+  private RbelContent downloadMessageContent(String uuid) {
+
+    final String downloadUrl = getRemoteProxyUrl() + "/webui/messageContent/" + uuid;
+    log.trace("Downloading content of message from '{}' with uuid '{}'", downloadUrl, uuid);
+
+    try {
+      final HttpResponse<InputStream> response =
+          Unirest.get(downloadUrl).asObject(RawResponse::getContent);
+      log.trace(
+          "Downloaded traffic from remote '{}', status: {}", downloadUrl, response.getStatus());
+      if (response.getStatus() != 200) {
+        throw new TigerRemoteProxyClientException(
+            "Error while downloading message from remote '" + downloadUrl);
+      }
+      return RbelContent.from(response.getBody());
+    } catch (OutOfMemoryError error) {
+      log.error(
+          "OutOfMemoryError while downloading traffic from remote '{}'. "
+              + "Please increase the heap size of the Tiger Proxy.",
+          downloadUrl,
+          error);
+      throw error;
+    } catch (IOException e) {
+      log.error("IOException while downloading traffic from remote '{}'", getRemoteProxyUrl(), e);
+      throw e;
+    }
   }
 
   private void doMessageBatchPostProcessing(List<RbelElement> convertedMessages, long count) {
@@ -136,29 +171,44 @@ public class TigerRemoteTrafficDownloader {
   private PaginationInfo downloadTrafficPageFromRemoteAndAddToQueue(
       int pageSize, Optional<String> currentLastUuid) {
     final String downloadUrl = getRemoteProxyUrl() + "/webui/trafficLog.tgr";
-    log.debug(
-        "Downloading missed traffic from '{}', starting from {}. page-size {} (currently cached {}"
-            + " messages)",
-        currentLastUuid,
-        downloadUrl,
-        pageSize,
-        getRbelLogger().getMessageHistory().size());
+    log.atDebug()
+        .addArgument(downloadUrl)
+        .addArgument(() -> currentLastUuid.orElse(""))
+        .addArgument(pageSize)
+        .addArgument(() -> getRbelLogger().getMessageHistory().size())
+        .log(
+            "Downloading missed traffic from '{}', starting after {}. page-size {} (currently"
+                + " cached {} messages)");
 
     final Map<String, Object> parameters = new HashMap<>();
     parameters.put("pageSize", pageSize);
     currentLastUuid.ifPresent(uuid -> parameters.put("lastMsgUuid", uuid));
 
-    final HttpResponse<String> response =
-        Unirest.get(downloadUrl).queryString(parameters).asString();
-    if (response.getStatus() != 200) {
-      throw new TigerRemoteProxyClientException(
-          "Error while downloading message from remote '"
-              + downloadUrl
-              + "': "
-              + response.getBody());
+    try {
+      final HttpResponse<String> response =
+          Unirest.get(downloadUrl).queryString(parameters).asString();
+      log.atTrace()
+          .addArgument(downloadUrl)
+          .addArgument(response::getStatus)
+          .addArgument(() -> response.getBody().length())
+          .log("Downloaded traffic from remote '{}', status: {}, size: {}");
+      if (response.getStatus() != 200) {
+        throw new TigerRemoteProxyClientException(
+            "Error while downloading message from remote '"
+                + downloadUrl
+                + "': "
+                + response.getBody());
+      }
+      parseTrafficChunk(response.getBody());
+      return PaginationInfo.of(response);
+    } catch (OutOfMemoryError error) {
+      log.error(
+          "OutOfMemoryError while downloading traffic from remote '{}'. "
+              + "Please increase the heap size of the Tiger Proxy.",
+          getRemoteProxyUrl(),
+          error);
+      throw error;
     }
-    parseTrafficChunk(response.getBody());
-    return PaginationInfo.of(response);
   }
 
   private RbelLogger getRbelLogger() {

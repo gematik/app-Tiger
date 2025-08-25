@@ -25,8 +25,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 /**
  * Enables the usage of the RbelPathExecutor. The methods are called by the RbelPathExecutor, but
@@ -65,19 +63,21 @@ public abstract class RbelPathAble {
   }
 
   public String findNodePath() {
-    LinkedList<Optional<String>> keyList = new LinkedList<>();
-    final AtomicReference<RbelPathAble> ptr = new AtomicReference<>(this);
-    while (ptr.get().getParentNode() != null) {
-      keyList.addFirst(
-          ptr.get().getParentNode().getChildNodesWithKey().stream()
-              .filter(entry -> entry.getValue().equals(ptr.get()))
-              .map(Map.Entry::getKey)
-              .findFirst());
-      ptr.set(ptr.get().getParentNode());
+    var keyList = new LinkedList<String>();
+    for (RbelPathAble currentNode = this, parent = currentNode.getParentNode();
+        parent != null;
+        currentNode = parent, parent = parent.getParentNode()) {
+      currentNode.findKeyInParentElement().ifPresent(keyList::addFirst);
     }
-    return keyList.stream()
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .collect(Collectors.joining("."));
+    return String.join(".", keyList);
+  }
+
+  public Optional<String> findKeyInParentElement() {
+    return Optional.ofNullable(getParentNode()).stream()
+        .map(RbelPathAble::getChildNodesWithKey)
+        .flatMap(RbelMultiMap::stream)
+        .filter(e -> e.getValue() == this)
+        .map(Map.Entry::getKey)
+        .findFirst();
   }
 }

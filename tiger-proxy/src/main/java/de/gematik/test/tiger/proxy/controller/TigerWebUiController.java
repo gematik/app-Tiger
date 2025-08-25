@@ -20,6 +20,8 @@
  */
 package de.gematik.test.tiger.proxy.controller;
 
+import static de.gematik.rbellogger.util.MemoryConstants.KB;
+
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
 import de.gematik.rbellogger.data.util.RbelElementTreePrinter;
@@ -27,6 +29,7 @@ import de.gematik.rbellogger.exceptions.RbelPathException;
 import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
+import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.rbellogger.util.RbelJexlExecutor;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.exceptions.TigerJexlException;
@@ -93,6 +96,8 @@ public class TigerWebUiController implements ApplicationContextAware {
    * handling on client side
    */
   public static final String REGEX_STATUSCODE_TOKEN = ".*:\\d* ";
+
+  public static final int SKIP_CONTENT_THRESHOLD = 100 * KB;
 
   private TigerProxy tigerProxy;
   private final RbelHtmlRenderer renderer;
@@ -422,7 +427,7 @@ public class TigerWebUiController implements ApplicationContextAware {
         : stream;
   }
 
-  private RbelElement findPartner(RbelElement msg) {
+  private static RbelElement findPartner(RbelElement msg) {
     return msg.getFacet(TracingMessagePairFacet.class)
         .map(
             pairFacet -> {
@@ -452,7 +457,7 @@ public class TigerWebUiController implements ApplicationContextAware {
     final String result =
         filteredMessages.stream()
             .limit(actualPageSize)
-            .map(tigerProxy.getRbelFileWriter()::convertToRbelFileString)
+            .map(this::convertToRbelFileString)
             .collect(Collectors.joining("\n\n"));
 
     if (!result.isEmpty()) {
@@ -461,38 +466,67 @@ public class TigerWebUiController implements ApplicationContextAware {
     return result;
   }
 
+  private String convertToRbelFileString(RbelElement element) {
+    return tigerProxy.getRbelFileWriter().convertToRbelFileString(element, SKIP_CONTENT_THRESHOLD);
+  }
+
+  @GetMapping(value = "/messageContent/{uuid}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+  public RbelContent downloadMessageContent(@PathVariable(name = "uuid") final String uuid) {
+    log.trace("Downloading content of message with UUID: {}", uuid);
+    return getTigerProxy()
+        .getRbelLogger()
+        .getRbelConverter()
+        .findMessageByUuid(uuid)
+        .map(RbelElement::getContent)
+        .orElseThrow(
+            () ->
+                new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Message with UUID " + uuid + " not found"));
+  }
+
   private List<RbelElement> loadMessagesMatchingFilter(String lastMsgUuid, String filterCriterion) {
-    return getTigerProxy().getRbelLogger().getMessageHistory().stream()
-        .filter(
-            msg -> {
-              if (!StringUtils.hasText(filterCriterion)) {
-                return true;
-              }
-              if (filterCriterion.startsWith("\"") && filterCriterion.endsWith("\"")) {
-                final String textFilter =
-                    filterCriterion.substring(1, filterCriterion.length() - 1);
-                return RbelJexlExecutor.matchAsTextExpression(msg, textFilter)
-                    || RbelJexlExecutor.matchAsTextExpression(findPartner(msg), textFilter);
-              } else {
-                return TigerJexlExecutor.matchesAsJexlExpression(
-                        msg, filterCriterion, Optional.empty())
-                    || TigerJexlExecutor.matchesAsJexlExpression(
-                        findPartner(msg), filterCriterion, Optional.empty());
-              }
-            })
-        .dropWhile(messageIsBefore(lastMsgUuid))
-        .filter(msg -> !msg.getUuid().equals(lastMsgUuid))
+    var dropCriterion = messageIsBefore(lastMsgUuid);
+    var rbelLogger = getTigerProxy().getRbelLogger();
+    if (!rbelLogger.getRbelConverter().getKnownMessageUuids().isAlreadyConverted(lastMsgUuid)) {
+      log.trace("Last message UUID '{}' is not known anymore", lastMsgUuid);
+      dropCriterion = msg -> false; // do not drop any messages
+    }
+    return rbelLogger.getMessageHistory().stream()
+        .dropWhile(dropCriterion)
+        .filter(lastMsgUuid != null ? messageDoesNotHaveUuid(lastMsgUuid) : msg -> true)
+        .filter(matchesFilter(filterCriterion))
         .toList();
+  }
+
+  private static Predicate<RbelElement> matchesFilter(String filterCriterion) {
+    if (!StringUtils.hasText(filterCriterion)) {
+      return msg -> true;
+    }
+    if (filterCriterion.startsWith("\"") && filterCriterion.endsWith("\"")) {
+      final String textFilter = filterCriterion.substring(1, filterCriterion.length() - 1);
+      return msg ->
+          RbelJexlExecutor.matchAsTextExpression(msg, textFilter)
+              || RbelJexlExecutor.matchAsTextExpression(findPartner(msg), textFilter);
+    } else {
+      return msg ->
+          TigerJexlExecutor.matchesAsJexlExpression(msg, filterCriterion, Optional.empty())
+              || TigerJexlExecutor.matchesAsJexlExpression(
+                  findPartner(msg), filterCriterion, Optional.empty());
+    }
   }
 
   private static Predicate<RbelElement> messageIsBefore(String lastMsgUuid) {
     return msg -> {
       if (StringUtils.hasText(lastMsgUuid)) {
-        return !msg.getUuid().equals(lastMsgUuid);
+        return messageDoesNotHaveUuid(lastMsgUuid).test(msg);
       } else {
         return false;
       }
     };
+  }
+
+  private static Predicate<RbelElement> messageDoesNotHaveUuid(String lastMsgUuid) {
+    return msg -> !msg.getUuid().equals(lastMsgUuid);
   }
 
   @GetMapping(value = "/resetMessages", produces = MediaType.APPLICATION_JSON_VALUE)

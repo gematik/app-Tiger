@@ -264,7 +264,7 @@ public class RbelPop3ResponseConverter extends RbelConverterPlugin {
     return context.findAndPairMatchingRequest(element, RbelPop3CommandFacet.class);
   }
 
-  private static Optional<RbelPop3Command> findPop3Command(
+  public static Optional<RbelPop3Command> findPop3Command(
       RbelElement element, RbelConversionExecutor context) {
     return findPop3Request(element, context).flatMap(RbelPop3ResponseConverter::getPop3Command);
   }

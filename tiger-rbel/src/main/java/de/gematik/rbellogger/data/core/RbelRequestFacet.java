@@ -28,7 +28,7 @@ import lombok.*;
 public class RbelRequestFacet extends RbelMessageInfoFacet {
 
   /** Mark this element for the message validation as requiring a matching response */
-  private boolean responseRequired;
+  private final boolean responseRequired;
 
   public RbelRequestFacet(String menuInfoString, Boolean responseRequired) {
     super("fa-share", "has-text-link", menuInfoString, "REQ", "Request");
