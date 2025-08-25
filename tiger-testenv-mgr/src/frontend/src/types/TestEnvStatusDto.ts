@@ -36,6 +36,7 @@ export default class TestEnvStatusDto {
   bannerType: BannerType = BannerType.MESSAGE;
   bannerIsHtml: boolean = false;
   bannerDetails: BannerDetails | null = null;
+  removedMessageUuids: string[] | null = null;
 
   public static sortArray(array: Array<TestEnvStatusDto>) {
     // sort prefetched Messages based on index;

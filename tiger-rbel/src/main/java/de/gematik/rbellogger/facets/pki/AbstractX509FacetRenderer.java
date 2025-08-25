@@ -25,12 +25,14 @@ import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.vertParent
 import static j2html.TagCreator.*;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMultiMap;
+import de.gematik.rbellogger.data.core.RbelValueFacet;
 import de.gematik.rbellogger.facets.asn1.RbelAsn1ExtensionFacet;
 import de.gematik.rbellogger.facets.asn1.RbelAsn1OidFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
-import j2html.tags.ContainerTag;
 import j2html.tags.DomContent;
+import java.util.List;
 import lombok.Data;
 import lombok.val;
 
@@ -47,7 +49,7 @@ public abstract class AbstractX509FacetRenderer implements RbelHtmlFacetRenderer
     }
   }
 
-  public ContainerTag renderX509Extension(
+  public DomContent renderX509Extension(
       RbelElement element, RbelHtmlRenderingToolkit renderingToolkit) {
     val extensionFacet = element.getFacetOrFail(RbelAsn1ExtensionFacet.class);
     val id = extensionFacet.getOid().printValue().orElse("<Unknown OID>");
@@ -66,5 +68,19 @@ public abstract class AbstractX509FacetRenderer implements RbelHtmlFacetRenderer
             retrieveAndPrintValueNullSafe("Critical: ", extensionFacet.getCritical()),
             br(),
             ancestorTitle().with(vertParentTitle().with(renderingToolkit.convertNested(element)))));
+  }
+
+  protected List<DomContent> renderValueChildren(RbelMultiMap<RbelElement> infoMap) {
+    return infoMap.stream()
+        .filter(pair -> pair.getValue().hasFacet(RbelValueFacet.class))
+        .map(
+            pair ->
+                retrieveAndPrintValueNullSafe(
+                    pair.getKey() + ": ",
+                    pair.getValue()
+                        .getFacet(RbelAsn1OidFacet.class)
+                        .map(RbelAsn1OidFacet::getName)
+                        .orElseGet(pair::getValue)))
+        .toList();
   }
 }

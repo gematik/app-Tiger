@@ -131,7 +131,23 @@ public class RbelMessageMetadata implements RbelFacet {
         try {
           return Optional.ofNullable(MAPPER.convertValue(result, type));
         } catch (Exception e) {
-          log.info("Failed to convert metadata value for key {} with content {}", key, result);
+          log.error(
+              "Failed to convert metadata value for key {} with content {} for type {}. Trying to"
+                  + " convert it via readValue.",
+              key,
+              result,
+              type.getName(),
+              e);
+          try {
+            return Optional.ofNullable(MAPPER.readValue(result.toString(), type));
+          } catch (Exception e1) {
+            log.error(
+                "Failed to read metadata value for key {} with content {} for type {}",
+                key,
+                result,
+                type.getName(),
+                e1);
+          }
           throw new RuntimeException(
               "Metadata Value for key "
                   + key

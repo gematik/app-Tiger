@@ -38,7 +38,6 @@ const rawContentModal = inject(rawContentModalSymbol)!;
 
 const messageElement: Ref<HTMLElement | null> = ref(null);
 
-const rawContent = ref("");
 const toggleMessageDetails = ref<((isHidden: boolean) => void) | null>(null);
 const toggleMessageHeaders = ref<((isHidden: boolean) => void) | null>(null);
 const toggleMessageBody = ref<((isHidden: boolean) => void) | null>(null);
@@ -122,13 +121,13 @@ watch(messageElement, async () => {
       for (let i = 0; i < rawContentModalButtons.length; i++) {
         const rawContentModalButton = rawContentModalButtons[i];
         const rawContentModalContent = rawContentModalContents[i];
+        const rawContentText = rawContentModalContent.querySelector("pre")?.innerHTML ?? "";
 
         rawContentModalButton.setAttribute("data-bs-target", "#rawContentModal");
         rawContentModalButton.addEventListener("click", () => {
-          rawContentModal.show(props.message, rawContent.value);
+          rawContentModal.show(props.message, rawContentText);
         });
 
-        rawContent.value += rawContentModalContent.querySelector("pre")?.innerHTML ?? "";
         rawContentModalContent.remove();
       }
     }
@@ -173,6 +172,19 @@ watch(messageElement, async () => {
         const toggledOn = elementHasToggledOnIcon(messageRequestBodyToggle);
         toggleMessageBody.value?.(toggledOn);
       });
+    }
+
+    const messageSections = messageElement.value.querySelectorAll(".msg-section");
+    for (const messageSection of messageSections) {
+      const sectionToggle = messageSection.querySelector(".msg-section-toggle");
+      const sectionContent = messageSection.querySelector(".msg-section-content");
+      if (sectionToggle && sectionContent) {
+        sectionToggle.addEventListener("click", () => {
+          const isHidden = sectionContent.classList.toggle("d-none");
+          elementToggleIcon(sectionToggle, !isHidden);
+          props.onToggleDetailsOrHeader();
+        });
+      }
     }
 
     // Code highlighting

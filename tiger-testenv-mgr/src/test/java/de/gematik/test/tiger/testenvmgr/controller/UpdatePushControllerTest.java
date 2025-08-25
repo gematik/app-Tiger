@@ -20,6 +20,7 @@
  */
 package de.gematik.test.tiger.testenvmgr.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -46,7 +47,6 @@ import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
@@ -63,7 +63,7 @@ class UpdatePushControllerTest {
 
   @Test
   void displayMessage_shouldPushToClient() throws ExecutionException, InterruptedException {
-    AtomicReference<String> receivedMessage = new AtomicReference<>("");
+    AtomicReference<TestEnvStatusDto> receivedStatus = new AtomicReference<>();
 
     tigerTestEnvMgr.setWorkflowUiSentFetch(true);
 
@@ -82,8 +82,7 @@ class UpdatePushControllerTest {
                   @Override
                   public void handleFrame(StompHeaders headers, Object payload) {
                     log.info("Received Frame {}", payload);
-                    var received = ((TestEnvStatusDto) payload).getFeatureMap();
-                    receivedMessage.set(received.toString());
+                    receivedStatus.set((TestEnvStatusDto) payload);
                   }
                 };
             session.subscribe("/topic/envStatus", handler);
@@ -92,6 +91,7 @@ class UpdatePushControllerTest {
 
     TigerStatusUpdate update =
         TigerStatusUpdate.builder()
+            .removedMessageUuids(List.of("foobar"))
             .featureMap(
                 new LinkedHashMap<>(
                     Map.of(
@@ -121,7 +121,11 @@ class UpdatePushControllerTest {
     await()
         .atMost(2, TimeUnit.SECONDS)
         .pollInterval(100, TimeUnit.MILLISECONDS)
-        .until(() -> receivedMessage.get().equals(update.getFeatureMap().toString()));
+        .until(
+            () ->
+                receivedStatus.get() != null
+                    && receivedStatus.get().getFeatureMap().equals(update.getFeatureMap()));
+    assertThat(receivedStatus.get().getRemovedMessageUuids()).containsExactly("foobar");
   }
 
   private void connectToSocketUsingHandler(StompSessionHandlerAdapter handler)
@@ -135,7 +139,7 @@ class UpdatePushControllerTest {
     var stompClient = new WebSocketStompClient(webSocketClient);
     stompClient.setMessageConverter(new MappingJackson2MessageConverter());
 
-    final ListenableFuture<StompSession> connectFuture = stompClient.connect(webSocketUrl, handler);
+    final var connectFuture = stompClient.connectAsync(webSocketUrl, handler);
 
     connectFuture.get();
   }

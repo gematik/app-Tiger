@@ -20,6 +20,7 @@
  */
 package de.gematik.rbellogger.renderer;
 
+import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.collapsibleCard;
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderer.showContentButtonAndDialog;
 import static de.gematik.rbellogger.util.EmailConversionUtils.CRLF;
 import static j2html.TagCreator.*;
@@ -42,12 +43,12 @@ import j2html.tags.DomContent;
 import j2html.tags.EmptyTag;
 import j2html.tags.Tag;
 import j2html.tags.UnescapedText;
-import j2html.tags.specialized.ArticleTag;
 import j2html.tags.specialized.DivTag;
 import j2html.tags.specialized.PTag;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -58,7 +59,6 @@ import java.util.stream.IntStream;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -73,7 +73,8 @@ import org.dom4j.io.XMLWriter;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
 
-@RequiredArgsConstructor
+@Builder(access = lombok.AccessLevel.PRIVATE, toBuilder = true)
+@AllArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 @Slf4j
 public class RbelHtmlRenderingToolkit {
 
@@ -89,37 +90,55 @@ public class RbelHtmlRenderingToolkit {
     return "is-size-" + n;
   }
 
-  @Getter
-  private final ObjectMapper objectMapper =
-      new ObjectMapper()
-          .enable(SerializationFeature.INDENT_OUTPUT)
-          .configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
-
-  @Getter private final Map<UUID, JsonNoteEntry> noteTags = new HashMap<>();
+  @Getter private final ObjectMapper objectMapper;
+  @Getter private final Map<UUID, JsonNoteEntry> noteTags;
   private final RbelHtmlRenderer rbelHtmlRenderer;
+
+  /** We are rendering a large element that should not be rendered fully. */
+  @Getter private final boolean inShortenedRenderingMode;
+
   private static final TigerTypedConfigurationKey<String> logoFilePath =
       new TigerTypedConfigurationKey<>(
           new TigerConfigurationKey("tiger", "lib", "rbelLogoFilePath"), String.class);
+
+  public RbelHtmlRenderingToolkit(RbelHtmlRenderer rbelHtmlRenderer) {
+    this(
+        new ObjectMapper()
+            .enable(SerializationFeature.INDENT_OUTPUT)
+            .configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true),
+        new HashMap<>(),
+        rbelHtmlRenderer,
+        false);
+  }
+
+  public RbelHtmlRenderingToolkit withInShortenedRenderingMode(boolean inShortenedRenderingMode) {
+    if (this.inShortenedRenderingMode == inShortenedRenderingMode) {
+      return this;
+    }
+    return this.toBuilder().inShortenedRenderingMode(inShortenedRenderingMode).build();
+  }
 
   @SuppressWarnings({"rawtypes", "java:S3740"})
   public static ContainerTag icon(final String iconName) {
     return span().withClass("icon").with(i().withClass("fas " + iconName));
   }
 
-  public static String prettyPrintXml(final String content) {
+  public static String prettyPrintXml(final RbelElement element) {
     try {
       final OutputFormat format = OutputFormat.createPrettyPrint();
-      final org.dom4j.Document document = DocumentHelper.parseText(content);
+      element.getCharset().map(Charset::name).ifPresent(format::setEncoding);
+      final org.dom4j.Document document = DocumentHelper.parseText(element.getRawStringContent());
       final StringWriter sw = new StringWriter();
       final XMLWriter writer = new XMLWriter(sw, format);
       writer.write(document);
-      return sw.getBuffer().toString();
+      return new String(
+          sw.getBuffer().toString().getBytes(element.getElementCharset()), StandardCharsets.UTF_8);
     } catch (final Exception e) {
       try {
-        return Jsoup.parse(content).html();
+        return Jsoup.parse(element.getRawStringContent()).html();
       } catch (Exception e2) {
-        log.debug("Exception while pretty-printing {}", content);
-        return content;
+        log.debug("Exception while pretty-printing {}", element.getRawStringContent(), e2);
+        return element.getRawStringContent();
       }
     }
   }
@@ -169,8 +188,9 @@ public class RbelHtmlRenderingToolkit {
     return h2(text).withClass("title");
   }
 
-  public DomContent renderMimeBodyContent(RbelElement body) {
+  public DomContent renderValueAsTextArea(RbelElement body) {
     return Optional.ofNullable(body)
+        .filter(b -> !isInShortenedRenderingMode())
         .flatMap(b -> b.seekValue(String.class))
         .filter(s -> shouldRenderEntitiesWithSize(s.length()))
         .map(s -> s.split(CRLF))
@@ -224,11 +244,15 @@ public class RbelHtmlRenderingToolkit {
 
   @SuppressWarnings({"rawtypes", "java:S3740"})
   public ContainerTag convert(final RbelElement element, final Optional<String> key) {
-    if (element.getRawContent() != null
-        && !shouldRenderEntitiesWithSize(element.getRawContent().length)) {
-      return addNotes(
-          element,
-          span(RbelHtmlRenderer.buildOversizeReplacementString(element)).withClass(isSize(7)));
+    if (!shouldRenderEntitiesWithSize(element.getSize())) {
+      return rbelHtmlRenderer
+          .convert(element, key, this.withInShortenedRenderingMode(true))
+          .orElseGet(
+              () ->
+                  addNotes(
+                      element,
+                      span(RbelHtmlRenderer.buildOversizeReplacementString(element))
+                          .withClass(isSize(7))));
     }
 
     return convertUnforced(element, key)
@@ -258,7 +282,7 @@ public class RbelHtmlRenderingToolkit {
   @SuppressWarnings({"rawtypes", "java:S3740"})
   public Optional<ContainerTag> convertUnforced(
       final RbelElement element, final Optional<String> key) {
-    return rbelHtmlRenderer.convert(element, key, this);
+    return rbelHtmlRenderer.convert(element, key, this.withInShortenedRenderingMode(false));
   }
 
   @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -621,7 +645,7 @@ public class RbelHtmlRenderingToolkit {
     }
   }
 
-  public List<? extends ContainerTag> convertNested(final RbelElement el) {
+  public List<DomContent> convertNested(final RbelElement el) {
     return el.traverseAndReturnNestedMembers().stream()
         .filter(entry -> !entry.getFacets().isEmpty())
         .map(
@@ -629,6 +653,7 @@ public class RbelHtmlRenderingToolkit {
                 Pair.of(
                     child,
                     rbelHtmlRenderer.isRenderNestedObjectsWithoutFacetRenderer()
+                            || isInShortenedRenderingMode()
                         ? Optional.of(convert(child, Optional.empty()))
                         : convertUnforced(child, Optional.empty())))
         .filter(pair -> pair.getValue().isPresent())
@@ -639,17 +664,26 @@ public class RbelHtmlRenderingToolkit {
         .toList();
   }
 
-  public ArticleTag generateSubsection(String title, RbelElement element, ContainerTag content) {
-    return article()
-        .withClass("message is-ancestor notification is-warning my-6 py-3 px-3")
-        .with(
-            div(h2(title).withClass("title").withStyle("word-break: break-word;"))
-                .withClass("message-header")
-                .with(addNotes(element))
-                .with(showContentButtonAndDialog(element, this)),
-            div(div(content.withClass("notification tile is-child box pe-2"))
-                    .withClass("notification tile is-parent pe-2"))
-                .withClass("message-body px-0"));
+  public DomContent generateSubsection(String title, RbelElement element, ContainerTag<?> content) {
+    boolean showExpanded = showElementExpanded(element);
+    DivTag titleDiv =
+        div(h2(title).withClass("title").withStyle("word-break: break-word;"))
+            .withClass("message-header msg-section-header full-width")
+            .with(
+                RbelMessageRenderer.showBodyToggleButton(
+                    showExpanded, "msg-section-toggle", Optional.empty()))
+            .with(showContentButtonAndDialog(element, this))
+            .with(addNotes(element));
+    DivTag bodyDiv =
+        div(div(content.withClass("notification tile is-child box pe-2"))
+                .withClass("notification tile is-parent pe-2"))
+            .withClass("message-body msg-section-body px-0");
+    return collapsibleCard(
+        titleDiv,
+        bodyDiv,
+        "msg-card message msg-section is-ancestor notification is-warning my-6 py-3 px-3",
+        "mx-3 mt-3",
+        "msg-section-content " + (showExpanded ? "" : "d-none"));
   }
 
   public List<DomContent> packAsInfoLine(String parameterName, DomContent... contentObject) {
@@ -671,8 +705,8 @@ public class RbelHtmlRenderingToolkit {
     return span().withText(value).withStyle("font-family: monospace; padding-right: 0.3rem;");
   }
 
-  public boolean shouldRenderEntitiesWithSize(int length) {
-    return rbelHtmlRenderer.getMaximumEntitySizeInBytes() > length;
+  public boolean shouldRenderEntitiesWithSize(long length) {
+    return rbelHtmlRenderer.getMaximumEntitySizeInBytes() >= length;
   }
 
   public static PTag buildScrollableTextbox(String text) {
@@ -693,6 +727,10 @@ public class RbelHtmlRenderingToolkit {
                 .attr("aria-expanded", "false")
                 .attr("aria-controls", id)),
         div(div(content).withClass("card card-body")).withClass("collapse").withId(id));
+  }
+
+  public boolean showElementExpanded(RbelElement element) {
+    return element.getDepth() <= rbelHtmlRenderer.getMaximumDefaultExpandedMessageDepth();
   }
 
   @Builder

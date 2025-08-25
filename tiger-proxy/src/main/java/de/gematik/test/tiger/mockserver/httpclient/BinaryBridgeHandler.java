@@ -23,6 +23,7 @@ package de.gematik.test.tiger.mockserver.httpclient;
 import static de.gematik.test.tiger.mockserver.exception.ExceptionHandling.closeOnFlush;
 
 import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.logging.ChannelContextLogger;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
@@ -58,14 +59,16 @@ public class BinaryBridgeHandler extends SimpleChannelInboundHandler<BinaryMessa
 
   @Override
   protected void channelRead0(ChannelHandlerContext ctx, BinaryMessage msg) {
-    for (val msgToSend : binaryModifierApplier.applyModifierPlugins(msg, ctx)) {
+    for (val msgToSend :
+        binaryModifierApplier.applyModifierPlugins(msg, ctx, RbelMessageKind.RESPONSE)) {
       Optional.ofNullable(ctx.channel().attr(INCOMING_CHANNEL).get())
           .orElseThrow(() -> new IllegalStateException("Incoming channel is not set."))
           .writeAndFlush(Unpooled.copiedBuffer(msgToSend.getBytes()));
       binaryProxyListener.onProxy(
           msgToSend,
           ctx.channel().attr(INCOMING_CHANNEL).get().remoteAddress(),
-          ctx.channel().remoteAddress());
+          ctx.channel().remoteAddress(),
+          RbelMessageKind.RESPONSE);
     }
   }
 

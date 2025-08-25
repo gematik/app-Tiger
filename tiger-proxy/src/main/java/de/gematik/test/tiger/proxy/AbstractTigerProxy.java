@@ -47,11 +47,13 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import kong.unirest.core.Unirest;
 import lombok.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @EqualsAndHashCode
@@ -70,7 +72,7 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
   @Getter private RbelLogger rbelLogger;
   @Getter private RbelFileWriter rbelFileWriter;
   @Getter private Optional<String> name;
-  @Getter protected final org.slf4j.Logger log;
+  @Getter protected final Logger log;
   @Getter private boolean isShuttingDown = false;
 
   @Getter
@@ -359,5 +361,12 @@ public abstract class AbstractTigerProxy implements ITigerProxy, AutoCloseable {
       Thread.currentThread().interrupt();
       throw new TigerProxyStartupException("Error while parsing tgr file", e);
     }
+  }
+
+  public void setRemovedMessageUuidsHandler(Consumer<List<String>> handleRemovedMessageUuids) {
+    rbelLogger
+        .getRbelConverter()
+        .getKnownMessageUuids()
+        .setRemovedMessageUuidsHandler(handleRemovedMessageUuids);
   }
 }

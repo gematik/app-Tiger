@@ -24,7 +24,8 @@ import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -32,10 +33,14 @@ import de.gematik.test.tiger.common.TokenSubstituteHelper;
 import de.gematik.test.tiger.common.data.config.ConfigurationFileType;
 import java.util.*;
 import java.util.Map.Entry;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
-import lombok.*;
+import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -134,10 +139,11 @@ public class TigerConfigurationLoader {
     TreeNode targetTree = convertToTreeUnresolved();
     final TigerConfigurationKey configurationKey = new TigerConfigurationKey(baseKeys);
     for (TigerConfigurationKeyString key : configurationKey) {
-      if (targetTree.get(key.getValue()) == null) {
+      var value = findByKey(targetTree, key);
+      if (value.isEmpty()) {
         return Optional.empty();
       }
-      targetTree = targetTree.get(key.getValue());
+      targetTree = value.get();
     }
     try {
       return Optional.of(objectMapper.treeToValue(targetTree, configurationBeanClass));
@@ -159,6 +165,15 @@ public class TigerConfigurationLoader {
               + "'",
           e);
     }
+  }
+
+  private Optional<TreeNode> findByKey(TreeNode node, TigerConfigurationKeyString key) {
+    var fields = node.fieldNames();
+    return Stream.iterate(fields, Iterator::hasNext, UnaryOperator.identity())
+        .map(Iterator::next)
+        .filter(field -> TigerConfigurationKeyString.wrapAsKey(field).equals(key))
+        .findAny()
+        .map(node::get);
   }
 
   @SneakyThrows

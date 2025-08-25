@@ -22,6 +22,7 @@ package de.gematik.test.tiger.testenvmgr.env;
 
 import de.gematik.test.tiger.testenvmgr.data.BannerType;
 import java.util.LinkedHashMap;
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,8 @@ public class TestEnvStatusDto {
   private BannerType bannerType;
   private boolean bannerIsHtml;
 
+  private List<String> removedMessageUuids;
+
   public TestEnvStatusDto(
       long index,
       LinkedHashMap<String, FeatureUpdate> featureMap,
@@ -51,7 +54,8 @@ public class TestEnvStatusDto {
       String bannerColor,
       TigerStatusUpdate.BannerDetails bannerDetails,
       BannerType bannerType,
-      boolean isHtml) {
+      boolean isHtml,
+      List<String> removedMessageUuids) {
     this.index = index;
     this.featureMap = featureMap;
     this.servers = servers;
@@ -60,6 +64,7 @@ public class TestEnvStatusDto {
     this.bannerDetails = bannerDetails;
     this.bannerType = bannerType;
     this.bannerIsHtml = isHtml;
+    this.removedMessageUuids = removedMessageUuids;
   }
 
   public static TestEnvStatusDto createFrom(final TigerStatusUpdate update) {
@@ -72,6 +77,7 @@ public class TestEnvStatusDto {
         .bannerDetails(update.getBannerDetails())
         .bannerIsHtml(update.isBannerIsHtml())
         .index(update.getIndex())
+        .removedMessageUuids(update.getRemovedMessageUuids())
         .build();
   }
 

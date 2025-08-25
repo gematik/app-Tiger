@@ -20,13 +20,13 @@
  */
 package de.gematik.rbellogger.facets.pki;
 
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.ancestorTitle;
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.vertParentTitle;
 import static j2html.TagCreator.*;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelFacet;
+import de.gematik.rbellogger.data.core.RbelListFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
@@ -48,22 +48,34 @@ public class RbelPkcs7Facet implements RbelFacet {
           }
 
           @Override
+          public boolean shouldRenderLargeElements() {
+            return true;
+          }
+
+          @Override
           public ContainerTag performRendering(
               RbelElement element,
               Optional<String> key,
               RbelHtmlRenderingToolkit renderingToolkit) {
+            RbelPkcs7Facet pkcs7Facet = element.getFacetOrFail(RbelPkcs7Facet.class);
+            var signerInfos = pkcs7Facet.getSignerInfos();
+            var renderedSignerInfos =
+                signerInfos.getFacetOrFail(RbelListFacet.class).getChildElements().stream()
+                    .map(signerInfo -> renderingToolkit.convert(signerInfo.getValue()))
+                    .toList();
             return div(
                 h2().withClass("title").withText("PKCS#7 Signed Message: "),
-                ancestorTitle()
-                    .with(vertParentTitle().with(renderingToolkit.convertNested(element))));
+                vertParentTitle().with(renderedSignerInfos),
+                renderingToolkit.convert(pkcs7Facet.getSigned()));
           }
         });
   }
 
   private final RbelElement signed;
+  private final RbelElement signerInfos;
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>().with("signed", signed);
+    return new RbelMultiMap<RbelElement>().with("signed", signed).with("signerInfos", signerInfos);
   }
 }

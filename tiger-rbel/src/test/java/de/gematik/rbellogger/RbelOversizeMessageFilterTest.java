@@ -21,6 +21,7 @@
 package de.gematik.rbellogger;
 
 import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
+import static de.gematik.rbellogger.util.MemoryConstants.MB;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.data.RbelElement;
@@ -61,6 +62,6 @@ class RbelOversizeMessageFilterTest {
 
     FileUtils.writeStringToFile(new File("target/large.html"), html, StandardCharsets.UTF_8);
 
-    assertThat(html).hasSizeLessThan(1024 * 1024);
+    assertThat(html).hasSizeLessThan(MB);
   }
 }

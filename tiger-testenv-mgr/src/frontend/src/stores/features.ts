@@ -67,10 +67,29 @@ export const useFeaturesStore = defineStore("features", () => {
     });
   }
 
+  function updateRemovedMessageUuids(update: string[]) {
+    featureUpdateMap.value.forEach((featureUpdate: FeatureUpdate) => {
+      featureUpdate.scenarios.forEach((scenario) => {
+        scenario.steps.forEach((step) => {
+          step.rbelMetaData.forEach((metaData) => {
+            if (update.includes(metaData.uuid)) {
+              debug(
+                "Marking message with uuid " + metaData.uuid + " as removed",
+              );
+              metaData.removed = true;
+            }
+          });
+        });
+      });
+    });
+    debug("Marked messages with uuids as removed:" + update);
+  }
+
   return {
     featureUpdateMap,
     replaceFeatureMap,
     mergeFeatureMap,
     updateFeatureMap,
+    updateRemovedMessageUuids,
   };
 });

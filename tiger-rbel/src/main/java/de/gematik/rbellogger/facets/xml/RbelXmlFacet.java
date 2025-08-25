@@ -63,8 +63,7 @@ public class RbelXmlFacet implements RbelFacet {
               RbelElement element,
               Optional<String> key,
               RbelHtmlRenderingToolkit renderingToolkit) {
-            String formattedXml =
-                RbelHtmlRenderingToolkit.prettyPrintXml(element.getRawStringContent());
+            String formattedXml = RbelHtmlRenderingToolkit.prettyPrintXml(element);
             for (final Entry<UUID, JsonNoteEntry> entry :
                 renderingToolkit.getNoteTags().entrySet()) {
               if (formattedXml.contains(entry.getValue().getStringToMatch() + ",")) {

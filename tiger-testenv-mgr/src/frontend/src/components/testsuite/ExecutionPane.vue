@@ -163,12 +163,20 @@
                       >
                         <div v-if="rbelmsg.menuInfoString" class="rbelmessage">
                           <a
+                            v-if="!rbelmsg.removed"
                             href="#"
                             class="badge rbelDetailsBadge test-rbel-link"
                             @click="ui.showRbelLogDetails(rbelmsg.uuid, $event)"
                           >
                             {{ rbelmsg.sequenceNumber + 1 }}
                           </a>
+                          <i
+                            v-else
+                            class="badge rbelDetailsBadge-transparent"
+                            title="Message removed from RBEL log"
+                          >
+                            {{ rbelmsg.sequenceNumber + 1 }}
+                          </i>
                           <span
                             ><i
                               v-if="rbelmsg.symbol"
@@ -327,6 +335,19 @@ h4.scenariotitle {
   color: #0a8694;
   text-decoration: none;
   cursor: pointer;
+}
+
+.rbelDetailsBadge-transparent {
+  font-size: 100%;
+  margin-right: 0.5rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+  padding: 0.5em 1rem;
+  border: 1px solid lightgray;
+  background-color: transparent;
+  color: #0a8694;
+  text-decoration: none;
+  cursor: default;
 }
 
 .blue {

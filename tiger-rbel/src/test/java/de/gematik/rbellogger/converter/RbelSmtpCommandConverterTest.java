@@ -57,8 +57,11 @@ class RbelSmtpCommandConverterTest {
           RbelLogger.build(
                   new RbelConfiguration()
                       .activateConversionFor("smtp")
+                      .activateConversionFor("pop3")
                       .activateConversionFor("mime"))
               .getRbelConverter();
+    } else {
+      converter.clearAllMessages();
     }
   }
 
@@ -163,6 +166,7 @@ class RbelSmtpCommandConverterTest {
     String body = "dGVzdAB0ZXN0ADEyMzQ=\r\ndGVzdAB0ZXN0ADEyMzQ=";
     String input = command + " " + arguments + "\r\n" + body + "\r\n";
 
+    convertToRbelElement("EHLO x.y\r\n");
     RbelElement element = convertToRbelElement(input);
     RbelElementAssertion.assertThat(element)
         .extractChildWithPath("$.smtpCommand")
@@ -190,6 +194,52 @@ class RbelSmtpCommandConverterTest {
         .hasStringContentEqualTo(arguments)
         .andTheInitialElement()
         .doesNotHaveChildWithPath("$.smtpBody");
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "AUTH PLAIN dGVzdAB0ZXN0ADEyMzQ=",
+        "HELO x.yz",
+        "EHLO x.yz",
+        "QUIT",
+        "RSET",
+        "NOOP"
+      })
+  void shouldRejectPop3CommandAfterSmtpCommand(String commandAsString) {
+    convertToRbelElement("CAPA\r\n");
+    String input = commandAsString + "\r\n";
+    RbelElement element = convertToRbelElement(input);
+
+    assertThatIfSmtpCommandIsParsedItIsStartingCommand(element);
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "AUTH PLAIN dGVzdAB0ZXN0ADEyMzQ=",
+        "HELO x.yz",
+        "EHLO x.yz",
+        "QUIT",
+        "RSET",
+        "NOOP"
+      })
+  void shouldRejectPop3CommandAfterSmtpResponse(String commandAsString) {
+    convertToRbelElement("CAPA\r\n");
+    String input = commandAsString + "\r\n";
+    RbelElement element = convertToRbelElement(input);
+
+    assertThatIfSmtpCommandIsParsedItIsStartingCommand(element);
+  }
+
+  private static void assertThatIfSmtpCommandIsParsedItIsStartingCommand(RbelElement element) {
+    element
+        .findElement("$.smtpCommand")
+        .flatMap(RbelElement::seekValue)
+        .map(RbelSmtpCommand.class::cast)
+        .ifPresent(
+            command ->
+                assertThat(List.of(RbelSmtpCommand.EHLO, RbelSmtpCommand.HELO)).contains(command));
   }
 
   @ParameterizedTest

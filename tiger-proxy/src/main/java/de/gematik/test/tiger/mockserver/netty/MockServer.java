@@ -20,6 +20,7 @@
  */
 package de.gematik.test.tiger.mockserver.netty;
 
+import static de.gematik.rbellogger.util.MemoryConstants.KB;
 import static de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration.configuration;
 import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandler.REMOTE_SOCKET;
 import static java.util.Collections.singletonList;
@@ -108,7 +109,7 @@ public class MockServer extends LifeCycle {
     serverServerBootstrap =
         new ServerBootstrap()
             .group(bossGroup, workerGroup)
-            .option(ChannelOption.SO_BACKLOG, 1024)
+            .option(ChannelOption.SO_BACKLOG, 1 * KB)
             .channel(NioServerSocketChannel.class)
             .handler(new LoggingHandler(LogLevel.DEBUG))
             .childOption(ChannelOption.AUTO_READ, true)

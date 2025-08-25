@@ -20,10 +20,13 @@
  */
 package de.gematik.test.tiger.proxy.tracing;
 
+import static de.gematik.rbellogger.util.MemoryConstants.MB;
+
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ContextStoppedEvent;
@@ -34,12 +37,14 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
 import org.springframework.web.socket.server.standard.TomcatRequestUpgradeStrategy;
 import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 
 @Configuration
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor
+@Slf4j
 public class TracingEndpointConfiguration
     implements WebSocketMessageBrokerConfigurer, ApplicationListener<ContextStoppedEvent> {
 
@@ -110,5 +115,14 @@ public class TracingEndpointConfiguration
   public void onApplicationEvent(ContextStoppedEvent event) {
     taskExecutors.forEach(ThreadPoolTaskExecutor::shutdown);
     schedulers.forEach(ThreadPoolTaskScheduler::shutdown);
+  }
+
+  @Override
+  public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
+    log.info(
+        "Configuring WebSocket transport with buffer size limit: {} MB",
+        tigerProxyConfiguration.getStompClientBufferSizeInMb());
+    registration.setSendBufferSizeLimit(
+        tigerProxyConfiguration.getStompClientBufferSizeInMb() * MB);
   }
 }

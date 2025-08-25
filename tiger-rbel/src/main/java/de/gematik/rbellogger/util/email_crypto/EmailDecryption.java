@@ -86,18 +86,13 @@ public class EmailDecryption {
     CMSEnvelopedData cmsEnvelopedData = new CMSEnvelopedData(message);
     Collection<RecipientInformation> recipients =
         cmsEnvelopedData.getRecipientInfos().getRecipients();
-    for (RecipientInformation recipient : recipients) {
-      if (recipient.getRID() instanceof KeyTransRecipientId id) {
-        var privateKey = findMatchingKey(keyManager, id);
-        if (privateKey.isPresent()) {
-          return Optional.of(
-              recipient.getContent(
-                  new JceKeyTransEnvelopedRecipient(privateKey.get())
-                      .setProvider(BouncyCastleProvider.PROVIDER_NAME)));
-        }
-      }
-    }
-    return Optional.empty();
+    return decryptIfKeyForRecipientFound(
+        recipients,
+        keyManager,
+        (recipient, privateKey) ->
+            recipient.getContent(
+                new JceKeyTransEnvelopedRecipient(privateKey)
+                    .setProvider(BouncyCastleProvider.PROVIDER_NAME)));
   }
 
   private static Optional<PrivateKey> findMatchingKey(
@@ -117,20 +112,36 @@ public class EmailDecryption {
     return false;
   }
 
-  private static Optional<byte[]> decryptOidAes256Gcm(
-      CMSAuthEnvelopedData oAuthEnv, AlgorithmIdentifier algorithm, RbelKeyManager keyManager) {
-    var recipients = oAuthEnv.getRecipientInfos().getRecipients();
+  private interface DecryptFunction {
+    byte[] decrypt(RecipientInformation recipient, PrivateKey privateKey) throws CMSException;
+  }
+
+  private static Optional<byte[]> decryptIfKeyForRecipientFound(
+      Collection<RecipientInformation> recipients,
+      RbelKeyManager keyManager,
+      DecryptFunction decryptFunction)
+      throws CMSException {
     for (RecipientInformation recipient : recipients) {
       if (recipient.getRID() instanceof KeyTransRecipientId id) {
         var privateKey = findMatchingKey(keyManager, id);
         if (privateKey.isPresent()) {
-          return Optional.of(
-              decryptOidAes256Gcm(
-                  oAuthEnv, (KeyTransRecipientInformation) recipient, algorithm, privateKey.get()));
+          return Optional.of(decryptFunction.decrypt(recipient, privateKey.get()));
         }
       }
     }
     return Optional.empty();
+  }
+
+  private static Optional<byte[]> decryptOidAes256Gcm(
+      CMSAuthEnvelopedData oAuthEnv, AlgorithmIdentifier algorithm, RbelKeyManager keyManager)
+      throws CMSException {
+    var recipients = oAuthEnv.getRecipientInfos().getRecipients();
+    return decryptIfKeyForRecipientFound(
+        recipients,
+        keyManager,
+        (recipient, privateKey) ->
+            decryptOidAes256Gcm(
+                oAuthEnv, (KeyTransRecipientInformation) recipient, algorithm, privateKey));
   }
 
   private static byte[] decryptOidAes256Gcm(

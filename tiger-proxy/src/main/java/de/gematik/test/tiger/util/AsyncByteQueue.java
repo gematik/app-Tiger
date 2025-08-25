@@ -21,13 +21,13 @@
 package de.gematik.test.tiger.util;
 
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.rbellogger.util.RbelContent;
 import de.gematik.test.tiger.proxy.data.TcpConnectionEntry;
 import de.gematik.test.tiger.proxy.data.TcpIpConnectionIdentifier;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +40,7 @@ public class AsyncByteQueue {
     final RbelContent data;
     final boolean isPrimaryDirection;
     final Map<String, Object> additionalData;
+    final RbelMessageKind messageKind;
     volatile int readPos = 0; // Tracks the consumed position
     Node previous, next;
     Consumer<RbelElement> preProcessingMessageManipulator;
@@ -49,6 +50,7 @@ public class AsyncByteQueue {
       this.data = value.getData();
       this.isPrimaryDirection = value.getConnectionIdentifier().isSameDirectionAs(primaryDirection);
       this.additionalData = value.getAdditionalData();
+      this.messageKind = value.getMessageKind();
       preProcessingMessageManipulator = value.getMessagePreProcessor();
     }
 
@@ -79,17 +81,16 @@ public class AsyncByteQueue {
   }
 
   public synchronized TcpConnectionEntry peek() {
-    if (head.get() == null) {
+    var headNode = head.get();
+    if (headNode == null) {
       return TcpConnectionEntry.empty();
     }
     var data = new LinkedList<RbelContent>();
-    Node current = head.get();
-    boolean initialDirection = current.isPrimaryDirection;
-    var uuid = current.uuid;
-    val initialReadPos = current.readPos;
+    boolean initialDirection = headNode.isPrimaryDirection;
+    val initialReadPos = headNode.readPos;
     val sourceUuids = new ArrayList<String>();
 
-    do {
+    for (var current = headNode; current != null; current = current.next) {
       if (current.isPrimaryDirection == initialDirection) {
         int availableBytes = current.availableBytes();
         if (availableBytes > 0) {
@@ -103,45 +104,39 @@ public class AsyncByteQueue {
           sourceUuids.add(current.uuid);
         }
       }
-      current = current.next;
-    } while (current != null);
+    }
 
     val direction = initialDirection ? primaryDirection : primaryDirection.reverse();
     return TcpConnectionEntry.builder()
-        .uuid(head.get().uuid)
+        .uuid(headNode.uuid)
         .data(RbelContent.of(data))
         .connectionIdentifier(direction)
-        .messagePreProcessor(head.get().preProcessingMessageManipulator)
-        .previousUuid(Objects.equals(uuid, head.get().uuid) ? null : uuid)
+        .messagePreProcessor(headNode.preProcessingMessageManipulator)
         .positionInBaseNode(initialReadPos)
+        .messageKind(headNode.messageKind)
         .build()
-        .addAdditionalData(head.get().additionalData)
+        .addAdditionalData(headNode.additionalData)
         .addSourceUuids(sourceUuids);
   }
 
   public synchronized void consume(long count) {
-    if (head.get() == null) {
-      return;
-    }
-    boolean direction = head.get().isPrimaryDirection;
-    var position = head.get();
-    String headUuid = head.get().uuid;
-
-    do {
-      if (position.isPrimaryDirection == direction) {
-        int available = position.availableBytes();
+    var headNode = head.get();
+    for (var currentNode = headNode;
+        count > 0 && currentNode != null;
+        currentNode = currentNode.next) {
+      if (currentNode.isPrimaryDirection == headNode.isPrimaryDirection) {
+        int available = currentNode.availableBytes();
         if (count >= available) {
           // Consume entire node
           count -= available;
-          removeNode(position);
+          removeNode(currentNode);
         } else {
           // Partially consume the node
-          position.readPos += (int) count;
+          currentNode.readPos += (int) count;
           count = 0;
         }
       }
-      position = position.next;
-    } while (count > 0 && position != null);
+    }
   }
 
   private synchronized void removeNode(Node node) {
@@ -168,13 +163,11 @@ public class AsyncByteQueue {
 
   public synchronized int availableBytes() {
     int total = 0;
-    Node current = head.get();
 
-    while (current != null) {
-      if (current.isPrimaryDirection == head.get().isPrimaryDirection) {
+    for (Node headNode = head.get(), current = headNode; current != null; current = current.next) {
+      if (current.isPrimaryDirection == headNode.isPrimaryDirection) {
         total += current.availableBytes();
       }
-      current = current.next;
     }
 
     return total;

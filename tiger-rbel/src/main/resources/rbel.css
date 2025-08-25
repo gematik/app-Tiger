@@ -40,6 +40,10 @@ article.message {
     margin: .5rem !important;
 }
 
+.message {
+    margin: .5rem !important;
+}
+
 .notification .tile .message-body {
     padding: .25rem;
 }
@@ -410,6 +414,10 @@ a.mt-3.is-block {
 }
 
 article.message {
+    margin: 0.5rem !important;
+}
+
+.message {
     margin: 0.5rem !important;
 }
 

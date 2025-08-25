@@ -61,7 +61,7 @@ public class RbelHostnameFacet implements RbelFacet {
             .domain(RbelElement.wrap(result, rbelHostname.getHostname()))
             .bundledServerName(
                 Optional.ofNullable(bundledServerName)
-                    .map(bundledName -> RbelElement.wrap(parentNode, bundledName)))
+                    .map(bundledName -> RbelElement.wrap(result, bundledName)))
             .build());
     return result;
   }
@@ -75,13 +75,7 @@ public class RbelHostnameFacet implements RbelFacet {
   }
 
   public String toString() {
-    return bundledServerName
-            .flatMap(el -> el.seekValue(String.class))
-            .or(() -> domain.seekValue(String.class))
-            .orElseThrow(() -> new RbelHostnameStructureException("Could not find domain-name!"))
-        + port.seekValue(Integer.class)
-            .map(bundledServerPort -> ":" + bundledServerPort)
-            .orElse("");
+    return toRbelHostname().toString();
   }
 
   public RbelHostname toRbelHostname() {
@@ -90,7 +84,8 @@ public class RbelHostnameFacet implements RbelFacet {
             bundledServerName
                 .flatMap(el -> el.seekValue(String.class))
                 .or(() -> domain.seekValue(String.class))
-                .orElseThrow())
+                .orElseThrow(
+                    () -> new RbelHostnameStructureException("Could not find domain-name!")))
         .port(port.seekValue(Integer.class).orElse(0))
         .build();
   }

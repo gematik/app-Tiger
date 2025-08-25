@@ -826,6 +826,20 @@ localResources: false
 
 There are some additional configuration-flags in the Tiger Proxy:
 
+==== Displaying Nested Messages
+
+Some messages are deeply nested and thus inconvenient to handle in the UI.
+
+With the property `tigerProxy.maximumDefaultExpandedMessageDepth` you can control how many levels of the message are displayed by default.
+
+Message-parts that are deeper than the given depth are displayed as collapsed, but can be expanded.
+
+[source,yaml]
+----
+tigerProxy:
+    maximumDefaultExpandedMessageDepth: 3 # default is 3, use 0 to display all messages collapsed
+----
+
 ==== Performance
 
 Below some properties along with their respective default values:

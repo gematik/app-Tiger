@@ -26,6 +26,7 @@ import static de.gematik.test.tiger.mockserver.mock.action.http.HttpActionHandle
 
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.core.RbelHostnameFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
@@ -84,16 +85,16 @@ public class BinaryModifierApplier {
    * @return a list of modified binary messages
    */
   public List<BinaryMessage> applyModifierPlugins(
-      BinaryMessage message, ChannelHandlerContext ctx) {
-    return applyModifierPluginsInternal(message, ctx);
+      BinaryMessage message, ChannelHandlerContext ctx, RbelMessageKind messageKind) {
+    return applyModifierPluginsInternal(message, ctx, messageKind);
   }
 
   private List<BinaryMessage> applyModifierPluginsInternal(
-      BinaryMessage message, ChannelHandlerContext ctx) {
+      BinaryMessage message, ChannelHandlerContext ctx, RbelMessageKind messageKind) {
     if (binaryModifierPlugins == null || binaryModifierPlugins.isEmpty()) {
       return List.of(message);
     }
-    return binaryMessageToRbelElement(message, ctx).stream()
+    return binaryMessageToRbelElement(message, ctx, messageKind).stream()
         .map(target -> filterMessageThroughPlugins(message, target))
         .toList();
   }
@@ -126,7 +127,7 @@ public class BinaryModifierApplier {
   }
 
   private List<RbelElement> binaryMessageToRbelElement(
-      BinaryMessage message, ChannelHandlerContext ctx) {
+      BinaryMessage message, ChannelHandlerContext ctx, RbelMessageKind messageKind) {
     try {
       final Optional<SocketAddress> incoming =
           Optional.ofNullable(ctx.channel().attr(INCOMING_CHANNEL).get())
@@ -144,7 +145,8 @@ public class BinaryModifierApplier {
               incoming.orElse(null),
               outgoing.orElse(null),
               message.getBytes(),
-              ZonedDateTime.of(message.getTimestamp(), ZoneId.systemDefault()))
+              ZonedDateTime.of(message.getTimestamp(), ZoneId.systemDefault()),
+              messageKind)
           .get(10, TimeUnit.MINUTES);
     } catch (InterruptedException | TimeoutException e) {
       Thread.currentThread().interrupt();

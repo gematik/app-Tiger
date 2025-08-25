@@ -671,7 +671,10 @@ public class SerenityReporterCallbacks extends AbstractStepListener {
 
     var requestsWaitingForResponses =
         stepMessages.stream()
-            .filter(message -> message.hasFacet(RbelRequestFacet.class))
+            .filter(
+                message ->
+                    message.getFacet(RbelRequestFacet.class).stream()
+                        .anyMatch(RbelRequestFacet::isResponseRequired))
             .filter(
                 message ->
                     message

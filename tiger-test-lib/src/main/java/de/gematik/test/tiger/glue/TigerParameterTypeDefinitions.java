@@ -48,6 +48,9 @@ import org.jetbrains.annotations.NotNull;
  */
 public class TigerParameterTypeDefinitions {
   private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
+
+  private static final String STRING_LITERAL = "\"[^\"]*\"|'[^']*'";
+
   private static RbelLoggerWriter rbelLoggerWriter;
   // THe type names are defined as the names of the methods. It is therefore necessary to manually
   // add to this list any
@@ -71,7 +74,7 @@ public class TigerParameterTypeDefinitions {
    * @param name name of the HTTP request method
    * @return an actual {@link Method}
    */
-  @ParameterType("GET|POST|DELETE|PUT|OPTIONS|\".*\"|'.*'")
+  @ParameterType("GET|POST|DELETE|PUT|OPTIONS|" + STRING_LITERAL)
   public static Method requestType(String name) {
     return Method.valueOf(resolveToString(name));
   }
@@ -80,7 +83,7 @@ public class TigerParameterTypeDefinitions {
    * @param mode type of data format.
    * @return an actual {@link ModeType}
    */
-  @ParameterType("XML|JSON|\".*\"|'.*'")
+  @ParameterType("XML|JSON|" + STRING_LITERAL)
   public static ModeType modeType(String mode) {
     return ModeType.valueOf(resolveToString(mode));
   }
@@ -92,7 +95,7 @@ public class TigerParameterTypeDefinitions {
    * @param string string value of the url
    * @return the resolved string
    */
-  @ParameterType("\".*\"|'.*'")
+  @ParameterType(STRING_LITERAL)
   public static String tigerResolvedString(String string) {
     return resolveToString(string);
   }
@@ -105,7 +108,7 @@ public class TigerParameterTypeDefinitions {
    * @return Enum value
    */
   @SneakyThrows
-  @ParameterType("\".*\"|'.*'")
+  @ParameterType(STRING_LITERAL)
   public static @NotNull URI tigerResolvedUrl(String address) {
     return new URI(resolveToString(address));
   }
@@ -116,7 +119,7 @@ public class TigerParameterTypeDefinitions {
    * @param value string value in enum
    * @return Enum value
    */
-  @ParameterType("XML|JSON|JWE|JWT|BEARER_TOKEN|URL|\".*\"|'.*'")
+  @ParameterType("XML|JSON|JWE|JWT|BEARER_TOKEN|URL|" + STRING_LITERAL)
   public static RbelContentType rbelContentType(String value) {
     return RbelContentType.seekValueFor(resolveToString(value));
   }

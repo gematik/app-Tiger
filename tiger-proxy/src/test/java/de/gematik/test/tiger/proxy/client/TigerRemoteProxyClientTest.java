@@ -53,6 +53,9 @@ import de.gematik.test.tiger.proxy.tracing.TracingPushService;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -641,6 +644,7 @@ class TigerRemoteProxyClientTest {
           .sender(RbelHostname.fromString("server:80").get())
           .receiver(RbelHostname.fromString("client:80").get());
     }
+    builder.request(request);
     return builder.build();
   }
 
@@ -662,15 +666,34 @@ class TigerRemoteProxyClientTest {
     addMessagePart("responseUuid", 1, 3, "blub");
     addMessagePart("responseUuid", 0, 3, "blub");
 
-    tigerRemoteProxyClient.triggerPartialMessageCleanup();
+    await()
+        .atMost(1, TimeUnit.SECONDS)
+        .until(tigerRemoteProxyClient.getPartiallyReceivedMessageMap()::size, size -> size == 2);
 
-    assertThat(tigerRemoteProxyClient.getPartiallyReceivedMessageMap()).hasSize(2);
+    // Calculate time to wait until last partial message is expired
+    ZonedDateTime oldestMessageTime =
+        new LinkedList<>(tigerRemoteProxyClient.getPartiallyReceivedMessageMap().values())
+            .getLast()
+            .getReceivedTime();
+    long millisToWait =
+        Math.max(
+            0,
+            ChronoUnit.MILLIS.between(
+                ZonedDateTime.now(), oldestMessageTime.plus(Duration.ofMillis(110))));
 
-    // ensure the 100ms for partial parsing timeout has occured
-    Thread.sleep(110);
-    tigerRemoteProxyClient.triggerPartialMessageCleanup();
+    Thread.sleep(millisToWait);
 
-    assertThat(tigerRemoteProxyClient.getPartiallyReceivedMessageMap()).isEmpty();
+    tigerRemoteProxyClient
+        .getTigerStompSessionHandler()
+        .getTracingStompHandler()
+        .handleFrame(
+            null, TigerTracingDto.builder().messageUuid("requestUuid2").sequenceNumber(3L).build());
+
+    await()
+        .atMost(1, TimeUnit.SECONDS)
+        .until(
+            tigerRemoteProxyClient::getPartiallyReceivedMessageMap,
+            map -> map.size() == 1 && map.containsKey("requestUuid2"));
   }
 
   @Test

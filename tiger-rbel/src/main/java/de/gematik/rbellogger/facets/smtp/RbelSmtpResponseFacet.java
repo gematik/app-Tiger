@@ -60,7 +60,7 @@ public class RbelSmtpResponseFacet implements RbelFacet {
               Optional<String> key,
               RbelHtmlRenderingToolkit renderingToolkit) {
             final RbelSmtpResponseFacet facet = element.getFacetOrFail(RbelSmtpResponseFacet.class);
-            var bodyContent = renderingToolkit.renderMimeBodyContent(facet.getBody());
+            var bodyContent = renderingToolkit.renderValueAsTextArea(facet.getBody());
 
             return div(
                 h2().withClass("title").withText("SMTP Response"),

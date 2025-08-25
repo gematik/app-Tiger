@@ -196,6 +196,7 @@ lib:
 ----
 
 the tests will only be discovered and displayed in the Workflow UI.
+That includes all the tests in the feature files, even if they don't match the "cucumber.filter.tags" configuration. This allows you to run manually any selection of tests.
 The user can then choose which test scenario he/she wants to execute.
 This can be done by clicking the play buttons in either the Test Execution pane or in the Status Bar.
 

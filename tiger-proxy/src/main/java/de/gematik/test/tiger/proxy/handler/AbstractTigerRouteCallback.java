@@ -23,10 +23,12 @@ package de.gematik.test.tiger.proxy.handler;
 import static de.gematik.test.tiger.mockserver.model.Header.header;
 import static de.gematik.test.tiger.mockserver.model.HttpOverrideForwardedRequest.forwardOverriddenRequest;
 
+import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.facets.uri.RbelUriFacet;
 import de.gematik.rbellogger.facets.uri.RbelUriParameterFacet;
+import de.gematik.rbellogger.util.GlobalServerMap;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationCallback;
 import de.gematik.test.tiger.mockserver.model.*;
@@ -259,16 +261,18 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
     }
   }
 
-  public CompletableFuture<RbelElement> executeHttpRequestParsing(HttpRequest mockServerRequest) {
-    if (isHealthEndpointRequest(mockServerRequest)) {
+  public CompletableFuture<RbelElement> executeHttpRequestParsing(HttpRequest request) {
+    if (isHealthEndpointRequest(request)) {
       return CompletableFuture.completedFuture(null);
     }
+
+    addServerNameForSender(request);
 
     return getTigerProxy()
         .getMockServerToRbelConverter()
         .convertRequest(
-            mockServerRequest,
-            extractProtocolAndHostForRequest(mockServerRequest),
+            request,
+            extractProtocolAndHostForRequest(request),
             Optional.of(ZonedDateTime.now()),
             previousMessageUuid)
         .exceptionally(
@@ -278,18 +282,21 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
             });
   }
 
-  private CompletableFuture executeHttpTrafficPairParsing(HttpRequest req, HttpResponse resp) {
-    if (isHealthEndpointRequest(req)) {
+  private CompletableFuture<RbelElement> executeHttpTrafficPairParsing(
+      HttpRequest request, HttpResponse response) {
+    if (isHealthEndpointRequest(request)) {
       return CompletableFuture.completedFuture(null);
     }
+
+    addServerNameForSender(request);
 
     return getTigerProxy()
         .getMockServerToRbelConverter()
         .convertResponse(
-            req,
-            resp,
-            extractProtocolAndHostForRequest(req),
-            req.getSenderAddress(),
+            request,
+            response,
+            extractProtocolAndHostForRequest(request),
+            request.getSenderAddress(),
             Optional.of(ZonedDateTime.now()),
             previousMessageUuid)
         .exceptionally(
@@ -352,16 +359,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
         || tigerRoute.getCriterions().isEmpty()) {
       return true;
     }
-    final RbelElement convertedRequest =
-        getTigerProxy()
-            .getMockServerToRbelConverter()
-            .convertRequest(
-                request,
-                extractProtocolAndHostForRequest(request),
-                Optional.of(ZonedDateTime.now()),
-                previousMessageUuid)
-            .join();
-    request.setCorrespondingRbelMessage(convertedRequest);
+    final RbelElement convertedRequest = getConvertedRequest(request);
     return tigerRoute.getCriterions().stream()
         .allMatch(
             criterion -> {
@@ -374,6 +372,26 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
                   .log("Matching {} for {}: {}");
               return matches;
             });
+  }
+
+  private RbelElement getConvertedRequest(HttpRequest request) {
+    var convertedRequest = request.getCorrespondingRbelMessage();
+    if (convertedRequest == null) {
+      var rbelMessage =
+          getTigerProxy().getMockServerToRbelConverter().requestToRbelMessage(request);
+      convertedRequest =
+          getTigerProxy()
+              .getRbelLogger()
+              .getRbelConverter()
+              .convertElement(
+                  rbelMessage,
+                  List.of(
+                      RbelConversionPhase.PREPARATION,
+                      RbelConversionPhase.PROTOCOL_PARSING,
+                      RbelConversionPhase.CONTENT_PARSING));
+      request.setCorrespondingRbelMessage(convertedRequest);
+    }
+    return convertedRequest;
   }
 
   @Override
@@ -390,6 +408,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
     routingException.setRoutedMessage(request.getParsedMessageFuture());
     log.info(routingException.getMessage(), routingException);
 
+    addServerNameForSender(request);
     tigerProxy
         .getMockServerToRbelConverter()
         .convertErrorResponse(
@@ -398,5 +417,17 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
             routingException,
             previousMessageUuid);
     return new CloseChannel();
+  }
+
+  private void addServerNameForSender(HttpRequest request) {
+    tigerProxy
+        .getName()
+        .filter(name -> !name.equals("local_tiger_proxy"))
+        .ifPresent(
+            serverName ->
+                RbelHostname.fromString(request.getSenderAddress())
+                    .ifPresent(
+                        sender ->
+                            GlobalServerMap.addServerNameForPort(sender.getPort(), serverName)));
   }
 }

@@ -38,6 +38,7 @@ public class TigerLibConfig {
   @Builder.Default private boolean addCurlCommandsForRaCallsToReport = true;
   @Builder.Default public boolean activateWorkflowUi = false;
   @Builder.Default public boolean startBrowser = true;
+  @Builder.Default public int workflowUiStartTimeoutInSeconds = 120;
   @Builder.Default public boolean createRbelHtmlReports = true;
   @Builder.Default public boolean createRbelModificationReports = true;
   @Builder.Default public long pauseExecutionTimeoutSeconds = 18000L;

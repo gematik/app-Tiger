@@ -31,8 +31,6 @@ import de.gematik.test.tiger.exceptions.GenericTigerException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.Setter;
@@ -213,34 +211,8 @@ public class RbelContentTreeNode extends RbelPathAble {
   }
 
   @Override
-  public String findNodePath() {
-    LinkedList<Optional<String>> keyList = new LinkedList<>();
-    final AtomicReference<RbelContentTreeNode> ptr = new AtomicReference<>(this);
-    while (ptr.get().getParentNode() != null) {
-      keyList.addFirst(
-          ptr.get().getParentNode().getChildNodesWithKey().stream()
-              .filter(entry -> entry.getValue() == ptr.get())
-              .map(Map.Entry::getKey)
-              .findFirst());
-      ptr.set(ptr.get().getParentNode());
-    }
-    return keyList.stream()
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .collect(Collectors.joining("."));
-  }
-
-  @Override
   public List<RbelContentTreeNode> findRbelPathMembers(String rbelPath) {
     return new RbelPathExecutor<>(this, rbelPath).execute();
-  }
-
-  public Optional<String> findKeyInParentElement() {
-    return Optional.of(this).map(RbelContentTreeNode::getParentNode).stream()
-        .flatMap(parent -> parent.getChildNodesWithKey().stream())
-        .filter(e -> e.getValue() == this)
-        .map(Map.Entry::getKey)
-        .findFirst();
   }
 
   @Override

@@ -65,6 +65,7 @@ public class TigerLauncherDiscoveryListener implements LauncherDiscoveryListener
       var newConfiguration = new HashMap<String, String>();
       configurationParameters.keySet().stream()
           .filter(key -> key.startsWith("cucumber."))
+          .filter(key -> !key.equals("cucumber.filter.tags"))
           .forEach(
               key -> newConfiguration.put(key, configurationParameters.get(key).orElseThrow()));
       TigerGlobalConfiguration.putValue(

@@ -40,15 +40,19 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
+import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class XmlConverterTest {
 
   private String curlMessage;
   private String curlMessageHtml;
+  private String xmlFile;
 
   @BeforeEach
   void setUp() throws IOException {
@@ -72,6 +76,51 @@ class XmlConverterTest {
 
     FileUtils.writeStringToFile(
         new File("target/xmlNested.html"), RbelHtmlRenderer.render(List.of(convertedMessage)));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"ISO-8859-15", "UTF-8", "UTF-16", "windows-1252"})
+  void advancedHtml(String charset) throws IOException {
+    xmlFile =
+        """
+      <?xml version="1.0" encoding="%s"?>
+      <MP>
+      	<P blub="löäopüß"/>
+      </MP>
+      """
+            .formatted(charset);
+    final RbelElement convertedMessage =
+        RbelLogger.build()
+            .getRbelConverter()
+            .convertElement(
+                wrapInHttpRequestWithContentType("text/html; charset=" + charset, xmlFile), null);
+    convertedMessage.addFacet(
+        RbelTcpIpMessageFacet.builder()
+            .receiver(RbelElement.wrap(null, convertedMessage, new RbelHostname("recipient", 1)))
+            .sender(RbelElement.wrap(null, convertedMessage, new RbelHostname("sender", 1)))
+            .build());
+
+    final String render = RbelHtmlRenderer.render(List.of(convertedMessage));
+    assertThat(render)
+        .contains("encoding=&quot;" + charset + "&quot;")
+        .contains("blub=&quot;löäopüß&quot;");
+    if (!charset.equals("UTF-8")) {
+      assertThat(render).doesNotContain("encoding=&quot;UTF-8&quot;");
+    }
+    FileUtils.writeStringToFile(new File("target/cleanHtml.html"), render);
+  }
+
+  private byte[] wrapInHttpRequestWithContentType(String contentType, String content) {
+    val header =
+        """
+        POST / HTTP/1.1\r
+        Host: localhost\r
+        Content-Type: %s\r
+        Content-Length: %d\r
+        \r
+        """
+            .formatted(contentType, content.getBytes().length);
+    return (header + content).getBytes();
   }
 
   @Test

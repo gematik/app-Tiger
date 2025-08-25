@@ -46,6 +46,11 @@ public record RbelMimeMessageFacet(RbelElement header, RbelElement body) impleme
           }
 
           @Override
+          public boolean shouldRenderLargeElements() {
+            return true;
+          }
+
+          @Override
           public ContainerTag performRendering(
               RbelElement element,
               Optional<String> key,

@@ -27,6 +27,7 @@ import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
+import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.test.tiger.ByteArrayToStringRepresentation;
 import de.gematik.test.tiger.common.data.config.tigerproxy.DirectReverseProxyInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
@@ -145,7 +146,8 @@ public abstract class AbstractNonHttpTest {
             public void onProxy(
                 BinaryMessage binaryMessage,
                 SocketAddress serverAddress,
-                SocketAddress clientAddress) {
+                SocketAddress clientAddress,
+                RbelMessageKind messageKind) {
               log.info(
                   "ports are {} and {}",
                   ((InetSocketAddress) serverAddress).getPort(),
@@ -158,7 +160,7 @@ public abstract class AbstractNonHttpTest {
               } else {
                 handlerCalledResponse.incrementAndGet();
               }
-              oldListener.onProxy(binaryMessage, serverAddress, clientAddress);
+              oldListener.onProxy(binaryMessage, serverAddress, clientAddress, messageKind);
             }
           });
 

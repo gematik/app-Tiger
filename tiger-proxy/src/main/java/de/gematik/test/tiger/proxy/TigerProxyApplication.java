@@ -20,6 +20,8 @@
  */
 package de.gematik.test.tiger.proxy;
 
+import static de.gematik.rbellogger.util.MemoryConstants.KB;
+
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -87,7 +89,9 @@ public class TigerProxyApplication implements ServletContextListener {
   public RbelHtmlRenderer rbelHtmlRenderer() {
     var renderer = new RbelHtmlRenderer();
     renderer.setMaximumEntitySizeInBytes(
-        proxyConfiguration.getSkipDisplayWhenMessageLargerThanKb() * 1024);
+        (long) proxyConfiguration.getSkipDisplayWhenMessageLargerThanKb() * KB);
+    renderer.setMaximumDefaultExpandedMessageDepth(
+        proxyConfiguration.getMaximumDefaultExpandedMessageDepth());
     return renderer;
   }
 }

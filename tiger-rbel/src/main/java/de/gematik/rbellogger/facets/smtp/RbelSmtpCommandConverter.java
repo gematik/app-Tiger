@@ -21,6 +21,7 @@
 package de.gematik.rbellogger.facets.smtp;
 
 import de.gematik.rbellogger.RbelConversionExecutor;
+import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.converter.ConverterInfo;
 import de.gematik.rbellogger.data.RbelElement;
@@ -46,8 +47,13 @@ public class RbelSmtpCommandConverter extends RbelConverterPlugin {
   private static final byte[] DATA_PREFIX_BYTES = "DATA\r\n".getBytes();
 
   @Override
+  public RbelConversionPhase getPhase() {
+    return RbelConversionPhase.PROTOCOL_PARSING;
+  }
+
+  @Override
   public void consumeElement(final RbelElement element, final RbelConversionExecutor context) {
-    buildSmtpCommandFacet(element)
+    buildSmtpCommandFacet(element, context)
         .ifPresent(
             pair -> {
               var facet = pair.getLeft();
@@ -72,10 +78,12 @@ public class RbelSmtpCommandConverter extends RbelConverterPlugin {
     }
   }
 
-  private Optional<Pair<RbelSmtpCommandFacet, Integer>> buildSmtpCommandFacet(RbelElement element) {
+  private Optional<Pair<RbelSmtpCommandFacet, Integer>> buildSmtpCommandFacet(
+      RbelElement element, RbelConversionExecutor context) {
     return Optional.of(element.getContent())
         .filter(c -> c.size() >= MIN_SMTP_COMMAND_LINE_LENGTH)
         .flatMap(this::parseCommand)
+        .filter(command -> canBeParsedAsSmtpCommand(element, command, context))
         .flatMap(
             command ->
                 Optional.of(element.getContent())
@@ -84,6 +92,24 @@ public class RbelSmtpCommandConverter extends RbelConverterPlugin {
                         content ->
                             Pair.of(
                                 buildSmtpCommandFacet(command, content, element), content.size())));
+  }
+
+  private boolean canBeParsedAsSmtpCommand(
+      RbelElement element, RbelSmtpCommand command, RbelConversionExecutor context) {
+    if (command != RbelSmtpCommand.EHLO && command != RbelSmtpCommand.HELO) {
+      var previousMessage = context.findPreviousMessageInSameConnectionAs(element, e -> true);
+      if (previousMessage.isPresent()) {
+        var message = previousMessage.get();
+        if (!(message.hasFacet(RbelSmtpCommandFacet.class)
+            || message.hasFacet(RbelSmtpResponseFacet.class))) {
+          log.debug(
+              "Previous message {} is not an SMTP message, skipping SMTP command parsing",
+              message.getUuid());
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   public Optional<RbelContent> findEndOfLine(RbelContent content, int numberOfLines) {

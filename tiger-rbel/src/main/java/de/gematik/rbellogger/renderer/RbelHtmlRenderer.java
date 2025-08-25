@@ -20,6 +20,7 @@
  */
 package de.gematik.rbellogger.renderer;
 
+import static de.gematik.rbellogger.util.MemoryConstants.MB;
 import static j2html.TagCreator.*;
 
 import de.gematik.rbellogger.data.RbelElement;
@@ -42,11 +43,12 @@ public class RbelHtmlRenderer {
 
   private static final List<RbelHtmlFacetRenderer> htmlRenderer = new ArrayList<>();
   public static final String OVERSIZE_REPLACEMENT_TEXT_PRE = "<...redacted due to size of ";
-  public static final String OVERSIZE_REPLACEMENT_TEXT_POST = " Mb...>";
+  public static final String OVERSIZE_REPLACEMENT_TEXT_POST = " MB...>";
   public static final String MODAL = "modal";
   private final RbelValueShader rbelValueShader;
   @Setter private boolean renderNestedObjectsWithoutFacetRenderer = false;
-  @Setter private int maximumEntitySizeInBytes = 4 * 1024 * 1024;
+  @Setter private long maximumEntitySizeInBytes = 4 * MB;
+  @Setter private long maximumDefaultExpandedMessageDepth = 2;
   @Setter private String title = "Tiger Proxy Log";
   @Setter private String subTitle = "";
   @Setter private String versionInfo = "";
@@ -94,7 +96,7 @@ public class RbelHtmlRenderer {
 
   public static DomContent showContentButtonAndDialog(
       final RbelElement el, final RbelHtmlRenderingToolkit renderingToolkit) {
-    if (el.getRawContent() == null) {
+    if (el.getContent().isNull()) {
       return div();
     }
     final String id = "dialog" + RandomStringUtils.insecure().nextAlphanumeric(20); // NOSONAR
@@ -154,8 +156,8 @@ public class RbelHtmlRenderer {
   @Nullable
   private static String printRawContentOfElement(
       final RbelElement el, final RbelHtmlRenderingToolkit renderingToolkit) {
-    if (renderingToolkit.shouldRenderEntitiesWithSize(el.getRawContent().length)) {
-      if (BinaryClassifier.isBinary(el.getRawContent())) {
+    if (renderingToolkit.shouldRenderEntitiesWithSize(el.getSize())) {
+      if (BinaryClassifier.isBinary(el.getContent().toInputStream())) {
         return Hex.toHexString(el.getRawContent());
       } else {
         return el.getRawStringContent();
@@ -167,7 +169,7 @@ public class RbelHtmlRenderer {
 
   public static String buildOversizeReplacementString(RbelElement el) {
     return OVERSIZE_REPLACEMENT_TEXT_PRE
-        + ((el.getRawContent().length / 10_000D) / 100.)
+        + ((el.getSize() / 10_000D) / 100.)
         + OVERSIZE_REPLACEMENT_TEXT_POST;
   }
 
@@ -196,6 +198,10 @@ public class RbelHtmlRenderer {
     final List<ContainerTag> renderedFacets =
         htmlRenderer.stream()
             .filter(renderer -> renderer.checkForRendering(element))
+            .filter(
+                renderer ->
+                    !renderingToolkit.isInShortenedRenderingMode()
+                        || renderer.shouldRenderLargeElements())
             .sorted(Comparator.comparing(RbelHtmlFacetRenderer::order))
             .map(renderer -> renderer.performRendering(element, key, renderingToolkit))
             .toList();

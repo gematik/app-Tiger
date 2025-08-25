@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.Builder;
+import lombok.SneakyThrows;
 import org.slf4j.event.Level;
 
 @TigerServerType("externalJar")
@@ -59,6 +60,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
   }
 
   @Override
+  @SneakyThrows
   public void assertThatConfigurationIsCorrect() {
     super.assertThatConfigurationIsCorrect();
 
@@ -102,7 +104,7 @@ public class ExternalJarServer extends AbstractExternalTigerServer {
     }
     getConfiguration().getExternalJarOptions().setWorkingDir(folder);
     File f = new File(folder);
-    if (!f.exists() && !f.mkdirs()) {
+    if (!f.exists() && !f.mkdirs() && !f.exists()) {
       throw new TigerTestEnvException("Unable to create working dir folder " + f.getAbsolutePath());
     }
     assertCfgPropertySet(getConfiguration(), "healthcheckUrl");

@@ -62,6 +62,7 @@ public class TigerProxyConfiguration {
   @Builder.Default private int rbelBufferSizeInMb = 1024;
   @Builder.Default private int skipParsingWhenMessageLargerThanKb = 8_000;
   @Builder.Default private int skipDisplayWhenMessageLargerThanKb = 512;
+  @Builder.Default private int maximumDefaultExpandedMessageDepth = 3;
   @Builder.Default private boolean activateRbelParsing = true;
   @Builder.Default private List<String> activateRbelParsingFor = new ArrayList<>();
   @Builder.Default private boolean parsingShouldBlockCommunication = false;

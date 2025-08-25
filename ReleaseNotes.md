@@ -1,9 +1,61 @@
 # Changelog Tiger Test platform
 
+# Release 4.0.9
+
+## Features
+
+* TGR-1917: node and npm updated
+* TGR-1796: Tiger-Proxy: When creating a Tiger-Proxy-Server the servername and hostname are now
+  automatically added to the alternative names list, making TLS connections to the proxy easier.
+* TGR-1747: "cucumber.filter.tags" are ignored when tests are run manually
+* TGR-1771: For signed data envelopes, also add signer infos in rbel tree.
+* TGR-1907: For container facets like MIME/POP3/SMTP, allow recursive short HTML rendering instead of top-level
+  redaction.
+  This allows to see the structure and headers while large bodies are still redacted in the HTML tree.
+* TGR-1916: Allow configuration of external Workflow UI startup timeout via property `workflowUiStartTimeoutInSeconds`
+
+```yaml
+lib:
+  workflowUiStartTimeoutInSeconds: 120 # default is 120
+```
+
+* TGR-1769: Allow expanding/collapsing of nested rbel elements in the Tiger-Proxy Web UI.
+  The default expansion depth is configured via the tiger proxy property `maximumDefaultExpandedMessageDepth`
+* TGR-1524: Messages that have been removed from the RBelLog of the local tiger proxy are
+  displayed differently in the execution pane to distinguish them from messages that can still be inspected.
+
+```yaml
+tigerProxy:
+  maximumDefaultExpandedMessageDepth: 3 # default is 3, use 0 to display all messages collapsed
+```
+
+## Bugfixes
+
+* TGR-1903: Solved problem of overlapping POP3/SMTP commands (AUTH, NOOP, QUIT, RSET).
+  If parsing a POP3 command that is not CAPA, ignore it if the last command on the same connection was not a POP3
+  command.
+  If parsing an SMTP command that is not EHLO or HELO, ignore it if the last command on the same connection was not an
+  SMTP command.
+* TGR-1905: Fix of racing condition between forwarded and downloaded messages in mesh proxy setup (in case connection is
+  lost)
+* TGR-1905: Fix of failing metadata conversion for String array in metadata of downloaded message.
+* TGR-1908: Fixed racing condition in Mesh-Setup when large messages split into many packages are being transferred.
+  This sometimes resulted in missing packets and non-processed messages.
+* TGR-1910: After step ends, only wait for responses of requests that require responses.
+* TGR-1904: Fixed incorrect rendering of parsed XML-encodings. The used charset was detected correctly, but the output
+  was always displayed to be UTF-8. The encoding in the header is now correctly displayed as the source format, while
+  the special characters in the XML itself are still displayed as UTF-8.
+* TGR-1914: Tiger Test Lib: calling TigerGlobalConfigurationd.instantiateConfigurationBean() has now the same key
+  case-insensitive behavior has the other read methods of the same class.
+* TGR-1915: Tiger type parameter types like `{tigerResolvedString}` match string literals non-greedy to avoid unintended
+  overlap of gluecode steps.
+
 # Release 4.0.8
 
 ## Features
 
+* TGR-1805: Better treatment of proxy client endpoints in traffic visualization. Instead of showing 'local client', the
+  proxy name will be shown.
 * TGR-1662: Workflow UI: it is now possible to select a subset of tests in the Workflow UI and execute them. To activate
   the feature you need to explicitly configure it in your tiger.yaml.
 

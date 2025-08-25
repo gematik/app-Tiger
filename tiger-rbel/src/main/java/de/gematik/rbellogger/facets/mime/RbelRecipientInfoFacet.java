@@ -20,31 +20,33 @@
  */
 package de.gematik.rbellogger.facets.mime;
 
-import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.ancestorTitle;
 import static de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit.vertParentTitle;
-import static j2html.TagCreator.*;
+import static j2html.TagCreator.div;
+import static j2html.TagCreator.h3;
+import static j2html.TagCreator.h4;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMultiMap;
 import de.gematik.rbellogger.data.core.RbelFacet;
-import de.gematik.rbellogger.renderer.RbelHtmlFacetRenderer;
+import de.gematik.rbellogger.facets.pki.AbstractX509FacetRenderer;
+import de.gematik.rbellogger.facets.pki.CmsEntityIdentifierFacet;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderingToolkit;
 import j2html.tags.ContainerTag;
 import java.util.Optional;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 
 @Builder
-@Getter
-public class RbelDecryptedEmailFacet implements RbelFacet {
+@Data
+class RbelRecipientInfoFacet implements RbelFacet {
 
   static {
     RbelHtmlRenderer.registerFacetRenderer(
-        new RbelHtmlFacetRenderer() {
+        new AbstractX509FacetRenderer() {
           @Override
           public boolean checkForRendering(RbelElement element) {
-            return element.hasFacet(RbelDecryptedEmailFacet.class);
+            return element.hasFacet(RbelRecipientInfoFacet.class);
           }
 
           @Override
@@ -52,18 +54,32 @@ public class RbelDecryptedEmailFacet implements RbelFacet {
               RbelElement element,
               Optional<String> key,
               RbelHtmlRenderingToolkit renderingToolkit) {
-            return div(
-                h2().withClass("title").withText("Decrypted Message: "),
-                ancestorTitle()
-                    .with(vertParentTitle().with(renderingToolkit.convertNested(element))));
+            var recipientInfoFacet = element.getFacetOrFail(RbelRecipientInfoFacet.class);
+            return div(h3().withClass("title").withText("Recipient Info"))
+                .with(renderValueChildren(recipientInfoFacet.getChildElements()))
+                .with(
+                    vertParentTitle()
+                        .with(
+                            div(h4().withClass("title").withText("Recipient Identifier"))
+                                .with(
+                                    renderValueChildren(
+                                        recipientInfoFacet
+                                            .getRecipientId()
+                                            .getFacetOrFail(CmsEntityIdentifierFacet.class)
+                                            .getChildElements()))));
           }
         });
   }
 
-  private final RbelElement decrypted;
+  final RbelElement contentType;
+  final RbelElement keyEncryptionAlgorithm;
+  final RbelElement recipientId;
 
   @Override
   public RbelMultiMap<RbelElement> getChildElements() {
-    return new RbelMultiMap<RbelElement>().with("decrypted", decrypted);
+    return new RbelMultiMap<RbelElement>()
+        .with("contentType", contentType)
+        .with("keyEncryptionAlgorithm", keyEncryptionAlgorithm)
+        .withSkipIfNull("recipientId", recipientId);
   }
 }

@@ -27,7 +27,9 @@ import de.gematik.rbellogger.data.decorator.ServerNameFromHostname;
 import de.gematik.rbellogger.data.decorator.ServernameFromProcessAndPortSupplier;
 import de.gematik.rbellogger.data.decorator.ServernameFromSpyPortMapping;
 
-/** encapulates the logic to add bundled server names to the requests and responses HostnameFacet */
+/**
+ * encapsulates the logic to add bundled server names to the requests and responses HostnameFacet
+ */
 public class BundledServerNamesAdder {
   private final MessageMetadataModifier modifierBasedOnProcessAndPort;
   private final MessageMetadataModifier modifierBasedOnHostname;

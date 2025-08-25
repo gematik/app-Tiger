@@ -493,6 +493,11 @@ function connectToWebSocket() {
         debug("RECEIVED " + json.index + "\n" + tick.body);
 
         if (!json.servers) json.servers = {};
+
+        if (json.removedMessageUuids) {
+          featuresStore.updateRemovedMessageUuids(json.removedMessageUuids);
+        }
+
         if (json.bannerType) {
           if (json.bannerType === BannerType.TESTRUN_ENDED) {
             setTestRunFinished();

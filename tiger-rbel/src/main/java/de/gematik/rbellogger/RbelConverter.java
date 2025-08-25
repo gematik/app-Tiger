@@ -21,6 +21,8 @@
 package de.gematik.rbellogger;
 
 import static de.gematik.rbellogger.RbelConversionPhase.*;
+import static de.gematik.rbellogger.util.MemoryConstants.KB;
+import static de.gematik.rbellogger.util.MemoryConstants.MB;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.unboundid.util.NotNull;
@@ -64,7 +66,10 @@ public class RbelConverter implements RbelConverterInterface {
   }
 
   @Getter private final Deque<RbelElement> messageHistory = new ConcurrentLinkedDeque<>();
-  private final Set<String> knownMessageUuids = ConcurrentHashMap.newKeySet();
+
+  @Getter
+  private final KnownUuidsContainer knownMessageUuids = new KnownUuidsContainer(messageHistory);
+
   private final Set<String> messageUuidsWaitingForNextMessage = ConcurrentHashMap.newKeySet();
   private final RbelMultiMap<CompletableFuture<RbelElement>> messagesWaitingForCompletion =
       new RbelMultiMap<>();
@@ -83,7 +88,7 @@ public class RbelConverter implements RbelConverterInterface {
           new SynchronousQueue<>(),
           new ThreadFactoryBuilder().setNameFormat("rbel-converter-thread-%d").build());
 
-  @Builder.Default int rbelBufferSizeInMb = 1024;
+  @Builder.Default int rbelBufferSizeInMb = KB;
   @Builder.Default boolean manageBuffer = false;
   @Getter @Builder.Default private long currentBufferSize = 0;
   @Builder.Default long messageSequenceNumber = 0;
@@ -123,6 +128,11 @@ public class RbelConverter implements RbelConverterInterface {
   }
 
   public RbelElement convertElement(RbelElement rbelElement) {
+    return convertElement(rbelElement, conversionPhases);
+  }
+
+  public RbelElement convertElement(
+      RbelElement rbelElement, List<RbelConversionPhase> conversionPhases) {
     return new RbelConversionExecutor(
             this, rbelElement, skipParsingWhenMessageLargerThanKb, rbelKeyManager, conversionPhases)
         .execute();
@@ -154,15 +164,15 @@ public class RbelConverter implements RbelConverterInterface {
     converterPlugins.put(converter);
   }
 
-  public RbelElement parseMessage(byte[] content, RbelMessageMetadata convertionMetadata) {
+  public RbelElement parseMessage(byte[] content, RbelMessageMetadata conversionMetadata) {
     final RbelElement messageElement = RbelElement.builder().rawContent(content).build();
-    return parseMessage(messageElement, convertionMetadata);
+    return parseMessage(messageElement, conversionMetadata);
   }
 
   public RbelElement parseMessage(
-      @NonNull final RbelElement message, @NonNull final RbelMessageMetadata convertionMetadata) {
+      @NonNull final RbelElement message, @NonNull final RbelMessageMetadata conversionMetadata) {
     try {
-      return parseMessageAsync(message, convertionMetadata)
+      return parseMessageAsync(message, conversionMetadata)
           .exceptionally(
               t -> {
                 log.error("Error while parsing message", t);
@@ -179,11 +189,11 @@ public class RbelConverter implements RbelConverterInterface {
 
   public CompletableFuture<RbelElement> parseMessageAsync(
       @NonNull final RbelElement messageElement,
-      @NonNull final RbelMessageMetadata convertionMetadata) {
+      @NonNull final RbelMessageMetadata conversionMetadata) {
     if (messageElement.getContent().isNull()) {
       throw new RbelConversionException("content is empty");
     }
-    if (isMessageUuidAlreadyKnown(messageElement.getUuid())) {
+    if (knownMessageUuids.isAlreadyConverted(messageElement.getUuid())) {
       log.atTrace()
           .addArgument(this::getName)
           .addArgument(messageElement::getUuid)
@@ -199,18 +209,18 @@ public class RbelConverter implements RbelConverterInterface {
           RbelTcpIpMessageFacet.builder()
               .receiver(
                   RbelMessageMetadata.MESSAGE_RECEIVER
-                      .getValue(convertionMetadata)
+                      .getValue(conversionMetadata)
                       .map(h -> RbelHostnameFacet.buildRbelHostnameFacet(messageElement, h))
                       .orElse(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, null)))
               .sender(
                   RbelMessageMetadata.MESSAGE_SENDER
-                      .getValue(convertionMetadata)
+                      .getValue(conversionMetadata)
                       .map(h -> RbelHostnameFacet.buildRbelHostnameFacet(messageElement, h))
                       .orElse(RbelHostnameFacet.buildRbelHostnameFacet(messageElement, null)))
               .sequenceNumber(seqNumber)
               .build());
     }
-    messageElement.addFacet(convertionMetadata);
+    messageElement.addFacet(conversionMetadata);
 
     return CompletableFuture.supplyAsync(() -> convertElement(messageElement), executorService);
   }
@@ -219,7 +229,7 @@ public class RbelConverter implements RbelConverterInterface {
     long seqNumber;
     synchronized (messageHistory) {
       currentBufferSize += rbelElement.getSize();
-      knownMessageUuids.add(rbelElement.getUuid());
+      knownMessageUuids.markAsConverted(rbelElement.getUuid());
       messageHistory.add(rbelElement);
       seqNumber = messageSequenceNumber++;
     }
@@ -245,7 +255,7 @@ public class RbelConverter implements RbelConverterInterface {
           long exceedingLimit = getExceedingLimit(currentBufferSize);
           if (exceedingLimit > 0) {
             log.atTrace()
-                .addArgument(() -> currentBufferSize / (1024 ^ 2))
+                .addArgument(() -> ((double) currentBufferSize / MB))
                 .addArgument(rbelBufferSizeInMb)
                 .log("Buffer is currently at {} Mb which exceeds the limit of {} Mb");
           }
@@ -263,11 +273,7 @@ public class RbelConverter implements RbelConverterInterface {
   }
 
   private long getExceedingLimit(long messageHistorySize) {
-    return messageHistorySize - ((long) rbelBufferSizeInMb * 1024 * 1024);
-  }
-
-  public boolean isMessageUuidAlreadyKnown(String msgUuid) {
-    return knownMessageUuids.contains(msgUuid);
+    return messageHistorySize - ((long) rbelBufferSizeInMb * MB);
   }
 
   public Stream<RbelElement> messagesStreamLatestFirst() {
@@ -404,13 +410,8 @@ public class RbelConverter implements RbelConverterInterface {
    * @param rbelElement
    */
   public void transmitElement(RbelElement rbelElement) {
-    new RbelConversionExecutor(
-            this,
-            rbelElement,
-            skipParsingWhenMessageLargerThanKb,
-            rbelKeyManager,
-            List.of(RbelConversionPhase.PREPARATION, RbelConversionPhase.TRANSMISSION))
-        .execute();
+    convertElement(
+        rbelElement, List.of(RbelConversionPhase.PREPARATION, RbelConversionPhase.TRANSMISSION));
   }
 
   private static @NotNull List<String> getTrimmedListElements(String commaSeparatedList) {

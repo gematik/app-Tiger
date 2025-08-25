@@ -53,6 +53,11 @@ public class RbelSmtpCommandFacet implements RbelFacet {
           }
 
           @Override
+          public boolean shouldRenderLargeElements() {
+            return true;
+          }
+
+          @Override
           public ContainerTag performRendering(
               RbelElement element,
               Optional<String> key,

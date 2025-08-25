@@ -30,8 +30,20 @@ lib:
     # a specific test workflow for manual tests.
     # Deactivated by default
     activateWorkflowUi: false
+    # If the startBrowser and activateWorkflowUi options are true,
+    # the test system will try to open the Workflow UI in a browser
+    # If the startBrowser option is false and activateWorflowUi is true
+    # the test system will wait for the Workflow UI to be activated in
+    # some other way. The time to be waited for the Workflow UI to be
+    # active can be configured via option workflowUiStartTimeoutInSeconds
+    startBrowser: true
+    # If the activateBrowser option is false and the workflowUI
+    # is supposed to be opened by some other process
+    # this option allows to configure how many seconds
+    # the test system will wait until the UI has been started
+    workflowUiStartTimeoutInSeconds: 120
     # Flag whether to add a curl command details button to
-    # SerenityRest Restassured calls
+    # SerenityRest RestAssured calls
     # in the Serenity BDD report
     addCurlCommandsForRaCallsToReport: true
     # Flag whether to create the RBEL HTML reports during
