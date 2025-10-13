@@ -74,7 +74,7 @@ export interface UseMessageQueueReturn {
   /**
    * Scroll to a message with `uuid`.
    */
-  scrollToMessage: (uuid: string) => void;
+  scrollToMessage: (uuid: string, sequenceNumber?: number) => void;
   /**
    * Delete all fetched messages.
    */
@@ -250,7 +250,27 @@ export function useMessageQueue(
     { rejectOnCancel: true },
   );
 
-  const scrollToMessage = (uuid: string) => {
+  const internalDebounceScrollToMessageBySequenceNumber = useDebounceFn(
+    (sequenceNumber: number) => {
+      // get the actual index from the entire list
+      const index = messages.value.findIndex((msg) => msg.sequenceNumber === sequenceNumber);
+      dynamicScrollerRef.value?.scrollToItem(index);
+      nextTick(async () => {
+        // FIXME: Sometimes the endless scroller won't scroll to the correct position,
+        //  so we try here again. This is a workaround and should be fixed in the future.
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        dynamicScrollerRef.value?.scrollToItem(index);
+      });
+    },
+    150,
+    { rejectOnCancel: true },
+  );
+
+  const scrollToMessage = (uuid: string, sequenceNumber?: number) => {
+    if (uuid === "" && sequenceNumber) {
+      internalDebounceScrollToMessageBySequenceNumber(sequenceNumber);
+      return;
+    }
     internalDebounceScrollToMessage(uuid);
   };
 

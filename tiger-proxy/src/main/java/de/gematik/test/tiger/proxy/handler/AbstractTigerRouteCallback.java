@@ -25,10 +25,10 @@ import static de.gematik.test.tiger.mockserver.model.HttpOverrideForwardedReques
 
 import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.facets.uri.RbelUriFacet;
 import de.gematik.rbellogger.facets.uri.RbelUriParameterFacet;
 import de.gematik.rbellogger.util.GlobalServerMap;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.common.jexl.TigerJexlExecutor;
 import de.gematik.test.tiger.mockserver.mock.action.ExpectationCallback;
 import de.gematik.test.tiger.mockserver.model.*;
@@ -67,6 +67,25 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
   protected AbstractTigerRouteCallback(TigerProxy tigerProxy, TigerProxyRoute tigerRoute) {
     this.tigerProxy = tigerProxy;
     this.tigerRoute = tigerRoute;
+    tigerProxy.addRemovedMessageUuidsHandler(this::handleRemoveUuids);
+    var converter = tigerProxy.getRbelLogger().getRbelConverter();
+    converter.addClearHistoryCallback(this::handleClearHistory);
+    converter.addMessageRemovedFromHistoryCallback(this::handleRemoveElementFromHistory);
+  }
+
+  private void handleClearHistory() {
+    previousMessageUuid.set(null);
+  }
+
+  private void handleRemoveElementFromHistory(RbelElement rbelElement) {
+    handleRemoveUuids(List.of(rbelElement.getUuid()));
+  }
+
+  private void handleRemoveUuids(List<String> uuids) {
+    var previous = previousMessageUuid.get();
+    if (previous != null && uuids.contains(previous)) {
+      previousMessageUuid.compareAndExchange(previous, null);
+    }
   }
 
   public void applyModifications(HttpRequest request) {
@@ -199,7 +218,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
   public final HttpResponse handle(
       HttpRequest req, HttpResponse resp, HttpRequest originalRequest) {
     try {
-      doOutgoingResponseLogging(resp);
+      doOutgoingResponseLogging(resp, originalRequest);
       return handleResponse(req, resp, originalRequest);
     } catch (RuntimeException e) {
       log.warn("Uncaught exception during handling of response", e);
@@ -330,8 +349,10 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
     }
   }
 
-  public void doOutgoingResponseLogging(HttpResponse resp) {
-    if (log.isInfoEnabled() && tigerProxy.getTigerProxyConfiguration().isActivateTrafficLogging()) {
+  public void doOutgoingResponseLogging(HttpResponse resp, HttpRequest req) {
+    if (log.isInfoEnabled()
+        && tigerProxy.getTigerProxyConfiguration().isActivateTrafficLogging()
+        && !isHealthEndpointRequest(req)) {
       log.info(
           "Returning HTTP "
               + resp.getStatusCode()
@@ -345,7 +366,9 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
   }
 
   public void doIncomingRequestLogging(HttpRequest req) {
-    if (log.isInfoEnabled() && tigerProxy.getTigerProxyConfiguration().isActivateTrafficLogging()) {
+    if (log.isInfoEnabled()
+        && tigerProxy.getTigerProxyConfiguration().isActivateTrafficLogging()
+        && !isHealthEndpointRequest(req)) {
       log.info("Received " + req.printLogLineDescription() + " => " + printTrafficTarget(req));
     }
   }
@@ -403,7 +426,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
             Optional.ofNullable(request.getReceiverAddress())
                 .map(SocketAddress::toRbelHostname)
                 .orElse(null),
-            RbelHostname.fromString(request.getSenderAddress()).orElse(null),
+            RbelSocketAddress.fromString(request.getSenderAddress()).orElse(null),
             exception);
     routingException.setRoutedMessage(request.getParsedMessageFuture());
     log.info(routingException.getMessage(), routingException);
@@ -425,7 +448,7 @@ public abstract class AbstractTigerRouteCallback implements ExpectationCallback 
         .filter(name -> !name.equals("local_tiger_proxy"))
         .ifPresent(
             serverName ->
-                RbelHostname.fromString(request.getSenderAddress())
+                RbelSocketAddress.fromString(request.getSenderAddress())
                     .ifPresent(
                         sender ->
                             GlobalServerMap.addServerNameForPort(sender.getPort(), serverName)));

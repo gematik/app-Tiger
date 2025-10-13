@@ -1,5 +1,98 @@
 # Changelog Tiger Test platform
 
+# Release 4.0.10
+
+## Breaking Changes
+
+* TGR-1913: Mail Extensions: the support for parsing and inspecting mail protocols (POP3, SMTP, MIME) has been extracted
+  to a separate module.
+  To keep using it, you need to declare in the pom.xml of your project the dependency to the tiger-mail-extension. e.g.:
+
+```xml
+
+<dependency>
+    <groupId>de.gematik.test</groupId>
+    <artifactId>tiger-mail-extension</artifactId>
+    <version>4.0.10</version>
+</dependency>
+```
+
+We plan to keep the version of the extension synchronized with the main Tiger project. For additional information
+check http://github.com/gematik/tiger-mail-extension
+
+* TGR-1763: Rbel: Stricter adherence to HTTP-Parsing when considering Content-Length. This will always work in real-life
+  scenarios but might lead to issues with nearly-correct HTTP messages that do not adhere to the HTTP standard.
+* TGR-1763: Tiger-Proxy: The handling of the Socket-Addresses in Tiger now is closer to the truth, giving options to
+  keep track of both the IP-address and the hostname. This might lead to errors when relying strictly on the
+  String-output of the Rbel-Tree. Instead, use the `InetAddressParser` and the underlying Java-classes.
+
+## Features
+
+* TGR-1763: Websocket Support added. Use `websocket` to activate the websocket parser.
+* TGR-1199: Tiger Proxy Web UI now provides a "Full Message" button for large redacted messages.
+  When message content exceeds the configured size threshold (configurable via
+  `tigerProxy.skipDisplayWhenMessageLargerThanKb`,
+  default 512 KB), users can click this button to view the complete, unredacted message in a separate window/tab.
+
+  Also, messages are not rendered redacted in test reports.
+
+* TGR-1923: Added additional properties to the RbelUriFacet (only visible in the RbelTree).
+* TGR-1886: Allow adding a specific key alias to PKI identities via configuration
+  for cases that multiple keys exist in the key store and a specific one should be used.
+
+```yaml
+myIdentity:
+  filename: "myIdentity.p12"
+  password: "changeit"
+  storeType: "P12"
+  alias: "myAlias"
+```
+
+or
+
+```yaml
+myIdentity: "myIdentity.p12;changeit;P12;myAlias"
+```
+
+* TGR-1899: Workflow UI: the test selector has been extended with new functionality. It is now possible:
+    * to select tests based on tags
+    * save and load a previous configured selection
+    * the selector opens automatically when no tests are run on start
+    * the selector table can be filtered based on a text input
+
+## Bugfixes
+
+* TGR-1859: update User Manual
+* TGR-1927: Tiger-Proxy: More resilient connection to upstream proxies. This can be turned on/off via
+  `tigerProxy.requireHealthyTrafficEndpoints`.
+* TGR-1940: Bugfix for missing messages in mesh setup with restarted local proxy.
+
+# Release 4.0.9
+
+## Features
+
+* TGR-1917: node and npm updated
+* TGR-1912: Tiger-Zion: the tiger zion artefact is now on its own separate project. The documentation for zion can be
+  found in: https://github.com/gematik/tiger-zion
+  Zion can be added to your project in the usual way:
+
+```xml
+
+<dependency>
+    <groupId>de.gematik.test</groupId>
+    <artifactId>tiger-zion</artifactId>
+    <version>${tiger.zion.version}</version>
+</dependency>
+```
+
+## Bugfixes
+
+* TGR-1859: update User Manual
+* TGR-1852: Use tiger-bom in the tiger base image pom
+* TGR-1929: add sonar run in master
+* TGR-1783: add tests for the httpbin server
+* TGR-1777: exclude illegal hostnames from addRoute() in TigerProxy
+
 # Release 4.0.9
 
 ## Features
@@ -67,6 +160,12 @@ lib:
 ## Bugfixes
 
 * TGR-1897: Tiger-Proxy: Fixed parsing of chunked SICCT messages.
+
+## Features
+
+* TGR-1869: Tiger-Proxy: When the given cipher-suites of server or client necessitate an ECC certificate, the
+  Tiger-Proxy
+  will now automatically generate a new ECC certificate for the server, if dynamic generation is the chosen mode.
 
 # Release 4.0.7
 
@@ -882,8 +981,8 @@ import org.junit.platform.suite.api.Suite;
 @ConfigurationParameter(key = FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue,ANY ADDITIONAL PACKAGES containing GLUE or HOOKS code")
 @ConfigurationParameter(
-        key = PLUGIN_PROPERTY_NAME,
-        value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+  key = PLUGIN_PROPERTY_NAME,
+  value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
 public class Driver1IT {
 
 }

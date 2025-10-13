@@ -131,6 +131,7 @@ describe("FeatureToTreeNodeConverter", () => {
               exampleKeys: [],
               exampleList: {},
               variantIndex: -1,
+              tags: [],
               uniqueId:
                 "[engine:junit-platform-suite]/[suite:de.gematik.test.tiger.examples.bdd.drivers.Driver004IT]/[engine:cucumber]/[feature:file%3A%2FC%3A%2Frepos%2Ftiger-demo%2Fsrc%2Ftest%2Fresources%2Ffeatures%2FCatalog%2Fcatalog.feature]/[scenario:3]",
               isDryRun: true,

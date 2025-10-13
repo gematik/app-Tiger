@@ -22,9 +22,9 @@
 -->
 <script lang="ts">
 // explicitly without "setup" because of issues with ag-grid. See https://stackoverflow.com/questions/73032489/ag-grid-framework-component-is-missing-the-method-getvalue-in-production-buil
-import { inject, nextTick, onMounted, Ref, ref } from "vue";
-import { ICellEditorParams } from "ag-grid-community";
-import { Emitter } from "mitt";
+import { inject, nextTick, onMounted, type Ref, ref } from "vue";
+import { type ICellEditorParams } from "ag-grid-community";
+import { type Emitter } from "mitt";
 
 export default {
   props: {

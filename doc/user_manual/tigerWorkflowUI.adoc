@@ -120,6 +120,26 @@ Hovering over the failed icon will display the failure message as a tooltip.
 
 image::screenshots/webui_failure_icon_hover.png[title="Hovering over the failed icon"]
 
+[#_mismatch_notes]
+====== Mismatch Notes
+
+If a step failed because of a mismatch, i.e. no message could be found matching the search criteria, the cause for the mismatch can potentially be in any number of messages that were observed before the validating step.
+
+image::screenshots/mismatch_notes_dropbox.png[title="Select Mismatch Dropdown Box"]
+
+In this case, it is possible to iterate through all the mismatching messages that were checked during search by using the up and down arrows beside the `Select mismatch` dropdown box beneath the failure message or by selecting a specific mismatch reason from the dropdown box.
+
+image::screenshots/mismatch_notes_down_button.png[title="Down Button"]
+image::screenshots/mismatch_notes_up_button.png[title="Up Button"]
+image::screenshots/mismatch_notes_dropdown.png[title="Expanded Mismatch Notes"]
+image::screenshots/mismatch_notes_third_option.png[title="Selected Mismatch Note"]
+
+This will lead to the mismatching message being displayed in the Rbel Log Details view on the right hand side of the Workflow UI.
+If the mismatching node exists in the message, it should be annotated there with an error note.
+
+[#_sub_steps]
+====== Sub-Steps
+
 If a test step executes sub-steps, these are displayed (per default collapsed) in the test execution section beneath their parent test step.
 They can be expanded by clicking on the small plus symbol to the left of the step description.
 Steps without sub-steps will not have the plus symbol and will not be expandable.
@@ -184,6 +204,7 @@ externalJarOptions:
 
 For the server types docker and compose, we do not yet support the visualization of messages originating on a client port of these servers.
 
+[#_runTestsOnStart]
 === Postpone start of test scenarios
 
 It is possible to configure the Workflow UI to not start all tests automatically at startup.
@@ -196,11 +217,61 @@ lib:
 ----
 
 the tests will only be discovered and displayed in the Workflow UI.
-That includes all the tests in the feature files, even if they don't match the "cucumber.filter.tags" configuration. This allows you to run manually any selection of tests.
+That includes all the tests in the feature files, even if they don't match the "cucumber.filter.tags" configuration.
+This allows you to run manually any selection of tests.
 The user can then choose which test scenario he/she wants to execute.
 This can be done by clicking the play buttons in either the Test Execution pane or in the Status Bar.
 
 image::screenshots/play_button.png[title="Play Buttons"]
+
+=== Select a subset of tests to run
+
+A Test Selector modal window can be used to select a subset of tests to run.
+This feature must be enabled in the `tiger.yaml` configuration file:
+
+[source,yaml]
+----
+lib:
+  enableTestSelection: true
+----
+
+If the Workflow UI is started without automatic execution of tests (see xref:_runTestsOnStart[Postpone start of test scenarios]), the Test Selector modal window will open automatically in the Workflow UI.
+The Test Selector modal window can also be opened manually by clicking the "Select tests to execute..." button in the Status Bar.
+
+image::screenshots/testselector_modal.png[title="Test Selector modal window opened in the Workflow UI"]
+
+The Test Selector modal window presents the tests in a tree table, where tests are organized by the folder structure of the feature files, and by scenarios within the feature files.
+The folder structure is omitted if the feature files are located all in the same folder.
+
+Additionally, the Test Selector modal window allows selecting tests by tags.
+The tags are displayed on the right side of the modal window.
+
+image::screenshots/testselector_tags.png[title="Select tests by tags"]
+
+By clicking on a tag, all tests with that tag will be selected.
+Additionally, one can remove a given tag from the selection or replace the full selection with just the selected tag.
+
+image::screenshots/testselector_tags_dropdown.png[title="Submenu for tag selection with option for unselect and replace selection"]
+
+A global search field as well as individual search fields for each column allow filtering the tests by name, tags or description.
+
+image::screenshots/testselector_searchfields.png[title="Search fields in the Test Selector table"]
+
+It is possible to save the current selection of tests in a file, which can be loaded later on.
+
+image::screenshots/testselector_save_load.png[title="Save and load buttons for test selections"]
+
+This may be useful for collaboration with other team members or for reusing the same selection in future test runs.
+
+CAUTION: Cucumber discovers and identifies tests partially based on the feature file location and the line number where the tests are located.
+When saving a test selection, we save the relative path of the feature path in relation to the current working directory of the java process.
+When loading the selection, the relative path is again resolved.
+When loading a selection configuration, the relative directory structure must be the same, and the tests must be located in the same line number within the files.
+Otherwise, we cannot unambiguously identify the tests.
+
+After selecting the tests, the user can click the "Run selected tests" button to start their execution.
+
+image::screenshots/testselector_run_button.png[title="Run selected tests button"]
 
 
 

@@ -84,14 +84,15 @@ public class RestAssuredLogToCurlCommandParser {
         curlCmd.append("\" -X POST \"").append(uri.get()).append("\" ");
       }
       case "DELETE" -> curlCmd.append("\" -X DELETE \"").append(uri.get()).append("\" ");
-      case "PUT" -> curlCmd
-          .append("\" -X PUT -d '")
-          .append(createCurlBodyString(getValuesForBlock(lines, "Body")))
-          .append("' \"")
-          .append(uri.get())
-          .append("\" ");
-      default -> throw new TigerLibraryException(
-          "Unable to parse http method '" + method.get() + "'");
+      case "PUT" ->
+          curlCmd
+              .append("\" -X PUT -d '")
+              .append(createCurlBodyString(getValuesForBlock(lines, "Body")))
+              .append("' \"")
+              .append(uri.get())
+              .append("\" ");
+      default ->
+          throw new TigerLibraryException("Unable to parse http method '" + method.get() + "'");
     }
   }
 

@@ -41,26 +41,26 @@ class JsonCheckerTest {
 
   private static final String IDP_STRUCT =
       """
-                  {
-                    iss: 'http.*',
-                    sub: 'http.*',
-                    iat: "${json-unit.ignore}",
-                    exp: "${json-unit.ignore}",
-                    jwks: {
-                      keys: [
-                        {
-                          use: "sig",
-                          kid: "puk_fachdienst_sig",
-                          kty: "EC",
-                          crv: "P-256",
-                          x: "${json-unit.ignore}",
-                          y: "${json-unit.ignore}"
-                        }
-                      ]
-                    },
-                    authority_hints: ["todo Bezeichnung des Federation Master"]
-                  }
-                  """;
+      {
+        iss: 'http.*',
+        sub: 'http.*',
+        iat: "${json-unit.ignore}",
+        exp: "${json-unit.ignore}",
+        jwks: {
+          keys: [
+            {
+              use: "sig",
+              kid: "puk_fachdienst_sig",
+              kty: "EC",
+              crv: "P-256",
+              x: "${json-unit.ignore}",
+              y: "${json-unit.ignore}"
+            }
+          ]
+        },
+        authority_hints: ["todo Bezeichnung des Federation Master"]
+      }
+      """;
   final JsonChecker check = new JsonChecker();
 
   private Stream<Arguments> provideDataForMatchingJsonObjects() {

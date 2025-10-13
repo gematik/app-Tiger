@@ -22,15 +22,15 @@ package de.gematik.test.tiger.proxy.data;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
+import de.gematik.rbellogger.util.RbelSocketAddress;
+import lombok.val;
 import org.junit.jupiter.api.Test;
 
 class SenderReceiverPairTest {
   @Test
   void testEqualityForOppositeDirection() {
-    SocketAddress address1 = new InetSocketAddress("localhost", 8080);
-    SocketAddress address2 = new InetSocketAddress("localhost", 9090);
+    val address1 = RbelSocketAddress.create("localhost", 8080);
+    val address2 = RbelSocketAddress.create("localhost", 9090);
 
     TcpIpConnectionIdentifier pair1 = new TcpIpConnectionIdentifier(address1, address2);
     TcpIpConnectionIdentifier pair2 = new TcpIpConnectionIdentifier(address2, address1);
@@ -42,8 +42,8 @@ class SenderReceiverPairTest {
 
   @Test
   void testPrimaryAndSecondaryAddresses() {
-    SocketAddress address1 = new InetSocketAddress("localhost", 8080);
-    SocketAddress address2 = new InetSocketAddress("localhost", 9090);
+    val address1 = RbelSocketAddress.create("localhost", 8080);
+    val address2 = RbelSocketAddress.create("localhost", 9090);
 
     TcpIpConnectionIdentifier pair = new TcpIpConnectionIdentifier(address1, address2);
 
@@ -57,8 +57,8 @@ class SenderReceiverPairTest {
 
   @Test
   void testSenderAndReceiver() {
-    SocketAddress address1 = new InetSocketAddress("localhost", 8080);
-    SocketAddress address2 = new InetSocketAddress("localhost", 9090);
+    val address1 = RbelSocketAddress.create("localhost", 8080);
+    val address2 = RbelSocketAddress.create("localhost", 9090);
 
     TcpIpConnectionIdentifier pair = new TcpIpConnectionIdentifier(address1, address2);
 

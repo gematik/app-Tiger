@@ -37,7 +37,15 @@ import lombok.NoArgsConstructor;
 public class TigerPkiIdentityInformation {
   private List<String> filenames;
   private String password;
+  private String alias;
   private StoreType storeType;
+
+  /**
+   * Internal field used for parsing compact format strings. Not configurable via JSON/YAML. Use
+   * 'password' and 'alias' fields instead for configuration.
+   */
+  @JsonIgnore @Builder.Default private List<String> aliasesOrPasswords = List.of();
+
   @JsonIgnore private boolean useCompactFormat = false;
 
   @JsonIgnore
@@ -57,7 +65,12 @@ public class TigerPkiIdentityInformation {
     if (filenames == null) {
       return "";
     } else {
-      return String.join(";", filenames) + ";" + password + ";" + getOrGuessStoreType();
+      return String.join(";", filenames)
+          + (aliasesOrPasswords.isEmpty() ? "" : ";" + String.join(";", aliasesOrPasswords))
+          + (password != null ? ";" + password : "")
+          + (alias != null ? ";" + alias : "")
+          + ";"
+          + getOrGuessStoreType();
     }
   }
 }

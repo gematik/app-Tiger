@@ -53,7 +53,7 @@ public abstract class AbstractJacksonConverter<F extends RbelFacet> extends Rbel
     }
 
     try {
-      return Optional.of(convertContentUsingJackson(target));
+      return Optional.ofNullable(convertContentUsingJackson(target));
     } catch (Exception e) {
       return Optional.empty();
     }

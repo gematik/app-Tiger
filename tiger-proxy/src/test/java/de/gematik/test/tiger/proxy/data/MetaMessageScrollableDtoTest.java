@@ -51,7 +51,7 @@ class MetaMessageScrollableDtoTest extends AbstractTigerProxyTest {
         .hasFieldOrPropertyWithValue("recipient", "backend:80")
         .hasFieldOrPropertyWithValue("sequenceNumber", 0L)
         .hasNoNullFieldsOrProperties();
-    assertThat(requestMetaData.getSender()).matches("127\\.0\\.0\\.1:\\d*");
+    assertThat(requestMetaData.getSender()).matches("(view-|)localhost:\\d*");
 
     MetaMessageScrollableDto responseMetaData =
         MetaMessageScrollableDto.createFrom(tigerProxy.getRbelMessagesList().get(1));
@@ -59,7 +59,7 @@ class MetaMessageScrollableDtoTest extends AbstractTigerProxyTest {
         .hasFieldOrPropertyWithValue("infoString", "666")
         .hasFieldOrPropertyWithValue("sender", "backend:80")
         .hasFieldOrPropertyWithValue("sequenceNumber", 1L);
-    assertThat(responseMetaData.getRecipient()).matches("127\\.0\\.0\\.1:\\d*");
+    assertThat(responseMetaData.getRecipient()).matches("(view-|)localhost:\\d*");
   }
 
   @Test

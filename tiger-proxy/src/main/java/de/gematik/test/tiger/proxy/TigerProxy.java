@@ -49,14 +49,20 @@ import de.gematik.test.tiger.proxy.tls.DynamicKeyAndCertificateFactory;
 import de.gematik.test.tiger.proxy.tls.MockServerTlsConfigurator;
 import jakarta.annotation.PreDestroy;
 import java.net.*;
-import java.security.*;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import javax.net.ssl.*;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.SneakyThrows;
@@ -275,6 +281,8 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
                             getTigerProxyConfiguration().isFailOnOfflineTrafficEndpoints())
                         .connectionTimeoutInSeconds(
                             getTigerProxyConfiguration().getConnectionTimeoutInSeconds())
+                        .requireHealthyTrafficEndpoints(
+                            getTigerProxyConfiguration().isRequireHealthyTrafficEndpoints())
                         .build(),
                     this))
         .forEach(remoteProxyClients::add);
@@ -326,6 +334,9 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
 
   @Override
   public synchronized TigerProxyRoute addRoute(final TigerProxyRoute tigerRoute) {
+    if (!isAllowedRoute(tigerRoute.getTo())) {
+      throw new TigerConfigurationException("Route '" + tigerRoute.getTo() + "' is not permitted!");
+    }
     log.info("Adding route {} -> {}", tigerRoute.getFrom(), tigerRoute.getTo());
     final Expectation expectation = buildRouteAndReturnExpectation(tigerRoute);
     expectation.setTigerRoute(tigerRoute);
@@ -335,6 +346,19 @@ public class TigerProxy extends AbstractTigerProxy implements AutoCloseable, Rbe
 
     log.debug("Created route from {} to {}", tigerRoute.getFrom(), tigerRoute.getTo());
     return createdTigerRoute;
+  }
+
+  private boolean isAllowedRoute(String route) {
+    try {
+      URI uri = new URI(route);
+      if (uri.getHost() == null || uri.getHost().isEmpty()) {
+        return false;
+      }
+      uri.toURL();
+      return true;
+    } catch (RuntimeException | URISyntaxException | MalformedURLException e) {
+      return false;
+    }
   }
 
   private Expectation buildRouteAndReturnExpectation(final TigerProxyRoute tigerRoute) {

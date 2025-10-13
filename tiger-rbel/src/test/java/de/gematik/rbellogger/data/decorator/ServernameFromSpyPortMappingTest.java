@@ -24,9 +24,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.core.RbelHostnameFacet;
 import de.gematik.rbellogger.util.GlobalServerMap;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,7 +42,7 @@ class ServernameFromSpyPortMappingTest {
   void testApply_whenPortExists_shouldReturnServerName() {
     // Setup a hostname element with localhost:1234
     RbelElement hostnameFacet =
-        RbelHostnameFacet.buildRbelHostnameFacet(null, new RbelHostname("localhost", 1234));
+        RbelHostnameFacet.buildRbelHostnameFacet(null, RbelSocketAddress.create("localhost", 1234));
     ServernameFromSpyPortMapping mapping = new ServernameFromSpyPortMapping();
     GlobalServerMap.addServerNameForPort(1234, "myTestServer");
 
@@ -55,7 +55,7 @@ class ServernameFromSpyPortMappingTest {
   void testApply_whenPortDoesNotExist_shouldReturnEmpty() {
     // Setup a hostname element with localhost:1234
     RbelElement hostnameFacet =
-        RbelHostnameFacet.buildRbelHostnameFacet(null, new RbelHostname("localhost", 1234));
+        RbelHostnameFacet.buildRbelHostnameFacet(null, RbelSocketAddress.create("localhost", 1234));
     ServernameFromSpyPortMapping mapping = new ServernameFromSpyPortMapping();
 
     Optional<String> result = mapping.apply(hostnameFacet);

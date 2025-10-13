@@ -22,8 +22,8 @@ package de.gematik.test.tiger.proxy;
 
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.model.Header;
 import de.gematik.test.tiger.mockserver.model.HttpRequest;
 import de.gematik.test.tiger.mockserver.model.HttpResponse;
@@ -72,7 +72,7 @@ public class MockServerToRbelConverter {
     val conversionMetadata =
         new RbelMessageMetadata()
             .withSender(convertUri(senderUrl))
-            .withReceiver(RbelHostname.fromString(receiverUrl).orElse(null))
+            .withReceiver(RbelSocketAddress.fromString(receiverUrl).orElse(null))
             .withPreviousMessage(request.getCorrespondingRbelMessage().getUuid())
             .withPairedMessage(request.getCorrespondingRbelMessage().getUuid())
             .withTransmissionTime(timestamp.orElse(null))
@@ -94,7 +94,7 @@ public class MockServerToRbelConverter {
     val unparsedRbelMessage = requestToRbelMessage(request);
     val conversionMetadata =
         new RbelMessageMetadata()
-            .withSender(RbelHostname.fromString(request.getSenderAddress()).orElse(null))
+            .withSender(RbelSocketAddress.fromString(request.getSenderAddress()).orElse(null))
             .withReceiver(convertUri(protocolAndHost))
             .withTransmissionTime(timestamp.orElse(null))
             .withPreviousMessage(previousMessageReference.getAndSet(unparsedRbelMessage.getUuid()));
@@ -133,13 +133,13 @@ public class MockServerToRbelConverter {
     return rbelConverter.parseMessage(message, metaData);
   }
 
-  private RbelHostname convertUri(String protocolAndHost) {
+  private RbelSocketAddress convertUri(String protocolAndHost) {
     if (protocolAndHost == null) {
       return null;
     }
     try {
       new URI(protocolAndHost);
-      return (RbelHostname) RbelHostname.generateFromUrl(protocolAndHost).orElse(null);
+      return RbelSocketAddress.generateFromUrl(protocolAndHost).orElse(null);
     } catch (URISyntaxException e) {
       throw new TigerProxyParsingException(
           "Unable to parse hostname from '" + protocolAndHost + "'", e);

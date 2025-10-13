@@ -21,10 +21,12 @@
 package de.gematik.test.tiger.common;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 
 /** Ringbuffer with bounded size. */
@@ -64,6 +66,10 @@ public class RingBufferHashMap<K, V> {
     return new ArrayList<>(map.entrySet());
   }
 
+  public synchronized Set<K> keys() {
+    return Collections.unmodifiableSet(map.keySet());
+  }
+
   public int size() {
     return map.size();
   }
@@ -79,5 +85,9 @@ public class RingBufferHashMap<K, V> {
 
   public void clear() {
     map.clear();
+  }
+
+  public String toString() {
+    return map.toString();
   }
 }

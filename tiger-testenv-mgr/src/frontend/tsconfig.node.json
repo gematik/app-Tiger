@@ -3,7 +3,8 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "target": "ES2022",
     "lib": [
-      "ES2023"
+      "ES2023",
+      "DOM"
     ],
     "types": [
       "node",
@@ -32,6 +33,7 @@
   },
   "include": [
     "vite.config.ts",
-    "src/**/__tests__/*.ts"
+    "src/**/__tests__/*.ts",
+    "node_modules/vitest/globals.d.ts"
   ]
 }

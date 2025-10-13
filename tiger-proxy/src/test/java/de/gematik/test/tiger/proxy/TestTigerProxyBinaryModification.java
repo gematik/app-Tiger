@@ -48,21 +48,21 @@ class TestTigerProxyBinaryModification {
 
   private static final String A_SAMPLE_HTTP_EXCHANGE =
       """
-    C: GET / HTTP/1.1
-    C: Host: example.com
-    C:
-    S: HTTP/1.1 200 OK
-    S: Server: gws
-    S: Content-Length: 0
-    S:
-    C: GET /foo HTTP/1.1
-    C: Host: example.com
-    C:
-    S: HTTP/1.1 201 OK
-    S: Server: fdsa
-    S: Content-Length: 0
-    S:
-    """;
+      C: GET / HTTP/1.1
+      C: Host: example.com
+      C:
+      S: HTTP/1.1 200 OK
+      S: Server: gws
+      S: Content-Length: 0
+      S:
+      C: GET /foo HTTP/1.1
+      C: Host: example.com
+      C:
+      S: HTTP/1.1 201 OK
+      S: Server: fdsa
+      S: Content-Length: 0
+      S:
+      """;
 
   @SneakyThrows
   @Test
@@ -70,19 +70,19 @@ class TestTigerProxyBinaryModification {
     val replayer =
         PcapReplayer.writeReplay(
             """
-                S: +OK POP3 server ready <1896.697170952@dbc.mtview.ca.us>
-                C: CAPA
-                S: +OK
-                S: fdsa
-                S: blubsblab
-                S: .
-                client: RETR 1
-                server: +OK body follows
-                server: MailBody
-                server: .
-                client: QUIT
-                server: +OK bye
-                """);
+            S: +OK POP3 server ready <1896.697170952@dbc.mtview.ca.us>
+            C: CAPA
+            S: +OK
+            S: fdsa
+            S: blubsblab
+            S: .
+            client: RETR 1
+            server: +OK body follows
+            server: MailBody
+            server: .
+            client: QUIT
+            server: +OK bye
+            """);
     val tigerProxy =
         replayer.replayWithDirectForwardUsing(
             new TigerProxyConfiguration()

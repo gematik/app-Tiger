@@ -90,7 +90,9 @@ public class NettySslContextFactory {
 
   private SslContext buildFreshClientSslContext(HttpProtocol protocol, String hostName) {
     try {
-      val clientIdentity = keyAndCertificateFactory.resolveIdentityForHostname(hostName);
+      val clientIdentity =
+          keyAndCertificateFactory.resolveIdentityForHostname(
+              hostName, KeyAlgorithmPreference.MIXED);
       // create x509 and private key if none exist yet
       SslContextBuilder sslContextBuilder =
           SslContextBuilder.forClient()
@@ -119,22 +121,32 @@ public class NettySslContextFactory {
     }
   }
 
-  public synchronized Pair<SslContext, TigerPkiIdentity> createServerSslContext(String hostname) {
+  public synchronized Pair<SslContext, TigerPkiIdentity> createServerSslContext(
+      String hostname, KeyAlgorithmPreference clientAlgorithmPreference) {
+    val algorithmPreference =
+        KeyAlgorithmPreference.determineEffectivePreference(
+            clientAlgorithmPreference, configuration.keyAlgorithmPreference());
     if (serverSslContextAndIdentity != null
         // re-create x509 and private key if SAN list has been updated and dynamic update has not
         // been disabled
-        && (!configuration.rebuildServerTlsContext())) {
-      log.info("Using existing server SSL context for {}", hostname);
+        && (!configuration.rebuildServerTlsContext())
+        && keyPreferenceMatches(algorithmPreference)) {
+      log.info(
+          "Using existing server SSL context for {} with key-algorithm {}",
+          hostname,
+          serverSslContextAndIdentity.getValue().getPrivateKey().getAlgorithm());
       return serverSslContextAndIdentity;
     }
     log.info("Creating new server SSL context for {}", hostname);
     try {
-      val serverIdentity = keyAndCertificateFactory.resolveIdentityForHostname(hostname);
+      val serverIdentity =
+          keyAndCertificateFactory.resolveIdentityForHostname(hostname, algorithmPreference);
 
       log.atInfo()
+          .addArgument(() -> serverIdentity.getPrivateKey().getAlgorithm())
           .addArgument(() -> serverIdentity.getCertificate().getSubjectX500Principal())
           .addArgument(() -> serverIdentity.getCertificate().getIssuerX500Principal())
-          .log("Using Server Certificate '{}', issued by '{}'");
+          .log("Using {} Server Certificate '{}', issued by '{}'");
       final SslContextBuilder sslContextBuilder =
           SslContextBuilder.forServer(
                   serverIdentity.getPrivateKey(), serverIdentity.buildChainWithCertificate())
@@ -150,6 +162,20 @@ public class NettySslContextFactory {
     } catch (RuntimeException | SSLException e) {
       log.error("Exception creating SSL context for server", e);
       throw new TigerProxySslException("exception creating SSL context for server", e);
+    }
+  }
+
+  private boolean keyPreferenceMatches(KeyAlgorithmPreference algorithmPreference) {
+    if (algorithmPreference == KeyAlgorithmPreference.MIXED
+        || algorithmPreference == KeyAlgorithmPreference.UNKNOWN) {
+      return true;
+    } else {
+      val serverIdentity = serverSslContextAndIdentity.getValue();
+      if (serverIdentity == null) {
+        return false;
+      } else {
+        return algorithmPreference.matches(serverIdentity);
+      }
     }
   }
 

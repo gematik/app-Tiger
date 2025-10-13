@@ -109,6 +109,27 @@ public class RbelUriConverter extends RbelConverterPlugin {
     final String[] pathParts = content.split("\\?", 2);
     final RbelUriFacetBuilder uriFacetBuilder =
         RbelUriFacet.builder().basicPath(RbelElement.wrap(rbel, pathParts[0]));
+    if (uri.getScheme() != null) {
+      uriFacetBuilder.scheme(RbelElement.wrap(rbel, uri.getScheme()));
+    }
+    if (uri.getAuthority() != null) {
+      uriFacetBuilder.authority(RbelElement.wrap(rbel, uri.getAuthority()));
+    }
+    if (uri.getUserInfo() != null) {
+      uriFacetBuilder.userInfo(RbelElement.wrap(rbel, uri.getUserInfo()));
+    }
+    if (uri.getPath() != null) {
+      uriFacetBuilder.path(RbelElement.wrap(rbel, uri.getPath()));
+    }
+    if (uri.getQuery() != null) {
+      uriFacetBuilder.query(RbelElement.wrap(rbel, uri.getQuery()));
+    }
+    if (uri.getHost() != null) {
+      uriFacetBuilder.host(RbelElement.wrap(rbel, uri.getHost()));
+    }
+    if (uri.getPort() >= 0) {
+      uriFacetBuilder.port(RbelElement.wrap(rbel, uri.getPort()));
+    }
     if (pathParts.length > 1) {
       uriFacetBuilder.queryParameters(
           extractParameterMap(uri, context, rbel.getRawStringContent(), rbel));

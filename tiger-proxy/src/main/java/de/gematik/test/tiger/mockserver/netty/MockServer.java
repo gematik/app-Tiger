@@ -44,6 +44,7 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import io.netty.util.internal.SocketUtils;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Arrays;
@@ -80,8 +81,14 @@ public class MockServer extends LifeCycle {
    */
   public MockServer(final MockServerConfiguration configuration, final Integer... localPorts) {
     super(configuration);
-    remoteSocket = configuration.directForwarding();
-
+    if (configuration.directForwarding() != null) {
+      remoteSocket =
+          SocketUtils.socketAddress(
+              configuration.directForwarding().getHostName(),
+              configuration.directForwarding().getPort());
+    } else {
+      remoteSocket = null;
+    }
     createServerBootstrap(configuration, localPorts);
 
     // wait to start

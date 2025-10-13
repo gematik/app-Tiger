@@ -40,7 +40,7 @@ class RbelSicctConverterTest {
   private RbelLogger rbelLogger;
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     final RbelFileReaderCapturer fileReaderCapturer =
         RbelFileReaderCapturer.builder().rbelFile("src/test/resources/sicctTraffic.tgr").build();
     rbelLogger =

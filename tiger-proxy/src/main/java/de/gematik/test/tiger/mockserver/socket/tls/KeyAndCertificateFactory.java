@@ -28,7 +28,9 @@ import java.util.Optional;
  */
 public interface KeyAndCertificateFactory {
 
-  Optional<TigerPkiIdentity> findExactIdentityForHostname(String hostname);
+  Optional<TigerPkiIdentity> findExactIdentityForHostname(
+      String hostname, KeyAlgorithmPreference keyAlgorithmPreference);
 
-  TigerPkiIdentity resolveIdentityForHostname(String hostname);
+  TigerPkiIdentity resolveIdentityForHostname(
+      String hostname, KeyAlgorithmPreference algorithmPreference);
 }

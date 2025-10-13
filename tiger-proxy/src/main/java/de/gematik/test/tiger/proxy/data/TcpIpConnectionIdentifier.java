@@ -20,26 +20,27 @@
  */
 package de.gematik.test.tiger.proxy.data;
 
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
+import de.gematik.rbellogger.util.RbelSocketAddress;
+import java.util.Arrays;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
 import lombok.experimental.Accessors;
+import lombok.val;
 
 @Value
 @EqualsAndHashCode(of = {"sortedAddress1", "sortedAddress2"})
 @Accessors(fluent = true)
 public class TcpIpConnectionIdentifier {
-  SocketAddress sender;
-  SocketAddress receiver;
+  RbelSocketAddress sender;
+  RbelSocketAddress receiver;
   boolean originalDirection;
 
-  InetSocketAddress sortedAddress1;
-  InetSocketAddress sortedAddress2;
+  RbelSocketAddress sortedAddress1;
+  RbelSocketAddress sortedAddress2;
 
-  public TcpIpConnectionIdentifier(SocketAddress sender, SocketAddress receiver) {
-    InetSocketAddress normA = normalize(sender);
-    InetSocketAddress normB = normalize(receiver);
+  public TcpIpConnectionIdentifier(RbelSocketAddress sender, RbelSocketAddress receiver) {
+    val normA = normalize(sender);
+    val normB = normalize(receiver);
 
     if (compareAddresses(normA, normB) < 0) {
       this.sortedAddress1 = normA;
@@ -54,33 +55,25 @@ public class TcpIpConnectionIdentifier {
     this.receiver = receiver;
   }
 
-  private static InetSocketAddress normalize(SocketAddress address) {
-
-    if (!(address instanceof InetSocketAddress inetAddr)) {
-      throw new IllegalArgumentException("Unsupported SocketAddress type: " + address.getClass());
-    }
-
-    // Try to get a resolved IP address
-    if (inetAddr.getAddress() != null) {
-      return new InetSocketAddress(inetAddr.getAddress().getHostAddress(), inetAddr.getPort());
-    }
-
-    // Fallback: If the address is unresolved, use the hostname as a last resort
-    return new InetSocketAddress(inetAddr.getHostString(), inetAddr.getPort());
+  private static RbelSocketAddress normalize(RbelSocketAddress address) {
+    return address;
   }
 
-  private static int compareAddresses(InetSocketAddress a, InetSocketAddress b) {
+  private static int compareAddresses(RbelSocketAddress a, RbelSocketAddress b) {
     if (a.getAddress() != null
         && b.getAddress() != null
-        && a.getAddress().getHostAddress() != null
-        && b.getAddress().getHostAddress() != null) {
+        && a.getAddress().getIpAddress() != null
+        && b.getAddress().getIpAddress() != null) {
       // prefer the resolved view, since it is more stable
-      int ipCompare = a.getAddress().getHostAddress().compareTo(b.getAddress().getHostAddress());
+      int ipCompare = Arrays.compare(a.getAddress().getIpAddress(), b.getAddress().getIpAddress());
+      return ipCompare != 0 ? ipCompare : Integer.compare(a.getPort(), b.getPort());
+    } else if (a.getAddress().getHostname() != null && b.getAddress().getHostname() != null) {
+      // for non-resolvable addresses, use the hostname
+      int ipCompare = a.getAddress().getHostname().compareTo(b.getAddress().getHostname());
       return ipCompare != 0 ? ipCompare : Integer.compare(a.getPort(), b.getPort());
     } else {
-      // for non-resolvable addresses, use the hostname
-      int ipCompare = a.getHostName().compareTo(b.getHostName());
-      return ipCompare != 0 ? ipCompare : Integer.compare(a.getPort(), b.getPort());
+      // fallback: not the same
+      return -1;
     }
   }
 

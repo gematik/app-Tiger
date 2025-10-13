@@ -25,20 +25,18 @@ import de.gematik.rbellogger.RbelConversionPhase;
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.RbelConverterPlugin;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.RbelMessageMetadata.RbelMetadataValue;
 import de.gematik.rbellogger.data.core.*;
 import de.gematik.rbellogger.file.BundledServerNameWriterAndReader;
 import de.gematik.rbellogger.util.GlobalServerMap;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import de.gematik.test.tiger.proxy.data.TcpConnectionEntry;
 import de.gematik.test.tiger.proxy.data.TcpIpConnectionIdentifier;
 import de.gematik.test.tiger.util.AsyncByteQueue;
 import de.gematik.test.tiger.util.DeterministicUuidGenerator;
 import io.micrometer.common.util.StringUtils;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -75,6 +73,24 @@ public class SingleConnectionParser {
     log =
         org.slf4j.LoggerFactory.getLogger(
             tigerProxy.getName().orElse("TigerProxy") + "-ConnectionParser");
+    // Reset linkage state when history is cleared so we don't propagate stale previous UUIDs
+    setMessageRemovalCallbacks(tigerProxy);
+  }
+
+  private void setMessageRemovalCallbacks(AbstractTigerProxy tigerProxy) {
+    this.rbelConverter.addClearHistoryCallback(() -> lastMessageUuid = null);
+    this.rbelConverter.addMessageRemovedFromHistoryCallback(
+        element -> {
+          if (element.getUuid().equals(lastMessageUuid)) {
+            lastMessageUuid = null;
+          }
+        });
+    tigerProxy.addRemovedMessageUuidsHandler(
+        uuids -> {
+          if (lastMessageUuid != null && uuids.contains(lastMessageUuid)) {
+            lastMessageUuid = null;
+          }
+        });
   }
 
   public SingleConnectionParser(
@@ -88,15 +104,14 @@ public class SingleConnectionParser {
     this.bufferedParts = new AsyncByteQueue(connectionIdentifier);
     this.proxyName = null;
     log = org.slf4j.LoggerFactory.getLogger(this.getClass());
+    setMessageRemovalCallbacks(binaryExchangeHandler.getTigerProxy());
   }
 
   private List<RbelElement> handleException(
       Throwable throwable, TcpIpConnectionIdentifier connectionId, TcpConnectionEntry entry) {
     log.warn("Exception while parsing buffered content for message {}", entry.getUuid(), throwable);
     binaryExchangeHandler.propagateExceptionMessageSafe(
-        throwable,
-        RbelHostname.create(connectionId.sender()),
-        RbelHostname.create(connectionId.receiver()));
+        throwable, connectionId.sender(), connectionId.receiver());
     return List.of();
   }
 
@@ -157,29 +172,29 @@ public class SingleConnectionParser {
   }
 
   private void setBundledServerName(TcpConnectionEntry entry) {
-    if (!StringUtils.isBlank(proxyName)
-        && !proxyName.equals("local_tiger_proxy")
-        && getDynamicConnectionEndpoint(entry) instanceof InetSocketAddress inetSocketAddress) {
-      GlobalServerMap.addServerNameForPort(inetSocketAddress.getPort(), proxyName);
+    if (!StringUtils.isBlank(proxyName) && !proxyName.equals("local_tiger_proxy")) {
+      getDynamicConnectionEndpoint(entry)
+          .ifPresent(adr -> GlobalServerMap.addServerNameForPort(adr.getPort(), proxyName));
     }
   }
 
-  private static SocketAddress getDynamicConnectionEndpoint(TcpConnectionEntry entry) {
+  private static Optional<RbelSocketAddress> getDynamicConnectionEndpoint(
+      TcpConnectionEntry entry) {
     var connectionId = entry.getConnectionIdentifier();
     if (entry.getMessageKind().isRequest()) {
       if (entry
           .getAdditionalData()
           .containsKey(BundledServerNameWriterAndReader.BUNDLED_HOSTNAME_SENDER.getKey())) {
-        return null;
+        return Optional.empty();
       }
-      return connectionId.sender();
+      return Optional.ofNullable(connectionId.sender());
     } else {
       if (entry
           .getAdditionalData()
           .containsKey(BundledServerNameWriterAndReader.BUNDLED_HOSTNAME_RECEIVER.getKey())) {
-        return null;
+        return Optional.empty();
       }
-      return connectionId.receiver();
+      return Optional.ofNullable(connectionId.receiver());
     }
   }
 
@@ -289,9 +304,8 @@ public class SingleConnectionParser {
       TcpConnectionEntry bufferedContent) {
     final RbelMessageMetadata metadata =
         new RbelMessageMetadata()
-            .withSender(RbelHostname.create(bufferedContent.getConnectionIdentifier().sender()))
-            .withReceiver(
-                RbelHostname.create(bufferedContent.getConnectionIdentifier().receiver()));
+            .withSender(bufferedContent.getConnectionIdentifier().sender())
+            .withReceiver(bufferedContent.getConnectionIdentifier().receiver());
     bufferedContent.getAdditionalData().forEach(metadata::addMetadata);
     return metadata;
   }

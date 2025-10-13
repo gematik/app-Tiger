@@ -38,18 +38,18 @@ class TigerSerializationUtilTest {
     final JSONObject jsonObject =
         yamlToJsonObject(
             """
-                        foo:
-                          bar: someString
-                          list:
-                            - entry
-                            - schmentry
-                            - nested:
-                                entry: withValue
-                          object:
-                            with:
-                              some:
-                                depth: "to it"
-                        """);
+            foo:
+              bar: someString
+              list:
+                - entry
+                - schmentry
+                - nested:
+                    entry: withValue
+              object:
+                with:
+                  some:
+                    depth: "to it"
+            """);
 
     assertThat(jsonObject.getJSONObject("foo").getString("bar")).isEqualTo("someString");
     assertThat(
@@ -102,13 +102,13 @@ class TigerSerializationUtilTest {
 
     val expectedYaml =
         """
-    java:
-      version: '11'
-      version.date: '2021-04-20'
-    os: Windows NT
-    os.arch: amd64
-    os.version: '10.0'
-    """;
+        java:
+          version: '11'
+          version.date: '2021-04-20'
+        os: Windows NT
+        os.arch: amd64
+        os.version: '10.0'
+        """;
 
     assertThat(TigerSerializationUtil.toNestedYaml(flatMap)).isEqualTo(expectedYaml);
   }
@@ -144,11 +144,11 @@ class TigerSerializationUtilTest {
 
     val expectedYaml =
         """
-            dummy:
-              '0': 0th
-              '1': 1st
-              '2': 2nd
-            """;
+        dummy:
+          '0': 0th
+          '1': 1st
+          '2': 2nd
+        """;
 
     assertThat(TigerSerializationUtil.toNestedYaml(flatMap)).isEqualTo(expectedYaml);
   }

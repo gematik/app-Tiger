@@ -80,13 +80,13 @@ class DriverGeneratorTest {
             assertEquals(
                 getNormalizedJavaFrom(
                     """
-                                package: fancy.pck.of.driver
-                                feature: relativeRessourceFeatureFile.feature
-                                counter: 1
-                                gluesCsv: de.gematik.test.tiger.glue,pck.of.glue1,glue2.pck
-                                classname: Mops001IT
-                                tagsAnnotation:
-                                """),
+                    package: fancy.pck.of.driver
+                    feature: relativeRessourceFeatureFile.feature
+                    counter: 1
+                    gluesCsv: de.gematik.test.tiger.glue,pck.of.glue1,glue2.pck
+                    classname: Mops001IT
+                    tagsAnnotation:
+                    """),
                 getNormalizedJavaFrom(
                     outputFolder.resolve(
                         Paths.get("fancy", "pck", "of", "driver", "Mops001IT.java")))),
@@ -94,12 +94,12 @@ class DriverGeneratorTest {
             assertEquals(
                 getNormalizedJavaFrom(
                     """
-                                package: fancy.pck.of.driver
-                                feature: /absoluteRessourceFeatureFile
-                                counter: 2
-                                gluesCsv: de.gematik.test.tiger.glue,pck.of.glue1,glue2.pck
-                                classname: Mops002IT
-                                """),
+                    package: fancy.pck.of.driver
+                    feature: /absoluteRessourceFeatureFile
+                    counter: 2
+                    gluesCsv: de.gematik.test.tiger.glue,pck.of.glue1,glue2.pck
+                    classname: Mops002IT
+                    """),
                 getNormalizedJavaFrom(
                     outputFolder.resolve(
                         Paths.get("fancy", "pck", "of", "driver", "Mops002IT.java")))));
@@ -134,25 +134,25 @@ class DriverGeneratorTest {
     assertEquals(
         getNormalizedJavaFrom(
             """
-                            ;
+            ;
 
-                            import io.cucumber.junit.platform.engine.Constants;
-                            import org.junit.platform.suite.api.ConfigurationParameter;
-                            import org.junit.platform.suite.api.IncludeEngines;
-                            import org.junit.platform.suite.api.Suite;
-                            import org.junit.platform.suite.api.SelectFile;
+            import io.cucumber.junit.platform.engine.Constants;
+            import org.junit.platform.suite.api.ConfigurationParameter;
+            import org.junit.platform.suite.api.IncludeEngines;
+            import org.junit.platform.suite.api.Suite;
+            import org.junit.platform.suite.api.SelectFile;
 
-                            @Suite
-                            @IncludeEngines("cucumber")
-                            @SelectFile("featureFile.feature")
-                            @ConfigurationParameter(key = Constants.GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue")
-                            @ConfigurationParameter(key = Constants.FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
-                            @ConfigurationParameter(key = Constants.PLUGIN_PROPERTY_NAME,
-                                                    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
-                            public class Mops001IT {
+            @Suite
+            @IncludeEngines("cucumber")
+            @SelectFile("featureFile.feature")
+            @ConfigurationParameter(key = Constants.GLUE_PROPERTY_NAME, value = "de.gematik.test.tiger.glue")
+            @ConfigurationParameter(key = Constants.FILTER_TAGS_PROPERTY_NAME, value = "not @Ignore")
+            @ConfigurationParameter(key = Constants.PLUGIN_PROPERTY_NAME,
+                                    value = "io.cucumber.core.plugin.TigerSerenityReporterPlugin,json:target/cucumber-parallel/1.json")
+            public class Mops001IT {
 
-                            }
-                            """),
+            }
+            """),
         getNormalizedJavaFrom(outputFolder.resolve(Paths.get("Mops001IT.java"))));
   }
 
@@ -204,7 +204,7 @@ class DriverGeneratorTest {
 
           assertEquals(
               getNormalizedJavaFrom(
-                  """
+"""
 @ConfigurationParameter(key = Constants.FILTER_TAGS_PROPERTY_NAME, value = "@MyCustomUnitTestTag")
 """),
               getNormalizedJavaFrom(outputFolder.resolve(Paths.get("Mops001IT.java"))));
@@ -231,9 +231,10 @@ class DriverGeneratorTest {
           underTest.generateDriverForFeatureFiles(List.of("featureFile.feature"));
 
           assertEquals(
-              getNormalizedJavaFrom("""
-            @MyCustomUnitTestTag
-            """),
+              getNormalizedJavaFrom(
+                  """
+                  @MyCustomUnitTestTag
+                  """),
               getNormalizedJavaFrom(outputFolder.resolve(Paths.get("Mops001IT.java"))));
         });
   }

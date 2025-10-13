@@ -83,7 +83,7 @@ class RbelHttpRequestConverterTest {
   @ParameterizedTest
   @CsvSource(
       textBlock =
-          """
+"""
 'User-Agent: Value1\r\nUser-Agent: Value2', 2
 'User-Agent: Value1, Value2', 3
 """)
@@ -205,25 +205,20 @@ class RbelHttpRequestConverterTest {
         + "Some-Header: Value\r\n\r\n"
         + "Some body, but no content-length defined', Did not find content-length or"
         + " transfer-encoding header",
-    "'HTTP/1.1 406\r\n"
-        + "Some-Header: Value\r\n\r\n"
-        + "Some body, but no content-length defined', Did not find content-length or"
-        + " transfer-encoding header",
-    "'PATCH /foo/bar HTTP/1.1\r\n"
-        + "Connection: Keep-Alive\r\n\r\n"
-        + "', HTTP/1.1 request does not contain Host header"
+    "'HTTP/1.1 406\r\nSome-Header: Value\r\n\r\nSome body, but no content-length defined'",
+    "'PATCH /foo/bar HTTP/1.1\r\nConnection: Keep-Alive\r\n\r\n"
   })
   // These errors only stop the parsing if the message is send via TCP (otherwise the message can
   // still be safely parsed)
-  void testTcpHttpErrors(String defunctMessage, String errorMessageContains) {
+  void testTcpHttpErrors(String defunctMessage) {
     assertThat(lenientRbelConverter.convertElement(defunctMessage, null))
         .hasFacet(RbelHttpMessageFacet.class);
     assertThat(rbelConverter.convertElement(defunctMessage, null))
-        .extractFacet(RbelNoteFacet.class)
-        .hasFieldOrPropertyWithValue("style", NoteStyling.INFO)
-        .extracting("value")
+        .andPrintTree()
+        .hasFacet(RbelHttpMessageFacet.class)
+        .extractChildWithPath("$.body")
         .asString()
-        .contains(errorMessageContains);
+        .isEmpty();
   }
 
   @Test

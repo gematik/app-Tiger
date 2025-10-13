@@ -20,9 +20,6 @@
  */
 package de.gematik.test.tiger.testenvmgr.servers;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNoException;
-
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.testenvmgr.AbstractTestTigerTestEnvMgr;
 import de.gematik.test.tiger.testenvmgr.TigerTestEnvMgr;
@@ -33,6 +30,9 @@ import kong.unirest.core.Unirest;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+
 class HttpBinServerTest extends AbstractTestTigerTestEnvMgr {
 
   @SneakyThrows
@@ -40,10 +40,11 @@ class HttpBinServerTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-            servers:
-                testHttpBin:
-                    type: httpbin
-                    serverPort: ${free.port.0}""",
+          servers:
+              testHttpBin:
+                  type: httpbin
+                  serverPort: ${free.port.0}\
+          """,
       skipEnvironmentSetup = true)
   void testCreateHttpBinWithRandomPort(TigerTestEnvMgr envMgr) {
     assertThatNoException().isThrownBy(envMgr::setUpEnvironment);

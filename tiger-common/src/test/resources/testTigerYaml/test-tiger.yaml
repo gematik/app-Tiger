@@ -1,0 +1,3 @@
+additionalConfigurationFiles:
+  - filename: src/test/resources/testTigerYaml/testdata-patient.yaml
+    baseKey: external

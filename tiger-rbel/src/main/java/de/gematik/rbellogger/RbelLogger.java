@@ -23,8 +23,6 @@ package de.gematik.rbellogger;
 import de.gematik.rbellogger.captures.RbelCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.facets.jose.RbelJwkReader;
-import de.gematik.rbellogger.facets.jose.RbelX5cKeyReader;
 import de.gematik.rbellogger.key.RbelKeyManager;
 import de.gematik.rbellogger.modifier.RbelModifier;
 import de.gematik.rbellogger.util.RbelValueShader;
@@ -65,8 +63,6 @@ public class RbelLogger {
 
     rbelConverter.initializeConverters(configuration);
 
-    rbelConverter.addConverter(new RbelJwkReader());
-    rbelConverter.addConverter(new RbelX5cKeyReader());
     configuration.getPostConversionListener().forEach(rbelConverter::addConverter);
     rbelConverter.addConverter(rbelConverter.getRbelValueShader().getPostConversionListener());
 

@@ -54,7 +54,7 @@ class TestMessageMetaDataDto extends AbstractTigerProxyTest {
         .hasFieldOrPropertyWithValue("symbol", "fa-share")
         .hasFieldOrPropertyWithValue("color", "has-text-link")
         .hasFieldOrPropertyWithValue("sequenceNumber", 0L);
-    assertThat(requestMetaData.getSender()).matches("127\\.0\\.0\\.1:\\d*");
+    assertThat(requestMetaData.getSender()).matches("localhost:\\d*");
 
     MessageMetaDataDto responseMetaData =
         MessageMetaDataDto.createFrom(tigerProxy.getRbelMessagesList().get(1));
@@ -64,7 +64,7 @@ class TestMessageMetaDataDto extends AbstractTigerProxyTest {
         .hasFieldOrPropertyWithValue("symbol", "fa-reply")
         .hasFieldOrPropertyWithValue("color", "text-success")
         .hasFieldOrPropertyWithValue("sequenceNumber", 1L);
-    assertThat(responseMetaData.getRecipient()).matches("127\\.0\\.0\\.1:\\d*");
+    assertThat(responseMetaData.getRecipient()).matches("localhost:\\d*");
   }
 
   @Test

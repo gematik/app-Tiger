@@ -28,14 +28,17 @@ import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.core.RbelHostnameFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.data.core.TracingMessagePairFacet;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.util.Objects;
+import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 
+@Slf4j
 @ConverterInfo(addAutomatically = false)
 public class RbelHttpPairingInBinaryChannelConverter extends RbelConverterPlugin {
   @Override
   public RbelConversionPhase getPhase() {
-    return RbelConversionPhase.CONTENT_ENRICHMENT;
+    return RbelConversionPhase.CONTENT_PARSING;
   }
 
   @Override
@@ -46,8 +49,7 @@ public class RbelHttpPairingInBinaryChannelConverter extends RbelConverterPlugin
     if (rbelElement.hasFacet(RbelHttpResponseFacet.class)) { // if it is a response
       // we assume the request before it is the request
       converter
-          .messagesStreamLatestFirst()
-          .dropWhile(e -> e != rbelElement)
+          .getPreviousMessagesInSameConnectionAs(rbelElement)
           .filter(e -> e.hasFacet(RbelHttpRequestFacet.class))
           .findFirst()
           .ifPresent(e -> updateHttpFacetsWithPairedMessages(e, rbelElement));
@@ -70,11 +72,14 @@ public class RbelHttpPairingInBinaryChannelConverter extends RbelConverterPlugin
 
   private static boolean senderAndReceiverMatch(
       RbelTcpIpMessageFacet request, RbelTcpIpMessageFacet response) {
-    return Objects.equals(
-            RbelHostnameFacet.tryToExtractServerName(request.getSender()).orElse(null),
-            RbelHostnameFacet.tryToExtractServerName(response.getReceiver()).orElse(null))
-        && Objects.equals(
-            RbelHostnameFacet.tryToExtractServerName(request.getReceiver()).orElse(null),
-            RbelHostnameFacet.tryToExtractServerName(response.getSender()).orElse(null));
+    return Objects.equals(getHostname(request.getSender()), getHostname(response.getReceiver()))
+        && Objects.equals(getHostname(request.getReceiver()), getHostname(response.getSender()));
+  }
+
+  private static RbelSocketAddress getHostname(RbelElement hostnameElement) {
+    return hostnameElement
+        .getFacet(RbelHostnameFacet.class)
+        .map(RbelHostnameFacet::toRbelSocketAddress)
+        .orElse(null);
   }
 }

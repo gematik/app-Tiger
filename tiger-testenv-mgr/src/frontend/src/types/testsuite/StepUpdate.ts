@@ -21,6 +21,7 @@
 
 import TestResult from "./TestResult";
 import MessageMetaDataDto from "@/types/rbel/MessageMetaDataDto";
+import { type IMismatchNote } from "./MismatchNote";
 
 export interface IStep {
   description: string;
@@ -31,6 +32,7 @@ export interface IStep {
   rbelMetaData: MessageMetaDataDto[];
   stepIndex: number;
   subSteps: IStep[];
+  mismatchNotes: IMismatchNote[];
 }
 
 export interface IJsonSteps {
@@ -46,6 +48,7 @@ export default class StepUpdate implements IStep {
   stepIndex = -1;
   rbelMetaData: MessageMetaDataDto[] = [];
   subSteps: IStep[] = [];
+  mismatchNotes: IMismatchNote[] = [];
 
   public static fromJson(json: IStep): StepUpdate {
     const step: StepUpdate = new StepUpdate();
@@ -72,6 +75,9 @@ export default class StepUpdate implements IStep {
     }
     if (json.subSteps?.length) {
       step.subSteps = json.subSteps;
+    }
+    if (json.mismatchNotes?.length) {
+      step.mismatchNotes = json.mismatchNotes;
     }
     return step;
   }
@@ -112,13 +118,14 @@ export default class StepUpdate implements IStep {
     if (step.rbelMetaData?.length) {
       this.rbelMetaData = step.rbelMetaData;
     }
-    if (step.stepIndex) {
+    if (step.stepIndex !== -1) {
       this.stepIndex = step.stepIndex;
     }
-    if (step.status === TestResult.PENDING) {
-      this.subSteps = [];
-    } else if (step.subSteps?.length) {
+    if (step.subSteps?.length) {
       this.subSteps = step.subSteps;
+    }
+    if (step.mismatchNotes?.length) {
+      this.mismatchNotes = step.mismatchNotes;
     }
   }
 

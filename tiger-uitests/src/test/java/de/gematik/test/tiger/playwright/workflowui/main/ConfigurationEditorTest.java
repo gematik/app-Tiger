@@ -342,7 +342,7 @@ class ConfigurationEditorTest extends AbstractBase {
     page.locator(
             "//div[@col-id='key' and text()='"
                 + key
-                + "']/following-sibling::div[@col-id='action']//button[@data-action='delete']/i[@id='test-tg-config-editor-btn-delete']")
+                + "']/following-sibling::div[@col-id='action']//button[@data-action='delete']/i[contains(@class,'test-tg-config-editor-btn-delete')]")
         .click();
 
     await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> findRowBySourceTypeKey(key));
@@ -350,15 +350,15 @@ class ConfigurationEditorTest extends AbstractBase {
 
   @Test
   void testOpenAndClearFilter() {
-    page.locator(".ag-header-icon.ag-header-cell-menu-button").nth(1).click();
+    page.locator(".ag-header-icon.ag-header-cell-filter-button").nth(1).click();
 
     var inputField = page.locator("input[placeholder='Filter...']").first();
     inputField.fill("tgr");
-    assertThat(page.locator("span.ag-header-label-icon.ag-filter-icon:not(.ag-hidden)"))
+    assertThat(page.locator("span.ag-header-icon.ag-header-cell-filter-button.ag-filter-active"))
         .isVisible();
 
     page.locator("#test-tg-config-editor-btn-clear-filters").click();
-    assertThat(page.locator("span.ag-header-label-icon.ag-filter-icon:not(.ag-hidden)"))
+    assertThat(page.locator("span.ag-header-icon.ag-header-cell-filter-button.ag-filter-active"))
         .hasCount(0);
     page.locator(".vsp__header h1").click();
   }

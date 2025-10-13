@@ -1,0 +1,29 @@
+patients:
+  # IBM PATIENTS
+  X110533977: #patient2:
+    - insurantId: &id X110533977
+      account: *id
+      pkcs12: ../config/identities/X110533977-C_CH_AUT_E256.p12
+      passwordPrivateKey: "00"
+      passwordKeyStore: "00"
+      name: Gisela Paula
+      system: ibm-tu
+      email: X110533977@epa-test.gematik.de
+  X110594367-tu: #patient10:
+    - insurantId: &id X110594367
+      name: Adelheid Blücher
+      account: *id
+      pkcs12: ../config/identities/X110594367-C_CH_AUT_E256.p12
+      passwordPrivateKey: "00"
+      passwordKeyStore: "00"
+      system: rise-tu
+      email: X110594367@epa-test.gematik.de
+  X110594367-ru: #patient10RU:
+    - insurantId: &id X110594367
+      name: Adelheid Blücher
+      account: *id
+      pkcs12: ../config/identities/X110594367-C_CH_AUT_E256.p12
+      passwordPrivateKey: "00"
+      passwordKeyStore: "00"
+      system: rise_ru
+      email: X110594367@epa-test.gematik.de

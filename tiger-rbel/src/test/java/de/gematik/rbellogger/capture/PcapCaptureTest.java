@@ -20,13 +20,13 @@
  */
 package de.gematik.rbellogger.capture;
 
+import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
 import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
@@ -38,8 +38,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.Map;
 import javax.crypto.spec.SecretKeySpec;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -53,72 +51,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Slf4j
 class PcapCaptureTest {
 
-  private static final Map<String, String> MASKING_FUNCTIONS = new HashMap<>();
-
-  {
-    MASKING_FUNCTIONS.put("exp", "[Gültigkeit des Tokens. Beispiel: %s]");
-    MASKING_FUNCTIONS.put("iat", "[Zeitpunkt der Ausstellung des Tokens. Beispiel: %s]");
-    MASKING_FUNCTIONS.put("nbf", "[Der Token ist erst ab diesem Zeitpunkt gültig. Beispiel: %s]");
-
-    MASKING_FUNCTIONS.put(
-        "code_challenge", "[code_challenge value, Base64URL(SHA256(code_verifier)). Beispiel: %s]");
-
-    MASKING_FUNCTIONS.put(
-        "nonce",
-        "[String value used to associate a Client session with an ID Token, and to mitigate replay"
-            + " attacks. Beispiel: %s]");
-
-    MASKING_FUNCTIONS.put(
-        "state",
-        "[OAuth 2.0 state value. Constant over complete flow. Value is a case-sensitive string."
-            + " Beispiel: %s]");
-
-    MASKING_FUNCTIONS.put(
-        "jti",
-        "[A unique identifier for the token, which can be used to prevent reuse of the token. Value"
-            + " is a case-sensitive string. Beispiel: %s]");
-
-    MASKING_FUNCTIONS.put(
-        "given_name",
-        "[givenName aus dem subject-DN des authentication-Zertifikats. Beispiel: %s]");
-    MASKING_FUNCTIONS.put(
-        "family_name", "[surname aus dem subject-DN des authentication-Zertifikats. Beispiel: %s]");
-    MASKING_FUNCTIONS.put(
-        "idNummer", "[KVNR oder Telematik-ID aus dem authentication-Zertifikats. Beispiel: %s]");
-    MASKING_FUNCTIONS.put(
-        "professionOID",
-        "[professionOID des HBA aus dem authentication-Zertifikats. Null if not present. Beispiel:"
-            + " %s]");
-    MASKING_FUNCTIONS.put(
-        "organizationName",
-        "[professionOID des HBA  aus dem authentication-Zertifikats. Null if not present. Beispiel:"
-            + " %s]");
-    MASKING_FUNCTIONS.put(
-        "auth_time",
-        "[timestamp of authentication. Technically this is the time of authentication-token"
-            + " signing. Beispiel: %s]");
-    MASKING_FUNCTIONS.put("snc", "[server-nonce. Used to introduce noise. Beispiel: %s]");
-    MASKING_FUNCTIONS.put(
-        "sub",
-        "[subject. Base64(sha256(audClaim + idNummerClaim + serverSubjectSalt)). Beispiel: %s]");
-    MASKING_FUNCTIONS.put(
-        "at_hash",
-        "[Erste 16 Bytes des Hash des Authentication Tokens"
-            + " Base64(subarray(Sha256(authentication_token), 0, 16)). Beispiel: %s]");
-
-    MASKING_FUNCTIONS.put("authorization_endpoint", "[URL des Authorization Endpunkts.]");
-    MASKING_FUNCTIONS.put("sso_endpoint", "[URL des Authorization Endpunkts.]");
-    MASKING_FUNCTIONS.put("token_endpoint", "[URL des Authorization Endpunkts.]");
-    MASKING_FUNCTIONS.put("uri_disc", "[URL des Discovery-Dokuments]");
-    MASKING_FUNCTIONS.put("puk_uri_auth", "[URL einer JWK-Struktur des Authorization Public-Keys]");
-    MASKING_FUNCTIONS.put("puk_uri_token", "[URL einer JWK-Struktur des Token Public-Keys]");
-    MASKING_FUNCTIONS.put(
-        "jwks_uri", "[URL einer JWKS-Struktur mit allen vom Server verwendeten Schlüsseln]");
-    MASKING_FUNCTIONS.put(
-        "njwt", "[enthält das Ursprüngliche Challenge Token des Authorization Endpunkt]");
-    MASKING_FUNCTIONS.put("Date", "[Zeitpunkt der Antwort. Beispiel %s]");
-  }
-
   @Test
   void pcapFile_checkMetadata() {
     final RbelFileReaderCapturer fileReaderCapturer =
@@ -128,22 +60,16 @@ class PcapCaptureTest {
 
     fileReaderCapturer.initialize();
 
-    assertThat(
-            rbelLogger
-                .getMessageHistory()
-                .getFirst()
-                .getFacetOrFail(RbelTcpIpMessageFacet.class)
-                .getSenderHostname()
-                .get())
-        .hasToString("127.0.0.1:51441");
-    assertThat(
-            rbelLogger
-                .getMessageHistory()
-                .getFirst()
-                .getFacetOrFail(RbelTcpIpMessageFacet.class)
-                .getReceiverHostname()
-                .get())
-        .hasToString("127.0.0.1:8080");
+    assertThat(rbelLogger.getMessageHistory().getFirst())
+        .hasStringContentEqualToAtPosition("$.sender.port", "51441")
+        .extractChildWithPath("$.sender.domain")
+        .asString()
+        .matches("(view-|)localhost");
+    assertThat(rbelLogger.getMessageHistory().getFirst())
+        .hasStringContentEqualToAtPosition("$.receiver.port", "8080")
+        .extractChildWithPath("$.receiver.domain")
+        .asString()
+        .matches("(view-|)localhost");
   }
 
   @SneakyThrows
@@ -165,8 +91,6 @@ class PcapCaptureTest {
             .addCapturer(fileReaderCapturer)
             .constructRbelLogger();
 
-    //    MASKING_FUNCTIONS.forEach(
-    //        (k, v) -> rbelLogger.getValueShader().addSimpleShadingCriterion(k, v));
     rbelLogger
         .getValueShader()
         .addJexlNoteCriterion(

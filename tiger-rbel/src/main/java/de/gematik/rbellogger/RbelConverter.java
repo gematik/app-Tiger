@@ -324,6 +324,7 @@ public class RbelConverter implements RbelConverterInterface {
 
   public void removeMessage(RbelElement rbelMessage) {
     synchronized (messageHistory) {
+      log.trace("Removing message {}", rbelMessage.getUuid());
       final Iterator<RbelElement> iterator = messageHistory.descendingIterator();
       while (iterator.hasNext()) {
         if (iterator.next().equals(rbelMessage)) {

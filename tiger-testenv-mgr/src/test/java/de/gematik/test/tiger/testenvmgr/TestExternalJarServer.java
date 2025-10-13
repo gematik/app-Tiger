@@ -41,19 +41,19 @@ class TestExternalJarServer extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-    servers:
-      testExternalJarMVP:
-        type: externalJar
-        source:
-          - local:winstone.jar
-        healthcheckUrl: http://127.0.0.1:${free.port.0}
-        healthcheckReturnCode: 200
-        externalJarOptions:
-          workingDir: 'target/'
-          arguments:
-            - --httpPort=${free.port.0}
-            - --webroot=.
-    """,
+          servers:
+            testExternalJarMVP:
+              type: externalJar
+              source:
+                - local:winstone.jar
+              healthcheckUrl: http://127.0.0.1:${free.port.0}
+              healthcheckReturnCode: 200
+              externalJarOptions:
+                workingDir: 'target/'
+                arguments:
+                  - --httpPort=${free.port.0}
+                  - --webroot=.
+          """,
       skipEnvironmentSetup = true)
   void testCreateExternalJarRelativePathWithWorkingDir(TigerTestEnvMgr envMgr) {
     assertThatNoException()
@@ -64,18 +64,18 @@ class TestExternalJarServer extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-            servers:
-              testExternalJarMVP:
-                type: externalJar
-                source:
-                  - local:target/winstone.jar
-                healthcheckUrl: http://127.0.0.1:${free.port.0}
-                healthcheckReturnCode: 200
-                externalJarOptions:
-                  arguments:
-                    - --httpPort=${free.port.0}
-                    - --webroot=.
-            """,
+          servers:
+            testExternalJarMVP:
+              type: externalJar
+              source:
+                - local:target/winstone.jar
+              healthcheckUrl: http://127.0.0.1:${free.port.0}
+              healthcheckReturnCode: 200
+              externalJarOptions:
+                arguments:
+                  - --httpPort=${free.port.0}
+                  - --webroot=.
+          """,
       skipEnvironmentSetup = true)
   void testCreateExternalJarRelativePathWithoutWorkingDir(TigerTestEnvMgr envMgr) {
     assertThatNoException()
@@ -86,20 +86,20 @@ class TestExternalJarServer extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-            servers:
-              testExternalJarMVP:
-                type: externalJar
-                source:
-                  - local:target/winstone.jar
-                healthcheckUrl: http://127.0.0.1:${free.port.0}
-                healthcheckReturnCode: 200
-                externalJarOptions:
-                  workingDir: '.'
-                  arguments:
-                    - --httpPort=${free.port.0}
-                    - --webroot=.
+          servers:
+            testExternalJarMVP:
+              type: externalJar
+              source:
+                - local:target/winstone.jar
+              healthcheckUrl: http://127.0.0.1:${free.port.0}
+              healthcheckReturnCode: 200
+              externalJarOptions:
+                workingDir: '.'
+                arguments:
+                  - --httpPort=${free.port.0}
+                  - --webroot=.
 
-            """,
+          """,
       skipEnvironmentSetup = true)
   void testCreateExternalJarRelativePathWithRelativeWorkingDir(TigerTestEnvMgr envMgr) {
     assertThatNoException()

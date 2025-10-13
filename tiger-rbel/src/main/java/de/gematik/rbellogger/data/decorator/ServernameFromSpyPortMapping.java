@@ -21,9 +21,9 @@
 package de.gematik.rbellogger.data.decorator;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.core.RbelHostnameFacet;
 import de.gematik.rbellogger.util.GlobalServerMap;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.util.Optional;
 import java.util.function.Function;
 import lombok.NoArgsConstructor;
@@ -46,7 +46,7 @@ public class ServernameFromSpyPortMapping implements Function<RbelElement, Optio
   private Optional<Integer> extractPort(RbelElement hostNameElement) {
     return hostNameElement
         .getFacet(RbelHostnameFacet.class)
-        .map(RbelHostnameFacet::toRbelHostname)
-        .map(RbelHostname::getPort);
+        .map(RbelHostnameFacet::toRbelSocketAddress)
+        .map(RbelSocketAddress::getPort);
   }
 }

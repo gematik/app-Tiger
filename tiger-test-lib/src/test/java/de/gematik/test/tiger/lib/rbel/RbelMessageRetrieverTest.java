@@ -57,6 +57,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 @Slf4j
 class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
 
+  @Override
   @BeforeEach
   public void setUp() {
     super.setUp();
@@ -213,7 +214,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   }
 
   @Test
-  void testFilterRequests_OK() {
+  void testFindMessage_OK() {
     localProxyRbelMessageListenerTestAdapter.addTwoRequestsToTigerTestHooks();
     RbelMessageRetriever validator = rbelMessageRetriever;
     validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").build());
@@ -222,7 +223,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   }
 
   @Test
-  void testFilterRequestsWrongPath_OK() {
+  void testFindMessageWrongPath_OK() {
     localProxyRbelMessageListenerTestAdapter.addTwoRequestsToTigerTestHooks();
     RbelMessageRetriever validator = rbelMessageRetriever;
     final RequestParameter requestParameter = RequestParameter.builder().path("/NOWAY.*").build();
@@ -231,7 +232,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   }
 
   @Test
-  void testFilterRequestsNextRequest_OK() {
+  void testFindMessageNextRequest_OK() {
     localProxyRbelMessageListenerTestAdapter.addTwoRequestsToTigerTestHooks();
     RbelMessageRetriever validator = rbelMessageRetriever;
     validator.filterRequestsAndStoreInContext(RequestParameter.builder().path(".*").build());
@@ -253,7 +254,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   }
 
   @Test
-  void testFilterRequestsRbelPath_OK() {
+  void testFindMessageRbelPath_OK() {
     localProxyRbelMessageListenerTestAdapter.addTwoRequestsToTigerTestHooks();
     RbelMessageRetriever validator = rbelMessageRetriever;
     validator.filterRequestsAndStoreInContext(
@@ -266,7 +267,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   }
 
   @Test
-  void testFilterRequestsRbelPathNotMatching_OK() {
+  void testFindMessageRbelPathNotMatching_OK() {
     localProxyRbelMessageListenerTestAdapter.addTwoRequestsToTigerTestHooks();
     var reuqest =
         RequestParameter.builder()
@@ -279,7 +280,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   }
 
   @Test
-  void testFilterRequestsRbelPathRegex_OK() {
+  void testFindMessageRbelPathRegex_OK() {
     localProxyRbelMessageListenerTestAdapter.addTwoRequestsToTigerTestHooks();
     RbelMessageRetriever validator = rbelMessageRetriever;
     validator.filterRequestsAndStoreInContext(
@@ -292,7 +293,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   }
 
   @Test
-  void testFilterRequestsRbelPathExists_OK() {
+  void testFindMessageRbelPathExists_OK() {
     localProxyRbelMessageListenerTestAdapter.addTwoRequestsToTigerTestHooks();
     RbelMessageRetriever validator = rbelMessageRetriever;
     validator.filterRequestsAndStoreInContext(
@@ -301,7 +302,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   }
 
   @Test
-  void testFilterRequestsRbelPathExists2_OK() {
+  void testFindMessageRbelPathExists2_OK() {
     localProxyRbelMessageListenerTestAdapter.addTwoRequestsToTigerTestHooks();
     RbelMessageRetriever validator = rbelMessageRetriever;
     validator.filterRequestsAndStoreInContext(
@@ -310,7 +311,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   }
 
   @Test
-  void testFilterRequestsRbelPathExists_NOK() {
+  void testFindMessageRbelPathExists_NOK() {
     localProxyRbelMessageListenerTestAdapter.addTwoRequestsToTigerTestHooks();
     var request = RequestParameter.builder().path(".*").rbelPath("$.header.User-AgentXXX").build();
     assertThatThrownBy(() -> rbelMessageRetriever.filterRequestsAndStoreInContext(request))
@@ -318,7 +319,7 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   }
 
   @Test
-  void testFilterRequestsAttachResponseCorrectly_OK() {
+  void testFindMessageAttachResponseCorrectly_OK() {
     localProxyRbelMessageListenerTestAdapter.addTwoRequestsToTigerTestHooks();
     RbelMessageRetriever validator = rbelMessageRetriever;
     validator.filterRequestsAndStoreInContext(
@@ -486,28 +487,28 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   void testCurrentRequestMatchesJsonSchemaWithPlaceholdersReplacement() {
     val responseToCheck =
         """
-              HTTP/1.1 200 OK
-              Content-Length: 18
+        HTTP/1.1 200 OK
+        Content-Length: 18
 
-              ["hello", "world"]
-              """;
+        ["hello", "world"]
+        """;
     val schema =
         """
-              {
-               "type": "array",
-                "prefixItems": [
-                  {
-                    "type": "string",
-                    "const": "${value.from.config1}"
-                  },
-                  {
-                    "type": "string",
-                    "const": "${value.from.config2}"
-                  }
-                ],
-                "additionalItems": false
-              }
-              """;
+        {
+         "type": "array",
+          "prefixItems": [
+            {
+              "type": "string",
+              "const": "${value.from.config1}"
+            },
+            {
+              "type": "string",
+              "const": "${value.from.config2}"
+            }
+          ],
+          "additionalItems": false
+        }
+        """;
     TigerGlobalConfiguration.putValue("value.from.config1", "hello");
     TigerGlobalConfiguration.putValue("value.from.config2", "world");
 
@@ -804,24 +805,26 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
               "signature": {
                 "verifiedUsing": "idpSig"
               }
-            }""",
+            }\
+            """,
             "JWT",
             "^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]*$"),
         Arguments.of(
             """
-                        {
-                          "header": {
-                            "alg": "ECDH-ES",
-                            "enc": "A256GCM"
-                          },
-                          "body": {
-                            "some_claim": "foobar",
-                            "other_claim": "code"
-                          },
-                          "encryptionInfo": {
-                            "decryptedUsingKeyWithId": "idpSig"
-                          }
-                        }""",
+            {
+              "header": {
+                "alg": "ECDH-ES",
+                "enc": "A256GCM"
+              },
+              "body": {
+                "some_claim": "foobar",
+                "other_claim": "code"
+              },
+              "encryptionInfo": {
+                "decryptedUsingKeyWithId": "idpSig"
+              }
+            }\
+            """,
             "JWE",
             "^[A-Za-z0-9-_]+\\.\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+$"));
   }
@@ -832,21 +835,21 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
             "<hello something='world1'>world2</hello>",
             "XML",
             """
-                                    <?xml version="1.0" encoding="UTF-8"?>
+            <?xml version="1.0" encoding="UTF-8"?>
 
-                                    <hello something="world1">world2</hello>
-                                    """),
+            <hello something="world1">world2</hello>
+            """),
         Arguments.of("{\"hello\":\"world\"}", "JSON", "{\"hello\": \"world\"}"),
         Arguments.of(
             """
-                        {
-                          "tgrEncodeAs": "url",
-                          "basicPath": "http://bluzb/fdsa",
-                          "parameters": {
-                            "foo": "bar"
-                          }
-                        }
-                        """,
+            {
+              "tgrEncodeAs": "url",
+              "basicPath": "http://bluzb/fdsa",
+              "parameters": {
+                "foo": "bar"
+              }
+            }
+            """,
             "URL",
             "http://bluzb/fdsa?foo=bar"),
         Arguments.of("{\"BearerToken\":\"blub\"}", "BEARER_TOKEN", "Bearer blub"));
@@ -903,21 +906,21 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
                     "$.body",
                     ModeType.JSON_SCHEMA,
                     """
-                                          {
-                                             "$schema": "https://json-schema.org/draft/2020-12/schema",
-                                             "description": "a description",
-                                             "required" : [
-                                               "regStat",
-                                               "foobar"
-                                             ],
-                                             "properties": {
-                                               "regStat" : {
-                                                 "type" : "string",
-                                                 "enum" : [ "registerede", "deregistered" ]
-                                               }
-                                             }
-                                           }
-                                        """,
+                      {
+                         "$schema": "https://json-schema.org/draft/2020-12/schema",
+                         "description": "a description",
+                         "required" : [
+                           "regStat",
+                           "foobar"
+                         ],
+                         "properties": {
+                           "regStat" : {
+                             "type" : "string",
+                             "enum" : [ "registerede", "deregistered" ]
+                           }
+                         }
+                       }
+                    """,
                     "",
                     rbelMessageRetriever));
 
@@ -949,15 +952,16 @@ class RbelMessageRetrieverTest extends AbstractRbelMessageValidatorTest {
   void testCurrentRequestMatchesAsJson() {
     val responseToCheck =
         """
-                  HTTP/1.1 200 OK
-                  Content-Length: 18
+        HTTP/1.1 200 OK
+        Content-Length: 18
 
-                  {'hello': 'world'}
-                  """;
+        {'hello': 'world'}
+        """;
     // Schema has a trailing comma which in an older version of JSON-java leads to
-    val schema = """
-       {"hello": 'world',}
-       """;
+    val schema =
+        """
+        {"hello": 'world',}
+        """;
 
     rbelMessageRetriever.currentRequest =
         RbelLogger.build()

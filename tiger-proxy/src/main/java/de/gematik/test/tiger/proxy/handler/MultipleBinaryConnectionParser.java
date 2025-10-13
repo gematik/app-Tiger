@@ -25,10 +25,10 @@ import static de.gematik.rbellogger.data.RbelMessageMetadata.MESSAGE_TRANSMISSIO
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.rbellogger.util.RbelContent;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.proxy.AbstractTigerProxy;
 import de.gematik.test.tiger.proxy.data.TcpConnectionEntry;
 import de.gematik.test.tiger.proxy.data.TcpIpConnectionIdentifier;
-import java.net.SocketAddress;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -57,8 +57,8 @@ public class MultipleBinaryConnectionParser {
   }
 
   public CompletableFuture<List<RbelElement>> addToBuffer(
-      SocketAddress senderAddress,
-      SocketAddress receiverAddress,
+      RbelSocketAddress senderAddress,
+      RbelSocketAddress receiverAddress,
       byte[] part,
       ZonedDateTime timestamp,
       RbelMessageKind messageKind) {
@@ -75,8 +75,8 @@ public class MultipleBinaryConnectionParser {
 
   public CompletableFuture<List<RbelElement>> addToBuffer(
       String uuid,
-      SocketAddress senderAddress,
-      SocketAddress receiverAddress,
+      RbelSocketAddress senderAddress,
+      RbelSocketAddress receiverAddress,
       byte[] part,
       Map<String, Object> additionalData,
       RbelMessageKind messageKind,

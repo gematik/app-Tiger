@@ -12,6 +12,9 @@ tigerProxy:
     - X509
     - epa3-vau
     - pop3
+  forwardToProxy:
+    hostname: null
+    port: null
 
 servers:
   httpbin:
@@ -35,6 +38,7 @@ lib:
   trafficVisualization: true
   runTestsOnStart: true
   enableTestManagementRestApi: true
+  enableTestSelection: false
 
 additionalConfigurationFiles:
   - filename: src/test/resources/testdata/specialEnvironment.yaml

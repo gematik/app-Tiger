@@ -407,7 +407,12 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
       final int endOfBodyIndex =
           bodyDataStartOffset + parseContentLengthHeader(contentLengthHeader.get());
       if (endOfBodyIndex > content.size()) {
-        throw new RbelConversionException("Body-length exceeds available content");
+        throw new RbelConversionException(
+            "Body-length exceeds available content (Wanted "
+                + endOfBodyIndex
+                + " bytes, but only "
+                + content.size()
+                + " bytes available)");
       }
       targetElement.setUsedBytes(endOfBodyIndex);
       return endOfBodyIndex;
@@ -416,17 +421,8 @@ public class RbelHttpResponseConverter extends RbelConverterPlugin {
       targetElement.setUsedBytes(endOfChunkedBody);
       return endOfChunkedBody;
     } else {
-      targetElement.addFacet(
-          RbelNoteFacet.builder()
-              .style(styleParsingError(targetElement))
-              .value(
-                  "Did not find content-length or transfer-encoding header. One of them is"
-                      + " required.")
-              .build());
-      if (!lenientParsingMode && isTcpMessage(targetElement)) {
-        throw new RbelConversionException("No content-length or transfer-encoding header found");
-      }
-      return content.size();
+      targetElement.setUsedBytes(bodyDataStartOffset);
+      return bodyDataStartOffset;
     }
   }
 

@@ -21,9 +21,9 @@
 package de.gematik.test.tiger.proxy.handler;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMessageKind;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.model.BinaryMessage;
 import de.gematik.test.tiger.proxy.TigerProxy;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
@@ -52,15 +52,15 @@ public class BinaryExchangeHandler {
       SocketAddress clientAddress,
       RbelMessageKind messageKind) {
     connectionParser.addToBuffer(
-        clientAddress,
-        serverAddress,
+        RbelSocketAddress.create(clientAddress),
+        RbelSocketAddress.create(serverAddress),
         binaryMessage.getBytes(),
         binaryMessage.getTimestamp().atZone(ZoneId.systemDefault()),
         messageKind);
   }
 
   public void propagateExceptionMessageSafe(
-      Throwable exception, RbelHostname senderAddress, RbelHostname receiverAddress) {
+      Throwable exception, RbelSocketAddress senderAddress, RbelSocketAddress receiverAddress) {
     try {
       log.warn("Exception during Direct-Proxy handling:", exception);
 

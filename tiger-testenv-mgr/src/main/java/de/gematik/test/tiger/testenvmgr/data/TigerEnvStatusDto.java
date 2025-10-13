@@ -38,4 +38,5 @@ public class TigerEnvStatusDto {
   private TigerStatusUpdate.BannerDetails bannerDetails;
   private boolean bannerIsHtml;
   private java.util.List<String> removedMessageUuids = new java.util.ArrayList<>();
+  private TestSuiteLifecycle testSuiteLifecycle = TestSuiteLifecycle.STARTUP;
 }

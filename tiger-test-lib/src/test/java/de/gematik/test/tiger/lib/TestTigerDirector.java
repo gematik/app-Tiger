@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.mock;
+import static uk.org.webcompere.systemstubs.SystemStubs.withEnvironmentVariable;
 
 import de.gematik.rbellogger.data.RbelElement;
 import de.gematik.rbellogger.util.IRbelMessageListener;
@@ -422,7 +423,7 @@ class TestTigerDirector {
   @Test
   void fixedPortForWorkflowUi_shouldBeUsed() throws Exception {
     final int availableTcpPort = TestSocketUtils.findAvailableTcpPort();
-    new EnvironmentVariables("TIGER_LIB_WORKFLOWUIPORT", Integer.toString(availableTcpPort))
+    withEnvironmentVariable("TIGER_LIB_WORKFLOWUIPORT", Integer.toString(availableTcpPort))
         .execute(
             () -> {
               TigerDirector.start();

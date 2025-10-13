@@ -108,6 +108,13 @@ public class RbelUriFacet implements RbelFacet {
   }
 
   private final RbelElement basicPath;
+  private final RbelElement scheme;
+  private final RbelElement path;
+  private final RbelElement authority;
+  private final RbelElement userInfo;
+  private final RbelElement query;
+  private final RbelElement host;
+  private final RbelElement port;
   private final List<RbelElement> queryParameters;
 
   @Override
@@ -116,6 +123,13 @@ public class RbelUriFacet implements RbelFacet {
     queryParameters.forEach(
         el -> result.put(el.getFacetOrFail(RbelUriParameterFacet.class).getKeyAsString(), el));
     result.put("basicPath", basicPath);
+    result.putIfNotNull("scheme", scheme);
+    result.putIfNotNull("path", path);
+    result.putIfNotNull("authority", authority);
+    result.putIfNotNull("userInfo", userInfo);
+    result.putIfNotNull("query", query);
+    result.putIfNotNull("host", host);
+    result.putIfNotNull("port", port);
     return result;
   }
 

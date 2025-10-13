@@ -36,11 +36,12 @@ import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
 import de.gematik.rbellogger.facets.timing.RbelMessageTimingFacet;
+import de.gematik.rbellogger.util.RbelSocketAddress;
+import de.gematik.test.tiger.common.RingBufferHashMap;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRoute;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
@@ -55,6 +56,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -73,6 +75,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -129,6 +132,8 @@ class TigerRemoteProxyClientTest {
   // the local TigerProxy-Client (which syphons the message from the remote Tiger Proxy)
   private static TigerRemoteProxyClient tigerRemoteProxyClient;
   private static UnirestInstance unirestInstance;
+
+  private Object originalMockServerConverter;
 
   @LocalServerPort private int springServerPort;
   private static final byte[] request;
@@ -201,6 +206,40 @@ class TigerRemoteProxyClientTest {
     unirestInstance.close();
     unirestInstance = null;
     tigerRemoteProxyClient = null;
+  }
+
+  @AfterEach
+  void cleanupSpyConverter() {
+    if (originalMockServerConverter != null) {
+      ReflectionTestUtils.setField(
+          tigerProxy, "mockServerToRbelConverter", originalMockServerConverter);
+      originalMockServerConverter = null;
+    }
+  }
+
+  /**
+   * Helper method to setup spy converter for capturing previousMessageUuid parameters. Stores the
+   * original converter for cleanup in globalTeardown().
+   */
+  private void setupSpyConverter(List<String> upstreamPreviousUuids) {
+    var mockServerConverter = tigerProxy.getMockServerToRbelConverter();
+    originalMockServerConverter = mockServerConverter;
+    var spyConverter = Mockito.spy(mockServerConverter);
+
+    Mockito.doAnswer(
+            invocation -> {
+              // Capture the previousMessageUuid parameter (4th parameter)
+              AtomicReference<String> previousUuidRef = invocation.getArgument(3);
+              String previousUuid = previousUuidRef.get();
+              upstreamPreviousUuids.add(previousUuid);
+
+              // Call the real method
+              return invocation.callRealMethod();
+            })
+        .when(spyConverter)
+        .convertRequest(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+
+    ReflectionTestUtils.setField(tigerProxy, "mockServerToRbelConverter", spyConverter);
   }
 
   @Test
@@ -637,12 +676,12 @@ class TigerRemoteProxyClientTest {
         TigerTracingDto.builder().messageUuid(uuid).sequenceNumber(sequenceNumber);
     if (request) {
       builder
-          .sender(RbelHostname.fromString("client:80").get())
-          .receiver(RbelHostname.fromString("server:80").get());
+          .sender(RbelSocketAddress.fromString("client:80").get())
+          .receiver(RbelSocketAddress.fromString("server:80").get());
     } else {
       builder
-          .sender(RbelHostname.fromString("server:80").get())
-          .receiver(RbelHostname.fromString("client:80").get());
+          .sender(RbelSocketAddress.fromString("server:80").get())
+          .receiver(RbelSocketAddress.fromString("client:80").get());
     }
     builder.request(request);
     return builder.build();
@@ -743,5 +782,124 @@ class TigerRemoteProxyClientTest {
                 .index(index)
                 .numberOfMessages(numberOfMessages)
                 .build());
+  }
+
+  @Test
+  void scheduleAfterMessage_shouldTimeoutOnlyWhenMessageHasNotArrivedAtAll() {
+    TigerRemoteProxyClient localClient =
+        new TigerRemoteProxyClient(
+            "http://localhost:0",
+            TigerProxyConfiguration.builder()
+                .waitForPreviousMessageBeforeParsingInSeconds(0.05F)
+                .proxyLogLevel("WARN")
+                .build());
+
+    AtomicInteger parseTaskExecutions = new AtomicInteger(0);
+    Runnable parseTask = parseTaskExecutions::incrementAndGet;
+
+    String missingPrev = "missing-message-uuid-1";
+    String partialPrev = "partial-message-uuid-2";
+    String msgBehindMissing = "waiting-message-uuid-1";
+    String msgBehindPartial = "waiting-message-uuid-2";
+
+    localClient.scheduleAfterMessage(missingPrev, parseTask, msgBehindMissing);
+
+    PartialTracingMessage partialMessage =
+        PartialTracingMessage.builder()
+            .tracingDto(
+                TigerTracingDto.builder()
+                    .messageUuid(partialPrev)
+                    .sender(RbelSocketAddress.fromString("127.0.0.1:80").orElse(null))
+                    .receiver(RbelSocketAddress.fromString("127.0.0.1:8080").orElse(null))
+                    .request(true)
+                    .build())
+            .sender(RbelSocketAddress.fromString("127.0.0.1:80").orElse(null))
+            .receiver(RbelSocketAddress.fromString("127.0.0.1:8080").orElse(null))
+            .messageFrame(new TracingMessageFrame(localClient))
+            .build();
+    localClient.getPartiallyReceivedMessageMap().put(partialPrev, partialMessage);
+
+    localClient.scheduleAfterMessage(partialPrev, parseTask, msgBehindPartial);
+
+    await().atMost(200, TimeUnit.MILLISECONDS).until(() -> parseTaskExecutions.get() == 1);
+
+    @SuppressWarnings("unchecked")
+    RingBufferHashMap<String, List<Runnable>> waitingTasks =
+        (RingBufferHashMap<String, List<Runnable>>)
+            ReflectionTestUtils.getField(localClient, "parsingTasksWaitingForUuid");
+
+    assertThat(waitingTasks).isNotNull();
+    assertThat(waitingTasks.get(missingPrev)).isEmpty();
+    assertThat(waitingTasks.get(partialPrev)).isNotEmpty();
+  }
+
+  @Test
+  void upstreamClear_shouldRemoveLinkageSoNextRequestHasNoPreviousUuid() {
+    final List<String> upstreamPreviousUuids = new ArrayList<>();
+
+    setupSpyConverter(upstreamPreviousUuids);
+
+    unirestInstance.get("http://myserv.er/foo").asString();
+    TigerProxyTestHelper.waitUntilMessageListInRemoteProxyClientContainsCountMessagesWithTimeout(
+        tigerRemoteProxyClient, 2, 10);
+
+    assertThat(upstreamPreviousUuids).hasSize(1);
+
+    tigerProxy.clearAllMessages();
+
+    unirestInstance.get("http://myserv.er/foo").asString();
+    TigerProxyTestHelper.waitUntilMessageListInRemoteProxyClientContainsCountMessagesWithTimeout(
+        tigerRemoteProxyClient, 4, 10);
+
+    assertThat(upstreamPreviousUuids).hasSize(2);
+
+    assertThat(upstreamPreviousUuids.get(1))
+        .as(
+            "Second request on upstream after clear should be processed with null"
+                + " previousMessageUuid")
+        .isNull();
+  }
+
+  @Test
+  void upstreamRemoveFromHistory_shouldRemoveLinkageSoNextRequestHasNoPreviousUuid() {
+    final List<String> upstreamPreviousUuids = new ArrayList<>();
+
+    setupSpyConverter(upstreamPreviousUuids);
+
+    // First request/response cycle
+    unirestInstance.get("http://myserv.er/foo").asString();
+    TigerProxyTestHelper.waitUntilMessageListInRemoteProxyClientContainsCountMessagesWithTimeout(
+        tigerRemoteProxyClient, 2, 10);
+
+    assertThat(upstreamPreviousUuids).hasSize(1);
+
+    // Get the messages from upstream proxy to remove them individually
+    var upstreamMessages = new ArrayList<>(tigerProxy.getRbelMessagesList());
+    assertThat(upstreamMessages).hasSize(2);
+
+    // Remove messages from history individually (this should trigger message removal callbacks)
+    for (RbelElement message : upstreamMessages) {
+      tigerProxy.getRbelLogger().getRbelConverter().removeMessage(message);
+    }
+
+    // Verify messages were removed
+    assertThat(tigerProxy.getRbelMessagesList()).isEmpty();
+
+    // Second request - this should not have a previousMessageUuid since all previous messages were
+    // removed
+    unirestInstance.get("http://myserv.er/foo").asString();
+    TigerProxyTestHelper.waitUntilMessageListInRemoteProxyClientContainsCountMessagesWithTimeout(
+        tigerRemoteProxyClient, 4, 10);
+
+    assertThat(upstreamPreviousUuids).hasSize(2);
+
+    // The key assertion: the second request should be processed with null previousMessageUuid on
+    // upstream
+    // because the message it would have referenced was removed from history
+    assertThat(upstreamPreviousUuids.get(1))
+        .as(
+            "Second request on upstream after removing messages from history should be processed"
+                + " with null previousMessageUuid")
+        .isNull();
   }
 }

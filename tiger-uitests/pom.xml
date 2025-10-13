@@ -27,7 +27,7 @@
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.0.9</version>
+        <version>4.1.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -36,21 +36,24 @@
     <description>Tiger uitests modul of the tiger test platform.</description>
     <dependencies>
         <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>com.microsoft.playwright</groupId>
             <artifactId>playwright</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>de.gematik.test</groupId>
+            <artifactId>tiger-httpbin</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>de.gematik.test</groupId>
             <artifactId>tiger-test-lib</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>de.gematik.test</groupId>
-            <artifactId>tiger-zion</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -394,6 +397,121 @@
                         <configuration>
                             <includes>
                                 <include>**/workflowui/sequencediagram/*.java</include>
+                            </includes>
+                            <summaryFile>target/failsafe-reports/failsafe-summary.xml</summaryFile>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                                <phase>verify</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonarsource.scanner.maven</groupId>
+                        <artifactId>sonar-maven-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>de.gematik.test</groupId>
+                        <artifactId>tiger-maven-plugin</artifactId>
+                        <version>${project.version}</version>
+                        <goals>
+                            <goal>generate-serenity-reports</goal>
+                        </goals>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>start-tiger-dummy-for-testselector-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.mycila</groupId>
+                        <artifactId>license-maven-plugin</artifactId>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>de.gematik.test</groupId>
+                        <artifactId>tiger-maven-plugin</artifactId>
+                        <version>${project.version}</version>
+                        <executions>
+                            <execution>
+                                <id>generate-tiger-drivers</id>
+                                <goals>
+                                    <goal>generate-drivers</goal>
+                                </goals>
+                                <phase>generate-test-sources</phase>
+                                <configuration>
+                                    <!-- mandatory -->
+                                    <glues>
+                                        <glue>de.gematik.test.tiger.glue</glue>
+                                    </glues>
+                                    <driverClassName>Driver${ctr}ITTestSelector</driverClassName>
+                                    <!-- optional -->
+                                    <featuresDir>${project.basedir}/src/test/resources/features/testselector</featuresDir>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${version.maven.failsafe}</version>
+                        <configuration>
+                            <forkedProcessExitTimeoutInSeconds>18000</forkedProcessExitTimeoutInSeconds>
+                            <includes>
+                                <!-- adapt to the class names of your driver classes -->
+                                <include>**/Driver*ITTestSelector.java</include>
+                            </includes>
+                            <testFailureIgnore>true</testFailureIgnore>
+                            <environmentVariables>
+                                <TIGER_TESTENV_CFGFILE>src/test/resources/playwright-testselector.yaml</TIGER_TESTENV_CFGFILE>
+                            </environmentVariables>
+                            <summaryFile>target/failsafe-reports/failsafe-dummy-summary-testselector.xml</summaryFile>
+                            <runOrder>alphabetical</runOrder>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${version.maven.surefire}</version>
+                        <configuration>
+                            <skipTests>true</skipTests>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>run-playwright-test-for-testselector-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <version>${version.maven.failsafe}</version>
+                        <configuration>
+                            <includes>
+                                <include>**/workflowui/testselector/*.java</include>
                             </includes>
                             <summaryFile>target/failsafe-reports/failsafe-summary.xml</summaryFile>
                         </configuration>

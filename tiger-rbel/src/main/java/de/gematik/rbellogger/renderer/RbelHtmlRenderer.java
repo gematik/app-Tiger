@@ -61,6 +61,11 @@ public class RbelHtmlRenderer {
     rbelValueShader = new RbelValueShader();
   }
 
+  public RbelHtmlRenderer withNoMaximumEntitySize() {
+    this.maximumEntitySizeInBytes = Long.MAX_VALUE;
+    return this;
+  }
+
   public static String render(final Collection<RbelElement> elements) {
     return render(elements, new RbelValueShader());
   }

@@ -35,33 +35,34 @@ class ConfigEditorScreenshotsTest extends AbstractBase {
     PlaywrightAssertions.assertThat(page.locator("#test-sidebar-tg-config-editor-icon"))
         .isVisible();
     page.locator("#test-sidebar-tg-config-editor-icon").hover();
-    screenshotElementById(page, "sidebar_config_editor.png", "test-sidebar-tg-config-editor-icon");
+    screenshotWithHighlightedElementById(
+        page, "sidebar_config_editor.png", "test-sidebar-tg-config-editor-icon");
 
     page.querySelector("#test-sidebar-tg-config-editor-icon").click();
     openMenuAndFilter();
-    screenshotByClassname(
+    screenshotWithHighlightedByClassname(
         page,
         "config_editor_example_filter_popup.png",
         "ag-labeled ag-label-align-left ag-text-field ag-input-field ag-filter-from"
             + " ag-filter-filter");
     page.locator(".vsp__header").click();
-    screenshotByClassname(page, "tg_global_config_editor.png", "vsp__header");
+    screenshotWithHighlightedByClassname(page, "tg_global_config_editor.png", "vsp__header");
 
     await()
         .atMost(10, TimeUnit.SECONDS)
-        .untilAsserted(() -> page.locator("#test-tg-config-editor-btn-delete").nth(1).hover());
-    screenshotElementById(
+        .untilAsserted(() -> page.locator(".test-tg-config-editor-btn-delete").nth(1).hover());
+    screenshotWithHighlightedByClassname(
         page, "config_editor_delete_button.png", "test-tg-config-editor-btn-delete");
     String xpathToValue =
         "//code[contains(@class, 'test-tg-config-editor-table-row') and text()='myEnv']";
     page.locator(xpathToValue).dblclick();
     page.waitForSelector("#test-tg-config-editor-text-area");
-    screenshotElementById(
+    screenshotWithHighlightedElementById(
         page, "config_editor_cell_editor_example.png", "test-tg-config-editor-text-area");
     page.locator("#test-tg-config-editor-btn-cancel").click();
     page.locator(".vsp__header").click();
 
-    screenshotByClassname(
+    screenshotWithHighlightedByClassname(
         page, "config_editor_collapse_icon.png", "fa-solid fa-up-right-and-down-left-from-center");
     String xpathToExpand =
         "//div[@col-id='key' and text()='"
@@ -74,7 +75,7 @@ class ConfigEditorScreenshotsTest extends AbstractBase {
             page.locator(".test-tg-config-editor-table-row.text-break.multi-line"))
         .isVisible();
 
-    screenshotByClassname(
+    screenshotWithHighlightedByClassname(
         page, "config_editor_expand_icon.png", "value col-11 gy-1 hljs text-break multi-line");
 
     page.locator("#test-tg-config-editor-btn-clear-filters").click();
@@ -82,12 +83,12 @@ class ConfigEditorScreenshotsTest extends AbstractBase {
   }
 
   private void openMenuAndFilter() {
-    page.locator(".ag-header-icon.ag-header-cell-menu-button").nth(1).click();
-    var inputField = page.locator("input[placeholder='Filter...']").first();
+    page.locator(".ag-header-icon.ag-header-cell-filter-button").nth(1).click();
+    var inputField = page.locator(".ag-input-field-input.ag-text-field-input").first();
     inputField.fill("tgr");
-    // waiting for the small filter icon to appear that indicates that a filter is applied
+    // waiting for the filter icon to have the active class applied, meaning the filter is active.
     PlaywrightAssertions.assertThat(
-            page.locator("span.ag-header-label-icon.ag-filter-icon:not(.ag-hidden)"))
+            page.locator("span.ag-header-icon.ag-header-cell-filter-button.ag-filter-active"))
         .isVisible();
   }
 }

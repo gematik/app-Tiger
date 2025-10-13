@@ -22,6 +22,7 @@ package de.gematik.test.tiger.mockserver.configuration;
 
 import de.gematik.rbellogger.RbelConverter;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
+import de.gematik.test.tiger.mockserver.socket.tls.KeyAlgorithmPreference;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
 import de.gematik.test.tiger.mockserver.socket.tls.NettySslContextFactory;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyRoutingException;
@@ -98,6 +99,7 @@ public class MockServerConfiguration {
       UnaryOperator.identity();
   private Function<java.security.cert.X509Certificate, byte[]> ocspResponseSupplier = null;
   private String masterSecretFile = null;
+  private KeyAlgorithmPreference keyAlgorithmPreference = KeyAlgorithmPreference.MIXED;
 
   // inbound - dynamic private key & x509
   private String sslCertificateDomainName = "localhost";

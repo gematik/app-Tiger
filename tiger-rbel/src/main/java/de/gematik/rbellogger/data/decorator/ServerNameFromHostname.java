@@ -21,31 +21,41 @@
 package de.gematik.rbellogger.data.decorator;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.core.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelRequestFacet;
+import de.gematik.rbellogger.data.core.RbelResponseFacet;
+import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.util.Optional;
 import java.util.function.Function;
 import lombok.NoArgsConstructor;
+import lombok.val;
 
 @NoArgsConstructor
 public class ServerNameFromHostname implements Function<RbelElement, Optional<String>> {
 
-  private String checkIfLocalProxy(String realAddress) {
-    if (realAddress.startsWith("127.0.0.1")) {
-      return "local client";
-    }
-    return realAddress;
-  }
-
-  private Optional<String> extractHostname(RbelElement hostNameElement) {
-    return hostNameElement
-        .getFacet(RbelHostnameFacet.class)
-        .map(RbelHostnameFacet::toRbelHostname)
-        .map(RbelHostname::getHostname);
-  }
-
   @Override
-  public Optional<String> apply(RbelElement element) {
-    return extractHostname(element).map(this::checkIfLocalProxy);
+  public Optional<String> apply(RbelElement hostNameElement) {
+    val hostnameFacet = hostNameElement.getFacet(RbelHostnameFacet.class);
+    if (hostnameFacet.isEmpty()) {
+      return Optional.empty();
+    }
+    final RbelSocketAddress socketAddress = hostnameFacet.get().toRbelSocketAddress();
+    final RbelElement msgElement = hostNameElement.findRootElement();
+    if (socketAddress.isLoopbackAddress()) {
+      if ((msgElement.hasFacet(RbelRequestFacet.class)
+              && msgElement
+                  .getFacet(RbelTcpIpMessageFacet.class)
+                  .map(RbelTcpIpMessageFacet::getSender)
+                  .filter(el -> el == hostNameElement)
+                  .isPresent())
+          || (msgElement.hasFacet(RbelResponseFacet.class)
+              && msgElement
+                  .getFacet(RbelTcpIpMessageFacet.class)
+                  .map(RbelTcpIpMessageFacet::getReceiver)
+                  .filter(el -> el == hostNameElement)
+                  .isPresent())) return Optional.of("local client");
+    }
+    return Optional.empty();
   }
 }

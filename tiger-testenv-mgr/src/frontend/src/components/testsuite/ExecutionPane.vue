@@ -37,14 +37,20 @@
       </div>
       <div id="execution_table" class="pt-1">
         <div
-          v-if="featureUpdateMap.size === 0"
+          v-if="testSuiteLifecycleStore.waitingForTestDiscovery"
           class="waiting-spinner alert w-100 text-center"
           style="height: 200px"
         >
           <i class="fa-solid fa-spinner fa-spin left fa-2x"></i> Waiting for
           first Feature / Scenario to start...
         </div>
-
+        <div
+          v-else-if="featureUpdateMap.size === 0"
+          class="alert w-100 text-center"
+          style="height: 200px"
+        >
+          No Features found. Please check your test suite configuration.
+        </div>
         <div v-else class="w-100">
           <div
             v-for="(feature, featureKey) in featureUpdateMap"
@@ -156,7 +162,12 @@
                         "
                         :id="scenario[1].getFailureId(feature[1].description)"
                       />
-                      <Step :step="step[1]" :ui="ui" ariaLabel="" />
+                      <Step
+                        :step="step[1]"
+                        :ui="ui"
+                        :all-rbel-meta-data="globalRbelMetaData"
+                        ariaLabel=""
+                      />
                       <div
                         v-for="rbelmsg in step[1].rbelMetaData"
                         :key="rbelmsg.uuid"
@@ -211,11 +222,14 @@ import TestStatusBadge from "@/components/testsuite/TestStatusBadge.vue";
 import BannerMessageWindow from "@/components/testsuite/BannerMessageWindow.vue";
 import Ui from "@/types/ui/Ui";
 import LargePlayButton from "@/components/replay/LargePlayButton.vue";
-import QuitReason from "@/types/QuitReason";
+import type QuitReason from "@/types/QuitReason";
 import Step from "@/components/testsuite/Step.vue";
 import { getTestResultIcon } from "@/types/testsuite/TestResult.ts";
+import { useTestSuiteLifecycleStore } from "@/stores/testSuiteLifecycle.ts";
+import { ref, watch } from "vue";
+import type MessageMetaDataDto from "@/types/rbel/MessageMetaDataDto.ts";
 
-defineProps<{
+const props = defineProps<{
   featureUpdateMap: Map<string, FeatureUpdate>;
   bannerMessage: BannerMessage | boolean;
   localProxyWebUiUrl: string;
@@ -225,7 +239,33 @@ defineProps<{
   quitReason: QuitReason;
 }>();
 
+// Maintain a global list of all RBEL metadata across the run
+const globalRbelMetaData = ref<MessageMetaDataDto[]>([]);
+
+// Initial population
+globalRbelMetaData.value = getGlobalRbelMetaData();
+
+// Update whenever the feature map changes
+watch(
+  () => Array.from(props.featureUpdateMap.values()),
+  () => {
+    globalRbelMetaData.value = getGlobalRbelMetaData();
+  },
+  { deep: true },
+);
+
+// Helper to collect all RBEL metadata from all features, scenarios and steps
+function getGlobalRbelMetaData() {
+  return Array.from(props.featureUpdateMap.values()).flatMap((feature) =>
+    Array.from(feature.scenarios.values()).flatMap((scenario) =>
+      Array.from(scenario.steps.values()).flatMap((step) => step.rbelMetaData),
+    ),
+  );
+}
+
 const maxOutlineTableColumns = 4;
+
+const testSuiteLifecycleStore = useTestSuiteLifecycleStore();
 
 function getTableCountForScenarioOutlineKeysLength(
   list: Array<string>,

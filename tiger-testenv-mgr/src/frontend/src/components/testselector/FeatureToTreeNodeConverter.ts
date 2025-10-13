@@ -104,7 +104,8 @@ function buildFolderAndFeatureNodes(
       key: featureKey,
       data: {
         label: featureUpdate.description,
-        sourcePath: pathRelativeToCommonPath,
+        //Once on the feature, we just care about the file name, not the full path
+        sourcePath: fileNameFromPath(pathRelativeToCommonPath),
         selected: false,
       },
       type: "feature",
@@ -114,6 +115,11 @@ function buildFolderAndFeatureNodes(
     parentNode.children!.push(featureNode);
   }
   return rootNode.children!;
+}
+
+export function fileNameFromPath(path: string): string {
+  const parts = path.split(/[\\/]/);
+  return parts[parts.length - 1] ?? "";
 }
 
 function findFeaturesCommonPath(features: FeatureUpdate[]): string {
@@ -254,11 +260,22 @@ function createNodeForScenario(
   return {
     key: key,
     data: {
-      label: scenario?.description,
-      examples: scenario?.getVariantExamplesAsString(),
+      label:
+        testType === "scenarioOutline"
+          ? scenario.description
+          : scenario.getVariantDescription(),
+      examples:
+        testType === "scenarioVariant"
+          ? scenario?.getVariantExamplesAsString()
+          : "",
       segmentValue: segment.value,
       testType: testType,
       sourcePath: sourcePath,
+      //A scenario outline can have tags, but we only get from the backend the individual
+      //scenarioVariants which inherit tags from it. Additionally, there can be multiple example tables
+      //with different tags. We therefore just show tags for the scenarioVariants and not on the root
+      //"scenarioOutline".
+      tags: testType === "scenarioOutline" ? [] : scenario.tags,
     },
     type: segment.type,
     children: [],

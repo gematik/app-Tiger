@@ -25,7 +25,9 @@ import static org.awaitility.Awaitility.await;
 
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.testenvmgr.api.model.mapper.TigerTestIdentifier;
+import de.gematik.test.tiger.testenvmgr.data.TestSuiteLifecycle;
 import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
+import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.NoArgsConstructor;
@@ -56,6 +58,9 @@ public class TigerExecutionListener implements TestExecutionListener {
       // gets called by junit and would break when we read the TigerDirector.getLibConfig()
       return;
     }
+    TigerDirector.getTigerTestEnvMgr()
+        .receiveTestEnvUpdate(
+            TigerStatusUpdate.builder().testSuiteLifecycle(TestSuiteLifecycle.IDLE).build());
     testPlan
         .getConfigurationParameters()
         .getBoolean(EXECUTION_DRY_RUN_PROPERTY_NAME)

@@ -34,7 +34,7 @@ class JsonSchemaCheckerTest {
   public static Collection<Arguments> validInputs() {
     return List.of(
         Arguments.of(
-            """
+"""
 {
   "username": "example",
   "kimVersion": "1.5+",
@@ -43,7 +43,7 @@ class JsonSchemaCheckerTest {
   "dataTimeToLive": 10
 }
 """,
-            """
+"""
 {
   "type": "object",
   "additionalProperties": false,

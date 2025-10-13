@@ -69,11 +69,15 @@ defineExpose({
     ></textarea>
     <div class="invalid-feedback">{{ rbelPathTestResult?.errorMessage }}</div>
     <div class="d-flex flex-row align-items-end justify-content-end gap-2 mt-4">
-      <button class="btn btn-primary" type="button" @click="rbelTest.testRbelPathQuery">
+      <button
+        class="btn btn-primary test-expression-button"
+        type="button"
+        @click="rbelTest.testRbelPathQuery"
+      >
         Test Expression
       </button>
       <button
-        class="btn btn-outline-primary"
+        class="btn btn-outline-primary apply-as-filter-button"
         type="button"
         :disabled="
           !(
@@ -86,7 +90,10 @@ defineExpose({
         Apply as Filter
       </button>
     </div>
-    <div class="card mt-3" v-if="rbelPathTestResult?.matchSuccessful === true">
+    <div
+      class="card mt-3 test-expression-success"
+      v-if="rbelPathTestResult?.matchSuccessful === true"
+    >
       <div
         class="d-flex flex-row align-items-center gap-2 border-start border-success border-4 rounded p-2 py-3"
       >
@@ -97,7 +104,10 @@ defineExpose({
         </div>
       </div>
     </div>
-    <div class="card mt-3" v-if="rbelPathTestResult?.matchSuccessful === false">
+    <div
+      class="card mt-3 test-expression-failure"
+      v-if="rbelPathTestResult?.matchSuccessful === false"
+    >
       <div
         class="d-flex flex-row align-items-center gap-2 border-start border-warning border-4 rounded p-2 py-3"
       >

@@ -21,10 +21,10 @@
 package de.gematik.rbellogger;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -32,7 +32,7 @@ import org.apache.commons.lang3.StringUtils;
 public class KnownUuidsContainer {
   private final Object monitor;
   private final Map<String, MessageUuidState> knownMessageUuids = new HashMap<>();
-  @Setter private Consumer<List<String>> removedMessageUuidsHandler;
+  private final List<Consumer<List<String>>> removedMessageUuidsHandlers = new LinkedList<>();
 
   public KnownUuidsContainer(Object monitor) {
     this.monitor = monitor;
@@ -65,16 +65,18 @@ public class KnownUuidsContainer {
   }
 
   public void clear() {
-    List<String> removedUuids = null;
+    List<String> removedUuids;
     synchronized (monitor) {
-      if (removedMessageUuidsHandler != null) {
+      if (!removedMessageUuidsHandlers.isEmpty()) {
         removedUuids = List.copyOf(knownMessageUuids.keySet());
+      } else {
+        removedUuids = null;
       }
       knownMessageUuids.clear();
     }
-    if (removedMessageUuidsHandler != null && removedUuids != null && !removedUuids.isEmpty()) {
+    if (removedUuids != null && !removedUuids.isEmpty()) {
       log.trace("Clearing known message UUIDs: {}", removedUuids);
-      removedMessageUuidsHandler.accept(removedUuids);
+      removedMessageUuidsHandlers.forEach(handler -> handler.accept(removedUuids));
     }
   }
 
@@ -82,9 +84,19 @@ public class KnownUuidsContainer {
     synchronized (monitor) {
       knownMessageUuids.remove(uuid);
     }
-    if (removedMessageUuidsHandler != null) {
-      removedMessageUuidsHandler.accept(List.of(uuid));
-    }
+    removedMessageUuidsHandlers.forEach(handler -> handler.accept(List.of(uuid)));
+  }
+
+  public String toString() {
+    return knownMessageUuids.toString();
+  }
+
+  public void addRemovedMessageUuidsHandler(Consumer<List<String>> handleRemovedMessageUuids) {
+    removedMessageUuidsHandlers.add(handleRemovedMessageUuids);
+  }
+
+  public void clearRemovedMessageUuidsHandlers() {
+    removedMessageUuidsHandlers.clear();
   }
 
   private enum MessageUuidState {

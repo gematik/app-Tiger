@@ -33,17 +33,10 @@ import de.gematik.rbellogger.facets.jackson.RbelCborConverter;
 import de.gematik.rbellogger.facets.jackson.RbelJsonConverter;
 import de.gematik.rbellogger.facets.jose.RbelJweConverter;
 import de.gematik.rbellogger.facets.jose.RbelJwtConverter;
-import de.gematik.rbellogger.facets.mime.RbelCmsEnvelopedDataConverter;
-import de.gematik.rbellogger.facets.mime.RbelMimeConverter;
-import de.gematik.rbellogger.facets.pki.RbelPkcs7Converter;
 import de.gematik.rbellogger.facets.pki.RbelX500Converter;
 import de.gematik.rbellogger.facets.pki.RbelX509Converter;
-import de.gematik.rbellogger.facets.pop3.RbelPop3CommandConverter;
-import de.gematik.rbellogger.facets.pop3.RbelPop3ResponseConverter;
 import de.gematik.rbellogger.facets.sicct.RbelSicctCommandConverter;
 import de.gematik.rbellogger.facets.sicct.RbelSicctEnvelopeConverter;
-import de.gematik.rbellogger.facets.smtp.RbelSmtpCommandConverter;
-import de.gematik.rbellogger.facets.smtp.RbelSmtpResponseConverter;
 import de.gematik.rbellogger.facets.uri.RbelUriConverter;
 import de.gematik.rbellogger.facets.vau.vau.RbelVauEpaKeyDeriver;
 import de.gematik.rbellogger.facets.xml.RbelMtomConverter;
@@ -173,13 +166,6 @@ public class RbelConverterInitializer {
                 RbelSicctCommandConverter.class,
                 RbelCetpConverter.class,
                 RbelCborConverter.class,
-                RbelPop3CommandConverter.class,
-                RbelPop3ResponseConverter.class,
-                RbelMimeConverter.class,
-                RbelCmsEnvelopedDataConverter.class,
-                RbelPkcs7Converter.class,
-                RbelSmtpCommandConverter.class,
-                RbelSmtpResponseConverter.class,
                 RbelAsn1Converter.class));
     Reflections reflections = new Reflections("de.gematik");
     reflections.getSubTypesOf(RbelConverterPlugin.class).stream()

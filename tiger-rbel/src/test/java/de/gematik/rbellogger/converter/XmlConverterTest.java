@@ -28,7 +28,6 @@ import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.captures.RbelFileReaderCapturer;
 import de.gematik.rbellogger.configuration.RbelConfiguration;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
 import de.gematik.rbellogger.facets.xml.RbelXmlAttributeFacet;
 import de.gematik.rbellogger.facets.xml.RbelXmlFacet;
@@ -36,10 +35,10 @@ import de.gematik.rbellogger.facets.xml.RbelXmlNamespaceFacet;
 import de.gematik.rbellogger.facets.xml.RbelXmlProcessingInstructionFacet;
 import de.gematik.rbellogger.initializers.RbelKeyFolderInitializer;
 import de.gematik.rbellogger.renderer.RbelHtmlRenderer;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.val;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,8 +69,9 @@ class XmlConverterTest {
         RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
     convertedMessage.addFacet(
         RbelTcpIpMessageFacet.builder()
-            .receiver(RbelElement.wrap(null, convertedMessage, new RbelHostname("recipient", 1)))
-            .sender(RbelElement.wrap(null, convertedMessage, new RbelHostname("sender", 1)))
+            .receiver(
+                RbelElement.wrap(null, convertedMessage, RbelSocketAddress.create("recipient", 1)))
+            .sender(RbelElement.wrap(null, convertedMessage, RbelSocketAddress.create("sender", 1)))
             .build());
 
     FileUtils.writeStringToFile(
@@ -83,11 +83,11 @@ class XmlConverterTest {
   void advancedHtml(String charset) throws IOException {
     xmlFile =
         """
-      <?xml version="1.0" encoding="%s"?>
-      <MP>
-      	<P blub="löäopüß"/>
-      </MP>
-      """
+        <?xml version="1.0" encoding="%s"?>
+        <MP>
+        	<P blub="löäopüß"/>
+        </MP>
+        """
             .formatted(charset);
     final RbelElement convertedMessage =
         RbelLogger.build()
@@ -96,8 +96,9 @@ class XmlConverterTest {
                 wrapInHttpRequestWithContentType("text/html; charset=" + charset, xmlFile), null);
     convertedMessage.addFacet(
         RbelTcpIpMessageFacet.builder()
-            .receiver(RbelElement.wrap(null, convertedMessage, new RbelHostname("recipient", 1)))
-            .sender(RbelElement.wrap(null, convertedMessage, new RbelHostname("sender", 1)))
+            .receiver(
+                RbelElement.wrap(null, convertedMessage, RbelSocketAddress.create("recipient", 1)))
+            .sender(RbelElement.wrap(null, convertedMessage, RbelSocketAddress.create("sender", 1)))
             .build());
 
     final String render = RbelHtmlRenderer.render(List.of(convertedMessage));
@@ -138,8 +139,7 @@ class XmlConverterTest {
     final RbelElement convertedMessage =
         RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
 
-    assertThat(convertedMessage.findRbelPathMembers("$.body").get(0).hasFacet(RbelXmlFacet.class))
-        .isTrue();
+    assertThat(convertedMessage).extractChildWithPath("$.body").hasFacet(RbelXmlFacet.class);
   }
 
   @Test
@@ -147,12 +147,11 @@ class XmlConverterTest {
     final RbelElement convertedMessage =
         RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
 
-    assertThat(
-            convertedMessage
-                .findRbelPathMembers("$.body.RegistryResponse.status")
-                .get(0)
-                .getRawStringContent())
-        .isEqualTo("urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure");
+    assertThat(convertedMessage)
+        .andPrintTree()
+        .hasStringContentEqualToAtPosition(
+            "$.body.RegistryResponse.status",
+            "urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure");
   }
 
   @Test
@@ -175,28 +174,19 @@ class XmlConverterTest {
     final RbelElement convertedMessage =
         RbelLogger.build().getRbelConverter().convertElement(curlMessage, null);
 
-    final RbelElement registryResponseNode =
-        convertedMessage
-            .findRbelPathMembers("$.body.RegistryResponse.RegistryErrorList.RegistryError[0]")
-            .get(0);
-    List<String> childNodeTextInOrder =
-        registryResponseNode.getChildNodes().stream()
-            .map(RbelElement::getRawStringContent)
-            .collect(Collectors.toList());
-
-    assertThat(childNodeTextInOrder.get(0)).isEqualTo("XDSDuplicateUniqueIdInRegistry");
-    assertThat(childNodeTextInOrder.get(1))
-        .isEqualTo("urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Warning");
-
-    final RbelElement registryErrorList =
-        convertedMessage.findRbelPathMembers("$.body.RegistryResponse.RegistryErrorList").get(0);
-    childNodeTextInOrder =
-        registryErrorList.getChildNodes().stream()
-            .map(RbelElement::getRawStringContent)
-            .collect(Collectors.toList());
-
-    assertThat(childNodeTextInOrder.get(0).trim()).isEqualTo("foo");
-    assertThat(childNodeTextInOrder.get(2).trim()).isEqualTo("bar");
+    assertThat(convertedMessage)
+        .extractChildWithPath("$.body.RegistryResponse.RegistryErrorList.RegistryError[0]")
+        .hasStringContentEqualToAtPosition("$.*[0]", "XDSDuplicateUniqueIdInRegistry")
+        .hasStringContentEqualToAtPosition(
+            "$.*[1]", "urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Warning")
+        .andTheInitialElement()
+        .extractChildWithPath("$.body.RegistryResponse.RegistryErrorList.*[0]")
+        .asString()
+        .isEqualToIgnoringWhitespace("foo");
+    assertThat(convertedMessage)
+        .extractChildWithPath("$.body.RegistryResponse.RegistryErrorList.*[2]")
+        .asString()
+        .isEqualToIgnoringWhitespace("bar");
   }
 
   @RepeatedTest(10)

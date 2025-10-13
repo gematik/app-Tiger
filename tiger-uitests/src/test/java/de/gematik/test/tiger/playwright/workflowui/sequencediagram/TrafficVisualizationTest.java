@@ -65,8 +65,14 @@ class TrafficVisualizationTest extends AbstractBase {
     page.locator(".clickableMessageText").last().click();
     assertThat(page.locator("#rbellog_details_pane")).isVisible();
     assertThat(page.locator("#test-rbel-webui-url")).isVisible();
-    assertThat(page.frameLocator("#rbellog-details-iframe").locator(".test-message-number").last())
-        .containsText("4");
+    page.pause();
+    // Because the configuration uses a remote proxy, the sequence numbers are not generated all
+    // on the local tiger proxy and the sequence is not exactly the same as the time order.
+    assertThat(
+            page.frameLocator("#rbellog-details-iframe")
+                .locator(".test-message-number")
+                .getByText("2"))
+        .isVisible();
   }
 
   private void showTrafficVisualizationPane() {

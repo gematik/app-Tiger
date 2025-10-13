@@ -1,0 +1,6 @@
+lib:
+  rbelPathDebugging: false
+  activateWorkflowUi: true
+  startBrowser: false
+  runTestsOnStart: false
+  enableTestSelection: true

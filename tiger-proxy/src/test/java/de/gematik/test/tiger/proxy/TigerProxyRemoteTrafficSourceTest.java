@@ -51,16 +51,16 @@ class TigerProxyRemoteTrafficSourceTest {
     tigerProxy.clearAllMessages();
     assertThat(tigerProxy.getRbelMessages()).isEmpty();
     Unirest.post("http://localhost:" + tigerProxy.getAdminPort() + "/traffic")
-        .header(TrafficPushController.SENDER_REQUEST_HEADER, "127.0.0.1:54321")
-        .header(TrafficPushController.RECEIVER_REQUEST_HEADER, "127.0.0.1:8080")
+        .header(TrafficPushController.SENDER_REQUEST_HEADER, "localhost:54321")
+        .header(TrafficPushController.RECEIVER_REQUEST_HEADER, "localhost:8080")
         .header(
             TrafficPushController.TIMESTAMP_REQUEST_HEADER,
             ZonedDateTime.now().minusSeconds(1).toString())
         .body(Files.readAllBytes(Path.of("src/test/resources/messages/getRequest.curl")))
         .asEmpty();
     Unirest.post("http://localhost:" + tigerProxy.getAdminPort() + "/traffic")
-        .header(TrafficPushController.SENDER_REQUEST_HEADER, "127.0.0.1:8080")
-        .header(TrafficPushController.RECEIVER_REQUEST_HEADER, "127.0.0.1:54321")
+        .header(TrafficPushController.SENDER_REQUEST_HEADER, "localhost:8080")
+        .header(TrafficPushController.RECEIVER_REQUEST_HEADER, "localhost:54321")
         .header(TrafficPushController.TIMESTAMP_REQUEST_HEADER, ZonedDateTime.now().toString())
         .body(Files.readAllBytes(Path.of("src/test/resources/messages/getResponse.curl")))
         .asEmpty();
@@ -68,17 +68,17 @@ class TigerProxyRemoteTrafficSourceTest {
     assertThat(tigerProxy.getRbelMessages()).hasSize(2);
     assertThat(tigerProxy.getRbelMessages().getFirst())
         .extractChildWithPath("$.sender")
-        .hasStringContentEqualTo("127.0.0.1:54321");
+        .hasStringContentEqualTo("localhost:54321");
     assertThat(tigerProxy.getRbelMessages().getFirst())
         .extractChildWithPath("$.receiver")
-        .hasStringContentEqualTo("127.0.0.1:8080");
+        .hasStringContentEqualTo("localhost:8080");
     assertThat(tigerProxy.getRbelMessages().getFirst()).hasFacet(RbelMessageTimingFacet.class);
     assertThat(tigerProxy.getRbelMessages().getLast())
         .extractChildWithPath("$.sender")
-        .hasStringContentEqualTo("127.0.0.1:8080");
+        .hasStringContentEqualTo("localhost:8080");
     assertThat(tigerProxy.getRbelMessages().getLast())
         .extractChildWithPath("$.receiver")
-        .hasStringContentEqualTo("127.0.0.1:54321");
+        .hasStringContentEqualTo("localhost:54321");
     assertThat(tigerProxy.getRbelMessages().getLast()).hasFacet(RbelMessageTimingFacet.class);
   }
 

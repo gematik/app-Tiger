@@ -20,9 +20,12 @@
  */
 package de.gematik.test.tiger.testenvmgr.env;
 
+import de.gematik.rbellogger.data.core.RbelMismatchNoteFacet;
 import de.gematik.rbellogger.renderer.MessageMetaDataDto;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -38,6 +41,10 @@ public class StepUpdate {
   private TestResult status;
   private String failureMessage;
   private String failureStacktrace;
+
+  @Builder.Default
+  Set<RbelMismatchNoteFacet> mismatchNotes = new TreeSet<>(RbelMismatchNoteFacet.COMPARATOR);
+
   private String tooltip;
   @Builder.Default private int stepIndex = -1;
   @Builder.Default private List<MessageMetaDataDto> rbelMetaData = new ArrayList<>();

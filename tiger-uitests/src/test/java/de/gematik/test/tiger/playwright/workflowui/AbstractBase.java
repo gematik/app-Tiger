@@ -33,9 +33,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -85,8 +87,39 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
   private static final String user_manual = "user_manual";
   private static final String screenshots = "screenshots";
   protected static final int NUMBER_OF_FEATURES = 2;
-  protected static final int NUMBER_OF_SCENARIOS = 28;
-  protected static final int TOTAL_MESSAGES = 58;
+  protected static final String[][] SCENARIO_DATA = {
+    {"Simple Get Request", "0"},
+    {"Get Request to folder", "0"},
+    {"PUT Request to folder", "0"},
+    {"PUT Request with body to folder", "0"},
+    {"PUT Request with body from file to folder", "0"},
+    {"DELETE Request without body shall fail", "0"},
+    {"Request with custom header", "0"},
+    {"Request with default header", "0"},
+    {"Request with custom and default header", "0"},
+    {"Request with DataTables Test", "0"},
+    {"Request with custom and default header", "0"},
+    {"Test red with Dagmar", "1"},
+    {"Test blue with Nils", "2"},
+    {"Test green with Tim", "3"},
+    {"Test yellow with Sophie", "4"},
+    {"Test green with foo again", "1"},
+    {"Test red with bar again", "2"},
+    {"Test Find Last Request", "0"},
+    {"Test find last request with parameters", "0"},
+    {"Test find last request", "0"},
+    {"JEXL Rbel Namespace Test", "1"},
+    {"JEXL Rbel Namespace Test", "2"},
+    {"JEXL Rbel Namespace Test", "3"},
+    {"JEXL Rbel Namespace Test", "4"},
+    {"JEXL Rbel Namespace Test", "5"},
+    {"Request a non existing url", "0"},
+    {"Request for testing tooltips", "0"},
+    {"A scenario with substeps", "0"},
+    {"Test zeige HTML", "0"}
+  };
+  protected static final int NUMBER_OF_SCENARIOS = SCENARIO_DATA.length;
+  protected static final int TOTAL_MESSAGES = 60;
   protected static final int MESSAGES_PER_PAGE = 20;
   protected static final int TOTAL_PAGES =
       (int) Math.ceil(TOTAL_MESSAGES / (MESSAGES_PER_PAGE * 1.0));
@@ -150,6 +183,10 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
     checkPort();
     playwright = Playwright.create();
     log.info("Playwright created");
+    // if you are running tests locally and want to troubleshoot, then set this to false and change
+    // the browser
+    // from .firefox() to .chromium().
+    // Then go to the test you are debugging and add a page.pause() call.
     boolean runHeadless = Boolean.parseBoolean(System.getProperty("tiger.test.headless", "true"));
     browser = playwright.firefox().launch(new BrowserType.LaunchOptions().setHeadless(runHeadless));
 
@@ -206,7 +243,7 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
     }
   }
 
-  void setBackToNormalState() {
+  protected void setBackToNormalState() {
     // check if sidebar is closed
     if (page.querySelector("#test-sidebar-title").isVisible()) {
       page.querySelector("#test-tiger-logo").click();
@@ -222,49 +259,68 @@ public class AbstractBase implements ExtensionContext.Store.CloseableResource {
     return Paths.get("..", doc, user_manual, screenshots, file);
   }
 
-  protected void screenshotElementById(Page page, String fileName, String elementId) {
-    page.evaluate("document.getElementById(\"" + elementId + "\").style.backgroundColor='yellow'");
-    screenshot(page, fileName);
-    page.evaluate(
-        "document.getElementById(\""
-            + elementId
-            + "\").style.removeProperty(\"background-color\")");
+  protected void screenshotWithHighlightedElementById(
+      Page page, String fileName, String elementId) {
+    doActionWithHighlightedElement(
+        page.locator("#".concat(elementId)), () -> screenshot(page, fileName));
   }
 
-  protected void screenshotByClassname(Page page, String fileName, String classname) {
-    page.evaluate(
-        "document.getElementsByClassName(\"" + classname + "\")[0].style.backgroundColor='yellow'");
-    await()
-        .atMost(2, TimeUnit.SECONDS)
-        .pollInterval(100, TimeUnit.MILLISECONDS)
-        .until(
-            () ->
-                page.evaluate(
-                        "document.getElementsByClassName(\""
-                            + classname
-                            + "\")[0].style.backgroundColor")
-                    .equals("yellow"));
+  protected void doActionWithHighlightedElement(Locator locator, Runnable action) {
+    locator.evaluate("e => e.style.setProperty('background-color', 'yellow', 'important')");
+    // Wait for the browser to repaint so the highlight is visible in screenshots
+    page.waitForTimeout(400);
+    action.run();
+    locator.evaluate("e => e.style.removeProperty(\"background-color\")");
+  }
 
-    screenshot(page, fileName);
-    page.evaluate(
-        "document.getElementsByClassName(\""
-            + classname
-            + "\")[0].style.removeProperty(\"background-color\")");
-    await()
-        .atMost(2, TimeUnit.SECONDS)
-        .pollInterval(100, TimeUnit.MILLISECONDS)
-        .until(
-            () ->
-                page.evaluate(
-                        "document.getElementsByClassName(\""
-                            + classname
-                            + "\")[0].style.backgroundColor")
-                    .equals(""));
+  protected void screenshotOnlyElementById(Page page, String fileName, String elementId) {
+    screenshotElement(page.locator("#".concat(elementId)), fileName);
+  }
+
+  protected void screenshotOnlyElementById(
+      Page page, String fileName, String elementId, String highlightSelector) {
+    screenshotElement(page.locator("#".concat(elementId)), fileName, highlightSelector);
+  }
+
+  protected void screenshotWithHighlightedByClassname(
+      Page page, String fileName, String classname) {
+    var classnameSelector =
+        Arrays.stream(classname.split(" ")).map("."::concat).collect(Collectors.joining());
+    doActionWithHighlightedElement(
+        page.locator(classnameSelector).first(), () -> screenshot(page, fileName));
+  }
+
+  protected void screenshotOnlyElementByClassname(Page page, String fileName, String classname) {
+    screenshotElement(page.locator(".".concat(classname)), fileName);
+  }
+
+  protected void screenshotOnlyElementByClassname(
+      Page page, String fileName, String classname, String highlightSelector) {
+    var classnameSelector =
+        Arrays.stream(classname.split(" ")).map("."::concat).collect(Collectors.joining());
+    screenshotElement(page.locator(classnameSelector), fileName, highlightSelector);
   }
 
   protected void screenshot(Page page, String fileName) {
     await().pollDelay(500, TimeUnit.MILLISECONDS).until(() -> true);
     page.screenshot(new Page.ScreenshotOptions().setFullPage(false).setPath(getPath(fileName)));
+  }
+
+  protected void screenshotElement(Locator element, String fileName) {
+    element.screenshot(new Locator.ScreenshotOptions().setPath(getPath(fileName)));
+  }
+
+  protected void screenshotElement(Locator element, String fileName, String highlightSelector) {
+    var elementToHighlight = element.locator(highlightSelector).first();
+    doActionWithHighlightedElement(elementToHighlight, () -> screenshotElement(element, fileName));
+  }
+
+  protected void screenshotHighlightedElement(Locator container, Locator element, String fileName) {
+    doActionWithHighlightedElement(element, () -> screenshotElement(container, fileName));
+  }
+
+  protected void screenshotPageWithHighlightedElement(Locator elementToHighlight, String fileName) {
+    doActionWithHighlightedElement(elementToHighlight, () -> screenshot(page, fileName));
   }
 
   protected void openSidebar() {

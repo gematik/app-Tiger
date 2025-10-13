@@ -21,8 +21,8 @@
 package de.gematik.test.tiger.proxy.tls;
 
 import de.gematik.test.tiger.common.pki.TigerPkiIdentity;
+import de.gematik.test.tiger.mockserver.socket.tls.KeyAlgorithmPreference;
 import de.gematik.test.tiger.mockserver.socket.tls.KeyAndCertificateFactory;
-import java.security.*;
 import java.util.*;
 import lombok.Data;
 
@@ -33,15 +33,17 @@ public class CombinedKeyAndCertificateFactory implements KeyAndCertificateFactor
   private final KeyAndCertificateFactory fallback;
 
   @Override
-  public Optional<TigerPkiIdentity> findExactIdentityForHostname(String hostname) {
+  public Optional<TigerPkiIdentity> findExactIdentityForHostname(
+      String hostname, KeyAlgorithmPreference keyAlgorithmPreference) {
     return supplier
-        .findExactIdentityForHostname(hostname)
-        .or(() -> fallback.findExactIdentityForHostname(hostname));
+        .findExactIdentityForHostname(hostname, keyAlgorithmPreference)
+        .or(() -> fallback.findExactIdentityForHostname(hostname, keyAlgorithmPreference));
   }
 
   @Override
-  public TigerPkiIdentity resolveIdentityForHostname(String hostname) {
-    return findExactIdentityForHostname(hostname)
-        .orElseGet(() -> fallback.resolveIdentityForHostname(hostname));
+  public TigerPkiIdentity resolveIdentityForHostname(
+      String hostname, KeyAlgorithmPreference algorithmPreference) {
+    return findExactIdentityForHostname(hostname, algorithmPreference)
+        .orElseGet(() -> fallback.resolveIdentityForHostname(hostname, algorithmPreference));
   }
 }

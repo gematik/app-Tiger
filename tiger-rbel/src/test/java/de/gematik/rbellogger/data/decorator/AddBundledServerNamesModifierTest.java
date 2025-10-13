@@ -24,9 +24,9 @@ import static de.gematik.rbellogger.testutil.RbelElementAssertion.assertThat;
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.TRAFFIC_VISUALIZATION_ACTIVE;
 
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.core.RbelHostnameFacet;
 import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
@@ -45,10 +45,10 @@ class AddBundledServerNamesModifierTest {
         RbelTcpIpMessageFacet.builder()
             .receiver(
                 RbelHostnameFacet.buildRbelHostnameFacet(
-                    messageWithTcpFacet, new RbelHostname("receiver", 1)))
+                    messageWithTcpFacet, RbelSocketAddress.create("receiver", 1)))
             .sender(
                 RbelHostnameFacet.buildRbelHostnameFacet(
-                    messageWithTcpFacet, new RbelHostname("sender", 1)))
+                    messageWithTcpFacet, RbelSocketAddress.create("sender", 1)))
             .build());
   }
 

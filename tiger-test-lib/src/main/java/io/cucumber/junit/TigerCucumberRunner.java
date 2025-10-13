@@ -21,40 +21,27 @@
 package io.cucumber.junit;
 
 import static de.gematik.test.tiger.common.config.TigerConfigurationKeys.RUN_TESTS_ON_START;
-import static io.cucumber.core.options.Constants.ANSI_COLORS_DISABLED_PROPERTY_NAME;
-import static io.cucumber.core.options.Constants.EXECUTION_DRY_RUN_PROPERTY_NAME;
-import static io.cucumber.core.options.Constants.FEATURES_PROPERTY_NAME;
-import static io.cucumber.core.options.Constants.FILTER_TAGS_PROPERTY_NAME;
-import static io.cucumber.core.options.Constants.GLUE_PROPERTY_NAME;
-import static io.cucumber.core.options.Constants.OBJECT_FACTORY_PROPERTY_NAME;
-import static io.cucumber.core.options.Constants.PLUGIN_PROPERTY_NAME;
-import static io.cucumber.core.options.Constants.SNIPPET_TYPE_PROPERTY_NAME;
-import static io.cucumber.core.options.Constants.UUID_GENERATOR_PROPERTY_NAME;
+import static io.cucumber.core.options.Constants.*;
 import static io.cucumber.junit.platform.engine.Constants.FILTER_NAME_PROPERTY_NAME;
 import static org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.request;
 
 import de.gematik.test.tiger.lib.TigerDirector;
 import de.gematik.test.tiger.lib.TigerInitializer;
 import de.gematik.test.tiger.testenvmgr.api.model.mapper.TigerTestIdentifier;
-import de.gematik.test.tiger.testenvmgr.env.FeatureUpdate;
-import de.gematik.test.tiger.testenvmgr.env.ScenarioRunner;
-import de.gematik.test.tiger.testenvmgr.env.ScenarioUpdate;
-import de.gematik.test.tiger.testenvmgr.env.TestResult;
-import de.gematik.test.tiger.testenvmgr.env.TigerStatusUpdate;
+import de.gematik.test.tiger.testenvmgr.data.TestSuiteLifecycle;
+import de.gematik.test.tiger.testenvmgr.env.*;
 import io.cucumber.core.options.CommandlineOptionsParser;
 import io.cucumber.core.options.RuntimeOptions;
 import io.cucumber.core.plugin.Options;
 import io.cucumber.core.plugin.TigerSerenityReporterPlugin;
 import java.net.URI;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.platform.engine.TestTag;
+import org.junit.platform.engine.UniqueId;
 import org.junit.platform.launcher.Launcher;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.TestExecutionListener;
@@ -103,7 +90,17 @@ public class TigerCucumberRunner {
           // We set these listeners, so that they also see replayed test executions
           ScenarioRunner.setTestListener(listeners);
           Launcher launcher = LauncherFactory.create();
+          TigerDirector.getTigerTestEnvMgr()
+              .receiveTestEnvUpdate(
+                  TigerStatusUpdate.builder()
+                      .testSuiteLifecycle(TestSuiteLifecycle.DISCOVERING_TESTS)
+                      .build());
           discoverTestsAndInformWorkflowUi(launcher, request);
+          TigerDirector.getTigerTestEnvMgr()
+              .receiveTestEnvUpdate(
+                  TigerStatusUpdate.builder()
+                      .testSuiteLifecycle(TestSuiteLifecycle.TESTS_DISCOVERED)
+                      .build());
           if (runNow) {
             launcher.execute(request, listeners);
           }
@@ -117,18 +114,43 @@ public class TigerCucumberRunner {
     informWorkflowUiAboutScenarios();
   }
 
+  private static boolean isScenarioVariant(UniqueId testUniqueId) {
+    return testUniqueId.getLastSegment().getType().equals("example");
+  }
+
   private static void informWorkflowUiAboutScenarios() {
+
     var featureMap = new LinkedHashMap<String, FeatureUpdate>();
 
     for (TigerTestIdentifier t : ScenarioRunner.getTigerScenarios()) {
-      var scenarioUniqueId = t.getTestIdentifier().getUniqueId();
-      var scenarioUpdate =
+      var scenarioUniqueId = t.getTestIdentifier().getUniqueIdObject();
+      Optional<ExamplesResolver.ExampleValues> exampleValues = Optional.empty();
+      if (isScenarioVariant(scenarioUniqueId)) {
+        exampleValues =
+            t.getTestIdentifier().getSource().flatMap(ExamplesResolver::findExampleValues);
+      }
+      var scenarioUpdateBuilder =
           ScenarioUpdate.builder()
               .isDryRun(true)
               .description(t.getScenarioName())
-              .uniqueId(scenarioUniqueId)
-              .status(TestResult.TEST_DISCOVERED)
-              .build();
+              .tags(
+                  t.getTestIdentifier().getTags().stream()
+                      .map(TestTag::getName)
+                      // prepending the @ because in
+                      // io.cucumber.core.plugin.report.SerenityReporterCallbacks.informWorkflowUiAboutCurrentScenario
+                      // the tags come from the io.cucumber.messages.types.Tag and contain always
+                      // the @. Otherwise they appear duplicated in the UI.
+                      .map("@"::concat)
+                      .toList())
+              .uniqueId(scenarioUniqueId.toString())
+              .status(TestResult.TEST_DISCOVERED);
+      exampleValues.ifPresent(
+          v ->
+              scenarioUpdateBuilder
+                  .variantIndex(v.variantIndex())
+                  .exampleKeys(v.values().keySet().stream().toList())
+                  .exampleList(v.values()));
+      var scenarioUpdate = scenarioUpdateBuilder.build();
       featureMap
           .computeIfAbsent(
               t.getFeatureName(),
@@ -139,7 +161,7 @@ public class TigerCucumberRunner {
                       .sourcePathForSource(t.getTestIdentifier().getSource().orElse(null))
                       .build())
           .getScenarios()
-          .put(scenarioUniqueId, scenarioUpdate);
+          .put(scenarioUniqueId.toString(), scenarioUpdate);
     }
     TigerDirector.getTigerTestEnvMgr()
         .receiveTestEnvUpdate(TigerStatusUpdate.builder().featureMap(featureMap).build());

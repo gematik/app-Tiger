@@ -86,7 +86,7 @@ export function useHtmlExporter(
 
     const compressed = deflateSync(new TextEncoder().encode(JSON.stringify(log)));
 
-    const dataURL = await bufferToDataURL(compressed);
+    const dataURL = await bufferToDataURL(new Uint8Array(compressed));
 
     const finalHtml = distDetachedHtml.replace(
       '<script id="__TGR_RBEL_LOG__" type="text/javascript"></script>',

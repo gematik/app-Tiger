@@ -39,7 +39,7 @@ class StaticRbelLogTests extends AbstractBase {
         .untilAsserted(
             () -> PlaywrightAssertions.assertThat(page.locator("#test-rbel-logo")).isVisible());
     screenshot(page, "maincontent_rbelpath.png");
-    screenshotElementById(
+    screenshotWithHighlightedElementById(
         page, "maincontent_rbelpath_urllink_highlight.png", "test-rbel-webui-url");
   }
 }

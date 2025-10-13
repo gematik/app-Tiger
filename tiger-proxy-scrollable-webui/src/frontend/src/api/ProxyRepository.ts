@@ -54,6 +54,12 @@ export type ProxyRepository = {
     signal: AbortSignal;
   }): Promise<GetMessagesDto>;
 
+  fetchFullyRenderedMessage(props: { uuid: string; signal?: AbortSignal }): Promise<{
+    content: string;
+    uuid: string;
+    sequenceNumber: number;
+  }>;
+
   fetchResetMessages(): Promise<void>;
 
   fetchQuitProxy(): Promise<void>;
@@ -154,6 +160,9 @@ const ProxyRepositoryLocal: ProxyRepository = {
     throwNotImplemented();
   },
   fetchDownloadTraffic(): Promise<string> {
+    throwNotImplemented();
+  },
+  fetchFullyRenderedMessage(): Promise<{ content: string; uuid: string; sequenceNumber: number }> {
     throwNotImplemented();
   },
 };
@@ -307,5 +316,18 @@ const ProxyRepositoryRemote: ProxyRepository = {
     await createFetchRequest<void>(`/route/${id}`, {
       method: "DELETE",
     });
+  },
+
+  fetchFullyRenderedMessage: async ({
+    uuid,
+    signal,
+  }: {
+    uuid: string;
+    signal?: AbortSignal;
+  }): Promise<{ content: string; uuid: string; sequenceNumber: number }> => {
+    return createFetchRequest<{ content: string; uuid: string; sequenceNumber: number }>(
+      `/webui/fullyRenderedMessage/${uuid}`,
+      { signal },
+    );
   },
 };

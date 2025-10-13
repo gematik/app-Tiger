@@ -31,7 +31,7 @@ import static de.gematik.test.tiger.mockserver.netty.HttpRequestHandler.PROXYING
 import static de.gematik.test.tiger.mockserver.netty.proxy.relay.RelayConnectHandler.*;
 import static java.util.Collections.unmodifiableSet;
 
-import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import de.gematik.test.tiger.mockserver.codec.MockServerHttpServerCodec;
 import de.gematik.test.tiger.mockserver.configuration.MockServerConfiguration;
 import de.gematik.test.tiger.mockserver.httpclient.NettyHttpClient;
@@ -188,7 +188,7 @@ public class PortUnificationHandler extends ReplayingDecoder<Void> {
       log.error("Infinite loop detected for {}", remoteAddress);
       throw new TigerProxyRoutingException(
           "Infinite loop detected for " + remoteAddress,
-          RbelHostname.create(remoteAddress),
+          RbelSocketAddress.create(remoteAddress),
           null,
           null);
     }

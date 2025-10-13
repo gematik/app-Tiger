@@ -26,7 +26,6 @@ import static org.awaitility.Awaitility.await;
 
 import de.gematik.rbellogger.util.RbelAnsiColors;
 import de.gematik.test.tiger.common.Ansi;
-import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
 import de.gematik.test.tiger.common.web.InsecureTrustAllManager;
 import de.gematik.test.tiger.mockserver.proxyconfiguration.ProxyConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -244,8 +243,8 @@ public abstract class AbstractExternalTigerServer extends AbstractTigerServer {
     return this.getTigerTestEnvMgr()
         .getLocalTigerProxyOptional()
         .map(TigerProxy::getTigerProxyConfiguration)
-        .map(TigerProxyConfiguration::getForwardToProxy)
-        .flatMap(ProxyConfigurationConverter::createMockServerProxyConfiguration)
+        .flatMap(
+            ProxyConfigurationConverter::convertForwardProxyConfigurationToMockServerConfiguration)
         .filter(pc -> pc.getProxyAddress() != null)
         .filter(pc -> StringUtils.isNotEmpty(pc.getProxyAddress().getHostName()));
   }

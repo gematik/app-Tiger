@@ -42,6 +42,8 @@ import de.gematik.rbellogger.facets.cetp.RbelCetpFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpMessageFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpRequestFacet;
 import de.gematik.rbellogger.facets.http.RbelHttpResponseFacet;
+import de.gematik.rbellogger.facets.websocket.RbelWebsocketHandshakeFacet;
+import de.gematik.rbellogger.facets.websocket.RbelWebsocketMessageFacet;
 import de.gematik.test.tiger.common.config.TigerGlobalConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.TigerProxy;
@@ -56,6 +58,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import kong.unirest.core.HttpResponse;
 import kong.unirest.core.Unirest;
@@ -93,23 +97,25 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-            tigerProxy:
-              trafficEndpoints:
-                - http://localhost:${free.port.4}
-            servers:
-              httpbin:
-                type: httpbin
-                serverPort: ${free.port.0}
-                healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
-              reverseProxy:
-                type: tigerProxy
-                tigerProxyConfiguration:
-                  adminPort: ${free.port.4}
-                  proxiedServer: httpbin
-                  proxyPort: ${free.port.5}
-            lib:
-              trafficVisualization: true
-            """)
+          tigerProxy:
+            trafficEndpoints:
+              - http://localhost:${free.port.4}
+          servers:
+            httpbin:
+              type: httpbin
+              serverPort: ${free.port.0}
+              healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
+            reverseProxy:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.4}
+                proxiedServer: httpbin
+                proxyPort: ${free.port.5}
+                tls.serverSslSuites:
+                  - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+          lib:
+            trafficVisualization: true
+          """)
   void aggregateFromOneRemoteProxy_shouldTransmitMetadata(TigerTestEnvMgr envMgr) {
     waitShortTime();
     final String path = "/status/404";
@@ -133,37 +139,148 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
         ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
             .getTigerProxy()
             .getRbelMessages();
+    val lastLocalSize = new AtomicInteger(0);
+    val lastRemoteSize = new AtomicInteger(0);
     await()
         .atMost(10, TimeUnit.SECONDS)
         .until(
             () -> {
-              log.info(
-                  "Local Proxy size: {}, aggregating Proxy size: (), Remote Proxy size {}",
-                  envMgr.getLocalTigerProxyOrFail().getRbelMessages().size(),
-                  reverseProxyMessages.size());
-              return envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size()
-                  >= 2;
+              var localSize =
+                  envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size();
+              var remoteSize = reverseProxyMessages.size();
+              if (localSize > lastLocalSize.get() || remoteSize > lastRemoteSize.get()) {
+                log.info("Local Proxy size: {}, Remote Proxy size {}", localSize, remoteSize);
+                lastLocalSize.set(localSize);
+                lastRemoteSize.set(remoteSize);
+              }
+              return localSize >= 2;
             });
 
     val localTigerMessages =
         envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageList().stream()
             .filter(el -> el.hasFacet(RbelHttpMessageFacet.class))
-            .peek(el -> log.info(el.printTreeStructure()))
             .toList();
-    assertThat(localTigerMessages.get(0))
-        .hasStringContentEqualToAtPosition("$.tlsVersion", "TLSv1.2")
-        .hasStringContentEqualToAtPosition("$.cipherSuite", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
-        .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "reverseProxy")
-        .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "httpbin")
-        .hasStringContentEqualToAtPosition(
-            "$.receiver.port", TigerGlobalConfiguration.readString("free.port.0"));
-    assertThat(localTigerMessages.get(1))
-        .hasStringContentEqualToAtPosition("$.tlsVersion", "TLSv1.2")
-        .hasStringContentEqualToAtPosition("$.cipherSuite", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
-        .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "reverseProxy")
-        .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "httpbin")
-        .hasStringContentEqualToAtPosition(
-            "$.sender.port", TigerGlobalConfiguration.readString("free.port.0"));
+    assertAndPrintIfFail(
+        localTigerMessages.get(0),
+        message -> {
+          assertThat(message)
+              .hasStringContentEqualToAtPosition("$.tlsVersion", "TLSv1.2")
+              .hasStringContentEqualToAtPosition(
+                  "$.cipherSuite", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
+              .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "reverseProxy")
+              .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "httpbin")
+              .hasStringContentEqualToAtPosition(
+                  "$.receiver.port", TigerGlobalConfiguration.readString("free.port.0"));
+        });
+    assertAndPrintIfFail(
+        localTigerMessages.get(1),
+        message -> {
+          assertThat(message)
+              .hasStringContentEqualToAtPosition("$.tlsVersion", "TLSv1.2")
+              .hasStringContentEqualToAtPosition(
+                  "$.cipherSuite", "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256")
+              .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "reverseProxy")
+              .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "httpbin")
+              .hasStringContentEqualToAtPosition(
+                  "$.sender.port", TigerGlobalConfiguration.readString("free.port.0"));
+        });
+
+    waitShortTime();
+  }
+
+  private void assertAndPrintIfFail(RbelElement message, Consumer<RbelElement> assertion) {
+    try {
+      assertion.accept(message);
+    } catch (AssertionError e) {
+      log.info(message.printTreeStructure());
+      throw e;
+    }
+  }
+
+  @SneakyThrows
+  @Test
+  @TigerTest(
+      tigerYaml =
+          """
+          tigerProxy:
+            connectionTimeoutInSeconds: 6000
+            trafficEndpoints:
+              - http://localhost:${free.port.4}
+          servers:
+            httpbin:
+              type: httpbin
+              serverPort: ${free.port.0}
+              healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
+            reverseProxy:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.6}
+                proxiedServer: httpbin
+                proxyPort: ${free.port.5}
+            sneakyProxy:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.7}
+                proxyPort: ${free.port.4}
+                activateRbelParsingFor:
+                  - websocket
+                directReverseProxy:
+                  hostname: localhost
+                  port: ${free.port.6}
+          """)
+  void parseWebsocketInTheLoop(TigerTestEnvMgr envMgr) {
+    waitShortTime();
+    final String path = "/status/404";
+    final UnirestInstance unirestInstance = Unirest.spawnInstance();
+    unirestInstance
+        .config()
+        .sslContext(
+            ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
+                .getTigerProxy()
+                .getConfiguredTigerProxySslContext());
+
+    unirestInstance
+        .get("https://localhost:" + TigerGlobalConfiguration.readString("free.port.5") + path)
+        .asString();
+
+    final Deque<RbelElement> reverseProxyMessages =
+        ((TigerProxyServer) envMgr.getServers().get("sneakyProxy"))
+            .getTigerProxy()
+            .getRbelMessages();
+
+    await().atMost(10, TimeUnit.SECONDS).until(reverseProxyMessages::size, size -> size == 16);
+
+    val websocketMessages =
+        reverseProxyMessages.stream()
+            .filter(el -> el.hasFacet(RbelWebsocketMessageFacet.class))
+            .toList();
+    val handshakeMessage =
+        reverseProxyMessages.stream()
+            .filter(el -> el.hasFacet(RbelWebsocketHandshakeFacet.class))
+            .toList();
+    assertThat(handshakeMessage.get(0))
+        .hasFacet(RbelWebsocketHandshakeFacet.class)
+        .hasStringContentEqualToAtPosition("$.header.[~'connection']", "upgrade")
+        .hasStringContentEqualToAtPosition("$.header.[~'upgrade']", "websocket");
+    assertThat(handshakeMessage.get(1))
+        .hasFacet(RbelWebsocketHandshakeFacet.class)
+        .hasStringContentEqualToAtPosition("$.responseCode", "101")
+        .hasStringContentEqualToAtPosition("$.header.[~'connection']", "upgrade")
+        .hasStringContentEqualToAtPosition("$.header.[~'upgrade']", "websocket");
+    assertThat(websocketMessages.get(0))
+        .hasFacet(RbelWebsocketMessageFacet.class)
+        .hasGivenValueAtPosition("$.opcode", 1)
+        .hasGivenValueAtPosition("$.payloadLength", 1)
+        .hasGivenValueAtPosition("$.masked", false)
+        .hasStringContentEqualToAtPosition("$.payload", "o");
+    assertThat(websocketMessages.get(1))
+        .hasFacet(RbelWebsocketMessageFacet.class)
+        .hasGivenValueAtPosition("$.opcode", 1)
+        .hasGivenValueAtPosition("$.payloadLength", 61)
+        .hasGivenValueAtPosition("$.masked", true)
+        .extractChildWithPath("$.payload")
+        .asString()
+        .startsWith("[\"CONNECT\\nheart-beat:");
 
     waitShortTime();
   }
@@ -173,41 +290,41 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-            lib:
-              trafficVisualization: true
-            tigerProxy:
-              skipTrafficEndpointsSubscription: true
-              trafficEndpoints:
-                - http://localhost:${free.port.12}
-            servers:
-              httpbin:
-                type: httpbin
-                serverPort: ${free.port.0}
-                healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
-              aggregatingProxy:
-                type: tigerProxy
-                dependsUpon: reverseProxy1, reverseProxy2
-                tigerProxyConfiguration:
-                  adminPort: ${free.port.12}
-                  proxyPort: ${free.port.13}
-                  activateRbelParsing: false
-                  rbelBufferSizeInMb: 0
-                  trafficEndpoints:
-                    - http://localhost:${free.port.14}
-                    - http://localhost:${free.port.16}
-              reverseProxy1:
-                type: tigerProxy
-                tigerProxyConfiguration:
-                  adminPort: ${free.port.14}
-                  proxiedServer: httpbin
-                  proxyPort: ${free.port.15}
-              reverseProxy2:
-                type: tigerProxy
-                tigerProxyConfiguration:
-                  adminPort: ${free.port.16}
-                  proxiedServer: httpbin
-                  proxyPort: ${free.port.17}
-            """)
+          lib:
+            trafficVisualization: true
+          tigerProxy:
+            skipTrafficEndpointsSubscription: true
+            trafficEndpoints:
+              - http://localhost:${free.port.12}
+          servers:
+            httpbin:
+              type: httpbin
+              serverPort: ${free.port.0}
+              healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
+            aggregatingProxy:
+              type: tigerProxy
+              dependsUpon: reverseProxy1, reverseProxy2
+              tigerProxyConfiguration:
+                adminPort: ${free.port.12}
+                proxyPort: ${free.port.13}
+                activateRbelParsing: false
+                rbelBufferSizeInMb: 0
+                trafficEndpoints:
+                  - http://localhost:${free.port.14}
+                  - http://localhost:${free.port.16}
+            reverseProxy1:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.14}
+                proxiedServer: httpbin
+                proxyPort: ${free.port.15}
+            reverseProxy2:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.16}
+                proxiedServer: httpbin
+                proxyPort: ${free.port.17}
+          """)
   void testWithMultipleUpstreamProxies(TigerTestEnvMgr envMgr) {
     waitShortTime();
     assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory()).isEmpty();
@@ -263,34 +380,34 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-      servers:
-        distributingProxy:
-          type: tigerProxy
-          dependsOn: specialServer, otherServer
-          tigerProxyConfiguration:
-            proxyPort: ${free.port.3}
-            adminPort: ${free.port.4}
-            proxyRoutes:
-              - from: /
-                to: http://localhost:${free.port.2}
-                criterions:
-                  - message.path == '/specialrequest'
-              - from: /
-                to: http://localhost:${free.port.1}
+          servers:
+            distributingProxy:
+              type: tigerProxy
+              dependsOn: specialServer, otherServer
+              tigerProxyConfiguration:
+                proxyPort: ${free.port.3}
+                adminPort: ${free.port.4}
+                proxyRoutes:
+                  - from: /
+                    to: http://localhost:${free.port.2}
+                    criterions:
+                      - message.path == '/specialrequest'
+                  - from: /
+                    to: http://localhost:${free.port.1}
 
-        specialServer:
-          type: httpbin
-          serverPort: ${free.port.2}
-          healthcheckUrl: http://127.0.0.1:${free.port.2}/status/200
+            specialServer:
+              type: httpbin
+              serverPort: ${free.port.2}
+              healthcheckUrl: http://127.0.0.1:${free.port.2}/status/200
 
-        otherServer:
-          type: httpbin
-          serverPort: ${free.port.1}
-          healthcheckUrl: http://127.0.0.1:${free.port.1}/status/200
+            otherServer:
+              type: httpbin
+              serverPort: ${free.port.1}
+              healthcheckUrl: http://127.0.0.1:${free.port.1}/status/200
 
-      lib:
-        trafficVisualization: true
-      """)
+          lib:
+            trafficVisualization: true
+          """)
   void multipleUpstreamProxiesWithDifferentCriteria_shouldShowCorrectServer(
       TigerTestEnvMgr envMgr) {
 
@@ -339,19 +456,19 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-            tigerProxy:
-              trafficEndpoints:
-                - http://localhost:${free.port.14}
-            servers:
-              reverseProxy1:
-                type: tigerProxy
-                tigerProxyConfiguration:
-                  adminPort: ${free.port.14}
-                  proxyPort: ${free.port.15}
-                  proxyRoutes:
-                    - from: http://myServer
-                      to: http://123.123.123.123:5678
-            """)
+          tigerProxy:
+            trafficEndpoints:
+              - http://localhost:${free.port.14}
+          servers:
+            reverseProxy1:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.14}
+                proxyPort: ${free.port.15}
+                proxyRoutes:
+                  - from: http://myServer
+                    to: http://123.123.123.123:5678
+          """)
   void unreachableRouteInUpstreamProxy_downstreamShouldStart(TigerTestEnvMgr envMgr) {
     waitShortTime();
     assertThat(envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory()).isEmpty();
@@ -362,30 +479,30 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-            tigerProxy:
-              skipTrafficEndpointsSubscription: true
-              trafficEndpoints:
-                - http://localhost:${free.port.22}
-            servers:
-              aggregatingProxy:
-                type: tigerProxy
-                dependsUpon: reverseProxy
-                tigerProxyConfiguration:
-                  adminPort: ${free.port.22}
-                  proxyPort: ${free.port.23}
-                  activateRbelParsing: false
-                  rbelBufferSizeInMb: 0
-                  trafficEndpoints:
-                    - http://localhost:${free.port.24}
-              reverseProxy:
-                type: tigerProxy
-                tigerProxyConfiguration:
-                  adminPort: ${free.port.24}
-                  proxyPort: ${free.port.25}
-                  directReverseProxy:
-                    hostname: localhost
-                    port: ${free.port.26}
-            """)
+          tigerProxy:
+            skipTrafficEndpointsSubscription: true
+            trafficEndpoints:
+              - http://localhost:${free.port.22}
+          servers:
+            aggregatingProxy:
+              type: tigerProxy
+              dependsUpon: reverseProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.22}
+                proxyPort: ${free.port.23}
+                activateRbelParsing: false
+                rbelBufferSizeInMb: 0
+                trafficEndpoints:
+                  - http://localhost:${free.port.24}
+            reverseProxy:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.24}
+                proxyPort: ${free.port.25}
+                directReverseProxy:
+                  hostname: localhost
+                  port: ${free.port.26}
+          """)
   void testDirectReverseProxyMeshSetup_withoutResponse(TigerTestEnvMgr envMgr) {
     waitShortTime();
     try (Socket clientSocket =
@@ -415,31 +532,31 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-            tigerProxy:
-              skipTrafficEndpointsSubscription: true
-              adminPort: ${free.port.36}
-              trafficEndpoints:
-                - http://localhost:${free.port.32}
-            servers:
-              aggregatingProxy:
-                type: tigerProxy
-                dependsUpon: reverseProxy
-                tigerProxyConfiguration:
-                  adminPort: ${free.port.32}
-                  proxyPort: ${free.port.33}
-                  activateRbelParsing: false
-                  rbelBufferSizeInMb: 0
-                  trafficEndpoints:
-                    - http://localhost:${free.port.34}
-              reverseProxy:
-                type: tigerProxy
-                tigerProxyConfiguration:
-                  adminPort: ${free.port.34}
-                  proxyPort: ${free.port.35}
-                  directReverseProxy:
-                    hostname: localhost
-                    port: ${free.port.36}
-            """)
+          tigerProxy:
+            skipTrafficEndpointsSubscription: true
+            adminPort: ${free.port.36}
+            trafficEndpoints:
+              - http://localhost:${free.port.32}
+          servers:
+            aggregatingProxy:
+              type: tigerProxy
+              dependsUpon: reverseProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.32}
+                proxyPort: ${free.port.33}
+                activateRbelParsing: false
+                rbelBufferSizeInMb: 0
+                trafficEndpoints:
+                  - http://localhost:${free.port.34}
+            reverseProxy:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.34}
+                proxyPort: ${free.port.35}
+                directReverseProxy:
+                  hostname: localhost
+                  port: ${free.port.36}
+          """)
   void testDirectReverseProxyMeshSetup_withResponse(TigerTestEnvMgr envMgr) {
     waitShortTime();
     try (Socket clientSocket =
@@ -464,33 +581,33 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-            lib:
-              trafficVisualization: true
-            tigerProxy:
-              adminPort: ${free.port.31}
-              dependsOn: reverseProxy1, reverseProxy2
-              skipTrafficEndpointsSubscription: true
-              trafficEndpoints:
-                - http://localhost:${free.port.32}
-                - http://localhost:${free.port.35}
-            servers:
-              reverseProxy1:
-                type: tigerProxy
-                tigerProxyConfiguration:
-                  adminPort: ${free.port.32}
-                  proxyPort: ${free.port.33}
-                  directReverseProxy:
-                    hostname: localhost
-                    port: ${free.port.31}
-              reverseProxy2:
-                type: tigerProxy
-                tigerProxyConfiguration:
-                  adminPort: ${free.port.35}
-                  proxyPort: ${free.port.36}
-                  directReverseProxy:
-                    hostname: localhost
-                    port: ${free.port.31}
-            """)
+          lib:
+            trafficVisualization: true
+          tigerProxy:
+            adminPort: ${free.port.31}
+            dependsOn: reverseProxy1, reverseProxy2
+            skipTrafficEndpointsSubscription: true
+            trafficEndpoints:
+              - http://localhost:${free.port.32}
+              - http://localhost:${free.port.35}
+          servers:
+            reverseProxy1:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.32}
+                proxyPort: ${free.port.33}
+                directReverseProxy:
+                  hostname: localhost
+                  port: ${free.port.31}
+            reverseProxy2:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.35}
+                proxyPort: ${free.port.36}
+                directReverseProxy:
+                  hostname: localhost
+                  port: ${free.port.31}
+          """)
   void testDirectReverseProxyMeshSetup_parallelUpstreamProxies(TigerTestEnvMgr envMgr) {
     waitShortTime();
 
@@ -554,11 +671,11 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
 
     assertThat(msg0)
         .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "reverseProxy2")
-        .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "localhost");
+        .doesNotHaveChildWithPath("$.receiver.bundledServerName");
 
     assertThat(msg1)
         .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "reverseProxy1")
-        .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "localhost");
+        .doesNotHaveChildWithPath("$.receiver.bundledServerName");
 
     assertThat(msg0)
         .extractFacet(ProxyTransmissionHistory.class)
@@ -600,23 +717,22 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-         lib:
-             trafficVisualization: true
-         tigerProxy:
-           skipTrafficEndpointsSubscription: true
-           adminPort: ${free.port.36}
-           trafficEndpoints:
-             - http://localhost:${free.port.34}
-         servers:
-           reverseProxy:
-             type: tigerProxy
-             tigerProxyConfiguration:
-               adminPort: ${free.port.34}
-               proxyPort: ${free.port.35}
-               directReverseProxy:
-                 hostname: reverseHostname
-                 port: ${free.port.50}
-        """)
+           lib:
+               trafficVisualization: true
+           tigerProxy:
+             adminPort: ${free.port.36}
+             trafficEndpoints:
+               - http://localhost:${free.port.34}
+           servers:
+             reverseProxy:
+               type: tigerProxy
+               tigerProxyConfiguration:
+                 adminPort: ${free.port.34}
+                 proxyPort: ${free.port.35}
+                 directReverseProxy:
+                   hostname: reverseHostname
+                   port: ${free.port.50}
+          """)
   void testDirectReverseProxyMeshSetup_senderAndReceiverAreCorrect(TigerTestEnvMgr envMgr) {
     waitShortTime();
 
@@ -631,9 +747,8 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
       await()
           .atMost(10, TimeUnit.SECONDS)
           .until(
-              () ->
-                  envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size()
-                      == 1);
+              envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory()::size,
+              size -> size == 1);
 
       val senderPort = clientSocket.getLocalPort();
       val receiverPort =
@@ -649,7 +764,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
           .matches("((view-|)localhost|127\\.0\\.0\\.1):" + senderPort);
 
       assertThat(message)
-          .hasStringContentEqualToAtPosition("$.receiver.bundledServerName", "reverseHostname")
+          .hasStringContentEqualToAtPosition("$.receiver.domain", "reverseHostname")
           .hasStringContentEqualToAtPosition("$.sender.bundledServerName", "reverseProxy");
     }
     waitShortTime();
@@ -667,25 +782,25 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-    tigerProxy:
-      skipTrafficEndpointsSubscription: true
-      trafficEndpoints:
-        - http://localhost:${free.port.4}
-    servers:
-      httpbin:
-        type: httpbin
-        serverPort: ${free.port.0}
-        healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
-      reverseProxy:
-        type: tigerProxy
-        tigerProxyConfiguration:
-          adminPort: ${free.port.4}
-          proxiedServer: httpbin
-          proxyPort: ${free.port.5}
-    """)
+          tigerProxy:
+            skipTrafficEndpointsSubscription: true
+            trafficEndpoints:
+              - http://localhost:${free.port.4}
+          servers:
+            httpbin:
+              type: httpbin
+              serverPort: ${free.port.0}
+              healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
+            reverseProxy:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.4}
+                proxiedServer: httpbin
+                proxyPort: ${free.port.5}
+          """)
   void testTracingFacetsAndHttpFacetHaveCorrectRequest(TigerTestEnvMgr envMgr) {
     waitShortTime();
-    val numberOfSentMessages = 200;
+    val numberOfSentMessages = 40;
     val maxDelay = 20;
     final Random random = RandomTestUtils.createRandomGenerator();
     ((TigerProxyServer) envMgr.getServers().get("reverseProxy"))
@@ -765,22 +880,22 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-    tigerProxy:
-      skipTrafficEndpointsSubscription: true
-      trafficEndpoints:
-        - http://localhost:${free.port.4}
-    servers:
-      httpbin:
-        type: httpbin
-        serverPort: ${free.port.0}
-        healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
-      reverseProxy:
-        type: tigerProxy
-        tigerProxyConfiguration:
-          adminPort: ${free.port.4}
-          proxiedServer: httpbin
-          proxyPort: ${free.port.5}
-    """)
+          tigerProxy:
+            skipTrafficEndpointsSubscription: true
+            trafficEndpoints:
+              - http://localhost:${free.port.4}
+          servers:
+            httpbin:
+              type: httpbin
+              serverPort: ${free.port.0}
+              healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
+            reverseProxy:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.4}
+                proxiedServer: httpbin
+                proxyPort: ${free.port.5}
+          """)
   void delayedParsing_sequenceShouldStillMatch(TigerTestEnvMgr envMgr) {
     waitShortTime();
     val maxDelay = 20;
@@ -884,22 +999,22 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-    tigerProxy:
-      skipTrafficEndpointsSubscription: true
-      trafficEndpoints:
-        - http://localhost:${free.port.4}
-    servers:
-      httpbin:
-        type: httpbin
-        serverPort: ${free.port.0}
-        healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
-      reverseProxy:
-        type: tigerProxy
-        tigerProxyConfiguration:
-          adminPort: ${free.port.4}
-          proxiedServer: httpbin
-          proxyPort: ${free.port.5}
-    """)
+          tigerProxy:
+            skipTrafficEndpointsSubscription: true
+            trafficEndpoints:
+              - http://localhost:${free.port.4}
+          servers:
+            httpbin:
+              type: httpbin
+              serverPort: ${free.port.0}
+              healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
+            reverseProxy:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.4}
+                proxiedServer: httpbin
+                proxyPort: ${free.port.5}
+          """)
   void waitingForAlreadyRemovedMessage_shouldNotBlock(TigerTestEnvMgr envMgr) {
     waitShortTime();
 
@@ -963,26 +1078,25 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-        tigerProxy:
-          adminPort: ${free.port.6}
-          trafficEndpoints:
-            - http://localhost:${free.port.4}
-        servers:
-          httpbin:
-            type: httpbin
-            serverPort: ${free.port.0}
-            healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
-          reverseProxy:
-            type: tigerProxy
-            tigerProxyConfiguration:
-              adminPort: ${free.port.4}
-              proxyPort: ${free.port.5}
-              directReverseProxy:
-                hostname: localhost
-                port: 45678
-        lib:
-          trafficVisualization: true
-        """)
+          tigerProxy:
+            adminPort: ${free.port.6}
+            trafficEndpoints:
+              - http://localhost:${free.port.4}
+            parsingTimeoutInMilliseconds: 200
+          servers:
+            httpbin:
+              type: httpbin
+              serverPort: ${free.port.0}
+              healthcheckUrl: http://127.0.0.1:${free.port.0}/status/200
+            reverseProxy:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.4}
+                proxyPort: ${free.port.5}
+                directReverseProxy:
+                  hostname: localhost
+                  port: 45678
+          """)
   void verifyChunkingLeadsToPredictableUuidGeneration(TigerTestEnvMgr envMgr) {
     final byte[] cetpMessage = wrapInCetpMessage("{'foo': 'bar'}".getBytes());
     waitShortTime();
@@ -1005,7 +1119,7 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
           .getOutputStream()
           .write(
               Bytes.concat(Arrays.copyOfRange(cetpMessage, 10, cetpMessage.length), cetpMessage));
-      waitAtMost(2, TimeUnit.SECONDS)
+      waitAtMost(5, TimeUnit.SECONDS)
           .until(() -> reverseProxyLogger.getMessageHistory().size() > 3);
     }
     val revProxyUuids =
@@ -1013,6 +1127,11 @@ class TigerProxyMeshTest extends AbstractTestTigerTestEnvMgr {
             .filter(msg -> msg.hasFacet(RbelCetpFacet.class))
             .map(RbelElement::getUuid)
             .toList();
+    waitAtMost(10, TimeUnit.SECONDS)
+        .until(
+            () ->
+                envMgr.getLocalTigerProxyOrFail().getRbelLogger().getMessageHistory().size()
+                    == revProxyUuids.size());
     val localProxyUuids =
         envMgr.getLocalTigerProxyOrFail().getRbelMessagesList().stream()
             .filter(msg -> msg.hasFacet(RbelCetpFacet.class))

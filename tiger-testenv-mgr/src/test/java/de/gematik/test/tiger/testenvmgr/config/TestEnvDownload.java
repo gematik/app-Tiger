@@ -57,7 +57,7 @@ class TestEnvDownload {
   private static byte[] tigerProxyBytes;
 
   @BeforeEach
-  public void cleanDownloadFolder(WireMockRuntimeInfo runtimeInfo) throws IOException {
+  void cleanDownloadFolder(WireMockRuntimeInfo runtimeInfo) throws IOException {
     log.info("Cleaning download folder...");
     if (DOWNLOAD_FOLDER_PATH.toFile().exists()) {
       FileUtils.deleteDirectory(DOWNLOAD_FOLDER_PATH.toFile());
@@ -72,7 +72,7 @@ class TestEnvDownload {
   }
 
   @BeforeAll
-  public static void loadFiles() throws IOException {
+  static void loadFiles() throws IOException {
     final File winstoneFile = new File("target/winstone.jar");
     if (!winstoneFile.exists()) {
       throw new RuntimeException(
@@ -104,7 +104,7 @@ class TestEnvDownload {
                 .map(Path::toFile)
                 .filter(File::isFile)
                 .filter(file -> file.length() > 1000)
-                .collect(Collectors.toList()))
+                .toList())
         .hasSize(2);
   }
 
@@ -171,23 +171,23 @@ class TestEnvDownload {
     StringBuilder yamlSource =
         new StringBuilder(
             """
-                    testenv:
-                    cfgfile: src/test/resources/tiger-testenv.yaml
-                    servers:
-                    """);
+            testenv:
+            cfgfile: src/test/resources/tiger-testenv.yaml
+            servers:
+            """);
     for (int i = 0; i < jarDownloadUrl.length; i++) {
       yamlSource.append(
           """
-                externalJarServer%d:
-                  type: externalJar
-                  startupTimeoutSec: 50
-                  source:
-                  - %s
-                  healthcheckUrl: http://127.0.0.1:${free.port.%d}
-                  externalJarOptions:
-                    workingDir: "target/jarDownloadTest"
-                    arguments:
-              """
+            externalJarServer%d:
+              type: externalJar
+              startupTimeoutSec: 50
+              source:
+              - %s
+              healthcheckUrl: http://127.0.0.1:${free.port.%d}
+              externalJarOptions:
+                workingDir: "target/jarDownloadTest"
+                arguments:
+          """
               .formatted(i, jarDownloadUrl[i], 10 + i));
       if (jarDownloadUrl[i].contains("tiger")) {
         yamlSource.append("        - --server.port=${free.port.").append(10 + i).append("}\n");

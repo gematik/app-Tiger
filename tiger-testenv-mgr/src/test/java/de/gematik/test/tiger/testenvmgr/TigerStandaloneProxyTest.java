@@ -46,13 +46,13 @@ import org.junit.jupiter.api.Test;
 @Slf4j
 @Getter
 @NotThreadSafe
-public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
+class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
 
   static File standaloneJar;
   private static UnirestInstance unirestInstance;
 
   @BeforeAll
-  public static void getJarFile() throws IOException {
+  static void getJarFile() throws IOException {
     standaloneJar =
         Arrays.stream(new File("../tiger-standalone-proxy/target").listFiles())
             .filter(f -> f.getName().matches("tiger-standalone-proxy-.*\\.jar"))
@@ -72,18 +72,18 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-              servers:
-                winstoneStandaloneProxy120:
-                  type: externalJar
-                  startupTimeoutSec: 60
-                  source:
-                    - local:target/winstone.jar
-                  healthcheckUrl: http://127.0.0.1:${free.port.120}
-                  externalJarOptions:
-                    arguments:
-                      - --httpPort=${free.port.120}
-                      - --webroot=.
-              """,
+          servers:
+            winstoneStandaloneProxy120:
+              type: externalJar
+              startupTimeoutSec: 60
+              source:
+                - local:target/winstone.jar
+              healthcheckUrl: http://127.0.0.1:${free.port.120}
+              externalJarOptions:
+                arguments:
+                  - --httpPort=${free.port.120}
+                  - --webroot=.
+          """,
       skipEnvironmentSetup = true)
   void testCreateStandaloneProxyAsExternalJarViaExternalProcess(TigerTestEnvMgr envMgr) {
     setUpEnvAndExecuteWithSecureShutdown(
@@ -120,28 +120,28 @@ public class TigerStandaloneProxyTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-                servers:
-                  winstoneStandaloneProxy110:
-                    type: externalJar
-                    startupTimeoutSec: 60
-                    source:
-                      - local:target/winstone.jar
-                    healthcheckUrl: http://127.0.0.1:${free.port.110}
-                    externalJarOptions:
-                      arguments:
-                        - --httpPort=${free.port.110}
-                        - --webroot=.
-                  externalProxy110:
-                    type: externalJar
-                    startupTimeoutSec: 60
-                    source:
-                      - local:test.jar
-                    healthcheckUrl: http://127.0.0.1:${free.port.115}
-                    externalJarOptions:
-                      workingDir: ../tiger-standalone-proxy/target
-                      arguments:
-                        - --spring.config.location=../../tiger-testenv-mgr/target/11/
-                """,
+          servers:
+            winstoneStandaloneProxy110:
+              type: externalJar
+              startupTimeoutSec: 60
+              source:
+                - local:target/winstone.jar
+              healthcheckUrl: http://127.0.0.1:${free.port.110}
+              externalJarOptions:
+                arguments:
+                  - --httpPort=${free.port.110}
+                  - --webroot=.
+            externalProxy110:
+              type: externalJar
+              startupTimeoutSec: 60
+              source:
+                - local:test.jar
+              healthcheckUrl: http://127.0.0.1:${free.port.115}
+              externalJarOptions:
+                workingDir: ../tiger-standalone-proxy/target
+                arguments:
+                  - --spring.config.location=../../tiger-testenv-mgr/target/11/
+          """,
       skipEnvironmentSetup = true)
   void testCreateStandaloneProxyAsExternalJarViaTestEnvMgr(TigerTestEnvMgr envMgr) {
     setUpEnvAndExecuteWithSecureShutdown(

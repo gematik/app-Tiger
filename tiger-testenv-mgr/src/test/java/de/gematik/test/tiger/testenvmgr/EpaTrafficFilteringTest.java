@@ -47,22 +47,22 @@ class EpaTrafficFilteringTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-            tigerProxy:
-              skipTrafficEndpointsSubscription: true
-              activateRbelParsingFor:
-                - epa-vau
-              trafficEndpointFilterString: "$.body.recordId == 'X114428539'"
-              keyFolders:
-                - '../tiger-proxy/src/test/resources'
-              trafficEndpoints:
-                - http://localhost:${free.port.1}
-            servers:
-              upstreamProxy:
-                type: tigerProxy
-                tigerProxyConfiguration:
-                  adminPort: ${free.port.1}
-                  proxyPort: ${free.port.2}
-            """)
+          tigerProxy:
+            skipTrafficEndpointsSubscription: true
+            activateRbelParsingFor:
+              - epa-vau
+            trafficEndpointFilterString: "$.body.recordId == 'X114428539'"
+            keyFolders:
+              - '../tiger-proxy/src/test/resources'
+            trafficEndpoints:
+              - http://localhost:${free.port.1}
+          servers:
+            upstreamProxy:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.1}
+                proxyPort: ${free.port.2}
+          """)
   void filterForEpaKvnr(TigerTestEnvMgr envMgr) {
     final TigerProxy upstreamTigerProxy =
         ((TigerProxyServer) envMgr.getServers().get("upstreamProxy")).getTigerProxy();

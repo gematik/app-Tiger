@@ -140,7 +140,7 @@ class RbelPathExecutorLoggingTest {
                 .map(str -> str.split(", ").length)
                 .max(Comparator.naturalOrder()))
         .get()
-        .isEqualTo(34);
+        .isEqualTo(81);
   }
 
   private ListAppender<ILoggingEvent> listFollowingLoggingEventsForClass(

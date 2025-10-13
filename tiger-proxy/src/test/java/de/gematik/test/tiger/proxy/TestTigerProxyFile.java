@@ -30,6 +30,7 @@ import de.gematik.test.tiger.common.data.config.tigerproxy.TigerConfigurationRou
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerFileSaveInfo.TigerFileSaveInfoBuilder;
 import de.gematik.test.tiger.common.data.config.tigerproxy.TigerProxyConfiguration;
+import de.gematik.test.tiger.common.data.config.tigerproxy.TigerTlsConfiguration;
 import de.gematik.test.tiger.config.ResetTigerConfiguration;
 import de.gematik.test.tiger.proxy.certificate.TlsFacet;
 import de.gematik.test.tiger.proxy.exceptions.TigerProxyStartupException;
@@ -188,6 +189,10 @@ class TestTigerProxyFile extends AbstractTigerProxyTest {
     FileUtils.deleteQuietly(new File(tgrFilename));
     spawnTigerProxyWithDefaultRoutesAndWith(
         TigerProxyConfiguration.builder()
+            .tls(
+                TigerTlsConfiguration.builder()
+                    .serverSslSuites(List.of("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"))
+                    .build())
             .proxyRoutes(
                 List.of(
                     TigerConfigurationRoute.builder()

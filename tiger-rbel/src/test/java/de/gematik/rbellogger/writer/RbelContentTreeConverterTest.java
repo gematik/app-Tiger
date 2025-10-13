@@ -80,11 +80,11 @@ class RbelContentTreeConverterTest {
                     .getContent()))
         .and(
             """
-                <?xml version="1.0"?>
-                <rootNode>
-                    <toBeRendered>yes!</toBeRendered>
-                </rootNode>
-                """)
+            <?xml version="1.0"?>
+            <rootNode>
+                <toBeRendered>yes!</toBeRendered>
+            </rootNode>
+            """)
         .ignoreWhitespace()
         .areIdentical();
   }
@@ -110,11 +110,11 @@ class RbelContentTreeConverterTest {
                     .getContent()))
         .and(
             """
-                <?xml version="1.0"?>
-                <rootNode>
-                    <toBeRendered>yes!</toBeRendered>
-                </rootNode>
-                """)
+            <?xml version="1.0"?>
+            <rootNode>
+                <toBeRendered>yes!</toBeRendered>
+            </rootNode>
+            """)
         .ignoreWhitespace()
         .areIdentical();
   }
@@ -139,13 +139,13 @@ class RbelContentTreeConverterTest {
                     .getContent()))
         .and(
             """
-                <?xml version="1.0"?>
-                <rootNode>
-                    <repeatedTag>entry</repeatedTag>
-                    <repeatedTag>entry</repeatedTag>
-                    <repeatedTag>entry</repeatedTag>
-                </rootNode>
-                """)
+            <?xml version="1.0"?>
+            <rootNode>
+                <repeatedTag>entry</repeatedTag>
+                <repeatedTag>entry</repeatedTag>
+                <repeatedTag>entry</repeatedTag>
+            </rootNode>
+            """)
         .ignoreWhitespace()
         .areIdentical();
   }
@@ -168,13 +168,13 @@ class RbelContentTreeConverterTest {
                     .getContent()))
         .and(
             """
-                <?xml version="1.0"?>
-                <rootNode>
-                    <repeatedTag>entry number 5</repeatedTag>
-                    <repeatedTag>entry number 6</repeatedTag>
-                    <repeatedTag>entry number 7</repeatedTag>
-                </rootNode>
-                """)
+            <?xml version="1.0"?>
+            <rootNode>
+                <repeatedTag>entry number 5</repeatedTag>
+                <repeatedTag>entry number 6</repeatedTag>
+                <repeatedTag>entry number 7</repeatedTag>
+            </rootNode>
+            """)
         .ignoreWhitespace()
         .areIdentical();
   }
@@ -244,11 +244,11 @@ class RbelContentTreeConverterTest {
                     .getContent()))
         .and(
             """
-                <?xml version="1.0"?>
-                <rootNode>
-                    <toBeRendered>{"foo": "bar"}</toBeRendered>
-                </rootNode>
-                """)
+            <?xml version="1.0"?>
+            <rootNode>
+                <toBeRendered>{"foo": "bar"}</toBeRendered>
+            </rootNode>
+            """)
         .ignoreWhitespace()
         .areIdentical();
   }
@@ -288,30 +288,30 @@ class RbelContentTreeConverterTest {
     XmlAssert.assertThat(output)
         .and(
             """
-                <?xml version="1.0" encoding="UTF-8"?>
-                <body>\s
-                  <blub>\s
-                    <blub>\s
-                      <name>klaus</name> \s
-                      <age>52</age>\s
-                    </blub>
-                    <blub>\s
-                      <name>dieter</name> \s
-                      <age>42</age>\s
-                    </blub> \s
-                    <blab>\s
-                      <someInteger>1</someInteger>\s
-                    </blab>
-                    <blab>\s
-                      <someInteger>2</someInteger>\s
-                    </blab>
-                    <blab>\s
-                      <someInteger>3</someInteger>\s
-                    </blab>\s
-                  </blub> \s
-                  <schmub logic="still applies"></schmub>\s
-                </body>
-                """)
+            <?xml version="1.0" encoding="UTF-8"?>
+            <body>\s
+              <blub>\s
+                <blub>\s
+                  <name>klaus</name> \s
+                  <age>52</age>\s
+                </blub>
+                <blub>\s
+                  <name>dieter</name> \s
+                  <age>42</age>\s
+                </blub> \s
+                <blab>\s
+                  <someInteger>1</someInteger>\s
+                </blab>
+                <blab>\s
+                  <someInteger>2</someInteger>\s
+                </blab>
+                <blab>\s
+                  <someInteger>3</someInteger>\s
+                </blab>\s
+              </blub> \s
+              <schmub logic="still applies"></schmub>\s
+            </body>
+            """)
         .ignoreWhitespace()
         .areSimilar();
   }
@@ -335,14 +335,14 @@ class RbelContentTreeConverterTest {
     XmlAssert.assertThat(output)
         .and(
             """
-                <?xml version="1.0" encoding="UTF-8"?>
+            <?xml version="1.0" encoding="UTF-8"?>
 
-                <rootNode>\s
-                  <toBeRendered>{"foo": "1"}</toBeRendered>
-                  <toBeRendered>{"foo": "2"}</toBeRendered>
-                  <toBeRendered>{"foo": "3"}</toBeRendered>\s
-                </rootNode>
-                """)
+            <rootNode>\s
+              <toBeRendered>{"foo": "1"}</toBeRendered>
+              <toBeRendered>{"foo": "2"}</toBeRendered>
+              <toBeRendered>{"foo": "3"}</toBeRendered>\s
+            </rootNode>
+            """)
         .ignoreWhitespace()
         .areIdentical();
   }
@@ -368,12 +368,12 @@ class RbelContentTreeConverterTest {
 
     JSONAssert.assertEquals(
         """
-                {
-                  "toBeRendered" : {
-                    "this": "should appear"
-                  }
-                }
-                """,
+        {
+          "toBeRendered" : {
+            "this": "should appear"
+          }
+        }
+        """,
         new String(
             new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent()),
         false);
@@ -407,12 +407,12 @@ class RbelContentTreeConverterTest {
                 .getContent());
     JSONAssert.assertEquals(
         """
-            {
-              "toBeRendered" : {
-                "this": "should appear"
-              }
-            }
-            """,
+        {
+          "toBeRendered" : {
+            "this": "should appear"
+          }
+        }
+        """,
         serializedElement,
         false);
   }
@@ -437,9 +437,10 @@ class RbelContentTreeConverterTest {
             new RbelWriter(rbelConverter).serialize(input, new TigerJexlContext()).getContent());
     JSONAssert.assertEquals(
         """
-            {
-              "primitiveValue" : 12345
-            }""",
+        {
+          "primitiveValue" : 12345
+        }\
+        """,
         serializedElement,
         false);
   }
@@ -483,9 +484,9 @@ class RbelContentTreeConverterTest {
   @CsvSource(
       textBlock =
           """
-        <name><text value="Susanne Engelchen"/></name>,/name/text/@value
-        <name text="Susanne Engelchen"/>,/name/@text
-        """)
+          <name><text value="Susanne Engelchen"/></name>,/name/text/@value
+          <name text="Susanne Engelchen"/>,/name/@text
+          """)
   void testSerializationOfXmlWithElementsNamedText(String xmlValue, String targetXPath)
       throws XpathException, IOException, SAXException {
     RbelElement convertedRbelElement = rbelConverter.convertElement(xmlValue, null);

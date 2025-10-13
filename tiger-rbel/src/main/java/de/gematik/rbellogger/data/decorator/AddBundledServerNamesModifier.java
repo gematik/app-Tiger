@@ -80,7 +80,8 @@ public class AddBundledServerNamesModifier implements MessageMetadataModifier {
     RbelElement serverNameElement = RbelElement.wrap(hostNameElement, bundledServerName);
     log.atTrace()
         .addArgument(serverNameElement)
-        .addArgument(() -> hostNameElement.getFacetOrFail(RbelHostnameFacet.class).toRbelHostname())
+        .addArgument(
+            () -> hostNameElement.getFacetOrFail(RbelHostnameFacet.class).toRbelSocketAddress())
         .log("Adding bundled server name '{}' to hostname facet of element: {}");
     hostNameElement
         .getFacet(RbelHostnameFacet.class)

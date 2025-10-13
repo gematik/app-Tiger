@@ -200,19 +200,19 @@ class EnvStatusControllerTest {
   @TigerTest(
       tigerYaml =
           """
-                localProxyActive: false
-                servers:
-                  winstoneServer:
-                    type: externalJar
-                    source:
-                      - local:target/winstone.jar
-                    healthcheckUrl: http://127.0.0.1:${free.port.0}
-                    healthcheckReturnCode: 200
-                    externalJarOptions:
-                      arguments:
-                        - --httpPort=${free.port.0}
-                        - --webroot=.
-                """,
+          localProxyActive: false
+          servers:
+            winstoneServer:
+              type: externalJar
+              source:
+                - local:target/winstone.jar
+              healthcheckUrl: http://127.0.0.1:${free.port.0}
+              healthcheckReturnCode: 200
+              externalJarOptions:
+                arguments:
+                  - --httpPort=${free.port.0}
+                  - --webroot=.
+          """,
       skipEnvironmentSetup = true)
   void verifyServerStatusDuringStartup(final TigerTestEnvMgr envMgr) {
     try {
@@ -367,7 +367,7 @@ class EnvStatusControllerTest {
 
     var converter = envMgr.getLocalTigerProxyOrFail().getRbelLogger().getRbelConverter();
 
-    converter.getKnownMessageUuids().setRemovedMessageUuidsHandler(null);
+    converter.getKnownMessageUuids().clearRemovedMessageUuidsHandlers();
 
     var message = converter.parseMessage("{'foo':'bar'}".getBytes(), new RbelMessageMetadata());
 
@@ -385,7 +385,7 @@ class EnvStatusControllerTest {
 
     var converter = envMgr.getLocalTigerProxyOrFail().getRbelLogger().getRbelConverter();
 
-    converter.getKnownMessageUuids().setRemovedMessageUuidsHandler(null);
+    converter.getKnownMessageUuids().clearRemovedMessageUuidsHandlers();
 
     var message = converter.parseMessage("{'foo':'bar'}".getBytes(), new RbelMessageMetadata());
 

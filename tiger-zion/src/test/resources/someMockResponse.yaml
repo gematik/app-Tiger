@@ -1,8 +1,0 @@
-requestCriterions:
-  - message.method == 'POST'
-  - message.url =~ '.*/specificEndpoint'
-response:
-  statusCode: 203
-  body: '{
-          "authorizedUser": "?{$.body.body.username.content}"
-        }'

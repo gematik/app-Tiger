@@ -100,4 +100,8 @@ public class TigerPkiIdentity {
     certificateWithChain.addAll(certificateChain);
     return certificateWithChain;
   }
+
+  public Optional<String> findKeyAlgorithm() {
+    return Optional.ofNullable(getPrivateKey()).map(PrivateKey::getAlgorithm);
+  }
 }

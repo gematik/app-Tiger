@@ -20,8 +20,8 @@
  */
 package de.gematik.test.tiger.proxy.client;
 
-import de.gematik.rbellogger.data.RbelHostname;
 import de.gematik.rbellogger.data.core.ProxyTransmissionHistory;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.util.Map;
 import lombok.Builder;
 import lombok.Data;
@@ -32,8 +32,8 @@ public class TigerTracingDto {
 
   // TODO fold into metadata-map structure: make NO assumptions about the keys in the map
   private final String messageUuid;
-  private final RbelHostname sender;
-  private final RbelHostname receiver;
+  private final RbelSocketAddress sender;
+  private final RbelSocketAddress receiver;
   private final @Builder.Default Map<String, Object> additionalInformation = Map.of();
   private final Long sequenceNumber;
   private final ProxyTransmissionHistory proxyTransmissionHistory;

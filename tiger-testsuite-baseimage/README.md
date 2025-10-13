@@ -10,7 +10,7 @@ To use it in your project, you can create your own image like this:
 
 #We recommend to use a base image of the same version as the tiger version you are using in your project.
 # This ensures that the tiger dependencies are alread loaded into the local maven repository.
-FROM tiger-testsuite-baseimage:3.6.1
+FROM tiger-testsuite-baseimage:4.0.9
 
 # Optional: if you need a different dependency script, overwrite the one inside the base image
 # -chown is needed because the COPY command will otherwise copy the file as root

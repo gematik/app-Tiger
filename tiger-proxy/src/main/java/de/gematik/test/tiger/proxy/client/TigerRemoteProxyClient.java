@@ -52,11 +52,13 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import kong.unirest.core.GenericType;
 import kong.unirest.core.Unirest;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.val;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
@@ -98,8 +100,9 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
   private final int connectionTimeoutInSeconds;
 
   @Getter
-  private final ExecutorService meshHandlerPool =
-      Executors.newCachedThreadPool(
+  private final ScheduledExecutorService meshHandlerPool =
+      Executors.newScheduledThreadPool(
+          0,
           r -> {
             Thread t = Executors.defaultThreadFactory().newThread(r);
             t.setName(
@@ -252,7 +255,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
       return; // route does not exist on remote, delete therefore successful
     }
 
-    if (Boolean.TRUE.equals(isInternalOptional.get())) {
+    if (isInternalOptional.get()) {
       throw new TigerRemoteProxyClientException(
           "Could not delete route with id '" + routeId + "': Is internal route!");
     }
@@ -352,8 +355,8 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
       getBinaryChunksBuffer()
           .addToBuffer(
               messageUuid,
-              message.getSender().asSocketAddress(),
-              message.getReceiver().asSocketAddress(),
+              message.getSender(),
+              message.getReceiver(),
               message.buildCompleteContent().toByteArray(),
               message.getAdditionalInformation(),
               message.getTracingDto().isRequest()
@@ -403,6 +406,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     }
     tigerProxyStompClient.stop();
     webSocketClient.stop();
+    meshHandlerPool.shutdownNow();
   }
 
   void receiveNewMessagePart(TracingMessagePart tracingMessagePart) {
@@ -556,10 +560,56 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
             .addArgument(previousMessageUuid)
             .addArgument(previousMessageConversionPhase)
             .addArgument(parsingTasksWaitingForUuid::size)
-            .log("Queueing {} behind {} ({}), currently {} messages waiting");
+            .addArgument(
+                () ->
+                    parsingTasksWaitingForUuid.entries().stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().size())))
+            .log("Queueing {} behind {} ({}), currently {} messages waiting ({})");
         parsingTasksWaitingForUuid
             .getOrPutDefault(previousMessageUuid, LinkedList::new)
             .add(parseMessageTask);
+
+        scheduleDirectParsingIfPreviousMessageHasNotEvenPartiallyArrived(
+            thisMessageUuid, previousMessageUuid, parseMessageTask);
+      }
+    }
+  }
+
+  private void scheduleDirectParsingIfPreviousMessageHasNotEvenPartiallyArrived(
+      String messageUuid, String previousMessageUuid, Runnable task) {
+    val parsingTimeoutInSeconds =
+        getTigerProxyConfiguration().getWaitForPreviousMessageBeforeParsingInSeconds();
+    meshHandlerPool.schedule(
+        () -> {
+          boolean schedule = false;
+          synchronized (parsingTasksWaitingForUuid) {
+            val waitingTasks = parsingTasksWaitingForUuid.get(previousMessageUuid).orElse(null);
+            if (waitingTasks != null
+                && waitingTasks.contains(task)
+                && !partiallyReceivedMessageMap.containsKey(previousMessageUuid)) {
+              removeFromWaitingTasks(previousMessageUuid, task, waitingTasks);
+              schedule = true;
+            }
+          }
+          if (schedule) {
+            meshHandlerPool.submit(task);
+            log.warn(
+                "Parsing task for message {} triggered by timeout after {} seconds. "
+                    + "Previous message {} did not even arrive partially.",
+                messageUuid,
+                parsingTimeoutInSeconds,
+                previousMessageUuid);
+          }
+        },
+        (int) (parsingTimeoutInSeconds * 1000),
+        TimeUnit.MILLISECONDS);
+  }
+
+  private void removeFromWaitingTasks(String messageUuid, Runnable task, List<Runnable> tasks) {
+    synchronized (parsingTasksWaitingForUuid) {
+      tasks.remove(task);
+      if (tasks.isEmpty()) {
+        parsingTasksWaitingForUuid.remove(messageUuid);
       }
     }
   }
@@ -572,6 +622,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
         .stream()
         .flatMap(Collection::stream)
         .distinct()
+        .filter(uuid -> !uuid.equals(msg.getUuid()))
         .forEach(this::signalNewCompletedMessage);
   }
 
@@ -610,7 +661,7 @@ public class TigerRemoteProxyClient extends AbstractTigerProxy implements AutoCl
     binaryChunksBuffer.waitForAllParsingTasksToBeFinished();
   }
 
-  private static class NextMessageParsedFacet implements RbelFacet {
+  public static class NextMessageParsedFacet implements RbelFacet {
     // This is a marker facet to indicate that the next message has been parsed
   }
 }

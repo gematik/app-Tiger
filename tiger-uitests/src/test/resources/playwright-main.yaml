@@ -1,4 +1,5 @@
 tigerProxy:
+  skipDisplayWhenMessageLargerThanKb: 1
   skipTrafficEndpointsSubscription: false
   # adminPort: 8080
   trafficEndpoints:

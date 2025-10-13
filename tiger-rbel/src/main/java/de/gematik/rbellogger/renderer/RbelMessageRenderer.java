@@ -40,6 +40,15 @@ import org.apache.commons.lang3.StringUtils;
 
 public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
 
+  public static final DomContent RENDER_FULLY_BUTTON =
+      span()
+          .with(
+              a().withTitle("Full Message")
+                  .withClass(
+                      "btn modal-button full-message-button float-end mx-2"
+                          + " test-modal-full-render")
+                  .with(span().withClass("icon is-small").with(i().withClass("fas fa-expand"))));
+
   @SuppressWarnings({"rawtypes", "java:S3740"})
   public static ContainerTag buildAddressInfo(final RbelElement element) {
     final var messageFacet = element.getFacet(RbelTcpIpMessageFacet.class);
@@ -120,6 +129,9 @@ public class RbelMessageRenderer implements RbelHtmlFacetRenderer {
     messageTitleElements.add(a().attr("name", element.getUuid()));
     messageTitleElements.add(showBodyToggleButton(showExpanded, "msg-toggle", messageInfoFacet));
     messageTitleElements.add(showContentButtonAndDialog(element, renderingToolkit));
+    if (!renderingToolkit.shouldRenderEntitiesWithSize(element.getSize())) {
+      messageTitleElements.add(RENDER_FULLY_BUTTON);
+    }
     partnerMessage
         .map(RbelMessageRenderer::showPartnerMessageButton)
         .ifPresent(messageTitleElements::add);

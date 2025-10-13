@@ -22,12 +22,12 @@
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>de.gematik.test</groupId>
         <artifactId>tiger</artifactId>
-        <version>4.0.9</version>
+        <version>4.1.0</version>
     </parent>
 
     <artifactId>tiger-rbel</artifactId>
@@ -37,13 +37,18 @@
         <build.date>${maven.build.timestamp}</build.date>
         <maven.build.timestamp.format>dd-MM-yyyy HH:mm:ss</maven.build.timestamp.format>
 
-        <sonar.coverage.exclusions>src/main/java/de/gematik/rbellogger/util/email_crypto/**/*.java</sonar.coverage.exclusions>
+        <sonar.coverage.exclusions>src/main/java/de/gematik/rbellogger/util/email_crypto/**/*.java
+        </sonar.coverage.exclusions>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-cbor</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
         </dependency>
         <dependency>
             <groupId>com.j2html</groupId>
@@ -62,12 +67,9 @@
             <artifactId>tiger-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
-            <artifactId>dss-spi</artifactId>
-        </dependency>
-        <dependency>
             <groupId>jaxen</groupId>
             <artifactId>jaxen</artifactId>
+            <!-- XPath engine needed by the de.gematik.rbellogger.facets.xml.RbelMtomConverter class -->
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -135,7 +137,6 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <dependency>

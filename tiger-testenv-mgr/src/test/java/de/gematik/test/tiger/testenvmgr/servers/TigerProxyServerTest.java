@@ -36,17 +36,17 @@ class TigerProxyServerTest extends AbstractTestTigerTestEnvMgr {
   @TigerTest(
       tigerYaml =
           """
-            servers:
-                someTigerProxy:
-                    type: tigerProxy
-                    hostname: someOtherProxy
-                    tigerProxyConfiguration:
-                      proxyRoutes:
-                        - from: /
-                          to: http://localhost:${free.port.1}
-                      proxyPort: ${free.port.0}
-                      adminPort: ${free.port.1}
-                      """)
+          servers:
+              someTigerProxy:
+                  type: tigerProxy
+                  hostname: someOtherProxy
+                  tigerProxyConfiguration:
+                    proxyRoutes:
+                      - from: /
+                        to: http://localhost:${free.port.1}
+                    proxyPort: ${free.port.0}
+                    adminPort: ${free.port.1}
+          """)
   void testCreateHttpBinWithRandomPort(TigerTestEnvMgr envMgr) {
     final UnirestInstance unirestInstance = Unirest.spawnInstance();
     unirestInstance.config().verifySsl(true);

@@ -148,6 +148,7 @@ include::request-validation-example.feature[]
 
 When comparing values (e.g. in the `TGR current response body matches:`) generally the algorithms check for equality and only check for regex matches if they were not equal.
 
+[#_complete_set_of_steps_in_validation_glue_code]
 ==== Complete set of steps in validation glue code
 
 // use AnnotationParser.java to extract comments

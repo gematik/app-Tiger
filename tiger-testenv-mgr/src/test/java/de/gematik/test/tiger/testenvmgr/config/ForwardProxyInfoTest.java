@@ -58,22 +58,22 @@ class ForwardProxyInfoTest {
   @TigerTest(
       tigerYaml =
           """
-        tigerProxy:
-          forwardToProxy:
-            hostname: 127.0.0.1
-            port: ${free.port.24}
-        servers:
-          someProxyServer:
-            type: tigerProxy
-            tigerProxyConfiguration:
-              adminPort: ${free.port.14}
-              proxyPort: ${free.port.24}
-          virtualExternalServer:
-            type: externalUrl
-            dependsUpon: someProxyServer
-            source:
-              - http://localhost:${free.port.14}/foobar
-        """)
+          tigerProxy:
+            forwardToProxy:
+              hostname: 127.0.0.1
+              port: ${free.port.24}
+          servers:
+            someProxyServer:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.14}
+                proxyPort: ${free.port.24}
+            virtualExternalServer:
+              type: externalUrl
+              dependsUpon: someProxyServer
+              source:
+                - http://localhost:${free.port.14}/foobar
+          """)
   void localSource_shouldNotUseForwardProxy(TigerTestEnvMgr envMgr) {
     assertThat(
             ((TigerProxyServer) envMgr.getServers().get("someProxyServer"))
@@ -88,13 +88,13 @@ class ForwardProxyInfoTest {
   @TigerTest(
       tigerYaml =
           """
-        tigerProxy:
-        servers:
-          virtualExternalServer:
-            type: externalUrl
-            source:
-              - http://localhost:${free.port.30}
-        """,
+          tigerProxy:
+          servers:
+            virtualExternalServer:
+              type: externalUrl
+              source:
+                - http://localhost:${free.port.30}
+          """,
       skipEnvironmentSetup = true)
   void localSourceNonHttp_shouldStillStartUp(TigerTestEnvMgr envMgr) {
     AtomicBoolean shouldServerRun = new AtomicBoolean(true);
@@ -127,13 +127,13 @@ class ForwardProxyInfoTest {
   @TigerTest(
       tigerYaml =
           """
-        tigerProxy:
-        servers:
-          virtualExternalServer:
-            type: externalUrl
-            source:
-              - http://localhost:${free.port.30}
-        """,
+          tigerProxy:
+          servers:
+            virtualExternalServer:
+              type: externalUrl
+              source:
+                - http://localhost:${free.port.30}
+          """,
       skipEnvironmentSetup = true)
   void failingHttpsServer_shouldStillStartUp(TigerTestEnvMgr envMgr) {
     AtomicBoolean shouldServerRun = new AtomicBoolean(true);
@@ -166,21 +166,21 @@ class ForwardProxyInfoTest {
   @TigerTest(
       tigerYaml =
           """
-        tigerProxy:
-          forwardToProxy:
-            hostname: 127.0.0.1
-            port: ${free.port.20}
-        servers:
-          someProxyServer:
-            type: tigerProxy
-            tigerProxyConfiguration:
-              adminPort: ${free.port.11}
-              proxyPort: ${free.port.21}
-          virtualExternalServer:
-            type: externalUrl
-            source:
-              - https://localhost:${free.port.31}
-        """,
+          tigerProxy:
+            forwardToProxy:
+              hostname: 127.0.0.1
+              port: ${free.port.20}
+          servers:
+            someProxyServer:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.11}
+                proxyPort: ${free.port.21}
+            virtualExternalServer:
+              type: externalUrl
+              source:
+                - https://localhost:${free.port.31}
+          """,
       skipEnvironmentSetup = true)
   void localSourceNonHttpAndForwardProxyConfigured_shouldStillStartUp(TigerTestEnvMgr envMgr) {
     AtomicBoolean shouldServerRun = new AtomicBoolean(true);
@@ -254,22 +254,22 @@ class ForwardProxyInfoTest {
   @TigerTest(
       tigerYaml =
           """
-        tigerProxy:
-          forwardToProxy:
-            hostname: 127.0.0.1
-            port: ${free.port.22}
-        servers:
-          someProxyServer:
-            type: tigerProxy
-            tigerProxyConfiguration:
-              adminPort: ${free.port.12}
-              proxyPort: ${free.port.22}
-          virtualExternalServer:
-            type: externalUrl
-            startupTimeoutSec: 1
-            source:
-              - http://localhost:${free.port.32}
-        """,
+          tigerProxy:
+            forwardToProxy:
+              hostname: 127.0.0.1
+              port: ${free.port.22}
+          servers:
+            someProxyServer:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.12}
+                proxyPort: ${free.port.22}
+            virtualExternalServer:
+              type: externalUrl
+              startupTimeoutSec: 1
+              source:
+                - http://localhost:${free.port.32}
+          """,
       skipEnvironmentSetup = true)
   void localSourceServerNotRunningAndForwardProxyConfigured_shouldGiveStartupError(
       TigerTestEnvMgr envMgr) {
@@ -286,22 +286,22 @@ class ForwardProxyInfoTest {
   @TigerTest(
       tigerYaml =
           """
-        tigerProxy:
-          forwardToProxy:
-            hostname: 127.0.0.1
-            port: ${free.port.26}
-        servers:
-          someProxyServer:
-            type: tigerProxy
-            tigerProxyConfiguration:
-              adminPort: ${free.port.16}
-              proxyPort: ${free.port.26}
-          virtualExternalServer:
-            type: externalUrl
-            dependsUpon: someProxyServer
-            source:
-              - http://google.com/foobar
-        """)
+          tigerProxy:
+            forwardToProxy:
+              hostname: 127.0.0.1
+              port: ${free.port.26}
+          servers:
+            someProxyServer:
+              type: tigerProxy
+              tigerProxyConfiguration:
+                adminPort: ${free.port.16}
+                proxyPort: ${free.port.26}
+            virtualExternalServer:
+              type: externalUrl
+              dependsUpon: someProxyServer
+              source:
+                - http://google.com/foobar
+          """)
   void externalSource_shouldUseForwardProxy(TigerTestEnvMgr envMgr) {
     await()
         .atMost(5, TimeUnit.SECONDS)

@@ -30,7 +30,10 @@ import { rawContentModalSymbol } from "../RawContentModal.ts";
 import hljs from "highlight.js/lib/core";
 import "highlight.js/styles/stackoverflow-dark.css";
 
-const props = defineProps<{ message: Message; onToggleDetailsOrHeader: () => void }>();
+const props = defineProps<{
+  message: Message;
+  onToggleDetailsOrHeader: () => void;
+}>();
 
 const settings = inject(settingsSymbol)!;
 const rbelQuery = inject(rbelQueryModalSymbol)!;
@@ -194,6 +197,18 @@ watch(messageElement, async () => {
         el.setAttribute("data-hljs-highlighted", "true");
       }
     });
+
+    const fullRenderButton = messageElement.value.querySelector(".full-message-button");
+    if (fullRenderButton) {
+      fullRenderButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        const url = `/message/${props.message.uuid}`;
+        const newWindow = window.open(url);
+        if (!newWindow) {
+          alert("Popup blocked. Please allow popups for this site.");
+        }
+      });
+    }
 
     // End
     //

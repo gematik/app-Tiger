@@ -23,15 +23,17 @@
 <script setup lang="ts">
 import type Ui from "@/types/ui/Ui.ts";
 import type { IStep } from "@/types/testsuite/StepUpdate.ts";
+import type MessageMetaDataDto from "@/types/rbel/MessageMetaDataDto";
 
 import { ref } from "vue";
 import FailureMessage from "@/components/testsuite/FailureMessage.vue";
 import { getTestResultIcon } from "@/types/testsuite/TestResult.ts";
 
-defineProps<{
+const props = defineProps<{
   step: IStep;
   ui: Ui;
   ariaLabel: string;
+  allRbelMetaData: MessageMetaDataDto[];
 }>();
 
 const isVisible = ref(false);
@@ -90,6 +92,7 @@ function toggleTable() {
             <Step
               :step="subStep"
               :ui="ui"
+              :all-rbel-meta-data="props.allRbelMetaData"
               ariaLabel="Sub-steps performed when executing this test step"
             />
           </td>
@@ -100,6 +103,9 @@ function toggleTable() {
       v-if="step.failureMessage"
       :message="step.failureMessage"
       :stacktrace="step.failureStacktrace"
+      :mismatch-notes="step.mismatchNotes"
+      :all-rbel-meta-data="props.allRbelMetaData"
+      :ui="props.ui"
     />
   </div>
 </template>

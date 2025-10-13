@@ -150,10 +150,11 @@
         <div class="container">
           <div class="row mb-1">
             <button
-              v-if="features.testSelection"
+              v-if="featureFlags.testSelection"
               class="btn btn-primary"
               type="button"
               @click="openTestSelectorDialog"
+              id="open-test-selector-button"
             >
               Select tests to execute...
             </button>
@@ -202,7 +203,7 @@
                 >Server Logs</a
               >
               <a
-                v-if="features.trafficVisualization"
+                v-if="featureFlags.trafficVisualization"
                 id="test-traffic-visualization-tab"
                 class="btn execution-pane-buttons"
                 @click="showTab('visualization_pane', $event)"
@@ -241,7 +242,7 @@
             :selected-text="''"
           />
           <traffic-visualization
-            v-if="features.trafficVisualization"
+            v-if="featureFlags.trafficVisualization"
             :feature-update-map="featuresStore.featureUpdateMap"
             :ui="ui"
           />
@@ -314,9 +315,10 @@ import TestSelector from "@/components/testselector/TestSelector.vue";
 import { useDialog } from "primevue";
 import { useFeaturesStore } from "@/stores/features.ts";
 import debug from "@/logging/log.ts";
+import { useTestSuiteLifecycleStore } from "@/stores/testSuiteLifecycle.ts";
 
 const { loadSubsetOfProperties } = useConfigurationLoader();
-const features = ref(new FeatureFlags());
+const featureFlags = ref(new FeatureFlags());
 
 const baseURL = import.meta.env.BASE_URL;
 let socket: WebSocket;
@@ -388,7 +390,7 @@ const configEditorSidePanelIsOpened: Ref<boolean> = ref(false);
 let hasTestRunFinished = false;
 
 async function loadFeaturesFlags() {
-  features.value = FeatureFlags.fromMap(
+  featureFlags.value = FeatureFlags.fromMap(
     await loadSubsetOfProperties("tiger.lib"),
   );
 }
@@ -399,7 +401,7 @@ onMounted(() => {
   fetchInitialServerStatus();
   fetchTigerVersion();
   fetchTigerBuild();
-  loadFeaturesFlags();
+  loadFeaturesFlags().then(() => checkIfSelectorShouldOpen());
 });
 
 const dialog = useDialog();
@@ -407,9 +409,16 @@ const openTestSelectorDialog = () => {
   dialog.open(TestSelector, {
     props: {
       modal: true,
+      position: "top",
     },
   });
 };
+
+function checkIfSelectorShouldOpen() {
+  if (featureFlags.value.shouldOpenDialog()) {
+    openTestSelectorDialog();
+  }
+}
 
 function setTestRunFinished() {
   hasTestRunFinished = true;
@@ -511,6 +520,7 @@ function connectToWebSocket() {
           pushedMessage.bannerColor = json.bannerColor;
           pushedMessage.bannerIsHtml = json.bannerIsHtml;
           pushedMessage.bannerDetails = json.bannerDetails;
+          pushedMessage.testSuiteLifecycle = json.testSuiteLifecycle;
           if (json.bannerType) {
             pushedMessage.bannerType = json.bannerType as BannerType;
           }
@@ -631,6 +641,9 @@ function mergeMessage(
 ) {
   debug("MESSAGE MERGE: " + message.index);
   updateServerStatus(map, message.servers);
+  if (message.testSuiteLifecycle) {
+    useTestSuiteLifecycleStore().updateLifecycle(message.testSuiteLifecycle);
+  }
   featuresStore.updateFeatureMap(message.featureMap);
   if (message.bannerMessage) {
     const bm = new BannerMessage();
@@ -647,7 +660,7 @@ function fetchInitialServerStatus() {
   fetch(baseURL + "status")
     .then((response) => response.text())
     .then((data) => {
-      debug("FETCH: " + data);
+      debug("FETCH initial server status: " + data);
       const json = JSON.parse(data);
 
       const fetchedServerStatus = new Map<string, TigerServerStatusDto>();
@@ -691,6 +704,9 @@ function fetchInitialServerStatus() {
 
       featuresStore.replaceFeatureMap(json.featureMap);
       debug("FETCH FEATURE MERGE DONE");
+      if (json.testSuiteLifecycle) {
+        useTestSuiteLifecycleStore().updateLifecycle(json.testSuiteLifecycle);
+      }
 
       if (json.bannerMessage) {
         bannerData.value.splice(0, bannerData.value.length);

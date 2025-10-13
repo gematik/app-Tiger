@@ -52,7 +52,7 @@ class TigerGlobalConfigurationControllerTest {
   }
 
   private static final String EXPECTED_YAML =
-      """
+"""
 dummy:
   nestedbean:
     foo: nestedFoo

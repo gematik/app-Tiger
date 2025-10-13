@@ -20,35 +20,64 @@
  */
 package de.gematik.rbellogger.data.decorator;
 
+import static de.gematik.rbellogger.TestUtils.readCurlFromFileWithCorrectedLineBreaks;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import de.gematik.rbellogger.RbelLogger;
 import de.gematik.rbellogger.data.RbelElement;
-import de.gematik.rbellogger.data.RbelHostname;
+import de.gematik.rbellogger.data.RbelMessageMetadata;
 import de.gematik.rbellogger.data.core.RbelHostnameFacet;
+import de.gematik.rbellogger.data.core.RbelTcpIpMessageFacet;
+import de.gematik.rbellogger.util.RbelSocketAddress;
 import java.util.Optional;
+import lombok.SneakyThrows;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 class ServerNameFromHostnameTest {
 
   private final ServerNameFromHostname serverNameFromHostname = new ServerNameFromHostname();
+  private static RbelElement exampleMessage;
+
+  @SneakyThrows
+  @BeforeAll
+  static void setUp() {
+    final String curlMessage =
+        readCurlFromFileWithCorrectedLineBreaks(
+            "src/test/resources/sampleMessages/jwtMessage.curl");
+
+    final RbelLogger rbelLogger = RbelLogger.build();
+    exampleMessage =
+        rbelLogger
+            .getRbelConverter()
+            .parseMessage(curlMessage.getBytes(), new RbelMessageMetadata());
+  }
 
   @Test
   void shouldReturnTigerProxyForLocalhost() {
-    RbelElement hostnameElement =
-        RbelHostnameFacet.buildRbelHostnameFacet(null, new RbelHostname("127.0.0.1", 1234));
-
+    final RbelElement hostnameElement =
+        addHostnameElementToMessageWithAddress(RbelSocketAddress.create("127.0.0.1", 1234));
     Optional<String> result = serverNameFromHostname.apply(hostnameElement);
 
     assertThat(result).hasValue("local client");
   }
 
   @Test
-  void shouldReturnRealAddressForNonLocalhost() {
-    RbelElement hostnameElement =
-        RbelHostnameFacet.buildRbelHostnameFacet(null, new RbelHostname("exampleTestServer", 1234));
+  void shouldReturnNothingForBasicServername() {
+    final RbelElement hostnameElement =
+        addHostnameElementToMessageWithAddress(RbelSocketAddress.create("exampleTestServer", 1234));
 
     Optional<String> result = serverNameFromHostname.apply(hostnameElement);
 
-    assertThat(result).hasValue("exampleTestServer");
+    assertThat(result).isEmpty();
+  }
+
+  private static RbelElement addHostnameElementToMessageWithAddress(
+      RbelSocketAddress socketAddress) {
+    RbelElement hostnameElement =
+        RbelHostnameFacet.buildRbelHostnameFacet(exampleMessage, socketAddress);
+    exampleMessage.addOrReplaceFacet(
+        RbelTcpIpMessageFacet.builder().receiver(hostnameElement).build());
+    return hostnameElement;
   }
 }
